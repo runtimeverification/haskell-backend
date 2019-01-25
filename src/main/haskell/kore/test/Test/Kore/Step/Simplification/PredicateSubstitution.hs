@@ -129,7 +129,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , thatDefinition
+                        , thatSimplification
                             [ makeEvaluator
                                     [ (Mock.f Mock.functional00, Mock.functional00)
                                 , (Mock.f Mock.functional01, Mock.a)
@@ -165,7 +165,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , thatDefinition
+                        , thatSimplification
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 ]
@@ -202,7 +202,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , thatDefinition
+                        , thatSimplification
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 ]
@@ -245,7 +245,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , thatDefinition
+                        , thatSimplification
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 , (Mock.f Mock.a, Mock.g Mock.b)
@@ -298,12 +298,12 @@ runSimplifier patternSimplifierMap predicateSubstitution =
             mockMetadataTools
             (Simplifier.create mockMetadataTools patternSimplifierMap)
 
-thatDefinition
+thatSimplification
     :: [ApplicationFunctionEvaluator Object]
     -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
-thatDefinition evaluators =
+thatSimplification evaluators =
     That FunctionEvaluators
-        { definitionEvaluators = evaluators
+        { definitionRules = []
         , simplificationEvaluators = evaluators
         }
 
@@ -319,7 +319,7 @@ makeEvaluator
     -> ApplicationFunctionEvaluator Object
 makeEvaluator mapping =
     ApplicationFunctionEvaluator
-        $ const $ const $ const $ const $ simpleEvaluator mapping
+        $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
     ::  ( FreshVariable variable
@@ -333,20 +333,18 @@ simpleEvaluator
         (Valid (variable Object) Object)
         (StepPattern Object variable)
     -> Simplifier
-        [   ( AttemptedFunction Object variable
-            , SimplificationProof Object
-            )
-        ]
-simpleEvaluator [] _ = return [(NotApplicable, SimplificationProof)]
+        ( AttemptedFunction Object variable
+        , SimplificationProof Object
+        )
+simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
 simpleEvaluator ((from, to) : ps) validApp@(valid :< app)
   | from == embed (valid :< ApplicationPattern app) =
     return
-        [   ( Applied
-                (OrOfExpandedPattern.make
-                    [Predicated.fromPurePattern to]
-                )
-            , SimplificationProof
+        ( Applied
+            (OrOfExpandedPattern.make
+                [Predicated.fromPurePattern to]
             )
-        ]
+        , SimplificationProof
+        )
   | otherwise =
     simpleEvaluator ps validApp

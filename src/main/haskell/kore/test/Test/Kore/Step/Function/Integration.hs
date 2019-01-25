@@ -17,8 +17,8 @@ import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeTruePredicate )
+                 ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
+                 makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
@@ -72,7 +72,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (thatDefinition
+                    (thatSimplification
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.g (mkVar Mock.x))
@@ -114,7 +114,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (theseDefinition
+                    (theseSimplification
                         (axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.g (mkVar Mock.x))
@@ -140,9 +140,9 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (theseDefinition
+                    (theseSimplification
                         (ApplicationFunctionEvaluator
-                            (\_ _ _ _ _ -> notApplicableFunctionEvaluator)
+                            (\_ _ _ _ -> notApplicableFunctionEvaluator)
                         )
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -164,7 +164,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (thatDefinition
+                    (thatSimplification
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.functional10 (mkVar Mock.x))
@@ -188,7 +188,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (thatDefinition
+                    (thatSimplification
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.functional10 (mkVar Mock.x))
@@ -219,7 +219,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
-                    (thatDefinition
+                    (thatSimplification
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.functional10 (mkVar Mock.x))
@@ -244,7 +244,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map thatDefinition $ Map.singleton Mock.cId
+                (Map.map thatSimplification $ Map.singleton Mock.cId
                     [ appliedMockEvaluator Predicated
                         { term   = Mock.d
                         , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
@@ -268,7 +268,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map thatDefinition $ Map.fromList
+                (Map.map thatSimplification $ Map.fromList
                     [   ( Mock.cId
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.e
@@ -306,7 +306,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map thatDefinition $ Map.fromList
+                (Map.map thatSimplification $ Map.fromList
                     [   ( Mock.cId
                         ,   [ axiomEvaluator Mock.c Mock.d ]
                         )
@@ -341,7 +341,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map thatDefinition $ Map.fromList
+                (Map.map thatSimplification $ Map.fromList
                     [   ( Mock.cId
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.d
@@ -388,7 +388,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.map thatDefinition $ Map.fromList
+                (Map.map thatSimplification $ Map.fromList
                     [   ( Mock.fId
                         ,   [ appliedMockEvaluator Predicated
                                 { term = Mock.a
@@ -427,12 +427,11 @@ test_functionIntegration =
                 (Map.map That $ Map.fromList
                     [   ( Mock.fId
                         ,   FunctionEvaluators
-                            { definitionEvaluators =
-                                [ appliedMockEvaluator Predicated
-                                    { term = Mock.a
-                                    , predicate = makeTruePredicate
-                                    , substitution = mempty
-                                    }
+                            { definitionRules =
+                                [ axiom
+                                    (Mock.f (mkVar Mock.y))
+                                    Mock.a
+                                    makeTruePredicate
                                 ]
                             , simplificationEvaluators =
                                 [ appliedMockEvaluator Predicated
@@ -461,12 +460,11 @@ test_functionIntegration =
                 (Map.map That $ Map.fromList
                     [   ( Mock.fId
                         ,   FunctionEvaluators
-                            { definitionEvaluators =
-                                [ appliedMockEvaluator Predicated
-                                    { term = Mock.a
-                                    , predicate = makeTruePredicate
-                                    , substitution = mempty
-                                    }
+                            { definitionRules =
+                                [ axiom
+                                    (Mock.f (mkVar Mock.y))
+                                    Mock.a
+                                    makeTruePredicate
                                 ]
                             , simplificationEvaluators =
                                 [ axiomEvaluator
@@ -503,12 +501,11 @@ test_functionIntegration =
                 (Map.map That $ Map.fromList
                     [   ( Mock.fId
                         ,   FunctionEvaluators
-                            { definitionEvaluators =
-                                [ appliedMockEvaluator Predicated
-                                    { term = Mock.a
-                                    , predicate = makeTruePredicate
-                                    , substitution = mempty
-                                    }
+                            { definitionRules =
+                                [ axiom
+                                    (Mock.f (mkVar Mock.y))
+                                    Mock.a
+                                    makeTruePredicate
                                 ]
                             , simplificationEvaluators =
                                 [ axiomEvaluator
@@ -525,7 +522,9 @@ test_functionIntegration =
     , testCase "Multiple definition branches." $ do
         let expect =
                 Predicated
-                    { term = mkOr Mock.a Mock.b
+                    { term = mkOr
+                        (mkAnd Mock.a (mkCeil Mock.testSort Mock.cf))
+                        (mkAnd Mock.b (mkNot (mkCeil Mock.testSort Mock.cf)))
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -535,17 +534,15 @@ test_functionIntegration =
                 (Map.map That $ Map.fromList
                     [   ( Mock.fId
                         ,   FunctionEvaluators
-                            { definitionEvaluators =
-                                [ appliedMockEvaluator Predicated
-                                    { term = Mock.a
-                                    , predicate = makeTruePredicate
-                                    , substitution = mempty
-                                    }
-                                , appliedMockEvaluator Predicated
-                                    { term = Mock.b
-                                    , predicate = makeTruePredicate
-                                    , substitution = mempty
-                                    }
+                            { definitionRules =
+                                [ axiom
+                                    (Mock.f (mkVar Mock.y))
+                                    Mock.a
+                                    (makeCeilPredicate Mock.cf)
+                                , axiom
+                                    (Mock.f (mkVar Mock.y))
+                                    Mock.b
+                                    makeTruePredicate
                                 ]
                             , simplificationEvaluators =
                                 [ axiomEvaluator
@@ -566,15 +563,20 @@ axiomEvaluator
     -> ApplicationFunctionEvaluator Object
 axiomEvaluator left right =
     ApplicationFunctionEvaluator
-        (ruleFunctionEvaluator
-            (EqualityRule RulePattern
-                { left
-                , right
-                , requires = makeTruePredicate
-                , attributes = def
-                }
-            )
-        )
+        (ruleFunctionEvaluator (axiom left right makeTruePredicate))
+
+axiom
+    :: CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonPredicate Object
+    -> EqualityRule Object
+axiom left right predicate =
+    EqualityRule RulePattern
+        { left
+        , right
+        , requires = predicate
+        , attributes = def
+        }
 
 appliedMockEvaluator
     :: CommonExpandedPattern level -> ApplicationFunctionEvaluator level
@@ -600,34 +602,33 @@ mockEvaluator
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
-    -> EvaluationType
     -> CofreeF
         (Application level)
         (Valid (variable level) level)
         (StepPattern level variable)
     -> Simplifier
-        [(AttemptedFunction level variable, SimplificationProof level)]
-mockEvaluator evaluation _ _ _ _ _ =
-    return [(evaluation, SimplificationProof)]
+        (AttemptedFunction level variable, SimplificationProof level)
+mockEvaluator evaluation _ _ _ _ =
+    return (evaluation, SimplificationProof)
 
-thatDefinition
+thatSimplification
     :: [ApplicationFunctionEvaluator Object]
     -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
-thatDefinition evaluators =
+thatSimplification evaluators =
     That FunctionEvaluators
-        { definitionEvaluators = evaluators
+        { definitionRules = []
         , simplificationEvaluators = evaluators
         }
 
-theseDefinition
+theseSimplification
     :: ApplicationFunctionEvaluator Object
     -> [ApplicationFunctionEvaluator Object]
     -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
-theseDefinition evaluator evaluators =
+theseSimplification evaluator evaluators =
     These
         evaluator
         FunctionEvaluators
-            { definitionEvaluators = evaluators
+            { definitionRules = []
             , simplificationEvaluators = evaluators
             }
 

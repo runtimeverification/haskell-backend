@@ -128,6 +128,8 @@ functionalConstr11Id :: Id Object
 functionalConstr11Id = testId "functionalConstr11"
 functionalConstr20Id :: Id Object
 functionalConstr20Id = testId "functionalConstr20"
+functionalConstr30Id :: Id Object
+functionalConstr30Id = testId "functionalConstr30"
 functionalTopConstr20Id :: Id Object
 functionalTopConstr20Id = testId "functionalTopConstr20"
 functionalTopConstr21Id :: Id Object
@@ -361,6 +363,11 @@ functionalConstr11Symbol = SymbolOrAlias
 functionalConstr20Symbol :: SymbolOrAlias Object
 functionalConstr20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalConstr20Id
+    , symbolOrAliasParams      = []
+    }
+functionalConstr30Symbol :: SymbolOrAlias Object
+functionalConstr30Symbol = SymbolOrAlias
+    { symbolOrAliasConstructor = functionalConstr30Id
     , symbolOrAliasParams      = []
     }
 functionalTopConstr20Symbol :: SymbolOrAlias Object
@@ -665,6 +672,15 @@ functionalConstr20
 functionalConstr20 arg1 arg2 =
     mkApp testSort functionalConstr20Symbol [arg1, arg2]
 
+functionalConstr30
+    :: Ord (variable Object)
+    => StepPattern Object variable
+    -> StepPattern Object variable
+    -> StepPattern Object variable
+    -> StepPattern Object variable
+functionalConstr30 arg1 arg2 arg3 =
+    mkApp testSort functionalConstr30Symbol [arg1, arg2, arg3]
+
 functionalTopConstr20
     :: Ord (variable Object)
     => StepPattern Object variable
@@ -905,6 +921,9 @@ attributesMapping =
     ,   ( functionalConstr20Symbol
         , Mock.constructorFunctionalAttributes
         )
+    ,   ( functionalConstr30Symbol
+        , Mock.constructorFunctionalAttributes
+        )
     ,   ( functionalTopConstr20Symbol
         , Mock.constructorFunctionalAttributes
         )
@@ -1102,6 +1121,9 @@ headTypeMapping =
         , HeadType.Symbol
         )
     ,   ( functionalConstr20Symbol
+        , HeadType.Symbol
+        )
+    ,   ( functionalConstr30Symbol
         , HeadType.Symbol
         )
     ,   ( functionalTopConstr20Symbol

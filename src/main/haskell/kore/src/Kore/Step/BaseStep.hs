@@ -8,7 +8,8 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.BaseStep
-    ( RulePattern
+    ( OrStepResult (..)
+    , RulePattern
     , StepperConfiguration (..)
     , StepResult (..)
     , StepperVariable (..)
@@ -19,8 +20,10 @@ module Kore.Step.BaseStep
     , simplificationProof
     , stepProof
     , stepProofSumName
+    , stepWithRemainders
+    , stepWithRemaindersForUnifier
+    , stepWithRewriteRule
     , stepWithRule
-    , stepWithRuleForUnifier
     ) where
 
 import           Control.Monad.Except
@@ -29,6 +32,8 @@ import           Control.Monad.Trans.Except
 import           Data.Either
                  ( partitionEithers )
 import qualified Data.Hashable as Hashable
+import           Data.List
+                 ( foldl' )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
@@ -40,7 +45,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
-
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -62,9 +66,9 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( toPredicate )
 import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
+                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns )
+                 ( extractPatterns, make, merge, mergeAll )
 import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
@@ -88,6 +92,7 @@ import           Kore.Unparser
 import           Kore.Variables.Free
                  ( pureAllVariables )
 import           Kore.Variables.Fresh
+
 {-| 'StepperConfiguration' represents the configuration to which a rewriting
 axiom is applied.
 
@@ -198,6 +203,20 @@ data StepResult level variable =
         }
     deriving (Eq, Show)
 
+{-! The result of applying an axiom to a pattern, as an Or.
+
+Contains the rewritten pattern (if any) and the unrewritten part of the
+original pattern.
+-}
+data OrStepResult level variable =
+    OrStepResult
+        { rewrittenPattern :: !(OrOfExpandedPattern level variable)
+        -- ^ The result of rewritting the pattern
+        , remainder :: !(OrOfExpandedPattern level variable)
+        -- ^ The unrewritten part of the original pattern
+        }
+    deriving (Eq, Show)
+
 {-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
 stepProofSumName :: StepProofAtom variable level -> String
 stepProofSumName (StepProofUnification _)       = "StepProofUnification"
@@ -206,7 +225,7 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Function.Matcher.matchAsUnification' to be used in
--- 'stepWithRuleForUnifier'.
+-- 'stepWithRule'.
 newtype UnificationProcedure level =
     UnificationProcedure
         ( forall variable m
@@ -241,7 +260,7 @@ newtype UnificationProcedure level =
     Returns 'Left' only if there is an error. It is not an error if the axiom
     does not apply to the given configuration.
 -}
-stepWithRuleForUnifier
+stepWithRule
     :: forall level variable .
         ( FreshVariable variable
         , MetaOrObject level
@@ -266,7 +285,7 @@ stepWithRuleForUnifier
             , StepProof level variable
             )
         ]
-stepWithRuleForUnifier
+stepWithRule
     tools
     (UnificationProcedure unificationProcedure')
     substitutionSimplifier
@@ -387,7 +406,7 @@ applyUnificationToRhs
     let
         -- TODO(virgil): Some of the work is duplicated with the
         -- startPattern = mapVariables ConfigurationVariable initialTerm
-        -- statement in the caller (stepWithRuleForUnifier). Should solve
+        -- statement in the caller (stepWithRule). Should solve
         -- this somehow.
         Predicated
             { predicate = startCondition
@@ -590,7 +609,7 @@ keepGoodResults mresultsm = do
             (err : _) -> throwE err
         else return goodResults
 
-stepWithRule
+stepWithRewriteRule
     ::  ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -613,13 +632,197 @@ stepWithRule
             , StepProof level variable
             )
         ]
-stepWithRule tools substitutionSimplifier patt (RewriteRule rule) =
-    stepWithRuleForUnifier
+stepWithRewriteRule tools substitutionSimplifier patt (RewriteRule rule) =
+    stepWithRule
             tools
             (UnificationProcedure unificationProcedure)
             substitutionSimplifier
             patt
             rule
+
+{-| Takes a configuration and a set of rules and tries to apply them to the
+configuration in order.
+
+The first rule is applied on the entire configuration, while the subsequent
+ones are applied on the part of configuration that was not transformed by the
+previous ones.
+
+It returns all results from applying these axioms, together with the
+untransformed part of the configuration left at the end (if any).
+
+As an example, let us assume that we have the following axioms:
+
+@
+a = b if p1
+a = c if p2
+a = d and p3
+@
+
+and we are trying to apply them to 'a'. Then we will get the following results:
+
+@
+b and p1
+c and (not p1) and p2
+d and (not p1) and (not p2) and p3
+a and (not p1) and (not p2) and (not p3)
+@
+-}
+stepWithRemaindersForUnifier
+    :: forall level variable .
+        ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , Unparse (variable level)
+        )
+    => MetadataTools level StepperAttributes
+    -> UnificationProcedure level
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> [RulePattern level]
+    -- ^ Rewriting axiom
+    -> ExpandedPattern level variable
+    -- ^ Configuration being rewritten.
+    -> Simplifier
+        ( OrStepResult level variable
+        , StepProof level variable
+        )
+stepWithRemaindersForUnifier
+    _
+    _
+    _
+    []
+    patt
+  = return
+    ( OrStepResult
+        { rewrittenPattern = OrOfExpandedPattern.make []
+        , remainder = OrOfExpandedPattern.make [patt]
+        }
+    , mempty
+    )
+stepWithRemaindersForUnifier
+    tools
+    unification
+    substitutionSimplifier
+    (rule : rules)
+    patt
+  = do
+    resultsEither <- runExceptT
+        $ stepWithRule
+            tools
+            unification
+            substitutionSimplifier
+            patt
+            rule
+    case resultsEither of
+        Left _ ->
+            stepWithRemaindersForUnifier
+                tools unification substitutionSimplifier rules patt
+        Right resultsWithProofs -> do
+            let
+                (results, proofs) = unzip resultsWithProofs
+                rewritten :: [OrOfExpandedPattern level variable]
+                remainders ::  [ExpandedPattern level variable]
+                (rewritten, remainders) =
+                    if null results
+                    then ([], [patt])
+                    else unzip (map splitStepResult results)
+            rewrittenRemaindersWithProofs <-
+                mapM
+                    (stepWithRemaindersForUnifier
+                        tools
+                        unification
+                        substitutionSimplifier
+                        rules
+                    )
+                    remainders
+            let
+                rewrittenRemainders :: [OrStepResult level variable]
+                rewrittenRemainderProofs :: [StepProof level variable]
+                (rewrittenRemainders, rewrittenRemainderProofs) =
+                    unzip rewrittenRemaindersWithProofs
+                alreadyRewritten :: OrStepResult level variable
+                alreadyRewritten =
+                    OrStepResult
+                        { rewrittenPattern =
+                            OrOfExpandedPattern.mergeAll rewritten
+                        , remainder = OrOfExpandedPattern.make []
+                        }
+            return
+                ( foldl' mergeResults alreadyRewritten rewrittenRemainders
+                , mconcat proofs <> mconcat rewrittenRemainderProofs
+                )
+  where
+    mergeResults
+        :: OrStepResult level variable
+        -> OrStepResult level variable
+        -> OrStepResult level variable
+    mergeResults
+        OrStepResult
+            { rewrittenPattern = firstPattern
+            , remainder = firstRemainder
+            }
+        OrStepResult
+            { rewrittenPattern = secondPattern
+            , remainder = secondRemainder
+            }
+      =
+        OrStepResult
+            { rewrittenPattern =
+                OrOfExpandedPattern.merge firstPattern secondPattern
+            , remainder =
+                OrOfExpandedPattern.merge firstRemainder secondRemainder
+            }
+    splitStepResult
+        :: StepResult level variable
+        ->  ( OrOfExpandedPattern level variable
+            , ExpandedPattern level variable
+            )
+    splitStepResult
+        StepResult { rewrittenPattern, remainder }
+      =
+        ( OrOfExpandedPattern.make [rewrittenPattern]
+        , remainder
+        )
+
+{-| Takes a configuration and a set of rules and tries to apply them to the
+configuration in order, using unification.
+
+The first rule is applied on the entire configuration, while the subsequent
+ones are applied on the part of configuration that was not transformed by the
+previous ones.
+
+See 'stepWithRemaindersForUnifier' for more details.
+-}
+stepWithRemainders
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , Unparse (variable level)
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> ExpandedPattern level variable
+    -- ^ Configuration being rewritten.
+    -> [RewriteRule level]
+    -- ^ Rewriting axiom
+    -> Simplifier
+        ( OrStepResult level variable
+        , StepProof level variable
+        )
+stepWithRemainders tools substitutionSimplifier patt rules =
+    stepWithRemaindersForUnifier
+        tools
+        (UnificationProcedure unificationProcedure)
+        substitutionSimplifier
+        (map (\ (RewriteRule rule) -> rule) rules)
+        patt
 
 -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
 -- internally-defined variables.

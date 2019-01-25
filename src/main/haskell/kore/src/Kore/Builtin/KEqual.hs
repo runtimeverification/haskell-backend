@@ -45,8 +45,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( ApplicationFunctionEvaluator (..), AttemptedFunction (..),
-                 EvaluationType, notApplicableFunctionEvaluator,
-                 purePatternFunctionEvaluator )
+                 notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -134,17 +133,15 @@ evalKEq
     -> MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable
-    -> EvaluationType
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
         (StepPattern Object variable)
     -> Simplifier
-        [   ( AttemptedFunction Object variable
-            , SimplificationProof Object
-            )
-        ]
-evalKEq true tools substitutionSimplifier _ _ (valid :< app) =
+        ( AttemptedFunction Object variable
+        , SimplificationProof Object
+        )
+evalKEq true tools substitutionSimplifier _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
@@ -174,17 +171,15 @@ evalKIte
     => MetadataTools.MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object Simplifier
     -> StepPatternSimplifier Object variable
-    -> EvaluationType
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
         (StepPattern Object variable)
     -> Simplifier
-        [   ( AttemptedFunction Object variable
-            , SimplificationProof Object
-            )
-        ]
-evalKIte _ _ _ _ (_ :< app) =
+        ( AttemptedFunction Object variable
+        , SimplificationProof Object
+        )
+evalKIte _ _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2

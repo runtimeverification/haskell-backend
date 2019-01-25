@@ -29,13 +29,15 @@ import           Kore.Step.AxiomPatterns
                  RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepResult (StepResult), UnificationProcedure (..),
-                 stepWithRuleForUnifier )
+                 stepWithRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepProof, StepResult (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( bottom )
 import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..), EvaluationType )
+                 ( AttemptedFunction (..) )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -75,40 +77,44 @@ ruleFunctionEvaluator
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
-    -> EvaluationType
     -> CofreeF
         (Application level)
         (Valid (variable level) level)
         (StepPattern level variable)
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
-        [(AttemptedFunction level variable, SimplificationProof level)]
+        (AttemptedFunction level variable, SimplificationProof level)
 ruleFunctionEvaluator
     (EqualityRule rule)
     tools
     substitutionSimplifier
     simplifier
-    evaluationType
     app@(_ :< Application _ c)
-    | (Axiom.Concrete.isConcrete $ concrete $ attributes rule)
+  | Axiom.Concrete.isConcrete (concrete $ attributes rule)
         && any (not . Pure.isConcrete) c
-    = notApplicable
-    | otherwise = do
+  = notApplicable
+  | otherwise = do
     result <- runExceptT stepResult
     case result of
         Left _ ->
             notApplicable
         Right results -> do
             processedResults <- mapM processResult results
-            return (concat processedResults)
+            return
+                ( AttemptedFunction.Applied
+                    (OrOfExpandedPattern.make (map dropProof processedResults))
+                , SimplificationProof
+                )
   where
-
-    notApplicable = return [(AttemptedFunction.NotApplicable, SimplificationProof)]
+    notApplicable =
+        return (AttemptedFunction.NotApplicable, SimplificationProof)
+    dropProof :: (a, SimplificationProof level) -> a
+    dropProof = fst
 
     stepResult =
-        stepWithRuleForUnifier
+        stepWithRule
             tools
-            (UnificationProcedure (matchAsUnification evaluationType))
+            (UnificationProcedure matchAsUnification)
             substitutionSimplifier
             (stepperConfiguration app)
             rule
@@ -126,28 +132,21 @@ ruleFunctionEvaluator
             , predicate = makeTruePredicate
             , substitution = mempty
             }
+
     processResult
         :: (StepResult level variable, StepProof level variable)
         -> Simplifier
-            [(AttemptedFunction level variable, SimplificationProof level)]
+            (ExpandedPattern level variable, SimplificationProof level)
     processResult
         (StepResult { rewrittenPattern = stepPattern }, _proof)
         -- TODO(virgil): ^^^ Also use the remainder.
       = do
-        (   rewrittenPattern@Predicated
-                { predicate = rewritingCondition }
+        (   rewrittenPattern@Predicated { predicate = rewritingCondition }
             , _
             ) <-
                 ExpandedPattern.simplifyPredicate
                     tools substitutionSimplifier simplifier stepPattern
-        let
-            results =
-                case rewritingCondition of
-                    PredicateFalse -> []
-                    _ -> [rewrittenPattern]
-        return
-            [   ( AttemptedFunction.Applied
-                    (OrOfExpandedPattern.make results)
-                , SimplificationProof
-                )
-            ]
+        case rewritingCondition of
+            PredicateFalse ->
+                return (ExpandedPattern.bottom, SimplificationProof)
+            _ -> return (rewrittenPattern, SimplificationProof)

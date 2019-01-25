@@ -30,8 +30,6 @@ import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
-import           Kore.Step.Function.Data as EvaluationType
-                 ( EvaluationType (..) )
 import           Kore.Step.Function.Data as AttemptedFunction
                  ( AttemptedFunction (..) )
 import           Kore.Step.Function.Data
@@ -81,7 +79,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier [])
                 (metaF (mkVar $ x patternMetaSort))
-        assertEqualWithExplanation "f(x) => g(x)" [expect] actual
+        assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply concrete rule to symbolic pattern" $ do
         let expect =
                 AttemptedFunction.NotApplicable
@@ -99,7 +97,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier [])
                 (metaF (mkVar $ x patternMetaSort))
-        assertEqualWithExplanation "f(x) => g(x)" [expect] actual
+        assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Can apply concrete rule to concrete pattern" $ do
         let expect =
                 AttemptedFunction.NotApplicable
@@ -117,7 +115,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier [])
                 (metaF (mkVar $ x patternMetaSort))
-        assertEqualWithExplanation "f(x) => g(x)" [expect] actual
+        assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
                 AttemptedFunction.Applied (OrOfExpandedPattern.make [])
@@ -135,7 +133,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier [])
                 (metaF (mkVar $ x patternMetaSort))
-        assertEqualWithExplanation "f(x) => g(x) requires false" [expect] actual
+        assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
 
     , testCase "Cannot apply step with unsat condition" $ do
         let expect =
@@ -158,7 +156,7 @@ test_userDefinedFunction =
                     [ (mkTop_, ([], SimplificationProof)) ]
                 )
                 (metaF (mkVar $ x patternMetaSort))
-        assertEqualWithExplanation "" [expect] actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "Preserves step substitution" $ do
         let expect =
@@ -191,7 +189,7 @@ test_userDefinedFunction =
                     (mkVar $ b patternMetaSort)
                 )
         assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)"
-            [expect]
+            expect
             actual
 
     -- TODO: Add a test for StepWithAxiom returning a condition.
@@ -300,7 +298,7 @@ evaluateWithAxiom
         (Application level)
         (Valid (Variable level) level)
         (CommonStepPattern level)
-    -> IO [CommonAttemptedFunction level]
+    -> IO (CommonAttemptedFunction level)
 evaluateWithAxiom
     metadataTools
     axiom
@@ -308,7 +306,7 @@ evaluateWithAxiom
     app
   = do
     results <- evaluated
-    return (map normalizeResult results)
+    return (normalizeResult results)
   where
     normalizeResult
         :: CommonAttemptedFunction level -> CommonAttemptedFunction level
@@ -324,9 +322,9 @@ evaluateWithAxiom
             , predicate = predicate
             , substitution = Substitution.modify sort substitution
             }
-    evaluated :: IO [CommonAttemptedFunction level]
+    evaluated :: IO (CommonAttemptedFunction level)
     evaluated =
-        (<$>) (map fst)
+        (<$>) fst
         $ SMT.runSMT SMT.defaultConfig
         $ evalSimplifier
         $ ruleFunctionEvaluator
@@ -334,5 +332,4 @@ evaluateWithAxiom
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
-            EvaluationType.Definition
             app
