@@ -33,6 +33,11 @@ module Kore.Builtin.List
     , isSymbolElement
     , isSymbolUnit
     , unifyEquals
+      -- * keys
+    , concatKey
+    , elementKey
+    , unitKey
+    , getKey
     ) where
 
 import           Control.Applicative
@@ -48,8 +53,11 @@ import qualified Data.Map.Strict as Map
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -105,16 +113,16 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( "LIST.concat"
+    [ ( concatKey
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
-    , ( "LIST.element"
+    , ( elementKey
       , Builtin.verifySymbol assertSort [anySort]
       )
-    , ( "LIST.unit"
+    , ( unitKey
       , Builtin.verifySymbol assertSort []
       )
-    , ( "LIST.get"
+    , ( getKey
       , Builtin.verifySymbol anySort [assertSort, Int.assertSort]
       )
     ]
@@ -133,7 +141,7 @@ type Builtin variable = Seq (StepPattern Object variable)
  -}
 expectBuiltinList
     :: Monad m
-    => String  -- ^ Context for error message
+    => Text  -- ^ Context for error message
     -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
 expectBuiltinList ctx =
@@ -141,7 +149,7 @@ expectBuiltinList ctx =
         DV_ _ domain ->
             case domain of
                 Domain.BuiltinList list -> return list
-                _ -> Builtin.verifierBug (ctx ++ ": Domain value is not a list")
+                _ -> Builtin.verifierBug (Text.unpack ctx ++ ": Domain value is not a list")
         _ ->
             empty
 
@@ -163,13 +171,12 @@ evalElement =
     evalElement0 _ _ resultSort = \arguments ->
         case arguments of
             [elem'] -> returnList resultSort (Seq.singleton elem')
-            _ -> Builtin.wrongArity "LIST.element"
+            _ -> Builtin.wrongArity elementKey
 
 evalGet :: Builtin.Function
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
-    ctx = "LIST.get"
     evalGet0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -183,15 +190,15 @@ evalGet =
             let (_list, _ix) =
                     case arguments of
                         [_list, _ix] -> (_list, _ix)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity getKey
                 emptyList = do
-                    _list <- expectBuiltinList ctx _list
+                    _list <- expectBuiltinList getKey _list
                     if Seq.null _list
                         then Builtin.appliedFunction ExpandedPattern.bottom
                         else empty
                 bothConcrete = do
-                    _list <- expectBuiltinList ctx _list
-                    _ix <- fromInteger <$> Int.expectBuiltinInt ctx _ix
+                    _list <- expectBuiltinList getKey _list
+                    _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
                     let ix
                             | _ix < 0 =
                                 -- negative indices count from end of list
@@ -217,7 +224,6 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    ctx = "LIST.concat"
     evalConcat0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -231,9 +237,9 @@ evalConcat =
             let (_list1, _list2) =
                     case arguments of
                         [_list1, _list2] -> (_list1, _list2)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity concatKey
                 leftIdentity = do
-                    _list1 <- expectBuiltinList ctx _list1
+                    _list1 <- expectBuiltinList concatKey _list1
                     if Seq.null _list1
                         then
                             Builtin.appliedFunction
@@ -241,7 +247,7 @@ evalConcat =
                         else
                             empty
                 rightIdentity = do
-                    _list2 <- expectBuiltinList ctx _list2
+                    _list2 <- expectBuiltinList concatKey _list2
                     if Seq.null _list2
                         then
                             Builtin.appliedFunction
@@ -249,8 +255,8 @@ evalConcat =
                         else
                             empty
                 bothConcrete = do
-                    _list1 <- expectBuiltinList ctx _list1
-                    _list2 <- expectBuiltinList ctx _list2
+                    _list1 <- expectBuiltinList concatKey _list1
+                    _list2 <- expectBuiltinList concatKey _list2
                     returnList resultSort (_list1 <> _list2)
             leftIdentity <|> rightIdentity <|> bothConcrete
         )
@@ -260,10 +266,10 @@ evalConcat =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ ("LIST.concat", evalConcat)
-        , ("LIST.element", evalElement)
-        , ("LIST.unit", evalUnit)
-        , ("LIST.get", evalGet)
+        [ (concatKey, evalConcat)
+        , (elementKey, evalElement)
+        , (unitKey, evalUnit)
+        , (getKey, evalGet)
         ]
 
 {- | Render a 'Seq' as a domain value pattern of the given sort.
@@ -318,7 +324,7 @@ lookupSymbolUnit
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol "LIST.unit"
+lookupSymbolUnit = Builtin.lookupSymbol unitKey
 
 {- | Find the symbol hooked to @LIST.element@ in an indexed module.
  -}
@@ -326,7 +332,7 @@ lookupSymbolElement
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol "LIST.element"
+lookupSymbolElement = Builtin.lookupSymbol elementKey
 
 {- | Find the symbol hooked to @LIST.concat@ in an indexed module.
  -}
@@ -334,7 +340,7 @@ lookupSymbolConcat
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol "LIST.concat"
+lookupSymbolConcat = Builtin.lookupSymbol concatKey
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
@@ -342,7 +348,7 @@ lookupSymbolGet
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolGet = Builtin.lookupSymbol "LIST.get"
+lookupSymbolGet = Builtin.lookupSymbol getKey
 
 {- | Check if the given symbol is hooked to @LIST.concat@.
 -}
@@ -350,7 +356,7 @@ isSymbolConcat
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolConcat = Builtin.isSymbol "LIST.concat"
+isSymbolConcat = Builtin.isSymbol concatKey
 
 {- | Check if the given symbol is hooked to @LIST.element@.
 -}
@@ -358,7 +364,7 @@ isSymbolElement
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolElement = Builtin.isSymbol "LIST.element"
+isSymbolElement = Builtin.isSymbol elementKey
 
 {- | Check if the given symbol is hooked to @LIST.unit@.
 -}
@@ -366,7 +372,7 @@ isSymbolUnit
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolUnit = Builtin.isSymbol "LIST.unit"
+isSymbolUnit = Builtin.isSymbol unitKey
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
 
@@ -448,7 +454,7 @@ unifyEquals
                             simplificationType
                             dv1
                             app
-                    _ -> Builtin.wrongArity "LIST.concat"
+                    _ -> Builtin.wrongArity concatKey
               | otherwise -> empty
             _ -> empty
 
@@ -539,3 +545,15 @@ unifyEquals
             prefixLength = Seq.length list1 - Seq.length suffix2
         listPrefix1 = asBuiltinDomainList prefix1
     unifyEqualsFramedLeft _ _ _ _ = error "The impossible happened."
+
+concatKey :: IsString s => s
+concatKey = "LIST.concat"
+
+elementKey :: IsString s => s
+elementKey = "LIST.element"
+
+unitKey :: IsString s => s
+unitKey = "LIST.unit"
+
+getKey :: IsString s => s
+getKey = "LIST.get"

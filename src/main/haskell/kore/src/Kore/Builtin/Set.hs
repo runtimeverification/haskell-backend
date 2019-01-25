@@ -36,19 +36,12 @@ module Kore.Builtin.Set
     , isSymbolUnit
       -- * Keys
     , unitKey
-    , unitKeyT
     , elementKey
-    , elementKeyT
     , concatKey
-    , concatKeyT
     , inKey
-    , inKeyT
     , differenceKey
-    , differenceKeyT
     , toListKey
-    , toListKeyT
     , sizeKey
-    , sizeKeyT
       -- * Unification
     , unifyEquals
     ) where
@@ -68,8 +61,11 @@ import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Pure as Kore
 import           Kore.AST.Valid
@@ -134,25 +130,25 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( concatKeyT
+    [ ( concatKey
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
-    , ( elementKeyT
+    , ( elementKey
       , Builtin.verifySymbol assertSort [anySort]
       )
-    , ( unitKeyT
+    , ( unitKey
       , Builtin.verifySymbol assertSort []
       )
-    , ( inKeyT
+    , ( inKey
       , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
       )
-    , ( differenceKeyT
+    , ( differenceKey
       , Builtin.verifySymbol assertSort [assertSort, assertSort]
       )
-    , ( toListKeyT
+    , ( toListKey
       , Builtin.verifySymbol List.assertSort [assertSort]
       )
-    , ( sizeKeyT
+    , ( sizeKey
       , Builtin.verifySymbol Int.assertSort [assertSort]
       )
     ]
@@ -171,7 +167,7 @@ type Builtin = Set (ConcreteStepPattern Object)
  -}
 expectBuiltinSet
     :: Monad m
-    => String  -- ^ Context for error message
+    => Text  -- ^ Context for error message
     -> MetadataTools Object StepperAttributes
     -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m Builtin
@@ -184,7 +180,7 @@ expectBuiltinSet ctx tools _set =
                     Domain.BuiltinSet set -> return set
                     _ ->
                         Builtin.verifierBug
-                            (ctx ++ ": Domain value is not a set")
+                            (Text.unpack ctx ++ ": Domain value is not a set")
             _ ->
                 empty
 
@@ -264,7 +260,7 @@ evalConcat =
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity concatKey
                 leftIdentity = do
                     _set1 <- expectBuiltinSet ctx tools _set1
                     if Set.null _set1
@@ -304,7 +300,7 @@ evalDifference =
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity ctx
+                        _ -> Builtin.wrongArity differenceKey
                 rightIdentity = do
                     _set2 <- expectBuiltinSet ctx tools _set2
                     if Set.null _set2
@@ -370,13 +366,13 @@ evalSize = Builtin.functionEvaluator evalSize0
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ (concatKeyT, evalConcat)
-        , (elementKeyT, evalElement)
-        , (unitKeyT, evalUnit)
-        , (inKeyT, evalIn)
-        , (differenceKeyT, evalDifference)
-        , (toListKeyT, evalToList)
-        , (sizeKeyT, evalSize)
+        [ (concatKey, evalConcat)
+        , (elementKey, evalElement)
+        , (unitKey, evalUnit)
+        , (inKey, evalIn)
+        , (differenceKey, evalDifference)
+        , (toListKey, evalToList)
+        , (sizeKey, evalSize)
         ]
 
 {- | Render a 'Set' as an internal domain value pattern of the given sort.
@@ -448,40 +444,26 @@ asExpandedPattern symbols resultSort =
     asExpandedPattern0 = \asPattern0 builtin ->
         ExpandedPattern.fromPurePattern $ asPattern0 builtin
 
-concatKey :: String
+concatKey :: IsString s => s
 concatKey = "SET.concat"
-concatKeyT :: Text
-concatKeyT = "SET.concat"
 
-elementKey :: String
+elementKey :: IsString s => s
 elementKey = "SET.element"
-elementKeyT :: Text
-elementKeyT = "SET.element"
 
-unitKey :: String
+unitKey :: IsString s => s
 unitKey = "SET.unit"
-unitKeyT :: Text
-unitKeyT = "SET.unit"
 
-inKey :: String
+inKey :: IsString s => s
 inKey = "SET.in"
-inKeyT :: Text
-inKeyT = "SET.in"
 
-differenceKey :: String
+differenceKey :: IsString s => s
 differenceKey = "SET.difference"
-differenceKeyT :: Text
-differenceKeyT = "SET.difference"
 
-toListKey :: String
+toListKey :: IsString s => s
 toListKey = "SET.set2list"
-toListKeyT :: Text
-toListKeyT = "SET.set2list"
 
-sizeKey :: String
+sizeKey :: IsString s => s
 sizeKey = "SET.size"
-sizeKeyT :: Text
-sizeKeyT = "SET.size"
 
 {- | Find the symbol hooked to @SET.unit@ in an indexed module.
  -}
@@ -489,7 +471,7 @@ lookupSymbolUnit
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol unitKeyT
+lookupSymbolUnit = Builtin.lookupSymbol unitKey
 
 {- | Find the symbol hooked to @SET.element@ in an indexed module.
  -}
@@ -497,7 +479,7 @@ lookupSymbolElement
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol elementKeyT
+lookupSymbolElement = Builtin.lookupSymbol elementKey
 
 {- | Find the symbol hooked to @SET.concat@ in an indexed module.
  -}
@@ -505,7 +487,7 @@ lookupSymbolConcat
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol concatKeyT
+lookupSymbolConcat = Builtin.lookupSymbol concatKey
 
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
@@ -513,7 +495,7 @@ lookupSymbolIn
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolIn = Builtin.lookupSymbol inKeyT
+lookupSymbolIn = Builtin.lookupSymbol inKey
 
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
  -}
@@ -521,7 +503,7 @@ lookupSymbolDifference
     :: Sort Object
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolDifference = Builtin.lookupSymbol differenceKeyT
+lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
 {- | Check if the given symbol is hooked to @SET.concat@.
  -}
@@ -529,7 +511,7 @@ isSymbolConcat
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolConcat = Builtin.isSymbol concatKeyT
+isSymbolConcat = Builtin.isSymbol concatKey
 
 {- | Check if the given symbol is hooked to @SET.element@.
  -}
@@ -537,7 +519,7 @@ isSymbolElement
     :: MetadataTools Object Hook
     -> SymbolOrAlias Object
     -> Bool
-isSymbolElement = Builtin.isSymbol elementKeyT
+isSymbolElement = Builtin.isSymbol elementKey
 
 {- | Check if the given symbol is hooked to @SET.unit@.
 -}

@@ -649,7 +649,7 @@ unifiedSortVariable
 unifiedSortVariable _x (SortVariableName name) =
     asUnified (sortVariable name :: SortVariable level)
 
-stringUnifiedPattern :: String -> VerifiedKorePattern
+stringUnifiedPattern :: Text -> VerifiedKorePattern
 stringUnifiedPattern s = toKorePattern (mkStringLiteral s)
 
 variable :: VariableName -> Sort level -> Variable level

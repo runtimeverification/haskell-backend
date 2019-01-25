@@ -253,7 +253,7 @@ metaIdRawParser = do
 stringLiteralRawParser :: Parser StringLiteral
 stringLiteralRawParser = do
     _ <- Parser.char '"'
-    StringLiteral <$> Parser.manyTill charParser (Parser.char '"')
+    StringLiteral <$> Text.pack <$> Parser.manyTill charParser (Parser.char '"')
 
 {- | Parse and unescape a Kore character literal.
 

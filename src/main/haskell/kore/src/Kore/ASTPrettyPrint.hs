@@ -39,7 +39,7 @@ import           Kore.Unification.Substitution
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
 import           Kore.Unparser
-                 ( escapeChar, escapeString )
+                 ( escapeCharT, escapeString, escapeStringT )
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
@@ -211,12 +211,6 @@ inCurlyBracesIndent = listWithDelimiters "{" "}"
 inSquareBracketsIndent :: [Doc ann] -> Doc ann
 inSquareBracketsIndent = listWithDelimiters "[" "]"
 
-inDoubleQuotes :: Doc ann -> Doc ann
-inDoubleQuotes thing = "\"" <> thing <> "\""
-
-inSingleQuotes :: Doc ann -> Doc ann
-inSingleQuotes thing = "\'" <> thing <> "\'"
-
 instance MetaOrObject level => PrettyPrint (SortVariable level) where
     prettyPrint flags sv =
         writeOneFieldStruct flags "SortVariable" (getSortVariable sv)
@@ -235,19 +229,19 @@ instance MetaOrObject level => PrettyPrint (SortActual level) where
             ]
 
 instance PrettyPrint StringLiteral where
-    prettyPrint flags s@(StringLiteral _) =
+    prettyPrint flags (StringLiteral s) =
         betweenParentheses
             flags
             ("StringLiteral "
-            <> inDoubleQuotes (fromString (escapeString (getStringLiteral s)))
+            <> dquotes (pretty (escapeStringT s))
             )
 
 instance PrettyPrint CharLiteral where
-    prettyPrint flags s@(CharLiteral _) =
+    prettyPrint flags (CharLiteral c) =
         betweenParentheses
             flags
             ("CharLiteral "
-            <> inSingleQuotes (fromString (escapeChar $ getCharLiteral s))
+            <> squotes (pretty (escapeCharT c))
             )
 
 instance MetaOrObject level => PrettyPrint (SymbolOrAlias level) where
@@ -277,7 +271,7 @@ instance PrettyPrint ModuleName where
         betweenParentheses
             flags
             ( "ModuleName "
-            <> inDoubleQuotes (pretty (getModuleName s))
+            <> dquotes (pretty (getModuleName s))
             )
 
 instance MetaOrObject level => PrettyPrint (Variable level) where
@@ -826,7 +820,7 @@ instance MetaOrObject level => PrettyPrint (ClashReason level) where
         betweenParentheses
             flags
             ("DomainValueClash "
-            <> inDoubleQuotes (fromString (escapeString h))
+            <> dquotes (fromString (escapeString h))
             )
     prettyPrint flags (HeadClash h) =
         writeOneFieldStruct flags "HeadClash" h

@@ -16,7 +16,9 @@ module Kore.Unparser
     , arguments
     , attributes
     , escapeString
+    , escapeStringT
     , escapeChar
+    , escapeCharT
     ) where
 
 import qualified Data.Char as Char
@@ -29,6 +31,9 @@ import           Data.Maybe
                  ( catMaybes )
 import           Data.String
                  ( IsString (fromString) )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc hiding
                  ( list )
 import           Data.Text.Prettyprint.Doc.Render.String
@@ -80,7 +85,7 @@ instance
             UnifiedObject object -> unparse object
 
 instance Unparse StringLiteral where
-    unparse = dquotes . fromString . escapeString . getStringLiteral
+    unparse = dquotes . pretty . escapeStringT . getStringLiteral
 
 instance Unparse CharLiteral where
     unparse = squotes . fromString . escapeChar . getCharLiteral
@@ -537,6 +542,9 @@ layoutPrettyUnbounded = layoutPretty LayoutOptions { layoutPageWidth = Unbounded
 escapeString :: String -> String
 escapeString s = foldr (.) id (map escapeCharS s) ""
 
+escapeStringT :: Text -> Text
+escapeStringT = Text.concatMap escapeCharT
+
 {- | Escape a 'Char' for a Kore character literal.
 
 @escapeChar@ does not include the surrounding delimiters.
@@ -555,12 +563,30 @@ escapeCharS c
         Just esc ->
             -- single-character escape sequence
             showChar '\\' . showChar esc
-  | c < '\x100' = showString "\\x" . zeroPad 2 (showHexCode c)
+  | c < '\x100'   = showString "\\x" . zeroPad 2 (showHexCode c)
   | c < '\x10000' = showString "\\u" . zeroPad 4 (showHexCode c)
-  | otherwise =  showString "\\U" . zeroPad 8 (showHexCode c)
+  | otherwise     = showString "\\U" . zeroPad 8 (showHexCode c)
   where
     showHexCode = Numeric.showHex . Char.ord
     zeroPad = padLeftWithCharToLength '0'
+
+escapeCharT :: Char -> Text
+escapeCharT c
+  | c >= '\x20' && c < '\x7F' =
+    case Map.lookup c oneCharEscapes of
+        Nothing ->
+            -- printable 7-bit ASCII
+            Text.singleton c
+        Just esc ->
+            -- single-character escape sequence
+            "\\" <> Text.singleton esc
+  | c < '\x100'   = "\\x" <> zeroPad 2 (Text.pack $ showHexCode c "")
+  | c < '\x10000' = "\\u" <> zeroPad 4 (Text.pack $ showHexCode c "")
+  | otherwise     = "\\U" <> zeroPad 8 (Text.pack $ showHexCode c "")
+  where
+    showHexCode = Numeric.showHex . Char.ord
+    zeroPad i = Text.justifyRight i '0'
+
 
 padLeftWithCharToLength :: Char -> Int -> ShowS -> ShowS
 padLeftWithCharToLength c i ss =

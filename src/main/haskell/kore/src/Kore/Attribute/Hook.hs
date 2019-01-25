@@ -22,7 +22,6 @@ import           Data.Hashable
 import qualified Data.Maybe as Maybe
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
@@ -74,7 +73,7 @@ Kore syntax: @hook{}("HOOKED.function")@
 function.
 
  -}
-hookAttribute :: String  -- ^ hooked function name
+hookAttribute :: Text  -- ^ hooked function name
               -> CommonKorePattern
 hookAttribute builtin =
     (asCommonKorePattern . ApplicationPattern)
@@ -100,7 +99,7 @@ instance ParseAttributes Hook where
             arg <- Parser.getOneArgument args
             StringLiteral name <- Parser.getStringLiteral arg
             Monad.unless (Maybe.isNothing hook) failDuplicate
-            return Hook { getHook = Just (Text.pack name) }
+            return Hook { getHook = Just name }
       where
         withApplication = Parser.withApplication hookId
         failDuplicate = Parser.failDuplicate hookId

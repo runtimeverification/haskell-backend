@@ -29,6 +29,16 @@ module Kore.Builtin.String
     , asExpandedPattern
     , asPartialExpandedPattern
     , parse
+      -- * keys
+    , ltKey
+    , plusKey
+    , string2IntKey
+    , substrKey
+    , lengthKey
+    , findKey
+    , string2BaseKey
+    , chrKey
+    , ordKey
     ) where
 
 import           Control.Applicative
@@ -41,16 +51,18 @@ import           Data.Char
                  ( chr, ord )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.List
-                 ( findIndex, isPrefixOf, tails )
+                 ( findIndex )
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( listToMaybe )
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
+import qualified Data.Text.Read as Text
 import           Numeric
-                 ( readDec, readHex, readOct, readSigned )
+                 ( readOct )
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.Annotation.Valid
@@ -103,37 +115,37 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [   ( ltKeyT
+    [   ( ltKey
         , Builtin.verifySymbol Bool.assertSort [assertSort, assertSort]
         )
-    ,   ( plusKeyT
+    ,   ( plusKey
         , Builtin.verifySymbol assertSort [assertSort, assertSort]
         )
-    ,   ( substrKeyT
+    ,   ( substrKey
         , Builtin.verifySymbol
             assertSort
             [assertSort, Int.assertSort, Int.assertSort]
         )
-    ,   ( lengthKeyT
+    ,   ( lengthKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
-    ,   ( findKeyT
+    ,   ( findKey
         , Builtin.verifySymbol
             Int.assertSort
             [assertSort, assertSort, Int.assertSort]
         )
-    ,   ( string2BaseKeyT
+    ,   ( string2BaseKey
         , Builtin.verifySymbol
             Int.assertSort
             [assertSort, Int.assertSort]
         )
-    ,   ( string2IntKeyT
+    ,   ( string2IntKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
-    ,   ( chrKeyT
+    ,   ( chrKey
         , Builtin.verifySymbol assertSort [Int.assertSort]
         )
-    ,   ( ordKeyT
+    ,   ( ordKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
     ]
@@ -147,8 +159,8 @@ patternVerifier =
 
 {- | Parse a string literal.
  -}
-parse :: Builtin.Parser String
-parse = Parsec.many Parsec.anySingle
+parse :: Builtin.Parser Text
+parse = Text.pack <$> Parsec.many Parsec.anySingle
 
 {- | Abort function evaluation if the argument is not a String domain value.
 
@@ -159,9 +171,9 @@ parse = Parsec.many Parsec.anySingle
  -}
 expectBuiltinString
     :: Monad m
-    => String  -- ^ Context for error message
+    => Text  -- ^ Context for error message
     -> StepPattern Object variable  -- ^ Operand pattern
-    -> MaybeT m String
+    -> MaybeT m Text
 expectBuiltinString ctx =
     \case
         DV_ _ domain ->
@@ -171,7 +183,7 @@ expectBuiltinString ctx =
                         (Builtin.parseString parse lit)
                 _ ->
                     Builtin.verifierBug
-                        (ctx ++ ": Domain value argument is not a string")
+                        (Text.unpack ctx ++ ": Domain value argument is not a string")
         _ ->
             empty
 
@@ -186,7 +198,7 @@ expectBuiltinString ctx =
 asPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
-    -> String  -- ^ builtin value to render
+    -> Text  -- ^ builtin value to render
     -> StepPattern Object variable
 asPattern resultSort result =
     fromConcreteStepPattern (asConcretePattern resultSort result)
@@ -201,7 +213,7 @@ asPattern resultSort result =
  -}
 asConcretePattern
     :: Sort Object  -- ^ resulting sort
-    -> String  -- ^ builtin value to render
+    -> Text  -- ^ builtin value to render
     -> ConcreteStepPattern Object
 asConcretePattern domainValueSort =
     mkDomainValue domainValueSort
@@ -211,14 +223,14 @@ asConcretePattern domainValueSort =
 
 asMetaPattern
     :: Functor domain
-    => String
+    => Text
     -> PurePattern Meta domain variable (Valid (variable Meta) Meta)
-asMetaPattern result = mkStringLiteral $ result
+asMetaPattern = mkStringLiteral
 
 asExpandedPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
-    -> String  -- ^ builtin value to render
+    -> Text  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asPattern resultSort
@@ -226,58 +238,44 @@ asExpandedPattern resultSort =
 asPartialExpandedPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
-    -> Maybe String  -- ^ builtin value to render
+    -> Maybe Text  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asPartialExpandedPattern resultSort =
     maybe ExpandedPattern.bottom (asExpandedPattern resultSort)
 
-ltKeyT :: Text
-ltKeyT = "STRING.lt"
+ltKey :: IsString s => s
+ltKey = "STRING.lt"
 
-plusKeyT :: Text
-plusKeyT = "STRING.concat"
+plusKey :: IsString s => s
+plusKey = "STRING.concat"
 
-string2IntKey :: String
+string2IntKey :: IsString s => s
 string2IntKey = "STRING.string2int"
-string2IntKeyT :: Text
-string2IntKeyT = "STRING.string2int"
 
-substrKey :: String
+substrKey :: IsString s => s
 substrKey = "STRING.substr"
-substrKeyT :: Text
-substrKeyT = "STRING.substr"
 
-lengthKey :: String
+lengthKey :: IsString s => s
 lengthKey = "STRING.length"
-lengthKeyT :: Text
-lengthKeyT = "STRING.length"
 
-findKey :: String
+findKey :: IsString s => s
 findKey = "STRING.find"
-findKeyT :: Text
-findKeyT = "STRING.find"
 
-string2BaseKey :: String
+string2BaseKey :: IsString s => s
 string2BaseKey = "STRING.string2base"
-string2BaseKeyT :: Text
-string2BaseKeyT = "STRING.string2base"
 
-chrKey :: String
+chrKey :: IsString s => s
 chrKey = "STRING.chr"
-chrKeyT :: Text
-chrKeyT = "STRING.chr"
 
-ordKey :: String
+ordKey :: IsString s => s
 ordKey = "STRING.ord"
-ordKeyT :: Text
-ordKeyT = "STRING.ord"
 
 evalSubstr :: Builtin.Function
 evalSubstr = Builtin.functionEvaluator evalSubstr0
   where
-    substr :: Int -> Int -> String -> String
+    substr :: Int -> Int -> Text -> Text
     substr startIndex endIndex =
-        take (endIndex - startIndex) . drop startIndex
+        Text.take (endIndex - startIndex) . Text.drop startIndex
     evalSubstr0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
@@ -318,7 +316,7 @@ evalLength = Builtin.functionEvaluator evalLength0
             Builtin.appliedFunction
                 . Int.asExpandedPattern resultSort
                 . toInteger
-                $ length _str
+                $ Text.length _str
 
 evalFind :: Builtin.Function
 evalFind = Builtin.functionEvaluator evalFind0
@@ -345,7 +343,7 @@ evalFind = Builtin.functionEvaluator evalFind0
             Builtin.appliedFunction
                 . Int.asExpandedPattern resultSort
                 . maybeNotFound
-                $ findIndex (isPrefixOf _substr) (tails . drop _idx $ _str)
+                $ findIndex (Text.isPrefixOf _substr) (Text.tails . Text.drop _idx $ _str)
 
 evalString2Base :: Builtin.Function
 evalString2Base = Builtin.functionEvaluator evalString2Base0
@@ -365,17 +363,22 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
                         _             -> Builtin.wrongArity string2BaseKey
             _str  <- expectBuiltinString string2BaseKey _str
             _base <- Int.expectBuiltinInt string2BaseKey _base
-            readN <- case _base of
-                8  -> pure readOct
-                10 -> pure . readSigned $ readDec
-                16 -> pure readHex
-                _  -> pure $ const empty
+            let readN =
+                    case _base of
+                        -- no builtin reader for number in octal notation
+                        8  -> \s ->
+                            case readOct $ Text.unpack s of
+                                [(result, "")] -> Right (result, "")
+                                _              -> Left ""
+                        10 -> Text.signed Text.decimal
+                        16 -> Text.hexadecimal
+                        _  -> const empty
             case readN _str of
-                [(result, "")] ->
+                Right (result, Text.unpack -> "") ->
                     Builtin.appliedFunction
                         . Int.asExpandedPattern resultSort
                         $ result
-                _                 ->
+                _ ->
                     Builtin.appliedFunction ExpandedPattern.bottom
 
 evalString2Int :: Builtin.Function
@@ -395,12 +398,13 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
                         [_str] -> _str
                         _      -> Builtin.wrongArity string2IntKey
             _str <- expectBuiltinString string2IntKey _str
-            Builtin.appliedFunction
-                . maybe
-                    ExpandedPattern.bottom
-                    (Int.asExpandedPattern resultSort)
-                . fmap fst . listToMaybe . readSigned readDec
-                $ _str
+            case Text.signed Text.decimal _str of
+                Right (result, Text.unpack -> "") ->
+                    Builtin.appliedFunction
+                    . Int.asExpandedPattern resultSort
+                    $ result
+                _ ->
+                    Builtin.appliedFunction ExpandedPattern.bottom
 
 evalChr :: Builtin.Function
 evalChr = Builtin.functionEvaluator evalChr0
@@ -421,7 +425,7 @@ evalChr = Builtin.functionEvaluator evalChr0
             _n <- Int.expectBuiltinInt chrKey _n
             Builtin.appliedFunction
                 . asExpandedPattern resultSort
-                $ [ chr (fromIntegral _n) ]
+                $ Text.singleton $ chr $ fromIntegral _n
 
 evalOrd :: Builtin.Function
 evalOrd = Builtin.functionEvaluator evalOrd0
@@ -442,12 +446,10 @@ evalOrd = Builtin.functionEvaluator evalOrd0
             _str <- expectBuiltinString ordKey _str
             Builtin.appliedFunction
                 . maybe ExpandedPattern.bottom charToOrdInt
-                $ singletonOrNothing _str
+                $ if Text.length _str == 1
+                      then Just (Text.head _str)
+                      else Nothing
       where
-        singletonOrNothing :: [a] -> Maybe a
-        singletonOrNothing [x] = Just x
-        singletonOrNothing _ = Nothing
-
         charToOrdInt =
             Int.asExpandedPattern resultSort
             . toInteger
@@ -458,15 +460,15 @@ evalOrd = Builtin.functionEvaluator evalOrd0
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-    [ comparator ltKeyT (<)
-    , binaryOperator plusKeyT (++)
-    , (substrKeyT, evalSubstr)
-    , (lengthKeyT, evalLength)
-    , (findKeyT, evalFind)
-    , (string2BaseKeyT, evalString2Base)
-    , (string2IntKeyT, evalString2Int)
-    , (chrKeyT, evalChr)
-    , (ordKeyT, evalOrd)
+    [ comparator ltKey (<)
+    , binaryOperator plusKey Text.append
+    , (substrKey, evalSubstr)
+    , (lengthKey, evalLength)
+    , (findKey, evalFind)
+    , (string2BaseKey, evalString2Base)
+    , (string2IntKey, evalString2Int)
+    , (chrKey, evalChr)
+    , (ordKey, evalOrd)
     ]
   where
     comparator name op =

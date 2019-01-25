@@ -38,6 +38,8 @@ module Kore.ASTUtils.SmartPatterns
   where
 
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Text
+                 ( Text )
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
@@ -162,7 +164,7 @@ pattern Var_
 
 pattern StringLiteral_
   :: Functor dom => (level ~ Meta)
-  => String
+  => Text
   -> PurePattern level dom var (Annotation.Null level)
 
 pattern CharLiteral_
