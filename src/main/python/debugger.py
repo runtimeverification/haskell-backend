@@ -11,6 +11,7 @@ class Debug:
         self.__expanded = False
         self.__indent_level = indent_level
         self.__cached_str = None
+        self.__cached_node_count = 0
         pass
 
     def add(self, object):
@@ -44,6 +45,14 @@ class Debug:
 
     def text(self):
         return self.__text
+
+    def updateNodeCount(self):
+        self.__cached_node_count = 1
+        for o in self.__objects:
+            o.updateNodeCount()
+            self.__cached_node_count += o.nodeCount()
+    def nodeCount(self):
+        return self.__cached_node_count
 
     def __textChunks(self, chunks):
         chunks.append(self.__text)
@@ -136,11 +145,13 @@ def readDebug(debug, it, indent_level):
     return debug
 
 class LineAttributes:
-    def __init__(self, is_selected, is_expanded, is_expandable, indent_level):
+    def __init__(self,
+            is_selected, is_expanded, is_expandable, indent_level, node_count):
         self.is_selected = is_selected
         self.is_expanded = is_expanded
         self.is_expandable = is_expandable
         self.indent_level = indent_level
+        self.node_count = node_count
 
 class WindowState:
     def __init__(self, debug):
@@ -160,7 +171,8 @@ class WindowState:
                         is_selected = line_index == self.__selected_line,
                         is_expanded = line.isExpanded(),
                         is_expandable = line.isExpandable(),
-                        indent_level = line.indentLevel()),
+                        indent_level = line.indentLevel(),
+                        node_count = line.nodeCount()),
                     line.text())
             line_index += 1
 
@@ -222,22 +234,30 @@ class WindowPainter:
         else:
             prefix = "| "
         prefix += "| " * line_attrs.indent_level
-        line = (prefix + line + (' ' * max_x))[:max_x - 1]
+        line = (
+            prefix
+            + ("#nc=%d: " % line_attrs.node_count)
+            + line
+            + (' ' * max_x)
+            )[:max_x - 1]
         self.__window.addstr(y, 0, line, attr)
 
 def main(args):
+    sys.setrecursionlimit(5000)
+    with open(args[0]) as f:
+        debug = readDebug(
+            Debug(0),
+            iter([l[ : len(l) - 1] for l in f.readlines()]),
+            0)
+        debug.expand()
+        print "*"
+        debug.updateNodeCount()
+
     try:
         window = curses.initscr()
         curses.noecho()
         curses.cbreak()
         window.keypad(True)
-
-        with open(args[0]) as f:
-            debug = readDebug(
-                Debug(0),
-                iter([l[ : len(l) - 1] for l in f.readlines()]),
-                0)
-            debug.expand()
 
         window_state = WindowState(debug)
         window_painter = WindowPainter(window)

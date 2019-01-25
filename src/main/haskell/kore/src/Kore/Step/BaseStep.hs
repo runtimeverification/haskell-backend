@@ -48,6 +48,7 @@ import           GHC.Generics
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -633,6 +634,7 @@ stepWithRewriteRule
             )
         ]
 stepWithRewriteRule tools substitutionSimplifier patt (RewriteRule rule) =
+    traceExceptT D_BaseStep_stepWithRule [debugArg "rule" rule] $
     stepWithRule
             tools
             (UnificationProcedure unificationProcedure)

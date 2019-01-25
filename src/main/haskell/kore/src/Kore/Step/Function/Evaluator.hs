@@ -26,6 +26,7 @@ import           Data.These
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -117,7 +118,10 @@ evaluateApplication
           | otherwise ->
             return unchanged
         Just builtinOrAxiomEvaluators ->
-            these
+            traceNonErrorMonad
+                D_Function_evaluateApplication
+                [debugArg "symbolId" (getId symbolId)]
+            $ these
                 evaluateWithBuiltins
                 evaluateWithFunctionAxioms
                 evaluateBuiltinAndAxioms
