@@ -40,69 +40,102 @@ import           Test.Kore.Step.MockSymbols
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Test.Kore
+                 ( sortVariableSort )
 
-{- Part 1: `SimplifyEvaluated` is the core function. It converts two
-   `OrOfExpandedPattern` values into a simplifier that is to
-   produce a single `OrOfExpandedPattern`. We run the simplifier to
-   check correctness.
--}
+          {- Part 1: `SimplifyEvaluated` is the core function. It converts two
+             `OrOfExpandedPattern` values into a simplifier that is to
+             produce a single `OrOfExpandedPattern`. We run the simplifier to
+             check correctness.
+          -}
 
-{- Part 1a: Handling of the easy cases: Top and Bottom values -}
+
+test_topDominates :: TestTree
+test_topDominates =
+  testGroup "top values override 'lower' values"
+  [
+    -- omission next line produces (OrOfExpandedPattern.merge middleX topOr, SimplificationProof)
+    -- simplifyEvaluated middleX   topOr     `equals_` (topOr, SimplificationProof)
+    -- bug: following produces `middleX`. 
+    -- , simplifyEvaluated topOr    middleX    `equals_` (topOr, SimplificationProof)
+    simplifyEvaluated topOr    topOr     `equals_` (topOr, SimplificationProof)
+  , simplifyEvaluated topOr    bottomOr  `equals_` (topOr, SimplificationProof)
+  , simplifyEvaluated bottomOr topOr     `equals_` (topOr, SimplificationProof)
+  ]
+    
+
+test_bottomIsEliminated :: TestTree
+test_bottomIsEliminated =
+  testGroup "bottom values are eliminated"
+  [
+    simplifyEvaluated middleX   bottomOr  `equals_` (middleX, SimplificationProof)
+  , simplifyEvaluated bottomOr  middleX   `equals_` (middleX, SimplificationProof)
+  , simplifyEvaluated topOr     bottomOr  `equals_` (topOr, SimplificationProof)
+  , simplifyEvaluated bottomOr  topOr     `equals_` (topOr, SimplificationProof)
+  , simplifyEvaluated bottomOr  bottomOr  `equals_` (bottomOr, SimplificationProof)
+  ]
+    
+test_middleValuesAreBothRetained :: TestTree
+test_middleValuesAreBothRetained = 
+  testGroup "Any other values are merged"
+  [
+    equals_
+      (simplifyEvaluated middleX middleY)
+      (OrOfExpandedPattern.merge middleX middleY, SimplificationProof)
+  ]
+
+        {- Part 2: `simplify` is just a trivial use of `simplifyEvaluated` -}
+
+test_simplify :: TestTree
+test_simplify =
+  testGroup "`simplify` just calls `simplifyEvaluated`"
+  [
+    equals_
+      (simplify           $ mkOr middleX middleY) 
+      (simplifyEvaluated         middleX middleY)
+  ]
+  where
+      mkOr first second =
+        Or { orFirst = first
+           , orSecond = second
+           , orSort = sortVariableSort "irrelevant"
+           }
+
+
+
+        {- Part 3: The values relevant to this test -}
 
 topOr :: OrOfExpandedPattern Object Variable
 topOr = OrOfExpandedPattern.make [ExpandedPattern.top]
 
-middle :: OrOfExpandedPattern Object Variable
-middle =
+bottomOr :: OrOfExpandedPattern Object Variable
+bottomOr = OrOfExpandedPattern.make [ExpandedPattern.bottom]
+
+
+mkMiddle :: Variable Object -> OrOfExpandedPattern Object Variable
+mkMiddle variable =
   OrOfExpandedPattern.make [raw]
   where
     raw = Predicated
-            { term = mkVar Mock.y
+            { term = mkVar variable
             , predicate = makeTruePredicate 
             , substitution = mempty
             }
+
+-- QUESTION: ask Tom what a Variable is, vs. other things.
+-- Should other things play any role in testing?
+
+middleX :: OrOfExpandedPattern Object Variable
+middleX = mkMiddle Mock.x
+middleY :: OrOfExpandedPattern Object Variable
+middleY = mkMiddle Mock.y
 
 
 test_testValuesAreAsExpected :: TestTree
 test_testValuesAreAsExpected =
   testGroup "check properties of test values"
-  [ topOr `has`  [ (isTop, True),  (isBottom, False) ]
-  , middle `has` [ (isTop, False), (isBottom, False) ]
+  [ topOr `has`    [ (isTop, True),  (isBottom, False) ]
+  , middleX `has`  [ (isTop, False), (isBottom, False) ]
+  , bottomOr `has` [ (isTop, False), (isBottom, True) ]
   ]
 
-
-test_topIsEliminated :: TestTree
-test_topIsEliminated =
-  testGroup "top values are eliminated"
-  [
-    -- omission next line produces (OrOfExpandedPattern.merge middle topOr, SimplificationProof)
-    simplifyEvaluated middle topOr  `equals_` (topOr, SimplificationProof)
-    -- bug: following produces `middle`. 
-  , simplifyEvaluated topOr  middle `equals_` (topOr, SimplificationProof)
-  , simplifyEvaluated topOr  topOr  `equals_` (topOr, SimplificationProof)
-  ]
-    
-
-
-
-
-
-
-
--- equal :: HasCallStack => Eq a => Show a => a -> a -> TestTree
--- equal actual expected =
---   testCase "equality" $ do
---     assertEqual "" expected actual
-
--- test_simplify :: [TestTree]
--- test_simplify =
---     [
---       equal proof SimplificationProof
---     , equal (map ExpandedPattern.allVariables (extractPatterns simplified)) $ [Set.empty]
---     ]
---     where
---       raw_variable :: Variable Object
---       raw_variable = Mock.y
-
--- --      (simplified, proof) :: ( OrOfExpandedPattern Object Variable , SimplificationProof Object)
---       (simplified, proof) = simplify raw_variable
