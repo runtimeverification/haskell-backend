@@ -569,7 +569,7 @@ char_ c =
         , sortedPatternSort    = charMetaSort
         }
 
-str_ :: String -> MetaPatternStub
+str_ :: Text -> MetaPatternStub
 str_ s =
     SortedPatternStub SortedPattern
         { sortedPatternPattern = StringLiteralPattern (StringLiteral s)

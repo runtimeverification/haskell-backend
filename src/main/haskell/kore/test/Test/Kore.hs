@@ -163,7 +163,7 @@ objectIdGen =
         (Gen.element $ idFirstChars ++ idOtherChars)
 
 stringLiteralGen :: MonadGen m => m StringLiteral
-stringLiteralGen = StringLiteral <$> Gen.list (Range.linear 0 256) charGen
+stringLiteralGen = StringLiteral <$> Gen.text (Range.linear 0 256) charGen
 
 charLiteralGen :: MonadGen m => m CharLiteral
 charLiteralGen = CharLiteral <$> charGen

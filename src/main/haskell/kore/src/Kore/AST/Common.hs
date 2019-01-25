@@ -38,6 +38,8 @@ import Data.Functor.Identity
        ( Identity (..) )
 import Data.Hashable
 import Data.Proxy
+import Data.Text
+       ( Text )
 import Data.Void
        ( Void )
 import GHC.Generics
@@ -52,7 +54,7 @@ import Template.Tools
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
-newtype StringLiteral = StringLiteral { getStringLiteral :: String }
+newtype StringLiteral = StringLiteral { getStringLiteral :: Text }
     deriving (Show, Eq, Ord, Generic)
 
 instance Hashable StringLiteral

@@ -948,7 +948,7 @@ mkStringLiteral
     ::  ( Functor domain
         , valid ~ Valid (variable Meta) Meta
         )
-    => String
+    => Text
     -> PurePattern Meta domain variable valid
 mkStringLiteral string =
     asPurePattern (valid :< StringLiteralPattern stringLiteral)
@@ -1234,7 +1234,7 @@ pattern Var_
 
 pattern StringLiteral_
   :: Functor dom => (level ~ Meta)
-  => String
+  => Text
   -> PurePattern level dom var annotation
 
 pattern CharLiteral_

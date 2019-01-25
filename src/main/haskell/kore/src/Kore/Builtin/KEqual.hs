@@ -17,6 +17,10 @@ builtin modules.
 module Kore.Builtin.KEqual
     ( symbolVerifiers
     , builtinFunctions
+      -- * keys
+    , eqKey
+    , neqKey
+    , iteKey
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -24,6 +28,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
 
@@ -62,11 +68,11 @@ import           Kore.Variables.Fresh
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( "KEQUAL.eq"
+    [ ( eqKey
       , Builtin.verifySymbol Bool.assertSort [trivialVerifier, trivialVerifier])
-    , ("KEQUAL.neq"
+    , (neqKey
       , Builtin.verifySymbol Bool.assertSort [trivialVerifier, trivialVerifier])
-    , ("KEQUAL.ite", iteVerifier)
+    , (iteKey, iteVerifier)
     ]
   where
     trivialVerifier :: Builtin.SortVerifier
@@ -112,9 +118,9 @@ otherwise.
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-    [ ("KEQUAL.eq", ApplicationFunctionEvaluator (evalKEq True))
-    , ("KEQUAL.neq", ApplicationFunctionEvaluator (evalKEq False))
-    , ("KEQUAL.ite", ApplicationFunctionEvaluator evalKIte)
+    [ (eqKey, ApplicationFunctionEvaluator (evalKEq True))
+    , (neqKey, ApplicationFunctionEvaluator (evalKEq False))
+    , (iteKey, ApplicationFunctionEvaluator evalKIte)
     ]
 
 evalKEq
@@ -141,7 +147,7 @@ evalKEq
 evalKEq true tools substitutionSimplifier _ _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
-        _ -> Builtin.wrongArity (if true then "KEQUAL.eq" else "KEQUAL.neq")
+        _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
     false = not true
     Valid { patternSort } = valid
@@ -182,7 +188,7 @@ evalKIte _ _ _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2
-        _ -> Builtin.wrongArity "KEQUAL.ite"
+        _ -> Builtin.wrongArity iteKey
   where
     evaluate
         :: StepPattern Object variable
@@ -194,7 +200,7 @@ evalKIte _ _ _ _ (_ :< app) =
 
     get :: DomainValue Object Domain.Builtin child -> Bool
     get =
-        Builtin.runParser "KEQUAL.ite"
+        Builtin.runParser iteKey
         . Builtin.parseDomainValue Bool.parse
 
     evalIte expr t1 t2 =
@@ -203,3 +209,12 @@ evalKIte _ _ _ _ (_ :< app) =
                 | result    -> purePatternFunctionEvaluator t1
                 | otherwise -> purePatternFunctionEvaluator t2
             Nothing    -> notApplicableFunctionEvaluator
+
+eqKey :: IsString s => s
+eqKey = "KEQUAL.eq"
+
+neqKey :: IsString s => s
+neqKey = "KEQUAL.neq"
+
+iteKey :: IsString s => s
+iteKey = "KEQUAL.ite"

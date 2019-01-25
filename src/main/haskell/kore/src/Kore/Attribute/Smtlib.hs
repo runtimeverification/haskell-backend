@@ -19,6 +19,8 @@ import qualified Control.Monad as Monad
 import           Data.Default
 import           Data.Maybe
                  ( fromMaybe, isNothing )
+import           Data.Text
+                 ( Text )
 import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
@@ -81,7 +83,7 @@ smtlibSymbol =
         }
 
 -- | Kore pattern representing the @smtlib@ attribute.
-smtlibAttribute :: String -> CommonKorePattern
+smtlibAttribute :: Text -> CommonKorePattern
 smtlibAttribute syntax =
     (asCommonKorePattern . ApplicationPattern)
         Application
@@ -99,10 +101,10 @@ entire argument is not consumed by the parser.
 
  -}
 parseSExpr
-    :: String  -- ^ text representing an 'SExpr'
+    :: Text  -- ^ text representing an 'SExpr'
     -> Parser SExpr
 parseSExpr syntax =
-    case readSExprs (Text.pack syntax) of
+    case readSExprs syntax of
         [] -> noParse
         sExpr : rest ->
             case rest of

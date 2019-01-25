@@ -248,25 +248,25 @@ pairSymbol lSort rSort =
 -- ** Set
 
 unitSetSymbol :: SymbolOrAlias Object
-unitSetSymbol = builtinSymbol Set.unitKeyT
+unitSetSymbol = builtinSymbol Set.unitKey
 
 elementSetSymbol :: SymbolOrAlias Object
-elementSetSymbol = builtinSymbol Set.elementKeyT
+elementSetSymbol = builtinSymbol Set.elementKey
 
 concatSetSymbol :: SymbolOrAlias Object
-concatSetSymbol = builtinSymbol Set.concatKeyT
+concatSetSymbol = builtinSymbol Set.concatKey
 
 inSetSymbol :: SymbolOrAlias Object
-inSetSymbol = builtinSymbol Set.inKeyT
+inSetSymbol = builtinSymbol Set.inKey
 
 differenceSetSymbol :: SymbolOrAlias Object
-differenceSetSymbol = builtinSymbol Set.differenceKeyT
+differenceSetSymbol = builtinSymbol Set.differenceKey
 
 toListSetSymbol :: SymbolOrAlias Object
-toListSetSymbol = builtinSymbol Set.toListKeyT
+toListSetSymbol = builtinSymbol Set.toListKey
 
 sizeSetSymbol :: SymbolOrAlias Object
-sizeSetSymbol = builtinSymbol Set.sizeKeyT
+sizeSetSymbol = builtinSymbol Set.sizeKey
 
 -- ** String
 
@@ -316,7 +316,7 @@ sortDecl sort =
             }
 
 -- | Declare a hooked sort.
-hookedSortDecl :: Sort Object -> String -> KoreSentence
+hookedSortDecl :: Sort Object -> Text -> KoreSentence
 hookedSortDecl sort hook =
     (asSentence . SentenceHookedSort) sentence
   where

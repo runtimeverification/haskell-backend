@@ -25,6 +25,16 @@ module Kore.Builtin.Bool
     , asPattern
     , asExpandedPattern
     , parse
+      -- * Keys
+    , orKey
+    , andKey
+    , xorKey
+    , neKey
+    , eqKey
+    , notKey
+    , impliesKey
+    , andThenKey
+    , orElseKey
     ) where
 
 import           Control.Monad
@@ -35,6 +45,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
 import qualified Text.Megaparsec as Parsec
@@ -79,15 +91,15 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ("BOOL.or", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("BOOL.and", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("BOOL.xor", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("BOOL.ne", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("BOOL.eq", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("BOOL.not", Builtin.verifySymbol assertSort [assertSort])
-    , ("BOOL.implies", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("BOOL.andThen", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("BOOL.orElse", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    [ (orKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (andKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (xorKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (neKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (eqKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (notKey, Builtin.verifySymbol assertSort [assertSort])
+    , (impliesKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (andThenKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (orElseKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
     ]
 
 {- | Verify that domain value patterns are well-formed.
@@ -144,18 +156,45 @@ asExpandedPattern resultSort =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-    [ ("BOOL.or", binaryOperator "BOOL.or" (||))
-    , ("BOOL.and", binaryOperator "BOOL.and" (&&))
-    , ("BOOL.xor", binaryOperator "BOOL.xor" xor)
-    , ("BOOL.ne", binaryOperator "BOOL.ne" (/=))
-    , ("BOOL.eq", binaryOperator "BOOL.eq" (==))
-    , ("BOOL.not", unaryOperator "BOOL.not" not)
-    , ("BOOL.implies", binaryOperator "BOOL.implies" implies)
-    , ("BOOL.andThen", binaryOperator "BOOL.andThen" (&&))
-    , ("BOOL.orElse", binaryOperator "BOOL.orElse" (||))
+    [ (orKey, binaryOperator orKey (||))
+    , (andKey, binaryOperator andKey (&&))
+    , (xorKey, binaryOperator xorKey xor)
+    , (neKey, binaryOperator neKey (/=))
+    , (eqKey, binaryOperator eqKey (==))
+    , (notKey, unaryOperator notKey not)
+    , (impliesKey, binaryOperator impliesKey implies)
+    , (andThenKey, binaryOperator andThenKey (&&))
+    , (orElseKey, binaryOperator orElseKey (||))
     ]
   where
     unaryOperator = Builtin.unaryOperator parse asExpandedPattern
     binaryOperator = Builtin.binaryOperator parse asExpandedPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
+
+orKey :: IsString s => s
+orKey = "BOOL.or"
+
+andKey :: IsString s => s
+andKey = "BOOL.and"
+
+xorKey :: IsString s => s
+xorKey = "BOOL.xor"
+
+neKey :: IsString s => s
+neKey = "BOOL.ne"
+
+eqKey :: IsString s => s
+eqKey = "BOOL.eq"
+
+notKey :: IsString s => s
+notKey = "BOOL.not"
+
+impliesKey :: IsString s => s
+impliesKey = "BOOL.implies"
+
+andThenKey :: IsString s => s
+andThenKey = "BOOL.andThen"
+
+orElseKey :: IsString s => s
+orElseKey = "BOOL.orElse"

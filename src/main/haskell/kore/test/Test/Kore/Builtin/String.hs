@@ -5,6 +5,8 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
 
+import Data.Text
+       ( Text )
 import GHC.Stack
        ( HasCallStack )
 
@@ -20,13 +22,13 @@ import           Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import           Test.SMT
 
-genString :: Gen String
-genString = Gen.string (Range.linear 0 256) Gen.unicode
+genString :: Gen Text
+genString = Gen.text (Range.linear 0 256) Gen.unicode
 
 -- | Test a comparison operator hooked to the given symbol
 testComparison
     :: TestName
-    -> (String -> String -> Bool)
+    -> (Text -> Text -> Bool)
     -- ^ implementation
     -> SymbolOrAlias Object
     -- ^ symbol
@@ -312,23 +314,23 @@ test_string2Int =
     ]
 
 -- | Another name for asPattern.
-stringLiteral :: String -> CommonStepPattern Object
+stringLiteral :: Text -> CommonStepPattern Object
 stringLiteral = asPattern
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
-asPattern :: String -> CommonStepPattern Object
+asPattern :: Text -> CommonStepPattern Object
 asPattern = String.asPattern stringSort
 
 -- | Specialize 'String.asConcretePattern' to the builtin sort 'stringSort'.
-asConcretePattern :: String -> ConcreteStepPattern Object
+asConcretePattern :: Text -> ConcreteStepPattern Object
 asConcretePattern = String.asConcretePattern stringSort
 
 -- | Specialize 'String.asExpandedPattern' to the builtin sort 'stringSort'.
-asExpandedPattern :: String -> CommonExpandedPattern Object
+asExpandedPattern :: Text -> CommonExpandedPattern Object
 asExpandedPattern = String.asExpandedPattern stringSort
 
 -- | Specialize 'String.asPartialPattern' to the builtin sort 'stringSort'.
-asPartialExpandedPattern :: Maybe String -> CommonExpandedPattern Object
+asPartialExpandedPattern :: Maybe Text -> CommonExpandedPattern Object
 asPartialExpandedPattern = String.asPartialExpandedPattern stringSort
 
 testString

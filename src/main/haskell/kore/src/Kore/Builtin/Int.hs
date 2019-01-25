@@ -31,6 +31,36 @@ module Kore.Builtin.Int
     , asExpandedPattern
     , asPartialExpandedPattern
     , parse
+      -- * keys
+    , bitRangeKey
+    , signExtendBitRangeKey
+    , randKey
+    , srandKey
+    , gtKey
+    , geKey
+    , eqKey
+    , leKey
+    , ltKey
+    , neKey
+    , minKey
+    , maxKey
+    , addKey
+    , subKey
+    , mulKey
+    , absKey
+    , edivKey
+    , emodKey
+    , tdivKey
+    , tmodKey
+    , andKey
+    , orKey
+    , xorKey
+    , notKey
+    , shlKey
+    , shrKey
+    , powKey
+    , powmodKey
+    , log2Key
     ) where
 
 import           Control.Applicative
@@ -45,8 +75,11 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import           GHC.Integer
                  ( smallInteger )
 import           GHC.Integer.GMP.Internals
@@ -96,52 +129,52 @@ symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
     [
-      ( "INT.bitRange"
+      ( bitRangeKey
       , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
       )
-    , ( "INT.signExtendBitRange"
+    , ( signExtendBitRangeKey
       , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
       )
 
-    , ("INT.rand", Builtin.verifySymbol assertSort [assertSort])
-    , ("INT.srand", Builtin.verifySymbolArguments [assertSort])
+    , (randKey, Builtin.verifySymbol assertSort [assertSort])
+    , (srandKey, Builtin.verifySymbolArguments [assertSort])
 
       -- TODO (thomas.tuegel): Implement builtin BOOL
-    , ("INT.gt", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
-    , ("INT.ge", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
-    , ("INT.eq", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
-    , ("INT.le", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
-    , ("INT.lt", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
-    , ("INT.ne", Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , (gtKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , (geKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , (eqKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , (leKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , (ltKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
+    , (neKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
 
       -- Ordering operations
-    , ("INT.min", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.max", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (minKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (maxKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
 
       -- Arithmetic operations
-    , ("INT.add", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.sub", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.mul", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.abs", Builtin.verifySymbol assertSort [assertSort])
-    , ("INT.ediv", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.emod", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.tdiv", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.tmod", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (addKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (subKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (mulKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (absKey, Builtin.verifySymbol assertSort [assertSort])
+    , (edivKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (emodKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (tdivKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (tmodKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
 
       -- Bitwise operations
-    , ("INT.and", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.or", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.xor", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.not", Builtin.verifySymbol assertSort [assertSort])
-    , ("INT.shl", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ("INT.shr", Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (andKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (orKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (xorKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (notKey, Builtin.verifySymbol assertSort [assertSort])
+    , (shlKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , (shrKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
 
       -- Exponential and logarithmic operations
-    , ("INT.pow", Builtin.verifySymbol assertSort [assertSort, assertSort])
-    , ( "INT.powmod"
+    , (powKey, Builtin.verifySymbol assertSort [assertSort, assertSort])
+    , ( powmodKey
       , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
       )
-    , ("INT.log2", Builtin.verifySymbol assertSort [assertSort])
+    , (log2Key, Builtin.verifySymbol assertSort [assertSort])
     ]
 
 {- | Verify that domain value patterns are well-formed.
@@ -167,7 +200,7 @@ parse = Parsec.signed noSpace Parsec.decimal
  -}
 expectBuiltinInt
     :: Monad m
-    => String  -- ^ Context for error message
+    => Text  -- ^ Context for error message
     -> StepPattern Object variable  -- ^ Operand pattern
     -> MaybeT m Integer
 expectBuiltinInt ctx =
@@ -179,7 +212,7 @@ expectBuiltinInt ctx =
                         (Builtin.parseString parse lit)
                 _ ->
                     Builtin.verifierBug
-                        (ctx ++ ": Domain value argument is not a string")
+                        (Text.unpack ctx ++ ": Domain value argument is not a string")
         _ ->
             empty
 
@@ -221,7 +254,7 @@ asMetaPattern
     :: Functor domain
     => Integer
     -> PurePattern Meta domain variable (Valid (variable Meta) Meta)
-asMetaPattern result = mkStringLiteral $ show result
+asMetaPattern result = mkStringLiteral $ Text.pack $ show result
 
 asExpandedPattern
     :: Ord (variable Object)
@@ -246,49 +279,49 @@ builtinFunctions =
     Map.fromList
     [
       -- TODO (thomas.tuegel): Implement bit ranges.
-      --("INT.bitRange", Builtin.notImplemented)
-      ("INT.signExtendBitRange", Builtin.notImplemented)
+      --(bitRangeKey, Builtin.notImplemented)
+      (signExtendBitRangeKey, Builtin.notImplemented)
 
       -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
       -- implement rand and srand.
-    , ("INT.rand", Builtin.notImplemented)
-    , ("INT.srand", Builtin.notImplemented)
+    , (randKey, Builtin.notImplemented)
+    , (srandKey, Builtin.notImplemented)
 
-    , comparator "INT.gt" (>)
-    , comparator "INT.ge" (>=)
-    , comparator "INT.eq" (==)
-    , comparator "INT.le" (<=)
-    , comparator "INT.lt" (<)
-    , comparator "INT.ne" (/=)
+    , comparator gtKey (>)
+    , comparator geKey (>=)
+    , comparator eqKey (==)
+    , comparator leKey (<=)
+    , comparator ltKey (<)
+    , comparator neKey (/=)
 
       -- Ordering operations
-    , binaryOperator "INT.min" min
-    , binaryOperator "INT.max" max
+    , binaryOperator minKey min
+    , binaryOperator maxKey max
 
       -- Arithmetic operations
-    , binaryOperator "INT.add" (+)
-    , binaryOperator "INT.sub" (-)
-    , binaryOperator "INT.mul" (*)
-    , unaryOperator "INT.abs" abs
+    , binaryOperator addKey (+)
+    , binaryOperator subKey (-)
+    , binaryOperator mulKey (*)
+    , unaryOperator absKey abs
 
       -- TODO (thomas.tuegel): Implement division.
-    , ("INT.ediv", Builtin.notImplemented)
-    , partialBinaryOperator "INT.emod" emod
-    , partialBinaryOperator "INT.tdiv" tdiv
-    , partialBinaryOperator "INT.tmod" tmod
+    , (edivKey, Builtin.notImplemented)
+    , partialBinaryOperator emodKey emod
+    , partialBinaryOperator tdivKey tdiv
+    , partialBinaryOperator tmodKey tmod
 
       -- Bitwise operations
-    , binaryOperator "INT.and" (.&.)
-    , binaryOperator "INT.or" (.|.)
-    , binaryOperator "INT.xor" xor
-    , unaryOperator "INT.not" complement
-    , binaryOperator "INT.shl" (\a -> shift a . fromInteger)
-    , binaryOperator "INT.shr" (\a -> shift a . fromInteger . negate)
+    , binaryOperator andKey (.&.)
+    , binaryOperator orKey (.|.)
+    , binaryOperator xorKey xor
+    , unaryOperator notKey complement
+    , binaryOperator shlKey (\a -> shift a . fromInteger)
+    , binaryOperator shrKey (\a -> shift a . fromInteger . negate)
 
       -- Exponential and logarithmic operations
-    , partialBinaryOperator "INT.pow" pow
-    , partialTernaryOperator "INT.powmod" powmod
-    , partialUnaryOperator "INT.log2" log2
+    , partialBinaryOperator powKey pow
+    , partialTernaryOperator powmodKey powmod
+    , partialUnaryOperator log2Key log2
     ]
   where
     unaryOperator name op =
@@ -323,3 +356,90 @@ builtinFunctions =
     log2 n
         | n > 0 = Just (smallInteger (integerLog2# n))
         | otherwise = Nothing
+
+bitRangeKey :: IsString s => s
+bitRangeKey = "INT.bitRange"
+
+signExtendBitRangeKey :: IsString s => s
+signExtendBitRangeKey = "INT.signExtendBitRange"
+
+randKey :: IsString s => s
+randKey = "INT.rand"
+
+srandKey :: IsString s => s
+srandKey = "INT.srand"
+
+gtKey :: IsString s => s
+gtKey = "INT.gt"
+
+geKey :: IsString s => s
+geKey = "INT.ge"
+
+eqKey :: IsString s => s
+eqKey = "INT.eq"
+
+leKey :: IsString s => s
+leKey = "INT.le"
+
+ltKey :: IsString s => s
+ltKey = "INT.lt"
+
+neKey :: IsString s => s
+neKey = "INT.ne"
+
+minKey :: IsString s => s
+minKey = "INT.min"
+
+maxKey :: IsString s => s
+maxKey = "INT.max"
+
+addKey :: IsString s => s
+addKey = "INT.add"
+
+subKey :: IsString s => s
+subKey = "INT.sub"
+
+mulKey :: IsString s => s
+mulKey = "INT.mul"
+
+absKey :: IsString s => s
+absKey = "INT.abs"
+
+edivKey :: IsString s => s
+edivKey = "INT.ediv"
+
+emodKey :: IsString s => s
+emodKey = "INT.emod"
+
+tdivKey :: IsString s => s
+tdivKey = "INT.tdiv"
+
+tmodKey :: IsString s => s
+tmodKey = "INT.tmod"
+
+andKey :: IsString s => s
+andKey = "INT.and"
+
+orKey :: IsString s => s
+orKey = "INT.or"
+
+xorKey :: IsString s => s
+xorKey = "INT.xor"
+
+notKey :: IsString s => s
+notKey = "INT.not"
+
+shlKey :: IsString s => s
+shlKey = "INT.shl"
+
+shrKey :: IsString s => s
+shrKey = "INT.shr"
+
+powKey :: IsString s => s
+powKey = "INT.pow"
+
+powmodKey :: IsString s => s
+powmodKey = "INT.powmod"
+
+log2Key :: IsString s => s
+log2Key = "INT.log2"
