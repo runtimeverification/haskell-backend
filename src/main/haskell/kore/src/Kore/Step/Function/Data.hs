@@ -13,7 +13,6 @@ module Kore.Step.Function.Data
     , AttemptedFunction (..)
     , BuiltinAndAxiomsFunctionEvaluator
     , CommonAttemptedFunction
-    , EvaluationType (..)
     , FunctionEvaluators (..)
     , notApplicableFunctionEvaluator
     , purePatternFunctionEvaluator
@@ -27,6 +26,8 @@ import Kore.AST.Pure
 import Kore.AST.Valid
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
+import Kore.Step.AxiomPatterns
+       ( EqualityRule )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import Kore.Step.Pattern
@@ -73,30 +74,25 @@ newtype ApplicationFunctionEvaluator level =
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
         -> StepPatternSimplifier level variable
-        -> EvaluationType
         -> CofreeF
             (Application level)
             (Valid (variable level) level)
             (StepPattern level variable)
         -> Simplifier
-            [   ( AttemptedFunction level variable
-                , SimplificationProof level
-                )
-            ]
+            ( AttemptedFunction level variable
+            , SimplificationProof level
+            )
         )
 {-| Data structure for holding evaluators for the same symbol
 -}
 data FunctionEvaluators level
     = FunctionEvaluators
-        { definitionEvaluators :: [ApplicationFunctionEvaluator level]
+        { definitionRules :: [EqualityRule level]
         -- ^ Evaluators used when evaluating functions according to their
         -- definition.
         , simplificationEvaluators :: [ApplicationFunctionEvaluator level]
         -- ^ Evaluators used when simplifying functions.
         }
-
--- | Which type of simplification we are attempting.
-data EvaluationType = Definition | Simplification
 
 {-|Datastructure to combine both a builtin evaluator and axiom-based
 function evaluators for the same symbol.
@@ -134,18 +130,17 @@ type CommonAttemptedFunction level = AttemptedFunction level Variable
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableFunctionEvaluator
     :: Simplifier
-        [(AttemptedFunction level1 variable, SimplificationProof level2)]
-notApplicableFunctionEvaluator = pure [(NotApplicable, SimplificationProof)]
+        (AttemptedFunction level1 variable, SimplificationProof level2)
+notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which produces a given 'StepPattern'
 purePatternFunctionEvaluator
     :: (MetaOrObject level, Ord (variable level))
     => StepPattern level variable
     -> Simplifier
-        [(AttemptedFunction level variable, SimplificationProof level)]
+        (AttemptedFunction level variable, SimplificationProof level)
 purePatternFunctionEvaluator p =
     pure
-        [   ( Applied (makeFromSinglePurePattern p)
-            , SimplificationProof
-            )
-        ]
+        ( Applied (makeFromSinglePurePattern p)
+        , SimplificationProof
+        )

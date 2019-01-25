@@ -3,15 +3,12 @@ module Test.Kore.Step.Function.Matcher
     , test_matcherVariableFunction
     , test_matcherNonVarToPattern
     , test_matcherMergeSubresults
+    , test_unificationWithAppMatchOnTop
     ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Control.DeepSeq
-       ( NFData, deepseq )
-import Control.Exception
-       ( ErrorCall (..), catch )
 import Control.Monad.Except
        ( ExceptT, runExceptT )
 
@@ -24,12 +21,10 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonPredicateSubstitution, Predicated (..) )
+                 ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.Function.Data as EvaluationType
-                 ( EvaluationType (..) )
 import           Kore.Step.Function.Matcher
-                 ( matchAsUnification )
+                 ( matchAsUnification, unificationWithAppMatchOnTop )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -87,7 +82,7 @@ test_matcherEqualHeads =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different constructors" $ do
-            let expect = Just $ OrOfExpandedPattern.make []
+            let expect = Nothing
             actual <-
                 matchDefinition mockMetadataTools
                     (Mock.constr10 (mkVar Mock.x))
@@ -95,16 +90,7 @@ test_matcherEqualHeads =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different functions" $ do
-            let expect = Just $ OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = ()
-                        , predicate =
-                            makeEqualsPredicate
-                                (Mock.f Mock.b)
-                                (Mock.g Mock.a)
-                        , substitution = mempty
-                        }
-                    ]
+            let expect = Nothing
             actual <-
                 matchDefinition mockMetadataTools
                     (Mock.f Mock.b)
@@ -120,16 +106,7 @@ test_matcherEqualHeads =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different symbols" $ do
-            let expect = Just $ OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = ()
-                        , predicate =
-                            makeEqualsPredicate
-                                (Mock.plain10 Mock.b)
-                                (Mock.plain11 Mock.a)
-                        , substitution = mempty
-                        }
-                    ]
+            let expect = Nothing
             actual <-
                 matchDefinition mockMetadataTools
                     (Mock.plain10 Mock.b)
@@ -371,15 +348,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Iff vs Or" $ do
-        let expect = Just $ OrOfExpandedPattern.make
-                [ Predicated
-                    { predicate = makeEqualsPredicate
-                        (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
-                        (mkOr (Mock.plain10 Mock.a) Mock.b)
-                    , substitution = mempty
-                    , term = ()
-                    }
-                ]
+        let expect = Nothing
         actual <-
             matchDefinition mockMetadataTools
                 (mkIff (Mock.plain10 Mock.a) (mkVar Mock.x))
@@ -418,7 +387,8 @@ test_matcherVariableFunction =
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.wrap [(Mock.x, Mock.functional00)]
+                    , substitution =
+                        Substitution.wrap [(Mock.x, Mock.functional00)]
                     , term = ()
                     }
                 ]
@@ -443,15 +413,7 @@ test_matcherVariableFunction =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Non-functional" $ do
-        let expect = Just $ OrOfExpandedPattern.make
-                [ Predicated
-                    { predicate = makeEqualsPredicate
-                        (mkVar Mock.x)
-                        (Mock.constr10 Mock.cf)
-                    , substitution = mempty
-                    , term = ()
-                    }
-                ]
+        let expect = Nothing
         actual <-
             matchDefinition mockMetadataTools
                 (mkVar Mock.x)
@@ -473,8 +435,8 @@ test_matcherVariableFunction =
             expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
                     { predicate = makeTruePredicate
-                    , substitution =
-                        Substitution.wrap [(x, Mock.sortInjectionSubSubToSub a)]
+                    , substitution = Substitution.unsafeWrap
+                        [(x, Mock.sortInjectionSubSubToSub a)]
                     , term = ()
                     }
                 ]
@@ -488,32 +450,24 @@ test_matcherVariableFunction =
         let
             a = Mock.functional00SubSubSort
             x = Variable (testId "x") Mock.subSort
-            expect = Just $ OrOfExpandedPattern.make
-                [ Predicated
-                    { predicate = makeEqualsPredicate
-                        (mkVar x)
-                        (Mock.sortInjectionSubSubToSub a)
-                    , substitution = mempty
-                    , term = ()
-                    }
-                ]
+            expect = Nothing
         actual <-
             matchDefinition mockMetadataTools
                 (Mock.sortInjectionSubSubToTop a)
                 (Mock.sortInjectionSubToTop (mkVar x))
         assertEqualWithExplanation "" expect actual
 
-    , testCase "Injection + rhs var predicate" $ do
+    , testCase "Injection + substitution" $ do
         let
             aSubSub = Mock.functional00SubSubSort
             xSub = Variable (testId "x") Mock.subSort
             expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate = makeEqualsPredicate
-                        (mkVar Mock.x)
-                        (Mock.functional10 Mock.a)
+                    { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [(xSub, Mock.sortInjectionSubSubToSub aSubSub)]
+                        [ (xSub, Mock.sortInjectionSubSubToSub aSubSub)
+                        , (Mock.x, Mock.functional10 Mock.a)
+                        ]
                     , term = ()
                     }
                 ]
@@ -521,41 +475,41 @@ test_matcherVariableFunction =
             matchDefinition mockMetadataTools
                 (Mock.functionalTopConstr20
                     (Mock.sortInjectionSubToTop (mkVar xSub))
-                    (Mock.functional10 Mock.a)
+                    (mkVar Mock.x)
                 )
                 (Mock.functionalTopConstr20
                     (Mock.sortInjectionSubSubToTop aSubSub)
-                    (mkVar Mock.x)
+                    (Mock.functional10 Mock.a)
                 )
         assertEqualWithExplanation "" expect actual
 
-    , testCase "rhs var predicate + Injection" $ do
+    , testCase "substitution + Injection" $ do
         let
             aSubSub = Mock.functional00SubSubSort
             xSub = Variable (testId "x") Mock.subSort
             expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate = makeEqualsPredicate
-                        (mkVar Mock.x)
-                        (Mock.functional10 Mock.a)
-                      , substitution = Substitution.unsafeWrap
-                        [(xSub, Mock.sortInjectionSubSubToSub aSubSub)]
+                    { predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (xSub, Mock.sortInjectionSubSubToSub aSubSub)
+                        , (Mock.x, Mock.functional10 Mock.a)
+                        ]
                     , term = ()
                     }
                 ]
         actual <-
             matchDefinition mockMetadataTools
                 (Mock.functionalTopConstr21
-                    (Mock.functional10 Mock.a)
+                    (mkVar Mock.x)
                     (Mock.sortInjectionSubToTop (mkVar xSub))
                 )
                 (Mock.functionalTopConstr21
-                    (mkVar Mock.x)
+                    (Mock.functional10 Mock.a)
                     (Mock.sortInjectionSubSubToTop aSubSub)
                 )
         assertEqualWithExplanation "" expect actual
 
-    , testCase "Quantified" $ do
+    , testCase "Quantified match on equivalent variable" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
                     { predicate = makeTruePredicate
@@ -567,25 +521,14 @@ test_matcherVariableFunction =
             matchDefinition mockMetadataTools
                 (mkExists Mock.y (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)))
                 (mkExists Mock.z (Mock.constr20 Mock.a (mkVar Mock.z)))
-        assertEqualWithExplanation "positive case" expect actual
-        catch
-            (do
-                matched <-
-                    matchDefinition mockMetadataTools
-                        (mkExists Mock.y
-                            $ Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)
-                        )
-                        (mkExists Mock.z
-                            $ Mock.constr20 Mock.a Mock.a
-                        )
-                deepseq matched $ assertFailure "expected error:"
-            )
-            (\(ErrorCallWithLocation err _) ->
-                assertEqual "error case"
-                    err
-                    "quantified variables in substitution or predicate escaping\
-                    \ context"
-            )
+        assertEqualWithExplanation "" expect actual
+    , testCase "Quantified no match on variable" $ do
+        let expect = Nothing
+        actual <-
+            matchDefinition mockMetadataTools
+                (mkExists Mock.y (Mock.constr20 (mkVar Mock.x) (mkVar Mock.y)))
+                (mkExists Mock.z (Mock.constr20 Mock.a Mock.a))
+        assertEqualWithExplanation "" expect actual
     , testGroup "Simplification"
         [ testCase "Function" $ do
             let expect = Just $ OrOfExpandedPattern.make
@@ -613,87 +556,37 @@ test_matcherVariableFunction =
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
-    [ testGroup "Definition"
-        [ testCase "no-var - no-var" $ do
-            let expect = Just $ OrOfExpandedPattern.make
-                    [ Predicated
-                        { predicate = makeEqualsPredicate
-                            (Mock.plain10 Mock.a) (Mock.plain11 Mock.b)
-                        , substitution = mempty
-                        , term = ()
-                        }
-                    ]
-            actual <-
-                matchDefinition mockMetadataTools
-                (Mock.plain10 Mock.a)
-                (Mock.plain11 Mock.b)
-            assertEqualWithExplanation "" expect actual
+    [ testCase "no-var - no-var" $ do
+        let expect = Nothing
+        actual <-
+            matchSimplification mockMetadataTools
+            (Mock.plain10 Mock.a)
+            (Mock.plain11 Mock.b)
+        assertEqualWithExplanation "" expect actual
 
-        , testCase "var - no-var" $ do
-            let expect = Nothing
-            actual <-
-                matchDefinition mockMetadataTools
-                (Mock.plain10 (mkVar Mock.x))
-                (Mock.plain11 Mock.b)
-            assertEqualWithExplanation "" expect actual
+    , testCase "var - no-var" $ do
+        let expect = Nothing
+        actual <-
+            matchSimplification mockMetadataTools
+            (Mock.plain10 (mkVar Mock.x))
+            (Mock.plain11 Mock.b)
+        assertEqualWithExplanation "" expect actual
 
-        , testCase "no-var - var" $ do
-            let expect = Just $ OrOfExpandedPattern.make
-                    [ Predicated
-                        { predicate = makeEqualsPredicate
-                            (Mock.plain10 Mock.a)
-                            (Mock.plain11 (mkVar Mock.x))
-                        , substitution = mempty
-                        , term = ()
-                        }
-                    ]
-            actual <-
-                matchDefinition mockMetadataTools
-                (Mock.plain10 Mock.a)
-                (Mock.plain11 (mkVar Mock.x))
-            assertEqualWithExplanation "" expect actual
+    , testCase "no-var - var" $ do
+        let expect = Nothing
+        actual <-
+            matchSimplification mockMetadataTools
+            (Mock.plain10 Mock.a)
+            (Mock.plain11 (mkVar Mock.x))
+        assertEqualWithExplanation "" expect actual
 
-        , testCase "var - var" $ do
-            let expect = Nothing
-            actual <-
-                matchDefinition mockMetadataTools
-                (Mock.plain10 (mkVar Mock.x))
-                (Mock.plain11 (mkVar Mock.y))
-            assertEqualWithExplanation "" expect actual
-        ]
-    , testGroup "Simplification"
-        [ testCase "no-var - no-var" $ do
-            let expect = Nothing
-            actual <-
-                matchSimplification mockMetadataTools
-                (Mock.plain10 Mock.a)
-                (Mock.plain11 Mock.b)
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "var - no-var" $ do
-            let expect = Nothing
-            actual <-
-                matchSimplification mockMetadataTools
-                (Mock.plain10 (mkVar Mock.x))
-                (Mock.plain11 Mock.b)
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "no-var - var" $ do
-            let expect = Nothing
-            actual <-
-                matchSimplification mockMetadataTools
-                (Mock.plain10 Mock.a)
-                (Mock.plain11 (mkVar Mock.x))
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "var - var" $ do
-            let expect = Nothing
-            actual <-
-                matchSimplification mockMetadataTools
-                (Mock.plain10 (mkVar Mock.x))
-                (Mock.plain11 (mkVar Mock.y))
-            assertEqualWithExplanation "" expect actual
-        ]
+    , testCase "var - var" $ do
+        let expect = Nothing
+        actual <-
+            matchSimplification mockMetadataTools
+            (Mock.plain10 (mkVar Mock.x))
+            (Mock.plain11 (mkVar Mock.y))
+        assertEqualWithExplanation "" expect actual
     ]
 
 test_matcherMergeSubresults :: [TestTree]
@@ -701,10 +594,7 @@ test_matcherMergeSubresults =
     [ testCase "And" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                    { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
@@ -713,16 +603,13 @@ test_matcherMergeSubresults =
         actual <-
             matchDefinition mockMetadataTools
                 (mkAnd (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
-                (mkAnd    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
+                (mkAnd    Mock.cf     (Mock.constr20 Mock.cf    Mock.b))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Application" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                    { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
@@ -736,17 +623,14 @@ test_matcherMergeSubresults =
                 )
                 (Mock.plain20
                     Mock.cf
-                    (Mock.constr20 Mock.cg Mock.b)
+                    (Mock.constr20 Mock.cf Mock.b)
                 )
         assertEqualWithExplanation "" expect actual
 
     , testCase "Equals" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                    { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
@@ -758,16 +642,13 @@ test_matcherMergeSubresults =
                     (mkVar Mock.x)
                     (Mock.constr20 Mock.cf (mkVar Mock.y))
                 )
-                (mkEquals_ Mock.cf (Mock.constr20 Mock.cg Mock.b))
+                (mkEquals_ Mock.cf (Mock.constr20 Mock.cf Mock.b))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Iff" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                    { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
@@ -776,16 +657,13 @@ test_matcherMergeSubresults =
         actual <-
             matchDefinition mockMetadataTools
                 (mkIff (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
-                (mkIff    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
+                (mkIff    Mock.cf     (Mock.constr20 Mock.cf    Mock.b))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Implies" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                    { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
@@ -799,17 +677,14 @@ test_matcherMergeSubresults =
                 )
                 (mkImplies
                     Mock.cf
-                    (Mock.constr20 Mock.cg    Mock.b)
+                    (Mock.constr20 Mock.cf    Mock.b)
                 )
         assertEqualWithExplanation "" expect actual
 
     , testCase "In" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                    { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
@@ -818,16 +693,13 @@ test_matcherMergeSubresults =
         actual <-
             matchDefinition mockMetadataTools
                 (mkIn_ (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
-                (mkIn_    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
+                (mkIn_    Mock.cf     (Mock.constr20 Mock.cf    Mock.b))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Or" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                    { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
@@ -836,16 +708,13 @@ test_matcherMergeSubresults =
         actual <-
             matchDefinition mockMetadataTools
                 (mkOr (mkVar Mock.x) (Mock.constr20 Mock.cf (mkVar Mock.y)))
-                (mkOr    Mock.cf     (Mock.constr20 Mock.cg    Mock.b))
+                (mkOr    Mock.cf     (Mock.constr20 Mock.cf    Mock.b))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Rewrites" $ do
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
-                    { predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.cg)
+                    { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
                     , term = ()
@@ -855,7 +724,7 @@ test_matcherMergeSubresults =
             matchDefinition mockMetadataTools
                 (mkRewrites
                     (mkVar Mock.x)
-                    (Mock.constr20 Mock.cf (mkVar Mock.y))
+                    (Mock.constr20 Mock.cg (mkVar Mock.y))
                 )
                 (mkRewrites
                     Mock.cf
@@ -880,6 +749,117 @@ test_matcherMergeSubresults =
         assertEqualWithExplanation "" expect actual
     ]
 
+test_unificationWithAppMatchOnTop :: [TestTree]
+test_unificationWithAppMatchOnTop =
+    [ testCase "Simple match same top" $ do
+        let
+            expect = Just (OrOfExpandedPattern.make [Predicated.topPredicate])
+        actual <-
+            unificationWithMatch mockMetadataTools
+            Mock.cg
+            Mock.cg
+        assertEqualWithExplanation "" expect actual
+    , testCase "variable vs function" $ do
+        let
+            expect = Just
+                (OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeCeilPredicate Mock.cf
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.x, Mock.cf)]
+                        }
+                    ]
+                )
+        actual <-
+            unificationWithMatch mockMetadataTools
+            (Mock.f (mkVar Mock.x))
+            (Mock.f Mock.cf)
+        assertEqualWithExplanation "" expect actual
+    , testCase "function vs variable" $ do
+        let
+            expect = Just
+                (OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeCeilPredicate Mock.cf
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.x, Mock.cf)]
+                        }
+                    ]
+                )
+        actual <-
+            unificationWithMatch mockMetadataTools
+            (Mock.f Mock.cf)
+            (Mock.f (mkVar Mock.x))
+        assertEqualWithExplanation "" expect actual
+    , testCase "removes constructor" $ do
+        let
+            expect = Just
+                (OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeCeilPredicate Mock.cf
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.x, Mock.cf)]
+                        }
+                    ]
+                )
+        actual <-
+            unificationWithMatch mockMetadataTools
+            (Mock.f (Mock.functionalConstr10 (mkVar Mock.x)))
+            (Mock.f (Mock.functionalConstr10 Mock.cf))
+        assertEqualWithExplanation "" expect actual
+    , testCase "produces predicate" $ do
+        let
+            expect = Just
+                (OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeEqualsPredicate
+                            Mock.a
+                            (Mock.g (mkVar Mock.x))
+                        , substitution = mempty
+                        }
+                    ]
+                )
+        actual <-
+            unificationWithMatch mockMetadataTools
+            (Mock.f Mock.a)
+            (Mock.f (Mock.g (mkVar Mock.x)))
+        assertEqualWithExplanation "" expect actual
+    , testCase "merges results" $ do
+        let
+            expect = Just
+                (OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeAndPredicate
+                            (makeEqualsPredicate
+                                Mock.a
+                                (Mock.g (mkVar Mock.x))
+                            )
+                            (makeCeilPredicate Mock.cf)
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.y, Mock.cf)]
+                        }
+                    ]
+                )
+        actual <-
+            unificationWithMatch mockMetadataTools
+            (Mock.functional20 Mock.a Mock.cf)
+            (Mock.functional20 (Mock.g (mkVar Mock.x)) (mkVar Mock.y))
+        assertEqualWithExplanation "" expect actual
+    , testCase "not matching" $ do
+        let
+            expect = Just
+                (OrOfExpandedPattern.make [])
+        actual <-
+            unificationWithMatch mockMetadataTools
+            (Mock.f Mock.a)
+            (Mock.f Mock.b)
+        assertEqualWithExplanation "" expect actual
+    ]
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
@@ -893,38 +873,47 @@ mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
 
 matchDefinition
-    :: forall level .
-        ( MetaOrObject level
-        , NFData (CommonPredicateSubstitution level)
-        )
+    :: forall level . ( MetaOrObject level )
     => MetadataTools level StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
-matchDefinition = match EvaluationType.Definition
+matchDefinition = match
 
 matchSimplification
-    :: forall level .
-        ( MetaOrObject level
-        , NFData (CommonPredicateSubstitution level)
-        )
+    :: forall level . ( MetaOrObject level )
     => MetadataTools level StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
-matchSimplification = match EvaluationType.Simplification
+matchSimplification = match
 
-match
-    :: forall level .
-        ( MetaOrObject level
-        , NFData (CommonPredicateSubstitution level)
-        )
-    => EvaluationType
-    -> MetadataTools level StepperAttributes
+unificationWithMatch
+    :: forall level . ( MetaOrObject level )
+    => MetadataTools level StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
-match evaluationType tools first second =
+unificationWithMatch tools first second = do
+    eitherResult <- SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier
+        $ runExceptT
+        $ unificationWithAppMatchOnTop
+            tools
+            (Mock.substitutionSimplifier tools)
+            first
+            second
+    case eitherResult of
+        Left _err -> return Nothing
+        Right (result, _proof) -> return (Just result)
+
+match
+    :: forall level . ( MetaOrObject level )
+    => MetadataTools level StepperAttributes
+    -> CommonStepPattern level
+    -> CommonStepPattern level
+    -> IO (Maybe (CommonOrOfPredicateSubstitution level))
+match tools first second =
     matchAsEither >>= return . \case
         Left _err -> Nothing
         Right (result, _) -> Just result
@@ -948,7 +937,6 @@ match evaluationType tools first second =
             )
     matchResult =
         matchAsUnification
-            evaluationType
             tools
             (Mock.substitutionSimplifier tools)
             first

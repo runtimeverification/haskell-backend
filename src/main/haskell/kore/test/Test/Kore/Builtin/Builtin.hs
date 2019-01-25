@@ -38,7 +38,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes, RewriteRule )
 import           Kore.Step.BaseStep
-                 ( StepProof, StepResult (StepResult), stepWithRule )
+                 ( StepProof, StepResult (StepResult), stepWithRewriteRule )
 import qualified Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import           Kore.Step.Error
@@ -232,7 +232,7 @@ runStepResult
         )
 runStepResult configuration axiom =
     (runSMT . evalSimplifier . runExceptT)
-        (stepWithRule
+        (stepWithRewriteRule
             testMetadataTools
             testSubstitutionSimplifier
             configuration
@@ -275,7 +275,7 @@ runStepResultWith
 runStepResultWith solver configuration axiom =
     let smt =
             (evalSimplifier . runExceptT)
-                (stepWithRule
+                (stepWithRewriteRule
                     testMetadataTools
                     testSubstitutionSimplifier
                     configuration

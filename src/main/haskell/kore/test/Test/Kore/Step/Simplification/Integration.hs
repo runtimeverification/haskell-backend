@@ -171,8 +171,15 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
-    , testCase "map function" $ do
-        let expect = OrOfExpandedPattern.make []
+    , testCase "map function, non-matching" $ do
+        let
+            expect = OrOfExpandedPattern.make
+                [ Predicated
+                    { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                ]
         actual <-
             evaluateWithAxioms
                 mockMetadataTools
@@ -201,6 +208,49 @@ test_simplificationIntegration =
                 )
                 Predicated
                     { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        assertEqualWithExplanation "" expect actual
+    , testCase "map function, matching" $ do
+        let
+            expect = OrOfExpandedPattern.make
+                [ Predicated
+                    { term = Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                mockMetadataTools
+                (axiomPatternsToEvaluators
+                    (Map.fromList
+                        [   ( Mock.function20MapTestId
+                            ,   [ EqualityRule RulePattern
+                                    { left =
+                                        Mock.function20MapTest
+                                            (Mock.concatMap
+                                                (Mock.elementMap
+                                                    (mkVar Mock.x)
+                                                    (mkVar Mock.y)
+                                                )
+                                                (mkVar Mock.m)
+                                            )
+                                            (mkVar Mock.x)
+                                    , right = mkVar Mock.y
+                                    , requires = makeTruePredicate
+                                    , attributes = def
+                                    }
+                                ]
+                            )
+                        ]
+                    )
+                )
+                Predicated
+                    { term =
+                        Mock.function20MapTest
+                            (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }

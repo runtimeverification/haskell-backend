@@ -48,7 +48,7 @@ import           Kore.Step.AxiomPatterns
                  isHeatingRule, isNormalRule )
 import           Kore.Step.BaseStep
                  ( StepProof (..), StepResult (StepResult),
-                 simplificationProof, stepWithRule )
+                 simplificationProof, stepWithRewriteRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import           Kore.Step.ExpandedPattern
@@ -120,7 +120,7 @@ transitionRule tools substitutionSimplifier simplifier =
             return (prove <$> toList nonEmptyConfigs)
     transitionRewrite a (config, proof) = do
         result <- runExceptT
-            $ stepWithRule tools substitutionSimplifier config a
+            $ stepWithRewriteRule tools substitutionSimplifier config a
         case result of
             Left _ -> pure []
             Right results -> return $ mapMaybe (patternFromResult proof) results

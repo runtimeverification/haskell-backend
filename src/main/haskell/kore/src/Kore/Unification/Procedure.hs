@@ -72,7 +72,6 @@ unificationProcedure
     -- ^left-hand-side of unification
     -> StepPattern level variable
     -> ExceptT
-        -- TODO: Consider using a false predicate instead of a Left error
         (UnificationOrSubstitutionError level variable)
         m
         ( OrOfPredicateSubstitution level variable

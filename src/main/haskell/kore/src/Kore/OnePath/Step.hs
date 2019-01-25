@@ -17,8 +17,6 @@ module Kore.OnePath.Step
     , onePathFollowupStep
     ) where
 
-import           Control.Monad.Except
-                 ( runExceptT )
 import           Data.Foldable
                  ( toList )
 import           Data.Hashable
@@ -36,10 +34,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
-                 ( StepProof (..), StepResult (StepResult),
-                 simplificationProof, stepWithRule )
-import           Kore.Step.BaseStep as StepResult
-                 ( StepResult (..) )
+                 ( OrStepResult (OrStepResult), StepProof (..),
+                 simplificationProof, stepWithRemainders )
+import           Kore.Step.BaseStep as OrStepResult
+                 ( OrStepResult (..) )
 import qualified Kore.Step.BaseStep as StepProof
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
@@ -47,6 +45,7 @@ import qualified Kore.Step.ExpandedPattern as Predicated
                  ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( CommonStepPatternSimplifier,
                  PredicateSubstitutionSimplifier, Simplifier )
@@ -245,53 +244,36 @@ transitionRule
             ]
     transitionMultiApplyWithRemainders _ (config, _)
         | ExpandedPattern.isBottom config = return []
-    transitionMultiApplyWithRemainders [] (config, proof) =
-        return [(Stuck config, proof)]
-    transitionMultiApplyWithRemainders
-        (rule : rules)
-        patt@(config, proof)
-      = do
-        resultsEither <- runExceptT
-            $ stepWithRule tools substitutionSimplifier config rule
-        case resultsEither of
-            Left _ -> transitionMultiApplyWithRemainders rules patt
-            Right results -> do
-                let
-                    rewritten
-                        ::  [   ( StrategyPattern (CommonExpandedPattern level)
-                                , StepProof level Variable
-                                )
-                            ]
-                    remainders
-                        ::  [   ( CommonExpandedPattern level
-                                , StepProof level Variable
-                                )
-                            ]
-                    (rewritten, remainders) =
-                        if null results
-                        then ([(Bottom, proof)], [patt])
-                        else unzip (map splitStepResult results)
-                rewrittenRemainders <-
-                    mapM (transitionMultiApplyWithRemainders rules) remainders
-                return (concat (rewritten : rewrittenRemainders))
-      where
-        splitStepResult
-            ( StepResult
-                { rewrittenPattern
-                , remainder
-                }
-            , proof'
-            )
-          =
-            if ExpandedPattern.isBottom rewrittenPattern
-                then ((Bottom, combinedProof), (remainder, combinedProof))
-                else
-                    ( (RewritePattern rewrittenPattern, combinedProof)
-                    , (remainder, combinedProof)
-                    )
-          where
+    transitionMultiApplyWithRemainders rules (config, proof) = do
+        (OrStepResult { rewrittenPattern, remainder }, proof') <-
+            stepWithRemainders tools substitutionSimplifier config rules
+        let
+            combinedProof :: StepProof level Variable
             combinedProof = proof <> proof'
 
+            rewriteResults
+                ::  [   ( StrategyPattern (CommonExpandedPattern level)
+                        , StepProof level Variable
+                        )
+                    ]
+            rewriteResults =
+                map
+                    (\ p -> (RewritePattern p, combinedProof))
+                    (OrOfExpandedPattern.extractPatterns rewrittenPattern)
+
+            remainderResults
+                ::  [   ( StrategyPattern (CommonExpandedPattern level)
+                        , StepProof level Variable
+                        )
+                    ]
+            remainderResults =
+                map
+                    (\ p -> (Stuck p, combinedProof))
+                    (OrOfExpandedPattern.extractPatterns remainder)
+
+        if null rewriteResults
+            then return ((Bottom, combinedProof) : remainderResults)
+            else return (rewriteResults ++ remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
