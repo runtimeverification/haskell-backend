@@ -134,8 +134,8 @@ middleY = mkMiddle Mock.y
 test_testValuesAreAsExpected :: TestTree
 test_testValuesAreAsExpected =
   testGroup "check properties of test values"
-  [ topOr `has`    [ (isTop, True),  (isBottom, False) ]
-  , middleX `has`  [ (isTop, False), (isBottom, False) ]
-  , bottomOr `has` [ (isTop, False), (isBottom, True) ]
+  [ topOr `has_`    [ (isTop, True),  (isBottom, False) ]
+  , middleX `has_`  [ (isTop, False), (isBottom, False) ]
+  , bottomOr `has_` [ (isTop, False), (isBottom, True) ]
   ]
 

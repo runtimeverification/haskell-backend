@@ -36,23 +36,30 @@ equals_ = actual_expected
 
 
 
-has :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> TestTree
-has value tuples =
-  testCase "Properties" (traverse_ checkOne tuples)
+has :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> String -> TestTree
+has value tuples comment=
+  testCase comment (traverse_ checkOne tuples)
   where
     checkOne :: (a->Bool, Bool) -> Assertion
     checkOne (predicate, expected) =
       assertEqual "" expected (predicate value)
 
+has_ :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> TestTree
+has_ value tuples = has value tuples "Has properties"
+      
 
-gives :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> TestTree
-gives predicate tuples =
-  testCase "Properties" (traverse_ checkOne tuples)
+
+gives :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> String -> TestTree
+gives predicate tuples comment =
+  testCase comment (traverse_ checkOne tuples)
   where
     checkOne :: (a, Bool) -> Assertion
     checkOne (value, expected) =
       assertEqual "" expected (predicate value)
 
+gives_ :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> TestTree
+gives_ predicate tuples =
+  gives predicate tuples "Gives"
 
 {- Part 2: Raw builder functions
 
