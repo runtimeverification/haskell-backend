@@ -40,11 +40,3 @@ RUN    cd /home/user                                                          \
     && git clone 'https://github.com/kframework/k' --branch=nightly-0f3835d3a \
     && ./k/k-distribution/src/main/scripts/bin/k-configure-opam-dev           \
     && rm -rf k
-
-RUN    cd /home/user                                                    \
-    && git clone 'https://github.com/kframework/kore' --branch=4063410b \
-    && cd kore                                                          \
-    && stack build --only-dependencies                                  \
-    && stack build --only-snapshot                                      \
-    && cd ..                                                            \
-    && rm -rf kore
