@@ -12,7 +12,7 @@ RUN apt install --yes                                                        \
         libgmp-dev libjemalloc-dev libmpfr-dev libstdc++6 libtool libxml2    \
         libyaml-cpp-dev llvm-6.0 m4 make maven opam openjdk-8-jdk pandoc     \
         pkg-config python3 python-jinja2 python-pygments python-recommonmark \
-        python-sphinx scala time unifdef zlib1g-dev
+        python-sphinx scala stylish-haskell time unifdef zlib1g-dev
 
 RUN curl -sSL https://get.haskellstack.org/ | sh
 
