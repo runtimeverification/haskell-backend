@@ -9,6 +9,7 @@ import Test.Tasty.HUnit.Extensions
 import Test.Terse
 import Test.Kore (testId)
 
+import qualified Kore.Domain.Builtin as Domain
 import           Data.Text
                  ( Text )
 import           Kore.Implicit.ImplicitSorts
@@ -58,10 +59,9 @@ import           Test.Kore
 test_highestTop :: TestTree
 test_highestTop =
   testGroup "Top dominates only when all its components are top" 
-  [
-  --   (tT, pT, sT) (tm, pm, sm) `simplifiesTo` (tT, pT, sT)
-  -- , (tm, pm, sm) (tT, pT, sT) `simplifiesTo` (tT, pT, sT)
-  -- , (tT, pT, sT) (tT, pT, sT) `simplifiesTo` (tT, pT, sT)
+  [ ((tT, pT, sT), (tm, pm, sm)) `simplifiesTo_` (tT, pT, sT)
+  -- , ((tm, pm, sm), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
+  -- , ((tT, pT, sT), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
   ]
 
 
@@ -77,25 +77,9 @@ test_simplify =
         {- Part 3: The values and functions relevant to this test -}
 
 
--- wrapInOrPattern
---   :: (TestTerm, TestPredicate, TestSubstitution)
---   -> OrOfExpandedPattern Object Variable
--- wrapInOrPattern (term, predicate, substitution) = 
---     OrOfExpandedPattern.make [singleton]
---     where
---       singleton = Predicated
---                   { term = term
---                   , predicate = predicate
---                   , substitution = substitution
---                   }
-    
-
--- Pick a specific domain to avoid annoying type variable ambiguity
-type ArbitraryDomain = []
-
 
 type TestTerm =
-  PurePattern Object ArbitraryDomain Variable (Valid (Variable Object) Object)
+  PurePattern Object Domain.Builtin Variable (Valid (Variable Object) Object)
 
 tT :: TestTerm
 tT = mkTop_
@@ -150,4 +134,36 @@ test_valueProperties =
   , sm `has_` [ (isTop, False),  (isBottom, False) ] 
   -- There is no bottom substitution
   ]
+
+
+                        -- Functions
+
+-- Note: we intentionally take care *not* to simplify out tops or bottoms
+-- during conversion of a Predicated into an OrOfExpandedPattern
+wrapInOrPattern
+  :: (TestTerm, TestPredicate, TestSubstitution)
+  -> OrOfExpandedPattern Object Variable
+wrapInOrPattern (term, predicate, substitution) = 
+    OrOfExpandedPattern.make [singleton]
+    where
+      singleton = Predicated
+                  { term = term
+                  , predicate = predicate
+                  , substitution = substitution
+                  }
+
+
+simplifiesTo_
+  :: ( (TestTerm, TestPredicate, TestSubstitution)
+     , (TestTerm, TestPredicate, TestSubstitution)
+     )
+  -> (TestTerm, TestPredicate, TestSubstitution)
+  -> TestTree
+simplifiesTo_ (raw1, raw2) rawExpected =
+  let
+    or1 = wrapInOrPattern raw1
+    or2 = wrapInOrPattern raw2
+    expected = wrapInOrPattern rawExpected
+  in
+    equals_ (simplifyEvaluated or1 or2) (expected, SimplificationProof)
 
