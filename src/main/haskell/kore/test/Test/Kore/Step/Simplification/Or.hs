@@ -7,27 +7,33 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.HUnit.Extensions
 import Test.Terse
+import Test.Kore (testId)
 
+import           Data.Text
+                 ( Text )
+import           Kore.Implicit.ImplicitSorts
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Data.Set as Set
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 ( Predicate, CommonPredicate, makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..), isTop, isBottom)
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom, top, allVariables )
 import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern , extractPatterns )
+                 ( OrOfExpandedPattern , extractPatterns , MultiOr(..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, merge )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier, SimplificationProof )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Unification.Substitution
+                 ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -49,40 +55,15 @@ import           Test.Kore
              check correctness.
           -}
 
+test_highestTop :: TestTree
+test_highestTop =
+  testGroup "Top dominates only when all its components are top" 
+  [
+  --   (tT, pT, sT) (tm, pm, sm) `simplifiesTo` (tT, pT, sT)
+  -- , (tm, pm, sm) (tT, pT, sT) `simplifiesTo` (tT, pT, sT)
+  -- , (tT, pT, sT) (tT, pT, sT) `simplifiesTo` (tT, pT, sT)
+  ]
 
-test_topDominates :: TestTree
-test_topDominates =
-  testGroup "top values override 'lower' values"
-  [
-    -- omission next line produces (OrOfExpandedPattern.merge middleX topOr, SimplificationProof)
-    -- simplifyEvaluated middleX   topOr     `equals_` (topOr, SimplificationProof)
-    -- bug: following produces `middleX`. 
-    -- , simplifyEvaluated topOr    middleX    `equals_` (topOr, SimplificationProof)
-    simplifyEvaluated topOr    topOr     `equals_` (topOr, SimplificationProof)
-  , simplifyEvaluated topOr    bottomOr  `equals_` (topOr, SimplificationProof)
-  , simplifyEvaluated bottomOr topOr     `equals_` (topOr, SimplificationProof)
-  ]
-    
-
-test_bottomIsEliminated :: TestTree
-test_bottomIsEliminated =
-  testGroup "bottom values are eliminated"
-  [
-    simplifyEvaluated middleX   bottomOr  `equals_` (middleX, SimplificationProof)
-  , simplifyEvaluated bottomOr  middleX   `equals_` (middleX, SimplificationProof)
-  , simplifyEvaluated topOr     bottomOr  `equals_` (topOr, SimplificationProof)
-  , simplifyEvaluated bottomOr  topOr     `equals_` (topOr, SimplificationProof)
-  , simplifyEvaluated bottomOr  bottomOr  `equals_` (bottomOr, SimplificationProof)
-  ]
-    
-test_middleValuesAreBothRetained :: TestTree
-test_middleValuesAreBothRetained = 
-  testGroup "Any other values are merged"
-  [
-    equals_
-      (simplifyEvaluated middleX middleY)
-      (OrOfExpandedPattern.merge middleX middleY, SimplificationProof)
-  ]
 
         {- Part 2: `simplify` is just a trivial use of `simplifyEvaluated` -}
 
@@ -90,52 +71,83 @@ test_simplify :: TestTree
 test_simplify =
   testGroup "`simplify` just calls `simplifyEvaluated`"
   [
-    equals_
-      (simplify           $ mkOr middleX middleY) 
-      (simplifyEvaluated         middleX middleY)
   ]
+
+
+        {- Part 3: The values and functions relevant to this test -}
+
+
+-- wrapInOrPattern
+--   :: (TestTerm, TestPredicate, TestSubstitution)
+--   -> OrOfExpandedPattern Object Variable
+-- wrapInOrPattern (term, predicate, substitution) = 
+--     OrOfExpandedPattern.make [singleton]
+--     where
+--       singleton = Predicated
+--                   { term = term
+--                   , predicate = predicate
+--                   , substitution = substitution
+--                   }
+    
+
+-- Pick a specific domain to avoid annoying type variable ambiguity
+type ArbitraryDomain = []
+
+
+type TestTerm =
+  PurePattern Object ArbitraryDomain Variable (Valid (Variable Object) Object)
+
+tT :: TestTerm
+tT = mkTop_
+
+tm :: TestTerm
+tm = mkVar Mock.x
+
+t_ :: TestTerm
+t_ = mkBottom_
+
+
+type TestPredicate = CommonPredicate Object
+
+pT :: TestPredicate
+pT = makeTruePredicate
+
+pm :: TestPredicate
+pm =
+  makeEqualsPredicate
+    (mkVar $ var "#left")
+    (mkVar $ var "#right")
   where
-      mkOr first second =
-        Or { orFirst = first
-           , orSecond = second
-           , orSort = sortVariableSort "irrelevant"
-           }
+    var :: Text -> Variable Object
+    var id =
+      Variable (testId id) predicateSort
+
+p_ :: TestPredicate
+p_ = makeFalsePredicate
 
 
+type TestSubstitution = Substitution Object Variable
 
-        {- Part 3: The values relevant to this test -}
+sT :: TestSubstitution
+sT = mempty
 
-topOr :: OrOfExpandedPattern Object Variable
-topOr = OrOfExpandedPattern.make [ExpandedPattern.top]
-
-bottomOr :: OrOfExpandedPattern Object Variable
-bottomOr = OrOfExpandedPattern.make [ExpandedPattern.bottom]
-
-
-mkMiddle :: Variable Object -> OrOfExpandedPattern Object Variable
-mkMiddle variable =
-  OrOfExpandedPattern.make [raw]
-  where
-    raw = Predicated
-            { term = mkVar variable
-            , predicate = makeTruePredicate 
-            , substitution = mempty
-            }
-
--- QUESTION: ask Tom what a Variable is, vs. other things.
--- Should other things play any role in testing?
-
-middleX :: OrOfExpandedPattern Object Variable
-middleX = mkMiddle Mock.x
-middleY :: OrOfExpandedPattern Object Variable
-middleY = mkMiddle Mock.y
+sm :: TestSubstitution
+sm = Substitution.wrap [(Mock.x, Mock.a)] -- I'd rather these were meaningful
 
 
-test_testValuesAreAsExpected :: TestTree
-test_testValuesAreAsExpected =
-  testGroup "check properties of test values"
-  [ topOr `has_`    [ (isTop, True),  (isBottom, False) ]
-  , middleX `has_`  [ (isTop, False), (isBottom, False) ]
-  , bottomOr `has_` [ (isTop, False), (isBottom, True) ]
+test_valueProperties :: TestTree
+test_valueProperties =
+  testGroup "The values have properties that fit their names" 
+  [ tT `has_` [ (isTop, True),   (isBottom, False) ] 
+  , tm `has_` [ (isTop, False),  (isBottom, False) ] 
+  , t_ `has_` [ (isTop, False),  (isBottom, True) ]
+
+  , pT `has_` [ (isTop, True),   (isBottom, False) ] 
+  , pm `has_` [ (isTop, False),  (isBottom, False) ] 
+  , p_ `has_` [ (isTop, False),  (isBottom, True) ] 
+
+  , sT `has_` [ (isTop, True),   (isBottom, False) ] 
+  , sm `has_` [ (isTop, False),  (isBottom, False) ] 
+  -- There is no bottom substitution
   ]
 
