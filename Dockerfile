@@ -14,6 +14,8 @@ RUN apt install --yes                                                        \
         pkg-config python3 python-jinja2 python-pygments python-recommonmark \
         python-sphinx scala stylish-haskell time unifdef zlib1g-dev
 
+RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+
 RUN curl -sSL https://get.haskellstack.org/ | sh
 
 RUN    git clone 'https://github.com/z3prover/z3' --branch=z3-4.8.4 \
