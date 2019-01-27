@@ -46,26 +46,33 @@ import Data.Foldable
   no comment is useful, use the variants with a trailing `_`.
 -}
 
--- |      3 + 4 `is` 5 "addition works"
+-- |      3 + 4 `is` isOdd "addition works"
 is :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
 is = actual_predicate_comment
 
+-- |      3 + 4 `is_` isOdd
 is_ :: HasCallStack => a -> (a -> Bool)-> TestTree
 is_ = actual_predicate
 
+-- |      3 + 4 `isn't` isEven "addition works"
 isn't :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
 isn't actual pred = actual_predicate_comment actual (not . pred)
 
+-- |      3 + 4 `isn't_` isEven 
 isn't_ :: HasCallStack => a -> (a -> Bool) -> TestTree
 isn't_ actual pred = actual_predicate actual (not . pred)
 
-equals :: (HasCallStack, Eq a, Show a, EqualWithExplanation a) => a -> a -> String -> TestTree
+-- |      3 + 4 `equals` 7  "addition works"
+equals
+  :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+  => a -> a -> String -> TestTree
 equals = actual_expected_comment
 
+-- |      3 + 4 `equals_` 7
 equals_ :: (HasCallStack, Eq a, Show a, EqualWithExplanation a) => a -> a -> TestTree
 equals_ = actual_expected
 
-
+-- | 1 `has` [(isPositive, True), (isEven, False) ] "comment" 
 has :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> String -> TestTree
 has value tuples comment=
   testCase comment (traverse_ checkOne tuples)
@@ -74,11 +81,12 @@ has value tuples comment=
     checkOne (predicate, expected) =
       assertEqual "" expected (predicate value)
 
+-- | 1 `has_` [(isPositive, True), (isEven, False) ]
 has_ :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> TestTree
 has_ value tuples = has value tuples "Has properties"
       
 
-
+-- | isOdd `gives` [ (1, True), (2, False) ] "arity"
 gives :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> String -> TestTree
 gives predicate tuples comment =
   testCase comment (traverse_ checkOne tuples)
@@ -87,6 +95,7 @@ gives predicate tuples comment =
     checkOne (value, expected) =
       assertEqual "" expected (predicate value)
 
+-- | isOdd `gives_` [ (1, True), (2, False) ]
 gives_ :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> TestTree
 gives_ predicate tuples =
   gives predicate tuples "Gives"
