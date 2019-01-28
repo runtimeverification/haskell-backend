@@ -58,7 +58,7 @@ create
     -> PredicateSubstitutionSimplifier level Simplifier
 create tools simplifier =
     PredicateSubstitutionSimplifier
-        (\p -> simplify tools simplifier p 0)
+        (\p -> simplify tools simplifier p)
 
 {-| Simplifies a predicate-substitution by applying the substitution to the
 predicate, simplifying the result and repeating with the new
@@ -88,7 +88,6 @@ simplify
         => StepPatternSimplifier level variable0
         )
     -> PredicateSubstitution level variable
-    -> Int
     -> Simplifier
         ( PredicateSubstitution level variable
         , SimplificationProof level
@@ -97,15 +96,10 @@ simplify
     tools
     simplifier
     initialValue@Predicated { predicate, substitution }
-    times
   = do
     let substitution' = Substitution.toMap substitution
     substitutedPredicate <- Predicate.substitute substitution' predicate
-    -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
-    -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
-    -- This was needed because, when we need to simplify 'requires' clauses,
-    -- this needs to run more than once.
-    if substitutedPredicate == predicate && times > 1
+    if substitutedPredicate == predicate
         then return (initialValue, SimplificationProof)
         else do
             (   Predicated
@@ -145,7 +139,7 @@ simplify
   where
     substitutionSimplifier =
         PredicateSubstitutionSimplifier
-            (\p -> simplify tools simplifier p (times + 1))
+            (\p -> simplify tools simplifier p)
 
 assertDistinctVariables
     :: forall level variable
