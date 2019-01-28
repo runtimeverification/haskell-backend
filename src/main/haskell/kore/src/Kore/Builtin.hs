@@ -16,7 +16,6 @@ This module is intended to be imported qualified.
 module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.DomainValueVerifiers
-    , Builtin.MonadVerify
     , Builtin.Function
     , Builtin
     , Builtin.sortDeclVerifier
@@ -76,7 +75,7 @@ type Builtin = DomainValue Object Domain.Builtin (CommonStepPattern Object)
   If you aren't sure which verifiers you need, use these.
 
  -}
-koreVerifiers :: Builtin.MonadVerify m =>  Builtin.Verifiers m child
+koreVerifiers :: Builtin.Verifiers
 koreVerifiers =
     Builtin.Verifiers
     { sortDeclVerifiers =

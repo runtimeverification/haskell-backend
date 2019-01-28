@@ -75,9 +75,8 @@ data Context =
         -- ^ The sort variables in scope.
         , indexedModule :: !(KoreIndexedModule Attribute.Null Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
-        , builtinDomainValueVerifiers :: !(Builtin.DomainValueVerifiers
-                                             (Either (Error (VerifyError)))
-                                             (VerifiedKorePattern))
+        , builtinDomainValueVerifiers
+            :: !(Builtin.DomainValueVerifiers VerifiedKorePattern)
         }
 
 newtype PatternVerifier a =

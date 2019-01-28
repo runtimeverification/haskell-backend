@@ -66,7 +66,7 @@ import           Kore.Variables.Fresh
   See also: 'Builtin.verifySymbol'
 
  -}
-symbolVerifiers :: Builtin.MonadVerify m => Builtin.SymbolVerifiers m
+symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
     [ ( eqKey
@@ -76,7 +76,7 @@ symbolVerifiers =
     , (iteKey, iteVerifier)
     ]
   where
-    iteVerifier :: Builtin.MonadVerify m =>  Builtin.SymbolVerifier m
+    iteVerifier :: Builtin.SymbolVerifier
     iteVerifier
         findSort
         SentenceSymbol

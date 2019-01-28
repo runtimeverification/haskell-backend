@@ -68,7 +68,7 @@ e.g.:
 verifyDefinition
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
     => AttributesVerification declAtts axiomAtts
-    -> Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification builtinVerifiers definition = do
@@ -81,7 +81,7 @@ collection of the definition's modules.
 verifyAndIndexDefinition
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
     => AttributesVerification declAtts axiomAtts
-    -> Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) (Map.Map ModuleName (VerifiedModule declAtts axiomAtts))
 verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
@@ -107,7 +107,7 @@ verifyAndIndexDefinitionWithBase
         , Map.Map Text AstLocation
         )
     -> AttributesVerification declAtts axiomAtts
-    -> Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError)
         ( Map.Map ModuleName (VerifiedModule declAtts axiomAtts)
@@ -265,7 +265,7 @@ verifyNormalKoreDefinition
         , Show axiomAtts
         )
     => AttributesVerification declAtts axiomAtts
-    -> Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) (VerifiedModule declAtts axiomAtts)
 verifyNormalKoreDefinition
@@ -289,7 +289,7 @@ containing only the 'kore' default module.
 verifyImplicitKoreDefinition
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
     => AttributesVerification declAtts axiomAtts
-    -> Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) (VerifiedModule declAtts axiomAtts)
 verifyImplicitKoreDefinition

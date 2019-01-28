@@ -112,7 +112,7 @@ sort = "SET.Set"
   See also: 'sort', 'Builtin.verifySort'
 
  -}
-assertSort :: Builtin.MonadVerify m => Builtin.SortVerifier m
+assertSort :: Builtin.SortVerifier
 assertSort findSort = Builtin.verifySort findSort sort
 
 {- | Verify that hooked sort declarations are well-formed.
@@ -120,7 +120,7 @@ assertSort findSort = Builtin.verifySort findSort sort
   See also: 'Builtin.verifySortDecl'
 
  -}
-sortDeclVerifiers :: Builtin.MonadVerify m => Builtin.SortDeclVerifiers m
+sortDeclVerifiers :: Builtin.SortDeclVerifiers
 sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 
 {- | Verify that hooked symbol declarations are well-formed.
@@ -128,7 +128,7 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
   See also: 'Builtin.verifySymbol'
 
  -}
-symbolVerifiers :: Builtin.MonadVerify m => Builtin.SymbolVerifiers m
+symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
     [ ( concatKey

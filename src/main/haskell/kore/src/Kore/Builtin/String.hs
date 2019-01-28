@@ -88,7 +88,7 @@ sort = "STRING.String"
   See also: 'sort', 'Builtin.verifySort'
 
  -}
-assertSort :: Builtin.MonadVerify m => Builtin.SortVerifier m
+assertSort :: Builtin.SortVerifier
 assertSort findSort = Builtin.verifySort findSort sort
 
 {- | Verify that hooked sort declarations are well-formed.
@@ -96,7 +96,7 @@ assertSort findSort = Builtin.verifySort findSort sort
   See also: 'Builtin.verifySortDecl'
 
  -}
-sortDeclVerifiers :: Builtin.MonadVerify m => Builtin.SortDeclVerifiers m
+sortDeclVerifiers :: Builtin.SortDeclVerifiers
 sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 
 {- | Verify that hooked symbol declarations are well-formed.
@@ -104,7 +104,7 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
   See also: 'Builtin.verifySymbol'
 
  -}
-symbolVerifiers :: Builtin.MonadVerify m => Builtin.SymbolVerifiers m
+symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
     [   ( ltKey
@@ -144,7 +144,7 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifier :: Builtin.MonadVerify m => Builtin.DomainValueVerifier m child
+patternVerifier :: Builtin.DomainValueVerifier child
 patternVerifier =
     Builtin.makeNonEncodedDomainValueVerifier sort
         (void . Builtin.parseDomainValue parse)

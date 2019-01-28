@@ -118,7 +118,7 @@ verifySentences
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> AttributesVerification declAtts axiomAtts
-    -> Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    -> Builtin.Verifiers
     -> [KoreSentence]
     -> Either (Error VerifyError) [VerifiedKoreSentence]
 verifySentences indexedModule attributesVerification builtinVerifiers =
@@ -130,7 +130,7 @@ verifySentences indexedModule attributesVerification builtinVerifiers =
         )
 
 verifySentence
-    :: Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
     -> KoreSentence
@@ -145,7 +145,7 @@ verifySentence builtinVerifiers indexedModule attributesVerification =
         )
 
 verifyMetaSentence
-    :: Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
     -> Sentence Meta UnifiedSortVariable CommonKorePattern
@@ -220,7 +220,7 @@ verifyMetaSentence
         return verified
 
 verifyObjectSentence
-    :: Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
     -> Sentence Object UnifiedSortVariable CommonKorePattern
@@ -289,7 +289,7 @@ verifySentenceAttributes attributesVerification sentence =
         verifySuccess
 
 verifyHookSentence
-    :: Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
     -> SentenceHook CommonKorePattern
@@ -350,7 +350,7 @@ verifySymbolSentence indexedModule sentence =
 
 verifyAliasSentence
     :: (MetaOrObject level)
-    => Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    => Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> KoreSentenceAlias level
     -> Either (Error VerifyError) (VerifiedKoreSentenceAlias level)
@@ -389,7 +389,7 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
 
 verifyAxiomSentence
     :: KoreSentenceAxiom
-    -> Builtin.Verifiers (Either (Error VerifyError)) VerifiedKorePattern
+    -> Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> Either (Error VerifyError) VerifiedKoreSentenceAxiom
 verifyAxiomSentence axiom builtinVerifiers indexedModule =
