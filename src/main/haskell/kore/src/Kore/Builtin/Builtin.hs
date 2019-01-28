@@ -104,8 +104,7 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( top )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
-                 AttemptedAxiom (..) )
+                 ( AttemptedAxiom (..), AxiomSimplifier (AxiomSimplifier) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -119,7 +118,7 @@ import           Kore.Unparser
 
 type Parser = Parsec Void Text
 
-type Function = ApplicationFunctionEvaluator Object
+type Function = AxiomSimplifier Object
 
 type HookedSortDescription = SortDescription Object Domain.Builtin
 
@@ -256,7 +255,7 @@ symbolVerifier Verifiers { symbolVerifiers } hook =
 
 notImplemented :: Function
 notImplemented =
-    ApplicationFunctionEvaluator notImplemented0
+    AxiomSimplifier notImplemented0
   where
     notImplemented0 _ _ _ _ = pure (NotApplicable, SimplificationProof)
 
@@ -623,7 +622,7 @@ functionEvaluator
     -- ^ Builtin function implementation
     -> Function
 functionEvaluator impl =
-    ApplicationFunctionEvaluator evaluator
+    AxiomSimplifier evaluator
   where
     evaluator
         :: (Ord (variable Object), Show (variable Object))

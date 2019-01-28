@@ -299,8 +299,8 @@ runSimplifier patternSimplifierMap predicateSubstitution =
             (Simplifier.create mockMetadataTools patternSimplifierMap)
 
 thatSimplification
-    :: [ApplicationFunctionEvaluator Object]
-    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+    :: [AxiomSimplifier Object]
+    -> These (AxiomSimplifier Object) (FunctionEvaluators Object)
 thatSimplification evaluators =
     That FunctionEvaluators
         { definitionRules = []
@@ -316,9 +316,9 @@ makeEvaluator
             )
         => [(StepPattern Object variable, StepPattern Object variable)]
         )
-    -> ApplicationFunctionEvaluator Object
+    -> AxiomSimplifier Object
 makeEvaluator mapping =
-    ApplicationFunctionEvaluator
+    AxiomSimplifier
         $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator

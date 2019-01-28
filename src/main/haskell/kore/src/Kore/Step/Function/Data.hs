@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.Data
-    ( ApplicationFunctionEvaluator (..)
+    ( AxiomSimplifier (..)
     , BuiltinAndAxiomsFunctionEvaluatorMap
     , AttemptedAxiom (..)
     , BuiltinAndAxiomsFunctionEvaluator
@@ -40,8 +40,8 @@ import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
 
-{-| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
-pattern. This can be either a built-in evaluator or a user-defined one.
+{-| 'AxiomSimplifier' simplifies 'Application' patterns using either an axiom
+or builtin code.
 
 Arguments:
 
@@ -58,8 +58,8 @@ Return value:
 It returns the result of appling the function, together with a proof certifying
 that the function was applied correctly (which is only a placeholder right now).
 -}
-newtype ApplicationFunctionEvaluator level =
-    ApplicationFunctionEvaluator
+newtype AxiomSimplifier level =
+    AxiomSimplifier
         (forall variable
         .   ( FreshVariable variable
             , MetaOrObject level
@@ -90,7 +90,7 @@ data FunctionEvaluators level
         { definitionRules :: [EqualityRule level]
         -- ^ Evaluators used when evaluating functions according to their
         -- definition.
-        , simplificationEvaluators :: [ApplicationFunctionEvaluator level]
+        , simplificationEvaluators :: [AxiomSimplifier level]
         -- ^ Evaluators used when simplifying functions.
         }
 
@@ -105,7 +105,7 @@ other succeeds, using both results would introduce a split in the search space.
 -}
 type BuiltinAndAxiomsFunctionEvaluator level =
     These
-        (ApplicationFunctionEvaluator level)
+        (AxiomSimplifier level)
         (FunctionEvaluators level)
 
 {-|A type to abstract away the mapping from symbol identifiers to

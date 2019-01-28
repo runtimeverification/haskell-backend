@@ -121,7 +121,7 @@ test_applicationSimplification =
                 (Map.singleton
                     Mock.fId
                     (thatSimplification
-                        [ ApplicationFunctionEvaluator
+                        [ AxiomSimplifier
                             (const $ const $ const $ const $ return
                                 ( AttemptedAxiom.Applied
                                     (OrOfExpandedPattern.make [gOfAExpanded])
@@ -216,7 +216,7 @@ test_applicationSimplification =
                     (Map.singleton
                         Mock.sigmaId
                         (thatSimplification
-                            [ ApplicationFunctionEvaluator
+                            [ AxiomSimplifier
                                 (const $ const $ const $ const $ do
                                     let zvar =
                                             freshVariableFromVariable Mock.z 1
@@ -308,8 +308,8 @@ test_applicationSimplification =
             Mock.subsorts
 
 thatSimplification
-    :: [ApplicationFunctionEvaluator Object]
-    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+    :: [AxiomSimplifier Object]
+    -> These (AxiomSimplifier Object) (FunctionEvaluators Object)
 thatSimplification evaluators =
     That FunctionEvaluators
         { definitionRules = []

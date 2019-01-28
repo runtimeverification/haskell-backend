@@ -141,7 +141,7 @@ test_functionIntegration =
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
                     (theseSimplification
-                        (ApplicationFunctionEvaluator
+                        (AxiomSimplifier
                             (\_ _ _ _ -> notApplicableFunctionEvaluator)
                         )
                         [ axiomEvaluator
@@ -560,9 +560,9 @@ test_functionIntegration =
 axiomEvaluator
     :: CommonStepPattern Object
     -> CommonStepPattern Object
-    -> ApplicationFunctionEvaluator Object
+    -> AxiomSimplifier Object
 axiomEvaluator left right =
-    ApplicationFunctionEvaluator
+    AxiomSimplifier
         (ruleFunctionEvaluator (axiom left right makeTruePredicate))
 
 axiom
@@ -579,9 +579,9 @@ axiom left right predicate =
         }
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> ApplicationFunctionEvaluator level
+    :: CommonExpandedPattern level -> AxiomSimplifier level
 appliedMockEvaluator result =
-    ApplicationFunctionEvaluator
+    AxiomSimplifier
     $ mockEvaluator
     $ AttemptedAxiom.Applied
     $ OrOfExpandedPattern.make
@@ -612,8 +612,8 @@ mockEvaluator evaluation _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 thatSimplification
-    :: [ApplicationFunctionEvaluator Object]
-    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+    :: [AxiomSimplifier Object]
+    -> These (AxiomSimplifier Object) (FunctionEvaluators Object)
 thatSimplification evaluators =
     That FunctionEvaluators
         { definitionRules = []
@@ -621,9 +621,9 @@ thatSimplification evaluators =
         }
 
 theseSimplification
-    :: ApplicationFunctionEvaluator Object
-    -> [ApplicationFunctionEvaluator Object]
-    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+    :: AxiomSimplifier Object
+    -> [AxiomSimplifier Object]
+    -> These (AxiomSimplifier Object) (FunctionEvaluators Object)
 theseSimplification evaluator evaluators =
     These
         evaluator

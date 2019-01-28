@@ -44,7 +44,7 @@ import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..), AttemptedAxiom (..),
+                 ( AttemptedAxiom (..), AxiomSimplifier (..),
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
@@ -117,9 +117,9 @@ otherwise.
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-    [ (eqKey, ApplicationFunctionEvaluator (evalKEq True))
-    , (neqKey, ApplicationFunctionEvaluator (evalKEq False))
-    , (iteKey, ApplicationFunctionEvaluator evalKIte)
+    [ (eqKey, AxiomSimplifier (evalKEq True))
+    , (neqKey, AxiomSimplifier (evalKEq False))
+    , (iteKey, AxiomSimplifier evalKIte)
     ]
 
 evalKEq
