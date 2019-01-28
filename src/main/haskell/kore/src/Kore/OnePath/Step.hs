@@ -29,6 +29,7 @@ import           Kore.AST.Common
                  ( Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.AxiomPatterns
@@ -83,6 +84,11 @@ data Prim patt rewrite =
     -- remainder. For details, see
     -- https://github.com/kframework/kore/blob/master/docs/2018-11-08-One-Path-Reachability-Proofs.md
   deriving (Show)
+
+debugString :: (Show patt, Show rewrite) => Prim patt rewrite -> String
+debugString Simplify = "Simplify"
+debugString s@(RemoveDestination _) = show s
+debugString (ApplyWithRemainders _) = "ApplyWithRemainders"
 
 {- | A pattern on which a rule can be applied or on which a rule was applied.
 
@@ -189,11 +195,17 @@ transitionRule
     tools
     substitutionSimplifier
     simplifier
+    strategy
+    expandedPattern
   =
-    \case
-        Simplify -> transitionSimplify
-        ApplyWithRemainders a -> transitionApplyWithRemainders a
-        RemoveDestination d -> transitionRemoveDestination d
+    traceNonErrorMonad D_OnePath_Step_transitionRule
+        [ debugArg "strategy" (debugString strategy)
+        , debugArg "expandedPattern" expandedPattern
+        ]
+    $ case strategy of
+        Simplify -> transitionSimplify expandedPattern
+        ApplyWithRemainders a -> transitionApplyWithRemainders a expandedPattern
+        RemoveDestination d -> transitionRemoveDestination d expandedPattern
   where
     transitionSimplify (RewritePattern config, proof) =
         applySimplify RewritePattern (config, proof)

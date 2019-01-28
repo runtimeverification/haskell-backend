@@ -2,6 +2,8 @@ module Main (main) where
 
 import           Control.Applicative
                  ( Alternative (..), optional, (<$) )
+import           Control.Concurrent
+                 ( threadDelay )
 import qualified Control.Lens as Lens
 import           Data.Function
                  ( (&) )
@@ -376,6 +378,7 @@ externalizeFreshVars pat = Recursive.fold renameFreshLocal pat
 main :: IO ()
 main = do
     options <- mainGlobal parseKoreExecOptions parserInfoModifiers
+    threadDelay 10000000
     case localOptions options of
         Nothing ->
             -- global options parsed, but local failed; exit gracefully
