@@ -78,7 +78,7 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( AttemptedFunction (..) )
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( Simplifier, StepPatternSimplifier )
@@ -282,9 +282,9 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalSubstr0 _ _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let (_str, _start, _end) =
                     case arguments of
                         [_str, _start, _end] -> (_str, _start, _end)
@@ -305,9 +305,9 @@ evalLength = Builtin.functionEvaluator evalLength0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalLength0 _ _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of
                         [_str] -> _str
@@ -330,9 +330,9 @@ evalFind = Builtin.functionEvaluator evalFind0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalFind0 _ _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let (_str, _substr, _idx) =
                     case arguments of
                         [_str, _substr, _idx] -> (_str, _substr, _idx)
@@ -354,9 +354,9 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalString2Base0 _ _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let (_str, _base) =
                     case arguments of
                         [_str, _base] -> (_str, _base)
@@ -390,9 +390,9 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalString2Int0 _ _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of
                         [_str] -> _str
@@ -415,9 +415,9 @@ evalChr = Builtin.functionEvaluator evalChr0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalChr0 _ _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let _n =
                     case arguments of
                         [_n] -> _n
@@ -436,9 +436,9 @@ evalOrd = Builtin.functionEvaluator evalOrd0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalOrd0 _ _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of
                         [_str] -> _str

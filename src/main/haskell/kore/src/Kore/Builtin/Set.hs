@@ -85,7 +85,7 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( AttemptedFunction (..) )
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
@@ -188,7 +188,7 @@ returnSet
     :: (Monad m, Ord (variable Object))
     => Sort Object
     -> Builtin
-    -> m (AttemptedFunction Object variable)
+    -> m (AttemptedAxiom Object variable)
 returnSet resultSort set =
     Builtin.appliedFunction
     $ ExpandedPattern.fromPurePattern
@@ -199,7 +199,7 @@ evalElement =
     Builtin.functionEvaluator evalElement0
   where
     evalElement0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (case arguments of
             [_elem] -> do
                 _elem <- Builtin.expectNormalConcreteTerm tools _elem
@@ -217,9 +217,9 @@ evalIn =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalIn0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_elem, _set) =
                     case arguments of
@@ -253,9 +253,9 @@ evalConcat =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalConcat0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_set1, _set2) =
                     case arguments of
@@ -293,9 +293,9 @@ evalDifference =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalDifference0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_set1, _set2) =
                     case arguments of
@@ -324,9 +324,9 @@ evalToList = Builtin.functionEvaluator evalToList0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalToList0 tools _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let _set =
                         case arguments of
                             [_set] -> _set
@@ -347,9 +347,9 @@ evalSize = Builtin.functionEvaluator evalSize0
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalSize0 tools _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let _set =
                         case arguments of
                             [_set] -> _set

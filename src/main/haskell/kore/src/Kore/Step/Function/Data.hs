@@ -10,9 +10,9 @@ Portability : portable
 module Kore.Step.Function.Data
     ( ApplicationFunctionEvaluator (..)
     , BuiltinAndAxiomsFunctionEvaluatorMap
-    , AttemptedFunction (..)
+    , AttemptedAxiom (..)
     , BuiltinAndAxiomsFunctionEvaluator
-    , CommonAttemptedFunction
+    , CommonAttemptedAxiom
     , FunctionEvaluators (..)
     , notApplicableFunctionEvaluator
     , purePatternFunctionEvaluator
@@ -79,7 +79,7 @@ newtype ApplicationFunctionEvaluator level =
             (Valid (variable level) level)
             (StepPattern level variable)
         -> Simplifier
-            ( AttemptedFunction level variable
+            ( AttemptedAxiom level variable
             , SimplificationProof level
             )
         )
@@ -114,23 +114,23 @@ their corresponding evaluators.
 type BuiltinAndAxiomsFunctionEvaluatorMap level =
     Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
 
-{-| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
-cases where the function can't be fully evaluated.
+{-| 'AttemptedAxiom' hods the result of axiom-based simplification, with
+a case for axioms that can't be applied.
 -}
-data AttemptedFunction level variable
+data AttemptedAxiom level variable
     = NotApplicable
     | Applied !(OrOfExpandedPattern level variable)
   deriving (Show, Eq)
 
-{-| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
+{-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
 -}
-type CommonAttemptedFunction level = AttemptedFunction level Variable
+type CommonAttemptedAxiom level = AttemptedAxiom level Variable
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableFunctionEvaluator
     :: Simplifier
-        (AttemptedFunction level1 variable, SimplificationProof level2)
+        (AttemptedAxiom level1 variable, SimplificationProof level2)
 notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which produces a given 'StepPattern'
@@ -138,7 +138,7 @@ purePatternFunctionEvaluator
     :: (MetaOrObject level, Ord (variable level))
     => StepPattern level variable
     -> Simplifier
-        (AttemptedFunction level variable, SimplificationProof level)
+        (AttemptedAxiom level variable, SimplificationProof level)
 purePatternFunctionEvaluator p =
     pure
         ( Applied (makeFromSinglePurePattern p)

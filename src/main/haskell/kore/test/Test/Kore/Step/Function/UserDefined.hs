@@ -30,10 +30,10 @@ import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
-import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Data
-                 ( CommonAttemptedFunction )
+                 ( CommonAttemptedAxiom )
 import           Kore.Step.Function.UserDefined
                  ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -57,7 +57,7 @@ test_userDefinedFunction :: [TestTree]
 test_userDefinedFunction =
     [ testCase "Applies one step" $ do
         let expect =
-                AttemptedFunction.Applied $ OrOfExpandedPattern.make
+                AttemptedAxiom.Applied $ OrOfExpandedPattern.make
                     [ Predicated
                         { term =
                             asApplicationPattern $ metaG (mkVar $ x patternMetaSort)
@@ -82,7 +82,7 @@ test_userDefinedFunction =
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply concrete rule to symbolic pattern" $ do
         let expect =
-                AttemptedFunction.NotApplicable
+                AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
@@ -100,7 +100,7 @@ test_userDefinedFunction =
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Can apply concrete rule to concrete pattern" $ do
         let expect =
-                AttemptedFunction.NotApplicable
+                AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
@@ -118,7 +118,7 @@ test_userDefinedFunction =
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
-                AttemptedFunction.Applied (OrOfExpandedPattern.make [])
+                AttemptedAxiom.Applied (OrOfExpandedPattern.make [])
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
@@ -137,7 +137,7 @@ test_userDefinedFunction =
 
     , testCase "Cannot apply step with unsat condition" $ do
         let expect =
-                AttemptedFunction.Applied
+                AttemptedAxiom.Applied
                 $ OrOfExpandedPattern.make [ ExpandedPattern.bottom ]
         actual <-
             evaluateWithAxiom
@@ -160,7 +160,7 @@ test_userDefinedFunction =
 
     , testCase "Preserves step substitution" $ do
         let expect =
-                AttemptedFunction.Applied $ OrOfExpandedPattern.make
+                AttemptedAxiom.Applied $ OrOfExpandedPattern.make
                     [ Predicated
                         { term =
                             asApplicationPattern $ metaG (mkVar $ b patternMetaSort)
@@ -298,7 +298,7 @@ evaluateWithAxiom
         (Application level)
         (Valid (Variable level) level)
         (CommonStepPattern level)
-    -> IO (CommonAttemptedFunction level)
+    -> IO (CommonAttemptedAxiom level)
 evaluateWithAxiom
     metadataTools
     axiom
@@ -309,11 +309,11 @@ evaluateWithAxiom
     return (normalizeResult results)
   where
     normalizeResult
-        :: CommonAttemptedFunction level -> CommonAttemptedFunction level
+        :: CommonAttemptedAxiom level -> CommonAttemptedAxiom level
     normalizeResult =
         \case
-            AttemptedFunction.Applied orPattern ->
-                AttemptedFunction.Applied (fmap sortSubstitution orPattern)
+            AttemptedAxiom.Applied orPattern ->
+                AttemptedAxiom.Applied (fmap sortSubstitution orPattern)
             result -> result
 
     sortSubstitution Predicated {term, predicate, substitution} =
@@ -322,7 +322,7 @@ evaluateWithAxiom
             , predicate = predicate
             , substitution = Substitution.modify sort substitution
             }
-    evaluated :: IO (CommonAttemptedFunction level)
+    evaluated :: IO (CommonAttemptedAxiom level)
     evaluated =
         (<$>) fst
         $ SMT.runSMT SMT.defaultConfig

@@ -333,7 +333,7 @@ simpleEvaluator
         (Valid (variable Object) Object)
         (StepPattern Object variable)
     -> Simplifier
-        ( AttemptedFunction Object variable
+        ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
 simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)

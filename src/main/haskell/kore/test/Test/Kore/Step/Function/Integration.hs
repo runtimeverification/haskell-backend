@@ -29,8 +29,8 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), mapVariables )
 import           Kore.Step.Function.Data
-import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Function.UserDefined
                  ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -583,7 +583,7 @@ appliedMockEvaluator
 appliedMockEvaluator result =
     ApplicationFunctionEvaluator
     $ mockEvaluator
-    $ AttemptedFunction.Applied
+    $ AttemptedAxiom.Applied
     $ OrOfExpandedPattern.make
         [Test.Kore.Step.Function.Integration.mapVariables result]
 
@@ -598,7 +598,7 @@ mapVariables =
     ExpandedPattern.mapVariables (\v -> freshVariableFromVariable v 1)
 
 mockEvaluator
-    :: AttemptedFunction level variable
+    :: AttemptedAxiom level variable
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
@@ -607,7 +607,7 @@ mockEvaluator
         (Valid (variable level) level)
         (StepPattern level variable)
     -> Simplifier
-        (AttemptedFunction level variable, SimplificationProof level)
+        (AttemptedAxiom level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ _ =
     return (evaluation, SimplificationProof)
 

@@ -36,8 +36,8 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
-import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -83,7 +83,7 @@ ruleFunctionEvaluator
         (StepPattern level variable)
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
-        (AttemptedFunction level variable, SimplificationProof level)
+        (AttemptedAxiom level variable, SimplificationProof level)
 ruleFunctionEvaluator
     (EqualityRule rule)
     tools
@@ -101,13 +101,13 @@ ruleFunctionEvaluator
         Right results -> do
             processedResults <- mapM processResult results
             return
-                ( AttemptedFunction.Applied
+                ( AttemptedAxiom.Applied
                     (OrOfExpandedPattern.make (map dropProof processedResults))
                 , SimplificationProof
                 )
   where
     notApplicable =
-        return (AttemptedFunction.NotApplicable, SimplificationProof)
+        return (AttemptedAxiom.NotApplicable, SimplificationProof)
     dropProof :: (a, SimplificationProof level) -> a
     dropProof = fst
 

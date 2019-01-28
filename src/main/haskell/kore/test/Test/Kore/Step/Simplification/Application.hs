@@ -22,8 +22,8 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
 import           Kore.Step.Function.Data
-import qualified Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import qualified Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -123,7 +123,7 @@ test_applicationSimplification =
                     (thatSimplification
                         [ ApplicationFunctionEvaluator
                             (const $ const $ const $ const $ return
-                                ( AttemptedFunction.Applied
+                                ( AttemptedAxiom.Applied
                                     (OrOfExpandedPattern.make [gOfAExpanded])
                                 , SimplificationProof
                                 )
@@ -221,7 +221,7 @@ test_applicationSimplification =
                                     let zvar =
                                             freshVariableFromVariable Mock.z 1
                                     return
-                                        ( AttemptedFunction.Applied
+                                        ( AttemptedAxiom.Applied
                                             (OrOfExpandedPattern.make
                                                 [ Predicated
                                                     { term = fOfA

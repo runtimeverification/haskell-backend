@@ -44,7 +44,7 @@ import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..), AttemptedFunction (..),
+                 ( ApplicationFunctionEvaluator (..), AttemptedAxiom (..),
                  notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
@@ -138,7 +138,7 @@ evalKEq
         (Valid (variable Object) Object)
         (StepPattern Object variable)
     -> Simplifier
-        ( AttemptedFunction Object variable
+        ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
 evalKEq true tools substitutionSimplifier _ (valid :< app) =
@@ -176,7 +176,7 @@ evalKIte
         (Valid (variable Object) Object)
         (StepPattern Object variable)
     -> Simplifier
-        ( AttemptedFunction Object variable
+        ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
 evalKIte _ _ _ (_ :< app) =

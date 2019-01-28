@@ -47,8 +47,8 @@ import           Kore.Step.Function.Data
                  FunctionEvaluators (FunctionEvaluators) )
 import           Kore.Step.Function.Data as FunctionEvaluators
                  ( FunctionEvaluators (..) )
-import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
@@ -140,7 +140,7 @@ evaluateApplication
     evaluateBuiltinAndAxioms builtinEvaluator axiomEvaluators = do
         (result, _proof) <- applyEvaluator validApp builtinEvaluator
         case result of
-            AttemptedFunction.NotApplicable
+            AttemptedAxiom.NotApplicable
               | isAppConcrete
               , Just hook <- getAppHookString ->
                 error
@@ -155,7 +155,7 @@ evaluateApplication
                 -- TODO(virgil): We should refine this at some point.
                 evaluateWithFunctionAxioms
                     axiomEvaluators { definitionRules = [] }
-            AttemptedFunction.Applied pat -> return (pat, SimplificationProof)
+            AttemptedAxiom.Applied pat -> return (pat, SimplificationProof)
 
     unchangedPatt =
         case childrenPredicateSubstitution of
@@ -175,7 +175,7 @@ evaluateApplication
             (StepPattern level variable)
         -> ApplicationFunctionEvaluator level
         -> Simplifier
-            ( AttemptedFunction level variable
+            ( AttemptedAxiom level variable
             , SimplificationProof level
             )
     applyEvaluator
@@ -207,7 +207,7 @@ evaluateApplication
         (simplifiedResult, proof) <-
             evaluateWithSimplificationAxioms simplificationEvaluators
         case simplifiedResult of
-            AttemptedFunction.NotApplicable ->
+            AttemptedAxiom.NotApplicable ->
                 if null definitionRules
                     then
                         -- We don't have a definition, so we shouldn't attempt
@@ -215,11 +215,11 @@ evaluateApplication
                         -- to bottom.
                         return (OrOfExpandedPattern.make [unchangedPatt], proof)
                     else evaluateWithDefinitionAxioms definitionRules
-            AttemptedFunction.Applied result -> return (result, proof)
+            AttemptedAxiom.Applied result -> return (result, proof)
 
     evaluateWithSimplificationAxioms [] =
         return
-            ( AttemptedFunction.NotApplicable
+            ( AttemptedAxiom.NotApplicable
             , SimplificationProof
             )
     evaluateWithSimplificationAxioms (evaluator : evaluators) = do
@@ -237,7 +237,7 @@ evaluateApplication
                     result
                 return (OrOfExpandedPattern.extractPatterns orPatt)
         case applicationResult of
-            AttemptedFunction.Applied orResults -> do
+            AttemptedAxiom.Applied orResults -> do
                 when
                     (length (OrOfExpandedPattern.extractPatterns orResults) > 1)
                     -- We should only allow multiple simplification results
@@ -256,21 +256,21 @@ evaluateApplication
                         simplify
                         (OrOfExpandedPattern.extractPatterns orResults)
                 return
-                    ( AttemptedFunction.Applied
+                    ( AttemptedAxiom.Applied
                         (OrOfExpandedPattern.make (concat patts))
                     , SimplificationProof
                     )
-            AttemptedFunction.NotApplicable ->
+            AttemptedAxiom.NotApplicable ->
                 evaluateWithSimplificationAxioms evaluators
 
     evaluateWithBuiltins evaluator = do
         (result, _proof) <- applyEvaluator validApp evaluator
         case result of
-            AttemptedFunction.NotApplicable -> return
+            AttemptedAxiom.NotApplicable -> return
                 ( OrOfExpandedPattern.make [unchangedPatt]
                 , SimplificationProof
                 )
-            AttemptedFunction.Applied orResult -> do
+            AttemptedAxiom.Applied orResult -> do
                 -- TODO(virgil): Find out if builtin results need to be
                 -- resimplified and, if they don't, skip resimplification.
                 simplifiedPatts <-
@@ -447,19 +447,19 @@ mergeWithConditionAndSubstitution
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedFunction level variable, SimplificationProof level)
-    -- ^ AttemptedFunction to which the condition should be added.
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
+    -> (AttemptedAxiom level variable, SimplificationProof level)
+    -- ^ AttemptedAxiom to which the condition should be added.
+    -> Simplifier (AttemptedAxiom level variable, SimplificationProof level)
 mergeWithConditionAndSubstitution
-    _ _ _ _ (AttemptedFunction.NotApplicable, _proof)
+    _ _ _ _ (AttemptedAxiom.NotApplicable, _proof)
   =
-    return (AttemptedFunction.NotApplicable, SimplificationProof)
+    return (AttemptedAxiom.NotApplicable, SimplificationProof)
 mergeWithConditionAndSubstitution
     tools
     substitutionSimplifier
     simplifier
     toMerge
-    (AttemptedFunction.Applied functionResult, _proof)
+    (AttemptedAxiom.Applied functionResult, _proof)
   = do
     (evaluated, _proof) <- OrOfExpandedPattern.mergeWithPredicateSubstitution
         tools
@@ -467,4 +467,4 @@ mergeWithConditionAndSubstitution
         simplifier
         toMerge
         functionResult
-    return (AttemptedFunction.Applied evaluated, SimplificationProof)
+    return (AttemptedAxiom.Applied evaluated, SimplificationProof)

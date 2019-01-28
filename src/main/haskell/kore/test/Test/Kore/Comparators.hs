@@ -39,8 +39,8 @@ import           Kore.Step.BaseStep as OrStepResult
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.OrOfExpandedPattern
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
@@ -1085,23 +1085,23 @@ instance
     , EqualWithExplanation (variable level)
     , EqualWithExplanation (StepPattern level variable)
     )
-    => SumEqualWithExplanation (AttemptedFunction level variable)
+    => SumEqualWithExplanation (AttemptedAxiom level variable)
   where
     sumConstructorPair
-        AttemptedFunction.NotApplicable
-        AttemptedFunction.NotApplicable
+        AttemptedAxiom.NotApplicable
+        AttemptedAxiom.NotApplicable
       =
         SumConstructorSameNoArguments
-    sumConstructorPair a1@AttemptedFunction.NotApplicable a2 =
+    sumConstructorPair a1@AttemptedAxiom.NotApplicable a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
     sumConstructorPair
-        (AttemptedFunction.Applied a1) (AttemptedFunction.Applied a2)
+        (AttemptedAxiom.Applied a1) (AttemptedAxiom.Applied a2)
       =
         SumConstructorSameWithArguments
             (EqWrap "Applied" a1 a2)
-    sumConstructorPair a1@(AttemptedFunction.Applied _) a2 =
+    sumConstructorPair a1@(AttemptedAxiom.Applied _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
@@ -1111,7 +1111,7 @@ instance
     , EqualWithExplanation (variable level)
     , EqualWithExplanation (StepPattern level variable)
     )
-    => EqualWithExplanation (AttemptedFunction level variable)
+    => EqualWithExplanation (AttemptedAxiom level variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
