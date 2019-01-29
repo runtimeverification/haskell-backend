@@ -1,54 +1,35 @@
 module Test.Kore.Step.Simplification.Or where
 
-import           Kore.Step.Simplification.Or
-                 ( simplify, simplifyEvaluated )
-
+import Test.Kore
+       ( testId )
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.HUnit.Extensions
 import Test.Terse
-import Test.Kore (testId)
 
-import qualified Kore.Domain.Builtin as Domain
+import qualified Data.List as List
 import           Data.Text
                  ( Text )
-import           Kore.Implicit.ImplicitSorts
+
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
-import qualified Data.Set as Set
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
-                 ( Predicate, CommonPredicate, makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeFalsePredicate, makeTruePredicate )
+                 ( CommonPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeOrPredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, CommonExpandedPattern, Predicated (..), isTop, isBottom)
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom, top, allVariables )
+                 ( ExpandedPattern, Predicated (..), isBottom, isTop )
 import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern , extractPatterns , MultiOr(..) )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, merge )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier, SimplificationProof )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
+                 ( MultiOr (..), OrOfExpandedPattern )
+import           Kore.Step.Simplification.Or
+                 ( simplifyEvaluated )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import qualified SMT
 
-import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
-import qualified Test.Kore.Step.MockSimplifiers as Mock
-import           Test.Kore.Step.MockSymbols
-                 ( testSort )
-import qualified Test.Kore.Step.MockSymbols as Mock
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
-import           Test.Kore
-                 ( sortVariableSort )
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSymbols as Mock
 
           {- Part 1: `SimplifyEvaluated` is the core function. It converts two
              `OrOfExpandedPattern` values into a simplifier that is to
@@ -58,7 +39,7 @@ import           Test.Kore
 
 test_highestTop :: TestTree
 test_highestTop =
-  testGroup "Top dominates only when all its components are top" 
+  testGroup "Top dominates only when all its components are top"
   [ ((tT, pT, sT), (tm, pm, sm)) `simplifiesTo_` (tT, pT, sT)
   , ((tm, pm, sm), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
   , ((tT, pT, sT), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
@@ -125,8 +106,8 @@ pm =
     (mkVar $ var "#right")
   where
     var :: Text -> Variable Object
-    var id =
-      Variable (testId id) predicateSort
+    var ident =
+      Variable (testId ident) predicateSort
 
 pM :: TestPredicate
 pM =
@@ -135,8 +116,8 @@ pM =
     (mkVar $ var "#RIGHT")
   where
     var :: Text -> Variable Object
-    var id =
-      Variable (testId id) predicateSort
+    var ident =
+      Variable (testId ident) predicateSort
 
 p_ :: TestPredicate
 p_ = makeFalsePredicate
@@ -156,21 +137,21 @@ sM = Substitution.wrap [(Mock.y, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree
 test_valueProperties =
-  testGroup "The values have properties that fit their names" 
-  [ tT `has_` [ (isTop, True),   (isBottom, False) ] 
-  , tm `has_` [ (isTop, False),  (isBottom, False) ] 
-  , tM `has_` [ (isTop, False),  (isBottom, False) ] 
+  testGroup "The values have properties that fit their names"
+  [ tT `has_` [ (isTop, True),   (isBottom, False) ]
+  , tm `has_` [ (isTop, False),  (isBottom, False) ]
+  , tM `has_` [ (isTop, False),  (isBottom, False) ]
   , t_ `has_` [ (isTop, False),  (isBottom, True) ]
   , tm `unequals_` tM
 
-  , pT `has_` [ (isTop, True),   (isBottom, False) ] 
-  , pm `has_` [ (isTop, False),  (isBottom, False) ] 
-  , pM `has_` [ (isTop, False),  (isBottom, False) ] 
-  , p_ `has_` [ (isTop, False),  (isBottom, True) ] 
+  , pT `has_` [ (isTop, True),   (isBottom, False) ]
+  , pm `has_` [ (isTop, False),  (isBottom, False) ]
+  , pM `has_` [ (isTop, False),  (isBottom, False) ]
+  , p_ `has_` [ (isTop, False),  (isBottom, True) ]
   , pm `unequals_` pM
 
-  , sT `has_` [ (isTop, True),   (isBottom, False) ] 
-  , sm `has_` [ (isTop, False),  (isBottom, False) ] 
+  , sT `has_` [ (isTop, True),   (isBottom, False) ]
+  , sm `has_` [ (isTop, False),  (isBottom, False) ]
   , sM `has_` [ (isTop, False),  (isBottom, False) ]
   , sm `unequals_` sM
   -- There is no bottom substitution
@@ -188,14 +169,14 @@ orChild (term, predicate, substitution) =
   , predicate = predicate
   , substitution = substitution
   }
-  
+
 
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
 -- during conversion of a Predicated into an OrOfExpandedPattern
 wrapInOrPattern
   :: (TestTerm, TestPredicate, TestSubstitution)
   -> OrOfExpandedPattern Object Variable
-wrapInOrPattern tuple = 
+wrapInOrPattern tuple =
     MultiOr [orChild tuple]
 
 
@@ -216,10 +197,9 @@ becomes_
      )
   -> OrOfExpandedPattern Object Variable
   -> TestTree
-becomes_ (raw1, raw2) expected =
+becomes_ (raw1, raw2) (MultiOr expected) =
   let
     or1 = wrapInOrPattern raw1
     or2 = wrapInOrPattern raw2
   in
-    equals_ (simplifyEvaluated or1 or2) (expected, SimplificationProof)
-
+    equals_ (simplifyEvaluated or1 or2) (MultiOr $ List.sort expected, SimplificationProof)
