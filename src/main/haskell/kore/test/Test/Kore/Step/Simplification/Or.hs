@@ -110,7 +110,7 @@ type TestTerm =
   PurePattern Object Domain.Builtin Variable (Valid (Variable Object) Object)
 
 tT :: TestTerm
-tT = mkTop_
+tT = mkTop Mock.testSort
 
 tm :: TestTerm
 tm = mkVar Mock.x
@@ -119,8 +119,10 @@ tM :: TestTerm
 tM = mkVar Mock.y
 
 t_ :: TestTerm
-t_ = mkBottom_
+t_ = mkBottom Mock.testSort
 
+testVar :: Text -> Variable Object
+testVar ident = Variable (testId ident) Mock.testSort
 
 type TestPredicate = CommonPredicate Object
 
@@ -130,22 +132,14 @@ pT = makeTruePredicate
 pm :: TestPredicate
 pm =
   makeEqualsPredicate
-    (mkVar $ var "#left")
-    (mkVar $ var "#right")
-  where
-    var :: Text -> Variable Object
-    var ident =
-      Variable (testId ident) predicateSort
+    (mkVar $ testVar "left")
+    (mkVar $ testVar "right")
 
 pM :: TestPredicate
 pM =
   makeEqualsPredicate
-    (mkVar $ var "#LEFT")
-    (mkVar $ var "#RIGHT")
-  where
-    var :: Text -> Variable Object
-    var ident =
-      Variable (testId ident) predicateSort
+    (mkVar $ testVar "LEFT")
+    (mkVar $ testVar "RIGHT")
 
 p_ :: TestPredicate
 p_ = makeFalsePredicate
