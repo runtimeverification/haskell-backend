@@ -77,6 +77,21 @@ test_anyBottom =
     ]
   ]
 
+test_distinctMiddle :: TestTree
+test_distinctMiddle =
+    testGroup "Distinct middle patterns are not simplified"
+    [ ((tM, pm, sm), (tm, pm, sm)) `becomes_` MultiOr [orChild (tM, pm, sm), orChild (tm, pm, sm)]
+    , ((tm, pM, sm), (tm, pm, sm)) `becomes_` MultiOr [orChild (tm, pM, sm), orChild (tm, pm, sm)]
+    , ((tm, pm, sM), (tm, pm, sm)) `becomes_` MultiOr [orChild (tm, pm, sM), orChild (tm, pm, sm)]
+    ]
+
+test_deduplicateMiddle :: TestTree
+test_deduplicateMiddle =
+    testGroup "Middle patterns are deduplicated"
+    [ ((tM, pM, sM), (tM, pM, sM)) `becomes_` MultiOr [orChild (tM, pM, sM)]
+    , ((tm, pm, sm), (tm, pm, sm)) `becomes_` MultiOr [orChild (tm, pm, sm)]
+    ]
+
 
         {- Part 2: `simplify` is just a trivial use of `simplifyEvaluated` -}
 
