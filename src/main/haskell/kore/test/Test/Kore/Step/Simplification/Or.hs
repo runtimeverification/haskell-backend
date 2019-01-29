@@ -22,7 +22,7 @@ import           Kore.Predicate.Predicate
                  ( Predicate, CommonPredicate, makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..), isTop, isBottom)
+                 ( ExpandedPattern, CommonExpandedPattern, Predicated (..), isTop, isBottom)
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom, top, allVariables )
 import           Kore.Step.OrOfExpandedPattern
@@ -60,8 +60,27 @@ test_highestTop :: TestTree
 test_highestTop =
   testGroup "Top dominates only when all its components are top" 
   [ ((tT, pT, sT), (tm, pm, sm)) `simplifiesTo_` (tT, pT, sT)
-  -- , ((tm, pm, sm), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
-  -- , ((tT, pT, sT), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
+  , ((tm, pm, sm), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
+  , ((tT, pT, sT), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
+  ]
+
+test_anyBottom :: TestTree
+test_anyBottom =
+  testGroup "Any bottom is removed from the result"
+  [ ((tM, pM, sM), (t_, pm, sm)) `simplifiesTo_` (tM, pM, sM)
+  , ((tM, pM, sM), (tm, p_, sm)) `simplifiesTo_` (tM, pM, sM)
+
+  , ((t_, pm, sm), (tM, pM, sM)) `simplifiesTo_` (tM, pM, sM)
+  , ((tm, p_, sm), (tM, pM, sM)) `simplifiesTo_` (tM, pM, sM)
+
+  -- Both bottom turns into an empty multiOr
+  , ((t_, pm, sm), (tm, p_, sm)) `becomes_` (MultiOr [])
+
+  , testGroup "check this test's expectations"
+    [ orChild (t_, pm, sm) `is_` isBottom
+    , orChild (tm, p_, sm) `is_` isBottom
+      -- Note that it's impossible for the substitution to be bottom.
+    ]
   ]
 
 
@@ -87,6 +106,9 @@ tT = mkTop_
 tm :: TestTerm
 tm = mkVar Mock.x
 
+tM :: TestTerm
+tM = mkVar Mock.y
+
 t_ :: TestTerm
 t_ = mkBottom_
 
@@ -106,6 +128,16 @@ pm =
     var id =
       Variable (testId id) predicateSort
 
+pM :: TestPredicate
+pM =
+  makeEqualsPredicate
+    (mkVar $ var "#LEFT")
+    (mkVar $ var "#RIGHT")
+  where
+    var :: Text -> Variable Object
+    var id =
+      Variable (testId id) predicateSort
+
 p_ :: TestPredicate
 p_ = makeFalsePredicate
 
@@ -118,52 +150,76 @@ sT = mempty
 sm :: TestSubstitution
 sm = Substitution.wrap [(Mock.x, Mock.a)] -- I'd rather these were meaningful
 
+sM :: TestSubstitution
+sM = Substitution.wrap [(Mock.y, Mock.b)] -- I'd rather these were meaningful
+
 
 test_valueProperties :: TestTree
 test_valueProperties =
   testGroup "The values have properties that fit their names" 
   [ tT `has_` [ (isTop, True),   (isBottom, False) ] 
   , tm `has_` [ (isTop, False),  (isBottom, False) ] 
+  , tM `has_` [ (isTop, False),  (isBottom, False) ] 
   , t_ `has_` [ (isTop, False),  (isBottom, True) ]
+  , tm `unequals_` tM
 
   , pT `has_` [ (isTop, True),   (isBottom, False) ] 
   , pm `has_` [ (isTop, False),  (isBottom, False) ] 
+  , pM `has_` [ (isTop, False),  (isBottom, False) ] 
   , p_ `has_` [ (isTop, False),  (isBottom, True) ] 
+  , pm `unequals_` pM
 
   , sT `has_` [ (isTop, True),   (isBottom, False) ] 
   , sm `has_` [ (isTop, False),  (isBottom, False) ] 
+  , sM `has_` [ (isTop, False),  (isBottom, False) ]
+  , sm `unequals_` sM
   -- There is no bottom substitution
   ]
 
 
                         -- Functions
 
+orChild
+  :: (TestTerm, TestPredicate, TestSubstitution)
+  -> ExpandedPattern Object Variable
+orChild (term, predicate, substitution) =
+  Predicated
+  { term = term
+  , predicate = predicate
+  , substitution = substitution
+  }
+  
+
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
 -- during conversion of a Predicated into an OrOfExpandedPattern
 wrapInOrPattern
   :: (TestTerm, TestPredicate, TestSubstitution)
   -> OrOfExpandedPattern Object Variable
-wrapInOrPattern (term, predicate, substitution) = 
-    OrOfExpandedPattern.make [singleton]
-    where
-      singleton = Predicated
-                  { term = term
-                  , predicate = predicate
-                  , substitution = substitution
-                  }
+wrapInOrPattern tuple = 
+    MultiOr [orChild tuple]
 
 
 simplifiesTo_
-  :: ( (TestTerm, TestPredicate, TestSubstitution)
+  :: HasCallStack
+  => ( (TestTerm, TestPredicate, TestSubstitution)
      , (TestTerm, TestPredicate, TestSubstitution)
      )
   -> (TestTerm, TestPredicate, TestSubstitution)
   -> TestTree
-simplifiesTo_ (raw1, raw2) rawExpected =
+simplifiesTo_ tuples rawExpected =
+  becomes_ tuples $ wrapInOrPattern rawExpected
+
+becomes_
+  :: HasCallStack
+  => ( (TestTerm, TestPredicate, TestSubstitution)
+     , (TestTerm, TestPredicate, TestSubstitution)
+     )
+  -> OrOfExpandedPattern Object Variable
+  -> TestTree
+becomes_ (raw1, raw2) expected =
   let
     or1 = wrapInOrPattern raw1
     or2 = wrapInOrPattern raw2
-    expected = wrapInOrPattern rawExpected
   in
     equals_ (simplifyEvaluated or1 or2) (expected, SimplificationProof)
 
