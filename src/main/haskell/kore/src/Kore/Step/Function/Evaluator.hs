@@ -15,6 +15,7 @@ import           Control.Exception
                  ( assert )
 import           Control.Monad
                  ( when )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( isJust )
@@ -178,13 +179,13 @@ evaluateApplication
             , SimplificationProof level
             )
     applyEvaluator
-        app' (AxiomSimplifier evaluator)
+        (valid' :< app') (AxiomSimplifier evaluator)
       = do
         result <- evaluator
             tools
             substitutionSimplifier
             simplifier
-            app'
+            (Recursive.embed (valid' :< ApplicationPattern app'))
         mergeWithConditionAndSubstitution
             tools
             substitutionSimplifier

@@ -39,7 +39,8 @@ import qualified Kore.Step.AxiomPatterns as AxiomPatterns
                  Idem (..), RulePattern (..), Unit (..) )
 import           Kore.Step.Function.Data
                  ( AxiomSimplifier (..),
-                 FunctionEvaluators (FunctionEvaluators) )
+                 FunctionEvaluators (FunctionEvaluators),
+                 applicationAxiomSimplifier )
 import           Kore.Step.Function.Data as FunctionEvaluators
                  ( FunctionEvaluators (..) )
 import           Kore.Step.Function.UserDefined
@@ -177,7 +178,7 @@ axiomPatternEvaluator axiomPat@(EqualityRule RulePattern { attributes })
     | isUnit = Nothing
     | isIdem = Nothing
     | otherwise =
-        Just (AxiomSimplifier $ ruleFunctionEvaluator axiomPat)
+        Just (applicationAxiomSimplifier $ ruleFunctionEvaluator axiomPat)
   where
     Assoc { isAssoc } = AxiomPatterns.assoc attributes
     Comm { isComm } = AxiomPatterns.comm attributes

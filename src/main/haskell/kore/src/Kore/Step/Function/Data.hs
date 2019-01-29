@@ -14,6 +14,7 @@ module Kore.Step.Function.Data
     , BuiltinAndAxiomsFunctionEvaluator
     , CommonAttemptedAxiom
     , FunctionEvaluators (..)
+    , applicationAxiomSimplifier
     , notApplicableFunctionEvaluator
     , purePatternFunctionEvaluator
     ) where
@@ -74,15 +75,13 @@ newtype AxiomSimplifier level =
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level Simplifier
         -> StepPatternSimplifier level variable
-        -> CofreeF
-            (Application level)
-            (Valid (variable level) level)
-            (StepPattern level variable)
+        -> StepPattern level variable
         -> Simplifier
             ( AttemptedAxiom level variable
             , SimplificationProof level
             )
         )
+
 {-| Data structure for holding evaluators for the same symbol
 -}
 data FunctionEvaluators level
@@ -144,3 +143,67 @@ purePatternFunctionEvaluator p =
         ( Applied (makeFromSinglePurePattern p)
         , SimplificationProof
         )
+
+applicationAxiomSimplifier
+    :: forall level
+    .   ( forall variable
+        .   ( FreshVariable variable
+            , MetaOrObject level
+            , Ord (variable level)
+            , OrdMetaOrObject variable
+            , SortedVariable variable
+            , Show (variable level)
+            , Show (variable Object)
+            , Unparse (variable level)
+            , ShowMetaOrObject variable
+            )
+        => MetadataTools level StepperAttributes
+        -> PredicateSubstitutionSimplifier level Simplifier
+        -> StepPatternSimplifier level variable
+        -> CofreeF
+            (Application level)
+            (Valid (variable level) level)
+            (StepPattern level variable)
+        -> Simplifier
+            ( AttemptedAxiom level variable
+            , SimplificationProof level
+            )
+        )
+    -> AxiomSimplifier level
+applicationAxiomSimplifier applicationSimplifier =
+    AxiomSimplifier helper
+  where
+    helper
+        ::  ( forall variable
+            .   ( FreshVariable variable
+                , MetaOrObject level
+                , Ord (variable level)
+                , OrdMetaOrObject variable
+                , SortedVariable variable
+                , Show (variable level)
+                , Show (variable Object)
+                , Unparse (variable level)
+                , ShowMetaOrObject variable
+                )
+            => MetadataTools level StepperAttributes
+            -> PredicateSubstitutionSimplifier level Simplifier
+            -> StepPatternSimplifier level variable
+            -> StepPattern level variable
+            -> Simplifier
+                ( AttemptedAxiom level variable
+                , SimplificationProof level
+                )
+        )
+    helper
+        tools
+        substitutionSimplifier
+        simplifier
+        patt
+      =
+        case fromPurePattern patt of
+            (valid :< ApplicationPattern p) ->
+                applicationSimplifier
+                    tools substitutionSimplifier simplifier (valid :< p)
+            _ -> error
+                ("Expected an application pattern, but got: " ++ show patt)
+

@@ -104,7 +104,8 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( top )
 import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..), AxiomSimplifier (AxiomSimplifier) )
+                 ( AttemptedAxiom (..), AxiomSimplifier (AxiomSimplifier),
+                 applicationAxiomSimplifier )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -622,7 +623,7 @@ functionEvaluator
     -- ^ Builtin function implementation
     -> Function
 functionEvaluator impl =
-    AxiomSimplifier evaluator
+    applicationAxiomSimplifier evaluator
   where
     evaluator
         :: (Ord (variable Object), Show (variable Object))
