@@ -2,15 +2,13 @@ module Test.Terse
   ( -- * Common Functions
     --
     -- $commonFunctions
-    is
-  , isn't
+    satisfies
   , equals
   , unequals
   , has
   , gives
     -- * Variants
-  , is_
-  , isn't_
+  , satisfies_
   , equals_
   , unequals_
   , has_
@@ -49,20 +47,12 @@ import Data.Foldable
 -}
 
 -- |      3 + 4 `is` isOdd "addition works"
-is :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
-is = actual_predicate_comment
+satisfies :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
+satisfies = actual_predicate_comment
 
--- |      3 + 4 `is_` isOdd
-is_ :: HasCallStack => a -> (a -> Bool)-> TestTree
-is_ = actual_predicate
-
--- |      3 + 4 `isn't` isEven "addition works"
-isn't :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
-isn't actual pred = actual_predicate_comment actual (not . pred)
-
--- |      3 + 4 `isn't_` isEven 
-isn't_ :: HasCallStack => a -> (a -> Bool) -> TestTree
-isn't_ actual pred = actual_predicate actual (not . pred)
+-- |      3 + 4 `satisfies_` isOdd
+satisfies_ :: HasCallStack => a -> (a -> Bool)-> TestTree
+satisfies_ = actual_predicate
 
 -- |      3 + 4 `equals` 7  "addition works"
 equals
@@ -74,18 +64,20 @@ equals = actual_expected_comment
 equals_ :: (HasCallStack, Eq a, Show a, EqualWithExplanation a) => a -> a -> TestTree
 equals_ = actual_expected
 
--- |      3 + 4 `unequals` 8  "comment"
+-- |
+-- > 3 + 4 `'unequals'` 8  "comment"
 unequals :: (HasCallStack, Eq a, Show a) => a -> a -> String -> TestTree
 unequals actual unexpected comment =
   actual_predicate_comment actual (/= unexpected) comment
 
--- |      3 + 4 `unequals` 8
+-- |
+-- > 3 + 4 `'unequals'` 8
 unequals_ :: (HasCallStack, Eq a, Show a) => a -> a -> TestTree
-unequals_ actual unexpected = 
+unequals_ actual unexpected =
   unequals actual unexpected ""
 
 
--- | 1 `has` [(isPositive, True), (isEven, False) ] "comment" 
+-- | 1 `has` [(isPositive, True), (isEven, False) ] "comment"
 has :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> String -> TestTree
 has value tuples comment=
   testCase comment (traverse_ checkOne tuples)
@@ -97,7 +89,7 @@ has value tuples comment=
 -- | 1 `has_` [(isPositive, True), (isEven, False) ]
 has_ :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> TestTree
 has_ value tuples = has value tuples "Has properties"
-      
+
 
 -- | isOdd `gives` [ (1, True), (2, False) ] "arity"
 gives :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> String -> TestTree

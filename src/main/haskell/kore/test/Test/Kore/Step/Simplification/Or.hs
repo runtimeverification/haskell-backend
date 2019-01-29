@@ -77,8 +77,8 @@ test_anyBottom =
   , ((t_, pm, sm), (tm, p_, sm)) `becomes_` (MultiOr [])
 
   , testGroup "check this test's expectations"
-    [ orChild (t_, pm, sm) `is_` isBottom
-    , orChild (tm, p_, sm) `is_` isBottom
+    [ orChild (t_, pm, sm) `satisfies_` isBottom
+    , orChild (tm, p_, sm) `satisfies_` isBottom
       -- Note that it's impossible for the substitution to be bottom.
     ]
   ]
