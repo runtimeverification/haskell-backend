@@ -5,12 +5,14 @@ module Test.Terse
     is
   , isn't
   , equals
+  , unequals
   , has
   , gives
     -- * Variants
   , is_
   , isn't_
   , equals_
+  , unequals_
   , has_
   , gives_
 
@@ -71,6 +73,17 @@ equals = actual_expected_comment
 -- |      3 + 4 `equals_` 7
 equals_ :: (HasCallStack, Eq a, Show a, EqualWithExplanation a) => a -> a -> TestTree
 equals_ = actual_expected
+
+-- |      3 + 4 `unequals` 8  "comment"
+unequals :: (HasCallStack, Eq a, Show a) => a -> a -> String -> TestTree
+unequals actual unexpected comment =
+  actual_predicate_comment actual (/= unexpected) comment
+
+-- |      3 + 4 `unequals` 8
+unequals_ :: (HasCallStack, Eq a, Show a) => a -> a -> TestTree
+unequals_ actual unexpected = 
+  unequals actual unexpected ""
+
 
 -- | 1 `has` [(isPositive, True), (isEven, False) ] "comment" 
 has :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> String -> TestTree
