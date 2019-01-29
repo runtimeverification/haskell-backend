@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Data.Functor.Foldable
-                 ( embed )
 import qualified Data.Map as Map
 import           Data.These
                  ( These (That) )
@@ -282,7 +280,7 @@ mockMetadataTools =
         Mock.subsorts
 
 runSimplifier
-    :: BuiltinAndAxiomsFunctionEvaluatorMap Object
+    :: BuiltinAndAxiomSimplifierMap Object
     -> CommonPredicateSubstitution Object
     -> IO (CommonPredicateSubstitution Object)
 runSimplifier patternSimplifierMap predicateSubstitution =
@@ -299,8 +297,8 @@ runSimplifier patternSimplifierMap predicateSubstitution =
             (Simplifier.create mockMetadataTools patternSimplifierMap)
 
 thatSimplification
-    :: [AxiomSimplifier Object]
-    -> These (AxiomSimplifier Object) (FunctionEvaluators Object)
+    :: [BuiltinAndAxiomSimplifier Object]
+    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
 thatSimplification evaluators =
     That FunctionEvaluators
         { definitionRules = []
@@ -316,9 +314,9 @@ makeEvaluator
             )
         => [(StepPattern Object variable, StepPattern Object variable)]
         )
-    -> AxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier Object
 makeEvaluator mapping =
-    AxiomSimplifier
+    BuiltinAndAxiomSimplifier
         $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
@@ -328,17 +326,14 @@ simpleEvaluator
         , ShowMetaOrObject variable
         )
     => [(StepPattern Object variable, StepPattern Object variable)]
-    -> CofreeF
-        (Application Object)
-        (Valid (variable Object) Object)
-        (StepPattern Object variable)
+    -> StepPattern Object variable
     -> Simplifier
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
 simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
-simpleEvaluator ((from, to) : ps) validApp@(valid :< app)
-  | from == embed (valid :< ApplicationPattern app) =
+simpleEvaluator ((from, to) : ps) patt
+  | from == patt =
     return
         ( Applied
             (OrOfExpandedPattern.make
@@ -347,4 +342,5 @@ simpleEvaluator ((from, to) : ps) validApp@(valid :< app)
         , SimplificationProof
         )
   | otherwise =
-    simpleEvaluator ps validApp
+    simpleEvaluator ps patt
+

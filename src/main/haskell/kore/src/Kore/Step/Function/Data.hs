@@ -8,15 +8,15 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.Data
-    ( AxiomSimplifier (..)
-    , BuiltinAndAxiomsFunctionEvaluatorMap
+    ( BuiltinAndAxiomSimplifier (..)
+    , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
     , BuiltinAndAxiomsFunctionEvaluator
     , CommonAttemptedAxiom
     , FunctionEvaluators (..)
     , applicationAxiomSimplifier
-    , notApplicableFunctionEvaluator
-    , purePatternFunctionEvaluator
+    , notApplicableAxiomEvaluator
+    , purePatternAxiomEvaluator
     ) where
 
 import qualified Data.Map.Strict as Map
@@ -41,7 +41,7 @@ import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
 
-{-| 'AxiomSimplifier' simplifies 'Application' patterns using either an axiom
+{-| 'BuiltinAndAxiomSimplifier' simplifies 'Application' patterns using either an axiom
 or builtin code.
 
 Arguments:
@@ -59,8 +59,8 @@ Return value:
 It returns the result of appling the function, together with a proof certifying
 that the function was applied correctly (which is only a placeholder right now).
 -}
-newtype AxiomSimplifier level =
-    AxiomSimplifier
+newtype BuiltinAndAxiomSimplifier level =
+    BuiltinAndAxiomSimplifier
         (forall variable
         .   ( FreshVariable variable
             , MetaOrObject level
@@ -89,7 +89,7 @@ data FunctionEvaluators level
         { definitionRules :: [EqualityRule level]
         -- ^ Evaluators used when evaluating functions according to their
         -- definition.
-        , simplificationEvaluators :: [AxiomSimplifier level]
+        , simplificationEvaluators :: [BuiltinAndAxiomSimplifier level]
         -- ^ Evaluators used when simplifying functions.
         }
 
@@ -104,13 +104,13 @@ other succeeds, using both results would introduce a split in the search space.
 -}
 type BuiltinAndAxiomsFunctionEvaluator level =
     These
-        (AxiomSimplifier level)
+        (BuiltinAndAxiomSimplifier level)
         (FunctionEvaluators level)
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
 -}
-type BuiltinAndAxiomsFunctionEvaluatorMap level =
+type BuiltinAndAxiomSimplifierMap level =
     Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
 
 {-| 'AttemptedAxiom' hods the result of axiom-based simplification, with
@@ -127,23 +127,26 @@ following the same pattern as the other `Common*` types.
 type CommonAttemptedAxiom level = AttemptedAxiom level Variable
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
-notApplicableFunctionEvaluator
+notApplicableAxiomEvaluator
     :: Simplifier
         (AttemptedAxiom level1 variable, SimplificationProof level2)
-notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
+notApplicableAxiomEvaluator = pure (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which produces a given 'StepPattern'
-purePatternFunctionEvaluator
+purePatternAxiomEvaluator
     :: (MetaOrObject level, Ord (variable level))
     => StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
-purePatternFunctionEvaluator p =
+purePatternAxiomEvaluator p =
     pure
         ( Applied (makeFromSinglePurePattern p)
         , SimplificationProof
         )
 
+{-| Creates an 'BuiltinAndAxiomSimplifier' from a similar function that takes an
+'Application'.
+-}
 applicationAxiomSimplifier
     :: forall level
     .   ( forall variable
@@ -169,9 +172,9 @@ applicationAxiomSimplifier
             , SimplificationProof level
             )
         )
-    -> AxiomSimplifier level
+    -> BuiltinAndAxiomSimplifier level
 applicationAxiomSimplifier applicationSimplifier =
-    AxiomSimplifier helper
+    BuiltinAndAxiomSimplifier helper
   where
     helper
         ::  ( forall variable

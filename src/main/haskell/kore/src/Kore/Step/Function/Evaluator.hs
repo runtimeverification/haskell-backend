@@ -43,7 +43,8 @@ import qualified Kore.Step.BaseStep as OrStepResult
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Function.Data
-                 ( AxiomSimplifier (..), BuiltinAndAxiomsFunctionEvaluatorMap,
+                 ( BuiltinAndAxiomSimplifier (..),
+                 BuiltinAndAxiomSimplifierMap,
                  FunctionEvaluators (FunctionEvaluators) )
 import           Kore.Step.Function.Data as FunctionEvaluators
                  ( FunctionEvaluators (..) )
@@ -86,7 +87,7 @@ evaluateApplication
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
@@ -133,7 +134,7 @@ evaluateApplication
     appPurePattern = asPurePattern (valid :< ApplicationPattern app)
 
     evaluateBuiltinAndAxioms
-        :: AxiomSimplifier level
+        :: BuiltinAndAxiomSimplifier level
         -> FunctionEvaluators level
         -> Simplifier
             (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -173,13 +174,13 @@ evaluateApplication
             (Application level)
             (Valid (variable level) level)
             (StepPattern level variable)
-        -> AxiomSimplifier level
+        -> BuiltinAndAxiomSimplifier level
         -> Simplifier
             ( AttemptedAxiom level variable
             , SimplificationProof level
             )
     applyEvaluator
-        (valid' :< app') (AxiomSimplifier evaluator)
+        (valid' :< app') (BuiltinAndAxiomSimplifier evaluator)
       = do
         result <- evaluator
             tools

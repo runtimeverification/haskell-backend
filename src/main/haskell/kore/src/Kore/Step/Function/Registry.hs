@@ -38,9 +38,8 @@ import qualified Kore.Step.AxiomPatterns as AxiomPatterns
                  ( Assoc (..), AxiomPatternAttributes (..), Comm (..),
                  Idem (..), RulePattern (..), Unit (..) )
 import           Kore.Step.Function.Data
-                 ( AxiomSimplifier (..),
-                 FunctionEvaluators (FunctionEvaluators),
-                 applicationAxiomSimplifier )
+                 ( BuiltinAndAxiomSimplifier (..),
+                 FunctionEvaluators (FunctionEvaluators) )
 import           Kore.Step.Function.Data as FunctionEvaluators
                  ( FunctionEvaluators (..) )
 import           Kore.Step.Function.UserDefined
@@ -126,7 +125,7 @@ axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
         Right (RewriteAxiomPattern _) -> Nothing
 
 -- |Converts a registry of 'RulePattern's to one of
--- 'AxiomSimplifier's
+-- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
     :: forall level
     .  Map.Map (Id level) [EqualityRule level]
@@ -169,7 +168,7 @@ axiom; this is determined by checking the 'AxiomPatternAttributes'.
  -}
 axiomPatternEvaluator
     :: EqualityRule level
-    -> Maybe (AxiomSimplifier level)
+    -> Maybe (BuiltinAndAxiomSimplifier level)
 axiomPatternEvaluator axiomPat@(EqualityRule RulePattern { attributes })
     | isAssoc = Nothing
     | isComm = Nothing
@@ -178,7 +177,7 @@ axiomPatternEvaluator axiomPat@(EqualityRule RulePattern { attributes })
     | isUnit = Nothing
     | isIdem = Nothing
     | otherwise =
-        Just (applicationAxiomSimplifier $ ruleFunctionEvaluator axiomPat)
+        Just (BuiltinAndAxiomSimplifier $ ruleFunctionEvaluator axiomPat)
   where
     Assoc { isAssoc } = AxiomPatterns.assoc attributes
     Comm { isComm } = AxiomPatterns.comm attributes

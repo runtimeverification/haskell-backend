@@ -5,22 +5,16 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Data.Default
-                 ( def )
-import           Data.List
-                 ( sort )
-import qualified Data.Set as Set
-
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Data.Default
+       ( def )
+import Data.List
+       ( sort )
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Axiom.Concrete
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
 import           Kore.Predicate.Predicate
                  ( makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
@@ -46,9 +40,11 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
-import           Test.Kore
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Kore.Step.Simplifier
                  ( mockSimplifier )
 import           Test.Tasty.HUnit.Extensions
@@ -59,8 +55,7 @@ test_userDefinedFunction =
         let expect =
                 AttemptedAxiom.Applied $ OrOfExpandedPattern.make
                     [ Predicated
-                        { term =
-                            asApplicationPattern $ metaG (mkVar $ x patternMetaSort)
+                        { term = Mock.functionalConstr11 (mkVar Mock.x)
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
@@ -69,16 +64,14 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 (EqualityRule RulePattern
-                    { left =
-                        asApplicationPattern $ metaF (mkVar $ x patternMetaSort)
-                    , right =
-                        asApplicationPattern $ metaG (mkVar $ x patternMetaSort)
+                    { left = Mock.functionalConstr10 (mkVar Mock.x)
+                    , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
                     , attributes = def
                     }
                 )
                 (mockSimplifier [])
-                (metaF (mkVar $ x patternMetaSort))
+                (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply concrete rule to symbolic pattern" $ do
         let expect =
@@ -87,16 +80,14 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 (EqualityRule RulePattern
-                    { left =
-                        asApplicationPattern $ metaF (mkVar $ x patternMetaSort)
-                    , right =
-                        asApplicationPattern $ metaG (mkVar $ x patternMetaSort)
+                    { left = Mock.functionalConstr10 (mkVar Mock.x)
+                    , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
                     , attributes = def { concrete = Concrete True }
                     }
                 )
                 (mockSimplifier [])
-                (metaF (mkVar $ x patternMetaSort))
+                (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Can apply concrete rule to concrete pattern" $ do
         let expect =
@@ -105,16 +96,14 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 (EqualityRule RulePattern
-                    { left =
-                        asApplicationPattern $ metaF metaH
-                    , right =
-                        asApplicationPattern $ metaG metaH
+                    { left = Mock.functionalConstr10 Mock.a
+                    , right = Mock.functionalConstr11 Mock.a
                     , requires = makeTruePredicate
                     , attributes = def { concrete = Concrete True }
                     }
                 )
                 (mockSimplifier [])
-                (metaF (mkVar $ x patternMetaSort))
+                (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
@@ -123,16 +112,14 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 (EqualityRule RulePattern
-                    { left =
-                        asApplicationPattern $ metaF (mkVar $ x patternMetaSort)
-                    , right =
-                        asApplicationPattern $ metaG (mkVar $ x patternMetaSort)
+                    { left = Mock.functionalConstr10 (mkVar Mock.x)
+                    , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeFalsePredicate
                     , attributes = def
                     }
                 )
                 (mockSimplifier [])
-                (metaF (mkVar $ x patternMetaSort))
+                (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
 
     , testCase "Cannot apply step with unsat condition" $ do
@@ -143,10 +130,8 @@ test_userDefinedFunction =
             evaluateWithAxiom
                 mockMetadataTools
                 (EqualityRule RulePattern
-                    { left =
-                        asApplicationPattern $ metaF (mkVar $ x patternMetaSort)
-                    , right =
-                        asApplicationPattern $ metaG (mkVar $ x patternMetaSort)
+                    { left = Mock.functionalConstr10 (mkVar Mock.x)
+                    , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
                     , attributes = def
                     }
@@ -155,18 +140,17 @@ test_userDefinedFunction =
                     -- Evaluate Top to Bottom.
                     [ (mkTop_, ([], SimplificationProof)) ]
                 )
-                (metaF (mkVar $ x patternMetaSort))
+                (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Preserves step substitution" $ do
         let expect =
                 AttemptedAxiom.Applied $ OrOfExpandedPattern.make
                     [ Predicated
-                        { term =
-                            asApplicationPattern $ metaG (mkVar $ b patternMetaSort)
+                        { term = Mock.g (mkVar Mock.z)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
-                            [(a patternMetaSort, mkVar $ b patternMetaSort)]
+                            [(Mock.y, mkVar Mock.z)]
                         }
                     ]
         actual <-
@@ -174,19 +158,18 @@ test_userDefinedFunction =
                 mockMetadataTools
                 (EqualityRule RulePattern
                     { left  =
-                        asApplicationPattern $ metaSigma
-                            (mkVar $ x patternMetaSort)
-                            (mkVar $ x patternMetaSort)
-                    , right =
-                        asApplicationPattern $ metaG (mkVar $ x patternMetaSort)
+                        Mock.functionalConstr20
+                            (mkVar Mock.x)
+                            (mkVar Mock.x)
+                    , right = Mock.g (mkVar Mock.x)
                     , requires = makeTruePredicate
                     , attributes = def
                     }
                 )
                 (mockSimplifier [])
-                (metaSigma
-                    (mkVar $ a patternMetaSort)
-                    (mkVar $ b patternMetaSort)
+                (Mock.functionalConstr20
+                    (mkVar Mock.y)
+                    (mkVar Mock.z)
                 )
         assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)"
             expect
@@ -196,114 +179,26 @@ test_userDefinedFunction =
     -- TODO: Add a test for the stepper giving up
     ]
 
-mockMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetadataTools = MetadataTools
-    { symAttributes = const Mock.constructorFunctionalAttributes
-    , symbolOrAliasType = const HeadType.Symbol
-    , sortAttributes = const Mock.constructorFunctionalAttributes
-    , isSubsortOf = const $ const False
-    , subsorts = Set.singleton
-    }
-
-x, a, b :: Sort Meta -> Variable Meta
-x = Variable (testId "#x")
-a = Variable (testId "#a")
-b = Variable (testId "#b")
-
-fSymbol :: SymbolOrAlias Meta
-fSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = testId "#f"
-    , symbolOrAliasParams = []
-    }
-
-metaF
-    :: CommonStepPattern Meta
-    -> CofreeF
-        (Application Meta)
-        (Valid (Variable Meta) Meta)
-        (CommonStepPattern Meta)
-metaF p =
-    valid :< Application fSymbol [p]
-  where
-    Valid { freeVariables } = extract p
-    valid = Valid { patternSort = patternMetaSort, freeVariables }
-
-
-gSymbol :: SymbolOrAlias Meta
-gSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = testId "#g"
-    , symbolOrAliasParams = []
-    }
-
-metaG
-    :: CommonStepPattern Meta
-    -> CofreeF
-        (Application Meta)
-        (Valid (Variable Meta) Meta)
-        (CommonStepPattern Meta)
-metaG p =
-    valid :< Application gSymbol [p]
-  where
-    Valid { freeVariables } = extract p
-    valid = Valid { patternSort = patternMetaSort, freeVariables }
-
-hSymbol :: SymbolOrAlias Meta
-hSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = testId "#h"
-    , symbolOrAliasParams = []
-    }
-
-metaH :: Functor dom => PurePattern Meta dom variable (Valid (Variable Meta) Meta)
-metaH = asPurePattern $
-    valid :< ApplicationPattern (Application hSymbol [])
-  where
-    valid = Valid { patternSort = patternMetaSort, freeVariables = mempty }
-
-sigmaSymbol :: SymbolOrAlias Meta
-sigmaSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = testId "#sigma"
-    , symbolOrAliasParams = []
-    }
-
-metaSigma
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
-    -> CofreeF
-        (Application Meta)
-        (Valid (Variable Meta) Meta)
-        (CommonStepPattern Meta)
-metaSigma p1 p2 =
-    valid :< Application sigmaSymbol [p1, p2]
-  where
-    Valid { freeVariables = freeVariables1 } = extract p1
-    Valid { freeVariables = freeVariables2 } = extract p2
-    freeVariables = Set.union freeVariables1 freeVariables2
-    valid = Valid { patternSort = patternMetaSort, freeVariables }
-
-asApplicationPattern
-    :: CofreeF
-        (Application Meta)
-        (Valid (Variable Meta) Meta)
-        (CommonStepPattern Meta)
-    -> CommonStepPattern Meta
-asApplicationPattern (valid :< app) =
-    asPurePattern (valid :< ApplicationPattern app)
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        Mock.subsorts
 
 evaluateWithAxiom
     :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
     -> EqualityRule level
     -> CommonStepPatternSimplifier level
-    -> CofreeF
-        (Application level)
-        (Valid (Variable level) level)
-        (CommonStepPattern level)
+    -> CommonStepPattern level
     -> IO (CommonAttemptedAxiom level)
 evaluateWithAxiom
     metadataTools
     axiom
     simplifier
-    app
+    patt
   = do
     results <- evaluated
     return (normalizeResult results)
@@ -332,4 +227,4 @@ evaluateWithAxiom
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
-            app
+            patt

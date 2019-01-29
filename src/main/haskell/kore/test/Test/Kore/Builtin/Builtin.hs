@@ -180,7 +180,7 @@ testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
 testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
-evaluators :: BuiltinAndAxiomsFunctionEvaluatorMap Object
+evaluators :: BuiltinAndAxiomSimplifierMap Object
 evaluators = Map.map This $ Builtin.koreEvaluators verifiedModule
 
 evaluate

@@ -440,7 +440,7 @@ evaluateWithAxioms tools axioms patt =
                 builtinAxioms
                 (Map.map That axioms)
             )
-    builtinAxioms :: BuiltinAndAxiomsFunctionEvaluatorMap Object
+    builtinAxioms :: BuiltinAndAxiomSimplifierMap Object
     builtinAxioms =
         Map.fromList
             [ (Mock.concatMapId, This Map.evalConcat)

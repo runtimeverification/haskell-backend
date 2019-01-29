@@ -18,12 +18,11 @@ import Control.Monad.Except
 import           Kore.AST.Pure hiding
                  ( isConcrete )
 import qualified Kore.AST.Pure as Pure
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateFalse, makeTruePredicate )
+                 ( pattern PredicateFalse )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
                  RulePattern (..) )
@@ -35,7 +34,7 @@ import           Kore.Step.BaseStep as StepResult
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom )
+                 ( bottom, fromPurePattern )
 import           Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Matcher
@@ -77,10 +76,7 @@ ruleFunctionEvaluator
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
-    -> CofreeF
-        (Application level)
-        (Valid (variable level) level)
-        (StepPattern level variable)
+    -> StepPattern level variable
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
@@ -89,9 +85,9 @@ ruleFunctionEvaluator
     tools
     substitutionSimplifier
     simplifier
-    app@(_ :< Application _ c)
+    patt
   | Axiom.Concrete.isConcrete (concrete $ attributes rule)
-        && any (not . Pure.isConcrete) c
+        && not (Pure.isConcrete patt)
   = notApplicable
   | otherwise = do
     result <- runExceptT stepResult
@@ -116,22 +112,8 @@ ruleFunctionEvaluator
             tools
             (UnificationProcedure matchAsUnification)
             substitutionSimplifier
-            (stepperConfiguration app)
+            (ExpandedPattern.fromPurePattern patt)
             rule
-
-    stepperConfiguration
-        :: MetaOrObject level
-        => CofreeF
-            (Application level)
-            (Valid (variable level) level)
-            (StepPattern level variable)
-        -> ExpandedPattern level variable
-    stepperConfiguration (valid :< app') =
-        Predicated
-            { term = asPurePattern (valid :< ApplicationPattern app')
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
 
     processResult
         :: (StepResult level variable, StepProof level variable)

@@ -121,7 +121,7 @@ test_applicationSimplification =
                 (Map.singleton
                     Mock.fId
                     (thatSimplification
-                        [ AxiomSimplifier
+                        [ BuiltinAndAxiomSimplifier
                             (const $ const $ const $ const $ return
                                 ( AttemptedAxiom.Applied
                                     (OrOfExpandedPattern.make [gOfAExpanded])
@@ -216,7 +216,7 @@ test_applicationSimplification =
                     (Map.singleton
                         Mock.sigmaId
                         (thatSimplification
-                            [ AxiomSimplifier
+                            [ BuiltinAndAxiomSimplifier
                                 (const $ const $ const $ const $ do
                                     let zvar =
                                             freshVariableFromVariable Mock.z 1
@@ -308,8 +308,8 @@ test_applicationSimplification =
             Mock.subsorts
 
 thatSimplification
-    :: [AxiomSimplifier Object]
-    -> These (AxiomSimplifier Object) (FunctionEvaluators Object)
+    :: [BuiltinAndAxiomSimplifier Object]
+    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
 thatSimplification evaluators =
     That FunctionEvaluators
         { definitionRules = []
@@ -343,7 +343,7 @@ evaluate
     => MetadataTools level StepperAttributes
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application level)

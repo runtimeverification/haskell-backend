@@ -141,8 +141,8 @@ test_functionIntegration =
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
                     (theseSimplification
-                        (AxiomSimplifier
-                            (\_ _ _ _ -> notApplicableFunctionEvaluator)
+                        (BuiltinAndAxiomSimplifier
+                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -560,9 +560,9 @@ test_functionIntegration =
 axiomEvaluator
     :: CommonStepPattern Object
     -> CommonStepPattern Object
-    -> AxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
-    AxiomSimplifier
+    BuiltinAndAxiomSimplifier
         (ruleFunctionEvaluator (axiom left right makeTruePredicate))
 
 axiom
@@ -579,9 +579,9 @@ axiom left right predicate =
         }
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> AxiomSimplifier level
+    :: CommonExpandedPattern level -> BuiltinAndAxiomSimplifier level
 appliedMockEvaluator result =
-    AxiomSimplifier
+    BuiltinAndAxiomSimplifier
     $ mockEvaluator
     $ AttemptedAxiom.Applied
     $ OrOfExpandedPattern.make
@@ -602,18 +602,15 @@ mockEvaluator
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
-    -> CofreeF
-        (Application level)
-        (Valid (variable level) level)
-        (StepPattern level variable)
+    -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 thatSimplification
-    :: [AxiomSimplifier Object]
-    -> These (AxiomSimplifier Object) (FunctionEvaluators Object)
+    :: [BuiltinAndAxiomSimplifier Object]
+    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
 thatSimplification evaluators =
     That FunctionEvaluators
         { definitionRules = []
@@ -621,9 +618,9 @@ thatSimplification evaluators =
         }
 
 theseSimplification
-    :: AxiomSimplifier Object
-    -> [AxiomSimplifier Object]
-    -> These (AxiomSimplifier Object) (FunctionEvaluators Object)
+    :: BuiltinAndAxiomSimplifier Object
+    -> [BuiltinAndAxiomSimplifier Object]
+    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
 theseSimplification evaluator evaluators =
     These
         evaluator
@@ -635,7 +632,7 @@ theseSimplification evaluator evaluators =
 evaluate
     :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -> CommonStepPattern level
     -> IO (CommonExpandedPattern level)
 evaluate metadataTools functionIdToEvaluator patt =

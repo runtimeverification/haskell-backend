@@ -45,7 +45,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedAxiom (..), applicationAxiomSimplifier,
-                 notApplicableFunctionEvaluator, purePatternFunctionEvaluator )
+                 notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -153,10 +153,10 @@ evalKEq true tools substitutionSimplifier _ (valid :< app) =
         (result, _proof) <- makeEvaluate tools substitutionSimplifier ep1 ep2
         case () of
             _ | OrOfExpandedPattern.isTrue result ->
-                purePatternFunctionEvaluator (Bool.asPattern patternSort true)
+                purePatternAxiomEvaluator (Bool.asPattern patternSort true)
               | OrOfExpandedPattern.isFalse result ->
-                purePatternFunctionEvaluator (Bool.asPattern patternSort false)
-              | otherwise -> notApplicableFunctionEvaluator
+                purePatternAxiomEvaluator (Bool.asPattern patternSort false)
+              | otherwise -> notApplicableAxiomEvaluator
       where
         ep1 = ExpandedPattern.fromPurePattern t1
         ep2 = ExpandedPattern.fromPurePattern t2
@@ -201,9 +201,9 @@ evalKIte _ _ _ (_ :< app) =
     evalIte expr t1 t2 =
         case evaluate expr of
             Just result
-                | result    -> purePatternFunctionEvaluator t1
-                | otherwise -> purePatternFunctionEvaluator t2
-            Nothing    -> notApplicableFunctionEvaluator
+                | result    -> purePatternAxiomEvaluator t1
+                | otherwise -> purePatternAxiomEvaluator t2
+            Nothing    -> notApplicableAxiomEvaluator
 
 eqKey :: IsString s => s
 eqKey = "KEQUAL.eq"
