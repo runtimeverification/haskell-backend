@@ -45,6 +45,19 @@ test_highestTop =
   , ((tT, pT, sT), (tT, pT, sT)) `simplifiesTo_` (tT, pT, sT)
   ]
 
+test_mergePredicates :: TestTree
+test_mergePredicates =
+    testGroup "Merge predicates when first term is Top and substitutions are equal"
+    [ ((tT, pM, sT), (tm, pm, sT)) `simplifiesTo_` (tT, makeOrPredicate pM pm, sT)
+    -- This fails because the halfSimplifyEvaluated is not commutative:
+    -- , ((tm, pm, sT), (tT, pM, sT)) `simplifiesTo_` (tT, makeOrPredicate pm pM, sT)
+    , ((tT, pM, sm), (tm, pm, sm)) `simplifiesTo_` (tT, makeOrPredicate pM pm, sm)
+    , testGroup "Inequal substitutions prevent merging"
+        [ ((tT, pM, sT), (tm, pm, sm)) `becomes_` MultiOr [orChild (tT, pM, sT), orChild (tm, pm, sm)]
+        , ((tm, pm, sm), (tT, pM, sT)) `becomes_` MultiOr [orChild (tT, pM, sT), orChild (tm, pm, sm)]
+        ]
+    ]
+
 test_anyBottom :: TestTree
 test_anyBottom =
   testGroup "Any bottom is removed from the result"
