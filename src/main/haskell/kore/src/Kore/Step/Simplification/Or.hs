@@ -105,37 +105,28 @@ halfSimplifyEvaluated
         , SimplificationProof level
         )
 halfSimplifyEvaluated
-    first@Predicated
+    Predicated
         { term = term1
-        , predicate = firstPredicate
-        , substitution = (Substitution.unwrap -> [])
+        , predicate = predicate1
+        , substitution = substitution1
         }
     second
-  | (Recursive.project -> _ :< TopPattern _) <- term1
+  | _ :< TopPattern _ <- Recursive.project term1
+  , pattern2 : patterns <- OrOfExpandedPattern.extractPatterns second
+  , Predicated { predicate = predicate2 } <- pattern2
+  , Predicated { substitution = substitution2 } <- pattern2
+  , Substitution.unwrap substitution1 == Substitution.unwrap substitution2
   =
-    case OrOfExpandedPattern.extractPatterns second of
-        [] ->
-            ( OrOfExpandedPattern.make [first]
-            , SimplificationProof
-            )
+    ( OrOfExpandedPattern.make
         ( Predicated
-            { term = term2, predicate, substitution}
-         : patts
-         ) ->
-            let
-                mergedPredicate =
-                    makeOrPredicate firstPredicate predicate
-            in
-                ( OrOfExpandedPattern.make
-                    ( Predicated
-                        { term = term2
-                        , predicate = mergedPredicate
-                        , substitution = substitution
-                        }
-                    : patts
-                    )
-                , SimplificationProof
-                )
+            { term = term1
+            , predicate = makeOrPredicate predicate1 predicate2
+            , substitution = substitution1
+            }
+        : patterns
+        )
+    , SimplificationProof
+    )
 halfSimplifyEvaluated
     first second
   =
