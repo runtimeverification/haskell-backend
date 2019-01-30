@@ -1,5 +1,8 @@
 #!/bin/sh
 
+set -e
+set -u
+
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 UPSTREAM_BRANCH=${UPSTREAM_BRANCH:-origin/master}
 
