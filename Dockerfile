@@ -44,4 +44,4 @@ RUN    cd /home/user                                                          \
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user src/main/haskell/kore/package.yaml /home/user/.tmp-haskell/src/main/haskell/kore/
 RUN    cd /home/user/.tmp-haskell \
-    && stack build --only-dependencies --test --bench --haddock --library-profiling
+    && stack build --only-dependencies --test --bench --library-profiling
