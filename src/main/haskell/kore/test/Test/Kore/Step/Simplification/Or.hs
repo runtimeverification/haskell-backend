@@ -21,7 +21,7 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr (..), OrOfExpandedPattern )
 import           Kore.Step.Simplification.Or
-                 ( simplifyEvaluated )
+                 ( simplify, simplifyEvaluated )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -36,6 +36,16 @@ import qualified Test.Kore.Step.MockSymbols as Mock
              produce a single `OrOfExpandedPattern`. We run the simplifier to
              check correctness.
           -}
+
+-- Key for variable names:
+-- 1. `OrOfExpandedPattern` values are represented by a tuple containing
+--    the term, predicate, and substitution, in that order. They're
+--    also tagged with `t`, `p`, and `s`.
+-- 2. The second character has this meaning:
+--    T : top
+--    _ : bottom
+--    m or M : a character neither top nor bottom. Two values
+--             named `pm` and `pM` are expected to be unequal.
 
 test_highestTop :: TestTree
 test_highestTop =
@@ -99,7 +109,26 @@ test_simplify :: TestTree
 test_simplify =
   testGroup "`simplify` just calls `simplifyEvaluated`"
   [
+    equals_
+      (simplify $        binaryOr orPattern1 orPattern2 )
+      (simplifyEvaluated          orPattern1 orPattern2 )
   ]
+  where
+    orPattern1 :: OrOfExpandedPattern Object Variable
+    orPattern1 = wrapInOrPattern (tM, pM, sM)
+    
+    orPattern2 :: OrOfExpandedPattern Object Variable
+    orPattern2 = wrapInOrPattern (tm, pm, sm)
+
+    binaryOr
+      :: OrOfExpandedPattern Object Variable
+      -> OrOfExpandedPattern Object Variable
+      -> Or Object (OrOfExpandedPattern Object Variable)
+    binaryOr first second =
+        Or { orFirst = first
+           , orSecond = second
+           , orSort = Mock.testSort
+           }
 
 
         {- Part 3: The values and functions relevant to this test -}
@@ -159,7 +188,7 @@ sM = Substitution.wrap [(Mock.y, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree
 test_valueProperties =
-  testGroup "The values have properties that fit their names"
+  testGroup "The values have properties that fit their ids"
   [ tT `has_` [ (isTop, True),   (isBottom, False) ]
   , tm `has_` [ (isTop, False),  (isBottom, False) ]
   , tM `has_` [ (isTop, False),  (isBottom, False) ]
@@ -224,4 +253,6 @@ becomes_ (raw1, raw2) (MultiOr expected) =
     or1 = wrapInOrPattern raw1
     or2 = wrapInOrPattern raw2
   in
-    equals_ (simplifyEvaluated or1 or2) (MultiOr $ List.sort expected, SimplificationProof)
+    equals_
+      (simplifyEvaluated or1 or2)
+      (MultiOr $ List.sort expected, SimplificationProof)
