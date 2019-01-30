@@ -12,7 +12,7 @@ k-frontend:
 	mkdir -p $(BUILD_DIR)
 	rm -rf $(K_DIST) $(K_NIGHTLY)
 	curl --location --output $(K_NIGHTLY) \
-	    $$(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[0].assets[0].browser_download_url')
+	    $$(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[0].assets[].browser_download_url | match(".*nightly.tar.gz").string')
 	mkdir --parents $(K_DIST)
 	tar --extract --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIST)
 	$(KRUN) --version
