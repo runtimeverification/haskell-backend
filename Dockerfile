@@ -40,3 +40,8 @@ RUN    cd /home/user                                                          \
     && git clone 'https://github.com/kframework/k' --branch=nightly-0f3835d3a \
     && ./k/k-distribution/src/main/scripts/bin/k-configure-opam-dev           \
     && rm -rf k
+
+ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
+ADD --chown=user:user src/main/haskell/kore/package.yaml /home/user/.tmp-haskell/src/main/haskell/kore/
+RUN    cd /home/user/.tmp-haskell \
+    && stack build --only-dependencies --test --bench --haddock --library-profiling
