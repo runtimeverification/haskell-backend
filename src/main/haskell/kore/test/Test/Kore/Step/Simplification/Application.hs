@@ -38,7 +38,6 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
-                 ( freshVariableFromVariable )
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -203,7 +202,7 @@ test_applicationSimplification =
                                         (makeEqualsPredicate gOfA gOfB)
                                     )
                             , substitution = Substitution.unsafeWrap
-                                [ (freshVariableFromVariable Mock.z 1, gOfB)
+                                [ (freshVariableWith Mock.z 1, gOfB)
                                 , (Mock.x, fOfA)
                                 , (Mock.y, gOfA)
                                 ]
@@ -219,7 +218,9 @@ test_applicationSimplification =
                             [ ApplicationFunctionEvaluator
                                 (const $ const $ const $ const $ do
                                     let zvar =
-                                            freshVariableFromVariable Mock.z 1
+                                            freshVariableWith
+                                                (fromVariable Mock.z)
+                                                1
                                     return
                                         ( AttemptedFunction.Applied
                                             (OrOfExpandedPattern.make

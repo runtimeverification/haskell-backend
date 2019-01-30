@@ -175,13 +175,11 @@ instance
     fromVariable = AxiomVariable
 
 instance
-    FreshVariable variable
-    => FreshVariable (StepperVariable variable)
+    (FreshVariable variable, SortedVariable variable) =>
+    FreshVariable (StepperVariable variable)
   where
-    freshVariableFromVariable var n =
-        ConfigurationVariable (freshVariableFromVariable var n)
     freshVariableWith (AxiomVariable a) n =
-        ConfigurationVariable $ freshVariableFromVariable a n
+        ConfigurationVariable $ freshVariableWith (fromVariable a) n
     freshVariableWith (ConfigurationVariable a) n =
         ConfigurationVariable $ freshVariableWith a n
 
@@ -833,6 +831,7 @@ stepWithRemainders tools substitutionSimplifier patt rules =
 stepperVariableToVariableForError
     :: forall a level variable
     .   ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -864,6 +863,7 @@ stepperVariableToVariableForError existingVars = mapExceptT mapper
 
 unificationProofStepVariablesToCommon
     ::  ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -994,6 +994,7 @@ listStepVariablesToCommon elementMapper existingVars mapping (proof : proofs)
 
 functionalProofStepVariablesToCommon
     ::  ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -1024,6 +1025,7 @@ functionalProofStepVariablesToCommon _ mapping (FunctionalDomainValue dv) =
 
 variableStepVariablesToCommon
     ::  ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -1066,6 +1068,7 @@ variableStepVariablesToCommon existingVars mapping variable =
 
 predicateStepVariablesToCommon
     ::  ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -1095,6 +1098,7 @@ predicateStepVariablesToCommon existingVars mapped predicate' = do
 
 patternStepVariablesToCommon
     ::  ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -1139,6 +1143,7 @@ replacePatternVariables mapping =
 
 addAxiomVariablesAsConfig
     ::  ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
