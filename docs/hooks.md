@@ -631,6 +631,6 @@ Comparison: is the first argument inequal to the second?
 If-then-else: if condition then something, else something else.
 
 ~~~
-    hooked-symbol neq{}(Bool{}, Item{}, Item{}) : Item{}
+    hooked-symbol ite{}(Bool{}, Item{}, Item{}) : Item{}
         [hook{}("KEQUAL.ite")]
 ~~~

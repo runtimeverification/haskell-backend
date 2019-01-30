@@ -117,7 +117,7 @@ and = And
 {- | Apply all of the strategies in parallel.
 
 @
-parallel [] === stuck
+all [] === stuck
 @
 
  -}
