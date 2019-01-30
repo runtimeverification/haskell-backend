@@ -167,10 +167,12 @@ instance
     SortedVariable variable
     => SortedVariable (StepperVariable variable)
   where
-    sortedVariableSort (ConfigurationVariable variable) =
-        sortedVariableSort variable
-    sortedVariableSort (AxiomVariable variable) =
-        sortedVariableSort variable
+    sortedVariableSort =
+        \case
+            AxiomVariable variable -> variableSort variable
+            ConfigurationVariable variable ->
+                sortedVariableSort variable
+    fromVariable = AxiomVariable
 
 instance
     FreshVariable variable

@@ -133,6 +133,7 @@ instance Unparse (W level) where
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVariable
+    fromVariable = error "Not implemented"
 
 instance SumEqualWithExplanation (V level)
   where
@@ -147,6 +148,7 @@ instance EqualWithExplanation (V level)
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVariable
+    fromVariable = error "Not implemented"
 
 instance SumEqualWithExplanation (W level)
   where

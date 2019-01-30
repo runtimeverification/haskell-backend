@@ -92,6 +92,8 @@ instance NFData (SymbolOrAlias level)
 @meta-variable@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
+Particularly, this is the type of variable in patterns returned by the parser.
+
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
@@ -120,13 +122,22 @@ instance Hashable (Concrete level)
 
 instance NFData (Concrete level)
 
-{-| 'SortedVariable' is a variable which has a sort.
--}
-class SortedVariable variable where
+{- | 'SortedVariable' is a Kore variable with a known sort.
+
+The instances of @SortedVariable@ must encompass the 'Variable' type by
+implementing 'fromVariable', i.e. we must be able to construct a
+@SortedVariable@ given a parsed 'Variable'.
+
+ -}
+class SortedVariable (variable :: * -> *) where
+    -- | The known 'Sort' of the given variable.
     sortedVariableSort :: variable level -> Sort level
+    -- | Convert a variable from the parsed syntax of Kore.
+    fromVariable :: Variable level -> variable level
 
 instance SortedVariable Variable where
     sortedVariableSort = variableSort
+    fromVariable = id
 
 {-|Enumeration of patterns starting with @\@
 -}
