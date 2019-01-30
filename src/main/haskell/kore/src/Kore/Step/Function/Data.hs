@@ -113,7 +113,7 @@ their corresponding evaluators.
 type BuiltinAndAxiomSimplifierMap level =
     Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
 
-{-| 'AttemptedAxiom' hods the result of axiom-based simplification, with
+{-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
 a case for axioms that can't be applied.
 -}
 data AttemptedAxiom level variable
