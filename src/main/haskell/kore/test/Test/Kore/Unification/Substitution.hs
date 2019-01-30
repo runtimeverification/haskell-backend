@@ -17,7 +17,6 @@ import Kore.AST.Pure hiding
 import Kore.Step.Pattern
        ( StepPattern )
 import Kore.Unification.Substitution
-import Kore.Unification.Substitution as Substitution
 import Kore.TopBottom
        ( isTop, isBottom )
 
