@@ -51,7 +51,6 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-                 ( FreshVariable, freshVariableFromVariable )
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -631,13 +630,14 @@ appliedMockEvaluator result =
 
 mapVariables
     ::  ( FreshVariable variable
+        , SortedVariable variable
         , MetaOrObject level
         , Ord (variable level)
         )
     => CommonExpandedPattern level
     -> ExpandedPattern level variable
 mapVariables =
-    ExpandedPattern.mapVariables (\v -> freshVariableFromVariable v 1)
+    ExpandedPattern.mapVariables (\v -> freshVariableWith (fromVariable v) 1)
 
 mockEvaluator
     :: AttemptedAxiom level variable
