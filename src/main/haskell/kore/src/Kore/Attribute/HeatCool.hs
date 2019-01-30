@@ -1,6 +1,6 @@
 {-|
 Module      : Kore.Attribute.HeatCool
-Description : Associativity axiom attribute
+Description : Heating and Cooling axiom attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com

@@ -1,6 +1,6 @@
 {-|
 Module      : Kore.Attribute.Idem
-Description : Idemiativity axiom attribute
+Description : Idempotency axiom attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com

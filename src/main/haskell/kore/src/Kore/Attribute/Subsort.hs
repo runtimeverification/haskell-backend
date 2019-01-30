@@ -69,7 +69,7 @@ subsortAttribute subsort supersort =
   It is a parse error if the @subsort@ attribute is not given exactly
   two sort parameters
 
-  See also: 'makeSubsortAttribute'
+  See also: 'subsortAttribute'
 
  -}
 instance ParseAttributes Subsorts where
