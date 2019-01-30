@@ -3,6 +3,8 @@
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 UPSTREAM_BRANCH=${UPSTREAM_BRANCH:-origin/master}
 
+git fetch
+
 if ! $TOP/scripts/git-assert-clean.sh; \
 then \
   echo >&2 "Please commit your changes!"; \
