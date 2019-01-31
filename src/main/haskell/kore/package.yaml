@@ -63,6 +63,7 @@ build-tools:
 
 default-extensions:
   - BangPatterns
+  - BlockArguments
   - ConstraintKinds
   - DataKinds
   - DeriveDataTypeable
