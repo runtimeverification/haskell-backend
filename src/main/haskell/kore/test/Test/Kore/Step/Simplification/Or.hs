@@ -116,7 +116,7 @@ test_simplify =
   where
     orPattern1 :: OrOfExpandedPattern Object Variable
     orPattern1 = wrapInOrPattern (tM, pM, sM)
-    
+
     orPattern2 :: OrOfExpandedPattern Object Variable
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 

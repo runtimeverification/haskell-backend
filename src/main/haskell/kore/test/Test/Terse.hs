@@ -11,7 +11,7 @@ module Test.Terse
     -- > , t_ `has_` [ (isTop, False),  (isBottom, True) ]
     -- > , tm `unequals_` tM
     -- > ...
-    -- 
+    --
     --
     -- * Common Functions
     --
@@ -44,13 +44,13 @@ module Test.Terse
     -- $rationale
   ) where
 
+import Data.Foldable
+       ( traverse_ )
 import Prelude
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
 import Test.Tasty.HUnit.Extensions
-import Data.Foldable
-       ( traverse_ )
 
 
 
@@ -121,7 +121,7 @@ gives predicate tuples comment =
     checkOne (value, expected) =
       assertEqual "" expected (predicate value)
 
--- | 
+-- |
 -- > isOdd `gives_` [ (1, True), (2, False) ]
 gives_ :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> TestTree
 gives_ predicate tuples =
@@ -137,20 +137,20 @@ gives_ predicate tuples =
 -- Note: if you use these functions, the domain-specific function has to
 -- be constrained by `HasCallStack`. See above.
 
--- | 
+-- |
 -- > actual_predicate_comment 3 isOdd "check odd numbers"
 actual_predicate_comment :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
 actual_predicate_comment actual predicate comment =
   testCase comment $
     assertEqual "" True $ predicate actual
 
--- | 
+-- |
 -- > actual_predicate 3 isOdd
 actual_predicate :: HasCallStack => a -> (a -> Bool) -> TestTree
 actual_predicate actual predicate =
   actual_predicate_comment actual predicate "actual_predicate with no comment"
 
--- | 
+-- |
 -- > actual_expected_comment (+ 1 1) 2 "addition"
 actual_expected_comment
   :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
@@ -159,7 +159,7 @@ actual_expected_comment actual expected comment =
   testCase comment $
     assertEqualWithExplanation "" expected actual
 
--- | 
+-- |
 -- > actual_expected (+ 1 1) 2
 actual_expected
   :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
@@ -168,16 +168,16 @@ actual_expected actual expected =
   actual_expected_comment actual expected "actual_expected with no comment"
 
 
--- | 
+-- |
 -- > f_2_expected_comment (+) (1, 2) 3 "addition"
 f_2_expected_comment
   :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
   => (a -> b -> e) -> (a, b) -> e -> String -> TestTree
 f_2_expected_comment f (arg1, arg2) expected comment =
-  testCase comment $ 
+  testCase comment $
     assertEqualWithExplanation "" expected (f arg1 arg2)
 
--- | 
+-- |
 -- > f_2_expected (+) (1, 2) 3
 f_2_expected
   :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
