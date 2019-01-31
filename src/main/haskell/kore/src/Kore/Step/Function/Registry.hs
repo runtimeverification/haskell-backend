@@ -149,15 +149,41 @@ axiomPatternsToEvaluators axiomPatterns =
             }
       where
         simplifications :: [EqualityRule level]
-        evaluations :: [EqualityRule level]
-        (simplifications, evaluations) =
+        nonSimplifications :: [EqualityRule level]
+        (simplifications, nonSimplifications) =
             partition isSimplificationRule equalities
+        evaluations :: [EqualityRule level]
+        evaluations =
+            filter
+                (\rule ->
+                    not (isCommRule rule)
+                    && not (isAssocRule rule)
+                    && not (isIdemRule rule)
+                    && not (isUnitRule rule)
+                )
+                nonSimplifications
         simplification = mapMaybe axiomPatternEvaluator simplifications
         isSimplificationRule (EqualityRule RulePattern { attributes }) =
             isSimplification
           where
             Simplification { isSimplification } =
                 AxiomPatterns.simplification attributes
+        isCommRule (EqualityRule RulePattern { attributes }) =
+            isComm
+          where
+            Comm { isComm } = AxiomPatterns.comm attributes
+        isAssocRule (EqualityRule RulePattern { attributes }) =
+            isAssoc
+          where
+            Assoc { isAssoc } = AxiomPatterns.assoc attributes
+        isIdemRule (EqualityRule RulePattern { attributes }) =
+            isIdem
+          where
+            Idem { isIdem } = AxiomPatterns.idem attributes
+        isUnitRule (EqualityRule RulePattern { attributes }) =
+            isUnit
+          where
+            Unit { isUnit } = AxiomPatterns.unit attributes
 
 {- | Return the function evaluator corresponding to the 'AxiomPattern'.
 
