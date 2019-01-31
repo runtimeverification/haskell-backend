@@ -22,13 +22,6 @@ RUN    groupadd --gid $GROUP_ID user                                        \
 
 USER $USER_ID:$GROUP_ID
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
-
-RUN    cd /home/user                                                          \
-    && git clone 'https://github.com/kframework/k' --branch=nightly-0f3835d3a \
-    && ./k/k-distribution/src/main/scripts/bin/k-configure-opam-dev           \
-    && rm -rf k
-
 ENV LC_ALL=C.UTF-8
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user src/main/haskell/kore/package.yaml /home/user/.tmp-haskell/src/main/haskell/kore/
