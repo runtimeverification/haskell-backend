@@ -13,6 +13,15 @@ pipeline {
         }
       }
     }
+    stage('Check') {
+      steps {
+        ansiColor('xterm') {
+          sh '''
+            ./scripts/check.sh
+          '''
+        }
+      }
+    }
     stage('Maven') {
       steps {
         ansiColor('xterm') {
@@ -22,11 +31,20 @@ pipeline {
         }
       }
     }
-    stage('Test') {
+    stage('Build/Unit Test') {
       steps {
         ansiColor('xterm') {
           sh '''
-            ./scripts/ci.sh
+            ./scripts/build.sh
+          '''
+        }
+      }
+    }
+    stage('K Test') {
+      steps {
+        ansiColor('xterm') {
+          sh '''
+            ./scripts/ktest.sh
           '''
         }
       }
