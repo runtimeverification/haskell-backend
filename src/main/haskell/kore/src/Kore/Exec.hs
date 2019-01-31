@@ -164,6 +164,49 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
   where
     Valid { patternSort } = extract purePattern
 
+-- | Proving a spec given as a module containing rules to be proven
+prove
+    :: Limit Natural
+    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -- ^ The main module
+    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -- ^ The spec module
+    -> Simplifier (Either (CommonStepPattern Object) ())
+prove limit definitionModule specModule = do
+    let
+        tools = extractMetadataTools definitionModule
+    Initialized { rewriteRules, simplifier, substitutionSimplifier } <-
+        initialize definitionModule tools
+    specAxioms <-
+        mapM (simplifyRuleOnSecond tools)
+            (extractRewriteClaims Object specModule)
+    let
+        axioms = fmap Axiom rewriteRules
+        claims = fmap makeClaim specAxioms
+
+    result <- runExceptT
+        $ verify
+            tools
+            simplifier
+            substitutionSimplifier
+            (defaultStrategy claims axioms)
+            (map (\x -> (x,limit)) (extractUntrustedClaims claims))
+
+    return $ Bifunctor.first toMLPattern result
+
+  where
+    makeClaim (attributes, rule) = Claim { rule , attributes }
+    simplifyRuleOnSecond
+        :: MetadataTools Object StepperAttributes
+        -> (AxiomPatternAttributes, RewriteRule Object)
+        -> Simplifier (AxiomPatternAttributes, RewriteRule Object)
+    simplifyRuleOnSecond tools (atts, rule) = do
+        rule' <- simplifyRewriteRule tools rule
+        return (atts, rule')
+    extractUntrustedClaims :: [Claim Object] -> [RewriteRule Object]
+    extractUntrustedClaims =
+        map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)
+
 -- | Construct an execution graph for the given input pattern.
 execute
     :: VerifiedModule StepperAttributes AxiomPatternAttributes
@@ -248,37 +291,11 @@ initialize verifiedModule tools =
                 PredicateSubstitution.create tools simplifier
         return Initialized { rewriteRules, simplifier, substitutionSimplifier }
 
-preSimplify
-    ::  (  CommonStepPattern Object
-        -> Simplifier
-            (OrOfExpandedPattern Object Variable, SimplificationProof Object)
-        )
-    -> RulePattern Object
-    -> Simplifier (RulePattern Object)
-preSimplify
-    simplifier
-    RulePattern
-        { left = lhs
-        , right = rhs
-        , requires
-        , attributes = atts
-        }
-  = do
-    (simplifiedOrLhs, _proof) <- simplifier lhs
-    let
-        [Predicated {term, predicate = PredicateTrue, substitution}] =
-            OrOfExpandedPattern.extractPatterns simplifiedOrLhs
-        subst = Substitution.toMap substitution
-    newLhs <- substitute subst term
-    newRhs <- substitute subst rhs
-    newRequires <- traverse (substitute subst) requires
-    return RulePattern
-        { left = newLhs
-        , right = newRhs
-        , requires = newRequires
-        , attributes = atts
-        }
+{- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
 
+See also: 'simplifyRulePattern'
+
+ -}
 simplifyFunctionAxioms
     :: MetadataTools Object StepperAttributes
     -> Map.Map (Id Object) [EqualityRule Object]
@@ -286,21 +303,62 @@ simplifyFunctionAxioms
 simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
   where
     simplifyEqualityRule (EqualityRule rule) =
-        EqualityRule <$> preSimplify (emptyPatternSimplifier tools) rule
+        EqualityRule <$> simplifyRulePattern tools rule
 
+{- | Simplify a 'Rule' using only matching logic rules.
+
+See also: 'simplifyRulePattern'
+
+ -}
 simplifyRewriteRule
     :: MetadataTools Object StepperAttributes
     -> Rule
     -> Simplifier Rule
 simplifyRewriteRule tools (RewriteRule rule) =
-    RewriteRule <$> preSimplify (emptyPatternSimplifier tools) rule
+    RewriteRule <$> simplifyRulePattern tools rule
 
-emptyPatternSimplifier
+{- | Simplify a 'RulePattern' using only matching logic rules.
+
+The original rule is returned unless the simplification result matches certain
+narrowly-defined criteria.
+
+ -}
+simplifyRulePattern
+    :: MetadataTools Object StepperAttributes
+    -> RulePattern Object
+    -> Simplifier (RulePattern Object)
+simplifyRulePattern tools rulePattern = do
+    let RulePattern { left } = rulePattern
+    (simplifiedLeft, _proof) <- simplifyPattern tools left
+    case OrOfExpandedPattern.extractPatterns simplifiedLeft of
+        [ Predicated { term, predicate, substitution } ]
+          | PredicateTrue <- predicate -> do
+            let subst = Substitution.toMap substitution
+            left' <- substitute subst term
+            let RulePattern { right } = rulePattern
+            right' <- substitute subst right
+            let RulePattern { requires } = rulePattern
+            requires' <- traverse (substitute subst) requires
+            let RulePattern { attributes } = rulePattern
+            return RulePattern
+                { left = left'
+                , right = right'
+                , requires = requires'
+                , attributes = attributes
+                }
+        _ ->
+            -- Unable to simplify the given rule pattern, so we return the
+            -- original pattern in the hope that we can do something with it
+            -- later.
+            return rulePattern
+
+-- | Simplify a 'StepPattern' using only matching logic rules.
+simplifyPattern
     :: MetadataTools Object StepperAttributes
     -> CommonStepPattern Object
     -> Simplifier
         (OrOfExpandedPattern Object Variable, SimplificationProof Object)
-emptyPatternSimplifier tools =
+simplifyPattern tools =
     ExpandedPattern.simplify
         tools
         emptySubstitutionSimplifier
@@ -320,47 +378,3 @@ emptyPatternSimplifier tools =
     emptySimplifier = Simplifier.create tools Map.empty
     emptySubstitutionSimplifier =
         PredicateSubstitution.create tools emptySimplifier
-
-
--- | Proving a spec given as a module containing rules to be proven
-prove
-    :: Limit Natural
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
-    -- ^ The main module
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
-    -- ^ The spec module
-    -> Simplifier (Either (CommonStepPattern Object) ())
-prove limit definitionModule specModule = do
-    let
-        tools = extractMetadataTools definitionModule
-    Initialized { rewriteRules, simplifier, substitutionSimplifier } <-
-        initialize definitionModule tools
-    specAxioms <-
-        mapM (simplifyRuleOnSecond tools)
-            (extractRewriteClaims Object specModule)
-    let
-        axioms = fmap Axiom rewriteRules
-        claims = fmap makeClaim specAxioms
-
-    result <- runExceptT
-        $ verify
-            tools
-            simplifier
-            substitutionSimplifier
-            (defaultStrategy claims axioms)
-            (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-
-    return $ Bifunctor.first toMLPattern result
-
-  where
-    makeClaim (attributes, rule) = Claim { rule , attributes }
-    simplifyRuleOnSecond
-        :: MetadataTools Object StepperAttributes
-        -> (AxiomPatternAttributes, RewriteRule Object)
-        -> Simplifier (AxiomPatternAttributes, RewriteRule Object)
-    simplifyRuleOnSecond tools (atts, rule) = do
-        rule' <- simplifyRewriteRule tools rule
-        return (atts, rule')
-    extractUntrustedClaims :: [Claim Object] -> [RewriteRule Object]
-    extractUntrustedClaims =
-        map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)
