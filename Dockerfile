@@ -4,7 +4,7 @@ ENV TZ=America/Chicago
 RUN    ln --symbolic --no-dereference --force /usr/share/zoneinfo/$TZ /etc/localtime \
     && echo $TZ > /etc/timezone
 
-RUN apt update && apt upgrade --yes
+RUN apt update && apt upgrade -y
 
 RUN apt install --yes                                                             \
         autoconf bison clang-6.0 cmake curl flex gcc git libboost-test-dev        \
