@@ -6,14 +6,11 @@ RUN    ln --symbolic --no-dereference --force /usr/share/zoneinfo/$TZ /etc/local
 
 RUN apt update && apt upgrade --yes
 
-RUN apt install --yes                                                        \
-        autoconf bison build-essential clang++-6.0 clang-6.0 cmake coreutils \
-        curl diffutils flex gcc git gnupg jq libboost-test-dev libffi-dev    \
-        libgmp-dev libjemalloc-dev libmpfr-dev libstdc++6 libtool libxml2    \
-        libyaml-cpp-dev libz3-dev llvm-6.0 m4 make maven opam openjdk-8-jdk  \
-        pandoc pkg-config python3 python-jinja2 python-pygments              \
-        python-recommonmark scala stylish-haskell time libtinfo-dev unifdef  \
-        zlib1g-dev z3
+RUN apt install --yes                                                       \
+        autoconf bison clang-6.0 cmake curl debhelper flex gcc git          \
+        libboost-test-dev libffi-dev libgmp-dev libjemalloc-dev libmpfr-dev \
+        libtool libyaml-cpp-dev libz3-dev make maven opam openjdk-8-jdk     \
+        pandoc pkg-config python3 z3 zlib1g-dev
 
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
