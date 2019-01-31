@@ -7,7 +7,7 @@ RUN    ln --symbolic --no-dereference --force /usr/share/zoneinfo/$TZ /etc/local
 RUN apt update && apt upgrade -y
 
 RUN apt install --yes                                                             \
-        autoconf bison clang-6.0 cmake curl flex gcc git libboost-test-dev        \
+        autoconf bison clang-6.0 cmake curl flex gcc git jq libboost-test-dev     \
         libffi-dev libgmp-dev libjemalloc-dev libmpfr-dev libtool libyaml-cpp-dev \
         libz3-dev make maven opam openjdk-8-jdk pkg-config z3 zlib1g-dev
 
