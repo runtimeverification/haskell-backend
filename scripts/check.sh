@@ -4,9 +4,10 @@ set -e
 set -u
 
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
-UPSTREAM_BRANCH=${UPSTREAM_BRANCH:-origin/master}
+UPSTREAM_REMOTE=${UPSTREAM_REMOTE:-origin}
 
-git fetch
+git fetch $(git remote get-url $UPSTREAM_REMOTE) master
+UPSTREAM_BRANCH=FETCH_HEAD
 
 if ! $TOP/scripts/git-assert-clean.sh; \
 then \
