@@ -6,6 +6,8 @@ import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
+import Test.Terse
+       ( gives_ )
 
 import Prelude hiding
        ( null )
@@ -14,6 +16,8 @@ import Kore.AST.Pure hiding
        ( mapVariables )
 import Kore.Step.Pattern
        ( StepPattern )
+import Kore.TopBottom
+       ( isBottom, isTop )
 import Kore.Unification.Substitution
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -27,7 +31,22 @@ test_substitution =
     , isNormalizedTests
     , nullTests
     , variablesTests
+    , propertyTests
     ]
+
+propertyTests:: TestTree
+propertyTests =
+  testGroup "the three notable kinds of `Substitution` values"
+  [ isTop `gives_`        [(empty, True),  (normalized, False), (unnormalized, False) ]
+  , isBottom `gives_`     [(empty, False), (normalized, False), (unnormalized, False) ]
+  , isNormalized `gives_` [(empty, True),  (normalized, True),  (unnormalized, False) ]
+  , null `gives_`         [(empty, True),  (normalized, False), (unnormalized, False) ]
+  ]
+  where
+    empty = (mempty::Substitution level variable)
+    normalized = unsafeWrap [(Mock.x, Mock.a)]
+    unnormalized = wrap [(Mock.x, Mock.a)]
+
 
 monoidTests:: TestTree
 monoidTests =
