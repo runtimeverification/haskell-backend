@@ -10,22 +10,14 @@ RUN apt install --yes                                                        \
         autoconf bison build-essential clang++-6.0 clang-6.0 cmake coreutils \
         curl diffutils flex gcc git gnupg jq libboost-test-dev libffi-dev    \
         libgmp-dev libjemalloc-dev libmpfr-dev libstdc++6 libtool libxml2    \
-        libyaml-cpp-dev llvm-6.0 m4 make maven opam openjdk-8-jdk pandoc     \
-        pkg-config python3 python-jinja2 python-pygments python-recommonmark \
-        scala stylish-haskell time libtinfo-dev unifdef zlib1g-dev
+        libyaml-cpp-dev libz3-dev llvm-6.0 m4 make maven opam openjdk-8-jdk  \
+        pandoc pkg-config python3 python-jinja2 python-pygments              \
+        python-recommonmark scala stylish-haskell time libtinfo-dev unifdef  \
+        zlib1g-dev z3
 
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
 RUN curl -sSL https://get.haskellstack.org/ | sh
-
-RUN    git clone 'https://github.com/z3prover/z3' --branch=z3-4.8.4 \
-    && cd z3                                                        \
-    && python scripts/mk_make.py                                    \
-    && cd build                                                     \
-    && make -j8                                                     \
-    && make install                                                 \
-    && cd ../..                                                     \
-    && rm -rf z3
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
