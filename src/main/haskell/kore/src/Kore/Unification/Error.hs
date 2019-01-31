@@ -13,6 +13,7 @@ module Kore.Unification.Error
     , UnificationOrSubstitutionError (..)
     , ClashReason (..)
     , mapSubstitutionErrorVariables
+    , traverseSubstitutionErrorVariables
     , substitutionErrorVariables
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
@@ -61,6 +62,8 @@ substitutionErrorVariables (NonCtorCircularVariableDependency variables) =
 {-| 'mapSubstitutionErrorVariables' replaces all variables in a
 'SubstitutionError' using the provided mapping.
 -}
+-- TODO (thomas.tuegel): It would be nicer if 'SubstitutionError' was a Functor
+-- over its variables.
 mapSubstitutionErrorVariables
     :: (variableFrom level -> variableTo level)
     -> SubstitutionError level variableFrom
@@ -68,6 +71,21 @@ mapSubstitutionErrorVariables
 mapSubstitutionErrorVariables mapper
     (NonCtorCircularVariableDependency variables) =
         NonCtorCircularVariableDependency (map mapper variables)
+
+{- | Replace all variables in a 'SubstitutionError' using the given traversal.
+ -}
+-- TODO (thomas.tuegel): It would be nicer if 'SubstitutionError' was
+-- Traversable over its variables.
+traverseSubstitutionErrorVariables
+    :: Applicative f
+    => (variableFrom level -> f (variableTo level))
+    -> SubstitutionError level variableFrom
+    -> f (SubstitutionError level variableTo)
+traverseSubstitutionErrorVariables traversal =
+    \case
+        NonCtorCircularVariableDependency variables ->
+            NonCtorCircularVariableDependency
+                <$> traverse traversal variables
 
 -- Trivially promote substitution errors to sum-type errors
 substitutionToUnifyOrSubError

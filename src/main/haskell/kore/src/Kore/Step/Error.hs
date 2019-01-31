@@ -9,6 +9,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 module Kore.Step.Error
     ( StepError (..)
     , mapStepErrorVariables
+    , traverseStepErrorVariables
     , stepErrorVariables
     , unificationToStepError
     , unificationOrSubstitutionToStepError
@@ -40,6 +41,8 @@ stepErrorVariables (StepErrorSubstitution a) = substitutionErrorVariables a
 {-| 'mapStepErrorVariables' replaces all variables in a 'StepError' using
 the provided mapping.
 -}
+-- TODO (thomas.tuegel): It would be nicer if 'StepError' was a Functor over
+-- its variables.
 mapStepErrorVariables
     :: (variableFrom level -> variableTo level)
     -> StepError level variableFrom
@@ -47,6 +50,23 @@ mapStepErrorVariables
 mapStepErrorVariables _ (StepErrorUnification a) = StepErrorUnification a
 mapStepErrorVariables mapper (StepErrorSubstitution a) =
     StepErrorSubstitution (mapSubstitutionErrorVariables mapper a)
+
+{- | Replace the variables in a 'StepError' using the given traversal.
+ -}
+-- TODO (thomas.tuegel): It would be nicer if 'StepError' was Traversable over
+-- its variables.
+traverseStepErrorVariables
+    :: Applicative f
+    => (variableFrom level -> f (variableTo level))
+    -> StepError level variableFrom
+    -> f (StepError level variableTo)
+traverseStepErrorVariables traversal =
+    \case
+        StepErrorUnification err ->
+            pure (StepErrorUnification err)
+        StepErrorSubstitution err ->
+            StepErrorSubstitution
+                <$> traverseSubstitutionErrorVariables traversal err
 
 {-| 'unificationToStepError' converts an action with a 'UnificationError' into
 an action with a 'StepError'.

@@ -7,6 +7,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
 module Kore.Step.BaseStep
     ( OrStepResult (..)
     , RulePattern
@@ -26,7 +27,11 @@ module Kore.Step.BaseStep
     , stepWithRule
     ) where
 
+import qualified Control.Monad as Monad
 import           Control.Monad.Except
+import           Control.Monad.State
+                 ( StateT )
+import qualified Control.Monad.State as State
 import           Control.Monad.Trans.Except
                  ( throwE )
 import           Data.Either
@@ -34,14 +39,16 @@ import           Data.Either
 import qualified Data.Hashable as Hashable
 import           Data.List
                  ( foldl' )
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( fromMaybe, mapMaybe )
+                 ( mapMaybe )
 import           Data.Semigroup
                  ( Semigroup (..) )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
+import Data.Set (Set)
 import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
@@ -290,14 +297,8 @@ stepWithRule
     tools
     (UnificationProcedure unificationProcedure')
     substitutionSimplifier
-    expandedPattern@Predicated
-        { term = initialTerm
-        }
-    axiom@RulePattern
-        { left = axiomLeftRaw
-        , right = axiomRightRaw
-        , requires = axiomRequiresRaw
-        }
+    expandedPattern@Predicated { term = initialTerm }
+    axiom@RulePattern { left = axiomLeftRaw }
   = do
     -- Distinguish configuration (pattern) and axiom variables by lifting them
     -- into 'StepperVariable'.
@@ -309,13 +310,7 @@ stepWithRule
 
     let
         -- Keep a set of all variables for remapping errors (below).
-        existingVars =
-            Set.map
-                ConfigurationVariable
-                (ExpandedPattern.allVariables expandedPattern)
-            <> Set.map AxiomVariable (pureAllVariables axiomLeftRaw)
-            <> Set.map AxiomVariable (pureAllVariables axiomRightRaw)
-            <> Set.map AxiomVariable (Predicate.allVariables axiomRequiresRaw)
+        existingVars = ExpandedPattern.allVariables expandedPattern
 
         -- Remap unification and substitution errors into 'StepError'.
         normalizeUnificationOrSubstitutionError
@@ -324,7 +319,7 @@ stepWithRule
                 , Ord (variable level)
                 , Show (variable level)
                 )
-            => Set.Set (StepperVariable variable level)
+            => Set (variable level)
             -> ExceptT
                 (UnificationOrSubstitutionError
                     level
@@ -380,7 +375,7 @@ applyUnificationToRhs
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> RulePattern level
-    -> Set.Set (StepperVariable variable level)
+    -> Set (variable level)
     -> ExpandedPattern level variable
     -> UnificationProof level (StepperVariable variable)
     -> PredicateSubstitution level (StepperVariable variable)
@@ -510,33 +505,30 @@ applyUnificationToRhs
 
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
     -- for the proof.
-    (variableMapping, result) <-
-        lift
-        $ patternStepVariablesToCommon
-            existingVars Map.empty rawResult
-    (variableMapping1, condition) <-
-        lift
-        $ predicateStepVariablesToCommon
-            existingVars variableMapping normalizedCondition
-    (variableMapping2, remainderPredicate) <-
-        lift
-        $ predicateStepVariablesToCommon
-            existingVars variableMapping1 normalizedRemainderPredicate
-    (variableMapping3, substitutionProof) <-
-        lift
-        $ unificationProofStepVariablesToCommon
-            existingVars variableMapping2 rawSubstitutionProof
+    (results, variableMapping) <-
+        (lift . flip runRemapper existingVars) do
+            result <- remapStepPattern rawResult
+            condition <- remapPredicate normalizedCondition
+            remainderPredicate <- remapPredicate normalizedRemainderPredicate
+            substitutionProof <- remapUnificationProof rawSubstitutionProof
+            return (result, condition, remainderPredicate, substitutionProof)
+    let (result, condition, remainderPredicate, substitutionProof) = results
 
-    if Predicate.isFalse condition
-        || variablesInLeftAxiom `Set.isSubsetOf` substitutions
-        then return ()
-        else
-            (error . unlines)
-            [ "While applying axiom:", show axiom
-            , "to configuration:", show expandedPattern
-            , "Unexpected non-false predicate:", show condition
-            , "when substitutions:", show substitutions
-            , "do not cover all variables in left axiom:", show variablesInLeftAxiom
+    let substitutionCoversLeftAxiom =
+            variablesInLeftAxiom `Set.isSubsetOf` substitutions
+    Monad.unless
+        (Predicate.isFalse condition || substitutionCoversLeftAxiom)
+        $ error $ unlines
+            [ "While applying axiom:"
+            , show axiom
+            , "to configuration:"
+            , show expandedPattern
+            , "Unexpected non-false predicate:"
+            , show condition
+            , "when substitutions:"
+            , show substitutions
+            , "do not cover all variables in left axiom:"
+            , show variablesInLeftAxiom
             ]
 
     let
@@ -580,17 +572,17 @@ applyUnificationToRhs
             }
         , (<>)
             ((stepProof . StepProofVariableRenamings)
-                (variablePairToRenaming <$> Map.toList variableMapping3)
+                (variablePairToRenaming <$> Map.toList variableMapping)
             )
             ((stepProof . StepProofUnification) substitutionProof)
         )
   where
     variablePairToRenaming
-        :: (StepperVariable variable level, StepperVariable variable level)
+        :: (Variable level, variable level)
         -> VariableRenaming level variable
     variablePairToRenaming (original, renamed) = VariableRenaming
-        { variableRenamingOriginal = original
-        , variableRenamingRenamed  = renamed
+        { variableRenamingOriginal = AxiomVariable original
+        , variableRenamingRenamed  = ConfigurationVariable renamed
         }
 
 keepGoodResults
@@ -826,359 +818,11 @@ stepWithRemainders tools substitutionSimplifier patt rules =
         (map (\ (RewriteRule rule) -> rule) rules)
         patt
 
--- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
--- internally-defined variables.
-stepperVariableToVariableForError
-    :: forall a level variable
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        )
-    => Set.Set (StepperVariable variable level)
-    -> ExceptT (StepError level (StepperVariable variable)) Simplifier a
-    -> ExceptT (StepError level variable) Simplifier a
-stepperVariableToVariableForError existingVars = mapExceptT mapper
-  where
-    mapper
-        :: Simplifier
-            (Either (StepError level (StepperVariable variable)) a)
-        -> Simplifier (Either (StepError level variable) a)
-    mapper action = do
-        result <- action
-        case result of
-            Right value -> return (Right value)
-            Left err -> do
-                let axiomVars = stepErrorVariables err
-                mapping <-
-                    addAxiomVariablesAsConfig
-                        existingVars Map.empty (Set.toList axiomVars)
-                let errorWithoutAxiomVars =
-                        mapStepErrorVariables
-                            (\var -> fromMaybe var (Map.lookup var mapping))
-                            err
-                return $ Left $ mapStepErrorVariables
-                    configurationVariableToCommon errorWithoutAxiomVars
-
-unificationProofStepVariablesToCommon
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        )
-    => Set.Set (StepperVariable variable level)
-    -> Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> UnificationProof level (StepperVariable variable)
-    -> Simplifier
-        ( Map.Map
-            (StepperVariable variable level)
-            (StepperVariable variable level)
-        , UnificationProof level variable
-        )
-unificationProofStepVariablesToCommon _ mapping EmptyUnificationProof =
-    return (mapping, EmptyUnificationProof)
-unificationProofStepVariablesToCommon
-    existingVars
-    mapping
-    (CombinedUnificationProof items)
-  = do
-    (newMapping, mappedItems) <-
-        listStepVariablesToCommon
-            unificationProofStepVariablesToCommon existingVars mapping items
-    return
-        ( newMapping
-        , CombinedUnificationProof mappedItems
-        )
-unificationProofStepVariablesToCommon
-    existingVars
-    mapping
-    (ConjunctionIdempotency patt)
-  = do
-    (newMapping, mappedPattern) <-
-        patternStepVariablesToCommon existingVars mapping patt
-    return (newMapping, ConjunctionIdempotency mappedPattern)
-unificationProofStepVariablesToCommon
-    existingVars
-    mapping
-    (Proposition_5_24_3 functionalProof variable patt)
-  = do
-    (newMapping1, mappedVariable) <-
-        variableStepVariablesToCommon existingVars mapping variable
-    (newMapping2, mappedFunctionalProof) <-
-        listStepVariablesToCommon
-            functionalProofStepVariablesToCommon
-            existingVars
-            newMapping1
-            functionalProof
-    (newMapping3, mappedPattern) <-
-        patternStepVariablesToCommon
-            existingVars
-            newMapping2
-            patt
-    return
-        ( newMapping3
-        , Proposition_5_24_3
-            mappedFunctionalProof
-            mappedVariable
-            mappedPattern
-        )
-unificationProofStepVariablesToCommon
-    existingVars
-    mapping
-    (AndDistributionAndConstraintLifting symbolOrAlias unificationProof)
-  = do
-    (newMapping, mappedItems) <-
-        listStepVariablesToCommon
-            unificationProofStepVariablesToCommon
-            existingVars
-            mapping
-            unificationProof
-    return
-        ( newMapping
-        , AndDistributionAndConstraintLifting
-            symbolOrAlias
-            mappedItems
-        )
-unificationProofStepVariablesToCommon
-    existingVars
-    mapping
-    (SubstitutionMerge variable patt1 patt2)
-  = do
-    (newMapping1, mappedVariable) <-
-        variableStepVariablesToCommon existingVars mapping variable
-    (newMapping2, mappedPattern1) <-
-        patternStepVariablesToCommon existingVars newMapping1 patt1
-    (newMapping3, mappedPattern2) <-
-        patternStepVariablesToCommon existingVars newMapping2 patt2
-    return
-        ( newMapping3
-        , SubstitutionMerge
-            mappedVariable
-            mappedPattern1
-            mappedPattern2
-        )
-
-listStepVariablesToCommon
-    :: MetaOrObject level
-    =>  (Set.Set (StepperVariable variable level)
-            -> Map.Map
-                (StepperVariable variable level)
-                (StepperVariable variable level)
-            -> listElement (StepperVariable variable)
-            -> Simplifier
-                ( Map.Map
-                    (StepperVariable variable level)
-                    (StepperVariable variable level)
-                , listElement variable
-                )
-        )
-    -> Set.Set (StepperVariable variable level)
-    -> Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> [listElement (StepperVariable variable)]
-    -> Simplifier
-        ( Map.Map
-            (StepperVariable variable level)
-            (StepperVariable variable level)
-        , [listElement variable]
-        )
-listStepVariablesToCommon _ _ mapping [] =
-    return (mapping, [])
-listStepVariablesToCommon elementMapper existingVars mapping (proof : proofs)
-  = do
-    (newMapping1, mappedProof) <- elementMapper existingVars mapping proof
-    (newMapping2, mappedProofs) <-
-        listStepVariablesToCommon elementMapper existingVars newMapping1 proofs
-    return (newMapping2, mappedProof : mappedProofs)
-
-functionalProofStepVariablesToCommon
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        )
-    => Set.Set (StepperVariable variable level)
-    -> Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> FunctionalProof level (StepperVariable variable)
-    -> Simplifier
-        ( Map.Map
-            (StepperVariable variable level)
-            (StepperVariable variable level)
-        , FunctionalProof level variable
-        )
-functionalProofStepVariablesToCommon
-    existingVars mapping (FunctionalVariable variable)
-  = do
-    (newMapping, mappedVariable) <-
-        variableStepVariablesToCommon existingVars mapping variable
-    return (newMapping, FunctionalVariable mappedVariable)
-functionalProofStepVariablesToCommon _ mapping (FunctionalHead f) =
-    return (mapping, FunctionalHead f)
-functionalProofStepVariablesToCommon _ mapping (FunctionalStringLiteral sl) =
-    return (mapping, FunctionalStringLiteral sl)
-functionalProofStepVariablesToCommon _ mapping (FunctionalCharLiteral cl) =
-    return (mapping, FunctionalCharLiteral cl)
-functionalProofStepVariablesToCommon _ mapping (FunctionalDomainValue dv) =
-    return (mapping, FunctionalDomainValue dv)
-
-variableStepVariablesToCommon
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        )
-    => Set.Set (StepperVariable variable level)
-    -> Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> StepperVariable variable level
-    -> Simplifier
-        ( Map.Map
-            (StepperVariable variable level)
-            (StepperVariable variable level)
-        , variable level
-        )
-variableStepVariablesToCommon existingVars mapping variable =
-    case variable of
-        ConfigurationVariable v -> return (mapping, v)
-        AxiomVariable _ ->
-            case Map.lookup variable mapping of
-                Just var ->
-                    case var of
-                        AxiomVariable _         ->
-                            error "Unexpected axiom variable"
-                        ConfigurationVariable v -> return (mapping, v)
-                Nothing -> do
-                    newVar <-
-                        freshVariableSuchThat
-                            variable
-                            ( not . (`Set.member` existingVars) )
-                    unwrappedNewVar <-
-                        case newVar of
-                            (ConfigurationVariable v) -> return v
-                            _ -> error
-                                (  "Unexpected new variable type: "
-                                ++ show newVar
-                                )
-                    return
-                        ( Map.insert variable newVar mapping
-                        , unwrappedNewVar
-                        )
-
-predicateStepVariablesToCommon
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        )
-    => Set.Set (StepperVariable variable level)
-    -> Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> Predicate level (StepperVariable variable)
-    -> Simplifier
-        ( Map.Map
-            (StepperVariable variable level)
-            (StepperVariable variable level)
-        , Predicate level variable
-        )
-predicateStepVariablesToCommon existingVars mapped predicate' = do
-    let axiomVars = Predicate.allVariables predicate'
-    mapping <-
-        addAxiomVariablesAsConfig existingVars mapped (Set.toList axiomVars)
-    return
-        ( mapping
-        , fmap
-            (configurationVariablesToCommon . replacePatternVariables mapping)
-            predicate'
-        )
-  where
-    configurationVariablesToCommon =
-        Kore.Step.Pattern.mapVariables configurationVariableToCommon
-
-patternStepVariablesToCommon
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        )
-    => Set.Set (StepperVariable variable level)
-    -> Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> StepPattern level (StepperVariable variable)
-    -> Simplifier
-        ( Map.Map
-            (StepperVariable variable level)
-            (StepperVariable variable level)
-        , StepPattern level variable
-        )
-patternStepVariablesToCommon existingVars mapped patt = do
-    let axiomVars = pureAllVariables patt
-    mapping <-
-        addAxiomVariablesAsConfig existingVars mapped (Set.toList axiomVars)
-    return
-        ( mapping
-        , configurationVariablesToCommon (replacePatternVariables mapping patt)
-        )
-  where
-    configurationVariablesToCommon =
-        Kore.Step.Pattern.mapVariables configurationVariableToCommon
-
 configurationVariableToCommon
     :: StepperVariable variable level -> variable level
 configurationVariableToCommon (AxiomVariable a) =
     error ("Unexpected AxiomVariable: '" ++ show a ++ "'.")
 configurationVariableToCommon (ConfigurationVariable v) = v
-
-replacePatternVariables
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        )
-    => Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> StepPattern level (StepperVariable variable)
-    -> StepPattern level (StepperVariable variable)
-replacePatternVariables mapping =
-    Kore.Step.Pattern.mapVariables
-        (\var -> fromMaybe var (Map.lookup var mapping))
-
-addAxiomVariablesAsConfig
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        )
-    => Set.Set (StepperVariable variable level)
-    -> Map.Map (StepperVariable variable level) (StepperVariable variable level)
-    -> [StepperVariable variable level]
-    -> Simplifier
-        (Map.Map
-            (StepperVariable variable level)
-            (StepperVariable variable level)
-        )
-addAxiomVariablesAsConfig _ mapping [] = return mapping
-addAxiomVariablesAsConfig
-    existingVars mapping (ConfigurationVariable _ : vars)
-  =
-    addAxiomVariablesAsConfig existingVars mapping vars
-addAxiomVariablesAsConfig
-    existingVars mapping (var@(AxiomVariable _) : vars)
-  =
-    case Map.lookup var mapping of
-        Just _ -> addAxiomVariablesAsConfig existingVars mapping vars
-        Nothing -> do
-            newVar <-
-                freshVariableSuchThat
-                    var
-                    ( not . (`Set.member` existingVars) )
-            case newVar of
-                (ConfigurationVariable _) -> return ()
-                _ -> error
-                    ("Unexpected new variable type: " ++ show newVar)
-            addAxiomVariablesAsConfig
-                existingVars
-                (Map.insert var newVar mapping)
-                vars
 
 removeAxiomVariables
     :: MetaOrObject level
@@ -1192,3 +836,250 @@ removeAxiomVariables =
             ConfigurationVariable _ -> True
         )
     . Substitution.unwrap
+
+{- | @Remapper@ carries the context needed to remap 'StepperVariable's.
+
+@Remapper level variable a@ represents a value of type @a@ in the context of a
+remapping from @'StepperVariable' variable level@ to @variable level@ which
+preserves 'ConfigurationVariable's.
+
+Use 'remapAxiomVariable' to remap a single 'StepperVariable'. Use 'evalRemapper'
+to evaluate @Remapper level variable a@ and extract the value @a@ from its
+context.
+
+ -}
+type Remapper level variable =
+    StateT (RemapperState level variable) Simplifier
+
+{- | The context used by 'Remapper'.
+
+The context tracks the mapping from axiom variables to generated variables. The
+set of existing configuration variables is used to ensure that generated
+variable names do not collide with existing variables. @existingVariables@
+includes previously-generated variables.
+
+ -}
+data RemapperState level variable =
+    RemapperState
+        { existingVariables :: !(Set (variable level))
+        -- ^ Existing configuration variables
+        , mappedVariables :: !(Map (Variable level) (variable level))
+        -- ^ Axiom variables already remapped
+        }
+
+{- | Evaluate a 'Remapper', extracting the value from its context.
+
+The set of existing configuration variables is used to avoid introducing
+internal generated variables whose names collide with external variables.
+
+ -}
+evalRemapper
+    :: Remapper level variable a
+    -> Set (variable level)  -- ^ existing (configuration) variables
+    -> Simplifier a
+evalRemapper remapper existingVariables = do
+    (a, _) <- runRemapper remapper existingVariables
+    return a
+
+{- | Evaluate a 'Remapper', extracting the value and mapping from its context.
+
+The set of existing configuration variables is used to avoid introducing
+internal generated variables whose names collide with external variables.
+
+The returned mapping records the assignments of all axiom variables which were
+remapped.
+
+ -}
+runRemapper
+    :: Remapper level variable a
+    -> Set (variable level)  -- ^ existing (configuration) variables
+    -> Simplifier (a, Map (Variable level) (variable level))
+runRemapper remapper existingVariables = do
+    (a, RemapperState { mappedVariables }) <- State.runStateT remapper state0
+    return (a, mappedVariables)
+  where
+    state0 =
+        RemapperState
+            { existingVariables
+            , mappedVariables = Map.empty
+            }
+
+{- | Remap a single 'Variable', returning a generated variable.
+
+The mapping from the original to the generated variable is recorded in the
+context. The generated variable will be unique from the existing configuration
+variables recorded in the context.
+
+ -}
+remapVariable
+    ::  ( MetaOrObject level
+        , FreshVariable variable
+        , SortedVariable variable
+        , Ord (variable level)
+        )
+    => Variable level
+    -> Remapper level variable (variable level)
+remapVariable variable = do
+    RemapperState { existingVariables, mappedVariables } <- State.get
+    case Map.lookup variable mappedVariables of
+        Just variable' -> return variable'
+        Nothing -> do
+            variable' <-
+                freshVariableSuchThat
+                    (fromVariable variable)
+                    (`Set.notMember` existingVariables)
+            State.put RemapperState
+                { existingVariables =
+                    Set.insert variable' existingVariables
+                , mappedVariables =
+                    Map.insert variable variable' mappedVariables
+                }
+            return variable'
+
+{- | Remap a single 'StepperVariable', returning a configuration variable.
+
+'AxiomVariable's are remapped to generated variables, but
+'ConfigurationVariable's are returned unaltered. If a new mapping is generated,
+it is recorded in the context.
+
+The remapping functions below are wrappers around @remapAxiomVariable@.
+
+See also: 'remapVariable'
+
+ -}
+remapAxiomVariable
+    ::  ( MetaOrObject level
+        , FreshVariable variable
+        , SortedVariable variable
+        , Ord (variable level)
+        )
+    => StepperVariable variable level
+    -> Remapper level variable (variable level)
+remapAxiomVariable =
+    \case
+        AxiomVariable var -> remapVariable var
+        ConfigurationVariable var -> return var
+
+{- | Remap the 'StepperVariable's in a 'UnificationProof'.
+
+See also: 'remapAxiomVariable'
+
+ -}
+remapUnificationProof
+    ::  ( MetaOrObject level
+        , FreshVariable variable
+        , SortedVariable variable
+        , Ord (variable level)
+        )
+    => UnificationProof level (StepperVariable variable)
+    -> Remapper level variable (UnificationProof level variable)
+remapUnificationProof =
+    \case
+        EmptyUnificationProof ->
+            return EmptyUnificationProof
+        CombinedUnificationProof proofs ->
+            CombinedUnificationProof <$> traverse remapUnificationProof proofs
+        ConjunctionIdempotency patt ->
+            ConjunctionIdempotency <$> remapStepPattern patt
+        Proposition_5_24_3 functionalProof variable patt ->
+            Proposition_5_24_3
+                <$> traverse remapFunctionalProof functionalProof
+                <*> remapAxiomVariable variable
+                <*> remapStepPattern patt
+        AndDistributionAndConstraintLifting symbolOrAlias unificationProof ->
+            AndDistributionAndConstraintLifting symbolOrAlias
+                <$> traverse remapUnificationProof unificationProof
+        SubstitutionMerge variable patt1 patt2 ->
+            SubstitutionMerge
+                <$> remapAxiomVariable variable
+                <*> remapStepPattern patt1
+                <*> remapStepPattern patt2
+
+{- | Remap the 'StepperVariable's in a 'FunctionalProof'.
+
+See also: 'remapAxiomVariable'
+
+ -}
+remapFunctionalProof
+    ::  ( MetaOrObject level
+        , FreshVariable variable
+        , SortedVariable variable
+        , Ord (variable level)
+        )
+    => FunctionalProof level (StepperVariable variable)
+    -> Remapper level variable (FunctionalProof level variable)
+remapFunctionalProof =
+    \case
+        FunctionalVariable variable ->
+            FunctionalVariable <$> remapAxiomVariable variable
+        FunctionalHead f ->
+            return (FunctionalHead f)
+        FunctionalStringLiteral sl ->
+            return (FunctionalStringLiteral sl)
+        FunctionalCharLiteral cl ->
+            return (FunctionalCharLiteral cl)
+        FunctionalDomainValue dv ->
+            return (FunctionalDomainValue dv)
+
+{- | Remap the 'StepperVariable's in a 'Predicate'.
+
+See also: 'remapAxiomVariable'
+
+ -}
+remapPredicate
+    ::  ( MetaOrObject level
+        , FreshVariable variable
+        , SortedVariable variable
+        , Ord (variable level)
+        )
+    => Predicate level (StepperVariable variable)
+    -> Remapper level variable (Predicate level variable)
+remapPredicate =
+    (traverse . Kore.Step.Pattern.traverseVariables) remapAxiomVariable
+
+{- | Remap the 'StepperVariable's in a 'StepPattern'.
+
+See also: 'remapAxiomVariable'
+
+ -}
+remapStepPattern
+    ::  ( FreshVariable variable
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        )
+    => StepPattern level (StepperVariable variable)
+    -> Remapper level variable (StepPattern level variable)
+remapStepPattern = Kore.Step.Pattern.traverseVariables remapAxiomVariable
+
+{- | Remap the 'StepperVariable's in a 'StepError'.
+
+See also: 'remapAxiomVariable'
+
+ -}
+remapStepError
+    ::  ( FreshVariable variable
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        )
+    => StepError level (StepperVariable variable)
+    -> Remapper level variable (StepError level variable)
+remapStepError = traverseStepErrorVariables remapAxiomVariable
+
+-- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
+-- internally-defined variables.
+stepperVariableToVariableForError
+    ::  ( FreshVariable variable
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        )
+    => Set (variable level)
+    -> ExceptT (StepError level (StepperVariable variable)) Simplifier a
+    -> ExceptT (StepError level variable                  ) Simplifier a
+stepperVariableToVariableForError existingVars =
+    mapExceptT \action ->
+        action >>= \case
+            Right value -> return (Right value)
+            Left err -> Left <$> evalRemapper (remapStepError err) existingVars
