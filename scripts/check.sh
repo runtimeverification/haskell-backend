@@ -2,6 +2,7 @@
 
 set -e
 set -u
+set -o
 
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 UPSTREAM_REMOTE=${UPSTREAM_REMOTE:-origin}
