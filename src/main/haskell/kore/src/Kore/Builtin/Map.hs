@@ -81,7 +81,7 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( AttemptedFunction (..) )
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -181,7 +181,7 @@ returnMap
     :: (Monad m, Ord (variable Object))
     => Sort Object
     -> Builtin variable
-    -> m (AttemptedFunction Object variable)
+    -> m (AttemptedAxiom Object variable)
 returnMap resultSort map' =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
@@ -197,9 +197,9 @@ evalLookup =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalLookup0 tools _ _ arguments =
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_map, _key) =
                     case arguments of
@@ -224,7 +224,7 @@ evalElement =
     Builtin.functionEvaluator evalElement0
   where
     evalElement0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_key, _value) =
                     case arguments of
@@ -245,9 +245,9 @@ evalConcat =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalConcat0 _ _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_map1, _map2) =
                     case arguments of
@@ -302,7 +302,7 @@ evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
     evalUpdate0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_map, _key, value) =
                     case arguments of
@@ -318,7 +318,7 @@ evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
     evalInKeys0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_key, _map) =
                     case arguments of
@@ -341,9 +341,9 @@ evalKeys =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalKeys0 _ _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let _map =
                     case arguments of

@@ -18,12 +18,11 @@ import Control.Monad.Except
 import           Kore.AST.Pure hiding
                  ( isConcrete )
 import qualified Kore.AST.Pure as Pure
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateFalse, makeTruePredicate )
+                 ( pattern PredicateFalse )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
                  RulePattern (..) )
@@ -35,9 +34,9 @@ import           Kore.Step.BaseStep as StepResult
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom )
-import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+                 ( bottom, fromPurePattern )
+import           Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -77,21 +76,18 @@ ruleFunctionEvaluator
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions in patterns
-    -> CofreeF
-        (Application level)
-        (Valid (variable level) level)
-        (StepPattern level variable)
+    -> StepPattern level variable
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
-        (AttemptedFunction level variable, SimplificationProof level)
+        (AttemptedAxiom level variable, SimplificationProof level)
 ruleFunctionEvaluator
     (EqualityRule rule)
     tools
     substitutionSimplifier
     simplifier
-    app@(_ :< Application _ c)
+    patt
   | Axiom.Concrete.isConcrete (concrete $ attributes rule)
-        && any (not . Pure.isConcrete) c
+        && not (Pure.isConcrete patt)
   = notApplicable
   | otherwise = do
     result <- runExceptT stepResult
@@ -101,13 +97,13 @@ ruleFunctionEvaluator
         Right results -> do
             processedResults <- mapM processResult results
             return
-                ( AttemptedFunction.Applied
+                ( AttemptedAxiom.Applied
                     (OrOfExpandedPattern.make (map dropProof processedResults))
                 , SimplificationProof
                 )
   where
     notApplicable =
-        return (AttemptedFunction.NotApplicable, SimplificationProof)
+        return (AttemptedAxiom.NotApplicable, SimplificationProof)
     dropProof :: (a, SimplificationProof level) -> a
     dropProof = fst
 
@@ -116,22 +112,8 @@ ruleFunctionEvaluator
             tools
             (UnificationProcedure matchAsUnification)
             substitutionSimplifier
-            (stepperConfiguration app)
+            (ExpandedPattern.fromPurePattern patt)
             rule
-
-    stepperConfiguration
-        :: MetaOrObject level
-        => CofreeF
-            (Application level)
-            (Valid (variable level) level)
-            (StepPattern level variable)
-        -> ExpandedPattern level variable
-    stepperConfiguration (valid :< app') =
-        Predicated
-            { term = asPurePattern (valid :< ApplicationPattern app')
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
 
     processResult
         :: (StepResult level variable, StepProof level variable)

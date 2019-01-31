@@ -41,14 +41,16 @@ import qualified Kore.Step.BaseStep as OrStepResult
                  ( OrStepResult (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( fromPurePattern )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (..),
-                 BuiltinAndAxiomsFunctionEvaluatorMap,
+                 ( BuiltinAndAxiomSimplifier (..),
+                 BuiltinAndAxiomSimplifierMap,
                  FunctionEvaluators (FunctionEvaluators) )
 import           Kore.Step.Function.Data as FunctionEvaluators
                  ( FunctionEvaluators (..) )
-import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
@@ -56,7 +58,7 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, traverseWithPairs )
+                 ( extractPatterns, flatten, make, traverseWithPairs )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -86,7 +88,7 @@ evaluateApplication
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
@@ -103,7 +105,7 @@ evaluateApplication
     simplifier
     symbolIdToEvaluator
     childrenPredicateSubstitution
-    validApp@(valid :< app)
+    (valid :< app)
   =
     case Map.lookup symbolId symbolIdToEvaluator of
         Nothing
@@ -121,11 +123,31 @@ evaluateApplication
             traceNonErrorMonad
                 D_Function_evaluateApplication
                 [debugArg "symbolId" (getId symbolId)]
-            $ these
-                evaluateWithBuiltins
-                evaluateWithFunctionAxioms
-                evaluateBuiltinAndAxioms
-                builtinOrAxiomEvaluators
+            $ do
+                (result, proof) <- these
+                    evaluateWithBuiltins
+                    evaluateWithFunctionAxioms
+                    evaluateBuiltinAndAxioms
+                    builtinOrAxiomEvaluators
+                flattened <- case result of
+                    AttemptedAxiom.NotApplicable ->
+                        return AttemptedAxiom.NotApplicable
+                    AttemptedAxiom.Applied orResults -> do
+                        simplified <- mapM simplifyIfNeeded orResults
+                        return
+                            (AttemptedAxiom.Applied
+                                (OrOfExpandedPattern.flatten simplified)
+                            )
+                (merged, _proof) <- mergeWithConditionAndSubstitution
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    childrenPredicateSubstitution
+                    (flattened, proof)
+                case merged of
+                    AttemptedAxiom.NotApplicable -> return unchanged
+                    AttemptedAxiom.Applied orPatt ->
+                        return (orPatt, SimplificationProof)
   where
     Application { applicationSymbolOrAlias = appHead } = app
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
@@ -133,29 +155,22 @@ evaluateApplication
     appPurePattern = asPurePattern (valid :< ApplicationPattern app)
 
     evaluateBuiltinAndAxioms
-        :: ApplicationFunctionEvaluator level
+        :: BuiltinAndAxiomSimplifier level
         -> FunctionEvaluators level
         -> Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-    evaluateBuiltinAndAxioms builtinEvaluator axiomEvaluators = do
-        (result, _proof) <- applyEvaluator validApp builtinEvaluator
-        case result of
-            AttemptedFunction.NotApplicable
-              | isAppConcrete
-              , Just hook <- getAppHookString ->
-                error
-                    (   "Expecting hook " ++ hook
-                    ++  " to reduce concrete pattern\n\t"
-                    ++ show app
-                    )
-              | otherwise ->
-                -- If the builtin axioms failed, in many cases we can't just
-                -- apply evaluation axioms, since may of them are recursive
-                -- and will be applied indefinitely.
-                -- TODO(virgil): We should refine this at some point.
-                evaluateWithFunctionAxioms
-                    axiomEvaluators { definitionRules = [] }
-            AttemptedFunction.Applied pat -> return (pat, SimplificationProof)
+            (AttemptedAxiom level variable, SimplificationProof level)
+    evaluateBuiltinAndAxioms
+        builtinEvaluator
+        FunctionEvaluators { definitionRules, simplificationEvaluators }
+      =
+        evaluateBuiltinOrFirstWorkingSimplifierOrDefinitionRulesIfAny
+            builtinEvaluator
+            simplificationEvaluators
+            definitionRules
+            tools
+            substitutionSimplifier
+            simplifier
+            appPurePattern
 
     unchangedPatt =
         case childrenPredicateSubstitution of
@@ -168,178 +183,324 @@ evaluateApplication
     unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
 
-    applyEvaluator
-        :: CofreeF
-            (Application level)
-            (Valid (variable level) level)
-            (StepPattern level variable)
-        -> ApplicationFunctionEvaluator level
-        -> Simplifier
-            ( AttemptedFunction level variable
-            , SimplificationProof level
-            )
-    applyEvaluator
-        app' (ApplicationFunctionEvaluator evaluator)
-      = do
-        result <- evaluator
-            tools
-            substitutionSimplifier
-            simplifier
-            app'
-        mergeWithConditionAndSubstitution
-            tools
-            substitutionSimplifier
-            simplifier
-            childrenPredicateSubstitution
-            result
-
-    isAppConcrete = isJust (asConcretePurePattern appPurePattern)
     getAppHookString =
         Text.unpack <$> (getHook . hook . symAttributes tools) appHead
 
     evaluateWithFunctionAxioms
         :: FunctionEvaluators level
         -> Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (AttemptedAxiom level variable, SimplificationProof level)
     evaluateWithFunctionAxioms
         FunctionEvaluators { definitionRules, simplificationEvaluators }
-      = do
-        (simplifiedResult, proof) <-
-            evaluateWithSimplificationAxioms simplificationEvaluators
-        case simplifiedResult of
-            AttemptedFunction.NotApplicable ->
-                if null definitionRules
-                    then
-                        -- We don't have a definition, so we shouldn't attempt
-                        -- to evaluate it, since it would currently evaluate
-                        -- to bottom.
-                        return (OrOfExpandedPattern.make [unchangedPatt], proof)
-                    else evaluateWithDefinitionAxioms definitionRules
-            AttemptedFunction.Applied result -> return (result, proof)
+      =
+        evaluateFirstWorkingSimplifierOrDefinitionRulesIfAny
+            simplificationEvaluators
+            definitionRules
+            tools
+            substitutionSimplifier
+            simplifier
+            appPurePattern
 
-    evaluateWithSimplificationAxioms [] =
-        return
-            ( AttemptedFunction.NotApplicable
-            , SimplificationProof
-            )
-    evaluateWithSimplificationAxioms (evaluator : evaluators) = do
-        (applicationResult, _proof) <- applyEvaluator validApp evaluator
-
-        let
-            simplify
-                :: ExpandedPattern level variable
-                -> Simplifier [ExpandedPattern level variable]
-            simplify result = do
-                orPatt <- reevaluateFunctions
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    result
-                return (OrOfExpandedPattern.extractPatterns orPatt)
-        case applicationResult of
-            AttemptedFunction.Applied orResults -> do
-                when
-                    (length (OrOfExpandedPattern.extractPatterns orResults) > 1)
-                    -- We should only allow multiple simplification results
-                    -- when they are created by unification splitting the
-                    -- configuration.
-                    -- However, right now, we shouldn't be able to get more
-                    -- than one result, so we throw an error.
-                    (error
-                        (  "Unexpected simplification result with more "
-                        ++ "than one configuration: "
-                        ++ show orResults
-                        )
-                    )
-                patts <-
-                    mapM
-                        simplify
-                        (OrOfExpandedPattern.extractPatterns orResults)
-                return
-                    ( AttemptedFunction.Applied
-                        (OrOfExpandedPattern.make (concat patts))
-                    , SimplificationProof
-                    )
-            AttemptedFunction.NotApplicable ->
-                evaluateWithSimplificationAxioms evaluators
-
-    evaluateWithBuiltins evaluator = do
-        (result, _proof) <- applyEvaluator validApp evaluator
-        case result of
-            AttemptedFunction.NotApplicable -> return
-                ( OrOfExpandedPattern.make [unchangedPatt]
-                , SimplificationProof
-                )
-            AttemptedFunction.Applied orResult -> do
-                -- TODO(virgil): Find out if builtin results need to be
-                -- resimplified and, if they don't, skip resimplification.
-                simplifiedPatts <-
-                    mapM simplifyIfNeeded
-                        (OrOfExpandedPattern.extractPatterns orResult)
-                return
-                    ( OrOfExpandedPattern.make (concat simplifiedPatts)
-                    , SimplificationProof
-                    )
-
-    evaluateWithDefinitionAxioms
-        :: [EqualityRule level]
-        -> Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
-    evaluateWithDefinitionAxioms definitionRules = do
-        (OrStepResult { rewrittenPattern, remainder }, _proof) <-
-            stepWithRemaindersForUnifier
-                tools
-                (UnificationProcedure unificationWithAppMatchOnTop)
-                substitutionSimplifier
-                (map (\ (EqualityRule rule) -> rule) definitionRules)
-                unchangedPatt
-        let
-            evaluationResults :: [ExpandedPattern level variable]
-            evaluationResults =
-                OrOfExpandedPattern.extractPatterns rewrittenPattern
-
-            remainderResults :: [ExpandedPattern level variable]
-            remainderResults =
-                    OrOfExpandedPattern.extractPatterns remainder
-
-            simplifyPredicate
-                :: ExpandedPattern level variable
-                -> Simplifier
-                    (ExpandedPattern level variable, SimplificationProof level)
-            simplifyPredicate =
-                ExpandedPattern.simplifyPredicate
-                    tools
-                    substitutionSimplifier
-                    simplifier
-        simplifiedEvaluationLists <- mapM simplifyIfNeeded evaluationResults
-        simplifiedRemainderList <-
-            mapM simplifyPredicate remainderResults
-        let
-            simplifiedEvaluationResults :: [ExpandedPattern level variable]
-            simplifiedEvaluationResults = concat simplifiedEvaluationLists
-
-            simplifiedRemainderResults :: [ExpandedPattern level variable]
-            (simplifiedRemainderResults, _proofs) =
-                unzip simplifiedRemainderList
-        return
-            ( OrOfExpandedPattern.make
-                (simplifiedEvaluationResults ++ simplifiedRemainderResults)
-            , SimplificationProof
-            )
+    evaluateWithBuiltins (BuiltinAndAxiomSimplifier evaluator) =
+        evaluator
+            tools
+            substitutionSimplifier
+            simplifier
+            appPurePattern
 
     simplifyIfNeeded
         :: ExpandedPattern level variable
-        -> Simplifier [ExpandedPattern level variable]
-    simplifyIfNeeded result =
-        if result == unchangedPatt
-            then return [unchangedPatt]
-            else do
-                orPatt <- reevaluateFunctions
+        -> Simplifier (OrOfExpandedPattern level variable)
+    simplifyIfNeeded patt =
+        if patt == unchangedPatt
+            then return (OrOfExpandedPattern.make [unchangedPatt])
+            else
+                reevaluateFunctions
                     tools
                     substitutionSimplifier
                     simplifier
-                    result
-                return (OrOfExpandedPattern.extractPatterns orPatt)
+                    patt
+
+
+evaluateBuiltinOrFirstWorkingSimplifierOrDefinitionRulesIfAny
+    :: forall variable level
+    .   ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , Show (variable Object)
+        , Unparse (variable level)
+        , ShowMetaOrObject variable
+        )
+    -- TODO(virgil): Merge the BuiltinAndAxiomSimplifier objects in
+    -- a single list.
+    => BuiltinAndAxiomSimplifier level
+    -> [BuiltinAndAxiomSimplifier level]
+    -> [EqualityRule level]
+    -> MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level variable
+    -> StepPattern level variable
+    -> Simplifier
+        (AttemptedAxiom level variable, SimplificationProof level)
+evaluateBuiltinOrFirstWorkingSimplifierOrDefinitionRulesIfAny
+    builtinEvaluator
+    axiomEvaluators
+    definitionRules
+    tools
+    substitutionSimplifier
+    simplifier
+    patt
+  = do
+    (result, _proof) <-
+        evaluateBuiltin
+            builtinEvaluator
+            tools
+            substitutionSimplifier
+            simplifier
+            patt
+    case result of
+        AttemptedAxiom.NotApplicable ->
+            -- If the builtin axioms failed, in many cases we can't just
+            -- apply evaluation axioms, since may of them are recursive
+            -- and will be applied indefinitely.
+            -- TODO(virgil): We should refine this at some point.
+            evaluateFirstWorkingSimplifierOrDefinitionRulesIfAny
+                axiomEvaluators
+                definitionRules
+                tools
+                substitutionSimplifier
+                simplifier
+                patt
+        AttemptedAxiom.Applied _ -> return (result, SimplificationProof)
+
+evaluateBuiltin
+    :: forall variable level
+    .   ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , Show (variable Object)
+        , Unparse (variable level)
+        , ShowMetaOrObject variable
+        )
+    => BuiltinAndAxiomSimplifier level
+    -> MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level variable
+    -> StepPattern level variable
+    -> Simplifier
+        (AttemptedAxiom level variable, SimplificationProof level)
+evaluateBuiltin
+    (BuiltinAndAxiomSimplifier builtinEvaluator)
+    tools
+    substitutionSimplifier
+    simplifier
+    patt
+  = do
+    (result, _proof) <-
+        builtinEvaluator
+            tools
+            substitutionSimplifier
+            simplifier
+            patt
+    case result of
+        AttemptedAxiom.NotApplicable
+          | isPattConcrete
+          , Just hook <- getAppHookString ->
+            error
+                (   "Expecting hook " ++ hook
+                ++  " to reduce concrete pattern\n\t"
+                ++ show patt
+                )
+          | otherwise ->
+            return (AttemptedAxiom.NotApplicable, SimplificationProof)
+        AttemptedAxiom.Applied _ -> return (result, SimplificationProof)
+  where
+    isPattConcrete = isJust (asConcretePurePattern patt)
+    appHead = case patt of
+        App_ head0 _children -> head0
+        _ -> error
+            ("Expected an application pattern, but got " ++ show patt ++ ".")
+    -- TODO(virgil): Send this from outside after replacing `These` as a
+    -- representation for application evaluators.
+    getAppHookString =
+        Text.unpack <$> (getHook . hook . symAttributes tools) appHead
+
+evaluateFirstWorkingSimplifierOrDefinitionRulesIfAny
+    :: forall variable level
+    .   ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , Show (variable Object)
+        , Unparse (variable level)
+        , ShowMetaOrObject variable
+        )
+    => [BuiltinAndAxiomSimplifier level]
+    -> [EqualityRule level]
+    -> MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level variable
+    -> StepPattern level variable
+    -> Simplifier
+        (AttemptedAxiom level variable, SimplificationProof level)
+evaluateFirstWorkingSimplifierOrDefinitionRulesIfAny
+    simplificationEvaluators
+    definitionRules
+    tools
+    substitutionSimplifier
+    simplifier
+    patt
+  = do
+    (simplifiedResult, proof) <-
+        applyFirstSimplifierThatWorks
+            simplificationEvaluators
+            tools
+            substitutionSimplifier
+            simplifier
+            patt
+    case simplifiedResult of
+        AttemptedAxiom.NotApplicable ->
+            if null definitionRules
+                then
+                    -- We don't have a definition, so we shouldn't attempt
+                    -- to evaluate it, since it would currently evaluate
+                    -- to bottom.
+                    return (AttemptedAxiom.NotApplicable, proof)
+                else evaluateWithDefinitionAxioms
+                    definitionRules
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    patt
+        AttemptedAxiom.Applied _ -> return (simplifiedResult, proof)
+
+applyFirstSimplifierThatWorks
+    :: forall variable level
+    .   ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , Show (variable Object)
+        , Unparse (variable level)
+        , ShowMetaOrObject variable
+        )
+    => [BuiltinAndAxiomSimplifier level]
+    -> MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level variable
+    -> StepPattern level variable
+    -> Simplifier
+        (AttemptedAxiom level variable, SimplificationProof level)
+applyFirstSimplifierThatWorks [] _ _ _ _ =
+    return
+        ( AttemptedAxiom.NotApplicable
+        , SimplificationProof
+        )
+applyFirstSimplifierThatWorks
+    (BuiltinAndAxiomSimplifier evaluator : evaluators)
+    tools
+    substitutionSimplifier
+    simplifier
+    patt
+  = do
+    (applicationResult, _proof) <-
+        evaluator tools substitutionSimplifier simplifier patt
+
+    case applicationResult of
+        AttemptedAxiom.Applied orResults -> do
+            when
+                (length (OrOfExpandedPattern.extractPatterns orResults) > 1)
+                -- We should only allow multiple simplification results
+                -- when they are created by unification splitting the
+                -- configuration.
+                -- However, right now, we shouldn't be able to get more
+                -- than one result, so we throw an error.
+                (error
+                    (  "Unexpected simplification result with more "
+                    ++ "than one configuration: "
+                    ++ show orResults
+                    )
+                )
+            return (applicationResult, SimplificationProof)
+        AttemptedAxiom.NotApplicable ->
+            applyFirstSimplifierThatWorks
+                evaluators tools substitutionSimplifier simplifier patt
+
+evaluateWithDefinitionAxioms
+    :: forall variable level
+    .   ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , SortedVariable variable
+        , Show (variable level)
+        , Show (variable Object)
+        , Unparse (variable level)
+        , ShowMetaOrObject variable
+        )
+    => [EqualityRule level]
+    -> MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level variable
+    -> StepPattern level variable
+    -> Simplifier
+        (AttemptedAxiom level variable, SimplificationProof level)
+evaluateWithDefinitionAxioms
+    definitionRules tools substitutionSimplifier simplifier patt
+  = do
+    let
+        expanded :: ExpandedPattern level variable
+        expanded = ExpandedPattern.fromPurePattern patt
+
+    (OrStepResult { rewrittenPattern, remainder }, _proof) <-
+        stepWithRemaindersForUnifier
+            tools
+            (UnificationProcedure unificationWithAppMatchOnTop)
+            substitutionSimplifier
+            (map (\ (EqualityRule rule) -> rule) definitionRules)
+            expanded
+    let
+        evaluationResults :: [ExpandedPattern level variable]
+        evaluationResults = OrOfExpandedPattern.extractPatterns rewrittenPattern
+
+        remainderResults :: [ExpandedPattern level variable]
+        remainderResults = OrOfExpandedPattern.extractPatterns remainder
+
+        simplifyPredicate
+            :: ExpandedPattern level variable
+            -> Simplifier
+                (ExpandedPattern level variable, SimplificationProof level)
+        simplifyPredicate =
+            ExpandedPattern.simplifyPredicate
+                tools
+                substitutionSimplifier
+                simplifier
+
+    simplifiedRemainderList <- mapM simplifyPredicate remainderResults
+    let
+        simplifiedEvaluationResults :: [ExpandedPattern level variable]
+        simplifiedEvaluationResults = evaluationResults
+
+        simplifiedRemainderResults :: [ExpandedPattern level variable]
+        (simplifiedRemainderResults, _proofs) =
+            unzip simplifiedRemainderList
+    return
+        ( AttemptedAxiom.Applied
+            (OrOfExpandedPattern.make
+                (simplifiedEvaluationResults ++ simplifiedRemainderResults)
+            )
+        , SimplificationProof
+        )
 
 {-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
 was evaluated.
@@ -447,19 +608,19 @@ mergeWithConditionAndSubstitution
     -- ^ Evaluates functions in a pattern.
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedFunction level variable, SimplificationProof level)
-    -- ^ AttemptedFunction to which the condition should be added.
-    -> Simplifier (AttemptedFunction level variable, SimplificationProof level)
+    -> (AttemptedAxiom level variable, SimplificationProof level)
+    -- ^ AttemptedAxiom to which the condition should be added.
+    -> Simplifier (AttemptedAxiom level variable, SimplificationProof level)
 mergeWithConditionAndSubstitution
-    _ _ _ _ (AttemptedFunction.NotApplicable, _proof)
+    _ _ _ _ (AttemptedAxiom.NotApplicable, _proof)
   =
-    return (AttemptedFunction.NotApplicable, SimplificationProof)
+    return (AttemptedAxiom.NotApplicable, SimplificationProof)
 mergeWithConditionAndSubstitution
     tools
     substitutionSimplifier
     simplifier
     toMerge
-    (AttemptedFunction.Applied functionResult, _proof)
+    (AttemptedAxiom.Applied functionResult, _proof)
   = do
     (evaluated, _proof) <- OrOfExpandedPattern.mergeWithPredicateSubstitution
         tools
@@ -467,4 +628,4 @@ mergeWithConditionAndSubstitution
         simplifier
         toMerge
         functionResult
-    return (AttemptedFunction.Applied evaluated, SimplificationProof)
+    return (AttemptedAxiom.Applied evaluated, SimplificationProof)

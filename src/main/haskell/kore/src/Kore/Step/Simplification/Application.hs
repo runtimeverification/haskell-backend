@@ -24,7 +24,7 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomsFunctionEvaluatorMap )
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.OrOfExpandedPattern
@@ -76,7 +76,7 @@ simplify
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application level)
@@ -133,7 +133,7 @@ makeAndEvaluateApplications
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> Valid (variable level) level
     -> SymbolOrAlias level
@@ -175,7 +175,7 @@ makeAndEvaluateSymbolApplications
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> Valid (variable level) level
     -> SymbolOrAlias level
@@ -221,7 +221,7 @@ evaluateApplicationFunction
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated

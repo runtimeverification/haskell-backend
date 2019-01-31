@@ -42,7 +42,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Sort
                  ( Sort )
 import           Kore.Step.Function.Data
-                 ( AttemptedFunction )
+                 ( AttemptedAxiom )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( Simplifier, StepPatternSimplifier )
@@ -83,9 +83,9 @@ evalKeccak =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalKeccak0 _ _ resultSort arguments =
-        Builtin.getAttemptedFunction $ do
+        Builtin.getAttemptedAxiom $ do
             let
                 arg =
                     case arguments of

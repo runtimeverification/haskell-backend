@@ -19,7 +19,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomsFunctionEvaluatorMap )
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -91,7 +91,7 @@ simplify
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> StepPattern level variable
     -> Simplifier
@@ -120,7 +120,7 @@ simplifyToOr
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPattern level variable
@@ -152,7 +152,7 @@ simplifyInternal
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> Base (StepPattern level variable) (StepPattern level variable)
     -> Simplifier
