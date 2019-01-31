@@ -1,5 +1,9 @@
 #!/bin/sh
 
+set -e
+set -u
+set -o
+
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 
 HS_TOP="$TOP/src/main/haskell/kore"
