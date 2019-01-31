@@ -173,6 +173,8 @@ instance
             ConfigurationVariable variable ->
                 sortedVariableSort variable
     fromVariable = AxiomVariable
+    toVariable (AxiomVariable var) = var
+    toVariable (ConfigurationVariable var) = toVariable var
 
 instance
     (FreshVariable variable, SortedVariable variable) =>
@@ -496,16 +498,18 @@ applyUnificationToRhs
                 (Predicate.allVariables normalizedCondition)
             <> extractAxiomVariables
                 (Predicate.allVariables normalizedRemainderPredicate)
-        toVariable :: StepperVariable variable level -> Maybe (Variable level)
-        toVariable (AxiomVariable v) = Just v
-        toVariable (ConfigurationVariable _) = Nothing
+        fromStepperVariable
+            :: StepperVariable variable level
+            -> Maybe (Variable level)
+        fromStepperVariable (AxiomVariable v) = Just v
+        fromStepperVariable (ConfigurationVariable _) = Nothing
         extractAxiomVariables
             :: Set.Set (StepperVariable variable level)
             -> Set.Set (Variable level)
         extractAxiomVariables =
-            Set.fromList . mapMaybe toVariable . Set.toList
+            Set.fromList . mapMaybe fromStepperVariable . Set.toList
         substitutions =
-            Set.fromList . mapMaybe toVariable . Map.keys
+            Set.fromList . mapMaybe fromStepperVariable . Map.keys
             $ substitution
 
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
