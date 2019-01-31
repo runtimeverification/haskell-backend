@@ -80,9 +80,9 @@ simplifyEvaluated
         )
 simplifyEvaluated first second =
     case OrOfExpandedPattern.extractPatterns first of
-        [patt] -> halfSimplifyEvaluated patt second
+        [patt] | Just result <- mergePredicates patt second -> result
         _ -> case OrOfExpandedPattern.extractPatterns second of
-            [patt] -> halfSimplifyEvaluated patt first
+            [patt] | Just result <- mergePredicates patt first -> result
             _ -> defaultMerge
   where
     defaultMerge =
@@ -90,9 +90,16 @@ simplifyEvaluated first second =
         , SimplificationProof
         )
 
+{- | Merge the predicate of a @\\top@ term with the first disjunct.
+
+If the configuration's term is not @\\top@ or the substitutions of the
+configuration and the first disjunct are not the same, then the predicates
+cannot be merged.
+
+ -}
 -- TODO(virgil): This should do all possible mergings, not just the first
 -- term with the second.
-halfSimplifyEvaluated
+mergePredicates
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Ord (variable level)
@@ -100,45 +107,33 @@ halfSimplifyEvaluated
         , Unparse (variable level)
         )
     => ExpandedPattern level variable
+    -- ^ Configuration
     -> OrOfExpandedPattern level variable
-    ->  ( OrOfExpandedPattern level variable
-        , SimplificationProof level
-        )
-halfSimplifyEvaluated
-    first@Predicated
+    -- ^ Disjunction
+    -> Maybe (OrOfExpandedPattern level variable, SimplificationProof level)
+mergePredicates
+    Predicated
         { term = term1
-        , predicate = firstPredicate
-        , substitution = (Substitution.unwrap -> [])
+        , predicate = predicate1
+        , substitution = substitution1
         }
     second
-  | (Recursive.project -> _ :< TopPattern _) <- term1
+  | _ :< TopPattern _ <- Recursive.project term1
+  , pattern2 : patterns <- OrOfExpandedPattern.extractPatterns second
+  , Predicated { predicate = predicate2 } <- pattern2
+  , Predicated { substitution = substitution2 } <- pattern2
+  , Substitution.unwrap substitution1 == Substitution.unwrap substitution2
   =
-    case OrOfExpandedPattern.extractPatterns second of
-        [] ->
-            ( OrOfExpandedPattern.make [first]
-            , SimplificationProof
+    Just
+        ( OrOfExpandedPattern.make
+            ( Predicated
+                { term = term1
+                , predicate = makeOrPredicate predicate1 predicate2
+                , substitution = substitution1
+                }
+            : patterns
             )
-        ( Predicated
-            { term = term2, predicate, substitution}
-         : patts
-         ) ->
-            let
-                mergedPredicate =
-                    makeOrPredicate firstPredicate predicate
-            in
-                ( OrOfExpandedPattern.make
-                    ( Predicated
-                        { term = term2
-                        , predicate = mergedPredicate
-                        , substitution = substitution
-                        }
-                    : patts
-                    )
-                , SimplificationProof
-                )
-halfSimplifyEvaluated
-    first second
-  =
-    ( OrOfExpandedPattern.merge (OrOfExpandedPattern.make [first]) second
-    , SimplificationProof
-    )
+        , SimplificationProof
+        )
+  | otherwise =
+    Nothing
