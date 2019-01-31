@@ -16,9 +16,9 @@ import Kore.AST.Pure hiding
        ( mapVariables )
 import Kore.Step.Pattern
        ( StepPattern )
-import Kore.Unification.Substitution
 import Kore.TopBottom
-       ( isTop, isBottom )
+       ( isBottom, isTop )
+import Kore.Unification.Substitution
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
