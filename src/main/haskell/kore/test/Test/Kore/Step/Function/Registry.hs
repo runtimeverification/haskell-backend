@@ -232,7 +232,7 @@ testId name =
         }
 
 testEvaluators
-    :: BuiltinAndAxiomsFunctionEvaluatorMap Object
+    :: BuiltinAndAxiomSimplifierMap Object
 testEvaluators =
     Map.map That
     $ axiomPatternsToEvaluators

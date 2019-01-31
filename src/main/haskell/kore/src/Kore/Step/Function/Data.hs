@@ -8,14 +8,15 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Function.Data
-    ( ApplicationFunctionEvaluator (..)
-    , BuiltinAndAxiomsFunctionEvaluatorMap
-    , AttemptedFunction (..)
+    ( BuiltinAndAxiomSimplifier (..)
+    , BuiltinAndAxiomSimplifierMap
+    , AttemptedAxiom (..)
     , BuiltinAndAxiomsFunctionEvaluator
-    , CommonAttemptedFunction
+    , CommonAttemptedAxiom
     , FunctionEvaluators (..)
-    , notApplicableFunctionEvaluator
-    , purePatternFunctionEvaluator
+    , applicationAxiomSimplifier
+    , notApplicableAxiomEvaluator
+    , purePatternAxiomEvaluator
     ) where
 
 import qualified Data.Map.Strict as Map
@@ -40,8 +41,8 @@ import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
 
-{-| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
-pattern. This can be either a built-in evaluator or a user-defined one.
+{-| 'BuiltinAndAxiomSimplifier' simplifies 'Application' patterns using either an axiom
+or builtin code.
 
 Arguments:
 
@@ -58,9 +59,97 @@ Return value:
 It returns the result of appling the function, together with a proof certifying
 that the function was applied correctly (which is only a placeholder right now).
 -}
-newtype ApplicationFunctionEvaluator level =
-    ApplicationFunctionEvaluator
+newtype BuiltinAndAxiomSimplifier level =
+    BuiltinAndAxiomSimplifier
         (forall variable
+        .   ( FreshVariable variable
+            , MetaOrObject level
+            , Ord (variable level)
+            , OrdMetaOrObject variable
+            , SortedVariable variable
+            , Show (variable level)
+            , Show (variable Object)
+            , Unparse (variable level)
+            , ShowMetaOrObject variable
+            )
+        => MetadataTools level StepperAttributes
+        -> PredicateSubstitutionSimplifier level Simplifier
+        -> StepPatternSimplifier level variable
+        -> StepPattern level variable
+        -> Simplifier
+            ( AttemptedAxiom level variable
+            , SimplificationProof level
+            )
+        )
+
+{-| Data structure for holding evaluators for the same symbol
+-}
+data FunctionEvaluators level
+    = FunctionEvaluators
+        { definitionRules :: [EqualityRule level]
+        -- ^ Evaluators used when evaluating functions according to their
+        -- definition.
+        , simplificationEvaluators :: [BuiltinAndAxiomSimplifier level]
+        -- ^ Evaluators used when simplifying functions.
+        }
+
+{-|Datastructure to combine both a builtin evaluator and axiom-based
+function evaluators for the same symbol.
+
+The backend implementation allows symbols to both be hooked to a builtin
+implementation and to be defined through axioms;  however, we don't want to
+use both methods to evaluate the function at the same time.  That is because
+(1) we expect to get the same results; (2) when one of them fails while the
+other succeeds, using both results would introduce a split in the search space.
+-}
+type BuiltinAndAxiomsFunctionEvaluator level =
+    These
+        (BuiltinAndAxiomSimplifier level)
+        (FunctionEvaluators level)
+
+{-|A type to abstract away the mapping from symbol identifiers to
+their corresponding evaluators.
+-}
+type BuiltinAndAxiomSimplifierMap level =
+    Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
+
+{-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
+a case for axioms that can't be applied.
+-}
+data AttemptedAxiom level variable
+    = NotApplicable
+    | Applied !(OrOfExpandedPattern level variable)
+  deriving (Show, Eq)
+
+{-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
+following the same pattern as the other `Common*` types.
+-}
+type CommonAttemptedAxiom level = AttemptedAxiom level Variable
+
+-- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
+notApplicableAxiomEvaluator
+    :: Simplifier
+        (AttemptedAxiom level1 variable, SimplificationProof level2)
+notApplicableAxiomEvaluator = pure (NotApplicable, SimplificationProof)
+
+-- |Yields a pure 'Simplifier' which produces a given 'StepPattern'
+purePatternAxiomEvaluator
+    :: (MetaOrObject level, Ord (variable level))
+    => StepPattern level variable
+    -> Simplifier
+        (AttemptedAxiom level variable, SimplificationProof level)
+purePatternAxiomEvaluator p =
+    pure
+        ( Applied (makeFromSinglePurePattern p)
+        , SimplificationProof
+        )
+
+{-| Creates an 'BuiltinAndAxiomSimplifier' from a similar function that takes an
+'Application'.
+-}
+applicationAxiomSimplifier
+    :: forall level
+    .   ( forall variable
         .   ( FreshVariable variable
             , MetaOrObject level
             , Ord (variable level)
@@ -79,68 +168,45 @@ newtype ApplicationFunctionEvaluator level =
             (Valid (variable level) level)
             (StepPattern level variable)
         -> Simplifier
-            ( AttemptedFunction level variable
+            ( AttemptedAxiom level variable
             , SimplificationProof level
             )
         )
-{-| Data structure for holding evaluators for the same symbol
--}
-data FunctionEvaluators level
-    = FunctionEvaluators
-        { definitionRules :: [EqualityRule level]
-        -- ^ Evaluators used when evaluating functions according to their
-        -- definition.
-        , simplificationEvaluators :: [ApplicationFunctionEvaluator level]
-        -- ^ Evaluators used when simplifying functions.
-        }
-
-{-|Datastructure to combine both a builtin evaluator and axiom-based
-function evaluators for the same symbol.
-
-The backend implementation allows symbols to both be hooked to a builtin
-implementation and to be defined through axioms;  however, we don't want to
-use both methods to evaluate the function at the same time.  That is because
-(1) we expect to get the same results; (2) when one of them fails while the
-other succeeds, using both results would introduce a split in the search space.
--}
-type BuiltinAndAxiomsFunctionEvaluator level =
-    These
-        (ApplicationFunctionEvaluator level)
-        (FunctionEvaluators level)
-
-{-|A type to abstract away the mapping from symbol identifiers to
-their corresponding evaluators.
--}
-type BuiltinAndAxiomsFunctionEvaluatorMap level =
-    Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
-
-{-| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
-cases where the function can't be fully evaluated.
--}
-data AttemptedFunction level variable
-    = NotApplicable
-    | Applied !(OrOfExpandedPattern level variable)
-  deriving (Show, Eq)
-
-{-| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
-following the same pattern as the other `Common*` types.
--}
-type CommonAttemptedFunction level = AttemptedFunction level Variable
-
--- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
-notApplicableFunctionEvaluator
-    :: Simplifier
-        (AttemptedFunction level1 variable, SimplificationProof level2)
-notApplicableFunctionEvaluator = pure (NotApplicable, SimplificationProof)
-
--- |Yields a pure 'Simplifier' which produces a given 'StepPattern'
-purePatternFunctionEvaluator
-    :: (MetaOrObject level, Ord (variable level))
-    => StepPattern level variable
-    -> Simplifier
-        (AttemptedFunction level variable, SimplificationProof level)
-purePatternFunctionEvaluator p =
-    pure
-        ( Applied (makeFromSinglePurePattern p)
-        , SimplificationProof
+    -> BuiltinAndAxiomSimplifier level
+applicationAxiomSimplifier applicationSimplifier =
+    BuiltinAndAxiomSimplifier helper
+  where
+    helper
+        ::  ( forall variable
+            .   ( FreshVariable variable
+                , MetaOrObject level
+                , Ord (variable level)
+                , OrdMetaOrObject variable
+                , SortedVariable variable
+                , Show (variable level)
+                , Show (variable Object)
+                , Unparse (variable level)
+                , ShowMetaOrObject variable
+                )
+            => MetadataTools level StepperAttributes
+            -> PredicateSubstitutionSimplifier level Simplifier
+            -> StepPatternSimplifier level variable
+            -> StepPattern level variable
+            -> Simplifier
+                ( AttemptedAxiom level variable
+                , SimplificationProof level
+                )
         )
+    helper
+        tools
+        substitutionSimplifier
+        simplifier
+        patt
+      =
+        case fromPurePattern patt of
+            (valid :< ApplicationPattern p) ->
+                applicationSimplifier
+                    tools substitutionSimplifier simplifier (valid :< p)
+            _ -> error
+                ("Expected an application pattern, but got: " ++ show patt)
+

@@ -29,8 +29,8 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), mapVariables )
 import           Kore.Step.Function.Data
-import           Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import           Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Function.UserDefined
                  ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -141,8 +141,8 @@ test_functionIntegration =
                 mockMetadataTools
                 (Map.singleton Mock.functionalConstr10Id
                     (theseSimplification
-                        (ApplicationFunctionEvaluator
-                            (\_ _ _ _ -> notApplicableFunctionEvaluator)
+                        (BuiltinAndAxiomSimplifier
+                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         [ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -560,9 +560,9 @@ test_functionIntegration =
 axiomEvaluator
     :: CommonStepPattern Object
     -> CommonStepPattern Object
-    -> ApplicationFunctionEvaluator Object
+    -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
-    ApplicationFunctionEvaluator
+    BuiltinAndAxiomSimplifier
         (ruleFunctionEvaluator (axiom left right makeTruePredicate))
 
 axiom
@@ -579,11 +579,11 @@ axiom left right predicate =
         }
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> ApplicationFunctionEvaluator level
+    :: CommonExpandedPattern level -> BuiltinAndAxiomSimplifier level
 appliedMockEvaluator result =
-    ApplicationFunctionEvaluator
+    BuiltinAndAxiomSimplifier
     $ mockEvaluator
-    $ AttemptedFunction.Applied
+    $ AttemptedAxiom.Applied
     $ OrOfExpandedPattern.make
         [Test.Kore.Step.Function.Integration.mapVariables result]
 
@@ -598,22 +598,19 @@ mapVariables =
     ExpandedPattern.mapVariables (\v -> freshVariableFromVariable v 1)
 
 mockEvaluator
-    :: AttemptedFunction level variable
+    :: AttemptedAxiom level variable
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
-    -> CofreeF
-        (Application level)
-        (Valid (variable level) level)
-        (StepPattern level variable)
+    -> StepPattern level variable
     -> Simplifier
-        (AttemptedFunction level variable, SimplificationProof level)
+        (AttemptedAxiom level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 thatSimplification
-    :: [ApplicationFunctionEvaluator Object]
-    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+    :: [BuiltinAndAxiomSimplifier Object]
+    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
 thatSimplification evaluators =
     That FunctionEvaluators
         { definitionRules = []
@@ -621,9 +618,9 @@ thatSimplification evaluators =
         }
 
 theseSimplification
-    :: ApplicationFunctionEvaluator Object
-    -> [ApplicationFunctionEvaluator Object]
-    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+    :: BuiltinAndAxiomSimplifier Object
+    -> [BuiltinAndAxiomSimplifier Object]
+    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
 theseSimplification evaluator evaluators =
     These
         evaluator
@@ -635,7 +632,7 @@ theseSimplification evaluator evaluators =
 evaluate
     :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -> CommonStepPattern level
     -> IO (CommonExpandedPattern level)
 evaluate metadataTools functionIdToEvaluator patt =

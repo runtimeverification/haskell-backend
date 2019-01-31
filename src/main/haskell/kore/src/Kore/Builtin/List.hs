@@ -157,7 +157,7 @@ returnList
     :: (Monad m, Ord (variable Object))
     => Sort Object
     -> (Builtin variable)
-    -> m (AttemptedFunction Object variable)
+    -> m (AttemptedAxiom Object variable)
 returnList resultSort list =
     Builtin.appliedFunction
         $ ExpandedPattern.fromPurePattern
@@ -183,9 +183,9 @@ evalGet =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalGet0 _ _ _ = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_list, _ix) =
                     case arguments of
@@ -230,9 +230,9 @@ evalConcat =
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
     evalConcat0 _ _ resultSort = \arguments ->
-        Builtin.getAttemptedFunction
+        Builtin.getAttemptedAxiom
         (do
             let (_list1, _list2) =
                     case arguments of

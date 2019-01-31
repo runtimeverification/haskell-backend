@@ -48,7 +48,7 @@ module Kore.Builtin.Builtin
     , lookupSymbol
     , isSymbol
     , expectNormalConcreteTerm
-    , getAttemptedFunction
+    , getAttemptedAxiom
       -- * Implementing builtin unification
     , unifyEqualsUnsolved
     ) where
@@ -104,8 +104,9 @@ import           Kore.Step.ExpandedPattern
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( top )
 import           Kore.Step.Function.Data
-                 ( ApplicationFunctionEvaluator (ApplicationFunctionEvaluator),
-                 AttemptedFunction (..) )
+                 ( AttemptedAxiom (..),
+                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
+                 applicationAxiomSimplifier )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -119,7 +120,7 @@ import           Kore.Unparser
 
 type Parser = Parsec Void Text
 
-type Function = ApplicationFunctionEvaluator Object
+type Function = BuiltinAndAxiomSimplifier Object
 
 type HookedSortDescription = SortDescription Object Domain.Builtin
 
@@ -256,7 +257,7 @@ symbolVerifier Verifiers { symbolVerifiers } hook =
 
 notImplemented :: Function
 notImplemented =
-    ApplicationFunctionEvaluator notImplemented0
+    BuiltinAndAxiomSimplifier notImplemented0
   where
     notImplemented0 _ _ _ _ = pure (NotApplicable, SimplificationProof)
 
@@ -450,7 +451,7 @@ parseString parser lit =
     castParseError =
         either (Kore.Error.koreFail . Parsec.errorBundlePretty) pure
 
-{- | Return the supplied pattern as an 'AttemptedFunction'.
+{- | Return the supplied pattern as an 'AttemptedAxiom'.
 
   No substitution or predicate is applied.
 
@@ -459,7 +460,7 @@ parseString parser lit =
 appliedFunction
     :: (Monad m, Ord (variable level), level ~ Object)
     => ExpandedPattern level variable
-    -> m (AttemptedFunction level variable)
+    -> m (AttemptedAxiom level variable)
 appliedFunction epat =
     (return . Applied . OrOfExpandedPattern.make) [epat]
 
@@ -502,7 +503,7 @@ unaryOperator
         -> StepPatternSimplifier level variable
         -> Sort level
         -> [StepPattern level variable]
-        -> Simplifier (AttemptedFunction level variable)
+        -> Simplifier (AttemptedAxiom level variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [DomainValuePattern a] -> do
@@ -552,7 +553,7 @@ binaryOperator
         -> StepPatternSimplifier level variable
         -> Sort level
         -> [StepPattern level variable]
-        -> Simplifier (AttemptedFunction level variable)
+        -> Simplifier (AttemptedAxiom level variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [DomainValuePattern a, DomainValuePattern b] -> do
@@ -601,7 +602,7 @@ ternaryOperator
         -> StepPatternSimplifier level variable
         -> Sort level
         -> [StepPattern level variable]
-        -> Simplifier (AttemptedFunction level variable)
+        -> Simplifier (AttemptedAxiom level variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [DomainValuePattern a, DomainValuePattern b, DomainValuePattern c] -> do
@@ -618,12 +619,12 @@ functionEvaluator
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
-        -> Simplifier (AttemptedFunction Object variable)
+        -> Simplifier (AttemptedAxiom Object variable)
         )
     -- ^ Builtin function implementation
     -> Function
 functionEvaluator impl =
-    ApplicationFunctionEvaluator evaluator
+    applicationAxiomSimplifier evaluator
   where
     evaluator
         :: (Ord (variable Object), Show (variable Object))
@@ -635,7 +636,7 @@ functionEvaluator impl =
             (Valid (variable Object) Object)
             (StepPattern Object variable)
         -> Simplifier
-            ( AttemptedFunction Object variable
+            ( AttemptedAxiom Object variable
             , SimplificationProof Object
             )
     evaluator tools _ simplifier (valid :< app) = do
@@ -707,11 +708,11 @@ expectNormalConcreteTerm tools purePattern =
 
 {- | Run a function evaluator that can terminate early.
  -}
-getAttemptedFunction
+getAttemptedAxiom
     :: Monad m
-    => MaybeT m (AttemptedFunction level variable)
-    -> m (AttemptedFunction level variable)
-getAttemptedFunction attempt =
+    => MaybeT m (AttemptedAxiom level variable)
+    -> m (AttemptedAxiom level variable)
+getAttemptedAxiom attempt =
     fromMaybe NotApplicable <$> runMaybeT attempt
 
 -- | Return an unsolved unification problem.

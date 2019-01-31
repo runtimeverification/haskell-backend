@@ -22,8 +22,8 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
 import           Kore.Step.Function.Data
-import qualified Kore.Step.Function.Data as AttemptedFunction
-                 ( AttemptedFunction (..) )
+import qualified Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -121,9 +121,9 @@ test_applicationSimplification =
                 (Map.singleton
                     Mock.fId
                     (thatSimplification
-                        [ ApplicationFunctionEvaluator
+                        [ BuiltinAndAxiomSimplifier
                             (const $ const $ const $ const $ return
-                                ( AttemptedFunction.Applied
+                                ( AttemptedAxiom.Applied
                                     (OrOfExpandedPattern.make [gOfAExpanded])
                                 , SimplificationProof
                                 )
@@ -216,12 +216,12 @@ test_applicationSimplification =
                     (Map.singleton
                         Mock.sigmaId
                         (thatSimplification
-                            [ ApplicationFunctionEvaluator
+                            [ BuiltinAndAxiomSimplifier
                                 (const $ const $ const $ const $ do
                                     let zvar =
                                             freshVariableFromVariable Mock.z 1
                                     return
-                                        ( AttemptedFunction.Applied
+                                        ( AttemptedAxiom.Applied
                                             (OrOfExpandedPattern.make
                                                 [ Predicated
                                                     { term = fOfA
@@ -308,8 +308,8 @@ test_applicationSimplification =
             Mock.subsorts
 
 thatSimplification
-    :: [ApplicationFunctionEvaluator Object]
-    -> These (ApplicationFunctionEvaluator Object) (FunctionEvaluators Object)
+    :: [BuiltinAndAxiomSimplifier Object]
+    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
 thatSimplification evaluators =
     That FunctionEvaluators
         { definitionRules = []
@@ -343,7 +343,7 @@ evaluate
     => MetadataTools level StepperAttributes
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomsFunctionEvaluatorMap level
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application level)
