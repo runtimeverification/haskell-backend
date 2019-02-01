@@ -15,6 +15,9 @@ module Kore.Unparser
     , parameters
     , arguments
     , attributes
+    , parameters'
+    , arguments'
+    , attributes'
     , escapeString
     , escapeStringT
     , escapeChar
