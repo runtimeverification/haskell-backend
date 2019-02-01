@@ -41,6 +41,8 @@ import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
+import           Kore.Step.Function.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.OrOfExpandedPattern
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
@@ -1035,7 +1037,9 @@ instance
     )
     => StructEqualWithExplanation (Predicated level variable child)
   where
-    structFieldsWithNames expected actual =
+    structFieldsWithNames
+        expected@(Predicated _ _ _) actual@(Predicated _ _ _)
+      =
         [ EqWrap
             "term = "
             (term expected)
@@ -1078,6 +1082,37 @@ instance
             ++ ")"
     printWithExplanation = show
 
+instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation (variable level)
+    )
+    => StructEqualWithExplanation (AttemptedAxiomResults level variable)
+  where
+    structFieldsWithNames
+        expected@(AttemptedAxiomResults _ _)
+        actual@(AttemptedAxiomResults _ _)
+      =
+        [ EqWrap
+            "results = "
+            (results expected)
+            (results actual)
+        , EqWrap
+            "remainders = "
+            (remainders expected)
+            (remainders actual)
+        ]
+    structConstructorName _ = "AttemptedAxiomResults"
+
+instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation (variable level)
+    )
+    => EqualWithExplanation (AttemptedAxiomResults level variable)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
 
 instance
     ( Show level, Show (variable level)

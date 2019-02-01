@@ -335,10 +335,10 @@ simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
 simpleEvaluator ((from, to) : ps) patt
   | from == patt =
     return
-        ( Applied
-            (OrOfExpandedPattern.make
-                [Predicated.fromPurePattern to]
-            )
+        ( Applied AttemptedAxiomResults
+            { results = OrOfExpandedPattern.make [Predicated.fromPurePattern to]
+            , remainders = OrOfExpandedPattern.make []
+            }
         , SimplificationProof
         )
   | otherwise =

@@ -105,8 +105,11 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( top )
 import           Kore.Step.Function.Data
                  ( AttemptedAxiom (..),
+                 AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  applicationAxiomSimplifier )
+import qualified Kore.Step.Function.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -462,7 +465,10 @@ appliedFunction
     => ExpandedPattern level variable
     -> m (AttemptedAxiom level variable)
 appliedFunction epat =
-    (return . Applied . OrOfExpandedPattern.make) [epat]
+    return $ Applied AttemptedAxiomResults
+        { results = OrOfExpandedPattern.make [epat]
+        , remainders = OrOfExpandedPattern.make []
+        }
 
 {- | Construct a builtin unary operator.
 
