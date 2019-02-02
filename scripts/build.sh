@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-set -u
-set -o
+set -exuo pipefail
 
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 export PATH="$(stack path --local-bin)${PATH:+:$PATH}"
