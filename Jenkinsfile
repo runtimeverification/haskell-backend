@@ -5,7 +5,7 @@ pipeline {
     }
   }
   stages {
-    stage("Init title") {
+    stage('Init title') {
       when { changeRequest() }
       steps {
         script {
@@ -45,6 +45,15 @@ pipeline {
         ansiColor('xterm') {
           sh '''
             ./scripts/ktest.sh
+          '''
+        }
+      }
+    }
+    stage('KEVM Integration') {
+      steps {
+        ansiColor('xterm') {
+          sh '''
+            ./scripts/kevm-integration.sh
           '''
         }
       }
