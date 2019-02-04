@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -exuo pipefail
 
 merge_branch="$1" ; shift
 [[ -z "$1" ]] || { linear="$1" ; shift ; }
