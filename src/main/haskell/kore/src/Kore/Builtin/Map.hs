@@ -84,8 +84,6 @@ import           Kore.Step.Function.Data
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 SimplificationType, Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -191,13 +189,7 @@ evalLookup :: Builtin.Function
 evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
-    evalLookup0
-        :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
-        -> Sort Object
-        -> [StepPattern Object variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+    evalLookup0 :: Builtin.FunctionImplementation
     evalLookup0 tools _ _ arguments =
         Builtin.getAttemptedAxiom
         (do
@@ -239,13 +231,6 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0
-        :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
-        -> Sort Object
-        -> [StepPattern Object variable]
-        -> Simplifier (AttemptedAxiom Object variable)
     evalConcat0 _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
@@ -335,13 +320,6 @@ evalKeys :: Builtin.Function
 evalKeys =
     Builtin.functionEvaluator evalKeys0
   where
-    evalKeys0
-        :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
-        -> Sort Object
-        -> [StepPattern Object variable]
-        -> Simplifier (AttemptedAxiom Object variable)
     evalKeys0 _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
