@@ -574,22 +574,22 @@ test_functionIntegration =
                                 )
                             )
                         )
-                    (mkAnd
-                        (Mock.f (mkVar Mock.x))
                         (mkAnd
-                            (mkNot
-                                (mkEquals Mock.testSort
-                                    (mkVar Mock.x) Mock.a
+                            (Mock.f (mkVar Mock.x))
+                            (mkAnd
+                                (mkNot
+                                    (mkEquals Mock.testSort
+                                        (mkVar Mock.x) Mock.a
+                                    )
                                 )
-                            )
-                            (mkNot
-                                (mkEquals Mock.testSort
-                                    (mkVar Mock.x) Mock.b
+                                (mkNot
+                                    (mkEquals Mock.testSort
+                                        (mkVar Mock.x) Mock.b
+                                    )
                                 )
                             )
                         )
-                    )
-        , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
