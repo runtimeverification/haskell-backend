@@ -18,8 +18,6 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
-import           Data.These
-                 ( These (This) )
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -181,7 +179,7 @@ testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
 evaluators :: BuiltinAndAxiomSimplifierMap Object
-evaluators = Map.map This $ Builtin.koreEvaluators verifiedModule
+evaluators = Builtin.koreEvaluators verifiedModule
 
 evaluate
     :: MonadSMT m

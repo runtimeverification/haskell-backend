@@ -3,7 +3,7 @@ module Test.Kore.Step.Function.Registry (test_functionRegistry) where
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+       ( assertEqual, assertFailure, testCase )
 
 import qualified Data.Map as Map
 import           Data.Maybe
@@ -12,8 +12,6 @@ import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Text
                  ( Text )
-import           Data.These
-                 ( These (That) )
 
 import           Kore.AST.Kore
 import           Kore.AST.Pure
@@ -234,8 +232,7 @@ testId name =
 testEvaluators
     :: BuiltinAndAxiomSimplifierMap Object
 testEvaluators =
-    Map.map That
-    $ axiomPatternsToEvaluators
+    axiomPatternsToEvaluators
     $ extractFunctionAxioms Object testIndexedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
@@ -243,19 +240,11 @@ testMetadataTools = extractMetadataTools testIndexedModule
 
 test_functionRegistry :: [TestTree]
 test_functionRegistry =
-    [ testCase "Checking that three axioms are found for f" $ do
-        assertEqual ""
-            2
-            (case Map.lookup (testId "f") testEvaluators of
-                Just (That axioms) -> length $ definitionRules axioms
-                _ -> error "Should find precisely two axioms for f"
-            )
-        assertEqual ""
-            1
-            (case Map.lookup (testId "f") testEvaluators of
-                Just (That axioms) -> length $ simplificationEvaluators axioms
-                _ -> error "Should find precisely one axiom for f"
-            )
+    [ testCase "Checking that a simplifier is found for f"
+        (case Map.lookup (testId "f") testEvaluators of
+            Just _ -> return ()
+            _ -> assertFailure "Should find a simplifier for f"
+        )
      , testCase "Checking that evaluator map has size 2"
         (assertEqual ""
             2

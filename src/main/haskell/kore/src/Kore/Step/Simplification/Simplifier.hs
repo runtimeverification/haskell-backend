@@ -12,13 +12,11 @@ module Kore.Step.Simplification.Simplifier
     ( create
     ) where
 
-import qualified Data.Map as Map
-
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomsFunctionEvaluator )
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -39,7 +37,7 @@ create
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
+    -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> StepPatternSimplifier level variable
 create
