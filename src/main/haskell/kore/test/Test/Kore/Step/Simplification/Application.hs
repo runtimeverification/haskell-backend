@@ -37,8 +37,10 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
+                 ( Unparse )
 import           Kore.Variables.Fresh
-                 ( freshVariableFromVariable )
+                 ( FreshVariable, freshVariableFromVariable )
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -123,8 +125,11 @@ test_applicationSimplification =
                     (thatSimplification
                         [ BuiltinAndAxiomSimplifier
                             (const $ const $ const $ const $ return
-                                ( AttemptedAxiom.Applied
-                                    (OrOfExpandedPattern.make [gOfAExpanded])
+                                ( AttemptedAxiom.Applied AttemptedAxiomResults
+                                    { results =
+                                        OrOfExpandedPattern.make [gOfAExpanded]
+                                    , remainders = OrOfExpandedPattern.make []
+                                    }
                                 , SimplificationProof
                                 )
                             )
@@ -210,37 +215,49 @@ test_applicationSimplification =
                             }
                         ]
             actual <-
-                evaluate
-                    mockMetadataTools
-                    (mockSimplifier [])
-                    (Map.singleton
-                        Mock.sigmaId
-                        (thatSimplification
-                            [ BuiltinAndAxiomSimplifier
-                                (const $ const $ const $ const $ do
-                                    let zvar =
-                                            freshVariableFromVariable Mock.z 1
-                                    return
-                                        ( AttemptedAxiom.Applied
-                                            (OrOfExpandedPattern.make
-                                                [ Predicated
-                                                    { term = fOfA
-                                                    , predicate =
-                                                        makeEqualsPredicate
-                                                            fOfA
-                                                            gOfA
-                                                    , substitution =
-                                                        Substitution.wrap
-                                                            [ (zvar, gOfB) ]
-                                                    }
-                                                ]
-                                            )
-                                        , SimplificationProof
-                                        )
-                                )
+                let
+                    zvar
+                        :: forall variable
+                        .   ( FreshVariable variable
+                            , Ord (variable Object)
+                            , SortedVariable variable
+                            )
+                        => variable Object
+                    zvar = freshVariableFromVariable Mock.z 1
+                    result
+                        :: forall variable
+                        .   ( FreshVariable variable
+                            , Ord (variable Object)
+                            , Show (variable Object)
+                            , SortedVariable variable
+                            , Unparse (variable Object)
+                            )
+                        => AttemptedAxiom Object variable
+                    result = AttemptedAxiom.Applied AttemptedAxiomResults
+                        { results = OrOfExpandedPattern.make
+                            [ Predicated
+                                { term = fOfA
+                                , predicate = makeEqualsPredicate fOfA gOfA
+                                , substitution =
+                                    Substitution.wrap [ (zvar, gOfB) ]
+                                }
                             ]
+                        , remainders = OrOfExpandedPattern.make []
+                        }
+                in
+                    evaluate
+                        mockMetadataTools
+                        (mockSimplifier [])
+                        (Map.singleton
+                            Mock.sigmaId
+                            (thatSimplification
+                                [ BuiltinAndAxiomSimplifier
+                                    (const $ const $ const $ const $
+                                        return (result, SimplificationProof)
+                                    )
+                                ]
+                            )
                         )
-                    )
                     (makeApplication
                         testSort
                         Mock.sigmaSymbol
