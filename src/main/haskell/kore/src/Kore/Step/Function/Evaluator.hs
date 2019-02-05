@@ -44,13 +44,15 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifier (..),
-                 BuiltinAndAxiomSimplifierMap,
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap,
                  FunctionEvaluators (FunctionEvaluators) )
 import           Kore.Step.Function.Data as FunctionEvaluators
                  ( FunctionEvaluators (..) )
 import           Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
+import           Kore.Step.Function.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Function.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
@@ -58,7 +60,8 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, flatten, make, traverseWithPairs )
+                 ( extractPatterns, flatten, isFalse, make, merge,
+                 traverseWithPairs )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -132,12 +135,18 @@ evaluateApplication
                 flattened <- case result of
                     AttemptedAxiom.NotApplicable ->
                         return AttemptedAxiom.NotApplicable
-                    AttemptedAxiom.Applied orResults -> do
-                        simplified <- mapM simplifyIfNeeded orResults
-                        return
-                            (AttemptedAxiom.Applied
-                                (OrOfExpandedPattern.flatten simplified)
-                            )
+                    AttemptedAxiom.Applied AttemptedAxiomResults
+                        { results = orResults
+                        , remainders = orRemainders
+                        } -> do
+                            simplified <- mapM simplifyIfNeeded orResults
+                            return
+                                (AttemptedAxiom.Applied AttemptedAxiomResults
+                                    { results =
+                                        OrOfExpandedPattern.flatten simplified
+                                    , remainders = orRemainders
+                                    }
+                                )
                 (merged, _proof) <- mergeWithConditionAndSubstitution
                     tools
                     substitutionSimplifier
@@ -146,8 +155,12 @@ evaluateApplication
                     (flattened, proof)
                 case merged of
                     AttemptedAxiom.NotApplicable -> return unchanged
-                    AttemptedAxiom.Applied orPatt ->
-                        return (orPatt, SimplificationProof)
+                    AttemptedAxiom.Applied AttemptedAxiomResults
+                        { results, remainders } ->
+                            return
+                                ( OrOfExpandedPattern.merge results remainders
+                                , SimplificationProof
+                                )
   where
     Application { applicationSymbolOrAlias = appHead } = app
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
@@ -417,21 +430,36 @@ applyFirstSimplifierThatWorks
         evaluator tools substitutionSimplifier simplifier patt
 
     case applicationResult of
-        AttemptedAxiom.Applied orResults -> do
-            when
-                (length (OrOfExpandedPattern.extractPatterns orResults) > 1)
-                -- We should only allow multiple simplification results
-                -- when they are created by unification splitting the
-                -- configuration.
-                -- However, right now, we shouldn't be able to get more
-                -- than one result, so we throw an error.
-                (error
-                    (  "Unexpected simplification result with more "
-                    ++ "than one configuration: "
-                    ++ show orResults
+        AttemptedAxiom.Applied AttemptedAxiomResults
+            { results = orResults
+            , remainders = orRemainders
+            } -> do
+                when
+                    (length (OrOfExpandedPattern.extractPatterns orResults) > 1)
+                    -- We should only allow multiple simplification results
+                    -- when they are created by unification splitting the
+                    -- configuration.
+                    -- However, right now, we shouldn't be able to get more
+                    -- than one result, so we throw an error.
+                    (error
+                        (  "Unexpected simplification result with more "
+                        ++ "than one configuration: "
+                        ++ show applicationResult
+                        )
                     )
-                )
-            return (applicationResult, SimplificationProof)
+                when (not (OrOfExpandedPattern.isFalse orRemainders))
+                    -- It's not obvious that we should accept simplifications
+                    -- that change only a part of the configuration, since
+                    -- that will probably make things more complicated.
+                    --
+                    -- Until we have a clear example that this can actually
+                    -- happen, we throw an error.
+                    (error
+                        (  "Unexpected simplification result with remainder: "
+                        ++ show applicationResult
+                        )
+                    )
+                return (applicationResult, SimplificationProof)
         AttemptedAxiom.NotApplicable ->
             applyFirstSimplifierThatWorks
                 evaluators tools substitutionSimplifier simplifier patt
@@ -470,9 +498,6 @@ evaluateWithDefinitionAxioms
             (map (\ (EqualityRule rule) -> rule) definitionRules)
             expanded
     let
-        evaluationResults :: [ExpandedPattern level variable]
-        evaluationResults = OrOfExpandedPattern.extractPatterns rewrittenPattern
-
         remainderResults :: [ExpandedPattern level variable]
         remainderResults = OrOfExpandedPattern.extractPatterns remainder
 
@@ -488,17 +513,14 @@ evaluateWithDefinitionAxioms
 
     simplifiedRemainderList <- mapM simplifyPredicate remainderResults
     let
-        simplifiedEvaluationResults :: [ExpandedPattern level variable]
-        simplifiedEvaluationResults = evaluationResults
-
         simplifiedRemainderResults :: [ExpandedPattern level variable]
         (simplifiedRemainderResults, _proofs) =
             unzip simplifiedRemainderList
     return
-        ( AttemptedAxiom.Applied
-            (OrOfExpandedPattern.make
-                (simplifiedEvaluationResults ++ simplifiedRemainderResults)
-            )
+        ( AttemptedAxiom.Applied AttemptedAxiomResults
+            { results = rewrittenPattern
+            , remainders = OrOfExpandedPattern.make simplifiedRemainderResults
+            }
         , SimplificationProof
         )
 
@@ -620,12 +642,26 @@ mergeWithConditionAndSubstitution
     substitutionSimplifier
     simplifier
     toMerge
-    (AttemptedAxiom.Applied functionResult, _proof)
+    ( AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders }
+    , _proof
+    )
   = do
-    (evaluated, _proof) <- OrOfExpandedPattern.mergeWithPredicateSubstitution
-        tools
-        substitutionSimplifier
-        simplifier
-        toMerge
-        functionResult
-    return (AttemptedAxiom.Applied evaluated, SimplificationProof)
+    (evaluatedResults, _proof) <-
+        OrOfExpandedPattern.mergeWithPredicateSubstitution
+            tools
+            substitutionSimplifier
+            simplifier
+            toMerge
+            results
+    (evaluatedRemainders, _proof) <-
+        OrOfExpandedPattern.mergeWithPredicateSubstitution
+            tools
+            substitutionSimplifier
+            simplifier
+            toMerge
+            remainders
+    return
+        ( AttemptedAxiom.Applied AttemptedAxiomResults
+            { results = evaluatedResults, remainders = evaluatedRemainders }
+        , SimplificationProof
+        )

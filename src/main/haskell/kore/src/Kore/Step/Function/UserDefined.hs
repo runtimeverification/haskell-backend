@@ -32,11 +32,15 @@ import           Kore.Step.BaseStep
 import           Kore.Step.BaseStep as StepResult
                  ( StepProof, StepResult (..) )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom, fromPurePattern )
+                 ( fromPurePattern )
 import           Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
+import           Kore.Step.Function.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import           Kore.Step.Function.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults) )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -98,7 +102,7 @@ ruleFunctionEvaluator
             processedResults <- mapM processResult results
             return
                 ( AttemptedAxiom.Applied
-                    (OrOfExpandedPattern.make (map dropProof processedResults))
+                    (mconcat (map dropProof processedResults))
                 , SimplificationProof
                 )
   where
@@ -118,17 +122,35 @@ ruleFunctionEvaluator
     processResult
         :: (StepResult level variable, StepProof level variable)
         -> Simplifier
-            (ExpandedPattern level variable, SimplificationProof level)
+            (AttemptedAxiomResults level variable, SimplificationProof level)
     processResult
-        (StepResult { rewrittenPattern = stepPattern }, _proof)
-        -- TODO(virgil): ^^^ Also use the remainder.
+        ( StepResult
+            { rewrittenPattern = stepPattern, remainder = remainderPattern }
+        , _proof
+        )
       = do
         (   rewrittenPattern@Predicated { predicate = rewritingCondition }
             , _
             ) <-
                 ExpandedPattern.simplifyPredicate
                     tools substitutionSimplifier simplifier stepPattern
-        case rewritingCondition of
-            PredicateFalse ->
-                return (ExpandedPattern.bottom, SimplificationProof)
-            _ -> return (rewrittenPattern, SimplificationProof)
+        (   rewrittenRemainder@Predicated { predicate = remainderCondition }
+            , _
+            ) <-
+                ExpandedPattern.simplifyPredicate
+                    tools substitutionSimplifier simplifier remainderPattern
+        return
+            ( AttemptedAxiomResults
+                { results = OrOfExpandedPattern.make
+                    (case rewritingCondition of
+                        PredicateFalse -> []
+                        _ -> [rewrittenPattern]
+                    )
+                , remainders = OrOfExpandedPattern.make
+                    (case remainderCondition of
+                        PredicateFalse -> []
+                        _ -> [rewrittenRemainder]
+                    )
+                }
+            , SimplificationProof
+            )

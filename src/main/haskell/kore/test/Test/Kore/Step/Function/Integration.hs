@@ -555,6 +555,66 @@ test_functionIntegration =
                 )
                 (Mock.f (mkVar Mock.x))
         assertEqualWithExplanation "" expect actual
+
+    , testCase "Variable expansion." $ do
+        let expect =
+                Predicated
+                    { term = mkOr
+                        (mkOr
+                            (mkAnd
+                                Mock.a
+                                (mkEquals Mock.testSort
+                                    (mkVar Mock.x) Mock.a
+                                )
+                            )
+                            (mkAnd
+                                Mock.b
+                                (mkEquals Mock.testSort
+                                    (mkVar Mock.x) Mock.b
+                                )
+                            )
+                        )
+                        (mkAnd
+                            (Mock.f (mkVar Mock.x))
+                            (mkAnd
+                                (mkNot
+                                    (mkEquals Mock.testSort
+                                        (mkVar Mock.x) Mock.a
+                                    )
+                                )
+                                (mkNot
+                                    (mkEquals Mock.testSort
+                                        (mkVar Mock.x) Mock.b
+                                    )
+                                )
+                            )
+                        )
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                mockMetadataTools
+                (Map.map That $ Map.fromList
+                    [   ( Mock.fId
+                        ,   FunctionEvaluators
+                            { definitionRules =
+                                [ axiom
+                                    (Mock.f Mock.a)
+                                    Mock.a
+                                    makeTruePredicate
+                                , axiom
+                                    (Mock.f Mock.b)
+                                    Mock.b
+                                    makeTruePredicate
+                                ]
+                            , simplificationEvaluators = []
+                            }
+                        )
+                    ]
+                )
+                (Mock.f (mkVar Mock.x))
+        assertEqualWithExplanation "" expect actual
     ]
 
 axiomEvaluator
@@ -583,9 +643,11 @@ appliedMockEvaluator
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
-    $ AttemptedAxiom.Applied
-    $ OrOfExpandedPattern.make
-        [Test.Kore.Step.Function.Integration.mapVariables result]
+    $ AttemptedAxiom.Applied AttemptedAxiomResults
+        { results = OrOfExpandedPattern.make
+            [Test.Kore.Step.Function.Integration.mapVariables result]
+        , remainders = OrOfExpandedPattern.make []
+        }
 
 mapVariables
     ::  ( FreshVariable variable

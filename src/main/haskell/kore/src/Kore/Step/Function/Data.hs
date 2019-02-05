@@ -11,6 +11,7 @@ module Kore.Step.Function.Data
     ( BuiltinAndAxiomSimplifier (..)
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
+    , AttemptedAxiomResults (..)
     , BuiltinAndAxiomsFunctionEvaluator
     , CommonAttemptedAxiom
     , FunctionEvaluators (..)
@@ -23,23 +24,25 @@ import qualified Data.Map.Strict as Map
 import           Data.These
                  ( These )
 
-import Kore.AST.Pure
-import Kore.AST.Valid
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
-import Kore.Step.AxiomPatterns
-       ( EqualityRule )
-import Kore.Step.OrOfExpandedPattern
-       ( OrOfExpandedPattern, makeFromSinglePurePattern )
-import Kore.Step.Pattern
-import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, SimplificationProof (..), Simplifier,
-       StepPatternSimplifier )
-import Kore.Step.StepperAttributes
-       ( StepperAttributes )
-import Kore.Unparser
-import Kore.Variables.Fresh
-       ( FreshVariable )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
+import           Kore.Step.AxiomPatterns
+                 ( EqualityRule )
+import           Kore.Step.OrOfExpandedPattern
+                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make, merge )
+import           Kore.Step.Pattern
+import           Kore.Step.Simplification.Data
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
+import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {-| 'BuiltinAndAxiomSimplifier' simplifies 'Application' patterns using either an axiom
 or builtin code.
@@ -113,12 +116,51 @@ their corresponding evaluators.
 type BuiltinAndAxiomSimplifierMap level =
     Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
 
+{-| A type holding the result of applying an axiom to a pattern.
+-}
+data AttemptedAxiomResults level variable =
+    AttemptedAxiomResults
+        { results :: !(OrOfExpandedPattern level variable)
+        -- ^ The result of applying the axiom
+        , remainders :: !(OrOfExpandedPattern level variable)
+        -- ^ The part of the pattern that was not rewritten by the axiom.
+        }
+  deriving (Show, Eq)
+
+instance (Ord level, Ord (variable level))
+    => Semigroup (AttemptedAxiomResults level variable)
+  where
+    (<>)
+        AttemptedAxiomResults
+            { results = firstResults
+            , remainders = firstRemainders
+            }
+        AttemptedAxiomResults
+            { results = secondResults
+            , remainders = secondRemainders
+            }
+      =
+        AttemptedAxiomResults
+            { results = OrOfExpandedPattern.merge firstResults secondResults
+            , remainders =
+                    OrOfExpandedPattern.merge firstRemainders secondRemainders
+            }
+
+instance (Ord level, Ord (variable level))
+    => Monoid (AttemptedAxiomResults level variable)
+  where
+    mempty =
+        AttemptedAxiomResults
+            { results = OrOfExpandedPattern.make []
+            , remainders = OrOfExpandedPattern.make []
+            }
+
 {-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
 a case for axioms that can't be applied.
 -}
 data AttemptedAxiom level variable
     = NotApplicable
-    | Applied !(OrOfExpandedPattern level variable)
+    | Applied !(AttemptedAxiomResults level variable)
   deriving (Show, Eq)
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
@@ -140,7 +182,10 @@ purePatternAxiomEvaluator
         (AttemptedAxiom level variable, SimplificationProof level)
 purePatternAxiomEvaluator p =
     pure
-        ( Applied (makeFromSinglePurePattern p)
+        ( Applied AttemptedAxiomResults
+            { results = makeFromSinglePurePattern p
+            , remainders = OrOfExpandedPattern.make []
+            }
         , SimplificationProof
         )
 

@@ -16,7 +16,8 @@ import           Kore.Attribute.Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( makeFalsePredicate, makeTruePredicate )
+                 ( makeEqualsPredicate, makeFalsePredicate, makeNotPredicate,
+                 makeTruePredicate )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
                  RulePattern (RulePattern) )
@@ -27,7 +28,10 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Data
-                 ( CommonAttemptedAxiom )
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 CommonAttemptedAxiom )
+import qualified Kore.Step.Function.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Function.UserDefined
                  ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -53,13 +57,16 @@ test_userDefinedFunction :: [TestTree]
 test_userDefinedFunction =
     [ testCase "Applies one step" $ do
         let expect =
-                AttemptedAxiom.Applied $ OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = Mock.functionalConstr11 (mkVar Mock.x)
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = Mock.functionalConstr11 (mkVar Mock.x)
+                            , predicate = makeTruePredicate
+                            , substitution = mempty
+                            }
+                        ]
+                    , remainders = OrOfExpandedPattern.make []
+                    }
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
@@ -107,7 +114,16 @@ test_userDefinedFunction =
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
-                AttemptedAxiom.Applied (OrOfExpandedPattern.make [])
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = OrOfExpandedPattern.make []
+                    , remainders = OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = Mock.functionalConstr10 (mkVar Mock.x)
+                            , predicate = makeTruePredicate
+                            , substitution = mempty
+                             }
+                        ]
+                    }
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
@@ -124,8 +140,11 @@ test_userDefinedFunction =
 
     , testCase "Cannot apply step with unsat condition" $ do
         let expect =
-                AttemptedAxiom.Applied
-                $ OrOfExpandedPattern.make [ ExpandedPattern.bottom ]
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results =
+                        OrOfExpandedPattern.make [ ExpandedPattern.bottom ]
+                    , remainders = OrOfExpandedPattern.make []
+                    }
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
@@ -145,14 +164,29 @@ test_userDefinedFunction =
 
     , testCase "Preserves step substitution" $ do
         let expect =
-                AttemptedAxiom.Applied $ OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = Mock.g (mkVar Mock.z)
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap
-                            [(Mock.y, mkVar Mock.z)]
-                        }
-                    ]
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = Mock.g (mkVar Mock.z)
+                            , predicate = makeTruePredicate
+                            , substitution = Substitution.wrap
+                                [(Mock.y, mkVar Mock.z)]
+                            }
+                        ]
+                    , remainders = OrOfExpandedPattern.make
+                        [ Predicated
+                            { term = Mock.functionalConstr20
+                                (mkVar Mock.y)
+                                (mkVar Mock.z)
+                            , predicate =
+                                makeNotPredicate
+                                    (makeEqualsPredicate
+                                        (mkVar Mock.y) (mkVar Mock.z)
+                                    )
+                            , substitution = mempty
+                            }
+                        ]
+                    }
         actual <-
             evaluateWithAxiom
                 mockMetadataTools
@@ -207,8 +241,12 @@ evaluateWithAxiom
         :: CommonAttemptedAxiom level -> CommonAttemptedAxiom level
     normalizeResult =
         \case
-            AttemptedAxiom.Applied orPattern ->
-                AttemptedAxiom.Applied (fmap sortSubstitution orPattern)
+            AttemptedAxiom.Applied AttemptedAxiomResults
+                { results, remainders } ->
+                    AttemptedAxiom.Applied AttemptedAxiomResults
+                        { results = fmap sortSubstitution results
+                        , remainders = fmap sortSubstitution remainders
+                        }
             result -> result
 
     sortSubstitution Predicated {term, predicate, substitution} =
