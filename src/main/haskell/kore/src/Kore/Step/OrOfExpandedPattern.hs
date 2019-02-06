@@ -23,6 +23,7 @@ module Kore.Step.OrOfExpandedPattern
     , isFalse
     , isTrue
     , make
+    , singleton
     , makeFromSinglePurePattern
     , merge
     , mergeAll
@@ -150,6 +151,14 @@ make
     => [term]
     -> MultiOr term
 make patts = filterOr (MultiOr patts)
+
+{- | Construct a normalized 'MultiOr' from a single pattern.
+ -}
+singleton
+    :: (Ord term, TopBottom term)
+    => term
+    -> MultiOr term
+singleton patt = make [patt]
 
 {-|'makeMultiOr' constructs a 'MultiOr'.
 -}
