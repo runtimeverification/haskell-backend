@@ -159,11 +159,26 @@ so that
     t₁ = t₂.
 ```
 
-**Note**: It is not clear that we should *ever* apply this simplification.  We
+**Note**: [Weakening predicates]
+
+Phillip: It is not clear that we should *ever* apply this simplification.  We
 attempt to refute the conditions on configurations using an external solver to
 reduce the configuration space for execution.  The solver operates best when it
 has the most information, and the predicate `p₁ ∨ p₂` is strictly weaker than
 either `p₁` or `p₂`.
+
+Virgil: IIRC the main reason for having this was to be able to use some
+assumptions on the pattern form at a time when it wasn't obvious that we needed
+full generality.
+
+That being said: for now, it's obvious that we want to split the configuration
+when we have an or between terms or substitutions (though that might change at
+some point), but, for predicates, it might be better to let the external solver
+handle this than for us to handle one more configuration, that will potentially
+be split into many other configurations. Or it may be worse, I don't know.
+
+To make it short: I agree with this, but I wanted to say the above in case it's
+useful.
 
 \begin{code}
 disjoinPredicates
