@@ -40,6 +40,7 @@ module Kore.Builtin.Builtin
     , unaryOperator
     , binaryOperator
     , ternaryOperator
+    , FunctionImplementation
     , functionEvaluator
     , verifierBug
     , wrongArity
@@ -618,17 +619,16 @@ ternaryOperator
             [_, _, _] -> return NotApplicable
             _ -> wrongArity (Text.unpack ctx)
 
-functionEvaluator
-    ::  (forall variable
-        .  (Ord (variable Object), Show (variable Object))
+type FunctionImplementation
+    = forall variable
+        .  Ord (variable Object)
         => MetadataTools Object StepperAttributes
         -> StepPatternSimplifier Object variable
         -> Sort Object
         -> [StepPattern Object variable]
         -> Simplifier (AttemptedAxiom Object variable)
-        )
-    -- ^ Builtin function implementation
-    -> Function
+
+functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
