@@ -89,8 +89,7 @@ import           Kore.Step.Function.Data
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), SimplificationType, Simplifier,
-                 StepPatternSimplifier )
+                 SimplificationProof (..), SimplificationType )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -211,13 +210,7 @@ evalIn :: Builtin.Function
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
-    evalIn0
-        :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
-        -> Sort Object
-        -> [StepPattern Object variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+    evalIn0 :: Builtin.FunctionImplementation
     evalIn0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
@@ -247,13 +240,7 @@ evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     ctx = concatKey
-    evalConcat0
-        :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
-        -> Sort Object
-        -> [StepPattern Object variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+    evalConcat0 :: Builtin.FunctionImplementation
     evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
@@ -287,13 +274,7 @@ evalDifference =
     Builtin.functionEvaluator evalDifference0
   where
     ctx = differenceKey
-    evalDifference0
-        :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
-        -> Sort Object
-        -> [StepPattern Object variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+    evalDifference0 :: Builtin.FunctionImplementation
     evalDifference0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
@@ -318,13 +299,7 @@ evalDifference =
 evalToList :: Builtin.Function
 evalToList = Builtin.functionEvaluator evalToList0
   where
-    evalToList0
-        :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
-        -> Sort Object
-        -> [StepPattern Object variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+    evalToList0 :: Builtin.FunctionImplementation
     evalToList0 tools _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _set =
@@ -341,13 +316,7 @@ evalToList = Builtin.functionEvaluator evalToList0
 evalSize :: Builtin.Function
 evalSize = Builtin.functionEvaluator evalSize0
   where
-    evalSize0
-        :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
-        -> Sort Object
-        -> [StepPattern Object variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+    evalSize0 :: Builtin.FunctionImplementation
     evalSize0 tools _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _set =

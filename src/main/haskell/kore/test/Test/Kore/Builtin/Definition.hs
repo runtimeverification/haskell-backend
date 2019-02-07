@@ -297,6 +297,9 @@ string2BaseStringSymbol = builtinSymbol "string2baseString"
 string2IntStringSymbol :: SymbolOrAlias Object
 string2IntStringSymbol = builtinSymbol "string2intString"
 
+ecdsaRecoverSymbol :: SymbolOrAlias Object
+ecdsaRecoverSymbol = builtinSymbol "ECDSARecover"
+
 -- -------------------------------------------------------------
 -- * Sorts
 
@@ -1009,6 +1012,29 @@ stringModule =
             ]
         }
 
+-- ** KRYPTO
+
+kryptoModuleName :: ModuleName
+kryptoModuleName = ModuleName "KRYPTO"
+
+-- | Declare the @KRYPTO@ builtins.
+kryptoModule :: KoreModule
+kryptoModule =
+    Module
+        { moduleName = kryptoModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ importKoreModule stringModuleName
+            , importKoreModule intModuleName
+            , importKoreModule listModuleName
+            , hookedSymbolDecl
+                ecdsaRecoverSymbol
+                stringSort
+                [stringSort, intSort, stringSort, stringSort]
+                [hookAttribute "KRYPTO.ecdsaRecover"]
+            ]
+        }
+
 -- ** TEST
 
 testModuleName :: ModuleName
@@ -1028,6 +1054,7 @@ testModule =
             , importKoreModule pairModuleName
             , importKoreModule setModuleName
             , importKoreModule stringModuleName
+            , importKoreModule kryptoModuleName
             ]
         }
 
@@ -1047,6 +1074,7 @@ testDefinition =
             , pairModule
             , setModule
             , stringModule
+            , kryptoModule
             , testModule
             ]
         }
