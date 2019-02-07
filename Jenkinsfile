@@ -50,4 +50,9 @@ pipeline {
       }
     }
   }
+  post {
+    always {
+      junit 'src/main/haskell/kore/test-results.xml'
+    }
+  }
 }
