@@ -32,11 +32,12 @@ module Test.Terse
     --
     -- $builderFunctions
 
-  , actual_predicate_comment
+  , actual_predicate_name
   , actual_predicate
-  , actual_expected_comment
+  , actual_expected_name_intention
+  , actual_expected_name
   , actual_expected
-  , f_2_expected_comment
+  , f_2_expected_name
   , f_2_expected
 
     -- * Rationale
@@ -56,14 +57,19 @@ import Test.Tasty.HUnit.Extensions
 
 {- $commonFunctions
 
-  By default, these assertions take a final comment argument. When
-  no comment is useful, use the variants with a trailing `_`.
+  By default, these assertions take a final `name` argument. When
+  no `name` is useful, use the variants with a trailing `_`.
+
+  See also builder functions below that end in `_name_intention`.
+  The `name` is printed for each test case, the intention is only
+  printed in case of error. These are useful for tests that
+  generate many variants of a single basic idea (the _name).
 -}
 
 -- |
 -- > 3 + 4 `satisfies` isOdd "addition works"
 satisfies :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
-satisfies = actual_predicate_comment
+satisfies = actual_predicate_name
 
 -- |
 -- > 3 + 4 `satisfies_` isOdd
@@ -75,7 +81,7 @@ satisfies_ = actual_predicate
 equals
   :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
   => a -> a -> String -> TestTree
-equals = actual_expected_comment
+equals = actual_expected_name
 
 -- |
 -- > 3 + 4 `equals_` 7
@@ -83,10 +89,10 @@ equals_ :: (HasCallStack, Eq a, Show a, EqualWithExplanation a) => a -> a -> Tes
 equals_ = actual_expected
 
 -- |
--- > 3 + 4 `'unequals'` 8  "comment"
+-- > 3 + 4 `'unequals'` 8  "name"
 unequals :: (HasCallStack, Eq a, Show a) => a -> a -> String -> TestTree
-unequals actual unexpected comment =
-  actual_predicate_comment actual (/= unexpected) comment
+unequals actual unexpected name =
+  actual_predicate_name actual (/= unexpected) name
 
 -- |
 -- > 3 + 4 `'unequals'` 8
@@ -96,10 +102,10 @@ unequals_ actual unexpected =
 
 
 -- |
--- > 1 `has` [(isPositive, True), (isEven, False) ] "comment"
+-- > 1 `has` [(isPositive, True), (isEven, False) ] "name"
 has :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> String -> TestTree
-has value tuples comment=
-  testCase comment (traverse_ checkOne tuples)
+has value tuples name=
+  testCase name (traverse_ checkOne tuples)
   where
     checkOne :: (a->Bool, Bool) -> Assertion
     checkOne (predicate, expected) =
@@ -114,8 +120,8 @@ has_ value tuples = has value tuples "Has properties"
 -- |
 -- > isOdd `gives` [ (1, True), (2, False) ] "arity checks"
 gives :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> String -> TestTree
-gives predicate tuples comment =
-  testCase comment (traverse_ checkOne tuples)
+gives predicate tuples name =
+  testCase name (traverse_ checkOne tuples)
   where
     checkOne :: (a, Bool) -> Assertion
     checkOne (value, expected) =
@@ -131,33 +137,41 @@ gives_ predicate tuples =
 -- $builderFunctions
 --
 -- Functions used to build domain-specific functions. Their names follow the
--- left-to-right order of their arguments. So, for example `_comment`, when
+-- left-to-right order of their arguments. So, for example `_name`, when
 -- present, is always on the far right.
 --
 -- Note: if you use these functions, the domain-specific function has to
 -- be constrained by `HasCallStack`. See above.
 
 -- |
--- > actual_predicate_comment 3 isOdd "check odd numbers"
-actual_predicate_comment :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
-actual_predicate_comment actual predicate comment =
-  testCase comment $
+-- > actual_predicate_name 3 isOdd "check odd numbers"
+actual_predicate_name :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
+actual_predicate_name actual predicate name =
+  testCase name $
     assertEqual "" True $ predicate actual
 
 -- |
 -- > actual_predicate 3 isOdd
 actual_predicate :: HasCallStack => a -> (a -> Bool) -> TestTree
 actual_predicate actual predicate =
-  actual_predicate_comment actual predicate "actual_predicate with no comment"
+  actual_predicate_name actual predicate "actual_predicate with no name"
 
 -- |
--- > actual_expected_comment (+ 1 1) 2 "addition"
-actual_expected_comment
+-- > actual_expected_name (+ 1 1) 2 "addition" "(+ 1 1) should be 2"
+actual_expected_name_intention
+  :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+  => a -> a -> String -> String -> TestTree
+actual_expected_name_intention actual expected name intention =
+  testCase name $
+    assertEqualWithExplanation intention expected actual
+
+-- |
+-- > actual_expected_name (+ 1 1) 2 "addition"
+actual_expected_name
   :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
   => a -> a -> String -> TestTree
-actual_expected_comment actual expected comment =
-  testCase comment $
-    assertEqualWithExplanation "" expected actual
+actual_expected_name actual expected name =
+  actual_expected_name_intention actual expected name ""
 
 -- |
 -- > actual_expected (+ 1 1) 2
@@ -165,16 +179,16 @@ actual_expected
   :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
   => a -> a -> TestTree
 actual_expected actual expected =
-  actual_expected_comment actual expected "actual_expected with no comment"
+  actual_expected_name actual expected "actual_expected with no name"
 
 
 -- |
--- > f_2_expected_comment (+) (1, 2) 3 "addition"
-f_2_expected_comment
+-- > f_2_expected_name (+) (1, 2) 3 "addition"
+f_2_expected_name
   :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
   => (a -> b -> e) -> (a, b) -> e -> String -> TestTree
-f_2_expected_comment f (arg1, arg2) expected comment =
-  testCase comment $
+f_2_expected_name f (arg1, arg2) expected name =
+  testCase name $
     assertEqualWithExplanation "" expected (f arg1 arg2)
 
 -- |
@@ -183,14 +197,14 @@ f_2_expected
   :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
   => (a -> b -> e) -> (a, b) -> e -> TestTree
 f_2_expected f tuple expected =
-  f_2_expected_comment f tuple expected "f_2_expected with no comment"
+  f_2_expected_name f tuple expected "f_2_expected with no name"
 
 {- $rationale
 
    1. The standard test functions place too much attention on
       the words that appear in every test, too little on the words
       that are special about this test.
-   2. The verbosity, and the placement of comments as the first argument,
+   2. The verbosity, and the placement of comments or names as the first argument,
       makes it hard to scan down a set of related tests to see what
       they have in common and what's special about each one.
    3. Putting expected values first is a historical accident. In English,

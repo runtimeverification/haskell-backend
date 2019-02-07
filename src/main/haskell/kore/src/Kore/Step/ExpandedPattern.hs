@@ -44,6 +44,7 @@ import           Data.Hashable
 import           Data.Monoid
                  ( (<>) )
 import qualified Data.Set as Set
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
@@ -117,6 +118,35 @@ instance TopBottom term
         isTop term && isTop predicate && isTop substitution
     isBottom Predicated {term, predicate, substitution} =
         isBottom term || isBottom predicate || isBottom substitution
+
+instance
+    ( MetaOrObject level
+    , SortedVariable variable
+    , Ord (variable level)
+    , Show (variable level)
+    , Unparse (variable level)
+    , Unparse child
+    ) =>
+    Unparse (Predicated level variable child)
+  where
+    unparse Predicated { term, predicate, substitution } =
+        unparseAnd
+            (below "/* term: */" (unparse term))
+            (unparseAnd
+                (below
+                    "/* predicate: */"
+                    (unparse predicate)
+                )
+                (below
+                    "/* substitution: */"
+                    (unparse $ substitutionToPredicate substitution)
+                )
+            )
+      where
+        unparseAnd first second =
+            "\\and" <> parameters' ["_"] <> arguments' [first, second]
+        below first second =
+            (Pretty.align . Pretty.vsep) [first, second]
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
