@@ -334,7 +334,9 @@ test_firstFullEvaluation =
     , testCase "Error with multiple results"
         (assertErrorIO
             (assertSubstring ""
-                "Unexpected simplification result with remainder"
+                (  "Unexpected simplification result with more than one "
+                ++ "configuration"
+                )
             )
             (evaluate
                 mockMetadataTools
