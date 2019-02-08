@@ -67,17 +67,24 @@ test_topTermAnnihilates =
 test_disjoinPredicates :: TestTree
 test_disjoinPredicates =
     testGroup "Disjoin predicates when other components are equal"
-        [ expectation ((t1, p1, s1), (t2, p2, s2)) (t1, p', s1)
+        [ expectation ((t1, p1, s1), (t2, p2, s2)) (t1, p', s')
         | t1 <- terms, t2 <- terms
         , p1 <- predicates, p2 <- predicates
         , s1 <- substitutions, s2 <- substitutions
         , let
-            -- If the terms and substitutions are equal, expect the given
-            -- simplification. Otherwise, the predicates should not be merged.
+            -- If the terms are equal, expect the given simplification.
+            -- Otherwise, the predicates should not be merged.
             expectation
-              | t1 == t2 && s1 == s2 = simplifiesTo
-              | otherwise            = \initial _ -> doesNotSimplify initial
-            p' = makeOrPredicate p1 p2
+              | t1 == t2  = simplifiesTo
+              | otherwise = \initial _ -> doesNotSimplify initial
+            (p', s')
+              | s1 == s2  = (makeOrPredicate p1 p2, s1)
+              | otherwise =
+                ( makeOrPredicate
+                    (makeAndPredicate p1 (substitutionToPredicate s1))
+                    (makeAndPredicate p2 (substitutionToPredicate s2))
+                , mempty
+                )
         ]
   where
     terms = [ tM, tm ]

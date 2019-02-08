@@ -7,6 +7,8 @@ module Test.Kore.Step.Simplification.Equals
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.Foldable as Foldable
+
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
@@ -24,7 +26,6 @@ import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, CommonOrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -34,6 +35,7 @@ import           Kore.Step.Simplification.Equals
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -206,6 +208,92 @@ test_equalsSimplification_OrOfExpandedPatterns =
                     , equalsSecond = first
                     }
         assertEqualWithExplanation "g or h or f" expect actual2
+
+    , testCase "f vs g[x = a] or h" $ do
+        let expect =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkTop_
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ definedF
+                                , makeOrPredicate definedG definedH
+                                , makeImpliesPredicate
+                                    definedG
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
+                                    definedH
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                ]
+                        , substitution = mempty
+                        }
+                    ,  Predicated
+                        { term = mkTop_
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ makeNotPredicate definedF
+                                , makeNotPredicate definedG
+                                , makeNotPredicate definedH
+                                ]
+                        , substitution = mempty
+                        }
+                    ]
+              where
+                definedF = makeCeilPredicate Mock.cf
+                definedG =
+                    makeAndPredicate
+                        (makeCeilPredicate Mock.cg)
+                        (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                definedH = makeCeilPredicate Mock.ch
+            first =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = Mock.cf
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    ]
+            second =
+                OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = Mock.cg
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.wrap [(Mock.x, Mock.a)]
+                        }
+                    , Predicated
+                        { term = Mock.ch
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    ]
+            test1 =
+                Equals
+                    { equalsOperandSort = testSort
+                    , equalsResultSort = testSort
+                    , equalsFirst = first
+                    , equalsSecond = second
+                    }
+        actual1 <- evaluateOr mockMetadataTools test1
+        let message1 =
+                unlines
+                    [ "Expected"
+                    , unparseToString (OrOfExpandedPattern.toExpandedPattern <$> test1)
+                    , "would simplify to:"
+                    , unlines (unparseToString <$> Foldable.toList expect)
+                    , "but instead found:"
+                    , unlines (unparseToString <$> Foldable.toList actual1)
+                    ]
+        assertEqual message1 expect actual1
+        actual2 <-
+            evaluateOr
+                mockMetadataTools
+                Equals
+                    { equalsOperandSort = testSort
+                    , equalsResultSort = testSort
+                    , equalsFirst = second
+                    , equalsSecond = first
+                    }
+        assertEqualWithExplanation "g[x = a] or h or f" expect actual2
     ]
 
 test_equalsSimplification_ExpandedPatterns :: [TestTree]

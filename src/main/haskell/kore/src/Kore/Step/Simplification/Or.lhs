@@ -19,6 +19,7 @@ module Kore.Step.Simplification.Or
 
 import           Control.Applicative
                  ( Alternative (..) )
+import qualified Data.Function as Function
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.AST.Pure
@@ -26,6 +27,7 @@ import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -187,21 +189,47 @@ disjoinPredicates
         , predicate = predicate1
         , substitution = substitution1
         }
-    Predicated
+    predicated2@Predicated
         { term = term2
         , predicate = predicate2
         , substitution = substitution2
         }
 
   | term1         == term2
-  , substitution1 == substitution2
-  = Just (result, SimplificationProof)
+  =
+    let result
+          | substitution1 == substitution2 =
+            predicated1 { predicate = makeOrPredicate predicate1 predicate2 }
+\end{code}
+
+When the configurations have different substitutions, it is possible to disjoin
+them by promoting the substitutions into the predicate,
+```
+(t, p₁     , s₁) ∨ (t, p₂     , s₂)
+(t, p₁ ∧ s₁, ⊤ ) ∨ (t, p₂ ∧ s₂, ⊤ )
+```
+and following the algorithm described above for disjoining predicates when the
+substitutions are equal. This is not strictly a simplification: simplifying
+predicates extracts substitutions into the corresponding field of the
+configuration. Nevertheless, this simplification is required by
+`Kore.Step.Simplification.Equals.makeEvaluateFunctionalOr`.
+
+\begin{code}
+          | otherwise =
+            Predicated
+                { term = term1
+                , predicate =
+                    Function.on
+                        makeOrPredicate
+                        Predicated.toPredicate
+                        predicated1
+                        predicated2
+                , substitution = mempty
+                }
+    in Just (result, SimplificationProof)
 
   | otherwise =
     Nothing
-
-  where
-    result = predicated1 { predicate = makeOrPredicate predicate1 predicate2 }
 \end{code}
 
 == `\top` annihilates `\or`
