@@ -12,24 +12,22 @@ module Kore.Step.Function.Data
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
     , AttemptedAxiomResults (..)
-    , BuiltinAndAxiomsFunctionEvaluator
     , CommonAttemptedAxiom
-    , FunctionEvaluators (..)
     , applicationAxiomSimplifier
     , notApplicableAxiomEvaluator
     , purePatternAxiomEvaluator
     ) where
 
+import           Control.DeepSeq
+                 ( NFData )
 import qualified Data.Map.Strict as Map
-import           Data.These
-                 ( These )
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.AxiomPatterns
-                 ( EqualityRule )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -44,8 +42,8 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-| 'BuiltinAndAxiomSimplifier' simplifies 'Application' patterns using either an axiom
-or builtin code.
+{-| 'BuiltinAndAxiomSimplifier' simplifies 'Application' patterns using either
+an axiom or builtin code.
 
 Arguments:
 
@@ -85,36 +83,11 @@ newtype BuiltinAndAxiomSimplifier level =
             )
         )
 
-{-| Data structure for holding evaluators for the same symbol
--}
-data FunctionEvaluators level
-    = FunctionEvaluators
-        { definitionRules :: [EqualityRule level]
-        -- ^ Evaluators used when evaluating functions according to their
-        -- definition.
-        , simplificationEvaluators :: [BuiltinAndAxiomSimplifier level]
-        -- ^ Evaluators used when simplifying functions.
-        }
-
-{-|Datastructure to combine both a builtin evaluator and axiom-based
-function evaluators for the same symbol.
-
-The backend implementation allows symbols to both be hooked to a builtin
-implementation and to be defined through axioms;  however, we don't want to
-use both methods to evaluate the function at the same time.  That is because
-(1) we expect to get the same results; (2) when one of them fails while the
-other succeeds, using both results would introduce a split in the search space.
--}
-type BuiltinAndAxiomsFunctionEvaluator level =
-    These
-        (BuiltinAndAxiomSimplifier level)
-        (FunctionEvaluators level)
-
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
 -}
 type BuiltinAndAxiomSimplifierMap level =
-    Map.Map (Id level) (BuiltinAndAxiomsFunctionEvaluator level)
+    Map.Map (Id level) (BuiltinAndAxiomSimplifier level)
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}
@@ -125,7 +98,10 @@ data AttemptedAxiomResults level variable =
         , remainders :: !(OrOfExpandedPattern level variable)
         -- ^ The part of the pattern that was not rewritten by the axiom.
         }
-  deriving (Show, Eq)
+  deriving (Eq, Generic, Show)
+
+instance (NFData (variable level))
+    => NFData (AttemptedAxiomResults level variable)
 
 instance (Ord level, Ord (variable level))
     => Semigroup (AttemptedAxiomResults level variable)
@@ -161,7 +137,10 @@ a case for axioms that can't be applied.
 data AttemptedAxiom level variable
     = NotApplicable
     | Applied !(AttemptedAxiomResults level variable)
-  deriving (Show, Eq)
+  deriving (Eq, Generic, Show)
+
+instance (NFData (variable level))
+    => NFData (AttemptedAxiom level variable)
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.

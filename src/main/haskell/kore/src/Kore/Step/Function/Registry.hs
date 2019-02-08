@@ -38,10 +38,10 @@ import qualified Kore.Step.AxiomPatterns as AxiomPatterns
                  ( Assoc (..), AxiomPatternAttributes (..), Comm (..),
                  Idem (..), RulePattern (..), Unit (..) )
 import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifier (..),
-                 FunctionEvaluators (FunctionEvaluators) )
-import           Kore.Step.Function.Data as FunctionEvaluators
-                 ( FunctionEvaluators (..) )
+                 ( BuiltinAndAxiomSimplifier (..) )
+import           Kore.Step.Function.EvaluationStrategy
+                 ( definitionEvaluation, firstFullEvaluation,
+                 simplifierWithFallback )
 import           Kore.Step.Function.UserDefined
                  ( ruleFunctionEvaluator )
 import           Kore.Step.StepperAttributes
@@ -129,7 +129,7 @@ axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
 axiomPatternsToEvaluators
     :: forall level
     .  Map.Map (Id level) [EqualityRule level]
-    -> Map.Map (Id level) (FunctionEvaluators level)
+    -> Map.Map (Id level) (BuiltinAndAxiomSimplifier level)
 axiomPatternsToEvaluators axiomPatterns =
     Map.map
         (fromMaybe (error "Unexpected Nothing"))
@@ -139,14 +139,14 @@ axiomPatternsToEvaluators axiomPatterns =
         )
   where
     equalitiesToEvaluators
-        :: [EqualityRule level] -> Maybe (FunctionEvaluators level)
+        :: [EqualityRule level] -> Maybe (BuiltinAndAxiomSimplifier level)
     equalitiesToEvaluators equalities =
-        if null simplification && null evaluations
-        then Nothing
-        else Just FunctionEvaluators
-            { definitionRules = evaluations
-            , simplificationEvaluators = simplification
-            }
+        case (simplificationEvaluator, definitionEvaluator) of
+            (Nothing, Nothing) -> Nothing
+            (Just evaluator, Nothing) -> Just evaluator
+            (Nothing, Just evaluator) -> Just evaluator
+            (Just sEvaluator, Just dEvaluator) ->
+                Just (simplifierWithFallback sEvaluator dEvaluator)
       where
         simplifications :: [EqualityRule level]
         nonSimplifications :: [EqualityRule level]
@@ -163,6 +163,14 @@ axiomPatternsToEvaluators axiomPatterns =
                 )
                 nonSimplifications
         simplification = mapMaybe axiomPatternEvaluator simplifications
+        simplificationEvaluator =
+            if null simplification
+                then Nothing
+                else Just (firstFullEvaluation simplification)
+        definitionEvaluator =
+            if null evaluations
+                then Nothing
+                else Just (definitionEvaluation evaluations)
         isSimplificationRule (EqualityRule RulePattern { attributes }) =
             isSimplification
           where

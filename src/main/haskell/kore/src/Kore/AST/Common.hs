@@ -1078,6 +1078,9 @@ data SortedPattern level domain variable child = SortedPattern
     }
     deriving (Eq, Show, Generic)
 
+instance (NFData child, NFData (variable level), NFData (domain child))
+    => NFData (SortedPattern level domain variable child)
+
 instance
     ( Hashable child
     , Hashable (variable level)
@@ -1092,6 +1095,9 @@ data PatternStub level domain variable child
     = SortedPatternStub !(SortedPattern level domain variable child)
     | UnsortedPatternStub (Sort level -> Pattern level domain variable child)
     deriving(Generic)
+
+instance (NFData child, NFData (variable level), NFData (domain child))
+    => NFData (PatternStub level domain variable child)
 
 -- cannot hash.
 

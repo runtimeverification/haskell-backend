@@ -791,6 +791,11 @@ greaterEqInt
     -> StepPattern Object variable
 greaterEqInt i1 i2 = mkApp boolSort greaterEqIntSymbol [i1, i2]
 
+unitMap
+    :: Ord (variable Object)
+    => StepPattern Object variable
+unitMap = mkApp mapSort unitMapSymbol []
+
 elementMap
     :: Ord (variable Object)
     => StepPattern Object variable

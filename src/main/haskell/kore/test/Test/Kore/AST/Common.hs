@@ -68,6 +68,7 @@ test_withSort =
                         , sortedPatternSort = sortListMetaSort
                         }
                     )
+                :: PatternStub Meta Domain.Builtin Variable ()
                 )
             )
         ]

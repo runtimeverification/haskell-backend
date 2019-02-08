@@ -7,8 +7,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import           Data.These
-                 ( These (That) )
 
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Pure
@@ -24,6 +22,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
 import qualified Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
+import           Kore.Step.Function.EvaluationStrategy
+                 ( firstFullEvaluation )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -122,7 +122,7 @@ test_applicationSimplification =
                 (mockSimplifier [])
                 (Map.singleton
                     Mock.fId
-                    (thatSimplification
+                    (simplificationEvaluator
                         [ BuiltinAndAxiomSimplifier
                             (const $ const $ const $ const $ return
                                 ( AttemptedAxiom.Applied AttemptedAxiomResults
@@ -250,7 +250,7 @@ test_applicationSimplification =
                         (mockSimplifier [])
                         (Map.singleton
                             Mock.sigmaId
-                            (thatSimplification
+                            (simplificationEvaluator
                                 [ BuiltinAndAxiomSimplifier
                                     (const $ const $ const $ const $
                                         return (result, SimplificationProof)
@@ -324,14 +324,10 @@ test_applicationSimplification =
             Mock.sortAttributesMapping
             Mock.subsorts
 
-thatSimplification
+simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier Object]
-    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
-thatSimplification evaluators =
-    That FunctionEvaluators
-        { definitionRules = []
-        , simplificationEvaluators = evaluators
-        }
+    -> BuiltinAndAxiomSimplifier Object
+simplificationEvaluator = firstFullEvaluation
 
 makeApplication
     :: (MetaOrObject level, Ord (variable level), HasCallStack)
