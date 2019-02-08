@@ -8,8 +8,6 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import qualified Data.Map as Map
-import           Data.These
-                 ( These (That) )
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -21,6 +19,8 @@ import           Kore.Step.ExpandedPattern
                  ( CommonPredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Data
+import           Kore.Step.Function.EvaluationStrategy
+                 ( firstFullEvaluation )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -127,7 +127,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , thatSimplification
+                        , simplificationEvaluator
                             [ makeEvaluator
                                     [ (Mock.f Mock.functional00, Mock.functional00)
                                 , (Mock.f Mock.functional01, Mock.a)
@@ -163,7 +163,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , thatSimplification
+                        , simplificationEvaluator
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 ]
@@ -200,7 +200,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , thatSimplification
+                        , simplificationEvaluator
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 ]
@@ -243,7 +243,7 @@ test_predicateSubstitutionSimplification =
             runSimplifier
                 (Map.fromList
                     [   ( Mock.fId
-                        , thatSimplification
+                        , simplificationEvaluator
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
                                 , (Mock.f Mock.a, Mock.g Mock.b)
@@ -296,14 +296,10 @@ runSimplifier patternSimplifierMap predicateSubstitution =
             mockMetadataTools
             (Simplifier.create mockMetadataTools patternSimplifierMap)
 
-thatSimplification
+simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier Object]
-    -> These (BuiltinAndAxiomSimplifier Object) (FunctionEvaluators Object)
-thatSimplification evaluators =
-    That FunctionEvaluators
-        { definitionRules = []
-        , simplificationEvaluators = evaluators
-        }
+    -> BuiltinAndAxiomSimplifier Object
+simplificationEvaluator = firstFullEvaluation
 
 makeEvaluator
     ::  (forall variable

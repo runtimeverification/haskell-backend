@@ -14,8 +14,6 @@ import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import           Data.These
-                 ( These (..) )
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -33,6 +31,8 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
+import           Kore.Step.Function.EvaluationStrategy
+                 ( builtinEvaluation, simplifierWithFallback )
 import           Kore.Step.Function.Registry
                  ( axiomPatternsToEvaluators )
 import           Kore.Step.OrOfExpandedPattern
@@ -411,7 +411,7 @@ evaluate tools patt =
 
 evaluateWithAxioms
     :: MetadataTools Object StepperAttributes
-    -> Map.Map (Id Object) (FunctionEvaluators Object)
+    -> BuiltinAndAxiomSimplifierMap Object
     -> CommonExpandedPattern Object
     -> IO (CommonOrOfExpandedPattern Object)
 evaluateWithAxioms tools axioms patt =
@@ -436,13 +436,13 @@ evaluateWithAxioms tools axioms patt =
         Simplifier.create
             tools
             (Map.unionWith
-                (\(This x) (That y) -> These x y)
+                simplifierWithFallback
                 builtinAxioms
-                (Map.map That axioms)
+                axioms
             )
     builtinAxioms :: BuiltinAndAxiomSimplifierMap Object
     builtinAxioms =
         Map.fromList
-            [ (Mock.concatMapId, This Map.evalConcat)
-            , (Mock.elementMapId, This Map.evalElement)
+            [ (Mock.concatMapId, builtinEvaluation Map.evalConcat)
+            , (Mock.elementMapId, builtinEvaluation Map.evalElement)
             ]

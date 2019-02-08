@@ -3,6 +3,8 @@ module Test.Tasty.HUnit.Extensions where
 import Test.Tasty.HUnit
        ( assertBool, assertFailure )
 
+import           Control.DeepSeq
+                 ( NFData, force )
 import           Control.Exception
                  ( SomeException, catch, evaluate )
 import           Control.Monad
@@ -53,12 +55,26 @@ assertInList
     -> IO ()
 assertInList = assertInListP show
 
-assertError :: HasCallStack => (String -> IO()) -> a -> IO()
+assertError :: (HasCallStack, NFData a) => (String -> IO()) -> a -> IO()
 assertError errorTest action = do
     maybeErr <-
         catch
             (do
-                _ <- evaluate action
+                _ <- evaluate $ force action
+                return Nothing
+            )
+            (\err -> return (Just (show (err :: SomeException))))
+    case maybeErr of
+        Nothing  -> assertFailure "No error during action."
+        Just err -> errorTest err
+
+assertErrorIO :: (HasCallStack, NFData a) => (String -> IO()) -> IO a -> IO()
+assertErrorIO errorTest action = do
+    maybeErr <-
+        catch
+            (do
+                value <- action
+                _ <- evaluate $ force value
                 return Nothing
             )
             (\err -> return (Just (show (err :: SomeException))))

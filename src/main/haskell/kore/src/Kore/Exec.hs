@@ -18,10 +18,7 @@ import           Control.Comonad
 import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Map.Strict as Map
-import           Data.These
-                 ( These (..) )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -55,6 +52,8 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..), toMLPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Function.EvaluationStrategy
+                 ( builtinEvaluation, simplifierWithFallback )
 import           Kore.Step.Function.Registry
                  ( axiomPatternsToEvaluators, extractFunctionAxioms )
 import           Kore.Step.OrOfExpandedPattern
@@ -264,12 +263,12 @@ makeAxiomsAndSimplifiers verifiedModule tools =
             functionEvaluators =
                 axiomPatternsToEvaluators functionAxioms
             functionRegistry =
-                Map.merge
-                    (Map.mapMissing (const This))
-                    (Map.mapMissing (const That))
-                    (Map.zipWithMatched (const These))
+                Map.unionWith
+                    simplifierWithFallback
                     -- builtin functions
-                    (Builtin.koreEvaluators verifiedModule)
+                    (Map.map builtinEvaluation
+                        (Builtin.koreEvaluators verifiedModule)
+                    )
                     -- user-defined functions
                     functionEvaluators
             simplifier
