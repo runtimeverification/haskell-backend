@@ -345,7 +345,15 @@ bottomPredicate = bottom $> ()
 
 {- | Transform a predicate and substitution into a predicate only.
 
-    See also: 'substitutionToPredicate'.
+@toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
+a 'PredicateSubstition' into only a 'Predicate'; i.e. when @term ~ ()@,
+
+> Predicated level variable term ~ PredicateSubstitution level variable
+
+@toPredicate@ is also used to extract the 'Predicate' and 'Substitution' while
+discarding the 'term'.
+
+See also: 'substitutionToPredicate'.
 
 -}
 toPredicate
@@ -355,7 +363,7 @@ toPredicate
        , Show (variable level)
        , Unparse (variable level)
        )
-    => PredicateSubstitution level variable
+    => Predicated level variable term
     -> Predicate level variable
 toPredicate Predicated { predicate, substitution } =
     makeAndPredicate
