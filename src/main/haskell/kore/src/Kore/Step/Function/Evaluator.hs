@@ -76,6 +76,7 @@ import           Kore.Variables.Fresh
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
 data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult
+    deriving (Eq, Ord, Show)
 
 {-|Converts 'AcceptsMultipleResults' to Bool.
 -}
