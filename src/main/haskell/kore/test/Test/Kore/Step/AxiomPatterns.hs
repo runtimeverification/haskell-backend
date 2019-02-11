@@ -1,9 +1,10 @@
-module Test.Kore.Step.AxiomPatterns (test_axiomPatterns) where
+module Test.Kore.Step.AxiomPatterns
+    ( test_axiomPatterns
+    , test_refreshRulePattern
+    ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
 
 import           Data.Default
 import qualified Data.Map as Map
@@ -16,11 +17,12 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
+import           Control.Monad.Counter
 import           Kore.AST.Builders
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
-import           Kore.AST.Valid
+import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (..), verifyAndIndexDefinition )
 import qualified Kore.Attribute.Null as Attribute
@@ -30,14 +32,14 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Parser.ParserImpl
 import           Kore.Parser.ParserUtils
-import           Kore.Predicate.Predicate
-                 ( wrapPredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Pattern
 
-import Test.Kore
-       ( testId )
-import Test.Kore.ASTVerifier.DefinitionVerifier
+import           Test.Kore
+                 ( testId )
+import           Test.Kore.ASTVerifier.DefinitionVerifier
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_axiomPatterns :: [TestTree]
 test_axiomPatterns =
@@ -54,7 +56,7 @@ axiomPatternsUnitTests =
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
                     , right = varI2
-                    , requires = wrapPredicate (mkTop sortAInt)
+                    , requires = Predicate.wrapPredicate (mkTop sortAInt)
                     , attributes = def
                     }
                 )
@@ -102,7 +104,7 @@ axiomPatternsUnitTests =
                     [ RewriteRule RulePattern
                         { left = varI1
                         , right = varI2
-                        , requires = wrapPredicate (mkTop sortAInt)
+                        , requires = Predicate.wrapPredicate (mkTop sortAInt)
                         , attributes = def
                         }
                     ]
@@ -160,7 +162,7 @@ axiomPatternsIntegrationTests =
                                 )
                             )
                             varStateCell
-                    , requires = wrapPredicate (mkTop sortTCell)
+                    , requires = Predicate.wrapPredicate (mkTop sortTCell)
                     , attributes = def
                     }
                 )
@@ -378,3 +380,28 @@ extractIndexedModule name eModules =
         Right modules -> fromMaybe
             (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
+
+test_refreshRulePattern :: [TestTree]
+test_refreshRulePattern =
+    [ testCase "Rename target variables" $ do
+        let rulePattern =
+                RulePattern
+                    { left = mkVar Mock.x
+                    , right = mkVar Mock.y
+                    , requires = Predicate.makeCeilPredicate (mkVar Mock.z)
+                    , attributes = def
+                    }
+            avoiding =
+                Set.fromList [Mock.x, Mock.y, Mock.z]
+            rulePattern' =
+                evalCounter $ refreshRulePattern avoiding rulePattern
+            free' =
+                Set.unions
+                    [ (Valid.freeVariables . extract) (left rulePattern')
+                    , (Valid.freeVariables . extract) (right rulePattern')
+                    , Predicate.freeVariables (requires rulePattern')
+                    ]
+        assertBool
+            "Expected no free variables in common with original RulePattern"
+            (Set.null $ Set.intersection avoiding free')
+    ]
