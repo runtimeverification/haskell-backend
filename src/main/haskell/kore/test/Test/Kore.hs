@@ -409,12 +409,17 @@ externalDomainGen _ =
         <$> stringLiteralGen
 
 builtinDomainGen :: Sort Object -> Gen (Domain.Builtin child)
-builtinDomainGen _ =
-    Domain.BuiltinPattern
-        . Kore.AST.Pure.eraseAnnotations
-        . mkStringLiteral
-        . getStringLiteral
-        <$> stringLiteralGen
+builtinDomainGen _ = Gen.choice
+    [ Domain.BuiltinPattern
+          . Kore.AST.Pure.eraseAnnotations
+          . mkStringLiteral
+          . getStringLiteral
+          <$> stringLiteralGen
+    , Domain.BuiltinInteger <$> genInteger
+    , Domain.BuiltinBool <$> Gen.bool
+    ]
+  where
+    genInteger = Gen.integral (Range.linear (-1024) 1024)
 
 existsGen
     :: MetaOrObject level
