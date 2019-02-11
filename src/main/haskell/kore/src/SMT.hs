@@ -16,13 +16,18 @@ module SMT
     , defaultConfig
     , TimeOut (..)
     , Result (..)
+    , escapeId
     , declare
+    , declareFun
+    , declareSort
     , assert
     , check
     , setInfo
+    , loadFile
     , inNewScope
     -- * Expressions
     , SExpr (..)
+    , pattern AtomOrListHead
     , SimpleSMT.tBool
     , SimpleSMT.tInt
     , SimpleSMT.and
@@ -56,6 +61,14 @@ import           SimpleSMT
                  ( Result (..), SExpr (..), Solver )
 import qualified SimpleSMT
 
+pattern AtomOrListHead :: Text -> SExpr
+pattern AtomOrListHead a <- (atomOrListHead -> Just a)
+
+atomOrListHead :: SExpr -> Maybe Text
+atomOrListHead (Atom x) = Just x
+atomOrListHead (List (Atom x : _)) = Just x
+atomOrListHead _ = Nothing
+
 -- | Time-limit for SMT queries.
 newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
     deriving (Eq, Ord, Read, Show)
@@ -86,7 +99,7 @@ defaultConfig =
             [ "-smt2"  -- use SMT-LIB2 format
             , "-in"  -- read from standard input
             ]
-        , logic = "QF_NIA"  -- Quantifier-Free formulas
+        , logic = "QF_UFNIA"  -- Quantifier-Free formulas
                             -- with Non-linear Integer Arithmetic
         , preludeFile = Nothing
         , logFile = Nothing
@@ -161,9 +174,11 @@ newSolver config = do
     Config { timeOut } = config
     Config { logic } = config
     Config { executable = exe, arguments = args } = config
+    Config { preludeFile } = config
     SMT { getSMT } = do
         setLogic logic
         setTimeOut timeOut
+        maybe (pure ()) loadFile preludeFile
 
 {- | Shut down a solver.
 
@@ -191,10 +206,30 @@ runSMT config SMT { getSMT } = do
 The declared name is returned as an expression for convenience.
 
  -}
+
+-- Need to quote every identifier in SMT between pipes
+-- to escape special chars
+escapeId :: Text -> Text
+escapeId name = "|" <> name <> "|"
+
+
+-- | Declares a general SExpr to SMT.
 declare :: MonadSMT m => Text -> SExpr -> m SExpr
 declare name typ =
     liftSMT $ withSolver $ \solver ->
         SimpleSMT.declare solver name typ
+
+-- | Declares a function symbol to SMT.
+declareFun :: MonadSMT m => Text -> [SExpr] -> SExpr -> m SExpr
+declareFun name inputTypes outputType =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.declareFun solver name inputTypes outputType
+
+-- | Declares a sort to SMT. Its arity is the # of sort parameters.
+declareSort :: MonadSMT m => Text -> Int -> m SExpr
+declareSort name arity =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.declareSort solver name arity
 
 -- | Assume a fact.
 assert :: MonadSMT m => SExpr -> m ()
@@ -262,6 +297,12 @@ setLogic :: MonadSMT m => Text -> m ()
 setLogic logic =
     liftSMT $ withSolver $ \solver ->
         SimpleSMT.setLogic solver logic
+
+-- | Load a .smt2 file
+loadFile :: MonadSMT m => FilePath -> m ()
+loadFile path =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.loadFile solver path
 
 -- | Run an 'SMT' computation with the given solver.
 withSolver :: (Solver -> IO a) -> SMT a
