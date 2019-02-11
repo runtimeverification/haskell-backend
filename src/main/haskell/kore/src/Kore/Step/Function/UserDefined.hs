@@ -26,6 +26,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
                  RulePattern (..) )
+import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep
                  ( StepResult (StepResult), UnificationProcedure (..),
                  stepWithRule )
@@ -117,7 +118,7 @@ ruleFunctionEvaluator
             (UnificationProcedure matchAsUnification)
             substitutionSimplifier
             (ExpandedPattern.fromPurePattern patt)
-            rule
+            (RulePattern.mapVariables fromVariable rule)
 
     processResult
         :: (StepResult level variable, StepProof level variable)

@@ -8,6 +8,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import           Data.Default
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -395,9 +396,17 @@ test_refreshRulePattern :: TestTree
 test_refreshRulePattern =
     testCase "Rename target variables" $ do
         let avoiding = AxiomPatterns.freeVariables testRulePattern
-            rulePattern' =
+            (renaming, rulePattern') =
                 evalCounter $ refreshRulePattern avoiding testRulePattern
+            renamed = Set.fromList (Foldable.toList renaming)
             free' = AxiomPatterns.freeVariables rulePattern'
+        assertEqual
+            "Expected to rename all free variables of original RulePattern"
+            avoiding
+            (Map.keysSet renaming)
+        assertBool
+            "Expected to renamed variables distinct from original variables"
+            (Set.null $ Set.intersection avoiding renamed)
         assertBool
             "Expected no free variables in common with original RulePattern"
             (Set.null $ Set.intersection avoiding free')

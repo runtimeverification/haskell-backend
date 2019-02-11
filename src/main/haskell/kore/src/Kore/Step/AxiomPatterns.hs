@@ -33,6 +33,7 @@ module Kore.Step.AxiomPatterns
     , mkFunctionAxiom
     , refreshRulePattern
     , freeVariables
+    , Kore.Step.AxiomPatterns.mapVariables
     ) where
 
 import           Control.Comonad
@@ -42,7 +43,9 @@ import qualified Control.Lens.TH.Rules as Lens
 import qualified Control.Monad as Monad
 import           Data.Default
                  ( Default (..) )
-import qualified Data.Map as Map
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
 import           Data.Set
                  ( Set )
@@ -367,9 +370,10 @@ refreshRulePattern
         )
     => Set (variable level)  -- ^ Variables to avoid
     -> RulePattern level variable
-    -> m (RulePattern level variable)
-refreshRulePattern avoiding rulePattern = do
-    (_, subst) <- refreshVariables originalFreeVariables
+    -> m (Map (variable level) (variable level), RulePattern level variable)
+refreshRulePattern avoid0 rulePattern = do
+    (_, rename) <- refreshVariables originalFreeVariables
+    let subst = mkVar <$> rename
     left' <- Pattern.substitute subst left
     right' <- Pattern.substitute subst right
     requires' <- Predicate.substitute subst requires
@@ -379,14 +383,17 @@ refreshRulePattern avoiding rulePattern = do
                 , right = right'
                 , requires = requires'
                 }
-    return rulePattern'
+    return (rename, rulePattern')
   where
     RulePattern { left, right, requires } = rulePattern
     originalFreeVariables = freeVariables rulePattern
     refreshVariables =
-        Monad.foldM refreshOneVariable (avoiding, Map.empty)
+        Monad.foldM refreshOneVariable (avoid0, Map.empty)
     refreshOneVariable (avoid, rename) var
-      | Set.notMember var avoid = return (avoid, rename)
+      | Set.notMember var avoid =
+        -- The variable does not collide with any others, so renaming is not
+        -- necessary.
+        return (Set.insert var avoid, rename)
       | otherwise = do
         var' <- freshVariableSuchThat var (\v -> Set.notMember v avoid)
         let avoid' =
@@ -412,3 +419,17 @@ freeVariables RulePattern { left, right, requires } =
         , (Valid.freeVariables . extract) right
         , Predicate.freeVariables requires
         ]
+
+{- | Apply the given function to all variables in a 'RulePattern'.
+ -}
+mapVariables
+    :: Ord (variable2 level)
+    => (variable1 level -> variable2 level)
+    -> RulePattern level variable1
+    -> RulePattern level variable2
+mapVariables mapping rulePattern@RulePattern { left, right, requires } =
+    rulePattern
+        { left = Pattern.mapVariables mapping left
+        , right = Pattern.mapVariables mapping right
+        , requires = Predicate.mapVariables mapping requires
+        }

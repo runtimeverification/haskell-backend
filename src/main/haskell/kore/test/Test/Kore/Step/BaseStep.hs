@@ -289,11 +289,7 @@ test_baseStep =
                         }
                     , mconcat
                         (map stepProof
-                            [ StepProofVariableRenamings
-                                [ variableRenaming
-                                    (a1 patternMetaSort)
-                                    (var_a1_0 patternMetaSort)
-                                ]
+                            [ StepProofVariableRenamings []
                             , StepProofUnification EmptyUnificationProof
                             ]
                         )
@@ -783,15 +779,6 @@ test_baseStep =
     x1 = Variable (testId "#x1")
     y1 = Variable (testId "#y1")
     var_a1_0 = Variable (testId "#var_a1_0")
-    variableRenaming
-        :: Variable Meta
-        -> Variable Meta
-        -> VariableRenaming Meta Variable
-    variableRenaming from to =
-        VariableRenaming
-            { variableRenamingOriginal = AxiomVariable from
-            , variableRenamingRenamed = ConfigurationVariable to
-            }
 
     identicalVariablesAssertion var = do
         let expect = Right
