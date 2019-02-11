@@ -31,6 +31,7 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
+import           Debug.Trace
 import           Prelude hiding
                  ( concat )
 
@@ -39,6 +40,8 @@ import           Kore.AST.Valid
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
+import qualified Kore.Builtin.Int as Builtin.Int
+import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -1039,7 +1042,7 @@ See also: 'equalAndEquals'
 -- TODO (thomas.tuegel): This unification case assumes that \dv is injective,
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
-    :: Eq (variable Object)
+    :: (Eq (variable Object), Eq level, Eq (variable level))
     => StepPattern level variable
     -> StepPattern level variable
     -> Maybe (StepPattern level variable, SimplificationProof level)
@@ -1047,8 +1050,17 @@ domainValueAndEqualsAssumesDifferent
     first@(DV_ _ (Domain.BuiltinPattern _))
     second@(DV_ _ (Domain.BuiltinPattern _))
   =
-    assert (first /= second) $
-        return (mkBottom_, SimplificationProof)
+    assert (first /= second) $ return (mkBottom_, SimplificationProof)
+domainValueAndEqualsAssumesDifferent
+    first@(DV_ _ (Domain.BuiltinBool _))
+    second@(DV_ _ (Domain.BuiltinBool _))
+  =
+    assert (first /= second) $ return (mkBottom_, SimplificationProof)
+domainValueAndEqualsAssumesDifferent
+    first@(DV_ _ (Domain.BuiltinInteger _))
+    second@(DV_ _ (Domain.BuiltinInteger _))
+  =
+    assert (first /= second) $ return (mkBottom_, SimplificationProof)
 domainValueAndEqualsAssumesDifferent _ _ = empty
 
 {-| Unify two literal strings.

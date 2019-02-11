@@ -7,6 +7,7 @@ import           Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
+import           Test.Tasty.HUnit
 
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
@@ -21,10 +22,13 @@ import           GHC.Integer.Logarithms
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
+import qualified Kore.Step.Simplification.AndTerms as AndTerms
+import           Kore.Step.Simplification.Data ( SimplificationProof(..) )
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
@@ -330,3 +334,51 @@ testInt
     -> CommonExpandedPattern Object
     -> TestTree
 testInt name = testSymbolWithSolver evaluate name intSort
+
+-- | "equal"ed internal Integers are not equal
+test_unifyEqual_NotEqual :: TestTree
+test_unifyEqual_NotEqual =
+    testCaseWithSolver "unifyEqual BuiltinInteger: Not Equal" $ \solver -> do
+        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 1
+            dv2 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        actual <- evaluateWith solver $ mkEquals_ dv1 dv2
+        assertEqual "" bottom actual
+
+-- | "equal"ed internal Integers are equal
+test_unifyEqual_Equal :: TestTree
+test_unifyEqual_Equal =
+    testCaseWithSolver "unifyEqual BuiltinInteger: Equal" $ \solver -> do
+        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        actual <- evaluateWith solver $ mkEquals_ dv1 dv1
+        assertEqual "" top actual
+
+-- | "and"ed internal Integers are not equal
+test_unifyAnd_NotEqual :: TestTree
+test_unifyAnd_NotEqual =
+    testCaseWithSolver "unifyAnd BuiltinInteger: Not Equal" $ \solver -> do
+        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 1
+            dv2 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        actual <- evaluateWith solver $ mkAnd dv1 dv2
+        assertEqual "" bottom actual
+
+-- | "and"ed internal Integers are equal
+test_unifyAnd_Equal :: TestTree
+test_unifyAnd_Equal =
+    testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
+        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        actual <- evaluateWith solver $ mkAnd dv1 dv1
+        assertEqual "" (pure dv1) actual
+
+{- |  \equal
+        ( \dv{Int}(0)
+        , \and ( \dv{Int}(0), \dv{Int}(0) )
+        )
+
+  internal Integers "and"ed are equal
+-}
+test_unifyAndEqual_Equal :: TestTree
+test_unifyAndEqual_Equal =
+    testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
+        let dv = mkDomainValue intSort $ Domain.BuiltinInteger 0
+        actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv 
+        assertEqual "" top actual
