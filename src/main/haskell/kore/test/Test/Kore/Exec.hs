@@ -12,6 +12,7 @@ import           Control.Applicative
                  ( liftA2 )
 import           Data.Limit
                  ( Limit (Unlimited) )
+import qualified Data.Limit as Limit
 import qualified Data.Map as Map
 import           Data.Set
                  ( Set )
@@ -55,11 +56,12 @@ import Test.Tasty.HUnit.Extensions
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
   where
+    unlimited :: Limit Integer
+    unlimited = Unlimited
     actual = SMT.runSMT SMT.defaultConfig $ evalSimplifier $ exec
         verifiedModule
+        (Limit.replicate unlimited . anyRewrite)
         inputPattern
-        Unlimited
-        anyRewrite
     verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
@@ -87,6 +89,8 @@ test_search =
         "search"
         [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
   where
+    unlimited :: Limit Integer
+    unlimited = Unlimited
     makeTestCase searchType =
         testCase (show searchType) (assertion searchType)
     assertion searchType = actual searchType
@@ -95,9 +99,8 @@ test_search =
         let
             simplifier = search
                 verifiedModule
+                (Limit.replicate unlimited . allRewrites)
                 inputPattern
-                Unlimited
-                allRewrites
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
         finalPattern <- SMT.runSMT SMT.defaultConfig $ evalSimplifier simplifier
