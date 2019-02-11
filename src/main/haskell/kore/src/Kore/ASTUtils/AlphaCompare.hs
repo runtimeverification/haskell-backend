@@ -414,4 +414,8 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
                             (Pure.castVoidDomainValues p1)
                             (Pure.castVoidDomainValues p2)
                 return (runReader worker ([], []))
+            (Domain.BuiltinInteger i1, Domain.BuiltinInteger i2) ->
+                return $ i1 == i2
+            (Domain.BuiltinBool b1, Domain.BuiltinBool b2) ->
+                return $ b1 == b2
             _ -> return False
