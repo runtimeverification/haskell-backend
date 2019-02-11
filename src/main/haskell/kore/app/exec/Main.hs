@@ -13,6 +13,7 @@ import           Data.Maybe
                  ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Reflection
 import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
@@ -48,6 +49,7 @@ import           Kore.Error
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
+import           Kore.IndexedModule.MetadataTools
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Predicate.Predicate
@@ -62,6 +64,8 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import           Kore.Step.SmtLemma
+                 ( declareSMTLemmas )
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unparser
@@ -71,6 +75,7 @@ import           Kore.Variables.Free
 import           Kore.Variables.Fresh
                  ( freshVariablePrefix )
 import qualified SMT
+
 
 import GlobalMain
 
@@ -445,35 +450,39 @@ mainWithOptions
                     fileName
         (exitCode, finalPattern) <-
             clockSomethingIO "Executing"
+            $ give (extractMetadataTools indexedModule
+                :: MetadataTools Object StepperAttributes)
             $ SMT.runSMT smtConfig
             $ evalSimplifier
-            $ case proveParameters of
-                Nothing -> do
-                    let purePattern =
-                            fromMaybe
-                                (error "Missing: --pattern PATTERN_FILE")
-                                maybePurePattern
-                    case searchParameters of
-                        Nothing -> do
-                            pat <- exec indexedModule strategy' purePattern
-                            return (ExitSuccess, pat)
-                        Just (searchPattern, searchConfig) -> do
-                            pat <-
-                                search
-                                    indexedModule
-                                    strategy'
-                                    purePattern
-                                    searchPattern
-                                    searchConfig
-                            return (ExitSuccess, pat)
-                Just specIndexedModule ->
-                    either
-                        (\pat -> (ExitFailure 1, pat))
-                        (\_ -> (ExitSuccess, mkTop $ mkSortVariable "R" ))
-                    <$> prove
-                            stepLimit
-                            indexedModule
-                            specIndexedModule
+            $ do
+                declareSMTLemmas indexedModule
+                case proveParameters of
+                    Nothing -> do
+                        let purePattern =
+                                fromMaybe
+                                    (error "Missing: --pattern PATTERN_FILE")
+                                    maybePurePattern
+                        case searchParameters of
+                            Nothing -> do
+                                pat <- exec indexedModule strategy' purePattern
+                                return (ExitSuccess, pat)
+                            Just (searchPattern, searchConfig) -> do
+                                pat <-
+                                    search
+                                        indexedModule
+                                        strategy'
+                                        purePattern
+                                        searchPattern
+                                        searchConfig
+                                return (ExitSuccess, pat)
+                    Just specIndexedModule ->
+                        either
+                            (\pat -> (ExitFailure 1, pat))
+                            (\_ -> (ExitSuccess, mkTop $ mkSortVariable "R" ))
+                        <$> prove
+                                stepLimit
+                                indexedModule
+                                specIndexedModule
         let
             finalExternalPattern =
                 either (error . printError) id
