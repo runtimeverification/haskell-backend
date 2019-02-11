@@ -32,6 +32,7 @@ module Kore.Step.AxiomPatterns
     , mkRewriteAxiom
     , mkFunctionAxiom
     , refreshRulePattern
+    , freeVariables
     ) where
 
 import           Control.Comonad
@@ -49,9 +50,12 @@ import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Kore
+import           Kore.AST.Kore hiding
+                 ( freeVariables )
 import           Kore.AST.Sentence
-import           Kore.AST.Valid as Valid
+import           Kore.AST.Valid hiding
+                 ( freeVariables )
+import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Assoc
 import qualified Kore.Attribute.Axiom.Concrete as Axiom
 import           Kore.Attribute.Comm
@@ -66,7 +70,9 @@ import           Kore.Attribute.Trusted
 import           Kore.Attribute.Unit
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-import           Kore.Predicate.Predicate as Predicate
+import           Kore.Predicate.Predicate
+                 ( CommonPredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern as Pattern
 import           Kore.Variables.Fresh
 
@@ -293,7 +299,7 @@ patternToAxiomPattern attributes pat =
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
                 , right = rhs
-                , requires = wrapPredicate requires
+                , requires = Predicate.wrapPredicate requires
                 , attributes
                 }
         -- function axioms: general
@@ -301,7 +307,7 @@ patternToAxiomPattern attributes pat =
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
                 , right = rhs
-                , requires = wrapPredicate requires
+                , requires = Predicate.wrapPredicate requires
                 , attributes
                 }
         -- function axioms: trivial pre- and post-conditions
@@ -309,7 +315,7 @@ patternToAxiomPattern attributes pat =
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
                 , right = rhs
-                , requires = makeTruePredicate
+                , requires = Predicate.makeTruePredicate
                 , attributes
                 }
         Forall_ _ _ child -> patternToAxiomPattern attributes child
@@ -370,12 +376,7 @@ refreshRulePattern avoiding rulePattern = do
     return rulePattern'
   where
     RulePattern { left, right, requires } = rulePattern
-    originalFreeVariables =
-        Set.unions
-            [ (Valid.freeVariables . extract) left
-            , (Valid.freeVariables . extract) right
-            , Predicate.freeVariables requires
-            ]
+    originalFreeVariables = freeVariables rulePattern
     refreshVariables =
         Monad.foldM refreshOneVariable (avoiding, Map.empty)
     refreshOneVariable (avoiding', subst) var = do
@@ -388,3 +389,16 @@ refreshRulePattern avoiding rulePattern = do
                 -- freshly-generated variable.
                 Map.insert var (mkVar var') subst
         return (avoiding'', subst')
+
+{- | Extract the free variables of a 'RulePattern'.
+ -}
+freeVariables
+    :: MetaOrObject level
+    => RulePattern level
+    -> Set (Variable level)
+freeVariables RulePattern { left, right, requires } =
+    Set.unions
+        [ (Valid.freeVariables . extract) left
+        , (Valid.freeVariables . extract) right
+        , Predicate.freeVariables requires
+        ]

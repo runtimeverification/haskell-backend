@@ -1,5 +1,6 @@
 module Test.Kore.Step.AxiomPatterns
     ( test_axiomPatterns
+    , test_freeVariables
     , test_refreshRulePattern
     ) where
 
@@ -33,7 +34,9 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Parser.ParserImpl
 import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.AxiomPatterns
+import           Kore.Step.AxiomPatterns hiding
+                 ( freeVariables )
+import qualified Kore.Step.AxiomPatterns as AxiomPatterns
 import           Kore.Step.Pattern
 
 import           Test.Kore
@@ -381,27 +384,33 @@ extractIndexedModule name eModules =
             (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
 
-test_refreshRulePattern :: [TestTree]
+test_freeVariables :: TestTree
+test_freeVariables =
+    testCase "Extract free variables" $ do
+        let expect = Set.fromList [Mock.x, Mock.z]
+            actual = AxiomPatterns.freeVariables testRulePattern
+        assertEqual "Expected free variables" expect actual
+
+test_refreshRulePattern :: TestTree
 test_refreshRulePattern =
-    [ testCase "Rename target variables" $ do
-        let rulePattern =
-                RulePattern
-                    { left = mkVar Mock.x
-                    , right = mkVar Mock.y
-                    , requires = Predicate.makeCeilPredicate (mkVar Mock.z)
-                    , attributes = def
-                    }
-            avoiding =
-                Set.fromList [Mock.x, Mock.y, Mock.z]
+    testCase "Rename target variables" $ do
+        let avoiding = AxiomPatterns.freeVariables testRulePattern
             rulePattern' =
-                evalCounter $ refreshRulePattern avoiding rulePattern
-            free' =
-                Set.unions
-                    [ (Valid.freeVariables . extract) (left rulePattern')
-                    , (Valid.freeVariables . extract) (right rulePattern')
-                    , Predicate.freeVariables (requires rulePattern')
-                    ]
+                evalCounter $ refreshRulePattern avoiding testRulePattern
+            free' = AxiomPatterns.freeVariables rulePattern'
         assertBool
             "Expected no free variables in common with original RulePattern"
             (Set.null $ Set.intersection avoiding free')
-    ]
+
+testRulePattern :: RulePattern Object
+testRulePattern =
+    RulePattern
+        { left =
+            -- Include an implicitly-quantified variable.
+            mkVar Mock.x
+        , right =
+            -- Include a binder to ensure that we respect them.
+            mkExists Mock.y (mkVar Mock.y)
+        , requires = Predicate.makeCeilPredicate (mkVar Mock.z)
+        , attributes = def
+        }
