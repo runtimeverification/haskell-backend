@@ -65,7 +65,7 @@ test_definitionEvaluation =
     [ testCase "Simple evaluation" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.g Mock.c
@@ -75,7 +75,6 @@ test_definitionEvaluation =
                             ]
                         , remainders = OrOfExpandedPattern.make []
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -91,7 +90,7 @@ test_definitionEvaluation =
     , testCase "Evaluation with remainder" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.g Mock.a
@@ -113,7 +112,6 @@ test_definitionEvaluation =
                                 }
                             ]
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -129,7 +127,7 @@ test_definitionEvaluation =
     , testCase "Failed evaluation" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make []
                         , remainders = OrOfExpandedPattern.make
                             [ Predicated
@@ -139,7 +137,6 @@ test_definitionEvaluation =
                                 }
                             ]
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -155,7 +152,7 @@ test_definitionEvaluation =
     , testCase "Evaluation with multiple branches" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.g Mock.a
@@ -190,7 +187,6 @@ test_definitionEvaluation =
                                 }
                             ]
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -214,7 +210,7 @@ test_firstFullEvaluation =
     [ testCase "Simple evaluation" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.g Mock.c
@@ -224,7 +220,6 @@ test_firstFullEvaluation =
                             ]
                         , remainders = OrOfExpandedPattern.make []
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -239,7 +234,7 @@ test_firstFullEvaluation =
     , testCase "Uses first matching" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.f Mock.a
@@ -249,7 +244,6 @@ test_firstFullEvaluation =
                             ]
                         , remainders = OrOfExpandedPattern.make []
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -270,7 +264,7 @@ test_firstFullEvaluation =
     , testCase "Skips partial matches" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.f Mock.a
@@ -280,7 +274,6 @@ test_firstFullEvaluation =
                             ]
                         , remainders = OrOfExpandedPattern.make []
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -363,7 +356,7 @@ test_simplifierWithFallback =
     [ testCase "Uses first" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.g Mock.a
@@ -373,7 +366,6 @@ test_simplifierWithFallback =
                             ]
                         , remainders = OrOfExpandedPattern.make []
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -392,7 +384,7 @@ test_simplifierWithFallback =
     , testCase "Uses first with remainder" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.g Mock.a
@@ -414,7 +406,6 @@ test_simplifierWithFallback =
                                 }
                             ]
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -433,7 +424,7 @@ test_simplifierWithFallback =
     , testCase "Falls back to second" $ do
         let expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.f Mock.a
@@ -443,7 +434,6 @@ test_simplifierWithFallback =
                             ]
                         , remainders = OrOfExpandedPattern.make []
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
@@ -485,7 +475,7 @@ test_builtinEvaluation =
         let
             expect =
                 AttemptedAxiom.Applied
-                    (AttemptedAxiomResults
+                    AttemptedAxiomResults
                         { results = OrOfExpandedPattern.make
                             [ Predicated
                                 { term = Mock.g Mock.a
@@ -495,7 +485,6 @@ test_builtinEvaluation =
                             ]
                         , remainders = OrOfExpandedPattern.make []
                         }
-                    )
         actual <-
             evaluate
                 mockMetadataTools
