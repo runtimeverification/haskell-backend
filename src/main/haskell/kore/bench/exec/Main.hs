@@ -6,9 +6,12 @@ import qualified Control.Lens as Lens
 import           Data.Function
                  ( (&) )
 import           Data.Limit
-                 ( Limit (Unlimited) )
+                 ( Limit )
+import qualified Data.Limit as Limit
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import           Numeric.Natural
+                 ( Natural )
 
 import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
@@ -181,7 +184,11 @@ execBenchmark root kFile definitionFile mainModuleName test =
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
         $ evalSimplifier
-        $ exec verifiedModule purePattern Unlimited anyRewrite
+        $ exec verifiedModule strategy purePattern
+      where
+        unlimited :: Limit Natural
+        unlimited = Limit.Unlimited
+        strategy = Limit.replicate unlimited . anyRewrite
     kompile = myShell $ (kBin </> "kompile")
         ++ " --backend haskell -d " ++ root
         ++ " " ++ (root </> kFile)

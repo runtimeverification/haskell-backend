@@ -32,6 +32,7 @@ import           System.IO
 
 import           Data.Limit
                  ( Limit (..) )
+import qualified Data.Limit as Limit
 import           Kore.AST.Kore
                  ( CommonKorePattern, VerifiedKorePattern )
 import           Kore.AST.Pure
@@ -397,7 +398,9 @@ mainWithOptions
         , koreProveOptions
         }
   = do
-        let smtConfig =
+        let
+            strategy' = Limit.replicate stepLimit . strategy
+            smtConfig =
                 SMT.defaultConfig
                     { SMT.timeOut = smtTimeOut
                     , SMT.preludeFile = smtPrelude
@@ -451,22 +454,18 @@ mainWithOptions
                                 (error "Missing: --pattern PATTERN_FILE")
                                 maybePurePattern
                     case searchParameters of
-                        Nothing ->
-                            (\pat -> (ExitSuccess, pat))
-                            <$> exec
-                                indexedModule
-                                purePattern
-                                stepLimit
-                                strategy
+                        Nothing -> do
+                            pat <- exec indexedModule strategy' purePattern
+                            return (ExitSuccess, pat)
                         Just (searchPattern, searchConfig) -> do
-                            (\pat -> (ExitSuccess, pat))
-                            <$> search
-                                indexedModule
-                                purePattern
-                                stepLimit
-                                strategy
-                                searchPattern
-                                searchConfig
+                            pat <-
+                                search
+                                    indexedModule
+                                    strategy'
+                                    purePattern
+                                    searchPattern
+                                    searchConfig
+                            return (ExitSuccess, pat)
                 Just specIndexedModule ->
                     either
                         (\pat -> (ExitFailure 1, pat))
