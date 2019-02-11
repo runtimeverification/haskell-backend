@@ -13,6 +13,7 @@ import           Control.Monad.Except
                  ( runExceptT )
 import           Data.Default
                  ( def )
+import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import           Data.Sup
@@ -39,6 +40,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
@@ -1312,6 +1315,8 @@ runStepWithRemainders metadataTools configuration axioms =
             $ stepWithRemainders
                 metadataTools
                 (Mock.substitutionSimplifier metadataTools)
+                (Simplifier.create metadataTools Map.empty)
+                Map.empty
                 configuration
                 axioms
             )
@@ -1335,5 +1340,7 @@ runSingleStepWithRemainder metadataTools configuration axiom =
     $ stepWithRewriteRule
         metadataTools
         (Mock.substitutionSimplifier metadataTools)
+        (Simplifier.create metadataTools Map.empty)
+        Map.empty
         configuration
         axiom

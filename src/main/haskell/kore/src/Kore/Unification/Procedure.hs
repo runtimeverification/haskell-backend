@@ -24,6 +24,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.OrOfExpandedPattern
@@ -36,7 +38,8 @@ import           Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -63,21 +66,25 @@ unificationProcedure
         , ShowMetaOrObject variable
         , MetaOrObject level
         , FreshVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> StepPattern level variable
     -- ^left-hand-side of unification
     -> StepPattern level variable
     -> ExceptT
         (UnificationOrSubstitutionError level variable)
-        m
+        Simplifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
-unificationProcedure tools substitutionSimplifier p1 p2
+unificationProcedure
+    tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
   | p1Sort /= p2Sort =
     return (OrOfExpandedPattern.make [], EmptyUnificationProof)
   | otherwise = do
@@ -86,6 +93,8 @@ unificationProcedure tools substitutionSimplifier p1 p2
             termUnification
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 p1
                 p2
     (pat@Predicated { term, predicate, substitution }, _) <- getUnifiedTerm
@@ -94,12 +103,19 @@ unificationProcedure tools substitutionSimplifier p1 p2
             (OrOfExpandedPattern.make [], EmptyUnificationProof)
         else Monad.Trans.lift $ do
             (orCeil, _proof) <-
-                Ceil.makeEvaluateTerm tools substitutionSimplifier term
+                Ceil.makeEvaluateTerm
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    term
             (result, _proof) <-
                 OrOfExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
                     (createPredicatesAndSubstitutionsMerger
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                     )
                     Predicated
                         { term = ()

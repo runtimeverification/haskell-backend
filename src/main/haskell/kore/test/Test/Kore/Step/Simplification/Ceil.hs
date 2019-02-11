@@ -7,6 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import qualified Data.Map as Map
+
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
@@ -30,6 +32,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
@@ -434,8 +438,12 @@ evaluate tools ceil =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger noRepl
-    $ Ceil.simplify tools (Mock.substitutionSimplifier tools) ceil
-
+    $ Ceil.simplify
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        Map.empty
+        ceil
 
 makeEvaluate
     ::  ( MetaOrObject level
@@ -447,4 +455,9 @@ makeEvaluate tools child =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger noRepl
-    $ Ceil.makeEvaluate tools (Mock.substitutionSimplifier tools) child
+    $ Ceil.makeEvaluate
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        Map.empty
+        child

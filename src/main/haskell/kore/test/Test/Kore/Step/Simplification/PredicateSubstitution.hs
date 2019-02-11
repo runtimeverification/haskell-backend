@@ -300,6 +300,7 @@ runSimplifier patternSimplifierMap predicateSubstitution =
         PSSimplifier.create
             mockMetadataTools
             (Simplifier.create mockMetadataTools patternSimplifierMap)
+            patternSimplifierMap
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier Object]
@@ -318,7 +319,7 @@ makeEvaluator
     -> BuiltinAndAxiomSimplifier Object
 makeEvaluator mapping =
     BuiltinAndAxiomSimplifier
-        $ const $ const $ const $ simpleEvaluator mapping
+        $ const $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
     ::  ( FreshVariable variable

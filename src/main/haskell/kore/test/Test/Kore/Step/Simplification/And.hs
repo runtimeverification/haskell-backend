@@ -5,6 +5,8 @@ module Test.Kore.Step.Simplification.And
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.Map as Map
+
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
@@ -24,6 +26,8 @@ import           Kore.Step.Simplification.And
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
@@ -432,6 +436,8 @@ evaluate patt =
     $ simplify
         mockMetadataTools
         (Mock.substitutionSimplifier mockMetadataTools)
+        (Simplifier.create mockMetadataTools Map.empty)
+        Map.empty
         patt
 
 evaluatePatterns
@@ -445,6 +451,8 @@ evaluatePatterns first second =
     $ makeEvaluate
             mockMetadataTools
             (Mock.substitutionSimplifier mockMetadataTools)
+            (Simplifier.create mockMetadataTools Map.empty)
+            Map.empty
             first
             second
 

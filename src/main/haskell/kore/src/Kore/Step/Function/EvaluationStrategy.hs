@@ -47,7 +47,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..) )
+                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Function.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Function.Data as AttemptedAxiom
@@ -138,8 +138,10 @@ evaluateBuiltin
         )
     => BuiltinAndAxiomSimplifier level
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
@@ -148,6 +150,7 @@ evaluateBuiltin
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     patt
   = do
     (result, _proof) <-
@@ -155,6 +158,7 @@ evaluateBuiltin
             tools
             substitutionSimplifier
             simplifier
+            axiomIdToSimplifier
             patt
     case result of
         AttemptedAxiom.NotApplicable
@@ -194,12 +198,14 @@ applyFirstSimplifierThatWorks
     => [BuiltinAndAxiomSimplifier level]
     -> AcceptsMultipleResults
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
     return
         ( AttemptedAxiom.NotApplicable
         , SimplificationProof
@@ -210,10 +216,12 @@ applyFirstSimplifierThatWorks
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     patt
   = do
     (applicationResult, _proof) <-
-        evaluator tools substitutionSimplifier simplifier patt
+        evaluator
+            tools substitutionSimplifier simplifier axiomIdToSimplifier patt
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -258,6 +266,7 @@ applyFirstSimplifierThatWorks
                 tools
                 substitutionSimplifier
                 simplifier
+                axiomIdToSimplifier
                 patt
 
 evaluateWithDefinitionAxioms
@@ -274,13 +283,20 @@ evaluateWithDefinitionAxioms
         )
     => [EqualityRule level Variable]
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 evaluateWithDefinitionAxioms
-    definitionRules tools substitutionSimplifier simplifier patt
+    definitionRules
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    patt
   = do
     let
         expanded :: ExpandedPattern level variable
@@ -294,6 +310,8 @@ evaluateWithDefinitionAxioms
             tools
             (UnificationProcedure unificationWithAppMatchOnTop)
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             (map unwrapEqualityRule definitionRules)
             expanded
 
@@ -316,6 +334,7 @@ evaluateWithDefinitionAxioms
                 tools
                 substitutionSimplifier
                 simplifier
+                axiomIdToSimplifier
 
     simplifiedRemainderList <- mapM simplifyPredicate remainderResults
     let

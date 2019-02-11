@@ -109,7 +109,7 @@ import           Kore.Step.Function.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 applicationAxiomSimplifier )
+                 BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
 import qualified Kore.Step.Function.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -231,7 +231,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure (NotApplicable, SimplificationProof)
+    notImplemented0 _ _ _ _ _ = pure (NotApplicable, SimplificationProof)
 
 {- | Verify a builtin sort declaration.
 
@@ -527,7 +527,7 @@ unaryOperator
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> StepPatternSimplifier level variable
+        -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -580,7 +580,7 @@ binaryOperator
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> StepPatternSimplifier level variable
+        -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -633,7 +633,7 @@ ternaryOperator
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> StepPatternSimplifier level variable
+        -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -650,7 +650,7 @@ type FunctionImplementation
     = forall variable
         .  Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
+        -> StepPatternSimplifier Object
         -> Sort Object
         -> [StepPattern Object variable]
         -> Simplifier (AttemptedAxiom Object variable)
@@ -662,8 +662,9 @@ functionEvaluator impl =
     evaluator
         :: (Ord (variable Object), Show (variable Object))
         => MetadataTools Object StepperAttributes
-        -> PredicateSubstitutionSimplifier level Simplifier
-        -> StepPatternSimplifier Object variable
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier Object
+        -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
             (Application Object)
             (Valid (variable Object) Object)
@@ -672,7 +673,7 @@ functionEvaluator impl =
             ( AttemptedAxiom Object variable
             , SimplificationProof Object
             )
-    evaluator tools _ simplifier (valid :< app) = do
+    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) = do
         attempt <- impl tools simplifier resultSort applicationChildren
         return (attempt, SimplificationProof)
       where

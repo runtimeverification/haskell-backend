@@ -8,6 +8,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
+import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -32,6 +33,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicateSubstitution,
                  simplify )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
@@ -992,7 +995,12 @@ evaluateOr tools equals =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger noRepl
-    $ simplify tools (Mock.substitutionSimplifier tools) equals
+    $ simplify
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        Map.empty
+        equals
 
 evaluate
     :: MetadataTools Object StepperAttributes
@@ -1011,7 +1019,13 @@ evaluateGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger noRepl
-    $ makeEvaluate tools (Mock.substitutionSimplifier tools) first second
+    $ makeEvaluate
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        Map.empty
+        first
+        second
 
 evaluateTermsGeneric
     :: MetaOrObject level
@@ -1026,5 +1040,7 @@ evaluateTermsGeneric tools first second =
     $ makeEvaluateTermsToPredicateSubstitution
         tools
         (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        Map.empty
         first
         second

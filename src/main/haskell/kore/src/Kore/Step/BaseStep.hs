@@ -67,6 +67,8 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( toPredicate )
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -76,7 +78,7 @@ import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), Simplifier )
+                 SimplificationProof (..), Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -241,7 +243,7 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 -- 'stepWithRule'.
 newtype UnificationProcedure level =
     UnificationProcedure
-        ( forall variable m
+        ( forall variable
         .   ( SortedVariable variable
             , Ord (variable level)
             , Show (variable level)
@@ -250,15 +252,18 @@ newtype UnificationProcedure level =
             , ShowMetaOrObject variable
             , MetaOrObject level
             , FreshVariable variable
-            , Monad m
             )
         => MetadataTools level StepperAttributes
-        -> PredicateSubstitutionSimplifier level m
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier level
+        -- ^ Evaluates functions.
+        -> BuiltinAndAxiomSimplifierMap level
+        -- ^ Map from symbol IDs to defined functions
         -> StepPattern level variable
         -> StepPattern level variable
         -> ExceptT
             (UnificationOrSubstitutionError level variable)
-            m
+            Simplifier
             ( OrOfPredicateSubstitution level variable
             , UnificationProof level variable
             )
@@ -286,7 +291,11 @@ stepWithRule
         )
     => MetadataTools level StepperAttributes
     -> UnificationProcedure level
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
     -> RulePattern level variable
@@ -302,6 +311,8 @@ stepWithRule
     tools
     (UnificationProcedure unificationProcedure')
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     config
     axiom
   = Log.withLogScope "stepWithRule" $ do
@@ -347,6 +358,8 @@ stepWithRule
             (unificationProcedure'
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 axiomLeft
                 startPattern
             )
@@ -372,6 +385,8 @@ stepWithRule
             (applyUnificationToRhs
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 axiom''
                 config'
             )
@@ -395,7 +410,11 @@ applyUnificationToRhs
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> RulePattern level (StepperVariable variable)
     -- ^ Applied rule
     -> ExpandedPattern level (StepperVariable variable)
@@ -409,6 +428,8 @@ applyUnificationToRhs
 applyUnificationToRhs
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     axiom@RulePattern
         { left = axiomLeft
         , right = axiomRight
@@ -440,6 +461,8 @@ applyUnificationToRhs
             $ mergePredicatesAndSubstitutionsExcept
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 [ startCondition  -- from initial configuration
                 , axiomRequires   -- from axiom
                 , rawPredicate    -- produced during unification
@@ -461,6 +484,8 @@ applyUnificationToRhs
             $ mergePredicatesAndSubstitutionsExcept
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 [ axiomRequires  -- from axiom
                 , rawPredicate   -- produced during unification
                 ]
@@ -621,7 +646,11 @@ stepWithRewriteRule
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
     -> RewriteRule level variable
@@ -633,13 +662,22 @@ stepWithRewriteRule
             , StepProof level variable
             )
         ]
-stepWithRewriteRule tools substitutionSimplifier patt (RewriteRule rule) =
+stepWithRewriteRule
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    patt
+    (RewriteRule rule)
+  =
     traceExceptT D_BaseStep_stepWithRule [debugArg "rule" rule] $
     Log.withLogScope "stepWithRewriteRule" $
         stepWithRule
                 tools
                 (UnificationProcedure unificationProcedure)
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 patt
                 rule
 
@@ -683,7 +721,11 @@ stepWithRemaindersForUnifier
         )
     => MetadataTools level StepperAttributes
     -> UnificationProcedure level
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> [RulePattern level variable]
     -- ^ Rewriting axiom
     -> ExpandedPattern level variable
@@ -695,6 +737,8 @@ stepWithRemaindersForUnifier
         , StepProof level variable
         )
 stepWithRemaindersForUnifier
+    _
+    _
     _
     _
     _
@@ -711,6 +755,8 @@ stepWithRemaindersForUnifier
     tools
     unification
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     (rule : rules)
     patt
   = do
@@ -719,6 +765,8 @@ stepWithRemaindersForUnifier
             tools
             unification
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             patt
             rule
     let
@@ -735,6 +783,8 @@ stepWithRemaindersForUnifier
                 tools
                 unification
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 rules
             )
             remainders
@@ -807,7 +857,11 @@ stepWithRemainders
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
     -> [RewriteRule level variable]
@@ -816,13 +870,16 @@ stepWithRemainders
         ( OrStepResult level variable
         , StepProof level variable
         )
-stepWithRemainders tools substitutionSimplifier patt rules
+stepWithRemainders
+    tools substitutionSimplifier simplifier axiomIdToSimplifier patt rules
   = do
     resultOrError <- runExceptT
         $ stepWithRemaindersForUnifier
             tools
             (UnificationProcedure unificationProcedure)
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             (map (\ (RewriteRule rule) -> rule) rules)
             patt
     case resultOrError of

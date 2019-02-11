@@ -83,7 +83,7 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..) )
+                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
@@ -542,10 +542,9 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
-    :: forall level variable m err p expanded proof .
+    :: forall level variable err p expanded proof .
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
-        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , Show (variable level)
@@ -557,13 +556,19 @@ unifyEquals
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> (err m) (expanded, proof))
-    -> (p -> p -> MaybeT (err m) (expanded, proof))
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
+    -> (p -> p -> (err Simplifier) (expanded, proof))
+    -> (p -> p -> MaybeT (err Simplifier) (expanded, proof))
 unifyEquals
     simplificationType
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     unifyEqualsChildren
   =
     unifyEquals0
@@ -586,8 +591,7 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT (err m) (expanded, proof)
-
+        -> MaybeT (err Simplifier) (expanded, proof)
     unifyEquals0 dv1@(DV_ resultSort (Domain.BuiltinMap map1)) =
         \case
             dv2@(DV_ _ builtin2) ->
@@ -648,7 +652,7 @@ unifyEquals
         => Sort level  -- ^ result sort
         -> Map k (StepPattern level variable)
         -> Map k (StepPattern level variable)
-        -> (err m) (expanded, proof)
+        -> (err Simplifier) (expanded, proof)
     unifyEqualsConcrete resultSort map1 map2 = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
@@ -681,7 +685,7 @@ unifyEquals
         -> p  -- ^ concrete map
         -> Map k p  -- ^ framed concrete map
         -> p  -- ^ framing variable
-        -> (err m) (expanded, proof)
+        -> (err Simplifier) (expanded, proof)
     unifyEqualsFramed1
         resultSort
         dv1@(DV_ _ (Domain.BuiltinMap map1))
@@ -713,7 +717,12 @@ unifyEquals
                 remainder2 = Map.difference map2 map1
 
         normalized <- Monad.Trans.lift $
-            normalize tools substitutionSimplifier result
+            normalize
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                result
         return (normalized, SimplificationProof)
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
@@ -728,7 +737,7 @@ unifyEquals
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
         -> p  -- ^ value
-        -> (err m) (expanded, proof)
+        -> (err Simplifier) (expanded, proof)
     unifyEqualsElement resultSort map1 element' key2 value2 =
         case Map.toList map1 of
             [(fromConcreteStepPattern -> key1, value1)] ->

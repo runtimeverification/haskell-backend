@@ -21,6 +21,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated )
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution,
                  mergeWithPredicateSubstitutionAssumesEvaluated )
@@ -30,7 +32,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..) )
+                 Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -56,18 +58,22 @@ mergeWithPredicateSubstitution
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -- ^ PredicateSubstitution to add.
     -> OrOfExpandedPattern level variable
     -- ^ Pattern to which the condition should be added.
-    -> Simplifier (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier
+        (OrOfExpandedPattern level variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     toMerge
     patt
   = do
@@ -77,6 +83,7 @@ mergeWithPredicateSubstitution
                 tools
                 substitutionSimplifier
                 simplifier
+                axiomIdToSimplifier
                 toMerge
             )
             patt
@@ -105,7 +112,8 @@ mergeWithPredicateSubstitutionAssumesEvaluated
     -- ^ PredicateSubstitution to add.
     -> MultiOr (Predicated level variable term)
     -- ^ Pattern to which the condition should be added.
-    -> m (MultiOr (Predicated level variable term), SimplificationProof level)
+    -> m
+        (MultiOr (Predicated level variable term), SimplificationProof level)
 mergeWithPredicateSubstitutionAssumesEvaluated
     substitutionMerger
     toMerge

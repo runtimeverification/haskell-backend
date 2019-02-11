@@ -57,10 +57,12 @@ import           Kore.Step.BaseStep as StepResult
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( CommonStepPatternSimplifier,
-                 PredicateSubstitutionSimplifier, Simplifier )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -98,14 +100,16 @@ rewriteStep a =
 transitionRule
     :: (HasCallStack, MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> CommonStepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> Prim (RewriteRule level Variable)
     -> (CommonExpandedPattern level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier [(CommonExpandedPattern level, StepProof level Variable)]
-transitionRule tools substitutionSimplifier simplifier =
+transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
@@ -114,7 +118,11 @@ transitionRule tools substitutionSimplifier simplifier =
         do
             (configs, proof') <-
                 ExpandedPattern.simplify
-                    tools substitutionSimplifier simplifier config
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    config
             let
                 proof'' = proof <> simplificationProof proof'
                 prove config' = (config', proof'')
@@ -123,7 +131,13 @@ transitionRule tools substitutionSimplifier simplifier =
             return (prove <$> toList nonEmptyConfigs)
     transitionRewrite a (config, proof) = do
         result <- runExceptT
-            $ stepWithRewriteRule tools substitutionSimplifier config a
+            $ stepWithRewriteRule
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                config
+                a
         case result of
             Left _ -> pure []
             Right results ->

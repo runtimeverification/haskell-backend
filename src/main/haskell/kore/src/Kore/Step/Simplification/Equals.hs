@@ -34,6 +34,8 @@ import           Kore.Step.ExpandedPattern
                  predicateSubstitutionToExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -50,7 +52,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -151,7 +153,11 @@ simplify
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> Equals level (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -159,13 +165,21 @@ simplify
         )
 simplify
     tools
-     substitutionSimplifier
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplfier
     Equals
         { equalsFirst = first
         , equalsSecond = second
         }
   =
-    simplifyEvaluated tools substitutionSimplifier first second
+    simplifyEvaluated
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplfier
+        first
+        second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -190,12 +204,22 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated tools substitutionSimplifier first second
+simplifyEvaluated
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplfier
+    first
+    second
   | first == second =
     return (OrOfExpandedPattern.make [Predicated.top], SimplificationProof)
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
@@ -203,17 +227,37 @@ simplifyEvaluated tools substitutionSimplifier first second
     case ( firstPatterns, secondPatterns )
       of
         ([firstP], [secondP]) ->
-            makeEvaluate tools substitutionSimplifier firstP secondP
+            makeEvaluate
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplfier
+                firstP
+                secondP
         ([firstP], _)
             | isFunctionPredicated firstP ->
                 makeEvaluateFunctionalOr
-                    tools substitutionSimplifier firstP secondPatterns
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplfier
+                    firstP
+                    secondPatterns
         (_, [secondP])
             | isFunctionPredicated secondP ->
                 makeEvaluateFunctionalOr
-                    tools substitutionSimplifier secondP firstPatterns
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplfier
+                    secondP
+                    firstPatterns
         _ ->
-            makeEvaluate tools substitutionSimplifier
+            makeEvaluate
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplfier
                 (OrOfExpandedPattern.toExpandedPattern first)
                 (OrOfExpandedPattern.toExpandedPattern second)
   where
@@ -233,15 +277,37 @@ makeEvaluateFunctionalOr
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
     -> [ExpandedPattern level variable]
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
-    (firstCeil, _proof0) <- Ceil.makeEvaluate tools substitutionSimplifier first
+makeEvaluateFunctionalOr
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplfier
+    first
+    seconds
+  = do
+    (firstCeil, _proof0) <-
+        Ceil.makeEvaluate
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            first
     secondCeilsWithProofs <- mapM
-        (Ceil.makeEvaluate tools substitutionSimplifier)
+        (Ceil.makeEvaluate
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+        )
         seconds
     let
         (secondCeils, _proofs) = unzip secondCeilsWithProofs
@@ -255,7 +321,12 @@ makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
     allAreBottom <-
         foldM
             (dropProofFoldM
-                (And.simplifyEvaluated tools substitutionSimplifier)
+                (And.simplifyEvaluated
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplfier
+                )
             )
             (OrOfExpandedPattern.make [ExpandedPattern.top])
             (firstNotCeil : secondNotCeils)
@@ -265,7 +336,9 @@ makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
             (zip seconds secondCeils)
     oneIsNotBottomEquals <- foldM
         (dropProofFoldM
-            (And.simplifyEvaluated tools substitutionSimplifier)
+            (And.simplifyEvaluated
+                tools substitutionSimplifier simplifier axiomIdToSimplfier
+            )
         )
         firstCeil
         (oneNotBottom : firstEqualsSeconds)
@@ -292,7 +365,12 @@ makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
       = do
         (equality, _) <-
             makeEvaluateTermsAssumesNoBottom
-                tools substitutionSimplifier firstTerm secondTerm
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplfier
+                firstTerm
+                secondTerm
         let
             (result, _proof) = Implies.simplifyEvaluated secondCeil equality
         return result
@@ -312,12 +390,18 @@ makeEvaluate
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
+    _
+    _
     _
     _
     first@Predicated
@@ -332,6 +416,8 @@ makeEvaluate
 makeEvaluate
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplfier
     Predicated
         { term = firstTerm
         , predicate = PredicateTrue
@@ -345,7 +431,12 @@ makeEvaluate
   = do
     (result, _proof) <-
         makeEvaluateTermsToPredicateSubstitution
-            tools substitutionSimplifier firstTerm secondTerm
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            firstTerm
+            secondTerm
     return
         ( fmap predicateSubstitutionToExpandedPattern result
         , SimplificationProof
@@ -353,6 +444,8 @@ makeEvaluate
 makeEvaluate
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplfier
     first@Predicated
         { term = firstTerm }
     second@Predicated
@@ -362,25 +455,51 @@ makeEvaluate
         Ceil.makeEvaluate
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
             first { term = if termsAreEqual then mkTop_ else firstTerm }
     (secondCeil, _proof2) <-
         Ceil.makeEvaluate
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
             second { term = if termsAreEqual then mkTop_ else secondTerm }
     let
         (firstCeilNegation, _proof3) = Not.simplifyEvaluated firstCeil
         (secondCeilNegation, _proof4) = Not.simplifyEvaluated secondCeil
     (termEquality, _proof) <-
         makeEvaluateTermsAssumesNoBottom
-            tools substitutionSimplifier firstTerm secondTerm
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            firstTerm
+            secondTerm
     (negationAnd, _proof) <-
         And.simplifyEvaluated
-            tools substitutionSimplifier firstCeilNegation secondCeilNegation
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            firstCeilNegation
+            secondCeilNegation
     (ceilAnd, _proof) <-
-        And.simplifyEvaluated tools substitutionSimplifier firstCeil secondCeil
+        And.simplifyEvaluated
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            firstCeil
+            secondCeil
     (equalityAnd, _proof) <-
-        And.simplifyEvaluated tools substitutionSimplifier termEquality ceilAnd
+        And.simplifyEvaluated
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            termEquality
+            ceilAnd
     let (finalOr, _proof) = Or.simplifyEvaluated equalityAnd negationAnd
     return (finalOr, SimplificationProof)
   where
@@ -399,7 +518,11 @@ makeEvaluateTermsAssumesNoBottom
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> StepPattern level variable
     -> StepPattern level variable
     -> Simplifier
@@ -407,6 +530,8 @@ makeEvaluateTermsAssumesNoBottom
 makeEvaluateTermsAssumesNoBottom
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplfier
     firstTerm
     secondTerm
   = do
@@ -415,6 +540,8 @@ makeEvaluateTermsAssumesNoBottom
         $ makeEvaluateTermsAssumesNoBottomMaybe
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
             firstTerm
             secondTerm
     (return . fromMaybe def) result
@@ -444,15 +571,31 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> StepPattern level variable
     -> StepPattern level variable
     -> MaybeT Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluateTermsAssumesNoBottomMaybe tools substitutionSimplifier first second
+makeEvaluateTermsAssumesNoBottomMaybe
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplfier
+    first
+    second
   = do
     (result, _proof) <-
-        AndTerms.termEquals tools substitutionSimplifier first second
+        AndTerms.termEquals
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            first
+            second
     return
         ( fmap predicateSubstitutionToExpandedPattern result
         , SimplificationProof
@@ -477,15 +620,19 @@ makeEvaluateTermsToPredicateSubstitution
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> StepPattern level variable
     -> StepPattern level variable
-    -> m (OrOfPredicateSubstitution level variable, SimplificationProof level)
+    -> Simplifier
+        (OrOfPredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateTermsToPredicateSubstitution
-    tools substitutionSimplifier first second
+    tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =
     return
         ( OrOfExpandedPattern.make [Predicated.topPredicate]
@@ -497,6 +644,8 @@ makeEvaluateTermsToPredicateSubstitution
         $ AndTerms.termEquals
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
             first
             second
     case result of
@@ -513,9 +662,19 @@ makeEvaluateTermsToPredicateSubstitution
                 )
         Just (predicatedOr, _proof) -> do
             (firstCeilOr, _proof1) <-
-                Ceil.makeEvaluateTerm tools substitutionSimplifier first
+                Ceil.makeEvaluateTerm
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplfier
+                    first
             (secondCeilOr, _proof2) <-
-                Ceil.makeEvaluateTerm tools substitutionSimplifier second
+                Ceil.makeEvaluateTerm
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplfier
+                    second
             let
                 firstCeil =
                     OrOfExpandedPattern.toPredicate

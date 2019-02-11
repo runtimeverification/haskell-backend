@@ -5,10 +5,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Default
-       ( def )
-import Data.List
-       ( sort )
+import           Data.Default
+                 ( def )
+import           Data.List
+                 ( sort )
+import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -24,7 +25,7 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), bottom )
+                 ( ExpandedPattern, Predicated (..), bottom )
 import           Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Data
@@ -38,7 +39,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( CommonStepPatternSimplifier, SimplificationProof (..),
+                 ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
@@ -78,7 +79,7 @@ test_userDefinedFunction =
                     , attributes = def
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply concrete rule to symbolic pattern" $ do
@@ -94,7 +95,7 @@ test_userDefinedFunction =
                     , attributes = def { concrete = Concrete True }
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Can apply concrete rule to concrete pattern" $ do
@@ -110,7 +111,7 @@ test_userDefinedFunction =
                     , attributes = def { concrete = Concrete True }
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
@@ -135,7 +136,7 @@ test_userDefinedFunction =
                     , attributes = def
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
 
@@ -158,7 +159,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier
                     -- Evaluate Top to Bottom.
-                    [ (mkTop_, ([], SimplificationProof)) ]
+                    (asSimplification [ (mkTop_, ([], SimplificationProof)) ])
                 )
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "" expect actual
@@ -201,7 +202,7 @@ test_userDefinedFunction =
                     , attributes = def
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr20
                     (mkVar Mock.y)
                     (mkVar Mock.z)
@@ -213,6 +214,25 @@ test_userDefinedFunction =
     -- TODO: Add a test for StepWithAxiom returning a condition.
     -- TODO: Add a test for the stepper giving up
     ]
+
+noSimplification
+    ::  [   ( StepPattern level Variable
+            , ([ExpandedPattern level Variable], SimplificationProof level)
+            )
+        ]
+noSimplification = []
+
+
+asSimplification
+    ::  [   ( StepPattern level Variable
+            , ([ExpandedPattern level Variable], SimplificationProof level)
+            )
+        ]
+    ->  [   ( StepPattern level Variable
+            , ([ExpandedPattern level Variable], SimplificationProof level)
+            )
+        ]
+asSimplification = id
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
@@ -226,7 +246,7 @@ evaluateWithAxiom
     :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
     -> EqualityRule level Variable
-    -> CommonStepPatternSimplifier level
+    -> StepPatternSimplifier level
     -> CommonStepPattern level
     -> IO (CommonAttemptedAxiom level)
 evaluateWithAxiom
@@ -266,4 +286,5 @@ evaluateWithAxiom
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
+            Map.empty
             patt

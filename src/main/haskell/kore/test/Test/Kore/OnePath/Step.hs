@@ -441,6 +441,7 @@ runSteps metadataTools graphFilter picker configuration strategy =
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
+            Map.empty
         )
         strategy
         (RewritePattern configuration, mempty)

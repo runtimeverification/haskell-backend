@@ -41,7 +41,8 @@ import           Kore.Step.Function.Data as AttemptedAxiom
 import           Kore.Step.Function.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Function.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults) )
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -78,9 +79,11 @@ ruleFunctionEvaluator
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
@@ -90,6 +93,7 @@ ruleFunctionEvaluator
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     patt
   | Axiom.Concrete.isConcrete (concrete $ attributes rule)
         && not (Pure.isConcrete patt)
@@ -117,6 +121,8 @@ ruleFunctionEvaluator
             tools
             (UnificationProcedure matchAsUnification)
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             (ExpandedPattern.fromPurePattern patt)
             (RulePattern.mapVariables fromVariable rule)
 
@@ -134,12 +140,20 @@ ruleFunctionEvaluator
             , _
             ) <-
                 ExpandedPattern.simplifyPredicate
-                    tools substitutionSimplifier simplifier stepPattern
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    stepPattern
         (   rewrittenRemainder@Predicated { predicate = remainderCondition }
             , _
             ) <-
                 ExpandedPattern.simplifyPredicate
-                    tools substitutionSimplifier simplifier remainderPattern
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    remainderPattern
         return
             ( AttemptedAxiomResults
                 { results = OrOfExpandedPattern.make
