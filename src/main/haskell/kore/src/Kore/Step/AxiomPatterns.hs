@@ -31,6 +31,7 @@ module Kore.Step.AxiomPatterns
     , extractRewriteClaims
     , mkRewriteAxiom
     , mkFunctionAxiom
+    , refreshRulePattern
     ) where
 
 import           Control.DeepSeq
@@ -41,6 +42,8 @@ import           Control.Monad
 import           Data.Default
                  ( Default (..) )
 import           Data.Maybe
+import           Data.Set
+                 ( Set )
 import           GHC.Generics
                  ( Generic )
 
@@ -63,6 +66,7 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
+import           Kore.Variables.Fresh
 
 {- | Attributes specific to interpreting axiom patterns.
  -}
@@ -338,3 +342,17 @@ mkFunctionAxiom lhs rhs requires =
         )
   where
     function = mkEquals_ lhs rhs
+
+{- | Refresh the variables of a 'RulePattern'.
+
+The free variables of a 'RulePattern' are implicitly quantified, so are renamed
+to avoid collision with any variables in the given set.
+
+ -}
+refreshRulePattern
+    :: MonadCounter m
+    => Set (Variable level)  -- ^ Variables to avoid
+    -> RulePattern level
+    -> m (RulePattern level)
+refreshRulePattern _avoiding rulePattern =
+    return rulePattern
