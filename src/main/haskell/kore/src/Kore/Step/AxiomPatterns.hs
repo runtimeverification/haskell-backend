@@ -34,22 +34,24 @@ module Kore.Step.AxiomPatterns
     , refreshRulePattern
     ) where
 
+import           Control.Comonad
 import           Control.DeepSeq
                  ( NFData )
 import qualified Control.Lens.TH.Rules as Lens
-import           Control.Monad
-                 ( (>=>) )
+import qualified Control.Monad as Monad
 import           Data.Default
                  ( Default (..) )
+import qualified Data.Map as Map
 import           Data.Maybe
 import           Data.Set
                  ( Set )
+import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
-import           Kore.AST.Valid
+import           Kore.AST.Valid as Valid
 import           Kore.Attribute.Assoc
 import qualified Kore.Attribute.Axiom.Concrete as Axiom
 import           Kore.Attribute.Comm
@@ -64,8 +66,8 @@ import           Kore.Attribute.Trusted
 import           Kore.Attribute.Unit
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
+import           Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Pattern as Pattern
 import           Kore.Variables.Fresh
 
 {- | Attributes specific to interpreting axiom patterns.
@@ -113,15 +115,15 @@ instance Default AxiomPatternAttributes where
 
 instance ParseAttributes AxiomPatternAttributes where
     parseAttribute attr =
-            lensHeatCool (parseAttribute attr)
-        >=> lensProductionID (parseAttribute attr)
-        >=> lensAssoc (parseAttribute attr)
-        >=> lensComm (parseAttribute attr)
-        >=> lensUnit (parseAttribute attr)
-        >=> lensIdem (parseAttribute attr)
-        >=> lensTrusted (parseAttribute attr)
-        >=> lensConcrete (parseAttribute attr)
-        >=> lensSimplification (parseAttribute attr)
+        lensHeatCool (parseAttribute attr)
+        Monad.>=> lensProductionID (parseAttribute attr)
+        Monad.>=> lensAssoc (parseAttribute attr)
+        Monad.>=> lensComm (parseAttribute attr)
+        Monad.>=> lensUnit (parseAttribute attr)
+        Monad.>=> lensIdem (parseAttribute attr)
+        Monad.>=> lensTrusted (parseAttribute attr)
+        Monad.>=> lensConcrete (parseAttribute attr)
+        Monad.>=> lensSimplification (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -350,9 +352,39 @@ to avoid collision with any variables in the given set.
 
  -}
 refreshRulePattern
-    :: MonadCounter m
+    :: forall level m. (MetaOrObject level, MonadCounter m)
     => Set (Variable level)  -- ^ Variables to avoid
     -> RulePattern level
     -> m (RulePattern level)
-refreshRulePattern _avoiding rulePattern =
-    return rulePattern
+refreshRulePattern avoiding rulePattern = do
+    (_, subst) <- refreshVariables originalFreeVariables
+    left' <- Pattern.substitute subst left
+    right' <- Pattern.substitute subst right
+    requires' <- Predicate.substitute subst requires
+    let rulePattern' =
+            rulePattern
+                { left = left'
+                , right = right'
+                , requires = requires'
+                }
+    return rulePattern'
+  where
+    RulePattern { left, right, requires } = rulePattern
+    originalFreeVariables =
+        Set.unions
+            [ (Valid.freeVariables . extract) left
+            , (Valid.freeVariables . extract) right
+            , Predicate.freeVariables requires
+            ]
+    refreshVariables =
+        Monad.foldM refreshOneVariable (avoiding, Map.empty)
+    refreshOneVariable (avoiding', subst) var = do
+        var' <- freshVariableSuchThat var (\v -> Set.notMember v avoiding')
+        let avoiding'' =
+                -- Avoid the freshly-generated variable in future renamings.
+                Set.insert var' avoiding'
+            subst' =
+                -- Record a mapping from the original variable to the
+                -- freshly-generated variable.
+                Map.insert var (mkVar var') subst
+        return (avoiding'', subst')
