@@ -77,7 +77,7 @@ simplify
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application level)
         (Valid (variable level) level)
@@ -90,7 +90,7 @@ simplify
     tools
     substitutionSimplifier
     simplifier
-    symbolIdToEvaluator
+    axiomIdToEvaluator
     (valid :< app)
   = do
     let
@@ -103,7 +103,7 @@ simplify
                 tools
                 substitutionSimplifier
                 simplifier
-                symbolIdToEvaluator
+                axiomIdToEvaluator
                 valid
                 symbol
             )
@@ -134,7 +134,7 @@ makeAndEvaluateApplications
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
@@ -144,7 +144,7 @@ makeAndEvaluateApplications
     tools
     substitutionSimplifier
     simplifier
-    symbolIdToEvaluator
+    axiomIdToEvaluator
     valid
     symbol
     children
@@ -155,7 +155,7 @@ makeAndEvaluateApplications
                 tools
                 substitutionSimplifier
                 simplifier
-                symbolIdToEvaluator
+                axiomIdToEvaluator
                 valid
                 symbol
                 children
@@ -176,7 +176,7 @@ makeAndEvaluateSymbolApplications
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
@@ -186,7 +186,7 @@ makeAndEvaluateSymbolApplications
     tools
     substitutionSimplifier
     simplifier
-    symbolIdToEvaluator
+    axiomIdToEvaluator
     valid
     symbol
     children
@@ -203,7 +203,7 @@ makeAndEvaluateSymbolApplications
             tools
             substitutionSimplifier
             simplifier
-            symbolIdToEvaluator
+            axiomIdToEvaluator
             expandedApplication
     return (functionApplication, SimplificationProof)
 
@@ -222,7 +222,7 @@ evaluateApplicationFunction
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated
     -> Simplifier
@@ -231,7 +231,7 @@ evaluateApplicationFunction
     tools
     substitutionSimplifier
     simplifier
-    symbolIdToEvaluator
+    axiomIdToEvaluator
     Predicated
         { term, predicate, substitution }
   =
@@ -239,7 +239,7 @@ evaluateApplicationFunction
         tools
         substitutionSimplifier
         simplifier
-        symbolIdToEvaluator
+        axiomIdToEvaluator
         Predicated { term = (), predicate, substitution }
         term
 

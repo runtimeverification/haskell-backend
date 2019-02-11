@@ -35,6 +35,8 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.Function.Registry
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
@@ -65,8 +67,14 @@ updateAttributes attrs = applyUnifiedSentence updateAttrs updateAttrs
 sortVar :: SortVariable Object
 sortVar = SortVariable (testId "R")
 
+sortVar1 :: SortVariable Object
+sortVar1 = SortVariable (testId "R1")
+
 sortVarS :: Sort Object
 sortVarS = SortVariableSort sortVar
+
+sortVar1S :: Sort Object
+sortVar1S = SortVariableSort sortVar1
 
 sortS :: Sort level
 sortS = SortActualSort (SortActual (testId "S") [])
@@ -204,6 +212,24 @@ testDef =
                             (mkAnd mkTop_ (mkApp sortS tHead []))
                         )
                 }
+        , asKoreAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters =
+                    [asUnified sortVar, asUnified sortVar1]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    toKorePattern
+                        (mkImplies
+                            (mkTop sortVarS)
+                            (mkAnd
+                                (mkEquals sortVarS
+                                    (mkCeil sortVar1S (mkApp sortS fHead []))
+                                    mkTop_
+                                )
+                                (mkTop sortVarS)
+                            )
+                        :: CommonStepPattern Object)
+                }
         ]
 
 testIndexedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
@@ -241,13 +267,26 @@ testMetadataTools = extractMetadataTools testIndexedModule
 test_functionRegistry :: [TestTree]
 test_functionRegistry =
     [ testCase "Checking that a simplifier is found for f"
-        (case Map.lookup (testId "f") testEvaluators of
-            Just _ -> return ()
-            _ -> assertFailure "Should find a simplifier for f"
+        (let axiomId = AxiomIdentifier.Application (testId "f")
+          in
+            (case Map.lookup axiomId testEvaluators of
+                Just _ -> return ()
+                _ -> assertFailure "Should find a simplifier for f"
+            )
         )
-     , testCase "Checking that evaluator map has size 2"
+    , testCase "Checking that a simplifier is found for ceil(f)"
+        (let
+            axiomId =
+                AxiomIdentifier.Ceil (AxiomIdentifier.Application (testId "f"))
+          in
+            (case Map.lookup axiomId testEvaluators of
+                Just _ -> return ()
+                _ -> assertFailure "Should find a simplifier for ceil(f)"
+            )
+        )
+    , testCase "Checking that evaluator map has size 3"
         (assertEqual ""
-            2
+            3
             (Map.size testEvaluators)
         )
     , testCase "Checking that the indexed module contains a rewrite axiom"
