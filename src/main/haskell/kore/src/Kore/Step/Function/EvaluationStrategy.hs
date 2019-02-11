@@ -21,7 +21,7 @@ import           Data.Maybe
 import qualified Data.Text as Text
 
 import           Kore.AST.Common
-                 ( SortedVariable )
+                 ( SortedVariable, Variable )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject, Object, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.AST.Pure
@@ -82,7 +82,7 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [EqualityRule level]
+    :: [EqualityRule level Variable]
     -> BuiltinAndAxiomSimplifier level
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
@@ -270,7 +270,7 @@ evaluateWithDefinitionAxioms
         , Unparse (variable level)
         , ShowMetaOrObject variable
         )
-    => [EqualityRule level]
+    => [EqualityRule level Variable]
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable

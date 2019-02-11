@@ -98,7 +98,7 @@ transitionRule
     -> PredicateSubstitutionSimplifier level Simplifier
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions in patterns
-    -> Prim (RewriteRule level)
+    -> Prim (RewriteRule level Variable)
     -> (CommonExpandedPattern level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier [(CommonExpandedPattern level, StepProof level Variable)]
@@ -176,8 +176,8 @@ anyRewrite rewrites =
 heatingCooling
     :: (forall rewrite. [rewrite] -> Strategy (Prim rewrite))
     -- ^ 'allRewrites' or 'anyRewrite'
-    -> [RewriteRule level]
-    -> Strategy (Prim (RewriteRule level))
+    -> [RewriteRule level Variable]
+    -> Strategy (Prim (RewriteRule level Variable))
 heatingCooling rewriteStrategy rewrites =
     Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where

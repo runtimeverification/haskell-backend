@@ -1293,7 +1293,7 @@ runStep
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> RewriteRule level
+    -> RewriteRule level Variable
     -> IO
         (Either
             (StepError level Variable)
@@ -1315,7 +1315,7 @@ runStepWithRemainders
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> [RewriteRule level]
+    -> [RewriteRule level Variable]
     -> IO (OrStepResult level Variable)
 runStepWithRemainders metadataTools configuration axioms =
     fst
@@ -1334,7 +1334,7 @@ runSingleStepWithRemainder
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> RewriteRule level
+    -> RewriteRule level Variable
     -> IO
         (Either
             (StepError level Variable)

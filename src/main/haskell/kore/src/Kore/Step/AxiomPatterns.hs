@@ -71,7 +71,7 @@ import           Kore.Attribute.Unit
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate )
+                 ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern as Pattern
 import           Kore.Variables.Fresh
@@ -141,35 +141,35 @@ Currently @RulePattern@ can only represent rules of the form
   left = right if requires
 @
 --}
-data RulePattern level = RulePattern
-    { left  :: !(CommonStepPattern level)
-    , right :: !(CommonStepPattern level)
-    , requires :: !(CommonPredicate level)
+data RulePattern level variable = RulePattern
+    { left  :: !(StepPattern level variable)
+    , right :: !(StepPattern level variable)
+    , requires :: !(Predicate level variable)
     , attributes :: !AxiomPatternAttributes
     }
     deriving (Eq, Show)
 
 {-  | Equality-based rule pattern.
 -}
-newtype EqualityRule level = EqualityRule (RulePattern level)
+newtype EqualityRule level variable = EqualityRule (RulePattern level variable)
     deriving (Eq, Show)
 
 {-  | Rewrite-based rule pattern.
 -}
-newtype RewriteRule level = RewriteRule (RulePattern level)
+newtype RewriteRule level variable = RewriteRule (RulePattern level variable)
     deriving (Eq, Show)
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
-data QualifiedAxiomPattern level
-    = RewriteAxiomPattern (RewriteRule level)
-    | FunctionAxiomPattern (EqualityRule level)
+data QualifiedAxiomPattern level variable
+    = RewriteAxiomPattern (RewriteRule level variable)
+    | FunctionAxiomPattern (EqualityRule level variable)
     deriving (Eq, Show)
 
 {- | Does the axiom pattern represent a heating rule?
  -}
-isHeatingRule :: RulePattern level -> Bool
+isHeatingRule :: RulePattern level variable -> Bool
 isHeatingRule RulePattern { attributes } =
     case heatCool attributes of
         Heat -> True
@@ -177,7 +177,7 @@ isHeatingRule RulePattern { attributes } =
 
 {- | Does the axiom pattern represent a cooling rule?
  -}
-isCoolingRule :: RulePattern level -> Bool
+isCoolingRule :: RulePattern level variable -> Bool
 isCoolingRule RulePattern { attributes } =
     case heatCool attributes of
         Cool -> True
@@ -185,7 +185,7 @@ isCoolingRule RulePattern { attributes } =
 
 {- | Does the axiom pattern represent a normal rule?
  -}
-isNormalRule :: RulePattern level -> Bool
+isNormalRule :: RulePattern level variable -> Bool
 isNormalRule RulePattern { attributes } =
     case heatCool attributes of
         Normal -> True
@@ -199,7 +199,7 @@ extractRewriteAxioms
     => level -- ^expected level for the axiom pattern
     -> VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
-    -> [RewriteRule level]
+    -> [RewriteRule level Variable]
 extractRewriteAxioms level idxMod =
     mapMaybe
         ( extractRewriteAxiomFrom level
@@ -214,7 +214,7 @@ extractRewriteClaims
     => level -- ^expected level for the axiom pattern
     -> VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, RewriteRule level)]
+    -> [(axiomAtts, RewriteRule level Variable)]
 extractRewriteClaims level idxMod =
     mapMaybe
         ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
@@ -227,7 +227,7 @@ extractRewriteAxiomFrom
     => level -- ^expected level for the axiom pattern
     -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (RewriteRule level)
+    -> Maybe (RewriteRule level Variable)
 extractRewriteAxiomFrom level sentence =
     case verifiedKoreSentenceToAxiomPattern level koreSentence of
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
@@ -241,7 +241,7 @@ verifiedKoreSentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> VerifiedKoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 verifiedKoreSentenceToAxiomPattern level =
     \case
         UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
@@ -253,7 +253,7 @@ koreSentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> VerifiedKoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 koreSentenceToAxiomPattern level =
     \case
         UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
@@ -263,7 +263,7 @@ sentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> Sentence level' UnifiedSortVariable VerifiedKorePattern
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 sentenceToAxiomPattern
     level
     (SentenceAxiomSentence SentenceAxiom
@@ -289,7 +289,7 @@ patternToAxiomPattern
     :: MetaOrObject level
     => AxiomPatternAttributes
     -> CommonStepPattern level
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 patternToAxiomPattern attributes pat =
     case pat of
         -- normal rewrite axioms
@@ -358,10 +358,16 @@ to avoid collision with any variables in the given set.
 
  -}
 refreshRulePattern
-    :: forall level m. (MetaOrObject level, MonadCounter m)
-    => Set (Variable level)  -- ^ Variables to avoid
-    -> RulePattern level
-    -> m (RulePattern level)
+    :: forall variable level m
+    .   ( FreshVariable variable
+        , SortedVariable variable
+        , Ord (variable level)
+        , MetaOrObject level
+        , MonadCounter m
+        )
+    => Set (variable level)  -- ^ Variables to avoid
+    -> RulePattern level variable
+    -> m (RulePattern level variable)
 refreshRulePattern avoiding rulePattern = do
     (_, subst) <- refreshVariables originalFreeVariables
     left' <- Pattern.substitute subst left
@@ -393,9 +399,11 @@ refreshRulePattern avoiding rulePattern = do
 {- | Extract the free variables of a 'RulePattern'.
  -}
 freeVariables
-    :: MetaOrObject level
-    => RulePattern level
-    -> Set (Variable level)
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        )
+    => RulePattern level variable
+    -> Set (variable level)
 freeVariables RulePattern { left, right, requires } =
     Set.unions
         [ (Valid.freeVariables . extract) left

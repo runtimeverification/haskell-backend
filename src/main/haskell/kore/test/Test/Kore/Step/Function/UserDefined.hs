@@ -224,7 +224,7 @@ mockMetadataTools =
 evaluateWithAxiom
     :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> EqualityRule level
+    -> EqualityRule level Variable
     -> CommonStepPatternSimplifier level
     -> CommonStepPattern level
     -> IO (CommonAttemptedAxiom level)

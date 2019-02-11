@@ -608,7 +608,7 @@ axiom
     :: CommonStepPattern Object
     -> CommonStepPattern Object
     -> CommonPredicate Object
-    -> EqualityRule Object
+    -> EqualityRule Object Variable
 axiom left right predicate =
     EqualityRule RulePattern
         { left

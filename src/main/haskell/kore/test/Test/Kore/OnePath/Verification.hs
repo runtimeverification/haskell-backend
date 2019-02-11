@@ -372,7 +372,7 @@ simpleRewrite
     :: MetaOrObject level
     => CommonStepPattern level
     -> CommonStepPattern level
-    -> RewriteRule level
+    -> RewriteRule level Variable
 simpleRewrite left right =
     RewriteRule RulePattern
         { left = left

@@ -72,7 +72,7 @@ ruleFunctionEvaluator
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         )
-    => EqualityRule level
+    => EqualityRule level Variable
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns

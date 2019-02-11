@@ -279,7 +279,7 @@ stepWithRule
     -> PredicateSubstitutionSimplifier level Simplifier
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
-    -> RulePattern level
+    -> RulePattern level Variable
     -- ^ Rewriting axiom
     -> ExceptT
         (StepError level variable)
@@ -381,7 +381,7 @@ applyUnificationToRhs
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> RulePattern level
+    -> RulePattern level Variable
     -> Set.Set (StepperVariable variable level)
     -> ExpandedPattern level variable
     -> UnificationProof level (StepperVariable variable)
@@ -628,7 +628,7 @@ stepWithRewriteRule
     -> PredicateSubstitutionSimplifier level Simplifier
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
-    -> RewriteRule level
+    -> RewriteRule level Variable
     -- ^ Rewriting axiom
     -> ExceptT
         (StepError level variable)
@@ -687,7 +687,7 @@ stepWithRemaindersForUnifier
     => MetadataTools level StepperAttributes
     -> UnificationProcedure level
     -> PredicateSubstitutionSimplifier level Simplifier
-    -> [RulePattern level]
+    -> [RulePattern level Variable]
     -- ^ Rewriting axiom
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
@@ -816,7 +816,7 @@ stepWithRemainders
     -> PredicateSubstitutionSimplifier level Simplifier
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
-    -> [RewriteRule level]
+    -> [RewriteRule level Variable]
     -- ^ Rewriting axiom
     -> Simplifier
         ( OrStepResult level variable
