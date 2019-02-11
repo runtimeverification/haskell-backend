@@ -24,6 +24,7 @@ module Kore.Builtin.Bool
     , asMetaPattern
     , asPattern
     , asExpandedPattern
+    , extractBoolDomainValue
     , parse
       -- * Keys
     , orKey
@@ -37,6 +38,8 @@ module Kore.Builtin.Bool
     , orElseKey
     ) where
 
+import           Control.Error
+import           Control.Applicative
 import           Data.Functor
                  ( ($>) )
 import qualified Data.HashMap.Strict as HashMap
@@ -59,6 +62,11 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Unparser
+import           Kore.Step.Simplification.Data
+import           Kore.IndexedModule.MetadataTools
+import           Kore.Variables.Fresh
+import           Kore.Step.StepperAttributes
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -106,6 +114,19 @@ patternVerifier :: Builtin.DomainValueVerifier child
 patternVerifier =
     Builtin.makeEncodedDomainValueVerifier sort
         (Builtin.parseEncodeDomainValue parse Domain.BuiltinBool)
+
+-- | get the value from a (possibly encoded) domain value
+extractBoolDomainValue
+    :: Text -- ^ error message Context
+    -> DomainValue Object Domain.Builtin child
+    -> Bool
+extractBoolDomainValue
+    ctx
+    dv@DomainValue { domainValueChild }
+  =
+    case domainValueChild of
+        Domain.BuiltinBool bool -> bool
+        _ -> Builtin.runParser ctx $ Builtin.parseDomainValue parse dv
 
 {- | Parse an integer string literal.
  -}
@@ -165,8 +186,10 @@ builtinFunctions =
     , (orElseKey, binaryOperator orElseKey (||))
     ]
   where
-    unaryOperator = Builtin.unaryOperator parse asExpandedPattern
-    binaryOperator = Builtin.binaryOperator parse asExpandedPattern
+    unaryOperator =
+        Builtin.unaryOperator extractBoolDomainValue asExpandedPattern
+    binaryOperator =
+        Builtin.binaryOperator extractBoolDomainValue asExpandedPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
 

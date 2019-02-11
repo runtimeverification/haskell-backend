@@ -25,6 +25,7 @@ module Kore.Builtin.Int
     , patternVerifier
     , builtinFunctions
     , expectBuiltinInt
+    , extractIntDomainValue
     , asMetaPattern
     , asPattern
     , asConcretePattern
@@ -96,6 +97,11 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Variables.Fresh
+import           Kore.Unparser
+import           Kore.Step.Simplification.Data
+import           Kore.IndexedModule.MetadataTools
+import           Kore.Step.StepperAttributes
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -182,6 +188,19 @@ patternVerifier =
     Builtin.makeEncodedDomainValueVerifier sort
         (Builtin.parseEncodeDomainValue parse Domain.BuiltinInteger)
 
+-- | get the value from a (possibly encoded) domain value
+extractIntDomainValue
+    :: Text -- ^ error message Context
+    -> DomainValue Object Domain.Builtin child
+    -> Integer
+extractIntDomainValue
+    ctx
+    dv@DomainValue {domainValueSort = _,domainValueChild }
+  =
+    case domainValueChild of
+        Domain.BuiltinInteger int -> int
+        _ -> Builtin.runParser ctx $ Builtin.parseDomainValue parse dv
+
 {- | Parse a string literal as an integer.
  -}
 parse :: Builtin.Parser Integer
@@ -208,9 +227,11 @@ expectBuiltinInt ctx =
                 Domain.BuiltinPattern (StringLiteral_ lit) ->
                     (return . Builtin.runParser ctx)
                         (Builtin.parseString parse lit)
+                Domain.BuiltinInteger int -> return int
                 _ ->
                     Builtin.verifierBug
-                        (Text.unpack ctx ++ ": Domain value argument is not a string")
+                        (Text.unpack ctx ++ ": Domain value argument is not a "
+                            ++ "string or internal value")
         _ ->
             empty
 
@@ -323,17 +344,53 @@ builtinFunctions =
     ]
   where
     unaryOperator name op =
-        (name, Builtin.unaryOperator parse asExpandedPattern name op)
+        ( name
+        , Builtin.unaryOperator
+          extractIntDomainValue
+          asExpandedPattern
+          name
+          op
+        )
     binaryOperator name op =
-        (name, Builtin.binaryOperator parse asExpandedPattern name op)
+        ( name
+        , Builtin.binaryOperator
+          extractIntDomainValue
+          asExpandedPattern
+          name
+          op
+        )
     comparator name op =
-        (name, Builtin.binaryOperator parse Bool.asExpandedPattern name op)
+        ( name
+        , Builtin.binaryOperator
+          extractIntDomainValue
+          Bool.asExpandedPattern
+          name
+          op
+        )
     partialUnaryOperator name op =
-        (name, Builtin.unaryOperator parse asPartialExpandedPattern name op)
+        ( name
+        , Builtin.unaryOperator
+          extractIntDomainValue
+          asPartialExpandedPattern
+          name
+          op
+        )
     partialBinaryOperator name op =
-        (name, Builtin.binaryOperator parse asPartialExpandedPattern name op)
+        ( name
+        , Builtin.binaryOperator
+          extractIntDomainValue
+          asPartialExpandedPattern
+          name
+          op
+        )
     partialTernaryOperator name op =
-        (name, Builtin.ternaryOperator parse asPartialExpandedPattern name op)
+        ( name
+        , Builtin.ternaryOperator
+          extractIntDomainValue
+          asPartialExpandedPattern
+          name
+          op
+        )
     tdiv n d
         | d == 0 = Nothing
         | otherwise = Just (quot n d)

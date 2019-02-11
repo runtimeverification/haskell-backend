@@ -446,7 +446,7 @@ parseEncodeDomainValue
                 val <- (parseString parser lit)
                 return $ ctor val
             _ -> Kore.Error.koreFail
-                    "Expected literal string or encoded builtin value"
+                    "Expected literal string"
 
 {- | Run a parser in a domain value pattern.
 
@@ -510,7 +510,11 @@ appliedFunction epat =
  -}
 unaryOperator
     :: forall a b
-    .  Parser a
+    .   (   forall variable
+        .   Text
+        ->  DomainValue Object Domain.Builtin (StepPattern Object variable)
+        ->  a
+        )
     -- ^ Parse operand
     ->  (   forall variable.
             Ord (variable Object)
@@ -523,15 +527,15 @@ unaryOperator
     -- ^ Operation on builtin types
     -> Function
 unaryOperator
-    parser
+    extractVal
     asPattern
     ctx
     op
   =
     functionEvaluator unaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin child -> a
-    get = runParser ctx . parseDomainValue parser
+    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get = extractVal ctx
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
@@ -560,8 +564,12 @@ unaryOperator
  -}
 binaryOperator
     :: forall a b
-    .  Parser a
-    -- ^ Parse operand
+    .   (   forall variable
+        .   Text
+        ->  DomainValue Object Domain.Builtin (StepPattern Object variable)
+        ->  a
+        )
+    -- ^ Extract domain value
     ->  (   forall variable.
             Ord (variable Object)
         => Sort Object -> b -> ExpandedPattern Object variable
@@ -573,15 +581,15 @@ binaryOperator
     -- ^ Operation on builtin types
     -> Function
 binaryOperator
-    parser
+    extractVal
     asPattern
     ctx
     op
   =
     functionEvaluator binaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin child -> a
-    get = runParser ctx . parseDomainValue parser
+    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get = extractVal ctx
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
@@ -610,9 +618,13 @@ binaryOperator
  -}
 ternaryOperator
     :: forall a b
-    .  Parser a
-    -- ^ Parse operand
-    ->  (forall variable. Ord (variable Object)
+    .   (   forall variable
+        .   Text
+        ->  DomainValue Object Domain.Builtin (StepPattern Object variable)
+        ->  a
+        )
+    -- ^ Extract domain value
+    ->  (  forall variable. Ord (variable Object)
         => Sort Object -> b -> ExpandedPattern Object variable
         )
     -- ^ Render result as pattern with given sort
@@ -622,15 +634,15 @@ ternaryOperator
     -- ^ Operation on builtin types
     -> Function
 ternaryOperator
-    parser
+    extractVal
     asPattern
     ctx
     op
   =
     functionEvaluator ternaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin child -> a
-    get = runParser ctx . parseDomainValue parser
+    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get = extractVal ctx
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes

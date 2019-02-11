@@ -41,7 +41,6 @@ import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -189,13 +188,9 @@ evalKIte _ _ _ (_ :< app) =
         -> Maybe Bool
     evaluate (Recursive.project -> _ :< pat) =
         case pat of
-            DomainValuePattern dv -> Just (get dv)
+            DomainValuePattern dv ->
+                Just (Bool.extractBoolDomainValue iteKey dv)
             _ -> Nothing
-
-    get :: DomainValue Object Domain.Builtin child -> Bool
-    get =
-        Builtin.runParser iteKey
-        . Builtin.parseDomainValue Bool.parse
 
     evalIte expr t1 t2 =
         case evaluate expr of

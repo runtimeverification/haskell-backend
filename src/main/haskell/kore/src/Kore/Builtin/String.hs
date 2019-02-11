@@ -149,6 +149,14 @@ patternVerifier =
     Builtin.makeNonEncodedDomainValueVerifier sort
         (void . Builtin.parseDomainValue parse)
 
+-- | get the value from a (possibly encoded) domain value
+extractStringDomainValue
+    :: Text -- ^ error message Context
+    -> DomainValue Object Domain.Builtin child
+    -> Text
+extractStringDomainValue ctx dv =
+    Builtin.runParser ctx $ Builtin.parseDomainValue parse dv
+
 {- | Parse a string literal.
  -}
 parse :: Builtin.Parser Text
@@ -414,6 +422,18 @@ builtinFunctions =
     ]
   where
     comparator name op =
-        (name, Builtin.binaryOperator parse Bool.asExpandedPattern name op)
+        ( name
+        , Builtin.binaryOperator
+          extractStringDomainValue
+          Bool.asExpandedPattern
+          name
+          op
+        )
     binaryOperator name op =
-        (name, Builtin.binaryOperator parse asExpandedPattern name op)
+        ( name
+        , Builtin.binaryOperator
+          extractStringDomainValue
+          asExpandedPattern
+          name
+          op
+        )
