@@ -258,6 +258,7 @@ language_extensions:
   - OverloadedStrings
   - PatternSynonyms
   - PolyKinds
+  - QuantifiedConstraints
   - RankNTypes
   - ScopedTypeVariables
   - StandaloneDeriving
