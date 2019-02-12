@@ -20,6 +20,8 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
+import Data.Sup
+
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)
     => (a -> String)
@@ -231,6 +233,32 @@ instance (EqualWithExplanation a)
 
     printWithExplanation (Just a) = "Just (" ++ printWithExplanation a ++ ")"
     printWithExplanation Nothing  = "Nothing"
+
+instance
+    EqualWithExplanation a =>
+    SumEqualWithExplanation (Sup a)
+  where
+    sumConstructorPair (Element a1) (Element a2) =
+        SumConstructorSameWithArguments (EqWrap "Element" a1 a2)
+    sumConstructorPair a1@(Element _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair Sup Sup =
+        SumConstructorSameNoArguments
+    sumConstructorPair a1@Sup a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+instance
+    EqualWithExplanation a =>
+    EqualWithExplanation (Sup a)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+
+    printWithExplanation (Element a) =
+        "Element (" ++ printWithExplanation a ++ ")"
+    printWithExplanation Sup  = "Sup"
 
 newtype EWEString = EWEString String
 

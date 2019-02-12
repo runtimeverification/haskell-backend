@@ -26,6 +26,7 @@ test_astPrettyPrint =
         (assertEqual ""
             (  "UnifiedMeta Variable\n"
             ++ "    { variableName = (Id \"#v\" AstLocationNone) :: Id Meta\n"
+            ++ "    , variableCounter = Nothing\n"
             ++ "    , variableSort =\n"
             ++ "        SortVariableSort (SortVariable ((Id \"#sv\" AstLocationNone) :: Id Meta))\n"
             ++ "    }"
@@ -33,6 +34,7 @@ test_astPrettyPrint =
             (prettyPrintToString
                 (UnifiedMeta Variable
                     { variableName = testId "#v"
+                    , variableCounter = mempty
                     , variableSort =
                         SortVariableSort (SortVariable (testId "#sv"))
                     }
@@ -43,6 +45,7 @@ test_astPrettyPrint =
         (assertEqual ""
             (  "UnifiedObject Variable\n"
             ++ "    { variableName = (Id \"v\" AstLocationNone) :: Id Object\n"
+            ++ "    , variableCounter = Nothing\n"
             ++ "    , variableSort =\n"
             ++ "        SortVariableSort (SortVariable ((Id \"sv\" AstLocationNone) :: Id Object))\n"
             ++ "    }"
@@ -50,6 +53,7 @@ test_astPrettyPrint =
             (prettyPrintToString
                 (UnifiedObject Variable
                     { variableName = testId "v"
+                    , variableCounter = mempty
                     , variableSort =
                         SortVariableSort (SortVariable (testId "sv"))
                     }

@@ -72,7 +72,7 @@ handleBinder old new mkBinder v p
     renamed = mkBinder v' (subst (mkVar v) (mkVar v') p)
     v' = head $ filter (not . flip S.member freeVarsP) $ alternatives v
     freeVarsP = freePureVariables p
-    alternatives (Variable (Id name loc) sort) =
-        [ Variable (Id (name <> (Text.pack . show) n) loc) sort
+    alternatives (Variable (Id name loc) sort c) =
+        [ Variable (Id (name <> (Text.pack . show) n) loc) sort c
         | n <- [(0::Integer)..]
         ]

@@ -220,10 +220,10 @@ axiomPatternsIntegrationTests =
                             patternSort = sortTCell
                             freeVariables =
                                 Set.fromList
-                                    [ asUnified (Variable "VarI1" sortAInt)
-                                    , asUnified (Variable "VarI2" sortAInt)
-                                    , asUnified (Variable "VarDotVar1" sortK)
-                                    , asUnified (Variable "VarDotVar0" sortStateCell)
+                                    [ asUnified (Variable "VarI1" mempty sortAInt)
+                                    , asUnified (Variable "VarI2" mempty sortAInt)
+                                    , asUnified (Variable "VarDotVar1" mempty sortK)
+                                    , asUnified (Variable "VarDotVar0" mempty sortStateCell)
                                     ]
                     koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
                 )
@@ -345,24 +345,28 @@ varI1, varI2, varKRemainder, varStateCell :: CommonStepPattern Object
 varI1 =
     mkVar Variable
         { variableName = testId "VarI1"
+        , variableCounter = mempty
         , variableSort = sortAInt
         }
 
 varI2 =
     mkVar Variable
         { variableName = testId "VarI2"
+        , variableCounter = mempty
         , variableSort = sortAInt
         }
 
 varKRemainder =
     mkVar Variable
         { variableName = testId "VarDotVar1"
+        , variableCounter = mempty
         , variableSort = sortK
         }
 
 varStateCell =
     mkVar Variable
         { variableName = testId "VarDotVar0"
+        , variableCounter = mempty
         , variableSort = sortStateCell
         }
 

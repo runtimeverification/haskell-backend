@@ -433,6 +433,7 @@ variableRemainderParser x identifier = do
     return Variable
         { variableName = identifier
         , variableSort = sort
+        , variableCounter = mempty
         }
 
 {-|'variableParser' parses either an @object-variable@, or a @meta-variable@.

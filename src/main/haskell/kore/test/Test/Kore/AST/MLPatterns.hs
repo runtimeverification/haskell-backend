@@ -66,6 +66,7 @@ test_mlPattern =
                         $ forall_
                             (Variable
                                 (testId "x")
+                                mempty
                                 charListMetaSort
                             )
                             top_
@@ -108,7 +109,7 @@ test_mlPattern =
                 charListMetaSort
                 (getPatternResultSort
                     undefinedHeadSort
-                    (VariablePattern (Variable (testId "x") charListMetaSort))
+                    (VariablePattern (Variable (testId "x") mempty charListMetaSort))
                 )
             )
         , let

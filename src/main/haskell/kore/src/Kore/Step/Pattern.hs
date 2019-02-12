@@ -23,14 +23,18 @@ module Kore.Step.Pattern
     , toKoreSentenceAxiom
     , toKoreModule
     , substitute
+    , fromFreshVariables
     ) where
 
 import qualified Control.Lens as Lens
+import qualified Control.Monad.Reader as Reader
 import           Data.Functor.Foldable
                  ( Base )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 
 import           Control.Monad.Counter
                  ( MonadCounter )
@@ -38,7 +42,8 @@ import           Kore.Annotation.Valid
                  ( Valid (..) )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
-                 ( Pattern (..), SortedVariable )
+                 ( Exists (..), Forall (..), Pattern (..),
+                 SortedVariable (..) )
 import qualified Kore.AST.Common as Base
 import           Kore.AST.Kore
                  ( KorePattern, UnifiedPattern (..), UnifiedSortVariable,
@@ -52,7 +57,6 @@ import           Kore.Error
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
 import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 type StepPattern level variable =
     PurePattern level Domain.Builtin variable (Valid (variable level) level)
@@ -66,6 +70,9 @@ type ConcreteStepPattern level = StepPattern level Concrete
 @mapVariables@ is lazy: it descends into its argument only as the result is
 demanded. Intermediate allocation from composing multiple transformations with
 @mapVariables@ is amortized; the intermediate trees are never fully resident.
+
+__Warning__: @mapVariables@ will capture variables if the provided mapping is
+not injective!
 
 See also: 'traverseVariables'
 
@@ -87,6 +94,9 @@ mapVariables mapping =
 returns. When composing multiple transformations with @traverseVariables@, the
 intermediate trees will be fully allocated; @mapVariables@ is more composable in
 this respect.
+
+__Warning__: @traverseVariables@ will capture variables if the provided
+traversal is not injective!
 
 See also: 'mapVariables'
 
@@ -338,3 +348,70 @@ substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
   where
     getFreeVariables Valid { freeVariables } = freeVariables
     setFreeVariables valid freeVariables = valid { freeVariables }
+
+{- | Reset the 'variableCounter' of all 'Variables'.
+
+@fromFreshVariables@ resets the 'variableCounter' of all variables, while
+ensuring that no 'Variable' in the result is accidentally captured.
+
+ -}
+fromFreshVariables
+    :: forall level. MetaOrObject level
+    => StepPattern level Variable
+    -> StepPattern level Variable
+fromFreshVariables stepPattern =
+    Reader.runReader
+        (Recursive.fold fromFreshVariablesWorker stepPattern)
+        Map.empty
+  where
+    lookupVariable variable =
+        Reader.asks (Map.lookup variable) >>= \case
+            Nothing -> return variable
+            Just variable' -> return variable'
+
+    -- | Refresh a 'Fresh variable level' until it is unique among a set of
+    -- 'Variable level'.
+    safeVariable freeVariables' variable =
+        head
+        $ dropWhile (\var -> Set.member var freeVariables')
+        $ iterate nextVariable variable
+
+    underBinder freeVariables' variable child = do
+        let variable' = safeVariable freeVariables' variable
+        child' <- Reader.local (Map.insert variable variable') child
+        return (variable', child')
+
+    fromFreshVariablesWorker (valid :< patt) = do
+        valid' <- Valid.traverseVariables lookupVariable valid
+        let Valid { freeVariables = freeVariables' } = valid'
+        patt' <-
+            case patt of
+                ExistsPattern exists -> do
+                    let Exists { existsVariable, existsChild } = exists
+                    (existsVariable', existsChild') <-
+                        underBinder
+                            freeVariables'
+                            existsVariable
+                            existsChild
+                    let exists' =
+                            exists
+                                { existsVariable = existsVariable'
+                                , existsChild = existsChild'
+                                }
+                    return (ExistsPattern exists')
+                ForallPattern forall -> do
+                    let Forall { forallVariable, forallChild } = forall
+                    (forallVariable', forallChild') <-
+                        underBinder
+                            freeVariables'
+                            forallVariable
+                            forallChild
+                    let forall' =
+                            forall
+                                { forallVariable = forallVariable'
+                                , forallChild = forallChild'
+                                }
+                    return (ForallPattern forall')
+                _ ->
+                    Base.traverseVariables lookupVariable patt >>= sequence
+        (return . Recursive.embed) (valid' :< patt')

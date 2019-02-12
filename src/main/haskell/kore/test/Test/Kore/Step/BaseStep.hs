@@ -15,6 +15,7 @@ import           Data.Default
                  ( def )
 import qualified Data.Set as Set
 
+import           Data.Sup
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Implicit.ImplicitSorts
@@ -772,13 +773,13 @@ test_baseStep =
     ]
   where
     v1, a1, b1, c1, x1, y1, var_a1_0 :: Sort Meta -> Variable Meta
-    v1 = Variable (testId "#v1")
-    a1 = Variable (testId "#a1")
-    b1 = Variable (testId "#b1")
-    c1 = Variable (testId "#c1")
-    x1 = Variable (testId "#x1")
-    y1 = Variable (testId "#y1")
-    var_a1_0 = Variable (testId "#var_a1_0")
+    v1 = Variable (testId "#v1") mempty
+    a1 = Variable (testId "#a1") mempty
+    b1 = Variable (testId "#b1") mempty
+    c1 = Variable (testId "#c1") mempty
+    x1 = Variable (testId "#x1") mempty
+    y1 = Variable (testId "#y1") mempty
+    var_a1_0 = Variable (testId "#a1") (Just (Element 0))
 
     identicalVariablesAssertion var = do
         let expect = Right

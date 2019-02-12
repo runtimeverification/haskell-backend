@@ -589,6 +589,7 @@ stringVariable_ name =
             { getId = name
             , idLocation = AstLocationImplicit
             }
+        , variableCounter = mempty
         , variableSort = stringMetaSort
         }
 

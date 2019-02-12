@@ -12,6 +12,7 @@ objectVariable :: Variable Object
 objectVariable = Variable
     { variableName = testId "v"
     , variableSort = objectSort
+    , variableCounter = mempty
     }
 
 unifiedObjectVariable :: Unified Variable
@@ -31,6 +32,7 @@ metaVariable :: Variable Meta
 metaVariable = Variable
     { variableName = testId "#v"
     , variableSort = metaSort
+    , variableCounter = mempty
     }
 
 unifiedMetaVariable :: Unified Variable

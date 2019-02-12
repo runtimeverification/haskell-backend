@@ -20,6 +20,7 @@ module Kore.Variables.Fresh
     , freshVariable
     , freshVariablePrefix
     , freshVariableSuchThat
+    , nextVariable
     , module Control.Monad.Counter
     ) where
 
@@ -28,11 +29,11 @@ import           Data.Set
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 
 import Control.Monad.Counter
+import Data.Sup
 import Kore.AST.Common
-       ( Variable (..) )
+       ( Variable (..), illegalVariableCounter )
 import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 
@@ -52,14 +53,6 @@ class (forall level. Ord (variable level)) => FreshVariable variable where
         => Set (variable level)
         -> variable level
         -> Maybe (variable level)
-    refreshVariable avoiding variable
-      | Set.member variable avoiding =
-        Just
-        $ head
-        $ dropWhile (\variable' -> Set.member variable' avoiding)
-        $ freshVariableWith variable <$> [0..]
-      | otherwise =
-        Nothing
 
     {-|Given an existing variable, generate a fresh one of
     the same kind.
@@ -92,44 +85,22 @@ a non-id symbol @_@ to avoid clashing with user-defined ids.
 freshVariablePrefix :: Text
 freshVariablePrefix = "var_"
 
-variableSeparator :: Text
-variableSeparator = "_"
-
 instance FreshVariable Variable where
-    {-| See the comment at the top of the file for the variable name syntax. -}
-    freshVariableWith var n
-      | not (Text.null prefix) =
-        var
-            { variableName = Id
-                { getId = prefix <> Text.pack (show n)
-                , idLocation = AstLocationGeneratedVariable
-                }
+    freshVariableWith variable@Variable { variableName } counter =
+        variable
+            { variableCounter = Just (Element counter)
+            , variableName =
+                variableName { idLocation = AstLocationGeneratedVariable }
             }
-      | otherwise =
-        var
-            { variableName = Id
-                { getId =
-                    metaObjectPrefix
-                    <> freshVariablePrefix
-                    <> Text.pack
-                        (filter
-                            (`notElem` ("#`" :: String))
-                            (Text.unpack variableId)
-                        )
-                    <> variableSeparator
-                    <> Text.pack (show n)
-                , idLocation = AstLocationGeneratedVariable
-                }
-            }
+
+    refreshVariable avoiding variable = do
+        largest <- Set.lookupLT pivotMax avoiding
+        if largest >= pivotMin
+            then Just (nextVariable largest)
+            else Nothing
       where
-        variableId :: Text
-        variableId = getId (variableName var)
-        prefix, _suffix :: Text
-        (prefix, _suffix) = Text.breakOnEnd variableSeparator variableId
-        metaObjectPrefix =
-            case isMetaOrObject var of
-                IsObject -> ""
-                IsMeta   -> "#"
+        pivotMax = variable { variableCounter = Just Sup }
+        pivotMin = variable { variableCounter = Nothing }
 
 freshVariable
     :: (FreshVariable var, MetaOrObject level, MonadCounter m)
@@ -144,3 +115,21 @@ freshVariableSuchThat
     -> m (var level)
 freshVariableSuchThat var predicate =
     freshVariableSuchThatWith var predicate <$> increment
+
+{- | Increase the 'variableCounter' of a 'Variable'
+ -}
+nextVariable :: Variable level -> Variable level
+nextVariable variable@Variable { variableName, variableCounter } =
+    variable
+        { variableName = variableName'
+        , variableCounter = variableCounter'
+        }
+  where
+    variableName' =
+        variableName
+            { idLocation = AstLocationGeneratedVariable }
+    variableCounter' =
+        case variableCounter of
+            Nothing -> Just (Element 0)
+            Just (Element a) -> Just (Element (succ a))
+            Just Sup -> illegalVariableCounter

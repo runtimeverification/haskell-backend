@@ -24,6 +24,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
+import           Data.Sup
 import           Kore.AST.Common
                  ( SymbolOrAlias (..), Variable (..) )
 import           Kore.AST.MetaOrObject
@@ -501,21 +502,21 @@ sigmaSymbol = SymbolOrAlias
     }
 
 var_x_1 :: Variable Object
-var_x_1 = Variable (testId "var_x_1") testSort
+var_x_1 = Variable (testId "x") (Just (Element 1)) testSort
 var_y_1 :: Variable Object
-var_y_1 = Variable (testId "var_y_1") testSort
+var_y_1 = Variable (testId "y") (Just (Element 1)) testSort
 var_z_1 :: Variable Object
-var_z_1 = Variable (testId "var_z_1") testSort
+var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
 x :: Variable Object
-x = Variable (testId "x") testSort
+x = Variable (testId "x") mempty testSort
 y :: Variable Object
-y = Variable (testId "y") testSort
+y = Variable (testId "y") mempty testSort
 z :: Variable Object
-z = Variable (testId "z") testSort
+z = Variable (testId "z") mempty testSort
 m :: Variable Object
-m = Variable (testId "m") mapSort
+m = Variable (testId "m") mempty mapSort
 xInt :: Variable Object
-xInt = Variable (testId "xInt") intSort
+xInt = Variable (testId "xInt") mempty intSort
 
 a :: Ord (variable Object) => StepPattern Object variable
 a = mkApp testSort aSymbol []

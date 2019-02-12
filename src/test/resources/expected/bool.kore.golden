@@ -216,6 +216,7 @@ Definition
                                         , existsVariable =
                                             Variable
                                                 { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                , variableCounter = Nothing
                                                 , variableSort =
                                                     SortActualSort SortActual
                                                         { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -238,6 +239,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -282,6 +284,7 @@ Definition
                                         , existsVariable =
                                             Variable
                                                 { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                , variableCounter = Nothing
                                                 , variableSort =
                                                     SortActualSort SortActual
                                                         { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -304,6 +307,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -348,6 +352,7 @@ Definition
                                         , existsVariable =
                                             Variable
                                                 { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                , variableCounter = Nothing
                                                 , variableSort =
                                                     SortActualSort SortActual
                                                         { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -370,6 +375,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -392,6 +398,7 @@ Definition
                                                                                 { runCofreeT = Identity
                                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                                        , variableCounter = Nothing
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
                                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -404,6 +411,7 @@ Definition
                                                                                 { runCofreeT = Identity
                                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "Y" AstLocationNone) :: Id Object
+                                                                                        , variableCounter = Nothing
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
                                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -439,6 +447,7 @@ Definition
                                         , existsVariable =
                                             Variable
                                                 { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                , variableCounter = Nothing
                                                 , variableSort =
                                                     SortActualSort SortActual
                                                         { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -461,6 +470,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -483,6 +493,7 @@ Definition
                                                                                 { runCofreeT = Identity
                                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                                        , variableCounter = Nothing
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
                                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -495,6 +506,7 @@ Definition
                                                                                 { runCofreeT = Identity
                                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "Y" AstLocationNone) :: Id Object
+                                                                                        , variableCounter = Nothing
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
                                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -530,6 +542,7 @@ Definition
                                         , existsVariable =
                                             Variable
                                                 { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                , variableCounter = Nothing
                                                 , variableSort =
                                                     SortActualSort SortActual
                                                         { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -552,6 +565,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "T" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -574,6 +588,7 @@ Definition
                                                                                 { runCofreeT = Identity
                                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                                        , variableCounter = Nothing
                                                                                         , variableSort =
                                                                                             SortActualSort SortActual
                                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -637,6 +652,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -654,6 +670,7 @@ Definition
                                                 { runCofreeT = Identity
                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableCounter = Nothing
                                                         , variableSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -710,6 +727,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -783,6 +801,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -856,6 +875,7 @@ Definition
                                                                 { runCofreeT = Identity
                                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                                        , variableCounter = Nothing
                                                                         , variableSort =
                                                                             SortActualSort SortActual
                                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
@@ -873,6 +893,7 @@ Definition
                                                 { runCofreeT = Identity
                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableCounter = Nothing
                                                         , variableSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "Bool" AstLocationNone) :: Id Object

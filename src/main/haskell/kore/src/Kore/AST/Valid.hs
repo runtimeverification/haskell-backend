@@ -979,8 +979,12 @@ mkSortVariable name = SortVariableSort $ SortVariable name
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s
 varS :: MetaOrObject level => Text -> Sort level -> Variable level
-varS x s =
-    Variable (noLocationId x) s
+varS x variableSort =
+    Variable
+        { variableName = noLocationId x
+        , variableSort
+        , variableCounter = mempty
+        }
 
 -- | Construct a symbol with a given name and input sorts
 -- "mult" `symS` [s, s]

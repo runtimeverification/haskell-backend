@@ -5,7 +5,10 @@ module Test.Kore.Step.Simplification.Application
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.List as List
 import qualified Data.Map as Map
+import           Data.Ord
+                 ( comparing )
 import qualified Data.Set as Set
 
 import qualified Kore.Annotation.Valid as Valid
@@ -209,11 +212,13 @@ test_applicationSimplification =
                                         (makeEqualsPredicate fOfA fOfB)
                                         (makeEqualsPredicate gOfA gOfB)
                                     )
-                            , substitution = Substitution.unsafeWrap
-                                [ (freshVariableWith Mock.z 1, gOfB)
-                                , (Mock.x, fOfA)
-                                , (Mock.y, gOfA)
-                                ]
+                            , substitution =
+                                Substitution.unsafeWrap
+                                $ List.sortBy (comparing fst)
+                                    [ (freshVariableWith Mock.z 1, gOfB)
+                                    , (Mock.x, fOfA)
+                                    , (Mock.y, gOfA)
+                                    ]
                             }
                         ]
             actual <-

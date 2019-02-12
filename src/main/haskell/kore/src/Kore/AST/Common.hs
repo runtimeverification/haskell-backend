@@ -42,12 +42,15 @@ import           Data.String
                  ( fromString )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Void
                  ( Void )
 import           GHC.Generics
                  ( Generic )
+import           Numeric.Natural
 
+import Data.Sup
 import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 import Kore.Sort
@@ -116,8 +119,16 @@ Particularly, this is the type of variable in patterns returned by the parser.
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
+-- Invariant [variableCounter = Just Sup]:
+-- No function returns a value that would match the pattern:
+--
+-- > Variable { variableCounter = Just Sup }
+--
+-- This value of variableCounter may only be used in refreshVariable to pivot
+-- the set of variables that must not be captured.
 data Variable level = Variable
     { variableName :: !(Id level)
+    , variableCounter :: !(Maybe (Sup Natural))
     , variableSort :: !(Sort level)
     }
     deriving (Show, Eq, Ord, Generic)
@@ -129,6 +140,35 @@ instance NFData (Variable level)
 instance Unparse (Variable level) where
     unparse Variable { variableName, variableSort } =
         unparse variableName <> Pretty.colon <> unparse variableSort
+
+{- | Error thrown when 'variableCounter' takes an illegal value.
+ -}
+illegalVariableCounter :: a
+illegalVariableCounter =
+    error "Illegal use of Variable { variableCounter = Just Sup }"
+
+{- | Reset 'variableCounter' so that a 'Variable' may be unparsed.
+
+@fromFreshVariable@ is not injective and is unsafe if used with
+'mapVariables'. See 'Kore.Step.Pattern.fromFreshVariables' instead.
+
+ -}
+fromFreshVariable :: Variable level -> Variable level
+fromFreshVariable variable@Variable { variableName, variableCounter } =
+    variable
+        { variableName = variableName'
+        , variableCounter = Nothing
+        }
+  where
+    variableName' =
+        variableName
+            { getId =
+                case variableCounter of
+                    Nothing -> getId variableName
+                    Just (Element n) -> getId variableName <> Text.pack (show n)
+                    Just Sup -> illegalVariableCounter
+            , idLocation = AstLocationGeneratedVariable
+            }
 
 {- | @Concrete level@ is a variable occuring in a concrete pattern.
 
@@ -1410,7 +1450,12 @@ instance
             IsMeta   -> error "Expecting Object pattern"
     unifiedPatternApply = id
 
--- | Use the provided mapping to replace all variables in a 'Pattern' head.
+{- | Use the provided mapping to replace all variables in a 'Pattern' head.
+
+__Warning__: @mapVariables@ will capture variables if the provided mapping is
+not injective!
+
+-}
 mapVariables
     :: (variable1 level -> variable2 level)
     -> Pattern level domain variable1 child
@@ -1419,7 +1464,12 @@ mapVariables mapping =
     runIdentity . traverseVariables (Identity . mapping)
 {-# INLINE mapVariables #-}
 
--- | Use the provided traversal to replace all variables in a 'Pattern' head.
+{- | Use the provided traversal to replace all variables in a 'Pattern' head.
+
+__Warning__: @traverseVariables@ will capture variables if the provided
+traversal is not injective!
+
+-}
 traverseVariables
     :: Applicative f
     => (variable1 level -> f (variable2 level))

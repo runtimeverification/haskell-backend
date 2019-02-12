@@ -171,6 +171,7 @@ test_KEqual =
         [ Test.Bool.asInternal True
         , mkVar Variable
             { variableName = testId "x"
+            , variableCounter = mempty
             , variableSort = boolSort
             }
         ]
