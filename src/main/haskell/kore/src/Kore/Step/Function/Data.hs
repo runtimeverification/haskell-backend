@@ -18,27 +18,39 @@ module Kore.Step.Function.Data
     , purePatternAxiomEvaluator
     ) where
 
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
 import           Control.DeepSeq
                  ( NFData )
 import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
+import           Kore.AST.Common
+                 ( Application, Pattern (..), SortedVariable, Variable (..) )
+import           Kore.AST.MetaOrObject
+                 ( MetaOrObject, Object, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.AST.Pure
+                 ( fromPurePattern )
 import           Kore.AST.Valid
+                 ( Valid )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Function.Identifier
+                 ( AxiomIdentifier )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make, merge )
 import           Kore.Step.Pattern
+                 ( StepPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unparser
+                 ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -87,7 +99,7 @@ newtype BuiltinAndAxiomSimplifier level =
 their corresponding evaluators.
 -}
 type BuiltinAndAxiomSimplifierMap level =
-    Map.Map (Id level) (BuiltinAndAxiomSimplifier level)
+    Map.Map (AxiomIdentifier level) (BuiltinAndAxiomSimplifier level)
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}

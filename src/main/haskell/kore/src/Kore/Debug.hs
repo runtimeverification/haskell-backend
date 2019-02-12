@@ -84,7 +84,7 @@ data DebugPlace
     = D_Generic !String !DebugResult
     | D_OnePath_Step_transitionRule
     | D_BaseStep_stepWithRule
-    | D_Function_evaluateApplication
+    | D_Function_evaluatePattern
   deriving (Eq, Ord, Show)
 
 data DebugArg = DebugArg { name :: !String, value :: !String }
@@ -122,7 +122,7 @@ enabledPlaces = Map.empty
 
 onePathWithFunctionNames :: Map DebugPlace DebugResult
 onePathWithFunctionNames =
-    Map.insert D_Function_evaluateApplication DebugNoResult
+    Map.insert D_Function_evaluatePattern DebugNoResult
     $ Map.insert D_OnePath_Step_transitionRule DebugResult
     $ Map.singleton D_BaseStep_stepWithRule DebugResult
 
