@@ -4,6 +4,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 
 import Control.Monad.Counter
 import Kore.AST.Valid
@@ -91,7 +92,7 @@ test_substitute =
             (assertEqualWithExplanation
                 "Expected quantified variable to be renamed"
                 (evalCounter $ do
-                    z' <- freshVariable Mock.z
+                    let Just z' = refreshVariable (Set.singleton Mock.z) Mock.z
                     return
                         (mkExists z'
                             (mkAnd
@@ -116,7 +117,7 @@ test_substitute =
             (assertEqualWithExplanation
                 "Expected quantified variable to be renamed"
                 (evalCounter $ do
-                    z' <- freshVariable Mock.z
+                    let Just z' = refreshVariable (Set.singleton Mock.z) Mock.z
                     return
                         (mkForall z'
                             (mkAnd

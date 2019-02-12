@@ -23,6 +23,9 @@ module Kore.Variables.Fresh
     , module Control.Monad.Counter
     ) where
 
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -35,11 +38,37 @@ import Kore.AST.MetaOrObject
 
 {- | A 'FreshVariable' can be freshened, given a 'Natural' counter.
 -}
-class FreshVariable var where
+class (forall level. Ord (variable level)) => FreshVariable variable where
+    {- | Refresh a variable, renaming it avoid the given set.
+
+    If the given variable occurs in the set, @refreshVariable@ must return
+    'Just' a fresh variable which does not occur in the set. If the given
+    variable does /not/ occur in the set, @refreshVariable@ /may/ return
+    'Nothing'.
+
+     -}
+    refreshVariable
+        :: MetaOrObject level
+        => Set (variable level)
+        -> variable level
+        -> Maybe (variable level)
+    refreshVariable avoiding variable
+      | Set.member variable avoiding =
+        Just
+        $ head
+        $ dropWhile (\variable' -> Set.member variable' avoiding)
+        $ freshVariableWith variable <$> [0..]
+      | otherwise =
+        Nothing
+
     {-|Given an existing variable, generate a fresh one of
     the same kind.
     -}
-    freshVariableWith :: MetaOrObject level => var level -> Natural -> var level
+    freshVariableWith
+        :: MetaOrObject level
+        => variable level
+        -> Natural
+        -> variable level
 
     {-|Given an existing variable and a predicate, generate a
     fresh variable of the same kind satisfying the predicate.
@@ -47,10 +76,10 @@ class FreshVariable var where
     -}
     freshVariableSuchThatWith
         :: MetaOrObject level
-        => var level
-        -> (var level -> Bool)
+        => variable level
+        -> (variable level -> Bool)
         -> Natural
-        -> var level
+        -> variable level
     freshVariableSuchThatWith var p n =
         let var' = freshVariableWith var n in
         if p var'

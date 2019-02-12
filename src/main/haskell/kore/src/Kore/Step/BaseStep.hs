@@ -27,12 +27,10 @@ module Kore.Step.BaseStep
     ) where
 
 import           Control.Monad.Except
-import qualified Control.Monad.Reader as Reader
 import           Control.Monad.Trans.Except
                  ( throwE )
 import           Data.Either
                  ( partitionEithers )
-import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Hashable as Hashable
 import           Data.List
                  ( foldl' )
@@ -183,6 +181,9 @@ instance
     toVariable (AxiomVariable var) = toVariable var
     toVariable (ConfigurationVariable var) = toVariable var
 
+{- | The implementation of @refreshVariable@ for 'StepperVariable' ensures that
+fresh variables are always unique under projection by 'unwrapStepperVariable'.
+ -}
 instance
     (FreshVariable variable, SortedVariable variable) =>
     FreshVariable (StepperVariable variable)
@@ -191,6 +192,13 @@ instance
         AxiomVariable $ freshVariableWith a n
     freshVariableWith (ConfigurationVariable a) n =
         ConfigurationVariable $ freshVariableWith a n
+
+    refreshVariable (Set.map unwrapStepperVariable -> avoiding) =
+        \case
+            AxiomVariable variable ->
+                AxiomVariable <$> refreshVariable avoiding variable
+            ConfigurationVariable variable ->
+                ConfigurationVariable <$> refreshVariable avoiding variable
 
 instance
     Unparse (variable level) =>
@@ -825,60 +833,7 @@ unwrapPatternVariables
         )
     => StepPattern level (StepperVariable variable)
     -> m (StepPattern level variable)
-unwrapPatternVariables stepPattern =
-    Reader.runReaderT
-        (Recursive.fold unwrapPatternVariablesWorker stepPattern)
-        Map.empty
-  where
-    lookupStepperVariable variable =
-        Reader.asks (Map.lookup variable) >>= \case
-            Nothing -> return (unwrapStepperVariable variable)
-            Just variable' -> return variable'
-    unwrapUnderBinder freeVariables' binderVariable binderChild = do
-        binderVariable' <-
-            freshVariableSuchThat
-                (unwrapStepperVariable binderVariable)
-                (\variable -> Set.notMember variable freeVariables')
-        binderChild' <-
-            Reader.local
-                (Map.insert binderVariable binderVariable')
-                binderChild
-        return (binderVariable', binderChild')
-    unwrapPatternVariablesWorker (valid :< patt) = do
-        valid' <- Valid.traverseVariables lookupStepperVariable valid
-        let Valid { freeVariables = freeVariables' } = valid'
-        patt' <-
-            case patt of
-                ExistsPattern exists -> do
-                    let Exists { existsVariable, existsChild } = exists
-                    (existsVariable', existsChild') <-
-                        unwrapUnderBinder
-                            freeVariables'
-                            existsVariable
-                            existsChild
-                    let exists' =
-                            exists
-                                { existsVariable = existsVariable'
-                                , existsChild = existsChild'
-                                }
-                    return (ExistsPattern exists')
-                ForallPattern forall -> do
-                    let Forall { forallVariable, forallChild } = forall
-                    (forallVariable', forallChild') <-
-                        unwrapUnderBinder
-                            freeVariables'
-                            forallVariable
-                            forallChild
-                    let forall' =
-                            forall
-                                { forallVariable = forallVariable'
-                                , forallChild = forallChild'
-                                }
-                    return (ForallPattern forall')
-                _ ->
-                    Common.traverseVariables lookupStepperVariable patt
-                    >>= sequence
-        (return . Recursive.embed) (valid' :< patt')
+unwrapPatternVariables = return . Pattern.mapVariables unwrapStepperVariable
 
 unwrapPredicateVariables
     ::  forall level variable m

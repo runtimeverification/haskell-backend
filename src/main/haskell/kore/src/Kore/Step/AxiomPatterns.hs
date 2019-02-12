@@ -394,12 +394,7 @@ refreshRulePattern avoid0 rulePattern = do
     refreshVariables =
         Monad.foldM refreshOneVariable (avoid0, Map.empty)
     refreshOneVariable (avoid, rename) var
-      | Set.notMember var avoid =
-        -- The variable does not collide with any others, so renaming is not
-        -- necessary.
-        return (Set.insert var avoid, rename)
-      | otherwise = do
-        var' <- freshVariableSuchThat var (\v -> Set.notMember v avoid)
+      | Just var' <- refreshVariable avoid var = do
         let avoid' =
                 -- Avoid the freshly-generated variable in future renamings.
                 Set.insert var' avoid
@@ -408,6 +403,10 @@ refreshRulePattern avoid0 rulePattern = do
                 -- freshly-generated variable.
                 Map.insert var var' rename
         return (avoid', rename')
+      | otherwise =
+        -- The variable does not collide with any others, so renaming is not
+        -- necessary.
+        return (Set.insert var avoid, rename)
 
 {- | Extract the free variables of a 'RulePattern'.
  -}
