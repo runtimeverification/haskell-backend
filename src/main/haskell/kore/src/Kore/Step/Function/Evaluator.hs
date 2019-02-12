@@ -124,13 +124,14 @@ evaluateApplication
     appPurePattern = asPurePattern (valid :< ApplicationPattern app)
 
     unchangedPatt =
-        case childrenPredicateSubstitution of
-            Predicated { predicate, substitution } ->
-                Predicated
-                    { term         = appPurePattern
-                    , predicate    = predicate
-                    , substitution = substitution
-                    }
+        Predicated
+            { term         = appPurePattern
+            , predicate    = predicate
+            , substitution = substitution
+            }
+      where
+        Predicated { term = (), predicate, substitution } =
+            childrenPredicateSubstitution
     unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
 
@@ -283,13 +284,14 @@ maybeEvaluatePattern
         Map.lookup identifier' axiomIdToEvaluator
 
     unchangedPatt =
-        case childrenPredicateSubstitution of
-            Predicated { predicate, substitution } ->
-                Predicated
-                    { term         = patt
-                    , predicate    = predicate
-                    , substitution = substitution
-                    }
+        Predicated
+            { term         = patt
+            , predicate    = predicate
+            , substitution = substitution
+            }
+      where
+        Predicated { term = (), predicate, substitution } =
+            childrenPredicateSubstitution
 
     simplifyIfNeeded
         :: ExpandedPattern level variable

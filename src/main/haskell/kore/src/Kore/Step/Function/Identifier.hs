@@ -1,11 +1,22 @@
 {-|
 Module      : Kore.Step.Function.Identifier
-Description : Data structures used for axiom evaluation.
+Description : Data structures and manipulation helpers used for axiom
+              evaluation identifiers.
+
+              The expectation is that an axiom can be applied to a term
+              only if the identifier of its left-hand-side is the same
+              as the term's identifier.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
+
+This module is intended to be imported qualified:
+@
+import Kore.Step.Function.Identifier ( AxiomIdentifier )
+import Kore.Step.Function.Identifier as AxiomIdentifier
+@
 
 TODO(virgil): Move from Kore.Step.Function to Kore.Step.Axiom
 -}
@@ -24,11 +35,23 @@ import Kore.AST.Pure
 import Kore.AST.Valid
        ( pattern App_, pattern Ceil_ )
 
+{-| Identifer for the left-hand-side of axioms and for the terms with which
+these can be identified.
+
+The expectation is that an axiom can be applied to a term only if the
+identifier of its left-hand-side is the same as the term's identifier.
+-}
 data AxiomIdentifier level
     = Application !(Id level)
+    -- ^ Identifier for an application pattern whose symbol has the given id
+    -- as name and which has no parameters.
     | Ceil !(AxiomIdentifier level)
+    -- ^ Identifier for a ceil pattern whose child has the given identifier.
     deriving (Eq, Ord, Show)
 
+{-|Given a pattern, returns its identifier, if any can be extracted.
+Returns Nothing if it will not handle the current pattern.
+-}
 extract
     :: (Functor domain)
     => PurePattern level domain variable annotation
