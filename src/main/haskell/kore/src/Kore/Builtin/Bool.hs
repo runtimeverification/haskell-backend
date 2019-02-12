@@ -136,6 +136,23 @@ parse = (Parsec.<|>) true false
     true = Parsec.string "true" $> True
     false = Parsec.string "false" $> False
 
+{- | Render a 'Bool' as an internal domain value pattern of the given sort.
+
+  The result sort should be hooked to the builtin @Bool@ sort, but this is not
+  checked.
+
+  See also: 'sort'
+
+ -}
+asInternal
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
+    -> Bool  -- ^ builtin value to render
+    -> StepPattern Object variable
+asInternal resultSort =
+    mkDomainValue resultSort
+        . Domain.BuiltinBool
+
 {- | Render a 'Bool' as a domain value pattern of the given sort.
 
   The result sort should be hooked to the builtin @Bool@ sort, but this is not
@@ -168,7 +185,7 @@ asExpandedPattern
     -> Bool  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asPattern resultSort
+    ExpandedPattern.fromPurePattern . asInternal resultSort
 
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}

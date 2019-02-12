@@ -235,6 +235,24 @@ expectBuiltinInt ctx =
         _ ->
             empty
 
+{- | Render an 'Integer' as an internal domain value pattern of the given sort.
+
+  The result sort should be hooked to the builtin @Int@ sort, but this is not
+  checked.
+
+  See also: 'sort'
+
+ -}
+asInternal
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
+    -> Integer  -- ^ builtin value to render
+    -> StepPattern Object variable
+asInternal resultSort =
+    fromConcreteStepPattern
+        . mkDomainValue resultSort
+        . Domain.BuiltinInteger
+
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
   The result sort should be hooked to the builtin @Int@ sort, but this is not
@@ -281,7 +299,7 @@ asExpandedPattern
     -> Integer  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asPattern resultSort
+    ExpandedPattern.fromPurePattern . asInternal resultSort
 
 asPartialExpandedPattern
     :: Ord (variable Object)
