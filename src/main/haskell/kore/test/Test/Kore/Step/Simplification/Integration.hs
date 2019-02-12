@@ -33,6 +33,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
 import           Kore.Step.Function.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.Function.Registry
                  ( axiomPatternsToEvaluators )
 import           Kore.Step.OrOfExpandedPattern
@@ -186,7 +188,8 @@ test_simplificationIntegration =
                 mockMetadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
-                        [   ( Mock.function20MapTestId
+                        [   ( AxiomIdentifier.Application
+                                Mock.function20MapTestId
                             ,   [ EqualityRule RulePattern
                                     { left =
                                         Mock.function20MapTest
@@ -227,7 +230,8 @@ test_simplificationIntegration =
                 mockMetadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
-                        [   ( Mock.function20MapTestId
+                        [   ( AxiomIdentifier.Application
+                                Mock.function20MapTestId
                             ,   [ EqualityRule RulePattern
                                     { left =
                                         Mock.function20MapTest
@@ -446,6 +450,10 @@ evaluateWithAxioms tools axioms patt =
     builtinAxioms :: BuiltinAndAxiomSimplifierMap Object
     builtinAxioms =
         Map.fromList
-            [ (Mock.concatMapId, builtinEvaluation Map.evalConcat)
-            , (Mock.elementMapId, builtinEvaluation Map.evalElement)
+            [   ( AxiomIdentifier.Application Mock.concatMapId
+                , builtinEvaluation Map.evalConcat
+                )
+            ,   ( AxiomIdentifier.Application Mock.elementMapId
+                , builtinEvaluation Map.evalElement
+                )
             ]

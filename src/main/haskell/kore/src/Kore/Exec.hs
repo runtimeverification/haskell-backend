@@ -25,7 +25,6 @@ import qualified Data.Map.Strict as Map
 import           Data.Limit
                  ( Limit (..) )
 import           Kore.AST.Common
-import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
                  ( Meta, Object (..) )
 import           Kore.AST.Valid
@@ -54,8 +53,12 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..), toMLPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
+import           Kore.Step.Function.Identifier
+                 ( AxiomIdentifier )
 import           Kore.Step.Function.Registry
                  ( axiomPatternsToEvaluators, extractFunctionAxioms )
 import           Kore.Step.OrOfExpandedPattern
@@ -270,8 +273,10 @@ initialize verifiedModule tools =
             mapM (simplifyRewriteRule tools)
                 (extractRewriteAxioms Object verifiedModule)
         let
+            functionEvaluators :: BuiltinAndAxiomSimplifierMap Object
             functionEvaluators =
                 axiomPatternsToEvaluators functionAxioms
+            functionRegistry :: BuiltinAndAxiomSimplifierMap Object
             functionRegistry =
                 Map.unionWith
                     simplifierWithFallback
@@ -305,8 +310,8 @@ See also: 'simplifyRulePattern'
  -}
 simplifyFunctionAxioms
     :: MetadataTools Object StepperAttributes
-    -> Map.Map (Id Object) [Equality]
-    -> Simplifier (Map.Map (Id Object) [Equality])
+    -> Map.Map (AxiomIdentifier Object) [Equality]
+    -> Simplifier (Map.Map (AxiomIdentifier Object) [Equality])
 simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
   where
     simplifyEqualityRule (EqualityRule rule) =

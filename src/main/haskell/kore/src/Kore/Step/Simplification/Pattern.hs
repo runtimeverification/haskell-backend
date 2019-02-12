@@ -92,15 +92,15 @@ simplify
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> Simplifier
         ( ExpandedPattern level variable
         , SimplificationProof level
         )
-simplify tools substitutionSimplifier symbolIdToEvaluator patt = do
+simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
     (orPatt, proof) <-
-        simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt
+        simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
     return
         ( OrOfExpandedPattern.toExpandedPattern orPatt
         , proof
@@ -121,23 +121,23 @@ simplifyToOr
         )
     => MetadataTools level StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPattern level variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
-simplifyToOr tools symbolIdToEvaluator substitutionSimplifier patt =
+simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
     simplifyInternal
         tools
         substitutionSimplifier
         simplifier
-        symbolIdToEvaluator
+        axiomIdToEvaluator
         (fromPurePattern patt)
   where
     simplifier = StepPatternSimplifier
-        (simplifyToOr tools symbolIdToEvaluator)
+        (simplifyToOr tools axiomIdToEvaluator)
 
 simplifyInternal
     ::  ( MetaOrObject level
@@ -153,7 +153,7 @@ simplifyInternal
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Base (StepPattern level variable) (StepPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -163,7 +163,7 @@ simplifyInternal
     tools
     substitutionSimplifier
     simplifier@(StepPatternSimplifier unwrappedSimplifier)
-    symbolIdToEvaluator
+    axiomIdToEvaluator
     (valid :< patt)
   = do
     halfSimplified <- traverse (unwrappedSimplifier substitutionSimplifier) patt
@@ -177,7 +177,7 @@ simplifyInternal
                 tools
                 substitutionSimplifier
                 simplifier
-                symbolIdToEvaluator
+                axiomIdToEvaluator
                 (valid :< p)
         BottomPattern p -> return $ Bottom.simplify p
         CeilPattern p -> return $ Ceil.simplify tools p
