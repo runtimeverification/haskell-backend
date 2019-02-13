@@ -84,6 +84,15 @@ fHead = groundHead "f" AstLocationTest
 gHead = groundHead "g" AstLocationTest
 sHead = groundHead "s" AstLocationTest
 tHead = groundHead "t" AstLocationTest
+injHead :: Sort level -> Sort level -> SymbolOrAlias level
+injHead s1 s2 = SymbolOrAlias
+    { symbolOrAliasConstructor = Id
+        { getId = "inj"
+        , idLocation = AstLocationTest
+        }
+    , symbolOrAliasParams = [s1, s2]
+    }
+
 
 testDef :: VerifiedKoreDefinition
 testDef =
@@ -92,12 +101,37 @@ testDef =
         [ simpleSortSentence (SortName "S")
         , simpleObjectSymbolSentence (SymbolName "s") (SortName "S")
         , simpleObjectSymbolSentence (SymbolName "t") (SortName "S")
+        , objectSymbolSentenceWithParametersAndArguments
+            (SymbolName "inj")
+            [sortVar, sortVar1]
+            sortVar1S
+            [sortVarS]
         , updateAttributes
             (Attributes [functionAttribute, constructorAttribute])
             (simpleObjectSymbolSentence (SymbolName "f") (SortName "S"))
         , updateAttributes
             (Attributes [functionAttribute, constructorAttribute])
             (simpleObjectSymbolSentence (SymbolName "g") (SortName "S"))
+        , asKoreAxiomSentence
+            SentenceAxiom
+                { sentenceAxiomParameters = [asUnified sortVar]
+                , sentenceAxiomAttributes = Attributes []
+                , sentenceAxiomPattern =
+                    toKorePattern
+                        (mkImplies
+                            (mkTop sortVarS)
+                            (mkAnd
+                                (mkEquals
+                                    sortVarS
+                                    (mkApp sortS (injHead sortS sortS)
+                                        [mkApp sortS tHead []]
+                                    )
+                                    (mkApp sortS sHead [])
+                                )
+                                (mkTop sortVarS)
+                            )
+                        )
+                }
         , asKoreAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = [asUnified sortVar]
@@ -274,6 +308,14 @@ test_functionRegistry =
                 _ -> assertFailure "Should find a simplifier for f"
             )
         )
+    , testCase "Checking that a simplifier is found for parametric inj"
+        (let axiomId = AxiomIdentifier.Application (testId "inj")
+          in
+            (case Map.lookup axiomId testEvaluators of
+                Just _ -> return ()
+                _ -> assertFailure "Should find a simplifier for inj"
+            )
+        )
     , testCase "Checking that a simplifier is found for ceil(f)"
         (let
             axiomId =
@@ -284,9 +326,9 @@ test_functionRegistry =
                 _ -> assertFailure "Should find a simplifier for ceil(f)"
             )
         )
-    , testCase "Checking that evaluator map has size 3"
+    , testCase "Checking that evaluator map has size 4"
         (assertEqual ""
-            3
+            4
             (Map.size testEvaluators)
         )
     , testCase "Checking that the indexed module contains a rewrite axiom"

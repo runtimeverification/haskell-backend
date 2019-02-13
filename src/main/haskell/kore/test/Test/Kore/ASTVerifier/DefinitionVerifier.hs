@@ -573,13 +573,32 @@ objectSymbolSentenceWithArguments = symbolSentenceWithArguments
 symbolSentenceWithArguments
     :: MetaOrObject level
     => SymbolName -> Sort level -> [Sort level] -> VerifiedKoreSentence
-symbolSentenceWithArguments
-    (SymbolName name) sort operandSorts
+symbolSentenceWithArguments name
+  = symbolSentenceWithParametersAndArguments name []
+
+objectSymbolSentenceWithParametersAndArguments
+    :: SymbolName
+    -> [SortVariable Object]
+    -> Sort Object
+    -> [Sort Object]
+    -> VerifiedKoreSentence
+objectSymbolSentenceWithParametersAndArguments
+  = symbolSentenceWithParametersAndArguments
+
+symbolSentenceWithParametersAndArguments
+    :: MetaOrObject level
+    => SymbolName
+    -> [SortVariable level]
+    -> Sort level
+    -> [Sort level]
+    -> VerifiedKoreSentence
+symbolSentenceWithParametersAndArguments
+    (SymbolName name) params sort operandSorts
   = constructUnifiedSentence SentenceSymbolSentence $
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId name
-                , symbolParams = []
+                , symbolParams = params
                 }
             , sentenceSymbolSorts = operandSorts
             , sentenceSymbolResultSort = sort
