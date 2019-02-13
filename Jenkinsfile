@@ -31,7 +31,7 @@ pipeline {
         }
       }
     }
-    stage('Build and Test') {
+    stage('Integration Tests') {
       parallel {
         stage('Maven') {
           steps {
