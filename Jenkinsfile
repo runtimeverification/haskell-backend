@@ -22,6 +22,15 @@ pipeline {
         }
       }
     }
+    stage('Build/Unit Test') {
+      steps {
+        ansiColor('xterm') {
+          sh '''
+            ./scripts/build.sh
+          '''
+        }
+      }
+    }
     stage('Build and Test') {
       parallel {
         stage('Maven') {
@@ -33,25 +42,12 @@ pipeline {
             }
           }
         }
-        stage('Repo Tests') {
-          stages {
-            stage('Build/Unit Test') {
-              steps {
-                ansiColor('xterm') {
-                  sh '''
-                    ./scripts/build.sh
-                  '''
-                }
-              }
-            }
-            stage('K Test') {
-              steps {
-                ansiColor('xterm') {
-                  sh '''
-                    ./scripts/ktest.sh
-                  '''
-                }
-              }
+        stage('K Test') {
+          steps {
+            ansiColor('xterm') {
+              sh '''
+                ./scripts/ktest.sh
+              '''
             }
           }
         }
