@@ -14,7 +14,6 @@ module Kore.Sort
     , SortActual (..)
     , Sort (..)
     , substituteSortVariables
-    , isActualSort
     -- * Meta-sorts
     , MetaSortType (..)
     , MetaBasicSortType (..)
@@ -104,10 +103,6 @@ substituteSortVariables substitution sort =
                 { sortActualSorts =
                     substituteSortVariables substitution <$> sortActualSorts
                 }
-
-isActualSort :: Sort level -> Bool
-isActualSort (SortActualSort _) = True
-isActualSort _ = False
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).

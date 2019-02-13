@@ -57,7 +57,6 @@ import           Kore.Attribute.Parser
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.ProductionID
 import           Kore.Attribute.Simplification
-import           Kore.Attribute.SmtLemma
 import           Kore.Attribute.Trusted
 import           Kore.Attribute.Unit
 import           Kore.Error
@@ -87,7 +86,6 @@ data AxiomPatternAttributes =
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
-    , smtLemma :: !SmtLemma
     }
     deriving (Eq, Ord, Show, Generic)
 
@@ -107,7 +105,6 @@ instance Default AxiomPatternAttributes where
             , trusted = def
             , concrete = def
             , simplification = def
-            , smtLemma = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -121,7 +118,6 @@ instance ParseAttributes AxiomPatternAttributes where
         >=> lensTrusted (parseAttribute attr)
         >=> lensConcrete (parseAttribute attr)
         >=> lensSimplification (parseAttribute attr)
-        >=> lensSmtLemma (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 

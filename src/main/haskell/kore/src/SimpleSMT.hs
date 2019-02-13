@@ -42,7 +42,6 @@ module SimpleSMT
     , inNewScope
     , declare
     , declareFun
-    , declareSort
     , declareDatatype
     , define
     , defineFun
@@ -189,6 +188,7 @@ import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as Lexer
 import           Text.Read
                  ( readMaybe )
+
 
 -- | Results of checking for satisfiability.
 data Result = Sat         -- ^ The assertions are satisfiable
@@ -458,11 +458,6 @@ declareFun :: Solver -> Text -> [SExpr] -> SExpr -> IO SExpr
 declareFun proc f as r =
   do ackCommand proc $ fun "declare-fun" [ Atom f, List as, r ]
      return (const f)
-
-declareSort :: Solver -> Text -> Int -> IO SExpr
-declareSort proc f n = do
-    ackCommand proc $ fun "declare-sort" [ Atom f, (Atom . Text.pack . show) n]
-    pure (const f)
 
 -- | Declare an ADT using the format introduced in SmtLib 2.6.
 declareDatatype ::
