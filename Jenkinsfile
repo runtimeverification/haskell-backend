@@ -22,39 +22,47 @@ pipeline {
         }
       }
     }
-    stage('Maven') {
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            mvn clean verify
-          '''
+    stage('Build and Test') {
+      parallel {
+        stage('Maven') {
+          steps {
+            ansiColor('xterm') {
+              sh '''
+                mvn clean verify
+              '''
+            }
+          }
         }
-      }
-    }
-    stage('Build/Unit Test') {
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            ./scripts/build.sh
-          '''
+        stage('Repo Tests') {
+          stages {
+            stage('Build/Unit Test') {
+              steps {
+                ansiColor('xterm') {
+                  sh '''
+                    ./scripts/build.sh
+                  '''
+                }
+              }
+            }
+            stage('K Test') {
+              steps {
+                ansiColor('xterm') {
+                  sh '''
+                    ./scripts/ktest.sh
+                  '''
+                }
+              }
+            }
+          }
         }
-      }
-    }
-    stage('K Test') {
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            ./scripts/ktest.sh
-          '''
-        }
-      }
-    }
-    stage('KEVM Integration') {
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            ./scripts/kevm-integration.sh
-          '''
+        stage('KEVM Integration') {
+          steps {
+            ansiColor('xterm') {
+              sh '''
+                ./scripts/kevm-integration.sh
+              '''
+            }
+          }
         }
       }
     }
