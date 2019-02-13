@@ -25,8 +25,6 @@ import           Test.Tasty.HUnit.Extensions
 test_axiomIdentifier :: [TestTree]
 test_axiomIdentifier =
     [ Mock.f Mock.a `hasId` AxiomIdentifier.Application Mock.fId
-    , Mock.sortInjection10 Mock.a
-        `hasId` AxiomIdentifier.Application Mock.sortInjectionId
     , mkCeil_ (Mock.f Mock.a)
         `hasId` AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.fId)
     , hasNoId $ mkCeil_ (mkCeil_ (Mock.f Mock.a))

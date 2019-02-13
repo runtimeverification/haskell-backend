@@ -51,15 +51,20 @@ data AxiomIdentifier level
 
 {-|Given a pattern, returns its identifier, if any can be extracted.
 Returns Nothing if it will not handle the current pattern.
-
-Currently parameters of parameterized symbols are ignored.
 -}
 extract
     :: (Functor domain)
     => PurePattern level domain variable annotation
     -> Maybe (AxiomIdentifier level)
 extract (App_ symbolOrAlias _children) =
-    Just (Application (symbolOrAliasConstructor symbolOrAlias))
+    case symbolOrAliasParams symbolOrAlias of
+        [] ->
+            Just (Application (symbolOrAliasConstructor symbolOrAlias))
+        _ ->
+            -- TODO (thomas.tuegel): Handle matching for
+            -- parameterized symbols, then enable extraction of
+            -- their axioms.
+            Nothing
 extract (Ceil_ _sort1 _sort2 (App_ symbolOrAlias _children)) =
     Just (Ceil (Application (symbolOrAliasConstructor symbolOrAlias)))
 extract _ = Nothing
