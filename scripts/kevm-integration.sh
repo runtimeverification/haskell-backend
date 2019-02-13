@@ -5,6 +5,8 @@ set -exuo pipefail
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 export EVM_SEMANTICS=$TOP/.build/evm-semantics
 
+mkdir -p $(dirname $EVM_SEMANTICS)
+
 git config --global user.email 'admin@runtimeverification.com'
 git config --global user.name  'CI Server'
 
