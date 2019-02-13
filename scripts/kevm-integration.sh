@@ -28,6 +28,11 @@ git commit -m '!!! .build/k: integration testing haskell backend'
 make clean
 git submodule update --init --recursive
 ./.build/k/k-distribution/src/main/scripts/bin/k-configure-opam-dev
+
 make deps          -B
 make build-haskell -B
+(   cd .build/k/haskell-backend/src/main/native/haskell-backend
+    git log --max-count 1
+)
+
 make test-vm-haskell -j8
