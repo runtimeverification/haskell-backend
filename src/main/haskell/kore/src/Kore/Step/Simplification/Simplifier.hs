@@ -38,11 +38,11 @@ create
         )
     => MetadataTools level StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from axiom IDs to axiom evaluators
+    -- ^ Map from symbol IDs to defined functions
     -> StepPatternSimplifier level variable
 create
     tools
-    axiomIdToEvaluator
+    symbolIdToEvaluator
   =
     StepPatternSimplifier
-        (Pattern.simplifyToOr tools axiomIdToEvaluator)
+        (Pattern.simplifyToOr tools symbolIdToEvaluator)

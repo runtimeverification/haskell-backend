@@ -60,10 +60,6 @@ import           Kore.IndexedModule.IndexedModule
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes )
-import           Kore.Step.Function.Identifier
-                 ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
@@ -113,7 +109,7 @@ koreVerifiers =
 koreEvaluators
     :: VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ Module under which evaluation takes place
-    -> Map (AxiomIdentifier Object) Builtin.Function
+    -> Map (Id Object) Builtin.Function
 koreEvaluators = evaluators builtins
   where
     builtins :: Map Text Builtin.Function
@@ -142,14 +138,9 @@ evaluators
     -- ^ Builtin functions indexed by name
     -> VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ Module under which evaluation takes place
-    -> Map (AxiomIdentifier Object) Builtin.Function
+    -> Map (Id Object) Builtin.Function
 evaluators builtins indexedModule =
-    Map.mapMaybe
-        lookupBuiltins
-        (Map.mapKeys
-            AxiomIdentifier.Application
-            (hookedSymbolAttributes indexedModule)
-        )
+    Map.mapMaybe lookupBuiltins (hookedSymbolAttributes indexedModule)
   where
     hookedSymbolAttributes
         :: VerifiedModule StepperAttributes AxiomPatternAttributes
@@ -157,9 +148,7 @@ evaluators builtins indexedModule =
     hookedSymbolAttributes im =
         Map.union
             (justAttributes <$> IndexedModule.hookedObjectSymbolSentences im)
-            (Map.unions
-                (importHookedSymbolAttributes <$> indexedModuleImports im)
-            )
+            (Map.unions (importHookedSymbolAttributes <$> indexedModuleImports im))
       where
         justAttributes (attrs, _) = attrs
 
