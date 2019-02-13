@@ -4,13 +4,14 @@ ENV TZ=America/Chicago
 RUN    ln --symbolic --no-dereference --force /usr/share/zoneinfo/$TZ /etc/localtime \
     && echo $TZ > /etc/timezone
 
-RUN    apt update                                                                 \
-    && apt upgrade --yes                                                          \
-    && apt install --yes                                                          \
-           autoconf bison clang-6.0 cmake curl flex gcc git jq libboost-test-dev  \
-           libffi-dev libgmp-dev libjemalloc-dev libmpfr-dev libtool              \
-           libyaml-cpp-dev libz3-dev make maven opam openjdk-8-jdk pkg-config z3  \
-           zlib1g-dev
+RUN    apt update                                                                \
+    && apt upgrade --yes                                                         \
+    && apt install --yes                                                         \
+           autoconf bison clang-6.0 cmake curl flex gcc git jq libboost-test-dev \
+           libffi-dev libgmp-dev libjemalloc-dev libmpfr-dev libtool             \
+           libyaml-cpp-dev libz3-dev make maven opam openjdk-8-jdk pandoc        \
+           pkg-config python3 python-pygments python-recommonmark python-sphinx  \
+           time z3 zlib1g-dev
 
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
