@@ -2,8 +2,8 @@
 
 set -exuo pipefail
 
-export TOP=${TOP:-$(git rev-parse --show-toplevel)}
-export EVM_SEMANTICS=$TOP/.build/evm-semantics
+TOP=${TOP:-$(git rev-parse --show-toplevel)}
+EVM_SEMANTICS=$TOP/.build/evm-semantics
 
 mkdir -p $(dirname $EVM_SEMANTICS)
 
@@ -11,9 +11,9 @@ git config --global user.email 'admin@runtimeverification.com'
 git config --global user.name  'CI Server'
 
 rm -rf $EVM_SEMANTICS
-git clone 'https://github.com/kframework/evm-semantics' $EVM_SEMANTICS --branch 'master'
+git clone --recurse-submodules 'https://github.com/kframework/evm-semantics' $EVM_SEMANTICS --branch 'master'
+
 cd $EVM_SEMANTICS
-git submodule update --init --recursive
 
 (   cd .build/k
     (   cd haskell-backend/src/main/native/haskell-backend
