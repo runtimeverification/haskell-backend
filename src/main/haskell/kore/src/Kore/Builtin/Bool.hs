@@ -126,6 +126,7 @@ extractBoolDomainValue
   =
     case domainValueChild of
         Domain.BuiltinBool bool -> bool
+        _ -> error "Bool builtin should be internal by now"
         _ -> Builtin.runParser ctx $ Builtin.parseDomainValue parse dv
 
 {- | Parse an integer string literal.

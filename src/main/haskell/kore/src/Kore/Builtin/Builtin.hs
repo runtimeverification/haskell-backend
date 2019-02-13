@@ -445,8 +445,10 @@ parseEncodeDomainValue
             Domain.BuiltinPattern (StringLiteral_ lit) -> do
                 val <- (parseString parser lit)
                 return $ ctor val
+            Domain.BuiltinInteger _ -> return domainValueChild
+            Domain.BuiltinBool _ -> return domainValueChild
             _ -> Kore.Error.koreFail
-                    "Expected literal string"
+                    "Expected literal string or internal value"
 
 {- | Run a parser in a domain value pattern.
 

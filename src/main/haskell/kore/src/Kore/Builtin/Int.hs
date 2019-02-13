@@ -199,6 +199,7 @@ extractIntDomainValue
   =
     case domainValueChild of
         Domain.BuiltinInteger int -> int
+        _ -> error "Int builtin should be internal by now"
         _ -> Builtin.runParser ctx $ Builtin.parseDomainValue parse dv
 
 {- | Parse a string literal as an integer.
