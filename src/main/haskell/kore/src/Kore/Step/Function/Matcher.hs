@@ -144,17 +144,20 @@ unificationWithAppMatchOnTop tools substitutionSimplifier first second
   = case first of
     (App_ firstHead firstChildren) ->
         case second of
-            (App_ secondHead secondChildren) ->
-                if firstHead == secondHead
-                then
-                    unifyJoin
+            (App_ secondHead secondChildren)
+                | firstHead == secondHead
+                  -> unifyJoin
                         tools
                         substitutionSimplifier
                         (zip firstChildren secondChildren)
-                else if symbolOrAliasConstructor firstHead
-                        == symbolOrAliasConstructor secondHead
-                then throwError (UnificationError UnsupportedPatterns)
-                else error
+                | symbolOrAliasConstructor firstHead
+                    == symbolOrAliasConstructor secondHead
+                -- The application heads have the same symbol or alias
+                -- constructor with different parameters,
+                -- but we do not handle unification of symbol parameters.
+                  -> throwError (UnificationError UnsupportedPatterns)
+                | otherwise
+                  -> error
                     (  "Unexpected unequal heads: "
                     ++ show firstHead ++ " and "
                     ++ show secondHead ++ "."
