@@ -21,7 +21,8 @@ module Kore.Builtin.Bool
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
-    , asMetaPattern
+    -- , asMetaPattern
+    , asInternal
     , asPattern
     , asExpandedPattern
     , extractBoolDomainValue
@@ -67,6 +68,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Variables.Fresh
 import           Kore.Step.StepperAttributes
+
+import Debug.Trace
 
 {- | Builtin name of the @Bool@ sort.
  -}

@@ -151,9 +151,9 @@ evalKEq true tools substitutionSimplifier _ (valid :< app) =
         (result, _proof) <- makeEvaluate tools substitutionSimplifier ep1 ep2
         case () of
             _ | OrOfExpandedPattern.isTrue result ->
-                purePatternAxiomEvaluator (Bool.asPattern patternSort true)
+                purePatternAxiomEvaluator (Bool.asInternal patternSort true)
               | OrOfExpandedPattern.isFalse result ->
-                purePatternAxiomEvaluator (Bool.asPattern patternSort false)
+                purePatternAxiomEvaluator (Bool.asInternal patternSort false)
               | otherwise -> notApplicableAxiomEvaluator
       where
         ep1 = ExpandedPattern.fromPurePattern t1
