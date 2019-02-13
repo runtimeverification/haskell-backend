@@ -28,6 +28,7 @@ module Kore.Builtin.Int
     , extractIntDomainValue
     , asMetaPattern
     , asPattern
+    , asInternal
     , asConcretePattern
     , asExpandedPattern
     , asPartialExpandedPattern

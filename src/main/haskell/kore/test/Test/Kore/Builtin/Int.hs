@@ -39,10 +39,10 @@ genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
 genIntegerPattern :: Gen (CommonStepPattern Object)
-genIntegerPattern = asPattern <$> genInteger
+genIntegerPattern = asInternal <$> genInteger
 
 genConcreteIntegerPattern :: Gen (ConcreteStepPattern Object)
-genConcreteIntegerPattern = asConcretePattern <$> genInteger
+genConcreteIntegerPattern = asInternal <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
 testUnary
@@ -55,7 +55,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asExpandedPattern $ impl a
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -73,7 +73,7 @@ testBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asExpandedPattern $ impl a b
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -91,7 +91,7 @@ testComparison symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = Test.Bool.asExpandedPattern $ impl a b
-        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -108,7 +108,7 @@ testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -126,7 +126,7 @@ testPartialBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a b
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -144,7 +144,7 @@ testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a 0
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, 0])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, 0])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -163,7 +163,7 @@ testPartialTernary symb impl =
         b <- forAll genInteger
         c <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a b c
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b, c])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -283,37 +283,37 @@ test_emod =
     [ testInt
         "emod normal"
         emodIntSymbol
-        (asPattern <$> [193, 12])
+        (asInternal <$> [193, 12])
         (asExpandedPattern 1)
     , testInt
         "emod negative lhs"
         emodIntSymbol
-        (asPattern <$> [-193, 12])
+        (asInternal <$> [-193, 12])
         (asExpandedPattern 11)
     , testInt
         "emod negative rhs"
         emodIntSymbol
-        (asPattern <$> [193, -12])
+        (asInternal <$> [193, -12])
         (asExpandedPattern 1)
     , testInt
         "emod both negative"
         emodIntSymbol
-        (asPattern <$> [-193, -12])
+        (asInternal <$> [-193, -12])
         (asExpandedPattern (-1))
     , testInt
         "emod bottom"
         emodIntSymbol
-        (asPattern <$> [193, 0])
+        (asInternal <$> [193, 0])
         bottom
     ]
 
--- | Another name for asPattern.
+-- | Another name for asInternal.
 intLiteral :: Integer -> CommonStepPattern Object
-intLiteral = asPattern
+intLiteral = asInternal
 
--- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> CommonStepPattern Object
-asPattern = Int.asPattern intSort
+-- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
+asInternal :: Ord (variable Object) => Integer -> StepPattern Object variable
+asInternal = Int.asInternal intSort
 
 -- | Specialize 'Int.asConcretePattern' to the builtin sort 'intSort'.
 asConcretePattern :: Integer -> ConcreteStepPattern Object

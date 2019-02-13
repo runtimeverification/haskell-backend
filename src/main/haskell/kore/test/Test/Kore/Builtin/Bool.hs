@@ -65,7 +65,7 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asExpandedPattern $ impl a b
-        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -82,7 +82,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asExpandedPattern $ impl a
-        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -138,9 +138,9 @@ test_unifyAndEqual_Equal =
         actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv 
         assertEqual "" top actual
 
--- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> CommonStepPattern Object
-asPattern = Bool.asPattern boolSort
+-- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
+asInternal :: Bool -> CommonStepPattern Object
+asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asExpandedPattern' to the builtin sort 'boolSort'.
 asExpandedPattern :: Bool -> CommonExpandedPattern Object

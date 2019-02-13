@@ -57,7 +57,7 @@ genSetInteger = Gen.set (Range.linear 0 32) genInteger
 
 genSetConcreteIntegerPattern :: Gen (Set (ConcreteStepPattern Object))
 genSetConcreteIntegerPattern =
-    Set.map Test.Int.asConcretePattern <$> genSetInteger
+    Set.map Test.Int.asInternal <$> genSetInteger
 
 genSetPattern :: Gen (CommonStepPattern Object)
 genSetPattern = asPattern <$> genSetConcreteIntegerPattern
@@ -75,7 +75,7 @@ test_getUnit =
                         [ patKey
                         , mkApp setSort unitSetSymbol []
                         ]
-                patFalse = Test.Bool.asPattern False
+                patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
             (===) (Test.Bool.asExpandedPattern False) =<< evaluate patIn
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -89,7 +89,7 @@ test_inElement =
             patKey <- forAll genIntegerPattern
             let patIn = mkApp boolSort inSetSymbol [ patKey, patElement ]
                 patElement = mkApp setSort elementSetSymbol [ patKey ]
-                patTrue = Test.Bool.asPattern True
+                patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asExpandedPattern True) =<< evaluate patIn
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -105,7 +105,7 @@ test_inConcat =
             let patIn = mkApp boolSort inSetSymbol [ patElem , patSet ]
                 patSet = asPattern $ Set.insert elem' values
                 patElem = fromConcreteStepPattern elem'
-                patTrue = Test.Bool.asPattern True
+                patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
             (===) (Test.Bool.asExpandedPattern True) =<< evaluate patIn
             (===) ExpandedPattern.top =<< evaluate predicate
@@ -199,7 +199,7 @@ test_size =
             set <- forAll genSetConcreteIntegerPattern
             let
                 size = Set.size set
-                patExpected = Test.Int.asPattern $ toInteger size
+                patExpected = Test.Int.asInternal $ toInteger size
                 patActual =
                     mkApp
                         intSort
@@ -332,13 +332,13 @@ test_concretizeKeys =
             , variableSort = intSort
             }
     key = 1
-    symbolicKey = Test.Int.asPattern key
-    concreteKey = Test.Int.asConcretePattern key
+    symbolicKey = Test.Int.asInternal key
+    concreteKey = Test.Int.asInternal key
     concreteSet = asPattern $ Set.fromList [concreteKey]
     symbolic = asSymbolicPattern $ Set.fromList [mkVar x]
     original =
         mkAnd
-            (mkPair intSort setSort (Test.Int.asPattern 1) concreteSet)
+            (mkPair intSort setSort (Test.Int.asInternal 1) concreteSet)
             (mkPair intSort setSort (mkVar x) symbolic)
     expected =
         Predicated
@@ -380,8 +380,8 @@ test_concretizeKeysAxiom =
   where
     x = mkIntVar (testId "x")
     key = 1
-    symbolicKey = Test.Int.asPattern key
-    concreteKey = Test.Int.asConcretePattern key
+    symbolicKey = Test.Int.asInternal key
+    concreteKey = Test.Int.asInternal key
     symbolicSet = asSymbolicPattern $ Set.fromList [x]
     concreteSet = asPattern $ Set.fromList [concreteKey]
     axiom =
