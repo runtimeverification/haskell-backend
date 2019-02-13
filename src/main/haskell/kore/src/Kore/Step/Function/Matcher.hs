@@ -27,6 +27,8 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+import           Kore.AST.Common
+                 ( SymbolOrAlias (symbolOrAliasConstructor) )
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
@@ -149,6 +151,9 @@ unificationWithAppMatchOnTop tools substitutionSimplifier first second
                         tools
                         substitutionSimplifier
                         (zip firstChildren secondChildren)
+                else if symbolOrAliasConstructor firstHead
+                        == symbolOrAliasConstructor secondHead
+                then throwError (UnificationError UnsupportedPatterns)
                 else error
                     (  "Unexpected unequal heads: "
                     ++ show firstHead ++ " and "
