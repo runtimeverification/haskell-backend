@@ -43,9 +43,6 @@ import           Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Function.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.Identifier
-                 ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
 import           Kore.Step.OrOfExpandedPattern
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
@@ -1400,25 +1397,4 @@ instance EqualWithExplanation PatternAttributesError.ConstructorLikeError
 instance EqualWithExplanation ConstructorLikeProof
   where
     compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-
-instance SumEqualWithExplanation (AxiomIdentifier level)
-  where
-    sumConstructorPair
-        (AxiomIdentifier.Application p1) (AxiomIdentifier.Application p2)
-      =
-        SumConstructorSameWithArguments (EqWrap "Application" p1 p2)
-    sumConstructorPair
-        (AxiomIdentifier.Ceil p1) (AxiomIdentifier.Ceil p2)
-      =
-        SumConstructorSameWithArguments (EqWrap "Ceil" p1 p2)
-    sumConstructorPair p1 p2 =
-        SumConstructorDifferent
-            (printWithExplanation p1)
-            (printWithExplanation p2)
-
-instance EqualWithExplanation (AxiomIdentifier level)
-  where
-    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

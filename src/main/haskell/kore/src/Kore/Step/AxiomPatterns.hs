@@ -57,7 +57,6 @@ import           Kore.Attribute.Parser
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.ProductionID
 import           Kore.Attribute.Simplification
-import           Kore.Attribute.SmtLemma
 import           Kore.Attribute.Trusted
 import           Kore.Attribute.Unit
 import           Kore.Error
@@ -87,7 +86,6 @@ data AxiomPatternAttributes =
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
-    , smtLemma :: !SmtLemma
     }
     deriving (Eq, Ord, Show, Generic)
 
@@ -107,7 +105,6 @@ instance Default AxiomPatternAttributes where
             , trusted = def
             , concrete = def
             , simplification = def
-            , smtLemma = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -121,7 +118,6 @@ instance ParseAttributes AxiomPatternAttributes where
         >=> lensTrusted (parseAttribute attr)
         >=> lensConcrete (parseAttribute attr)
         >=> lensSimplification (parseAttribute attr)
-        >=> lensSmtLemma (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -157,8 +153,6 @@ from function axioms (used for functional simplification).
 data QualifiedAxiomPattern level
     = RewriteAxiomPattern (RewriteRule level)
     | FunctionAxiomPattern (EqualityRule level)
-    -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
-    -- not only to function-related ones.
     deriving (Eq, Show)
 
 {- | Does the axiom pattern represent a heating rule?
@@ -331,8 +325,6 @@ mkRewriteAxiom lhs rhs requires =
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'FunctionAxiomPattern'.
  -}
--- TODO(virgil): Rename the above since it applies to all sorts of axioms,
--- not only to function-related ones.
 mkFunctionAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side

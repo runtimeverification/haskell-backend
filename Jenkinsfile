@@ -5,7 +5,7 @@ pipeline {
     }
   }
   stages {
-    stage("Init title") {
+    stage('Init title') {
       when { changeRequest() }
       steps {
         script {
@@ -22,15 +22,6 @@ pipeline {
         }
       }
     }
-    stage('Maven') {
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            mvn clean verify
-          '''
-        }
-      }
-    }
     stage('Build/Unit Test') {
       steps {
         ansiColor('xterm') {
@@ -40,12 +31,34 @@ pipeline {
         }
       }
     }
-    stage('K Test') {
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            ./scripts/ktest.sh
-          '''
+    stage('Integration Tests') {
+      parallel {
+        stage('Maven') {
+          steps {
+            ansiColor('xterm') {
+              sh '''
+                mvn clean verify
+              '''
+            }
+          }
+        }
+        stage('K Test') {
+          steps {
+            ansiColor('xterm') {
+              sh '''
+                ./scripts/ktest.sh
+              '''
+            }
+          }
+        }
+        stage('KEVM Integration') {
+          steps {
+            ansiColor('xterm') {
+              sh '''
+                ./scripts/kevm-integration.sh
+              '''
+            }
+          }
         }
       }
     }

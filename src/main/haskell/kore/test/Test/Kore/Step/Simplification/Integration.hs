@@ -33,8 +33,6 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
 import           Kore.Step.Function.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
 import           Kore.Step.Function.Registry
                  ( axiomPatternsToEvaluators )
 import           Kore.Step.OrOfExpandedPattern
@@ -187,8 +185,7 @@ test_simplificationIntegration =
                 mockMetadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
-                        [   ( AxiomIdentifier.Application
-                                Mock.function20MapTestId
+                        [   ( Mock.function20MapTestId
                             ,   [ EqualityRule RulePattern
                                     { left =
                                         Mock.function20MapTest
@@ -229,8 +226,7 @@ test_simplificationIntegration =
                 mockMetadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
-                        [   ( AxiomIdentifier.Application
-                                Mock.function20MapTestId
+                        [   ( Mock.function20MapTestId
                             ,   [ EqualityRule RulePattern
                                     { left =
                                         Mock.function20MapTest
@@ -447,10 +443,6 @@ evaluateWithAxioms tools axioms patt =
     builtinAxioms :: BuiltinAndAxiomSimplifierMap Object
     builtinAxioms =
         Map.fromList
-            [   ( AxiomIdentifier.Application Mock.concatMapId
-                , builtinEvaluation Map.evalConcat
-                )
-            ,   ( AxiomIdentifier.Application Mock.elementMapId
-                , builtinEvaluation Map.evalElement
-                )
+            [ (Mock.concatMapId, builtinEvaluation Map.evalConcat)
+            , (Mock.elementMapId, builtinEvaluation Map.evalElement)
             ]
