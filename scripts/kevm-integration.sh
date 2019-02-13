@@ -3,7 +3,7 @@
 set -exuo pipefail
 
 TOP=${TOP:-$(git rev-parse --show-toplevel)}
-EVM_SEMANTICS=$TOP/.build/evm-semantics
+EVM_SEMANTICS=$TOP/evm-semantics
 
 mkdir -p $(dirname $EVM_SEMANTICS)
 
