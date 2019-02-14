@@ -74,6 +74,7 @@ import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Sort
+import           Kore.Unparser
 import           Template.Tools
                  ( newDefinitionGroup )
 
@@ -199,6 +200,19 @@ deriving instance
     ) =>
     Traversable (UnifiedPattern domain variable)
 
+instance
+    ( Unparse (variable Meta)
+    , Unparse (variable Object)
+    , Unparse (domain child)
+    , Unparse child
+    ) =>
+    Unparse (UnifiedPattern domain variable child)
+  where
+    unparse =
+        \case
+            UnifiedMetaPattern pat -> unparse pat
+            UnifiedObjectPattern pat -> unparse pat
+
 {- | The abstract syntax of Kore.
 
 @KorePattern@ covers the 'Object' and 'Meta' levels of Kore, corresponding to
@@ -284,6 +298,17 @@ instance
   where
     rnf (Recursive.project -> annotation :< pat) =
         rnf annotation `seq` rnf pat `seq` ()
+
+instance
+    ( Functor domain
+    , Unparse (variable Meta)
+    , Unparse (variable Object)
+    , Unparse (domain self)
+    , self ~ KorePattern domain variable annotation
+    ) =>
+    Unparse (KorePattern domain variable annotation)
+  where
+    unparse (Recursive.project -> _ :< pat) = unparse pat
 
 type instance Base (KorePattern domain variable annotation) =
     CofreeF (UnifiedPattern domain variable) annotation

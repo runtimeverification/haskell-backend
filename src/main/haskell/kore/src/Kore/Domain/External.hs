@@ -27,6 +27,7 @@ import GHC.Generics
        ( Generic )
 
 import Kore.AST.Pure
+import Kore.Unparser
 
 newtype External child =
     External { getExternal :: CommonPurePattern Meta (Const Void) }
@@ -36,8 +37,11 @@ deriveEq1 ''External
 deriveOrd1 ''External
 deriveShow1 ''External
 
+instance Hashable (External child)
+
 instance NFData (External child)
 
-instance Hashable (External child)
+instance Unparse (External child) where
+    unparse (External lit) = unparse lit
 
 type CommonExternalPattern level = CommonPurePattern level External

@@ -33,6 +33,7 @@ import           GHC.Generics
                  ( Generic )
 
 import Kore.AST.Identifier
+import Kore.Unparser
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
@@ -48,6 +49,9 @@ newtype SortVariable level = SortVariable
 instance Hashable (SortVariable level)
 
 instance NFData (SortVariable level)
+
+instance Unparse (SortVariable level) where
+    unparse = unparse . getSortVariable
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -66,6 +70,10 @@ instance Hashable (SortActual level)
 
 instance NFData (SortActual level)
 
+instance Unparse (SortActual level) where
+    unparse SortActual { sortActualName, sortActualSorts } =
+        unparse sortActualName <> parameters sortActualSorts
+
 {-|'Sort' corresponds to the @object-sort@ and
 @meta-sort@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
@@ -81,6 +89,12 @@ data Sort level
 instance Hashable (Sort level)
 
 instance NFData (Sort level)
+
+instance Unparse (Sort level) where
+    unparse =
+        \case
+            SortVariableSort sortVariable -> unparse sortVariable
+            SortActualSort sortActual -> unparse sortActual
 
 {- | Substitute sort variables in a 'Sort'.
 

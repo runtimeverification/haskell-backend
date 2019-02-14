@@ -29,8 +29,11 @@ import           Data.String
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
+
+import Kore.Unparser
 
 {-| 'FileLocation' represents a position in a source file.
 -}
@@ -118,6 +121,9 @@ instance NFData (Id level)
 
 instance IsString (Id level) where
     fromString = noLocationId . fromString
+
+instance Unparse (Id level) where
+    unparse = Pretty.pretty . getId
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options
