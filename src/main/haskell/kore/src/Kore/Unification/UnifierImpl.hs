@@ -15,8 +15,6 @@ import           Control.Arrow
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad
                  ( foldM )
-import           Control.Monad.Counter
-                 ( MonadCounter )
 import           Control.Monad.Except
                  ( ExceptT (..), throwError )
 import           Data.Function
@@ -100,7 +98,7 @@ simplifyAnds
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , MonadCounter m
+        , Monad m
         , unifier ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
@@ -177,7 +175,7 @@ solveGroupedSubstitution
        , ShowMetaOrObject variable
        , SortedVariable variable
        , FreshVariable variable
-       , MonadCounter m
+       , Monad m
        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -223,7 +221,7 @@ normalizeSubstitutionDuplication
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m

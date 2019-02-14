@@ -346,12 +346,14 @@ simplifyRulePattern tools rulePattern = do
         [ Predicated { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
             let subst = Substitution.toMap substitution
-            left' <- substitute subst term
-            let RulePattern { right } = rulePattern
-            right' <- substitute subst right
-            let RulePattern { requires } = rulePattern
-            requires' <- traverse (substitute subst) requires
-            let RulePattern { attributes } = rulePattern
+                left' = substitute subst term
+                right' = substitute subst right
+                  where
+                    RulePattern { right } = rulePattern
+                requires' = substitute subst <$> requires
+                  where
+                    RulePattern { requires } = rulePattern
+                RulePattern { attributes } = rulePattern
             return RulePattern
                 { left = left'
                 , right = right'

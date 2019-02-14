@@ -3,8 +3,6 @@ module Kore.Step.Substitution where
 import Control.Monad.Except
        ( ExceptT )
 
-import Control.Monad.Counter
-       ( MonadCounter )
 import Kore.AST.Common
        ( SortedVariable )
 import Kore.AST.MetaOrObject
@@ -37,7 +35,7 @@ mergePredicatesAndSubstitutionsExcept
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , FreshVariable variable
-       , MonadCounter m
+       , Monad m
        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m

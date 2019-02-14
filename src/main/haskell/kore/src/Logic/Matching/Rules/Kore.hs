@@ -30,7 +30,6 @@ import           Kore.Substitute
 import           Kore.Unparser
                  ( Unparse, unparseToString )
 import qualified Kore.Variables.Free as Variables.Free
-import           Kore.Variables.Fresh
 import           Kore.Variables.Sort
                  ( TermWithSortVariablesClass (sortVariables) )
 import           Logic.Matching.Error
@@ -234,9 +233,6 @@ newtype NoCapture a = NoCapture { getNoCapture :: Either (Error MLError) a }
 
 deriving instance MonadError (Error MLError) NoCapture
 
-instance MonadCounter NoCapture where
-    increment = koreFail "Did not expect variable capturing"
-
 checkVariableSubstitution
     :: SubstitutingVariable (Variable Meta)
     -> SubstitutedVariable (Variable Meta)
@@ -260,10 +256,13 @@ checkVariableSubstitution
     testFormulaEquality
         psi1 (nameInKind "psi1")
         beforeSubstitution (nameInProposition "phi")
-    afterSubstitution <-
-        substitute id
-            (Map.singleton substituted substitutingPattern)
-            (Annotation.synthesize Variables.Free.synthetic beforeSubstitution)
+    let afterSubstitution =
+            substitute id
+                (Map.singleton substituted substitutingPattern)
+                (Annotation.synthesize
+                    Variables.Free.synthetic
+                    beforeSubstitution
+                )
     testFormulaEquality
         psi2 (nameInKind "psi2")
         (Annotation.Null <$ afterSubstitution)

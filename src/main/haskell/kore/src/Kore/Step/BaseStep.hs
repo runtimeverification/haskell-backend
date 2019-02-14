@@ -188,11 +188,6 @@ instance
     (FreshVariable variable, SortedVariable variable) =>
     FreshVariable (StepperVariable variable)
   where
-    freshVariableWith (AxiomVariable a) n =
-        AxiomVariable $ freshVariableWith a n
-    freshVariableWith (ConfigurationVariable a) n =
-        ConfigurationVariable $ freshVariableWith a n
-
     refreshVariable (Set.map unwrapStepperVariable -> avoiding) =
         \case
             AxiomVariable variable ->
@@ -255,7 +250,7 @@ newtype UnificationProcedure level =
             , ShowMetaOrObject variable
             , MetaOrObject level
             , FreshVariable variable
-            , MonadCounter m
+            , Monad m
             )
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level m
@@ -316,15 +311,15 @@ stepWithRule
         <> "\n for \n"
         <> Text.pack (show config)
     let configVariables = ExpandedPattern.freeEpVariables config
+        (renaming, axiom') =
+            RulePattern.refreshRulePattern configVariables axiom
 
-    (renaming, axiom') <- RulePattern.refreshRulePattern configVariables axiom
-    let axiom'' = RulePattern.mapVariables AxiomVariable axiom'
+        axiom'' = RulePattern.mapVariables AxiomVariable axiom'
         config' = ExpandedPattern.mapVariables ConfigurationVariable config
 
-    let RulePattern { left = axiomLeft } = axiom''
+        RulePattern { left = axiomLeft } = axiom''
         Predicated { term = startPattern } = config'
 
-    let
         -- Remap unification and substitution errors into 'StepError'.
         normalizeUnificationOrSubstitutionError
             ::  ( FreshVariable variable
@@ -499,10 +494,10 @@ applyUnificationToRhs
         isConfigurationVariable (ConfigurationVariable _) = True
 
     let substitution = Substitution.toMap normalizedSubstitution
-    -- Apply substitution to resulting configuration and conditions.
-    rawResult <- substitute substitution axiomRight
 
-    let
+        -- Apply substitution to resulting configuration and conditions.
+        rawResult = substitute substitution axiomRight
+
         variablesInLeftAxiom :: Set.Set (variable level)
         variablesInLeftAxiom =
             (extractAxiomVariables . Valid.freeVariables . extract) axiomLeft
@@ -826,7 +821,7 @@ unwrapStepErrorVariables =
 unwrapPatternVariables
     ::  forall level variable m
     .   ( MetaOrObject level
-        , MonadCounter m
+        , Monad m
         , Ord (variable level)
         , Unparse (variable level)
         , FreshVariable variable
@@ -838,7 +833,7 @@ unwrapPatternVariables = return . Pattern.mapVariables unwrapStepperVariable
 unwrapPredicateVariables
     ::  forall level variable m
     .   ( MetaOrObject level
-        , MonadCounter m
+        , Monad m
         , Ord (variable level)
         , Unparse (variable level)
         , FreshVariable variable

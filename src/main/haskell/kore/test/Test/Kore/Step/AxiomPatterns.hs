@@ -19,7 +19,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Control.Monad.Counter
 import           Kore.AST.Builders
 import           Kore.AST.Kore
 import           Kore.AST.Pure
@@ -401,7 +400,7 @@ test_refreshRulePattern =
     testCase "Rename target variables" $ do
         let avoiding = AxiomPatterns.freeVariables testRulePattern
             (renaming, rulePattern') =
-                evalCounter $ refreshRulePattern avoiding testRulePattern
+                refreshRulePattern avoiding testRulePattern
             renamed = Set.fromList (Foldable.toList renaming)
             free' = AxiomPatterns.freeVariables rulePattern'
         assertEqual

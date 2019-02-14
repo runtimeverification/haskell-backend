@@ -475,7 +475,7 @@ makeEvaluateTermsToPredicateSubstitution
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m

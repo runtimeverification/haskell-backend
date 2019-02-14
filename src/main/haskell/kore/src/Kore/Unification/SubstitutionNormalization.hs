@@ -57,9 +57,9 @@ normalizeSubstitution
      .  ( MetaOrObject level
         , Ord (variable level)
         , OrdMetaOrObject variable
+        , Monad m
         , FreshVariable variable
         , SortedVariable variable
-        , MonadCounter m
         , Show (variable level)
         )
     => MetadataTools level StepperAttributes
@@ -142,7 +142,7 @@ normalizeSortedSubstitution
     ::  ( MetaOrObject level
         , OrdMetaOrObject variable
         , Ord (variable level)
-        , MonadCounter m
+        , Monad m
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -167,8 +167,8 @@ normalizeSortedSubstitution
           | var == var' ->
             normalizeSortedSubstitution unprocessed result substitution
         _ -> do
-            substitutedVarPattern <-
-                substitute (Map.fromList substitution) varPattern
+            let substitutedVarPattern =
+                    substitute (Map.fromList substitution) varPattern
             normalizeSortedSubstitution
                 unprocessed
                 ((var, substitutedVarPattern) : result)

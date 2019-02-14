@@ -21,8 +21,6 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Control.Monad.Counter
-       ( MonadCounter )
 import Kore.AST.Common
        ( Exists (..), Forall (..), Pattern (..), SortedVariable )
 import Kore.AST.MetaOrObject
@@ -41,10 +39,9 @@ may appear in the right-hand side of any substitution, but this is not checked.
 -- TODO (thomas.tuegel): In the future, patterns may have other types of
 -- attributes which need to be re-synthesized after substitution.
 substitute
-    ::  forall m level domain variable attribute.
+    ::  forall level domain variable attribute.
         ( FreshVariable variable
         , MetaOrObject level
-        , MonadCounter m
         , Ord (variable level)
         , SortedVariable variable
         , Traversable domain
@@ -55,7 +52,7 @@ substitute
     -- ^ Substitution
     -> PurePattern level domain variable attribute
     -- ^ Original pattern
-    -> m (PurePattern level domain variable attribute)
+    -> PurePattern level domain variable attribute
 substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
   where
     extractFreeVariables
@@ -76,33 +73,31 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
         -- If there are no targeted free variables, return the original pattern.
         -- Note that this covers the case of a non-targeted variable pattern,
         -- which produces an error below.
-        return stepPattern
+        stepPattern
       | otherwise =
         case stepPatternHead of
             -- Capturing quantifiers
             ExistsPattern exists@Exists { existsVariable, existsChild }
-              | Just existsVariable' <- avoidCapture existsVariable -> do
+              | Just existsVariable' <- avoidCapture existsVariable ->
                 -- Rename the freshened bound variable in the subterms.
                 let subst'' = renaming existsVariable existsVariable' subst'
-                existsChild' <- substituteWorker subst'' existsChild
-                let exists' =
+                    exists' =
                         exists
                             { existsVariable = existsVariable'
-                            , existsChild = existsChild'
+                            , existsChild = substituteWorker subst'' existsChild
                             }
-                (return . Recursive.embed) (attrib' :< ExistsPattern exists')
+                in Recursive.embed (attrib' :< ExistsPattern exists')
 
             ForallPattern forall@Forall { forallVariable, forallChild }
-              | Just forallVariable' <- avoidCapture forallVariable -> do
+              | Just forallVariable' <- avoidCapture forallVariable ->
                 -- Rename the freshened bound variable in the subterms.
                 let subst'' = renaming forallVariable forallVariable' subst'
-                forallChild' <- substituteWorker subst'' forallChild
-                let forall' =
+                    forall' =
                         forall
                             { forallVariable = forallVariable'
-                            , forallChild = forallChild'
+                            , forallChild = substituteWorker subst'' forallChild
                             }
-                (return . Recursive.embed) (attrib' :< ForallPattern forall')
+                in Recursive.embed (attrib' :< ForallPattern forall')
 
             -- Variables
             VariablePattern variable ->
@@ -113,16 +108,15 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
                         -- the top of substituteWorker.
                         error "Internal error: Impossible free variable"
                     Just (Left variable') ->
-                        (return . Recursive.embed)
-                            (attrib' :< VariablePattern variable')
+                        Recursive.embed (attrib' :< VariablePattern variable')
                     Just (Right stepPattern') ->
-                        return stepPattern'
+                        stepPattern'
 
             -- All other patterns
-            _ -> do
-                stepPatternHead' <-
-                    traverse (substituteWorker subst') stepPatternHead
-                (return . Recursive.embed) (attrib' :< stepPatternHead')
+            _ ->
+                let stepPatternHead' =
+                        substituteWorker subst' <$> stepPatternHead
+                in Recursive.embed (attrib' :< stepPatternHead')
       where
         attrib :< stepPatternHead = Recursive.project stepPattern
         freeVariables = Lens.view lensFreeVariables attrib

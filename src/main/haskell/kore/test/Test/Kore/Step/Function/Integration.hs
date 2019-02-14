@@ -9,6 +9,7 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
+import           Data.Sup
 import           Kore.AST.Pure hiding
                  ( mapVariables )
 import           Kore.AST.Valid
@@ -648,7 +649,8 @@ mapVariables
     => CommonExpandedPattern level
     -> ExpandedPattern level variable
 mapVariables =
-    ExpandedPattern.mapVariables (\v -> freshVariableWith (fromVariable v) 1)
+    ExpandedPattern.mapVariables $ \v ->
+        fromVariable v { variableCounter = Just (Element 1) }
 
 mockEvaluator
     :: AttemptedAxiom level variable

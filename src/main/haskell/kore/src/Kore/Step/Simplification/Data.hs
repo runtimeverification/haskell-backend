@@ -25,8 +25,6 @@ import Control.Concurrent.MVar
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
        ( ExceptT (..), runExceptT )
-import Data.IORef
-       ( IORef, modifyIORef, newIORef, readIORef )
 
 import Kore.AST.Common
        ( SortedVariable, Variable )
@@ -57,8 +55,7 @@ data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
 data Environment = Environment
-    { envCounter :: !(IORef Natural)
-    , envSolver  :: !(MVar Solver)
+    { envSolver  :: !(MVar Solver)
     , envLogger  :: !(LogAction Simplifier LogMessage)
     }
 
@@ -66,13 +63,6 @@ newtype Simplifier a = Simplifier
     { getSimplifier :: ReaderT Environment IO a
     }
     deriving (Applicative, Functor, Monad)
-
-instance MonadCounter Simplifier where
-    increment :: Simplifier Natural
-    increment = Simplifier . ReaderT $ \Environment { envCounter } -> do
-        n <- readIORef envCounter
-        modifyIORef envCounter succ
-        pure n
 
 instance MonadSMT Simplifier where
     liftSMT :: SMT a -> Simplifier a
@@ -127,15 +117,13 @@ instance HasLog Environment LogMessage (ExceptT e Simplifier) where
 runSimplifier
     :: Simplifier a
     -- ^ simplifier computation
-    -> Natural
     -> LogAction Simplifier LogMessage
     -- ^ initial counter for fresh variables
-    -> SMT (a, Natural)
-runSimplifier (Simplifier s) n logger =
+    -> SMT a
+runSimplifier (Simplifier s) logger =
     withSolver' $ \solver -> do
-        nat <- newIORef n
-        a <- runReaderT s $ Environment nat solver logger
-        pure (a, n)
+        a <- runReaderT s $ Environment solver logger
+        pure a
 
 {- | Evaluate a simplifier computation.
 
@@ -143,9 +131,8 @@ Only the result is returned; the counter is discarded.
 
   -}
 evalSimplifier :: LogAction Simplifier LogMessage -> Simplifier a -> SMT a
-evalSimplifier logger simplifier = do
-    (result, _) <- runSimplifier simplifier 0 logger
-    return result
+evalSimplifier logger simplifier =
+    runSimplifier simplifier logger
 
 {-| 'StepPatternSimplifier' wraps a function that evaluates
 Kore functions on StepPatterns.

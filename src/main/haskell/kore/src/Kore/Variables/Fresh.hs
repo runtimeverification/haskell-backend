@@ -17,20 +17,13 @@ like "var_v_11".
 -}
 module Kore.Variables.Fresh
     ( FreshVariable (..)
-    , freshVariable
-    , freshVariablePrefix
-    , freshVariableSuchThat
     , nextVariable
-    , module Control.Monad.Counter
     ) where
 
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
 
-import Control.Monad.Counter
 import Data.Sup
 import Kore.AST.Common
        ( Variable (..), illegalVariableCounter )
@@ -54,45 +47,7 @@ class (forall level. Ord (variable level)) => FreshVariable variable where
         -> variable level
         -> Maybe (variable level)
 
-    {-|Given an existing variable, generate a fresh one of
-    the same kind.
-    -}
-    freshVariableWith
-        :: MetaOrObject level
-        => variable level
-        -> Natural
-        -> variable level
-
-    {-|Given an existing variable and a predicate, generate a
-    fresh variable of the same kind satisfying the predicate.
-    By default, die in flames if the predicate is not satisfied.
-    -}
-    freshVariableSuchThatWith
-        :: MetaOrObject level
-        => variable level
-        -> (variable level -> Bool)
-        -> Natural
-        -> variable level
-    freshVariableSuchThatWith var p n =
-        let var' = freshVariableWith var n in
-        if p var'
-            then var'
-            else error "Cannot generate variable satisfying predicate"
-
-{-| The prefix used to generate fresh variables.  It intentionally contains
-a non-id symbol @_@ to avoid clashing with user-defined ids.
--}
-freshVariablePrefix :: Text
-freshVariablePrefix = "var_"
-
 instance FreshVariable Variable where
-    freshVariableWith variable@Variable { variableName } counter =
-        variable
-            { variableCounter = Just (Element counter)
-            , variableName =
-                variableName { idLocation = AstLocationGeneratedVariable }
-            }
-
     refreshVariable avoiding variable = do
         largest <- Set.lookupLT pivotMax avoiding
         if largest >= pivotMin
@@ -101,20 +56,6 @@ instance FreshVariable Variable where
       where
         pivotMax = variable { variableCounter = Just Sup }
         pivotMin = variable { variableCounter = Nothing }
-
-freshVariable
-    :: (FreshVariable var, MetaOrObject level, MonadCounter m)
-    => var level
-    -> m (var level)
-freshVariable var = freshVariableWith var <$> increment
-
-freshVariableSuchThat
-    :: (FreshVariable var, MetaOrObject level, MonadCounter m)
-    => var level
-    -> (var level -> Bool)
-    -> m (var level)
-freshVariableSuchThat var predicate =
-    freshVariableSuchThatWith var predicate <$> increment
 
 {- | Increase the 'variableCounter' of a 'Variable'
  -}

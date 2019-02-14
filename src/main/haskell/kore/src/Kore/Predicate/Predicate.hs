@@ -71,7 +71,7 @@ import           Kore.Unparser
 import           Kore.Variables.Free
                  ( freePureVariables, pureAllVariables )
 import           Kore.Variables.Fresh
-                 ( FreshVariable, MonadCounter )
+                 ( FreshVariable )
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -527,12 +527,11 @@ contain none of the targeted variables.
 substitute
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , MonadCounter m
         , Ord (variable level)
         , SortedVariable variable
         )
     => Map (variable level) (StepPattern level variable)
     -> Predicate level variable
-    -> m (Predicate level variable)
+    -> Predicate level variable
 substitute subst (GenericPredicate stepPattern) =
-    GenericPredicate <$> Step.Pattern.substitute subst stepPattern
+    GenericPredicate (Step.Pattern.substitute subst stepPattern)

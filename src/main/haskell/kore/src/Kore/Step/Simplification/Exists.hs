@@ -256,13 +256,11 @@ substituteTermPredicate
     -> Substitution level variable
     -> Simplifier
         (ExpandedPattern level variable, SimplificationProof level)
-substituteTermPredicate term predicate substitution globalSubstitution = do
-    substitutedTerm <- substitute substitution term
-    substitutedPredicate <- traverse (substitute substitution) predicate
+substituteTermPredicate term predicate substitution globalSubstitution =
     return
         ( Predicated
-            { term = substitutedTerm
-            , predicate = substitutedPredicate
+            { term = substitute substitution term
+            , predicate = substitute substitution <$> predicate
             , substitution = globalSubstitution
             }
         , SimplificationProof

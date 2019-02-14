@@ -36,8 +36,6 @@ import           Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
-import           Control.Monad.Counter
-                 ( MonadCounter )
 import           Kore.Annotation.Valid
                  ( Valid (..) )
 import qualified Kore.Annotation.Valid as Valid
@@ -337,13 +335,12 @@ may appear in the right-hand side of any substitution, but this is not checked.
 substitute
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , MonadCounter m
         , Ord (variable level)
         , SortedVariable variable
         )
     => Map (variable level) (StepPattern level variable)
     -> StepPattern level variable
-    -> m (StepPattern level variable)
+    -> StepPattern level variable
 substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
   where
     getFreeVariables Valid { freeVariables } = freeVariables
