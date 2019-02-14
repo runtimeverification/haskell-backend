@@ -262,12 +262,16 @@ matchEqualHeadPatterns
                             quantifiedVariables
                             (zip firstChildren secondChildren)
                     else case simplifySortInjections tools first second of
-                        SortInjectionSimplification.NotInjection ->
+                        Nothing -> nothing
+                        Just SortInjectionSimplification.NotInjection ->
                             nothing
-                        SortInjectionSimplification.NotMatching ->
+                        Just SortInjectionSimplification.NotMatching ->
                             nothing
-                        SortInjectionSimplification.Matching SortInjectionMatch
-                            { firstChild, secondChild } ->
+                        Just
+                            (SortInjectionSimplification.Matching
+                                SortInjectionMatch
+                                    { firstChild, secondChild }
+                            ) ->
                                 matchJoin
                                     tools
                                     substitutionSimplifier

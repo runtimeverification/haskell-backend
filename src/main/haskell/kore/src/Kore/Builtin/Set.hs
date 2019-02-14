@@ -49,7 +49,7 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT )
+                 ( ExceptT, MaybeT )
 import           Control.Monad.Counter
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
@@ -95,6 +95,8 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( normalize )
+import           Kore.Unification.Error
+                 ( UnificationOrSubstitutionError (..) )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -508,7 +510,7 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable m p expanded proof.
+    :: forall level variable m err p expanded proof.
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
         , Unparse (variable level)
@@ -518,12 +520,13 @@ unifyEquals
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> m (expanded, proof))
-    -> (p -> p -> MaybeT m (expanded, proof))
+    -> (p -> p -> (err m) (expanded, proof))
+    -> (p -> p -> MaybeT (err m) (expanded, proof))
 unifyEquals
     simplificationType
     tools
@@ -546,7 +549,7 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT m (expanded, proof)
+        -> MaybeT (err m) (expanded, proof)
     unifyEquals0
         (DV_ resultSort (Domain.BuiltinSet set1))
         (DV_ _    (Domain.BuiltinSet set2))
@@ -580,6 +583,12 @@ unifyEquals
                     Builtin.wrongArity "SET.element"
             )
       | otherwise =
+        -- TODO (virgil): This should be an error, since Set.unifyEquals is the
+        -- proper handler for set DV unification. Returning empty would
+        -- mean it could not identify its input, which is not the case here.
+        --
+        -- The same applies to the similar places in Map and List, but not
+        -- to the empty result a few lines below.
         empty
 
     unifyEquals0 app_@(App_ _ _) dv_@(DV_ _ _) = unifyEquals0 dv_ app_
@@ -592,7 +601,7 @@ unifyEquals
         => Sort level -- ^ Sort of result
         -> Set.Set k
         -> Set.Set k
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsConcrete resultSort set1 set2
       | set1 == set2 =
         return (unified, SimplificationProof)
@@ -610,7 +619,7 @@ unifyEquals
         -> Set.Set k  -- ^ concrete set
         -> Set.Set k -- ^ framed concrete set
         -> StepPattern level variable  -- ^ framing variable
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsFramed resultSort set1 set2 var
       | Set.isSubsetOf set2 set1 = do
         (remainder, _) <-
@@ -621,7 +630,8 @@ unifyEquals
                 -- Return the concrete set, but capture any predicates and
                 -- substitutions from unifying the framing variable.
                 asBuiltinDomainSet set1 <$ remainder
-        normalized <- normalize tools substitutionSimplifier result
+        normalized <- Monad.Trans.lift $
+            normalize tools substitutionSimplifier result
         return (normalized, SimplificationProof)
 
       | otherwise =
@@ -635,7 +645,7 @@ unifyEquals
         -> Set k  -- ^ concrete set
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsElement resultSort set1 element' key2 =
         case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->

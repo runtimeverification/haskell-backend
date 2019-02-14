@@ -43,7 +43,7 @@ module Kore.Builtin.List
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT )
+                 ( ExceptT, MaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -80,6 +80,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
+import           Kore.Unification.Error
+                 ( UnificationOrSubstitutionError (..) )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -384,7 +386,7 @@ isSymbolUnit = Builtin.isSymbol unitKey
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable m p expanded proof.
+    :: forall level variable m err p expanded proof.
         ( OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , Ord (variable level)
@@ -397,12 +399,13 @@ unifyEquals
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> m (expanded, proof))
-    -> (p -> p -> MaybeT m (expanded, proof))
+    -> (p -> p -> (err m) (expanded, proof))
+    -> (p -> p -> MaybeT (err m) (expanded, proof))
 unifyEquals
     simplificationType
     tools
@@ -425,7 +428,7 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT m (expanded, proof)
+        -> MaybeT (err m) (expanded, proof)
 
     unifyEquals0 dv1@(DV_ resultSort (Domain.BuiltinList list1)) =
         \case
@@ -468,7 +471,7 @@ unifyEquals
         => Sort level
         -> Seq p
         -> Seq p
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsConcrete dvSort list1 list2
       | Seq.length list1 /= Seq.length list2 =
         return (ExpandedPattern.bottom, SimplificationProof)
@@ -490,7 +493,7 @@ unifyEquals
         -> p
         -> Seq p
         -> p
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsFramedRight
         resultSort
         dv1@(DV_ _ (Domain.BuiltinList list1))
@@ -521,7 +524,7 @@ unifyEquals
         -> p
         -> p
         -> Seq p
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsFramedLeft
         resultSort
         dv1@(DV_ _ (Domain.BuiltinList list1))

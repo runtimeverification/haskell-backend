@@ -21,7 +21,7 @@ module Kore.Step.Simplification.AndTerms
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( ExceptT, MaybeT (..), fromMaybe )
+                 ( ExceptT (..), MaybeT (..), fromMaybe )
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
@@ -118,7 +118,8 @@ termEquals tools substitutionSimplifier first second = do
     return (OrOfExpandedPattern.make [erasePredicatedTerm result], proof)
 
 termEqualsAnd
-    ::  ( MetaOrObject level
+    :: forall level variable m .
+        ( MetaOrObject level
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -134,18 +135,39 @@ termEqualsAnd
     -> StepPattern level variable
     -> MaybeT m
         (ExpandedPattern level variable, SimplificationProof level)
-termEqualsAnd tools substitutionSimplifier =
-    maybeTermEquals tools substitutionSimplifier termEqualsAndWorker
+termEqualsAnd tools substitutionSimplifier p1 p2 =
+    MaybeT $ do
+        eitherMaybeResult <- Error.runExceptT $ runMaybeT $
+            maybeTermEquals
+                tools
+                substitutionSimplifier
+                termEqualsAndWorker
+                p1
+                p2
+        return $
+            case eitherMaybeResult of
+                Left _ -> Nothing
+                Right result -> result
   where
-    termEqualsAndWorker first second = do
-        let maybeTermEqualsAndChild =
-                maybeTermEquals
-                    tools
-                    substitutionSimplifier
-                    termEqualsAndWorker
-                    first
-                    second
-        fromMaybe equalsPredicate <$> runMaybeT maybeTermEqualsAndChild
+    termEqualsAndWorker
+        :: err ~ ExceptT (UnificationOrSubstitutionError level variable)
+        => StepPattern level variable
+        -> StepPattern level variable
+        -> (err m) (ExpandedPattern level variable, SimplificationProof level)
+    termEqualsAndWorker first second = ExceptT $ do
+        eitherMaybeTermEqualsAndChild <- Error.runExceptT $ runMaybeT $
+            maybeTermEquals
+                tools
+                substitutionSimplifier
+                termEqualsAndWorker
+                first
+                second
+        return $ Right
+            (case eitherMaybeTermEqualsAndChild of
+                Left _ -> equalsPredicate
+                Right maybeResult ->
+                    fromMaybe equalsPredicate maybeResult
+            )
       where
         equalsPredicate =
             ( Predicated
@@ -166,14 +188,15 @@ maybeTermEquals
         , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> TermSimplifier level variable m
+    -> TermSimplifier level variable (err m)
     -- ^ Used to simplify subterm "and".
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m
+    -> MaybeT (err m)
         (ExpandedPattern level variable, SimplificationProof level)
 maybeTermEquals = maybeTransformTerm equalsFunctions
 
@@ -192,7 +215,8 @@ the special cases handled by this.
 -- NOTE (hs-boot): Please update AndTerms.hs-boot file when changing the
 -- signature.
 termUnification
-    ::  ( MetaOrObject level
+    :: forall level variable m err .
+        ( MetaOrObject level
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -201,17 +225,21 @@ termUnification
         , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
-        , unifier ~ ExceptT (UnificationOrSubstitutionError level variable)
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level (unifier m)
+    -> PredicateSubstitutionSimplifier level m
     -> StepPattern level variable
     -> StepPattern level variable
-    -> unifier m
+    -> err m
         (ExpandedPattern level variable, SimplificationProof level)
 termUnification tools substitutionSimplifier =
     termUnificationWorker
   where
+    termUnificationWorker
+        :: StepPattern level variable
+        -> StepPattern level variable
+        -> (err m) (ExpandedPattern level variable, SimplificationProof level)
     termUnificationWorker pat1 pat2 = do
         let maybeTermUnification =
                 maybeTermAnd
@@ -236,7 +264,8 @@ See also: 'termUnification'
 -- NOTE (hs-boot): Please update AndTerms.hs-boot file when changing the
 -- signature.
 termAnd
-    ::  ( MetaOrObject level
+    :: forall level variable m .
+        ( MetaOrObject level
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -251,9 +280,21 @@ termAnd
     -> StepPattern level variable
     -> StepPattern level variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
-termAnd tools substitutionSimplifier =
-    termAndWorker
+termAnd tools substitutionSimplifier p1 p2 = do
+    eitherResult <- Error.runExceptT $
+        termAndWorker p1 p2
+    case eitherResult of
+        Left _ -> return
+            ( ExpandedPattern.fromPurePattern (mkAnd p1 p2)
+            , SimplificationProof
+            )
+        Right result -> return result
   where
+    termAndWorker
+        :: (err ~ ExceptT (UnificationOrSubstitutionError level variable))
+        => StepPattern level variable
+        -> StepPattern level variable
+        -> (err m) (ExpandedPattern level variable, SimplificationProof level)
     termAndWorker first second = do
         let maybeTermAnd' =
                 maybeTermAnd
@@ -279,14 +320,17 @@ maybeTermAnd
         , Unparse (variable level)
         , SortedVariable variable
         , MonadCounter m
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> TermSimplifier level variable m
+    -> TermSimplifier level variable (err m)
     -- ^ Used to simplify subterm "and".
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m (ExpandedPattern level variable, SimplificationProof level)
+    -> MaybeT
+        (err m)
+        (ExpandedPattern level variable, SimplificationProof level)
 maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
@@ -340,7 +384,8 @@ equalsFunctions =
     forEquals f = f SimplificationType.Equals
 
 andEqualsFunctions
-    ::  ( Eq (variable level)
+    :: forall variable level m err .
+        ( Eq (variable level)
         , FreshVariable variable
         , MetaOrObject level
         , MonadCounter m
@@ -350,6 +395,7 @@ andEqualsFunctions
         , ShowMetaOrObject variable
         , Unparse (variable level)
         , SortedVariable variable
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => [(SimplificationTarget, TermTransformation level variable m)]
 andEqualsFunctions =
@@ -381,10 +427,10 @@ andEqualsFunctions =
     addT
         ::  (  MetadataTools level StepperAttributes
             -> PredicateSubstitutionSimplifier level m
-            -> TermSimplifier level variable m
+            -> TermSimplifier level variable (err m)
             -> StepPattern level variable
             -> StepPattern level variable
-            -> MaybeT m
+            -> MaybeT (err m)
                 (ExpandedPattern level variable , SimplificationProof level)
             )
         -> TermTransformation level variable m
@@ -407,17 +453,27 @@ type TermTransformation level variable m =
        SimplificationType
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> TermSimplifier level variable m
+    -> TermSimplifier
+        level
+        variable
+        (ExceptT (UnificationOrSubstitutionError level variable) m)
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
+    -> MaybeT
+        (ExceptT (UnificationOrSubstitutionError level variable) m)
+        (ExpandedPattern level variable , SimplificationProof level)
 type TermTransformationOld level variable m =
        MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> TermSimplifier level variable m
+    -> TermSimplifier
+        level
+        variable
+        (ExceptT (UnificationOrSubstitutionError level variable) m)
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
+    -> MaybeT
+        (ExceptT (UnificationOrSubstitutionError level variable) m)
+        (ExpandedPattern level variable , SimplificationProof level)
 
 maybeTransformTerm
     ::  ( MetaOrObject level
@@ -428,15 +484,18 @@ maybeTransformTerm
         , Show (variable level)
         , SortedVariable variable
         , MonadCounter m
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => [TermTransformationOld level variable m]
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> TermSimplifier level variable m
+    -> TermSimplifier level variable (err m)
     -- ^ Used to simplify subterm pairs.
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
+    -> MaybeT
+        (err m)
+        (ExpandedPattern level variable , SimplificationProof level)
 maybeTransformTerm
     topTransformers tools substitutionSimplifier childTransformers first second
   =
@@ -710,14 +769,17 @@ equalInjectiveHeadsAndEquals
         , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> TermSimplifier level variable m
+    -> TermSimplifier level variable (err m)
     -- ^ Used to simplify subterm "and".
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m (ExpandedPattern level variable, SimplificationProof level)
+    -> MaybeT
+        (err m)
+        (ExpandedPattern level variable, SimplificationProof level)
 equalInjectiveHeadsAndEquals
     tools
     substitutionSimplifier
@@ -729,7 +791,7 @@ equalInjectiveHeadsAndEquals
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let predicates = ExpandedPattern.predicate . fst <$> children
             substitutions = ExpandedPattern.substitution . fst <$> children
-        (merged, _proof) <-
+        (merged, _proof) <- Monad.Trans.lift $
             mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
@@ -777,27 +839,35 @@ when @src1@ is a subsort of @src2@.
 
  -}
 sortInjectionAndEqualsAssumesDifferentHeads
-    ::  forall level variable m .
+    ::  forall level variable m err .
         ( Ord (variable level)
         , MetaOrObject level
         , MonadCounter m
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
-    -> TermSimplifier level variable m
+    -> TermSimplifier level variable (err m)
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
+    -> MaybeT
+        (err m)
+        (ExpandedPattern level variable, SimplificationProof level)
 sortInjectionAndEqualsAssumesDifferentHeads
     tools
     termMerger
     first
     second
   = case simplifySortInjections tools first second of
-    NotInjection -> empty
-    NotMatching -> return (ExpandedPattern.bottom, SimplificationProof)
-    Matching SortInjectionMatch
-        { injectionHead, sort, firstChild, secondChild } -> do
-            (merged, _) <- Monad.Trans.lift $ termMerger firstChild secondChild
+    Nothing ->
+        Monad.Trans.lift (Error.throwE (UnificationError UnsupportedPatterns))
+    Just NotInjection -> empty
+    Just NotMatching -> return (ExpandedPattern.bottom, SimplificationProof)
+    Just
+        (Matching SortInjectionMatch
+            { injectionHead, sort, firstChild, secondChild }
+        ) -> do
+            (merged, _) <- Monad.Trans.lift $
+                termMerger firstChild secondChild
             if ExpandedPattern.isBottom merged
                 then return (ExpandedPattern.bottom, SimplificationProof)
                 else return
@@ -828,7 +898,7 @@ simplifySortInjections
     => MetadataTools level StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
-    -> SortInjectionSimplification level variable
+    -> Maybe (SortInjectionSimplification level variable)
 simplifySortInjections
     tools
     (App_
@@ -850,20 +920,16 @@ simplifySortInjections
     $ assert (firstConstructor == secondConstructor)
     $ case () of
         _
-          | firstOrigin `isSubsortOf` secondOrigin -> mergeFirstIntoSecond
+          | firstOrigin `isSubsortOf` secondOrigin -> Just mergeFirstIntoSecond
 
-          | secondOrigin `isSubsortOf` firstOrigin -> mergeSecondIntoFirst
+          | secondOrigin `isSubsortOf` firstOrigin -> Just mergeSecondIntoFirst
 
-          | isFirstConstructorLike || isSecondConstructorLike -> NotMatching
+          | isFirstConstructorLike || isSecondConstructorLike
+            -> Just NotMatching
 
-          | Set.null sortIntersection -> NotMatching
+          | Set.null sortIntersection -> Just NotMatching
 
-          | otherwise ->
-            (error . unlines)
-                [ "Sort " ++ show firstOrigin
-                , "and sort " ++ show secondOrigin
-                , "have common subsort(s): " ++ show sortIntersection
-                ]
+          | otherwise -> Nothing
   where
     subsorts = MetadataTools.subsorts tools
 
@@ -939,7 +1005,7 @@ simplifySortInjections
     firstSubsorts = subsorts firstOrigin
     secondSubsorts = subsorts secondOrigin
     sortIntersection = Set.intersection firstSubsorts secondSubsorts
-simplifySortInjections _ _ _ = NotInjection
+simplifySortInjections _ _ _ = Just NotInjection
 
 {- | Unify a constructor application pattern with a sort injection pattern.
 

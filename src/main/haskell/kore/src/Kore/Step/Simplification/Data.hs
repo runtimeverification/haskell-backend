@@ -12,7 +12,6 @@ module Kore.Step.Simplification.Data
     , runSimplifier
     , evalSimplifier
     , PredicateSubstitutionSimplifier (..)
-    , liftPredicateSubstitutionSimplifier
     , StepPatternSimplifier (..)
     , CommonStepPatternSimplifier
     , SimplificationProof (..)
@@ -191,12 +190,3 @@ newtype PredicateSubstitutionSimplifier level m =
             , SimplificationProof level
             )
         )
-
-liftPredicateSubstitutionSimplifier
-    :: (MonadTrans t, Monad m)
-    => PredicateSubstitutionSimplifier level m
-    -> PredicateSubstitutionSimplifier level (t m)
-liftPredicateSubstitutionSimplifier
-    (PredicateSubstitutionSimplifier simplifier)
-  =
-    PredicateSubstitutionSimplifier (Monad.Trans.lift . simplifier)

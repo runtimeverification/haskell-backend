@@ -236,7 +236,7 @@ maybeEvaluatePattern
             Just
             $ traceNonErrorMonad
                 D_Function_evaluatePattern
-                [debugArg "axiomIdentifier" identifier]
+                [ debugArg "axiomIdentifier" identifier ]
             $ do
                 (result, proof) <-
                     evaluator
