@@ -16,6 +16,7 @@ module Kore.Step.Function.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
+import           Control.Monad.Trans.Except
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
@@ -288,13 +289,20 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    (OrStepResult { rewrittenPattern, remainder }, _proof) <-
-        stepWithRemaindersForUnifier
+    resultOrError <- runExceptT
+        $ stepWithRemaindersForUnifier
             tools
             (UnificationProcedure unificationWithAppMatchOnTop)
             substitutionSimplifier
             (map unwrapEqualityRule definitionRules)
             expanded
+
+    let OrStepResult { rewrittenPattern, remainder } = case resultOrError of
+            Right (result, _proof) -> result
+            Left _ -> OrStepResult
+                { rewrittenPattern = OrOfExpandedPattern.make []
+                , remainder = OrOfExpandedPattern.make [expanded]
+                }
     let
         remainderResults :: [ExpandedPattern level variable]
         remainderResults = OrOfExpandedPattern.extractPatterns remainder
