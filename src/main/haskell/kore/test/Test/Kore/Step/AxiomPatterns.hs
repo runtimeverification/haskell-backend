@@ -1,11 +1,14 @@
-module Test.Kore.Step.AxiomPatterns (test_axiomPatterns) where
+module Test.Kore.Step.AxiomPatterns
+    ( test_axiomPatterns
+    , test_freeVariables
+    , test_refreshRulePattern
+    ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
 
 import           Data.Default
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -16,11 +19,12 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
+import           Control.Monad.Counter
 import           Kore.AST.Builders
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
-import           Kore.AST.Valid
+import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (..), verifyAndIndexDefinition )
 import qualified Kore.Attribute.Null as Attribute
@@ -30,14 +34,16 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Parser.ParserImpl
 import           Kore.Parser.ParserUtils
-import           Kore.Predicate.Predicate
-                 ( wrapPredicate )
-import           Kore.Step.AxiomPatterns
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.AxiomPatterns hiding
+                 ( freeVariables )
+import qualified Kore.Step.AxiomPatterns as AxiomPatterns
 import           Kore.Step.Pattern
 
-import Test.Kore
-       ( testId )
-import Test.Kore.ASTVerifier.DefinitionVerifier
+import           Test.Kore
+                 ( testId )
+import           Test.Kore.ASTVerifier.DefinitionVerifier
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_axiomPatterns :: [TestTree]
 test_axiomPatterns =
@@ -54,7 +60,7 @@ axiomPatternsUnitTests =
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
                     , right = varI2
-                    , requires = wrapPredicate (mkTop sortAInt)
+                    , requires = Predicate.wrapPredicate (mkTop sortAInt)
                     , attributes = def
                     }
                 )
@@ -102,7 +108,7 @@ axiomPatternsUnitTests =
                     [ RewriteRule RulePattern
                         { left = varI1
                         , right = varI2
-                        , requires = wrapPredicate (mkTop sortAInt)
+                        , requires = Predicate.wrapPredicate (mkTop sortAInt)
                         , attributes = def
                         }
                     ]
@@ -160,7 +166,7 @@ axiomPatternsIntegrationTests =
                                 )
                             )
                             varStateCell
-                    , requires = wrapPredicate (mkTop sortTCell)
+                    , requires = Predicate.wrapPredicate (mkTop sortTCell)
                     , attributes = def
                     }
                 )
@@ -378,3 +384,42 @@ extractIndexedModule name eModules =
         Right modules -> fromMaybe
             (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
+
+test_freeVariables :: TestTree
+test_freeVariables =
+    testCase "Extract free variables" $ do
+        let expect = Set.fromList [Mock.x, Mock.z]
+            actual = AxiomPatterns.freeVariables testRulePattern
+        assertEqual "Expected free variables" expect actual
+
+test_refreshRulePattern :: TestTree
+test_refreshRulePattern =
+    testCase "Rename target variables" $ do
+        let avoiding = AxiomPatterns.freeVariables testRulePattern
+            (renaming, rulePattern') =
+                evalCounter $ refreshRulePattern avoiding testRulePattern
+            renamed = Set.fromList (Foldable.toList renaming)
+            free' = AxiomPatterns.freeVariables rulePattern'
+        assertEqual
+            "Expected to rename all free variables of original RulePattern"
+            avoiding
+            (Map.keysSet renaming)
+        assertBool
+            "Expected to renamed variables distinct from original variables"
+            (Set.null $ Set.intersection avoiding renamed)
+        assertBool
+            "Expected no free variables in common with original RulePattern"
+            (Set.null $ Set.intersection avoiding free')
+
+testRulePattern :: RulePattern Object Variable
+testRulePattern =
+    RulePattern
+        { left =
+            -- Include an implicitly-quantified variable.
+            mkVar Mock.x
+        , right =
+            -- Include a binder to ensure that we respect them.
+            mkExists Mock.y (mkVar Mock.y)
+        , requires = Predicate.makeCeilPredicate (mkVar Mock.z)
+        , attributes = def
+        }

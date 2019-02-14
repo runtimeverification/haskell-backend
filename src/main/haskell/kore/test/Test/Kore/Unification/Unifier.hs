@@ -613,9 +613,13 @@ newtype W level = W String
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVar
+    fromVariable = error "Not implemented"
+    toVariable = error "Not implemented"
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVar
+    fromVariable = error "Not implemented"
+    toVariable = error "Not implemented"
 
 instance EqualWithExplanation (V level)
   where

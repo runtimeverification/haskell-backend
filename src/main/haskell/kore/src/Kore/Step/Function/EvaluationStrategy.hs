@@ -21,7 +21,7 @@ import           Data.Maybe
 import qualified Data.Text as Text
 
 import           Kore.AST.Common
-                 ( SortedVariable )
+                 ( SortedVariable (..), Variable )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject, Object, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.AST.Pure
@@ -32,6 +32,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule) )
+import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep
                  ( OrStepResult (OrStepResult),
                  UnificationProcedure (UnificationProcedure),
@@ -82,7 +83,7 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [EqualityRule level]
+    :: [EqualityRule level Variable]
     -> BuiltinAndAxiomSimplifier level
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
@@ -270,7 +271,7 @@ evaluateWithDefinitionAxioms
         , Unparse (variable level)
         , ShowMetaOrObject variable
         )
-    => [EqualityRule level]
+    => [EqualityRule level Variable]
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
@@ -284,12 +285,15 @@ evaluateWithDefinitionAxioms
         expanded :: ExpandedPattern level variable
         expanded = ExpandedPattern.fromPurePattern patt
 
+    let unwrapEqualityRule =
+            \(EqualityRule rule) ->
+                RulePattern.mapVariables fromVariable rule
     (OrStepResult { rewrittenPattern, remainder }, _proof) <-
         stepWithRemaindersForUnifier
             tools
             (UnificationProcedure unificationWithAppMatchOnTop)
             substitutionSimplifier
-            (map (\ (EqualityRule rule) -> rule) definitionRules)
+            (map unwrapEqualityRule definitionRules)
             expanded
     let
         remainderResults :: [ExpandedPattern level variable]

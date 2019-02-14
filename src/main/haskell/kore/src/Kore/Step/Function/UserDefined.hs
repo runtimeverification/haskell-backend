@@ -26,6 +26,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
                  RulePattern (..) )
+import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep
                  ( StepResult (StepResult), UnificationProcedure (..),
                  stepWithRule )
@@ -72,7 +73,7 @@ ruleFunctionEvaluator
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         )
-    => EqualityRule level
+    => EqualityRule level Variable
     -- ^ Axiom defining the current function.
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
@@ -117,7 +118,7 @@ ruleFunctionEvaluator
             (UnificationProcedure matchAsUnification)
             substitutionSimplifier
             (ExpandedPattern.fromPurePattern patt)
-            rule
+            (RulePattern.mapVariables fromVariable rule)
 
     processResult
         :: (StepResult level variable, StepProof level variable)

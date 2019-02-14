@@ -31,22 +31,34 @@ module Kore.Step.AxiomPatterns
     , extractRewriteClaims
     , mkRewriteAxiom
     , mkFunctionAxiom
+    , refreshRulePattern
+    , freeVariables
+    , Kore.Step.AxiomPatterns.mapVariables
     ) where
 
+import           Control.Comonad
 import           Control.DeepSeq
                  ( NFData )
 import qualified Control.Lens.TH.Rules as Lens
-import           Control.Monad
-                 ( (>=>) )
+import qualified Control.Monad as Monad
 import           Data.Default
                  ( Default (..) )
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Kore
+import           Kore.AST.Kore hiding
+                 ( freeVariables )
 import           Kore.AST.Sentence
-import           Kore.AST.Valid
+import           Kore.AST.Valid hiding
+                 ( freeVariables )
+import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Assoc
 import qualified Kore.Attribute.Axiom.Concrete as Axiom
 import           Kore.Attribute.Comm
@@ -62,7 +74,10 @@ import           Kore.Attribute.Unit
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Pattern as Pattern
+import           Kore.Variables.Fresh
 
 {- | Attributes specific to interpreting axiom patterns.
  -}
@@ -109,15 +124,15 @@ instance Default AxiomPatternAttributes where
 
 instance ParseAttributes AxiomPatternAttributes where
     parseAttribute attr =
-            lensHeatCool (parseAttribute attr)
-        >=> lensProductionID (parseAttribute attr)
-        >=> lensAssoc (parseAttribute attr)
-        >=> lensComm (parseAttribute attr)
-        >=> lensUnit (parseAttribute attr)
-        >=> lensIdem (parseAttribute attr)
-        >=> lensTrusted (parseAttribute attr)
-        >=> lensConcrete (parseAttribute attr)
-        >=> lensSimplification (parseAttribute attr)
+        lensHeatCool (parseAttribute attr)
+        Monad.>=> lensProductionID (parseAttribute attr)
+        Monad.>=> lensAssoc (parseAttribute attr)
+        Monad.>=> lensComm (parseAttribute attr)
+        Monad.>=> lensUnit (parseAttribute attr)
+        Monad.>=> lensIdem (parseAttribute attr)
+        Monad.>=> lensTrusted (parseAttribute attr)
+        Monad.>=> lensConcrete (parseAttribute attr)
+        Monad.>=> lensSimplification (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -129,35 +144,35 @@ Currently @RulePattern@ can only represent rules of the form
   left = right if requires
 @
 --}
-data RulePattern level = RulePattern
-    { left  :: !(CommonStepPattern level)
-    , right :: !(CommonStepPattern level)
-    , requires :: !(CommonPredicate level)
+data RulePattern level variable = RulePattern
+    { left  :: !(StepPattern level variable)
+    , right :: !(StepPattern level variable)
+    , requires :: !(Predicate level variable)
     , attributes :: !AxiomPatternAttributes
     }
     deriving (Eq, Show)
 
 {-  | Equality-based rule pattern.
 -}
-newtype EqualityRule level = EqualityRule (RulePattern level)
+newtype EqualityRule level variable = EqualityRule (RulePattern level variable)
     deriving (Eq, Show)
 
 {-  | Rewrite-based rule pattern.
 -}
-newtype RewriteRule level = RewriteRule (RulePattern level)
+newtype RewriteRule level variable = RewriteRule (RulePattern level variable)
     deriving (Eq, Show)
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
-data QualifiedAxiomPattern level
-    = RewriteAxiomPattern (RewriteRule level)
-    | FunctionAxiomPattern (EqualityRule level)
+data QualifiedAxiomPattern level variable
+    = RewriteAxiomPattern (RewriteRule level variable)
+    | FunctionAxiomPattern (EqualityRule level variable)
     deriving (Eq, Show)
 
 {- | Does the axiom pattern represent a heating rule?
  -}
-isHeatingRule :: RulePattern level -> Bool
+isHeatingRule :: RulePattern level variable -> Bool
 isHeatingRule RulePattern { attributes } =
     case heatCool attributes of
         Heat -> True
@@ -165,7 +180,7 @@ isHeatingRule RulePattern { attributes } =
 
 {- | Does the axiom pattern represent a cooling rule?
  -}
-isCoolingRule :: RulePattern level -> Bool
+isCoolingRule :: RulePattern level variable -> Bool
 isCoolingRule RulePattern { attributes } =
     case heatCool attributes of
         Cool -> True
@@ -173,7 +188,7 @@ isCoolingRule RulePattern { attributes } =
 
 {- | Does the axiom pattern represent a normal rule?
  -}
-isNormalRule :: RulePattern level -> Bool
+isNormalRule :: RulePattern level variable -> Bool
 isNormalRule RulePattern { attributes } =
     case heatCool attributes of
         Normal -> True
@@ -187,7 +202,7 @@ extractRewriteAxioms
     => level -- ^expected level for the axiom pattern
     -> VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
-    -> [RewriteRule level]
+    -> [RewriteRule level Variable]
 extractRewriteAxioms level idxMod =
     mapMaybe
         ( extractRewriteAxiomFrom level
@@ -202,7 +217,7 @@ extractRewriteClaims
     => level -- ^expected level for the axiom pattern
     -> VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, RewriteRule level)]
+    -> [(axiomAtts, RewriteRule level Variable)]
 extractRewriteClaims level idxMod =
     mapMaybe
         ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
@@ -215,7 +230,7 @@ extractRewriteAxiomFrom
     => level -- ^expected level for the axiom pattern
     -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (RewriteRule level)
+    -> Maybe (RewriteRule level Variable)
 extractRewriteAxiomFrom level sentence =
     case verifiedKoreSentenceToAxiomPattern level koreSentence of
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
@@ -229,7 +244,7 @@ verifiedKoreSentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> VerifiedKoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 verifiedKoreSentenceToAxiomPattern level =
     \case
         UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
@@ -241,7 +256,7 @@ koreSentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> VerifiedKoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 koreSentenceToAxiomPattern level =
     \case
         UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
@@ -251,7 +266,7 @@ sentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> Sentence level' UnifiedSortVariable VerifiedKorePattern
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 sentenceToAxiomPattern
     level
     (SentenceAxiomSentence SentenceAxiom
@@ -277,7 +292,7 @@ patternToAxiomPattern
     :: MetaOrObject level
     => AxiomPatternAttributes
     -> CommonStepPattern level
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 patternToAxiomPattern attributes pat =
     case pat of
         -- normal rewrite axioms
@@ -287,7 +302,7 @@ patternToAxiomPattern attributes pat =
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
                 , right = rhs
-                , requires = wrapPredicate requires
+                , requires = Predicate.wrapPredicate requires
                 , attributes
                 }
         -- function axioms: general
@@ -295,7 +310,7 @@ patternToAxiomPattern attributes pat =
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
                 , right = rhs
-                , requires = wrapPredicate requires
+                , requires = Predicate.wrapPredicate requires
                 , attributes
                 }
         -- function axioms: trivial pre- and post-conditions
@@ -303,7 +318,7 @@ patternToAxiomPattern attributes pat =
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
                 , right = rhs
-                , requires = makeTruePredicate
+                , requires = Predicate.makeTruePredicate
                 , attributes
                 }
         Forall_ _ _ child -> patternToAxiomPattern attributes child
@@ -338,3 +353,83 @@ mkFunctionAxiom lhs rhs requires =
         )
   where
     function = mkEquals_ lhs rhs
+
+{- | Refresh the variables of a 'RulePattern'.
+
+The free variables of a 'RulePattern' are implicitly quantified, so are renamed
+to avoid collision with any variables in the given set.
+
+ -}
+refreshRulePattern
+    :: forall variable level m
+    .   ( FreshVariable variable
+        , SortedVariable variable
+        , Ord (variable level)
+        , MetaOrObject level
+        , MonadCounter m
+        )
+    => Set (variable level)  -- ^ Variables to avoid
+    -> RulePattern level variable
+    -> m (Map (variable level) (variable level), RulePattern level variable)
+refreshRulePattern avoid0 rulePattern = do
+    (_, rename) <- refreshVariables originalFreeVariables
+    let subst = mkVar <$> rename
+    left' <- Pattern.substitute subst left
+    right' <- Pattern.substitute subst right
+    requires' <- Predicate.substitute subst requires
+    let rulePattern' =
+            rulePattern
+                { left = left'
+                , right = right'
+                , requires = requires'
+                }
+    return (rename, rulePattern')
+  where
+    RulePattern { left, right, requires } = rulePattern
+    originalFreeVariables = freeVariables rulePattern
+    refreshVariables =
+        Monad.foldM refreshOneVariable (avoid0, Map.empty)
+    refreshOneVariable (avoid, rename) var
+      | Set.notMember var avoid =
+        -- The variable does not collide with any others, so renaming is not
+        -- necessary.
+        return (Set.insert var avoid, rename)
+      | otherwise = do
+        var' <- freshVariableSuchThat var (\v -> Set.notMember v avoid)
+        let avoid' =
+                -- Avoid the freshly-generated variable in future renamings.
+                Set.insert var' avoid
+            rename' =
+                -- Record a mapping from the original variable to the
+                -- freshly-generated variable.
+                Map.insert var var' rename
+        return (avoid', rename')
+
+{- | Extract the free variables of a 'RulePattern'.
+ -}
+freeVariables
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        )
+    => RulePattern level variable
+    -> Set (variable level)
+freeVariables RulePattern { left, right, requires } =
+    Set.unions
+        [ (Valid.freeVariables . extract) left
+        , (Valid.freeVariables . extract) right
+        , Predicate.freeVariables requires
+        ]
+
+{- | Apply the given function to all variables in a 'RulePattern'.
+ -}
+mapVariables
+    :: Ord (variable2 level)
+    => (variable1 level -> variable2 level)
+    -> RulePattern level variable1
+    -> RulePattern level variable2
+mapVariables mapping rulePattern@RulePattern { left, right, requires } =
+    rulePattern
+        { left = Pattern.mapVariables mapping left
+        , right = Pattern.mapVariables mapping right
+        , requires = Predicate.mapVariables mapping requires
+        }

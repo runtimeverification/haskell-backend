@@ -19,6 +19,7 @@ module Kore.Unification.Substitution
     , null
     , variables
     , unsafeWrap
+    , Kore.Unification.Substitution.filter
     ) where
 
 import           Control.DeepSeq
@@ -140,3 +141,11 @@ null _                           = False
 -- | Returns the list of variables in the 'Substitution'.
 variables :: Substitution level variable -> [(variable level)]
 variables = fmap fst . unwrap
+
+-- | Filter the variables of the 'Substitution'.
+filter
+    :: (variable level -> Bool)
+    -> Substitution level variable
+    -> Substitution level variable
+filter filtering =
+    modify (Prelude.filter (filtering . fst))

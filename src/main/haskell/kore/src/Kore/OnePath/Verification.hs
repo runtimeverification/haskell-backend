@@ -59,14 +59,14 @@ import           Kore.Step.Strategy
 {- | Wrapper for a rewrite rule that should be used as a claim.
 -}
 data Claim level = Claim
-    { rule :: !(RewriteRule level)
+    { rule :: !(RewriteRule level Variable)
     , attributes :: !AxiomPatternAttributes
     }
 
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
-newtype Axiom level = Axiom (RewriteRule level)
+newtype Axiom level = Axiom (RewriteRule level Variable)
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -85,11 +85,16 @@ verify
     -> PredicateSubstitutionSimplifier level Simplifier
     -- ^ Simplifies predicates
     ->  (  CommonStepPattern level
-        -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
+        -> [Strategy
+            (Prim
+                (CommonExpandedPattern level)
+                (RewriteRule level Variable)
+            )
+           ]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
-    -> [(RewriteRule level, Limit Natural)]
+    -> [(RewriteRule level Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT
@@ -126,7 +131,12 @@ defaultStrategy
     -- The claims that we want to prove
     -> [Axiom level]
     -> CommonStepPattern level
-    -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
+    -> [Strategy
+        (Prim
+            (CommonExpandedPattern level)
+            (RewriteRule level Variable)
+        )
+       ]
 defaultStrategy
     claims
     axioms
@@ -140,11 +150,11 @@ defaultStrategy
             rewrites
         )
   where
-    rewrites :: [RewriteRule level]
+    rewrites :: [RewriteRule level Variable]
     rewrites = map unwrap axioms
       where
         unwrap (Axiom a) = a
-    coinductiveRewrites :: [RewriteRule level]
+    coinductiveRewrites :: [RewriteRule level Variable]
     coinductiveRewrites = map rule claims
     expandedTarget :: CommonExpandedPattern level
     expandedTarget = ExpandedPattern.fromPurePattern target
@@ -155,9 +165,14 @@ verifyClaim
     -> StepPatternSimplifier level Variable
     -> PredicateSubstitutionSimplifier level Simplifier
     ->  (  CommonStepPattern level
-        -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
+        -> [Strategy
+            (Prim
+                (CommonExpandedPattern level)
+                (RewriteRule level Variable)
+            )
+           ]
         )
-    -> (RewriteRule level, Limit Natural)
+    -> (RewriteRule level Variable, Limit Natural)
     -> ExceptT
         (CommonExpandedPattern level)
         Simplifier
@@ -193,4 +208,3 @@ verifyClaim
         StrategyPattern.RewritePattern p : _ -> throwE p
         StrategyPattern.Stuck p : _ -> throwE p
         StrategyPattern.Bottom : _ -> error "Unexpected bottom pattern."
-

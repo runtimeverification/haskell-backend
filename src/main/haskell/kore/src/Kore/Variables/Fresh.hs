@@ -33,13 +33,9 @@ import Kore.AST.Common
 import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 
-{- | A 'FreshVariable' can be freshened in a 'MonadCounter'.
+{- | A 'FreshVariable' can be freshened, given a 'Natural' counter.
 -}
 class FreshVariable var where
-    {-|Given an existing Variable, generate a fresh one.
-    -}
-    freshVariableFromVariable
-        :: MetaOrObject level => Variable level -> Natural -> var level
     {-|Given an existing variable, generate a fresh one of
     the same kind.
     -}
@@ -71,7 +67,6 @@ variableSeparator :: Text
 variableSeparator = "_"
 
 instance FreshVariable Variable where
-    freshVariableFromVariable = freshVariableWith
     {-| See the comment at the top of the file for the variable name syntax. -}
     freshVariableWith var n
       | not (Text.null prefix) =

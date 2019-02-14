@@ -204,7 +204,7 @@ evaluateWith solver patt =
 runStep
     :: CommonExpandedPattern Object
     -- ^ configuration
-    -> RewriteRule Object
+    -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
@@ -221,7 +221,7 @@ runStep configuration axiom = do
 runStepResult
     :: CommonExpandedPattern Object
     -- ^ configuration
-    -> RewriteRule Object
+    -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
@@ -244,7 +244,7 @@ runStepWith
     :: MVar Solver
     -> CommonExpandedPattern Object
     -- ^ configuration
-    -> RewriteRule Object
+    -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
@@ -263,7 +263,7 @@ runStepResultWith
     :: MVar Solver
     -> CommonExpandedPattern Object
     -- ^ configuration
-    -> RewriteRule Object
+    -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either

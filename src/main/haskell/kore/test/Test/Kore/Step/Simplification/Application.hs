@@ -40,7 +40,6 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
-                 ( FreshVariable, freshVariableFromVariable )
 import qualified SMT
 
 import           Test.Kore.Comparators ()
@@ -208,7 +207,7 @@ test_applicationSimplification =
                                         (makeEqualsPredicate gOfA gOfB)
                                     )
                             , substitution = Substitution.unsafeWrap
-                                [ (freshVariableFromVariable Mock.z 1, gOfB)
+                                [ (freshVariableWith Mock.z 1, gOfB)
                                 , (Mock.x, fOfA)
                                 , (Mock.y, gOfA)
                                 ]
@@ -223,7 +222,7 @@ test_applicationSimplification =
                             , SortedVariable variable
                             )
                         => variable Object
-                    zvar = freshVariableFromVariable Mock.z 1
+                    zvar = freshVariableWith (fromVariable Mock.z) 1
                     result
                         :: forall variable
                         .   ( FreshVariable variable

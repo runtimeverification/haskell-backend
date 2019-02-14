@@ -51,7 +51,7 @@ a1 = Variable (testId "#a1")
 b1 = Variable (testId "#b1")
 x1 = Variable (testId "#x1")
 
-rewriteIdentity :: RewriteRule Meta
+rewriteIdentity :: RewriteRule Meta Variable
 rewriteIdentity =
     RewriteRule RulePattern
         { left = mkVar (x1 patternMetaSort)
@@ -60,7 +60,7 @@ rewriteIdentity =
         , attributes = def
         }
 
-rewriteImplies :: RewriteRule Meta
+rewriteImplies :: RewriteRule Meta Variable
 rewriteImplies =
     RewriteRule $ RulePattern
         { left = mkVar (x1 patternMetaSort)
@@ -257,7 +257,7 @@ test_simpleStrategy =
             =<< actualZeroStepLimit)
     ]
 
-axiomsSimpleStrategy :: [RewriteRule Meta]
+axiomsSimpleStrategy :: [RewriteRule Meta Variable]
 axiomsSimpleStrategy =
     [ RewriteRule $ RulePattern
         { left = metaF (mkVar $ x1 patternMetaSort)
@@ -448,7 +448,7 @@ runStep
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> [RewriteRule level]
+    -> [RewriteRule level Variable]
     -> IO [(CommonExpandedPattern level, StepProof level Variable)]
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
@@ -472,7 +472,7 @@ runSteps
     -> Limit Natural
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> [RewriteRule level]
+    -> [RewriteRule level Variable]
     -> IO (CommonExpandedPattern level, StepProof level Variable)
 runSteps metadataTools stepLimit configuration axioms =
     (<$>) pickLongest

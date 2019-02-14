@@ -53,7 +53,7 @@ import           Kore.Parser.Parser
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes, RewriteRule )
+                 ( AxiomPatternAttributes )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Pattern
@@ -199,8 +199,7 @@ data KoreExecOptions = KoreExecOptions
     , smtTimeOut          :: !SMT.TimeOut
     , smtPrelude          :: !(Maybe FilePath)
     , stepLimit           :: !(Limit Natural)
-    , strategy
-        :: !([RewriteRule Object] -> Strategy (Prim (RewriteRule Object)))
+    , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
     }

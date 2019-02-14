@@ -10,12 +10,14 @@ Portability : portable
 -}
 module Kore.Unification.Data
     ( UnificationProof (..)
+    , Kore.Unification.Data.mapVariables
     ) where
 
-import Kore.AST.Pure
-import Kore.Proof.Functional
-       ( FunctionalProof (..) )
-import Kore.Step.Pattern
+import           Kore.AST.Pure
+import           Kore.Proof.Functional
+                 ( FunctionalProof (..) )
+import qualified Kore.Proof.Functional as Proof.Functional
+import           Kore.Step.Pattern as Pattern
 
 -- |'UnificationProof' is meant to represent proof term stubs for various
 -- steps performed during unification
@@ -68,3 +70,32 @@ instance Semigroup (UnificationProof level variable) where
 instance Monoid (UnificationProof level variable) where
     mempty = EmptyUnificationProof
     mconcat = CombinedUnificationProof
+
+mapVariables
+    :: Ord (variable2 level)
+    => (variable1 level -> variable2 level)
+    -> UnificationProof level variable1
+    -> UnificationProof level variable2
+mapVariables mapping = mapVariablesWorker
+  where
+    mapVariablesWorker =
+        \case
+            EmptyUnificationProof -> EmptyUnificationProof
+            CombinedUnificationProof proofs ->
+                CombinedUnificationProof (map mapVariablesWorker proofs)
+            ConjunctionIdempotency patt ->
+                ConjunctionIdempotency (Pattern.mapVariables mapping patt)
+            Proposition_5_24_3 proofs variable patt ->
+                Proposition_5_24_3
+                    (map (Proof.Functional.mapVariables mapping) proofs)
+                    (mapping variable)
+                    (Pattern.mapVariables mapping patt)
+            AndDistributionAndConstraintLifting symbol proofs ->
+                AndDistributionAndConstraintLifting
+                    symbol
+                    (map mapVariablesWorker proofs)
+            SubstitutionMerge variable patt1 patt2 ->
+                SubstitutionMerge
+                    (mapping variable)
+                    (Pattern.mapVariables mapping patt1)
+                    (Pattern.mapVariables mapping patt2)

@@ -12,6 +12,8 @@ module Kore.Exec
     ( exec
     , search
     , prove
+    , Rewrite
+    , Equality
     ) where
 
 import           Control.Comonad
@@ -87,12 +89,15 @@ type Config = CommonExpandedPattern Object
 type Proof = StepProof Object Variable
 
 -- | Semantic rule used during execution.
-type Rule = RewriteRule Object
+type Rewrite = RewriteRule Object Variable
+
+-- | Function rule used during execution
+type Equality = EqualityRule Object Variable
 
 -- | A collection of rules and simplifiers used during execution.
 data Initialized =
     Initialized
-        { rewriteRules :: ![RewriteRule Object]
+        { rewriteRules :: ![Rewrite]
         , simplifier :: !(StepPatternSimplifier Object Variable)
         , substitutionSimplifier
             :: !(PredicateSubstitutionSimplifier Object Simplifier)
@@ -112,7 +117,7 @@ data Execution =
 exec
     :: VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ The main module
-    -> ([Rule] -> [Strategy (Prim Rule)])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> CommonStepPattern Object
     -- ^ The input pattern
@@ -130,11 +135,11 @@ exec indexedModule strategy purePattern = do
 search
     :: VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ The main module
-    -> ([Rule] -> [Strategy (Prim Rule)])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> CommonStepPattern Object
     -- ^ The input pattern
-    -> Config
+    -> CommonExpandedPattern Object
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
@@ -198,12 +203,12 @@ prove limit definitionModule specModule = do
     makeClaim (attributes, rule) = Claim { rule , attributes }
     simplifyRuleOnSecond
         :: MetadataTools Object StepperAttributes
-        -> (AxiomPatternAttributes, RewriteRule Object)
-        -> Simplifier (AxiomPatternAttributes, RewriteRule Object)
+        -> (AxiomPatternAttributes, Rewrite)
+        -> Simplifier (AxiomPatternAttributes, Rewrite)
     simplifyRuleOnSecond tools (atts, rule) = do
         rule' <- simplifyRewriteRule tools rule
         return (atts, rule')
-    extractUntrustedClaims :: [Claim Object] -> [RewriteRule Object]
+    extractUntrustedClaims :: [Claim Object] -> [Rewrite]
     extractUntrustedClaims =
         map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)
 
@@ -211,7 +216,7 @@ prove limit definitionModule specModule = do
 execute
     :: VerifiedModule StepperAttributes AxiomPatternAttributes
     -- ^ The main module
-    -> ([Rule] -> [Strategy (Prim Rule)])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> CommonStepPattern Object
     -- ^ The input pattern
@@ -298,8 +303,8 @@ See also: 'simplifyRulePattern'
  -}
 simplifyFunctionAxioms
     :: MetadataTools Object StepperAttributes
-    -> Map.Map (Id Object) [EqualityRule Object]
-    -> Simplifier (Map.Map (Id Object) [EqualityRule Object])
+    -> Map.Map (Id Object) [Equality]
+    -> Simplifier (Map.Map (Id Object) [Equality])
 simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
   where
     simplifyEqualityRule (EqualityRule rule) =
@@ -312,8 +317,8 @@ See also: 'simplifyRulePattern'
  -}
 simplifyRewriteRule
     :: MetadataTools Object StepperAttributes
-    -> Rule
-    -> Simplifier Rule
+    -> Rewrite
+    -> Simplifier Rewrite
 simplifyRewriteRule tools (RewriteRule rule) =
     RewriteRule <$> simplifyRulePattern tools rule
 
@@ -325,8 +330,8 @@ narrowly-defined criteria.
  -}
 simplifyRulePattern
     :: MetadataTools Object StepperAttributes
-    -> RulePattern Object
-    -> Simplifier (RulePattern Object)
+    -> RulePattern Object Variable
+    -> Simplifier (RulePattern Object Variable)
 simplifyRulePattern tools rulePattern = do
     let RulePattern { left } = rulePattern
     (simplifiedLeft, _proof) <- simplifyPattern tools left

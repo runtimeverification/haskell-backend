@@ -54,7 +54,7 @@ extractFunctionAxioms
         MetaOrObject level
     => level
     -> VerifiedModule StepperAttributes AxiomPatternAttributes
-    -> Map (Id level) [EqualityRule level]
+    -> Map (Id level) [EqualityRule level Variable]
 extractFunctionAxioms level =
     \imod ->
         Foldable.foldl'
@@ -64,9 +64,9 @@ extractFunctionAxioms level =
   where
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
-        :: Map (Id level) [EqualityRule level]
+        :: Map (Id level) [EqualityRule level Variable]
         -> VerifiedModule StepperAttributes AxiomPatternAttributes
-        -> Map (Id level) [EqualityRule level]
+        -> Map (Id level) [EqualityRule level Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
       where
@@ -76,9 +76,9 @@ extractFunctionAxioms level =
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
     extractSentenceAxiom
-        :: Map (Id level) [EqualityRule level]
+        :: Map (Id level) [EqualityRule level Variable]
         -> (attrs, VerifiedKoreSentenceAxiom)
-        -> Map (Id level) [EqualityRule level]
+        -> Map (Id level) [EqualityRule level Variable]
     extractSentenceAxiom axioms (_, sentence) =
         let
             namedAxiom = axiomToIdAxiomPatternPair level sentence
@@ -87,9 +87,9 @@ extractFunctionAxioms level =
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
-        :: Map (Id level) [EqualityRule level]
-        -> (Id level, EqualityRule level)
-        -> Map (Id level) [EqualityRule level]
+        :: Map (Id level) [EqualityRule level Variable]
+        -> (Id level, EqualityRule level Variable)
+        -> Map (Id level) [EqualityRule level Variable]
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
@@ -97,7 +97,7 @@ axiomToIdAxiomPatternPair
     :: MetaOrObject level
     => level
     -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
-    -> Maybe (Id level, EqualityRule level)
+    -> Maybe (Id level, EqualityRule level Variable)
 axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
     case verifiedKoreSentenceToAxiomPattern level axiom of
         Left _ -> Nothing
@@ -128,7 +128,7 @@ axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
 -- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
     :: forall level
-    .  Map.Map (Id level) [EqualityRule level]
+    .  Map.Map (Id level) [EqualityRule level Variable]
     -> Map.Map (Id level) (BuiltinAndAxiomSimplifier level)
 axiomPatternsToEvaluators axiomPatterns =
     Map.map
@@ -139,7 +139,8 @@ axiomPatternsToEvaluators axiomPatterns =
         )
   where
     equalitiesToEvaluators
-        :: [EqualityRule level] -> Maybe (BuiltinAndAxiomSimplifier level)
+        :: [EqualityRule level Variable]
+        -> Maybe (BuiltinAndAxiomSimplifier level)
     equalitiesToEvaluators equalities =
         case (simplificationEvaluator, definitionEvaluator) of
             (Nothing, Nothing) -> Nothing
@@ -148,11 +149,11 @@ axiomPatternsToEvaluators axiomPatterns =
             (Just sEvaluator, Just dEvaluator) ->
                 Just (simplifierWithFallback sEvaluator dEvaluator)
       where
-        simplifications :: [EqualityRule level]
-        nonSimplifications :: [EqualityRule level]
+        simplifications :: [EqualityRule level Variable]
+        nonSimplifications :: [EqualityRule level Variable]
         (simplifications, nonSimplifications) =
             partition isSimplificationRule equalities
-        evaluations :: [EqualityRule level]
+        evaluations :: [EqualityRule level Variable]
         evaluations =
             filter
                 (\rule ->
@@ -201,7 +202,7 @@ axiom; this is determined by checking the 'AxiomPatternAttributes'.
 
  -}
 axiomPatternEvaluator
-    :: EqualityRule level
+    :: EqualityRule level Variable
     -> Maybe (BuiltinAndAxiomSimplifier level)
 axiomPatternEvaluator axiomPat@(EqualityRule RulePattern { attributes })
     | isAssoc = Nothing

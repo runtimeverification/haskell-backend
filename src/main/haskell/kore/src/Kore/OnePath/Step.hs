@@ -183,7 +183,7 @@ transitionRule
     -> PredicateSubstitutionSimplifier level Simplifier
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions in patterns
-    -> Prim (CommonExpandedPattern level) (RewriteRule level)
+    -> Prim (CommonExpandedPattern level) (RewriteRule level Variable)
     -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier
@@ -228,7 +228,7 @@ transitionRule
                 else return (prove <$> map wrapper (toList nonEmptyConfigs))
 
     transitionApplyWithRemainders
-        :: [RewriteRule level]
+        :: [RewriteRule level Variable]
         ->  ( StrategyPattern (CommonExpandedPattern level)
             , StepProof level Variable
             )
@@ -245,7 +245,7 @@ transitionRule
       = transitionMultiApplyWithRemainders rules (config, proof)
 
     transitionMultiApplyWithRemainders
-        :: [RewriteRule level]
+        :: [RewriteRule level Variable]
         ->  ( CommonExpandedPattern level
             , StepProof level Variable
             )

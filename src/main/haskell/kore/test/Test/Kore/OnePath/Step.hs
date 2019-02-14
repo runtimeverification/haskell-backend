@@ -387,7 +387,7 @@ simpleRewrite
     :: MetaOrObject level
     => CommonStepPattern level
     -> CommonStepPattern level
-    -> RewriteRule level
+    -> RewriteRule level Variable
 simpleRewrite left right =
     RewriteRule RulePattern
         { left = left
@@ -401,7 +401,7 @@ rewriteWithPredicate
     => CommonStepPattern level
     -> CommonStepPattern level
     -> CommonPredicate level
-    -> RewriteRule level
+    -> RewriteRule level Variable
 rewriteWithPredicate left right predicate =
     RewriteRule RulePattern
         { left = left
@@ -423,7 +423,12 @@ runSteps
     -> (ExecutionGraph (b, StepProof level Variable) -> a)
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> [Strategy (Prim (CommonExpandedPattern level) (RewriteRule level))]
+    -> [Strategy
+        (Prim
+            (CommonExpandedPattern level)
+            (RewriteRule level Variable)
+        )
+       ]
     -> IO a
 runSteps metadataTools graphFilter picker configuration strategy =
     (<$>) picker
@@ -449,8 +454,8 @@ runOnePathSteps
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> CommonStepPattern level
-    -> [RewriteRule level]
-    -> [RewriteRule level]
+    -> [RewriteRule level Variable]
+    -> [RewriteRule level Variable]
     -> IO [StrategyPattern (CommonExpandedPattern level)]
 runOnePathSteps
     metadataTools

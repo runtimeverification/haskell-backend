@@ -11,9 +11,11 @@ module Kore.Proof.Functional
     , FunctionProof (..)
     , FunctionalProof (..)
     , TotalProof (..)
+    , mapVariables
     ) where
 
 import           Kore.AST.Common
+                 ( CharLiteral, DomainValue, StringLiteral, SymbolOrAlias )
 import qualified Kore.Domain.Builtin as Domain
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is
@@ -71,3 +73,15 @@ data TotalProof level variable
 data ConstructorLikeProof
     = ConstructorLikeProof
   deriving (Eq, Show)
+
+mapVariables
+    :: (variable1 level -> variable2 level)
+    -> FunctionalProof level variable1
+    -> FunctionalProof level variable2
+mapVariables mapping =
+    \case
+        FunctionalVariable variable -> FunctionalVariable (mapping variable)
+        FunctionalDomainValue value -> FunctionalDomainValue value
+        FunctionalHead symbol -> FunctionalHead symbol
+        FunctionalStringLiteral string -> FunctionalStringLiteral string
+        FunctionalCharLiteral char -> FunctionalCharLiteral char
