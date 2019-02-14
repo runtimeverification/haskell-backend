@@ -565,7 +565,7 @@ constructorFunctions ixm =
     constructorFunctions1 ident (atts, defn) =
         ( atts
             & lensConstructor Lens.<>~ Constructor isCons
-            & lensFunctional Lens.<>~ Functional (isCons || isInj)
+            & lensFunctional Lens.<>~ Functional True --(isCons || isInj)
             & lensInjective Lens.<>~ Injective (isCons || isInj)
             & lensSortInjection Lens.<>~ SortInjection isInj
         , defn
