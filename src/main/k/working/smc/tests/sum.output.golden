@@ -1,0 +1,12 @@
+<T>
+  <k>
+    .
+  </k>
+  <mem>
+    n |-> 0
+    sum |-> 15
+  </mem>
+  <stack>
+    .ValStack
+  </stack>
+</T>

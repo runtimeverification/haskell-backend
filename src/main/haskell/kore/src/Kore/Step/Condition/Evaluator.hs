@@ -24,6 +24,7 @@ import           Data.Reflection
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
@@ -126,7 +127,10 @@ refutePredicate
     => Predicate level variable
     -> m (Maybe Bool)
 refutePredicate korePredicate =
-    case isMetaOrObject (Proxy :: Proxy level) of
+    traceNonErrorMonad D_SMT_refutePredicate
+        [ debugArg "predicate" korePredicate
+        ]
+    $ case isMetaOrObject (Proxy :: Proxy level) of
         IsMeta   -> return Nothing
         IsObject ->
             SMT.inNewScope $ runMaybeT $ do
