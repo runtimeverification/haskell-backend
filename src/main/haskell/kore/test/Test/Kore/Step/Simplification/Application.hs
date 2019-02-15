@@ -370,7 +370,7 @@ evaluate
   =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier mempty
     $ simplify
         tools
         (Mock.substitutionSimplifier tools)

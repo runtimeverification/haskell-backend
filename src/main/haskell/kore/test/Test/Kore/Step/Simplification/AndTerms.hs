@@ -802,7 +802,10 @@ unify
     -> IO (Maybe (CommonExpandedPattern level))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier $ runMaybeT $ (<$>) fst $ unification
+        $ evalSimplifier mempty
+        $ runMaybeT
+        $ (<$>) fst
+        $ unification
   where
     substitutionSimplifier =
         liftPredicateSubstitutionSimplifier
@@ -822,5 +825,5 @@ simplify
 simplify tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier mempty
     $ termAnd tools (Mock.substitutionSimplifier tools) first second

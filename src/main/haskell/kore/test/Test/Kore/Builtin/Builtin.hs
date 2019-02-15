@@ -188,7 +188,7 @@ evaluate
 evaluate =
     (<$>) fst
     . liftSMT
-    . evalSimplifier
+    . evalSimplifier mempty
     . Pattern.simplify
         testMetadataTools
         testSubstitutionSimplifier
@@ -229,7 +229,7 @@ runStepResult
             [(StepResult Object Variable, StepProof Object Variable)]
         )
 runStepResult configuration axiom =
-    (runSMT . evalSimplifier . runExceptT)
+    (runSMT . evalSimplifier mempty . runExceptT)
         (stepWithRewriteRule
             testMetadataTools
             testSubstitutionSimplifier
@@ -272,7 +272,7 @@ runStepResultWith
         )
 runStepResultWith solver configuration axiom =
     let smt =
-            (evalSimplifier . runExceptT)
+            (evalSimplifier mempty . runExceptT)
                 (stepWithRewriteRule
                     testMetadataTools
                     testSubstitutionSimplifier

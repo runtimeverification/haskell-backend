@@ -7,7 +7,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
 module SMT
-    ( SMT, getSMT
+    ( SMT (..)
     , Solver
     , newSolver, stopSolver, withSolver
     , runSMT

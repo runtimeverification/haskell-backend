@@ -561,7 +561,7 @@ evaluate
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier mempty
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier patt
   where

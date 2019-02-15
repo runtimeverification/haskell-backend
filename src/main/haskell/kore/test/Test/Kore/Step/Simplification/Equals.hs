@@ -988,7 +988,7 @@ evaluateOr
 evaluateOr tools equals =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier mempty
     $ simplify tools (Mock.substitutionSimplifier tools) equals
 
 evaluate
@@ -1007,7 +1007,7 @@ evaluateGeneric
 evaluateGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier mempty
     $ makeEvaluate tools (Mock.substitutionSimplifier tools) first second
 
 evaluateTermsGeneric
@@ -1019,7 +1019,7 @@ evaluateTermsGeneric
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier mempty
     $ makeEvaluateTermsToPredicateSubstitution
         tools
         (Mock.substitutionSimplifier tools)

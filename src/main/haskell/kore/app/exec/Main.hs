@@ -48,6 +48,8 @@ import           Kore.Error
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
+import           Kore.Logger.Output
+                 ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Predicate.Predicate
@@ -200,6 +202,7 @@ data KoreExecOptions = KoreExecOptions
     , smtPrelude          :: !(Maybe FilePath)
     , stepLimit           :: !(Limit Natural)
     , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
+    , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
     }
@@ -247,6 +250,7 @@ parseKoreExecOptions =
             )
         <*> parseStepLimit
         <*> parseStrategy
+        <*> parseKoreLogOptions
         <*> pure Nothing
         <*> optional parseKoreProveOptions
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
@@ -393,6 +397,7 @@ mainWithOptions
         , smtPrelude
         , stepLimit
         , strategy
+        , koreLogOptions
         , koreSearchOptions
         , koreProveOptions
         }
@@ -444,35 +449,37 @@ mainWithOptions
                     fileName
         (exitCode, finalPattern) <-
             clockSomethingIO "Executing"
-            $ SMT.runSMT smtConfig
-            $ evalSimplifier
-            $ case proveParameters of
-                Nothing -> do
-                    let purePattern =
-                            fromMaybe
-                                (error "Missing: --pattern PATTERN_FILE")
-                                maybePurePattern
-                    case searchParameters of
-                        Nothing -> do
-                            pat <- exec indexedModule strategy' purePattern
-                            return (ExitSuccess, pat)
-                        Just (searchPattern, searchConfig) -> do
-                            pat <-
-                                search
-                                    indexedModule
-                                    strategy'
-                                    purePattern
-                                    searchPattern
-                                    searchConfig
-                            return (ExitSuccess, pat)
-                Just specIndexedModule ->
-                    either
-                        (\pat -> (ExitFailure 1, pat))
-                        (\_ -> (ExitSuccess, mkTop $ mkSortVariable "R" ))
-                    <$> prove
-                            stepLimit
-                            indexedModule
-                            specIndexedModule
+            $ withLogger koreLogOptions (\logger ->
+                SMT.runSMT smtConfig
+                $ evalSimplifier logger
+                $ case proveParameters of
+                    Nothing -> do
+                        let purePattern =
+                                fromMaybe
+                                    (error "Missing: --pattern PATTERN_FILE")
+                                    maybePurePattern
+                        case searchParameters of
+                            Nothing -> do
+                                pat <- exec indexedModule strategy' purePattern
+                                return (ExitSuccess, pat)
+                            Just (searchPattern, searchConfig) -> do
+                                pat <-
+                                    search
+                                        indexedModule
+                                        strategy'
+                                        purePattern
+                                        searchPattern
+                                        searchConfig
+                                return (ExitSuccess, pat)
+                    Just specIndexedModule ->
+                        either
+                            (\pat -> (ExitFailure 1, pat))
+                            (\_ -> (ExitSuccess, mkTop $ mkSortVariable "R" ))
+                        <$> prove
+                                stepLimit
+                                indexedModule
+                                specIndexedModule
+                )
         let
             finalExternalPattern =
                 either (error . printError) id

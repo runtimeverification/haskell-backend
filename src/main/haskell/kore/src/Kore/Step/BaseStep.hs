@@ -45,6 +45,7 @@ import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
@@ -55,6 +56,7 @@ import           Kore.AST.Valid
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.Logger as Log
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeNotPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -299,8 +301,12 @@ stepWithRule
     substitutionSimplifier
     config
     axiom
-  = do
-
+  = Log.withLogScope "stepWithRule" $ do
+    Log.logDebug
+        $ "Attempting rule \n"
+        <> Text.pack (show axiom)
+        <> "\n for \n"
+        <> Text.pack (show config)
     let configVariables = ExpandedPattern.freeEpVariables config
 
     (renaming, axiom') <- RulePattern.refreshRulePattern configVariables axiom
@@ -610,12 +616,13 @@ stepWithRewriteRule
         ]
 stepWithRewriteRule tools substitutionSimplifier patt (RewriteRule rule) =
     traceExceptT D_BaseStep_stepWithRule [debugArg "rule" rule] $
-    stepWithRule
-            tools
-            (UnificationProcedure unificationProcedure)
-            substitutionSimplifier
-            patt
-            rule
+    Log.withLogScope "stepWithRewriteRule" $
+        stepWithRule
+                tools
+                (UnificationProcedure unificationProcedure)
+                substitutionSimplifier
+                patt
+                rule
 
 {-| Takes a configuration and a set of rules and tries to apply them to the
 configuration in order.

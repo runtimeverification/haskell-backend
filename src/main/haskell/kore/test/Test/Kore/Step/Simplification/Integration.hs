@@ -415,8 +415,10 @@ evaluateWithAxioms
     -> CommonExpandedPattern Object
     -> IO (CommonOrOfExpandedPattern Object)
 evaluateWithAxioms tools axioms patt =
-    (<$>) fst $ SMT.runSMT SMT.defaultConfig $ evalSimplifier $
-        ExpandedPattern.simplify
+    (<$>) fst
+        $ SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier mempty
+        $ ExpandedPattern.simplify
             tools
             (PredicateSubstitution.create tools simplifier)
             simplifier

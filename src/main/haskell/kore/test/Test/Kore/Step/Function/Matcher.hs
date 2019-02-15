@@ -896,7 +896,7 @@ unificationWithMatch
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier
+        $ evalSimplifier mempty
         $ runExceptT
         $ unificationWithAppMatchOnTop
             tools
@@ -927,7 +927,9 @@ match tools first second =
                 )
             )
     matchAsEither =
-        SMT.runSMT SMT.defaultConfig $ evalSimplifier $ runExceptT matchResult
+        SMT.runSMT SMT.defaultConfig
+            $ evalSimplifier mempty
+            $ runExceptT matchResult
     matchResult
         :: ExceptT
             (UnificationOrSubstitutionError level Variable)

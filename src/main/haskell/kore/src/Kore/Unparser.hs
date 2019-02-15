@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Unparser
     ( Unparse (..)
+    , unparseToText
     , unparseToString
     , renderDefault
     , layoutPrettyUnbounded
@@ -41,6 +42,8 @@ import           Data.Text.Prettyprint.Doc hiding
                  ( list )
 import           Data.Text.Prettyprint.Doc.Render.String
                  ( renderString )
+import           Data.Text.Prettyprint.Doc.Render.Text
+                 ( renderStrict )
 import           Data.Void
 import qualified Numeric
 
@@ -65,6 +68,9 @@ import qualified Kore.Domain.External as Domain
 class Unparse p where
     -- | Render a type from abstract to concrete Kore syntax.
     unparse :: p -> Doc ann
+
+unparseToText :: Unparse p => p -> Text
+unparseToText = renderStrict . layoutPretty defaultLayoutOptions . unparse
 
 -- | Serialize an object to 'String'.
 unparseToString :: Unparse p => p -> String

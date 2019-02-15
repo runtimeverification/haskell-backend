@@ -34,6 +34,7 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import qualified Kore.Logger as Log
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom), Claim (Claim), defaultStrategy, verify )
 import qualified Kore.OnePath.Verification as Claim
@@ -221,7 +222,8 @@ execute
     -> CommonStepPattern Object
     -- ^ The input pattern
     -> Simplifier Execution
-execute verifiedModule strategy inputPattern = do
+execute verifiedModule strategy inputPattern
+  = Log.withLogScope "setUpConcreteExecution" $ do
     let metadataTools = extractMetadataTools verifiedModule
     initialized <- initialize verifiedModule metadataTools
     let

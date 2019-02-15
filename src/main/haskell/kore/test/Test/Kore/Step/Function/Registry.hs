@@ -259,7 +259,7 @@ test_functionRegistry =
         let expect = mkApp sortS sHead []
         (simplified, _) <-
             SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier
+            $ evalSimplifier mempty
             $ ExpandedPattern.simplify
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)
