@@ -26,8 +26,6 @@ import           Kore.AST.Valid
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Function.Data
@@ -96,8 +94,6 @@ evaluateApplication
     (valid :< app)
   = case maybeEvaluatedPattSimplifier of
         Nothing
-          | give tools isSortInjection_ appHead ->
-            evaluateSortInjection tools unchangedOr app
           | Just hook <- getAppHookString
           , not(null axiomIdToEvaluator) ->
             error
@@ -108,6 +104,8 @@ evaluateApplication
             return unchanged
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
   where
+    (afterInj, _proof) = evaluateSortInjection tools app
+
     maybeEvaluatedPattSimplifier =
         maybeEvaluatePattern
             tools
@@ -118,10 +116,10 @@ evaluateApplication
             appPurePattern
             unchangedOr
 
-    Application { applicationSymbolOrAlias = appHead } = app
+    Application { applicationSymbolOrAlias = appHead } = afterInj
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
 
-    appPurePattern = asPurePattern (valid :< ApplicationPattern app)
+    appPurePattern = asPurePattern (valid :< ApplicationPattern afterInj)
 
     unchangedPatt =
         Predicated
@@ -306,39 +304,41 @@ maybeEvaluatePattern
                     simplifier
                     toSimplify
 
-
 evaluateSortInjection
     :: (MetaOrObject level, Ord (variable level))
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
     -> Application level (StepPattern level variable)
-    -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
-evaluateSortInjection tools unchanged ap = case apChild of
+    ->  ( Application level (StepPattern level variable)
+        , SimplificationProof level
+        )
+evaluateSortInjection tools ap
+  | give tools isSortInjection_ apHead
+  = case apChild of
     (App_ apHeadChild grandChildren)
       | give tools isSortInjection_ apHeadChild ->
         let
             [fromSort', toSort'] = symbolOrAliasParams apHeadChild
             apHeadNew = updateSortInjectionSource apHead fromSort'
+            resultApp = apHeadNew grandChildren
         in
             assert (toSort' == fromSort) $
-            return
-                ( OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = apHeadNew grandChildren
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                ( resultApp
                 , SimplificationProof
                 )
-    _ -> return (unchanged, SimplificationProof)
+    _ -> (ap, SimplificationProof)
+  | otherwise = (ap, SimplificationProof)
   where
     apHead = applicationSymbolOrAlias ap
     [fromSort, _] = symbolOrAliasParams apHead
     [apChild] = applicationChildren ap
     updateSortInjectionSource head1 fromSort1 =
-        mkApp toSort1 head1 { symbolOrAliasParams = [fromSort1, toSort1] }
+        \children ->
+            ( Application
+                { applicationSymbolOrAlias =
+                    head1 { symbolOrAliasParams = [fromSort1, toSort1] }
+                , applicationChildren = children
+                }
+            )
       where
         [_, toSort1] = symbolOrAliasParams head1
 
