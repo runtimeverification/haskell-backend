@@ -10,6 +10,7 @@ module Kore.Attribute.Smtlib
     ( Smtlib (..)
     , smtlibId, smtlibSymbol, smtlibAttribute
     , applySExpr
+    , shortenSExpr
     ) where
 
 import           Control.DeepSeq
@@ -114,6 +115,10 @@ parseSExpr syntax =
     noParse = Kore.Error.koreFail "failed to parse S-expression"
     incompleteParse =
         Kore.Error.koreFail "failed to parse entire argument"
+
+shortenSExpr :: SExpr -> SExpr
+shortenSExpr (List [e]) = e
+shortenSExpr e = e
 
 {- | Fill placeholder symbols in an 'SExpr' from the argument list.
 

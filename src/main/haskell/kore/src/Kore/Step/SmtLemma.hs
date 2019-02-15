@@ -19,6 +19,7 @@ import           Control.Error
 import qualified Control.Monad.Counter as Counter
 import           Control.Monad.Except
 import qualified Control.Monad.State as State
+import           Control.Monad.Trans.Maybe
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
@@ -28,6 +29,7 @@ import           Kore.AST.Kore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.SmtLemma
+import           Kore.Attribute.Smtlib
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
@@ -40,7 +42,6 @@ import           Kore.Unparser
 import           SMT
                  ( MonadSMT, SExpr (..), SMT )
 import qualified SMT
-
 
 normalizeRule
     :: ( Ord (var Object)
@@ -73,8 +74,43 @@ declareSMTLemmas
             StepperAttributes
             AxiomPatternAttributes
     -> m ()
-declareSMTLemmas m = SMT.liftSMT $ mapM_ declareRule (indexedModuleAxioms m)
+declareSMTLemmas m = SMT.liftSMT $ do
+    mapM_ declareSort (indexedModuleObjectSortDescriptions m)
+    mapM_ declareSymbol (indexedModuleObjectSymbolSentences m)
+    mapM_ declareRule (indexedModuleAxioms m)
   where
+    declareSort :: forall .
+        ( Given (MetadataTools Object StepperAttributes)
+        )
+        =>  ( StepperAttributes
+            , SentenceSort
+                Object
+                (KorePattern Domain.Builtin Variable (Unified (Valid (Unified Variable))))
+            )
+            -> SMT ()
+    declareSort (atts, _) =
+        case getSmtlib $ smtlib atts of
+            Just (SMT.List (SMT.Atom name : sortArgs)) -> do
+                _ <- SMT.declareSort name (length sortArgs)
+                pure ()
+            _ -> pure ()
+    declareSymbol :: forall .
+        ( Given (MetadataTools Object StepperAttributes)
+        )
+        =>  ( StepperAttributes
+            , SentenceSymbol
+                Object
+                (KorePattern Domain.Builtin Variable (Unified (Valid (Unified Variable))))
+            )
+            -> SMT (Maybe ())
+    declareSymbol (atts, symDeclaration) = runMaybeT $
+        case getSmtlib $ smtlib atts of
+            Just (SMT.List (SMT.Atom name : _)) -> do
+                inputSorts <- mapM translateSort (sentenceSymbolSorts symDeclaration)
+                resultSort <- translateSort (sentenceSymbolResultSort symDeclaration)
+                _ <- SMT.declareFun name inputSorts resultSort
+                pure ()
+            _ -> pure ()
     declareRule :: forall sortParam .
         ( Given (MetadataTools Object StepperAttributes)
         )
@@ -94,7 +130,7 @@ declareSMTLemmas m = SMT.liftSMT $ mapM_ declareRule (indexedModuleAxioms m)
           $ translatePredicate translateUninterpreted
           $ wrapPredicate
           $ normalizeRule pat
-        (SMT.assert . addQuantifiers vars) lemma
+        SMT.assert (addQuantifiers vars lemma)
 
     addQuantifiers vars lemma | null vars = lemma
     addQuantifiers vars lemma = SMT.List
@@ -103,6 +139,18 @@ declareSMTLemmas m = SMT.liftSMT $ mapM_ declareRule (indexedModuleAxioms m)
             [ SMT.List [sexpr, t] | (sexpr, t) <- Map.elems vars ]
         , lemma
         ]
+
+    translateSort
+        :: Given (MetadataTools Object StepperAttributes)
+        => Sort Object
+        -> MaybeT SMT SExpr
+    translateSort sort@(SortActualSort (SortActual _ children)) =
+        case getSmtlib $ smtlib $ sortAttributes given sort of
+            Just sExpr -> do
+                children' <- mapM translateSort children
+                pure $ applySExpr sExpr children'
+            Nothing -> mzero
+    translateSort _ = mzero
 
 getRight :: MonadPlus m => Either a b -> m b
 getRight (Right a) = pure a

@@ -207,10 +207,9 @@ translatePredicate translateUninterpreted predicate =
             { applicationSymbolOrAlias
             , applicationChildren
             }
-      =
-        case getSmtlib (symAttributes smtTools applicationSymbolOrAlias) of
+      = case getSmtlib (symAttributes smtTools applicationSymbolOrAlias) of
             Nothing -> empty
-            Just sExpr ->
+            Just sExpr -> shortenSExpr <$>
                 applySExpr sExpr
                     <$> zipWithM translatePattern
                         applicationChildrenSorts
@@ -228,12 +227,15 @@ translatePredicate translateUninterpreted predicate =
         => Sort Object
         -> p
         -> Translator p SExpr
-    translatePattern sort =
+    translatePattern sort pat =
         case getHook (sortAttributes hookTools sort) of
             Just builtinSort
-              | builtinSort == Builtin.Bool.sort -> translateBool
-              | builtinSort == Builtin.Int.sort -> translateInt
-            _ -> const empty
+              | builtinSort == Builtin.Bool.sort -> translateBool pat
+              | builtinSort == Builtin.Int.sort -> translateInt pat
+            _ -> case Cofree.tailF $ Recursive.project pat of
+                    ApplicationPattern app ->
+                        translateApplication app
+                    _ -> empty
       where
         hookTools :: MetadataTools Object Hook
         hookTools = StepperAttributes.hook <$> given
