@@ -44,9 +44,12 @@ instance Hashable a => Hashable (Sup a)
 
 instance NFData a => NFData (Sup a)
 
+-- | 'Sup' is the annihilator of 'Element'.
 instance Ord a => Semigroup (Sup a) where
-    (<>) Sup = \_ -> Sup
-    (<>) (Element a) =
-        \case
-            Element b -> Element (max a b)
-            Sup       -> Sup
+    (<>) a b = max <$> a <*> b
+
+-- | 'Sup' is the annihilator of 'Element'.
+instance Applicative Sup where
+    pure = Element
+    (<*>) Sup         = \_ -> Sup
+    (<*>) (Element f) = \case { Sup -> Sup; Element a -> Element (f a) }
