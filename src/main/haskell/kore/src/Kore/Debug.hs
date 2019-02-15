@@ -83,6 +83,7 @@ statements and the others for permanent debug statements
 data DebugPlace
     = D_Generic !String !DebugResult
     | D_OnePath_Step_transitionRule
+    | D_Step
     | D_BaseStep_stepWithRule
     | D_Function_evaluatePattern
   deriving (Eq, Ord, Show)
@@ -124,6 +125,12 @@ onePathWithFunctionNames :: Map DebugPlace DebugResult
 onePathWithFunctionNames =
     Map.insert D_Function_evaluatePattern DebugNoResult
     $ Map.insert D_OnePath_Step_transitionRule DebugResult
+    $ Map.singleton D_BaseStep_stepWithRule DebugResult
+
+executionWithFunctionNames :: Map DebugPlace DebugResult
+executionWithFunctionNames =
+    Map.insert D_Function_evaluatePattern DebugNoResult
+    $ Map.insert D_Step DebugNoResult
     $ Map.singleton D_BaseStep_stepWithRule DebugResult
 
 traceWhenEnabled

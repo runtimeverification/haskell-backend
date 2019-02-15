@@ -36,8 +36,7 @@ import qualified Kore.Step.AxiomPatterns as AxiomPatterns
                  ( Assoc (..), AxiomPatternAttributes (..), Comm (..),
                  Idem (..), RulePattern (..), Unit (..) )
 import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifier (..),
-                 BuiltinAndAxiomSimplifierMap )
+                 ( BuiltinAndAxiomSimplifier (..) )
 import           Kore.Step.Function.EvaluationStrategy
                  ( definitionEvaluation, firstFullEvaluation,
                  simplifierWithFallback )
