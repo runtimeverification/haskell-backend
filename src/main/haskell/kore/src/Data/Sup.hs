@@ -33,11 +33,11 @@ data Sup a
     deriving (Data, Functor, Generic, Read, Show, Typeable)
 
 instance Eq a => Eq (Sup a) where
-    (==) Sup         = \case { Sup -> True        ; _ -> False }
+    (==) Sup         = \case { Sup       -> True  ; _ -> False }
     (==) (Element a) = \case { Element b -> a == b; _ -> False }
 
 instance Ord a => Ord (Sup a) where
-    compare Sup         = \_ -> GT
+    compare Sup         = \case { Sup       -> EQ         ; _   -> GT }
     compare (Element a) = \case { Element b -> compare a b; Sup -> LT }
 
 instance Hashable a => Hashable (Sup a)
