@@ -17,6 +17,7 @@ module SimpleSMT
       Solver(..)
     , newSolver
     , ackCommand
+    , ackCommandIgnoreErr
     , simpleCommand
     , simpleCommandMaybe
     , loadFile
@@ -42,6 +43,7 @@ module SimpleSMT
     , inNewScope
     , declare
     , declareFun
+    , declareSort
     , declareDatatype
     , define
     , defineFun
@@ -370,6 +372,7 @@ loadFile s file = do
         Right exprs ->
             mapM_ (command s) exprs
 
+
 -- | A command with no interesting result.
 ackCommand :: Solver -> SExpr -> IO ()
 ackCommand proc c =
@@ -381,6 +384,11 @@ ackCommand proc c =
                       , "  Expected: success"
                       , "  Result: " ++ showSExpr res
                       ]
+
+-- | A command with no interesting result.
+ackCommandIgnoreErr :: Solver -> SExpr -> IO ()
+ackCommandIgnoreErr proc c = command proc c >> pure ()
+
 
 -- | A command entirely made out of atoms, with no interesting result.
 simpleCommand :: Solver -> [Text] -> IO ()
@@ -446,7 +454,6 @@ inNewScope s m =
      m `X.finally` pop s
 
 
-
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
 -- For convenience, returns an the declared name as a constant expression.
 declare :: Solver -> Text -> SExpr -> IO SExpr
@@ -456,8 +463,13 @@ declare proc f t = declareFun proc f [] t
 -- For convenience, returns an the declared name as a constant expression.
 declareFun :: Solver -> Text -> [SExpr] -> SExpr -> IO SExpr
 declareFun proc f as r =
-  do ackCommand proc $ fun "declare-fun" [ Atom f, List as, r ]
+  do ackCommandIgnoreErr proc $ fun "declare-fun" [ Atom f, List as, r ]
      return (const f)
+
+declareSort :: Solver -> Text -> Int -> IO SExpr
+declareSort proc f n = do
+    ackCommandIgnoreErr proc $ fun "declare-sort" [ Atom f, (Atom . Text.pack . show) n]
+    pure (const f)
 
 -- | Declare an ADT using the format introduced in SmtLib 2.6.
 declareDatatype ::
