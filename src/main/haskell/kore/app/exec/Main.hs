@@ -415,7 +415,7 @@ mainWithOptions
                 either (error . printError) id
                 (Builtin.externalizePattern indexedModule finalPattern)
             unparsed =
-                (unparse . fromFreshVariables) finalExternalPattern
+                (unparse . externalizeFreshVariables) finalExternalPattern
         case outputFileName of
             Nothing ->
                 putDoc unparsed

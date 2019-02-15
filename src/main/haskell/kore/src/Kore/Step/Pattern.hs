@@ -23,10 +23,12 @@ module Kore.Step.Pattern
     , toKoreSentenceAxiom
     , toKoreModule
     , substitute
-    , fromFreshVariables
+    , externalizeFreshVariables
     ) where
 
 import qualified Control.Lens as Lens
+import           Control.Monad.Reader
+                 ( Reader )
 import qualified Control.Monad.Reader as Reader
 import           Data.Functor.Foldable
                  ( Base )
@@ -348,17 +350,17 @@ substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 
-@fromFreshVariables@ resets the 'variableCounter' of all variables, while
+@externalizeFreshVariables@ resets the 'variableCounter' of all variables, while
 ensuring that no 'Variable' in the result is accidentally captured.
 
  -}
-fromFreshVariables
+externalizeFreshVariables
     :: forall level. MetaOrObject level
     => StepPattern level Variable
     -> StepPattern level Variable
-fromFreshVariables stepPattern =
+externalizeFreshVariables stepPattern =
     Reader.runReader
-        (Recursive.fold fromFreshVariablesWorker stepPattern)
+        (Recursive.fold externalizeFreshVariablesWorker stepPattern)
         Map.empty
   where
     lookupVariable variable =
@@ -378,7 +380,18 @@ fromFreshVariables stepPattern =
         child' <- Reader.local (Map.insert variable variable') child
         return (variable', child')
 
-    fromFreshVariablesWorker (valid :< patt) = do
+    externalizeFreshVariablesWorker
+        ::  Base
+                (CommonStepPattern level)
+                (Reader
+                    (Map (Variable level) (Variable level))
+                    (CommonStepPattern level)
+                )
+        ->  (Reader
+                (Map (Variable level) (Variable level))
+                (CommonStepPattern level)
+            )
+    externalizeFreshVariablesWorker (valid :< patt) = do
         valid' <- Valid.traverseVariables lookupVariable valid
         let Valid { freeVariables = freeVariables' } = valid'
         patt' <-
