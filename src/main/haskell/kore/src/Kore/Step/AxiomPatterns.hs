@@ -20,6 +20,7 @@ module Kore.Step.AxiomPatterns
     , lensIdem, Idem (..)
     , lensTrusted, Trusted (..)
     , lensSimplification, Simplification (..)
+    , lensOverload, Overload
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -65,6 +66,8 @@ import qualified Kore.Attribute.Axiom.Concrete as Axiom
 import           Kore.Attribute.Comm
 import           Kore.Attribute.HeatCool
 import           Kore.Attribute.Idem
+import           Kore.Attribute.Overload
+                 ( Overload )
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..), parseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
@@ -102,6 +105,8 @@ data AxiomPatternAttributes =
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
+    , overload :: !Overload
+    -- ^ The axiom is an overloaded-production axiom.
     }
     deriving (Eq, Ord, Show, Generic)
 
@@ -121,6 +126,7 @@ instance Default AxiomPatternAttributes where
             , trusted = def
             , concrete = def
             , simplification = def
+            , overload = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -134,6 +140,7 @@ instance ParseAttributes AxiomPatternAttributes where
         Monad.>=> lensTrusted (parseAttribute attr)
         Monad.>=> lensConcrete (parseAttribute attr)
         Monad.>=> lensSimplification (parseAttribute attr)
+        Monad.>=> lensOverload (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
