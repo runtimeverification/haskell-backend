@@ -42,6 +42,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -370,7 +371,7 @@ evaluate
   =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier mempty
+    $ evalSimplifier emptyLogger
     $ simplify
         tools
         (Mock.substitutionSimplifier tools)

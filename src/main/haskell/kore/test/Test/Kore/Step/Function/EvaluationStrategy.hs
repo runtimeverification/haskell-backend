@@ -54,6 +54,7 @@ import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -561,7 +562,7 @@ evaluate
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier mempty
+    $ evalSimplifier emptyLogger
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier patt
   where

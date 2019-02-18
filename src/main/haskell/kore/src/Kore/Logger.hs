@@ -4,13 +4,12 @@ Description : Logging functions.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
 
 module Kore.Logger
     ( LogMessage (..)
     , Severity (..)
+    , Scope (..)
     , log
     , logDebug
     , logInfo
@@ -25,9 +24,12 @@ import           Colog
 import qualified Colog as Colog
 import           Data.Functor.Contravariant
                  ( contramap )
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
+import           GHC.Stack
+                 ( CallStack, HasCallStack, callStack )
 import           Prelude hiding
                  ( log )
 
@@ -46,27 +48,34 @@ data Severity
     -- ^ Used before shutting down the application.
     deriving (Show, Read, Eq, Ord)
 
+-- | Logging scope, used by 'LogMessage'.
+newtype Scope = Scope
+    { unScope :: Text
+    } deriving (Eq, Ord, Show, Semigroup, Monoid, IsString)
+
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
 data LogMessage = LogMessage
-    { lmMessage  :: !Text
+    { message   :: !Text
     -- ^ message being logged
-    , lmSeverity :: !Severity
+    , severity  :: !Severity
     -- ^ log level / severity of message
-    , lmScope    :: !Text
+    , scope     :: ![Scope]
     -- ^ scope of the message, usually of the form "a.b.c"
+    , callstack :: !CallStack
+    -- ^ call stack of the message, when available
     }
 
 -- | Logs a message using given 'Severity'.
 log
     :: forall env m
-    . (WithLog env LogMessage m)
+    . (HasCallStack, WithLog env LogMessage m)
     => Severity
     -- ^ If lower than the minimum severity, the message will not be logged
     -> Text
     -- ^ Message to be logged
     -> m ()
-log s t = Colog.logMsg $ LogMessage t s ""
+log s t = Colog.logMsg $ LogMessage t s mempty callStack
 
 -- | Logs using 'Debug' log level. See 'log'.
 logDebug
@@ -74,7 +83,7 @@ logDebug
     . (WithLog env LogMessage m)
     => Text
     -> m ()
-logDebug t = Colog.logMsg $ LogMessage t Debug ""
+logDebug = log Debug
 
 -- | Logs using 'Info' log level. See 'log'.
 logInfo
@@ -82,7 +91,7 @@ logInfo
     . (WithLog env LogMessage m)
     => Text
     -> m ()
-logInfo t = Colog.logMsg $ LogMessage t Info ""
+logInfo = log Info
 
 -- | Logs using 'Warning' log level. See 'log'.
 logWarning
@@ -90,7 +99,7 @@ logWarning
     . (WithLog env LogMessage m)
     => Text
     -> m ()
-logWarning t = Colog.logMsg $ LogMessage t Warning ""
+logWarning = log Warning
 
 -- | Logs using 'Error' log level. See 'log'.
 logError
@@ -98,7 +107,7 @@ logError
     . (WithLog env LogMessage m)
     => Text
     -> m ()
-logError t = Colog.logMsg $ LogMessage t Error ""
+logError = log Error
 
 -- | Logs using 'Critical' log level. See 'log'.
 logCritical
@@ -106,7 +115,7 @@ logCritical
     . (WithLog env LogMessage m)
     => Text
     -> m ()
-logCritical t = Colog.logMsg $ LogMessage t Critical ""
+logCritical = log Critical
 
 -- | Creates a new logging scope, appending the text to the current scope. For
 -- example, if the current scope is "a.b" and 'withLogScope' is called with
@@ -114,15 +123,12 @@ logCritical t = Colog.logMsg $ LogMessage t Critical ""
 withLogScope
     :: forall env m a
     .  WithLog env LogMessage m
-    => Text
+    => Scope
     -- ^ new scope
     -> m a
     -- ^ continuation / enclosure for the new scope
     -> m a
 withLogScope newScope = Colog.withLog (contramap appendScope)
   where
-    appendScope (LogMessage msg sev scope) =
-        LogMessage msg sev $
-            if Text.null scope
-               then newScope
-               else (newScope <> "." <> scope)
+    appendScope (LogMessage msg sev scope callstack) =
+        LogMessage msg sev (newScope : scope) callstack

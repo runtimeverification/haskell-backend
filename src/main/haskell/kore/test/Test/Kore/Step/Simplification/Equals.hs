@@ -38,6 +38,7 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -988,7 +989,7 @@ evaluateOr
 evaluateOr tools equals =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier mempty
+    $ evalSimplifier emptyLogger
     $ simplify tools (Mock.substitutionSimplifier tools) equals
 
 evaluate
@@ -1007,7 +1008,7 @@ evaluateGeneric
 evaluateGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier mempty
+    $ evalSimplifier emptyLogger
     $ makeEvaluate tools (Mock.substitutionSimplifier tools) first second
 
 evaluateTermsGeneric
@@ -1019,7 +1020,7 @@ evaluateTermsGeneric
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier mempty
+    $ evalSimplifier emptyLogger
     $ makeEvaluateTermsToPredicateSubstitution
         tools
         (Mock.substitutionSimplifier tools)

@@ -32,6 +32,7 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -802,7 +803,7 @@ unify
     -> IO (Maybe (CommonExpandedPattern level))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier mempty
+        $ evalSimplifier emptyLogger
         $ runMaybeT
         $ (<$>) fst
         $ unification
@@ -825,5 +826,5 @@ simplify
 simplify tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier mempty
+    $ evalSimplifier emptyLogger
     $ termAnd tools (Mock.substitutionSimplifier tools) first second

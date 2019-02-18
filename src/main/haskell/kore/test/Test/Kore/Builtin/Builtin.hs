@@ -54,6 +54,7 @@ import           SMT
                  ( MonadSMT (..), SMT, Solver )
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Builtin.Definition
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.SMT
@@ -188,7 +189,7 @@ evaluate
 evaluate =
     (<$>) fst
     . liftSMT
-    . evalSimplifier mempty
+    . evalSimplifier emptyLogger
     . Pattern.simplify
         testMetadataTools
         testSubstitutionSimplifier
@@ -229,7 +230,7 @@ runStepResult
             [(StepResult Object Variable, StepProof Object Variable)]
         )
 runStepResult configuration axiom =
-    (runSMT . evalSimplifier mempty . runExceptT)
+    (runSMT . evalSimplifier emptyLogger . runExceptT)
         (stepWithRewriteRule
             testMetadataTools
             testSubstitutionSimplifier
@@ -272,7 +273,7 @@ runStepResultWith
         )
 runStepResultWith solver configuration axiom =
     let smt =
-            (evalSimplifier mempty . runExceptT)
+            (evalSimplifier emptyLogger . runExceptT)
                 (stepWithRewriteRule
                     testMetadataTools
                     testSubstitutionSimplifier

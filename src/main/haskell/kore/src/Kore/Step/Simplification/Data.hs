@@ -45,7 +45,7 @@ import Kore.Variables.Fresh
 import SimpleSMT
        ( Solver )
 import SMT
-       ( MonadSMT, SMT (..), liftSMT )
+       ( MonadSMT, SMT (..), liftSMT, withSolver' )
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
@@ -133,11 +133,11 @@ runSimplifier
     -> LogAction Simplifier LogMessage
     -- ^ initial counter for fresh variables
     -> SMT (a, Natural)
-runSimplifier (Simplifier s) n logger =  SMT $ ReaderT (\solver -> do
-    nat <- newIORef n
-    a <- runReaderT s $ Environment nat solver logger
-    pure (a, n)
-                                                )
+runSimplifier (Simplifier s) n logger =
+    withSolver' $ \solver -> do
+        nat <- newIORef n
+        a <- runReaderT s $ Environment nat solver logger
+        pure (a, n)
 
 {- | Evaluate a simplifier computation.
 

@@ -4,8 +4,6 @@ Description : Logger helpers and internals needed for Main.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
 
 module Kore.Logger.Output
@@ -13,6 +11,7 @@ module Kore.Logger.Output
     , KoreLogOptions (..)
     , withLogger
     , parseKoreLogOptions
+    , emptyLogger
     ) where
 
 import           Colog
@@ -23,13 +22,19 @@ import           Control.Applicative
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import qualified Control.Monad.Trans as Trans
+import           Data.Foldable
+                 ( fold )
 import           Data.Functor.Contravariant
                  ( contramap )
+import           Data.List
+                 ( intersperse )
 import           Data.String
                  ( IsString, fromString )
 import           Data.Text
                  ( Text )
 import qualified Data.Text.Lazy as Text.Lazy
+import           Data.Text.Lazy.Builder
+                 ( Builder )
 import qualified Data.Text.Lazy.Builder as Builder
 import           Data.Time.Clock
                  ( getCurrentTime )
@@ -37,11 +42,14 @@ import           Data.Time.Format
                  ( defaultTimeLocale, formatTime )
 import           Data.Time.LocalTime
                  ( LocalTime, getCurrentTimeZone, utcToLocalTime )
-import           Kore.Logger
+import           GHC.Stack
+                 ( CallStack, getCallStack, popCallStack, prettyCallStack )
 import           Options.Applicative
                  ( Parser, auto, help, long, option, str )
 import           Text.Read
                  ( readMaybe )
+
+import Kore.Logger
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
@@ -126,7 +134,7 @@ makeKoreLogger
     -> LogAction m Text
     -> LogAction m LogMessage
 makeKoreLogger severity logToText =
-    Colog.cfilter (\(LogMessage _ s _) -> s >= severity)
+    Colog.cfilter (\(LogMessage _ s _ _) -> s >= severity)
         . Colog.cmapM addTimeStamp
         $ contramap messageToText logToText
   where
@@ -138,7 +146,7 @@ makeKoreLogger severity logToText =
     messageToText :: LogMessageWithTimestamp -> Text
     messageToText
         (LogMessageWithTimestamp
-            (LogMessage message severity' scope)
+                (LogMessage message severity' scope callstack)
             localTime
         )
             = Text.Lazy.toStrict . Builder.toLazyText
@@ -147,9 +155,26 @@ makeKoreLogger severity logToText =
                 <> "] ["
                 <> formatLocalTime "%Y-%m-%d %H:%M:%S%Q" localTime
                 <> "] ["
-                <> Builder.fromText scope
+                <> scopeToBuilder scope
                 <> "]: "
                 <> Builder.fromText message
+                <> " ["
+                <> formatCallStack callstack
+                <> "]"
+
+    scopeToBuilder :: [Scope] -> Builder
+    scopeToBuilder =
+        fold
+            . intersperse "."
+            . fmap (Builder.fromText . unScope)
+
+    formatCallStack :: CallStack -> Builder
+    formatCallStack cs
+        | length (getCallStack cs) <= 1 = mempty
+        | otherwise                    = callStackToBuilder cs
+
+    callStackToBuilder :: CallStack -> Builder
+    callStackToBuilder = Builder.fromString . prettyCallStack . popCallStack
 
 -- Helper to get the local time in 'MonadIO'.
 getLocalTime :: MonadIO m => m LocalTime
@@ -159,3 +184,6 @@ getLocalTime =
 -- Formats the local time using the provided format string.
 formatLocalTime :: IsString s => String -> LocalTime -> s
 formatLocalTime format = fromString . formatTime defaultTimeLocale format
+
+emptyLogger :: Applicative m => LogAction m msg
+emptyLogger = mempty

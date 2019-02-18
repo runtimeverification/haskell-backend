@@ -41,7 +41,7 @@ import           Kore.Unification.Unifier
 import qualified SMT
 
 import           Test.Kore
-                 ( testId )
+                 ( emptyLogger, testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -896,7 +896,7 @@ unificationWithMatch
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier mempty
+        $ evalSimplifier emptyLogger
         $ runExceptT
         $ unificationWithAppMatchOnTop
             tools
@@ -928,7 +928,7 @@ match tools first second =
             )
     matchAsEither =
         SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier mempty
+            $ evalSimplifier emptyLogger
             $ runExceptT matchResult
     matchResult
         :: ExceptT
