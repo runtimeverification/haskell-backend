@@ -46,7 +46,7 @@ testBinary symb impl =
         actual <-
             evaluate
             $ mkApp boolSort symb
-            $ Test.Bool.asPattern <$> [a, b]
+            $ Test.Bool.asInternal <$> [a, b]
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -69,7 +69,7 @@ test_KEqual =
     , testCaseWithSolver "dotk equals dotk" $ \solver -> do
         let expect =
                 ExpandedPattern.fromPurePattern
-                $ Test.Bool.asPattern True
+                $ Test.Bool.asInternal True
             original =
                 mkApp
                     boolSort
@@ -83,7 +83,7 @@ test_KEqual =
     , testCaseWithSolver "distinct domain values" $ \solver -> do
         let expect =
                 ExpandedPattern.fromPurePattern
-                $ Test.Bool.asPattern False
+                $ Test.Bool.asInternal False
             original =
                 mkApp
                     boolSort
@@ -103,7 +103,7 @@ test_KEqual =
     , testCaseWithSolver "injected distinct domain values" $ \solver -> do
         let expect =
                 ExpandedPattern.fromPurePattern
-                $ Test.Bool.asPattern False
+                $ Test.Bool.asInternal False
             original =
                 mkApp
                     boolSort
@@ -131,7 +131,7 @@ test_KEqual =
     , testCase "distinct Id domain values casted to K" $ do
         let expect =
                 ExpandedPattern.fromPurePattern
-                $ Test.Bool.asPattern False
+                $ Test.Bool.asInternal False
             original =
                 mkApp
                     boolSort
@@ -168,7 +168,7 @@ test_KEqual =
     ]
   where
     pat symbol = mkApp boolSort symbol
-        [ Test.Bool.asPattern True
+        [ Test.Bool.asInternal True
         , mkVar Variable
             { variableName = testId "x"
             , variableSort = boolSort
@@ -180,14 +180,14 @@ test_KIte =
     [ testCaseWithSolver "ite true" $ \solver -> do
         let expect =
                 ExpandedPattern.fromPurePattern
-                $ Test.Bool.asPattern False
+                $ Test.Bool.asInternal False
             original =
                 mkApp
                     kSort
                     kiteKSymbol
-                    [ Test.Bool.asPattern True
-                    , Test.Bool.asPattern False
-                    , Test.Bool.asPattern True
+                    [ Test.Bool.asInternal True
+                    , Test.Bool.asInternal False
+                    , Test.Bool.asInternal True
                     ]
         actual <- evaluateWith solver original
         assertEqual "" expect actual
@@ -195,14 +195,14 @@ test_KIte =
     , testCaseWithSolver "ite false" $ \solver -> do
         let expect =
                 ExpandedPattern.fromPurePattern
-                $ Test.Bool.asPattern True
+                $ Test.Bool.asInternal True
             original =
                 mkApp
                     kSort
                     kiteKSymbol
-                    [ Test.Bool.asPattern False
-                    , Test.Bool.asPattern False
-                    , Test.Bool.asPattern True
+                    [ Test.Bool.asInternal False
+                    , Test.Bool.asInternal False
+                    , Test.Bool.asInternal True
                     ]
         actual <- evaluateWith solver original
         assertEqual "" expect actual

@@ -1376,10 +1376,10 @@ builtinInt
     :: Ord (variable Object)
     => Integer
     -> StepPattern Object variable
-builtinInt = Builtin.Int.asPattern intSort
+builtinInt = Builtin.Int.asInternal intSort
 
 builtinBool
     :: Ord (variable Object)
     => Bool
     -> StepPattern Object variable
-builtinBool = Builtin.Bool.asPattern boolSort
+builtinBool = Builtin.Bool.asInternal boolSort

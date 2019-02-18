@@ -4,6 +4,7 @@ import           Hedgehog hiding
                  ( property )
 import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
+import           Test.Tasty.HUnit
 
 import qualified Data.Text as Text
 
@@ -11,6 +12,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
@@ -51,6 +53,14 @@ test_implies = testBinary impliesBoolSymbol implies
   where
     implies u v = not u || v
 
+-- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
+asInternal :: Bool -> CommonStepPattern Object
+asInternal = Bool.asInternal boolSort
+
+-- | Specialize 'Bool.asExpandedPattern' to the builtin sort 'boolSort'.
+asExpandedPattern :: Bool -> CommonExpandedPattern Object
+asExpandedPattern = Bool.asExpandedPattern boolSort
+
 -- | Test a binary operator hooked to the given symbol.
 testBinary
     :: SymbolOrAlias Object
@@ -63,7 +73,7 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asExpandedPattern $ impl a b
-        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -80,16 +90,50 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asExpandedPattern $ impl a
-        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
         symAttributes testMetadataTools symb
 
--- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> CommonStepPattern Object
-asPattern = Bool.asPattern boolSort
+-- | "\equal"ed internal Bools that are not equal
+test_unifyEqual_NotEqual :: TestTree
+test_unifyEqual_NotEqual =
+    testCaseWithSolver "unifyEqual BuiltinInteger: Not Equal" $ \solver -> do
+        let dv1 = mkDomainValue boolSort $ Domain.BuiltinBool True
+            dv2 = mkDomainValue boolSort $ Domain.BuiltinBool False
+        actual <- evaluateWith solver $ mkEquals_ dv1 dv2
+        assertEqual "" bottom actual
 
--- | Specialize 'Bool.asExpandedPattern' to the builtin sort 'boolSort'.
-asExpandedPattern :: Bool -> CommonExpandedPattern Object
-asExpandedPattern = Bool.asExpandedPattern boolSort
+-- | "\equal"ed internal Bools that are equal
+test_unifyEqual_Equal :: TestTree
+test_unifyEqual_Equal =
+    testCaseWithSolver "unifyEqual BuiltinInteger: Equal" $ \solver -> do
+        let dv1 = mkDomainValue boolSort $ Domain.BuiltinBool False
+        actual <- evaluateWith solver $ mkEquals_ dv1 dv1
+        assertEqual "" top actual
+
+-- | "\and"ed internal Bools that are not equal
+test_unifyAnd_NotEqual :: TestTree
+test_unifyAnd_NotEqual =
+    testCaseWithSolver "unifyEqual BuiltinInteger: Not Equal" $ \solver -> do
+        let dv1 = mkDomainValue boolSort $ Domain.BuiltinBool True
+            dv2 = mkDomainValue boolSort $ Domain.BuiltinBool False
+        actual <- evaluateWith solver $ mkAnd dv1 dv2
+        assertEqual "" bottom actual
+
+-- | "\and"ed internal Bools that are equal
+test_unifyAnd_Equal :: TestTree
+test_unifyAnd_Equal =
+    testCaseWithSolver "unifyEqual BuiltinInteger: Equal" $ \solver -> do
+        let dv1 = mkDomainValue boolSort $ Domain.BuiltinBool False
+        actual <- evaluateWith solver $ mkAnd dv1 dv1
+        assertEqual "" (pure dv1) actual
+
+-- | "\and"ed internal Bools that are equal
+test_unifyAndEqual_Equal :: TestTree
+test_unifyAndEqual_Equal =
+    testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
+        let dv = mkDomainValue intSort $ Domain.BuiltinBool True
+        actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv
+        assertEqual "" top actual

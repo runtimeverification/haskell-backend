@@ -53,7 +53,7 @@ test_getUnit =
         let patGet =
                 mkApp intSort getListSymbol
                     [ mkApp listSort unitListSymbol []
-                    , Test.Int.asPattern k
+                    , Test.Int.asInternal k
                     ]
             predicate = mkEquals_ mkBottom_ patGet
         (===) ExpandedPattern.bottom =<< evaluate patGet
@@ -68,13 +68,13 @@ test_getFirstElement =
     property = do
         values <- forAll genSeqInteger
         let patGet =
-                mkApp intSort getListSymbol [ patList , Test.Int.asPattern 0 ]
-            patList = asPattern (Test.Int.asPattern <$> values)
+                mkApp intSort getListSymbol [ patList , Test.Int.asInternal 0 ]
+            patList = asPattern (Test.Int.asInternal <$> values)
             value =
                 case values of
                     Seq.Empty -> Nothing
                     v Seq.:<| _ -> Just v
-            patFirst = maybe mkBottom_ Test.Int.asPattern value
+            patFirst = maybe mkBottom_ Test.Int.asInternal value
             predicate = mkEquals_ patGet patFirst
         let expectGet = Test.Int.asPartialExpandedPattern value
         (===) expectGet =<< evaluate patGet
@@ -88,13 +88,13 @@ test_getLastElement =
   where
     property = do
         values <- forAll genSeqInteger
-        let patGet = mkApp intSort getListSymbol [ patList , Test.Int.asPattern (-1) ]
-            patList = asPattern (Test.Int.asPattern <$> values)
+        let patGet = mkApp intSort getListSymbol [ patList , Test.Int.asInternal (-1) ]
+            patList = asPattern (Test.Int.asInternal <$> values)
             value =
                 case values of
                     Seq.Empty -> Nothing
                     _ Seq.:|> v -> Just v
-            patFirst = maybe mkBottom_ Test.Int.asPattern value
+            patFirst = maybe mkBottom_ Test.Int.asInternal value
             predicate = mkEquals_ patGet patFirst
         let expectGet = Test.Int.asPartialExpandedPattern value
         (===) expectGet =<< evaluate patGet
@@ -109,7 +109,7 @@ test_concatUnit =
     property = do
         values <- forAll genSeqInteger
         let patUnit = mkApp listSort unitListSymbol []
-            patValues = asPattern (Test.Int.asPattern <$> values)
+            patValues = asPattern (Test.Int.asInternal <$> values)
             patConcat1 = mkApp listSort concatListSymbol [ patUnit, patValues ]
             patConcat2 = mkApp listSort concatListSymbol [ patValues, patUnit ]
             predicate1 = mkEquals_ patValues patConcat1
@@ -130,9 +130,9 @@ test_concatAssociates =
         values1 <- forAll genSeqInteger
         values2 <- forAll genSeqInteger
         values3 <- forAll genSeqInteger
-        let patList1 = asPattern $ Test.Int.asPattern <$> values1
-            patList2 = asPattern $ Test.Int.asPattern <$> values2
-            patList3 = asPattern $ Test.Int.asPattern <$> values3
+        let patList1 = asPattern $ Test.Int.asInternal <$> values1
+            patList2 = asPattern $ Test.Int.asInternal <$> values2
+            patList3 = asPattern $ Test.Int.asInternal <$> values3
             patConcat12 = mkApp listSort concatListSymbol [ patList1, patList2 ]
             patConcat23 = mkApp listSort concatListSymbol [ patList2, patList3 ]
             patConcat12_3 =
