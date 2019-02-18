@@ -3,38 +3,58 @@ module Test.Kore.Attribute.Overload where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Kore
-import Kore.Attribute.Overload
+import qualified Data.Map.Strict as Map
+import           Data.Proxy
 
-import Test.Kore
-import Test.Kore.Attribute.Parser
+import           Kore.AST.Kore
+import qualified Kore.AST.Pure as Pure
+import           Kore.AST.PureToKore
+import           Kore.AST.Sentence
+import           Kore.AST.Valid
+import           Kore.ASTVerifier.DefinitionVerifier
+import           Kore.Attribute.Overload
+import qualified Kore.Builtin as Builtin
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import           Kore.Step.Function.Registry
+
+import           Test.Kore
+import           Test.Kore.Attribute.Parser
+import           Test.Kore.Builtin.Definition
+                 ( sortDecl, symbolDecl )
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 parseOverload :: Attributes -> Parser Overload
 parseOverload = parseAttributes
 
+superId :: Id Object
+superId = testId "super"
+
 superSymbol :: SymbolOrAlias Object
 superSymbol =
     SymbolOrAlias
-        { symbolOrAliasConstructor = testId "superSymbol"
+        { symbolOrAliasConstructor = superId
         , symbolOrAliasParams = []
         }
+
+subId :: Id Object
+subId = testId "sub"
 
 subSymbol :: SymbolOrAlias Object
 subSymbol =
     SymbolOrAlias
-        { symbolOrAliasConstructor = testId "subSymbol"
+        { symbolOrAliasConstructor = subId
         , symbolOrAliasParams = []
         }
 
 test_Overload :: TestTree
 test_Overload =
-    testCase "[overload{}(superSymbol{}(), subSymbol{}())] :: Overload"
+    testCase "[overload{}(super{}(), sub{}())] :: Overload"
     $ expectSuccess Overload { overload = Just (superSymbol, subSymbol) }
     $ parseOverload $ Attributes [ overloadAttribute superSymbol subSymbol ]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[overload{}(superSymbol{}(), subSymbol{}())] :: Attributes"
+    testCase "[overload{}(super{}(), sub{}())] :: Attributes"
     $ expectSuccess attrs $ parseAttributes attrs
   where
     attrs = Attributes [ overloadAttribute superSymbol subSymbol ]
@@ -82,3 +102,58 @@ test_parameters =
                         }
                 , applicationChildren = []
                 }
+
+test_ignore :: TestTree
+test_ignore =
+    testCase "Ignore overloaded production axioms" $
+        case Map.lookup (AxiomIdentifier.Application superId) evaluators of
+            Nothing -> return ()
+            Just _ -> assertFailure "Should ignore overloaded production axiom"
+  where
+    evaluators =
+        axiomPatternsToEvaluators $ extractFunctionAxioms Object indexedModule
+      where
+        Just indexedModule = Map.lookup testModuleName verifiedModules
+          where
+            Right verifiedModules =
+                verifyAndIndexDefinition
+                    attributesVerification
+                    Builtin.koreVerifiers
+                    testDefinition
+            attributesVerification = defaultAttributesVerification Proxy Proxy
+
+    testDefinition =
+        Definition
+            { definitionAttributes = Attributes []
+            , definitionModules = [ testModule ]
+            }
+
+    testModuleName = ModuleName "test"
+    testModule =
+        Module
+            { moduleName = testModuleName
+            , moduleAttributes = Attributes []
+            , moduleSentences =
+                [ sortDecl   Mock.testSort
+                , symbolDecl superSymbol Mock.testSort [] []
+                , symbolDecl subSymbol   Mock.testSort [] []
+                , overloadAxiom
+                ]
+            }
+
+    overloadAxiom :: KoreSentence
+    overloadAxiom =
+        asKoreAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [ UnifiedObject sortVarS ]
+            , sentenceAxiomAttributes =
+                Attributes [ overloadAttribute superSymbol subSymbol ]
+            , sentenceAxiomPattern =
+                patternPureToKore
+                $ Pure.eraseAnnotations
+                $ mkEquals sortS
+                    (mkApp Mock.testSort superSymbol [])
+                    (mkApp Mock.testSort subSymbol   [])
+            }
+      where
+        sortVarS = SortVariable "S"
+        sortS = SortVariableSort sortVarS
