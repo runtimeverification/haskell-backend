@@ -28,6 +28,8 @@ import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule,
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
+import           Kore.Logger.Output
+                 ( emptyLogger )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Step.AxiomPatterns
@@ -183,7 +185,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
         -> IO (CommonStepPattern Object)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier
+        $ evalSimplifier emptyLogger
         $ exec verifiedModule strategy purePattern
       where
         unlimited :: Limit Natural

@@ -33,6 +33,7 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -277,7 +278,7 @@ evaluate
 evaluate tools exists =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier emptyLogger
     $ Exists.simplify
         tools
         (Mock.substitutionSimplifier tools)
@@ -293,7 +294,7 @@ makeEvaluate
 makeEvaluate tools variable child =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier emptyLogger
     $ Exists.makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)

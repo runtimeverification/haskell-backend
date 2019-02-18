@@ -48,6 +48,7 @@ import           Kore.Step.Strategy
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -433,7 +434,7 @@ runSteps
 runSteps metadataTools graphFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier emptyLogger
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
         (transitionRule

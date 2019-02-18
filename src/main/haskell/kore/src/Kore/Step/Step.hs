@@ -34,6 +34,8 @@ import Data.Maybe
        ( mapMaybe )
 import Data.Semigroup
        ( (<>) )
+import GHC.Stack
+       ( HasCallStack )
 import Numeric.Natural
        ( Natural )
 
@@ -43,6 +45,7 @@ import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.Logger as Log
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
@@ -93,7 +96,7 @@ rewriteStep a =
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: (MetaOrObject level)
+    :: (HasCallStack, MetaOrObject level)
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level Simplifier
     -> CommonStepPatternSimplifier level
@@ -123,7 +126,9 @@ transitionRule tools substitutionSimplifier simplifier =
             $ stepWithRewriteRule tools substitutionSimplifier config a
         case result of
             Left _ -> pure []
-            Right results -> return $ mapMaybe (patternFromResult proof) results
+            Right results ->
+                Log.withLogScope "transitionRule" $
+                    return $ mapMaybe (patternFromResult proof) results
     patternFromResult
         :: StepProof level Variable
         -> (StepResult level Variable, StepProof level Variable)

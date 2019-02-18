@@ -18,6 +18,10 @@ To regenerate the golden data for regression tests:
 `stack test --no-keep-going --ta --accept`
 
 To generate documentation: `stack build --haddock`.
+Note that because of `co-log`'s `typerep-map` dependency (which fails haddock),
+we are currently building with `--no-haddock-deps`. This seems to be a problem
+with `stack` and libraries that have internal libraries in the same project,
+see https://github.com/commercialhaskell/stack/issues/3989 for details.
 
 To test parsing performance:
 

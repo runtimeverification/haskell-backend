@@ -53,6 +53,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -659,7 +660,7 @@ evaluate
 evaluate metadataTools functionIdToEvaluator patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier emptyLogger
     $ Pattern.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where

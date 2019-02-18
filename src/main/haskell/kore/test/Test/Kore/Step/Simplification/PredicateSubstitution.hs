@@ -39,6 +39,7 @@ import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -288,7 +289,7 @@ runSimplifier patternSimplifierMap predicateSubstitution =
         (PredicateSubstitutionSimplifier unwrapped) ->
             (<$>) fst
             $ SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier
+            $ evalSimplifier emptyLogger
             $ unwrapped predicateSubstitution
   where
     simplifier =

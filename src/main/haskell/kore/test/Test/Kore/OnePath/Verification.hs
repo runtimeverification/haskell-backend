@@ -45,6 +45,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
 import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -396,7 +397,7 @@ runVerification
     claims
   =
     SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier
+    $ evalSimplifier emptyLogger
     $ runExceptT
     $ OnePath.verify
         metadataTools

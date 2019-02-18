@@ -9,7 +9,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module SMT
     ( SMT, getSMT
     , Solver
-    , newSolver, stopSolver, withSolver
+    , newSolver, stopSolver, withSolver, withSolver'
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -268,3 +268,6 @@ withSolver :: (Solver -> IO a) -> SMT a
 withSolver within = do
     mvar <- SMT $ Reader.ask
     liftIO $ withMVar mvar within
+
+withSolver' :: (MVar Solver -> IO a) -> SMT a
+withSolver' = SMT . Reader.ReaderT
