@@ -37,6 +37,8 @@ import           Data.Functor.Const
 import           Data.Functor.Identity
                  ( Identity (..) )
 import           Data.Hashable
+import           Data.Maybe
+                 ( isNothing )
 import           Data.Proxy
 import           Data.String
                  ( fromString )
@@ -140,6 +142,11 @@ instance NFData (Variable level)
 instance Unparse (Variable level) where
     unparse Variable { variableName, variableSort } =
         unparse variableName <> Pretty.colon <> unparse variableSort
+
+{- | Is the variable original (as opposed to generated)?
+ -}
+isOriginalVariable :: Variable level -> Bool
+isOriginalVariable Variable { variableCounter } = isNothing variableCounter
 
 {- | Error thrown when 'variableCounter' takes an illegal value.
  -}
