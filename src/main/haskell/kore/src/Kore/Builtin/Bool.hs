@@ -39,8 +39,6 @@ module Kore.Builtin.Bool
     , orElseKey
     ) where
 
-import           Control.Applicative
-import           Control.Error
 import           Data.Functor
                  ( ($>) )
 import qualified Data.HashMap.Strict as HashMap
@@ -60,15 +58,10 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
-import           Kore.Step.Simplification.Data
-import           Kore.Step.StepperAttributes
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -122,14 +115,12 @@ extractBoolDomainValue
     :: Text -- ^ error message Context
     -> DomainValue Object Domain.Builtin child
     -> Bool
-extractBoolDomainValue
-    ctx
-    dv@DomainValue { domainValueChild }
-  =
+extractBoolDomainValue ctx DomainValue { domainValueChild } =
     case domainValueChild of
         Domain.BuiltinBool bool -> bool
         _ -> Builtin.verifierBug $ Text.unpack ctx ++ ": "
             ++ "Bool builtin should be internal"
+
 {- | Parse an integer string literal.
  -}
 parse :: Builtin.Parser Bool

@@ -94,15 +94,10 @@ import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
-import           Kore.Step.Simplification.Data
-import           Kore.Step.StepperAttributes
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -194,10 +189,7 @@ extractIntDomainValue
     :: Text -- ^ error message Context
     -> DomainValue Object Domain.Builtin child
     -> Integer
-extractIntDomainValue
-    ctx
-    dv@DomainValue {domainValueSort = _,domainValueChild }
-  =
+extractIntDomainValue ctx DomainValue { domainValueChild } =
     case domainValueChild of
         Domain.BuiltinInteger int -> int
         _ -> Builtin.verifierBug $ Text.unpack ctx ++ ": "
