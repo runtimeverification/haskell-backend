@@ -26,10 +26,12 @@ module Kore.Step.Pattern
     , externalizeFreshVariables
     ) where
 
+import           Control.Comonad
 import qualified Control.Lens as Lens
 import           Control.Monad.Reader
                  ( Reader )
 import qualified Control.Monad.Reader as Reader
+import qualified Data.Foldable as Foldable
 import           Data.Functor.Foldable
                  ( Base )
 import qualified Data.Functor.Foldable as Recursive
@@ -361,19 +363,54 @@ externalizeFreshVariables
 externalizeFreshVariables stepPattern =
     Reader.runReader
         (Recursive.fold externalizeFreshVariablesWorker stepPattern)
-        Map.empty
+        renamedFreeVariables
   where
+    -- | 'originalFreeVariables' are present in the original pattern; they do
+    -- not have a generated counter. 'generatedFreeVariables' have a generated
+    -- counter, usually because they were introduced by applying some axiom.
+    (originalFreeVariables, generatedFreeVariables) =
+        Set.partition Base.isOriginalVariable freeVariables
+      where
+        Valid { freeVariables } = extract stepPattern
+
+    -- | The map of generated free variables, renamed to be unique from the
+    -- original free variables.
+    (renamedFreeVariables, _) =
+        Foldable.foldl' rename initial generatedFreeVariables
+      where
+        initial = (Map.empty, originalFreeVariables)
+        rename (renaming, avoiding) variable =
+            let
+                variable' = safeVariable avoiding variable
+                renaming' = Map.insert variable variable' renaming
+                avoiding' = Set.insert variable' avoiding
+            in
+                (renaming', avoiding')
+
+    {- | Look up a variable renaming.
+
+    The original (not generated) variables of the pattern are never renamed, so
+    these variables are not present in the Map of renamed variables.
+
+     -}
     lookupVariable variable =
         Reader.asks (Map.lookup variable) >>= \case
             Nothing -> return variable
             Just variable' -> return variable'
 
-    -- | Refresh a 'Fresh variable level' until it is unique among a set of
-    -- 'Variable level'.
-    safeVariable freeVariables' variable =
-        head
-        $ dropWhile (\var -> Set.member var freeVariables')
-        $ iterate nextVariable variable
+    {- | Externalize a variable safely.
+
+    The variable's counter is incremented until its externalized form is unique
+    among the set of avoided variables. The externalized form is returned.
+
+     -}
+    safeVariable avoiding variable =
+        head  -- 'head' is safe because 'iterate' creates an infinite list
+        $ dropWhile wouldCapture
+        $ Base.externalizeFreshVariable
+        <$> iterate nextVariable variable
+      where
+        wouldCapture var = Set.member var avoiding
 
     underBinder freeVariables' variable child = do
         let variable' = safeVariable freeVariables' variable
