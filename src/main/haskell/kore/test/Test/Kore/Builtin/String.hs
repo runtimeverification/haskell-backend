@@ -70,27 +70,27 @@ test_substr =
     [ testString
         "substr simple"
         substrStringSymbol
-        [asPattern "foobar", Test.Int.asPattern 0, Test.Int.asPattern 6]
+        [asPattern "foobar", Test.Int.asInternal 0, Test.Int.asInternal 6]
         (asExpandedPattern "foobar")
     , testString
         "substr out of bounds"
         substrStringSymbol
-        [asPattern "foobar", Test.Int.asPattern 0, Test.Int.asPattern 10]
+        [asPattern "foobar", Test.Int.asInternal 0, Test.Int.asInternal 10]
         (asExpandedPattern "foobar")
     , testString
         "substr negative start"
         substrStringSymbol
-        [asPattern "foobar", Test.Int.asPattern (-10), Test.Int.asPattern 6]
+        [asPattern "foobar", Test.Int.asInternal (-10), Test.Int.asInternal 6]
         (asExpandedPattern "foobar")
     , testString
         "substr negative end"
         substrStringSymbol
-        [asPattern "foobar", Test.Int.asPattern 0, Test.Int.asPattern (-1)]
+        [asPattern "foobar", Test.Int.asInternal 0, Test.Int.asInternal (-1)]
         (asExpandedPattern "")
     , testString
         "substr actual substring"
         substrStringSymbol
-        [asPattern "foobar", Test.Int.asPattern 0, Test.Int.asPattern 3]
+        [asPattern "foobar", Test.Int.asInternal 0, Test.Int.asInternal 3]
         (asExpandedPattern "foo")
     ]
 
@@ -113,12 +113,12 @@ test_chr =
     [ testString
         "STRING.chr(48) is '0'"
         chrStringSymbol
-        [Test.Int.asPattern 48]
+        [Test.Int.asInternal 48]
         (asExpandedPattern "0")
     , testString
         "STRING.chr(100) is 'd'"
         chrStringSymbol
-        [Test.Int.asPattern 100]
+        [Test.Int.asInternal 100]
         (asExpandedPattern "d")
     ]
 
@@ -151,32 +151,32 @@ test_find =
     [ Test.Int.testInt
         "find simple"
         findStringSymbol
-        [asPattern "foobar", asPattern "foobar", Test.Int.asPattern 0]
+        [asPattern "foobar", asPattern "foobar", Test.Int.asInternal 0]
         (Test.Int.asExpandedPattern 0)
     , Test.Int.testInt
         "find subpattern"
         findStringSymbol
-        [asPattern "foobar", asPattern "bar", Test.Int.asPattern 0]
+        [asPattern "foobar", asPattern "bar", Test.Int.asInternal 0]
         (Test.Int.asExpandedPattern 3)
     , Test.Int.testInt
         "find empty pattern"
         findStringSymbol
-        [asPattern "foobar", asPattern "", Test.Int.asPattern 0]
+        [asPattern "foobar", asPattern "", Test.Int.asInternal 0]
         (Test.Int.asExpandedPattern 0)
     , Test.Int.testInt
         "find negative index"
         findStringSymbol
-        [asPattern "foobar", asPattern "foobar", Test.Int.asPattern (-1)]
+        [asPattern "foobar", asPattern "foobar", Test.Int.asInternal (-1)]
         (Test.Int.asExpandedPattern 0)
     , Test.Int.testInt
         "find after end of string"
         findStringSymbol
-        [asPattern "foobar", asPattern "bar", Test.Int.asPattern 10]
+        [asPattern "foobar", asPattern "bar", Test.Int.asInternal 10]
         (Test.Int.asExpandedPattern (-1))
     , Test.Int.testInt
         "find pattern that does not exist"
         findStringSymbol
-        [asPattern "foobar", asPattern "nope", Test.Int.asPattern 0]
+        [asPattern "foobar", asPattern "nope", Test.Int.asInternal 0]
         (Test.Int.asExpandedPattern (-1))
     ]
 
@@ -186,96 +186,96 @@ test_string2Base =
     [ Test.Int.testInt
         "string2Base decimal simple"
         string2BaseStringSymbol
-        [asPattern "42", Test.Int.asPattern 10]
+        [asPattern "42", Test.Int.asInternal 10]
         (Test.Int.asExpandedPattern 42)
     , Test.Int.testInt
         "string2Base decimal negative"
         string2BaseStringSymbol
-        [asPattern "-42", Test.Int.asPattern 10]
+        [asPattern "-42", Test.Int.asInternal 10]
         (Test.Int.asExpandedPattern (-42))
     , Test.Int.testInt
         "string2Base decimal is bottom"
         string2BaseStringSymbol
-        [asPattern "-42.3", Test.Int.asPattern 10]
+        [asPattern "-42.3", Test.Int.asInternal 10]
         bottom
     , Test.Int.testInt
         "string2Base decimal empty string is bottom"
         string2BaseStringSymbol
-        [asPattern "", Test.Int.asPattern 10]
+        [asPattern "", Test.Int.asInternal 10]
         bottom
     , Test.Int.testInt
         "string2Base decimal non-number is bottom"
         string2BaseStringSymbol
-        [asPattern "foobar", Test.Int.asPattern 10]
+        [asPattern "foobar", Test.Int.asInternal 10]
         bottom
     , Test.Int.testInt
         "string2Base decimal from hex is bottom"
         string2BaseStringSymbol
-        [asPattern "baad", Test.Int.asPattern 10]
+        [asPattern "baad", Test.Int.asInternal 10]
         bottom
 
     -- Octal
     , Test.Int.testInt
         "string2Base octal simple"
         string2BaseStringSymbol
-        [asPattern "42", Test.Int.asPattern 8]
+        [asPattern "42", Test.Int.asInternal 8]
         (Test.Int.asExpandedPattern 34)
     , Test.Int.testInt
         "string2Base octal negative is bottom"
         string2BaseStringSymbol
-        [asPattern "-42", Test.Int.asPattern 8]
+        [asPattern "-42", Test.Int.asInternal 8]
         bottom
     , Test.Int.testInt
         "string2Base octal is bottom"
         string2BaseStringSymbol
-        [asPattern "-42.3", Test.Int.asPattern 8]
+        [asPattern "-42.3", Test.Int.asInternal 8]
         bottom
     , Test.Int.testInt
         "string2Base octal empty string is bottom"
         string2BaseStringSymbol
-        [asPattern "", Test.Int.asPattern 8]
+        [asPattern "", Test.Int.asInternal 8]
         bottom
     , Test.Int.testInt
         "string2Base octal non-number is bottom"
         string2BaseStringSymbol
-        [asPattern "foobar", Test.Int.asPattern 8]
+        [asPattern "foobar", Test.Int.asInternal 8]
         bottom
     , Test.Int.testInt
         "string2Base octal from hex is bottom"
         string2BaseStringSymbol
-        [asPattern "baad", Test.Int.asPattern 8]
+        [asPattern "baad", Test.Int.asInternal 8]
         bottom
 
     -- Hexadecimal
     , Test.Int.testInt
         "string2Base hex simple"
         string2BaseStringSymbol
-        [asPattern "42", Test.Int.asPattern 16]
+        [asPattern "42", Test.Int.asInternal 16]
         (Test.Int.asExpandedPattern 66)
     , Test.Int.testInt
         "string2Base hex negative is bottom"
         string2BaseStringSymbol
-        [asPattern "-42", Test.Int.asPattern 16]
+        [asPattern "-42", Test.Int.asInternal 16]
         bottom
     , Test.Int.testInt
         "string2Base hex is bottom"
         string2BaseStringSymbol
-        [asPattern "-42.3", Test.Int.asPattern 16]
+        [asPattern "-42.3", Test.Int.asInternal 16]
         bottom
     , Test.Int.testInt
         "string2Base hex empty string is bottom"
         string2BaseStringSymbol
-        [asPattern "", Test.Int.asPattern 16]
+        [asPattern "", Test.Int.asInternal 16]
         bottom
     , Test.Int.testInt
         "string2Base hex non-number is bottom"
         string2BaseStringSymbol
-        [asPattern "foobar", Test.Int.asPattern 16]
+        [asPattern "foobar", Test.Int.asInternal 16]
         bottom
     , Test.Int.testInt
         "string2Base hex from hex is bottom"
         string2BaseStringSymbol
-        [asPattern "baad", Test.Int.asPattern 16]
+        [asPattern "baad", Test.Int.asInternal 16]
         (Test.Int.asExpandedPattern 47789)
     ]
 

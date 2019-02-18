@@ -7,6 +7,7 @@ import           Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
+import           Test.Tasty.HUnit
 
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
@@ -21,9 +22,13 @@ import           GHC.Integer.Logarithms
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
+import qualified Kore.Step.Simplification.AndTerms as AndTerms
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -35,10 +40,10 @@ genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
 genIntegerPattern :: Gen (CommonStepPattern Object)
-genIntegerPattern = asPattern <$> genInteger
+genIntegerPattern = asInternal <$> genInteger
 
 genConcreteIntegerPattern :: Gen (ConcreteStepPattern Object)
-genConcreteIntegerPattern = asConcretePattern <$> genInteger
+genConcreteIntegerPattern = asInternal <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
 testUnary
@@ -51,7 +56,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asExpandedPattern $ impl a
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -69,7 +74,7 @@ testBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asExpandedPattern $ impl a b
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -87,7 +92,7 @@ testComparison symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = Test.Bool.asExpandedPattern $ impl a b
-        actual <- evaluate $ mkApp boolSort symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -104,7 +109,7 @@ testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -122,7 +127,7 @@ testPartialBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a b
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -140,7 +145,7 @@ testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a 0
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, 0])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, 0])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -159,7 +164,7 @@ testPartialTernary symb impl =
         b <- forAll genInteger
         c <- forAll genInteger
         let expect = asPartialExpandedPattern $ impl a b c
-        actual <- evaluate $ mkApp intSort symb (asPattern <$> [a, b, c])
+        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
     StepperAttributes { hook = Hook { getHook = Just name } } =
@@ -279,37 +284,37 @@ test_emod =
     [ testInt
         "emod normal"
         emodIntSymbol
-        (asPattern <$> [193, 12])
+        (asInternal <$> [193, 12])
         (asExpandedPattern 1)
     , testInt
         "emod negative lhs"
         emodIntSymbol
-        (asPattern <$> [-193, 12])
+        (asInternal <$> [-193, 12])
         (asExpandedPattern 11)
     , testInt
         "emod negative rhs"
         emodIntSymbol
-        (asPattern <$> [193, -12])
+        (asInternal <$> [193, -12])
         (asExpandedPattern 1)
     , testInt
         "emod both negative"
         emodIntSymbol
-        (asPattern <$> [-193, -12])
+        (asInternal <$> [-193, -12])
         (asExpandedPattern (-1))
     , testInt
         "emod bottom"
         emodIntSymbol
-        (asPattern <$> [193, 0])
+        (asInternal <$> [193, 0])
         bottom
     ]
 
--- | Another name for asPattern.
+-- | Another name for asInternal.
 intLiteral :: Integer -> CommonStepPattern Object
-intLiteral = asPattern
+intLiteral = asInternal
 
--- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> CommonStepPattern Object
-asPattern = Int.asPattern intSort
+-- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
+asInternal :: Ord (variable Object) => Integer -> StepPattern Object variable
+asInternal = Int.asInternal intSort
 
 -- | Specialize 'Int.asConcretePattern' to the builtin sort 'intSort'.
 asConcretePattern :: Integer -> ConcreteStepPattern Object
@@ -330,3 +335,45 @@ testInt
     -> CommonExpandedPattern Object
     -> TestTree
 testInt name = testSymbolWithSolver evaluate name intSort
+
+-- | "\equal"ed internal Integers that are not equal
+test_unifyEqual_NotEqual :: TestTree
+test_unifyEqual_NotEqual =
+    testCaseWithSolver "unifyEqual BuiltinInteger: Not Equal" $ \solver -> do
+        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 1
+            dv2 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        actual <- evaluateWith solver $ mkEquals_ dv1 dv2
+        assertEqual "" bottom actual
+
+-- | "\equal"ed internal Integers that are equal
+test_unifyEqual_Equal :: TestTree
+test_unifyEqual_Equal =
+    testCaseWithSolver "unifyEqual BuiltinInteger: Equal" $ \solver -> do
+        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        actual <- evaluateWith solver $ mkEquals_ dv1 dv1
+        assertEqual "" top actual
+
+-- | "\and"ed internal Integers that are not equal
+test_unifyAnd_NotEqual :: TestTree
+test_unifyAnd_NotEqual =
+    testCaseWithSolver "unifyAnd BuiltinInteger: Not Equal" $ \solver -> do
+        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 1
+            dv2 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        actual <- evaluateWith solver $ mkAnd dv1 dv2
+        assertEqual "" bottom actual
+
+-- | "\and"ed internal Integers that are equal
+test_unifyAnd_Equal :: TestTree
+test_unifyAnd_Equal =
+    testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
+        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        actual <- evaluateWith solver $ mkAnd dv1 dv1
+        assertEqual "" (pure dv1) actual
+
+-- | "\and"ed then "\equal"ed internal Integers that are equal
+test_unifyAndEqual_Equal :: TestTree
+test_unifyAndEqual_Equal =
+    testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
+        let dv = mkDomainValue intSort $ Domain.BuiltinInteger 0
+        actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv
+        assertEqual "" top actual
