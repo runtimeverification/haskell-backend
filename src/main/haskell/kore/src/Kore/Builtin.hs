@@ -15,11 +15,12 @@ This module is intended to be imported qualified.
  -}
 module Kore.Builtin
     ( Builtin.Verifiers (..)
-    , Builtin.PatternVerifier (..)
+    , Builtin.DomainValueVerifiers
     , Builtin.Function
     , Builtin
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
+    , Builtin.verifyDomainValue
     , koreVerifiers
     , koreEvaluators
     , evaluators
@@ -29,6 +30,7 @@ module Kore.Builtin
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -96,10 +98,12 @@ koreVerifiers =
         <> Set.symbolVerifiers
         <> String.symbolVerifiers
         <> Krypto.symbolVerifiers
-    , patternVerifier =
-           Bool.patternVerifier
-        <> Int.patternVerifier
-        <> String.patternVerifier
+    , domainValueVerifiers =
+        HashMap.fromList
+            [ (Bool.sort, Bool.patternVerifier)
+            , (Int.sort, Int.patternVerifier)
+            , (String.sort, String.patternVerifier)
+            ]
     }
 
 {- | Construct an evaluation context for Kore builtin functions.
@@ -201,6 +205,11 @@ asPattern
             List.asPattern indexedModule domainValueSort <*> pure list
         Domain.BuiltinSet set ->
             Set.asPattern indexedModule domainValueSort <*> pure set
+        Domain.BuiltinInteger int ->
+            return $ Int.asPattern domainValueSort int
+        Domain.BuiltinBool bool ->
+            return $ Bool.asPattern domainValueSort bool
+
 
 {- | Externalize all builtin domain values in the given pattern.
 
@@ -241,3 +250,5 @@ asMetaPattern =
         Domain.BuiltinMap _ -> notImplementedInternal
         Domain.BuiltinList _ -> notImplementedInternal
         Domain.BuiltinSet _ -> notImplementedInternal
+        Domain.BuiltinInteger _ -> notImplementedInternal
+        Domain.BuiltinBool _ -> notImplementedInternal

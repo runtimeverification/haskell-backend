@@ -361,8 +361,8 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
         verifySort findSort variables sentenceAliasResultSort
         let context =
                 PatternVerifier.Context
-                    { builtinPatternVerifier =
-                        Builtin.patternVerifier builtinVerifiers
+                    { builtinDomainValueVerifiers =
+                        Builtin.domainValueVerifiers builtinVerifiers
                     , indexedModule =
                         makeIndexedModuleAttributesNull indexedModule
                     , declaredSortVariables = variables
@@ -399,8 +399,8 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
                 (sentenceAxiomParameters axiom)
         let context =
                 PatternVerifier.Context
-                    { builtinPatternVerifier =
-                        Builtin.patternVerifier builtinVerifiers
+                    { builtinDomainValueVerifiers =
+                        Builtin.domainValueVerifiers builtinVerifiers
                     , indexedModule =
                         makeIndexedModuleAttributesNull indexedModule
                     , declaredSortVariables = variables
