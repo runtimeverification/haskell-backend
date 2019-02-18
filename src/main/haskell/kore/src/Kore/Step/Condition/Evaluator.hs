@@ -38,7 +38,6 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Smtlib
 import qualified Kore.Builtin.Bool as Builtin.Bool
-import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
@@ -263,8 +262,8 @@ translateInt pat =
     case Cofree.tailF (Recursive.project pat) of
         VariablePattern _ -> translateUninterpretedInt pat
         DomainValuePattern dv ->
-            (return . SMT.int . Builtin.runParser Builtin.Int.sort)
-                (Builtin.parseDomainValue Builtin.Int.parse dv)
+            return $ SMT.int $ Builtin.Int.extractIntDomainValue
+                "while translating dv to SMT.int" dv
         ApplicationPattern app ->
             translateApplication app
         _ -> empty
@@ -282,8 +281,8 @@ translateBool pat =
     case Cofree.tailF (Recursive.project pat) of
         VariablePattern _ -> translateUninterpretedBool pat
         DomainValuePattern dv ->
-            (return . SMT.bool . Builtin.runParser Builtin.Bool.sort)
-            (Builtin.parseDomainValue Builtin.Bool.parse dv)
+            return $ SMT.bool $ Builtin.Bool.extractBoolDomainValue
+                "while translating dv to SMT.bool" dv
         NotPattern Not { notChild } ->
             -- \not is equivalent to BOOL.not for functional patterns.
             -- The following is safe because non-functional patterns will fail
