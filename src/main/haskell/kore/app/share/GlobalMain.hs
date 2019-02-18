@@ -185,7 +185,7 @@ mainPatternVerify verifiedModule patt = do
             (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
     either (error . printError) return verifyResult
   where
-    Builtin.Verifiers { patternVerifier } = Builtin.koreVerifiers
+    Builtin.Verifiers { domainValueVerifiers } = Builtin.koreVerifiers
     indexedModule =
         mapIndexedModulePatterns eraseAnnotations verifiedModule
     context =
@@ -193,5 +193,5 @@ mainPatternVerify verifiedModule patt = do
             { indexedModule = makeIndexedModuleAttributesNull indexedModule
             , declaredSortVariables = Set.empty
             , declaredVariables = emptyDeclaredVariables
-            , builtinPatternVerifier = patternVerifier
+            , builtinDomainValueVerifiers = domainValueVerifiers
             }

@@ -166,8 +166,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
               where
                 context =
                     PatternVerifier.Context
-                        { builtinPatternVerifier =
-                            Builtin.patternVerifier Builtin.koreVerifiers
+                        { builtinDomainValueVerifiers =
+                            Builtin.domainValueVerifiers Builtin.koreVerifiers
                         , indexedModule =
                             makeIndexedModuleAttributesNull indexedModule
                         , declaredSortVariables = Set.empty

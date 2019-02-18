@@ -44,7 +44,6 @@ import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Error
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
-import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
@@ -76,7 +75,8 @@ data Context =
         -- ^ The sort variables in scope.
         , indexedModule :: !(KoreIndexedModule Attribute.Null Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
-        , builtinPatternVerifier :: !Builtin.PatternVerifier
+        , builtinDomainValueVerifiers
+            :: !(Builtin.DomainValueVerifiers VerifiedKorePattern)
         }
 
 newtype PatternVerifier a =
@@ -356,10 +356,6 @@ verifyObjectPattern
     -> PatternVerifier (CofreeF base valid VerifiedKorePattern)
 verifyObjectPattern pat =
     withLocationAndContext pat patternName $ do
-        -- Builtin domains only occur in object-level patterns.
-        -- The builtin pattern verifiers only look at the pattern head,
-        -- so we erase the child verifiers.
-        verifyBuiltinPattern (mempty <$ pat)
         verifyPatternHead pat
   where
     patternName = patternNameForContext pat
@@ -584,13 +580,6 @@ verifyNext
     -> PatternVerifier (CofreeF operator valid VerifiedKorePattern)
 verifyNext = verifyOperands nextSort
 
-verifyBuiltinPattern
-    :: Pattern Object Domain.Builtin Variable ()
-    -> PatternVerifier ()
-verifyBuiltinPattern pat = do
-    Context { builtinPatternVerifier } <- Reader.ask
-    Builtin.runPatternVerifier builtinPatternVerifier lookupSortDeclaration pat
-
 verifyPatternsWithSorts
     :: ( Comonad pat, valid ~ Valid (Unified Variable) )
     => [UnifiedSort]
@@ -705,13 +694,16 @@ verifyDomainValue
         )
     => base (PatternVerifier VerifiedKorePattern)
     -> PatternVerifier (CofreeF base valid VerifiedKorePattern)
-verifyDomainValue dv@DomainValue { domainValueSort, domainValueChild } = do
+verifyDomainValue dv@DomainValue { domainValueSort, domainValueChild = _ } = do
     let patternSort = domainValueSort
+    Context { builtinDomainValueVerifiers, indexedModule } <- Reader.ask
     verifyPatternSort patternSort
-    verified <-
-        case domainValueChild of
-            Domain.BuiltinPattern (StringLiteral_ _) -> sequence dv
-            _ -> koreFail "Domain value argument must be a literal string."
+    let lookupSortDeclaration' sortId = do
+            (_, sortDecl) <- resolveSort indexedModule sortId
+            return sortDecl
+    dv' <- sequence dv
+    verified <- PatternVerifier $ Reader.lift $ Builtin.verifyDomainValue
+                    builtinDomainValueVerifiers lookupSortDeclaration' dv'
     let freeVariables =
             Foldable.foldl'
                 Set.union

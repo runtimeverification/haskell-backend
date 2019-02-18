@@ -38,8 +38,9 @@ import           Kore.AST.Sentence
                  ( SentenceSymbol (..) )
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
+import           Kore.Builtin.Builtin
+                 ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -68,15 +69,12 @@ symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
     [ ( eqKey
-      , Builtin.verifySymbol Bool.assertSort [trivialVerifier, trivialVerifier])
+      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, acceptAnySort])
     , (neqKey
-      , Builtin.verifySymbol Bool.assertSort [trivialVerifier, trivialVerifier])
+      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, acceptAnySort])
     , (iteKey, iteVerifier)
     ]
   where
-    trivialVerifier :: Builtin.SortVerifier
-    trivialVerifier = const $ const $ Right ()
-
     iteVerifier :: Builtin.SymbolVerifier
     iteVerifier
         findSort
@@ -153,9 +151,9 @@ evalKEq true tools substitutionSimplifier _ (valid :< app) =
         (result, _proof) <- makeEvaluate tools substitutionSimplifier ep1 ep2
         case () of
             _ | OrOfExpandedPattern.isTrue result ->
-                purePatternAxiomEvaluator (Bool.asPattern patternSort true)
+                purePatternAxiomEvaluator (Bool.asInternal patternSort true)
               | OrOfExpandedPattern.isFalse result ->
-                purePatternAxiomEvaluator (Bool.asPattern patternSort false)
+                purePatternAxiomEvaluator (Bool.asInternal patternSort false)
               | otherwise -> notApplicableAxiomEvaluator
       where
         ep1 = ExpandedPattern.fromPurePattern t1
@@ -190,13 +188,9 @@ evalKIte _ _ _ (_ :< app) =
         -> Maybe Bool
     evaluate (Recursive.project -> _ :< pat) =
         case pat of
-            DomainValuePattern dv -> Just (get dv)
+            DomainValuePattern dv ->
+                Just (Bool.extractBoolDomainValue iteKey dv)
             _ -> Nothing
-
-    get :: DomainValue Object Domain.Builtin child -> Bool
-    get =
-        Builtin.runParser iteKey
-        . Builtin.parseDomainValue Bool.parse
 
     evalIte expr t1 t2 =
         case evaluate expr of

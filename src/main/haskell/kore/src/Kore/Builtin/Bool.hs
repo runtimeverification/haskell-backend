@@ -22,8 +22,10 @@ module Kore.Builtin.Bool
     , patternVerifier
     , builtinFunctions
     , asMetaPattern
+    , asInternal
     , asPattern
     , asExpandedPattern
+    , extractBoolDomainValue
     , parse
       -- * Keys
     , orKey
@@ -37,8 +39,8 @@ module Kore.Builtin.Bool
     , orElseKey
     ) where
 
-import           Control.Monad
-                 ( void )
+import           Control.Applicative
+import           Control.Error
 import           Data.Functor
                  ( ($>) )
 import qualified Data.HashMap.Strict as HashMap
@@ -49,6 +51,7 @@ import           Data.String
                  ( IsString )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
@@ -57,10 +60,15 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Simplification.Data
+import           Kore.Step.StepperAttributes
+import           Kore.Unparser
+import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -104,11 +112,24 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifier :: Builtin.PatternVerifier
+patternVerifier :: Builtin.DomainValueVerifier child
 patternVerifier =
-    Builtin.verifyDomainValue sort
-    (void . Builtin.parseDomainValue parse)
+    Builtin.makeEncodedDomainValueVerifier sort
+        (Builtin.parseEncodeDomainValue parse Domain.BuiltinBool)
 
+-- | get the value from a (possibly encoded) domain value
+extractBoolDomainValue
+    :: Text -- ^ error message Context
+    -> DomainValue Object Domain.Builtin child
+    -> Bool
+extractBoolDomainValue
+    ctx
+    dv@DomainValue { domainValueChild }
+  =
+    case domainValueChild of
+        Domain.BuiltinBool bool -> bool
+        _ -> Builtin.verifierBug $ Text.unpack ctx ++ ": "
+            ++ "Bool builtin should be internal"
 {- | Parse an integer string literal.
  -}
 parse :: Builtin.Parser Bool
@@ -116,6 +137,21 @@ parse = (Parsec.<|>) true false
   where
     true = Parsec.string "true" $> True
     false = Parsec.string "false" $> False
+
+{- | Render a 'Bool' as an internal domain value pattern of the given sort.
+
+  The result sort should be hooked to the builtin @Bool@ sort, but this is not
+  checked.
+
+  See also: 'sort'
+
+ -}
+asInternal
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
+    -> Bool  -- ^ builtin value to render
+    -> StepPattern Object variable
+asInternal resultSort = mkDomainValue resultSort . Domain.BuiltinBool
 
 {- | Render a 'Bool' as a domain value pattern of the given sort.
 
@@ -149,7 +185,7 @@ asExpandedPattern
     -> Bool  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asPattern resultSort
+    ExpandedPattern.fromPurePattern . asInternal resultSort
 
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}
@@ -167,8 +203,10 @@ builtinFunctions =
     , (orElseKey, binaryOperator orElseKey (||))
     ]
   where
-    unaryOperator = Builtin.unaryOperator parse asExpandedPattern
-    binaryOperator = Builtin.binaryOperator parse asExpandedPattern
+    unaryOperator =
+        Builtin.unaryOperator extractBoolDomainValue asExpandedPattern
+    binaryOperator =
+        Builtin.binaryOperator extractBoolDomainValue asExpandedPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
 

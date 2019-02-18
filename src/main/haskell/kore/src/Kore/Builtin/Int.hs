@@ -25,8 +25,10 @@ module Kore.Builtin.Int
     , patternVerifier
     , builtinFunctions
     , expectBuiltinInt
+    , extractIntDomainValue
     , asMetaPattern
     , asPattern
+    , asInternal
     , asConcretePattern
     , asExpandedPattern
     , asPartialExpandedPattern
@@ -67,8 +69,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
-import           Control.Monad
-                 ( void )
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
 import qualified Data.HashMap.Strict as HashMap
@@ -94,10 +94,15 @@ import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Simplification.Data
+import           Kore.Step.StepperAttributes
+import           Kore.Unparser
+import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -179,12 +184,26 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifier :: Builtin.PatternVerifier
+patternVerifier :: Builtin.DomainValueVerifier child
 patternVerifier =
-    Builtin.verifyDomainValue sort
-    (void . Builtin.parseDomainValue parse)
+    Builtin.makeEncodedDomainValueVerifier sort
+        (Builtin.parseEncodeDomainValue parse Domain.BuiltinInteger)
 
-{- | Parse an integer string literal.
+-- | get the value from a (possibly encoded) domain value
+extractIntDomainValue
+    :: Text -- ^ error message Context
+    -> DomainValue Object Domain.Builtin child
+    -> Integer
+extractIntDomainValue
+    ctx
+    dv@DomainValue {domainValueSort = _,domainValueChild }
+  =
+    case domainValueChild of
+        Domain.BuiltinInteger int -> int
+        _ -> Builtin.verifierBug $ Text.unpack ctx ++ ": "
+            ++ "Int builtin should be internal"
+
+{- | Parse a string literal as an integer.
  -}
 parse :: Builtin.Parser Integer
 parse = Parsec.signed noSpace Parsec.decimal
@@ -210,11 +229,31 @@ expectBuiltinInt ctx =
                 Domain.BuiltinPattern (StringLiteral_ lit) ->
                     (return . Builtin.runParser ctx)
                         (Builtin.parseString parse lit)
+                Domain.BuiltinInteger int -> return int
                 _ ->
                     Builtin.verifierBug
-                        (Text.unpack ctx ++ ": Domain value argument is not a string")
+                        (Text.unpack ctx ++ ": Domain value argument is not a "
+                            ++ "string or internal value")
         _ ->
             empty
+
+{- | Render an 'Integer' as an internal domain value pattern of the given sort.
+
+  The result sort should be hooked to the builtin @Int@ sort, but this is not
+  checked.
+
+  See also: 'sort'
+
+ -}
+asInternal
+    :: Ord (variable Object)
+    => Sort Object  -- ^ resulting sort
+    -> Integer  -- ^ builtin value to render
+    -> StepPattern Object variable
+asInternal resultSort =
+    fromConcreteStepPattern
+        . mkDomainValue resultSort
+        . Domain.BuiltinInteger
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
@@ -262,7 +301,7 @@ asExpandedPattern
     -> Integer  -- ^ builtin value to render
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asPattern resultSort
+    ExpandedPattern.fromPurePattern . asInternal resultSort
 
 asPartialExpandedPattern
     :: Ord (variable Object)
@@ -325,17 +364,23 @@ builtinFunctions =
     ]
   where
     unaryOperator name op =
-        (name, Builtin.unaryOperator parse asExpandedPattern name op)
+        ( name, Builtin.unaryOperator extractIntDomainValue
+            asExpandedPattern name op )
     binaryOperator name op =
-        (name, Builtin.binaryOperator parse asExpandedPattern name op)
+        ( name, Builtin.binaryOperator extractIntDomainValue
+            asExpandedPattern name op )
     comparator name op =
-        (name, Builtin.binaryOperator parse Bool.asExpandedPattern name op)
+        ( name, Builtin.binaryOperator extractIntDomainValue
+            Bool.asExpandedPattern name op )
     partialUnaryOperator name op =
-        (name, Builtin.unaryOperator parse asPartialExpandedPattern name op)
+        ( name, Builtin.unaryOperator extractIntDomainValue
+            asPartialExpandedPattern name op )
     partialBinaryOperator name op =
-        (name, Builtin.binaryOperator parse asPartialExpandedPattern name op)
+        ( name, Builtin.binaryOperator extractIntDomainValue
+            asPartialExpandedPattern name op )
     partialTernaryOperator name op =
-        (name, Builtin.ternaryOperator parse asPartialExpandedPattern name op)
+        ( name, Builtin.ternaryOperator extractIntDomainValue
+            asPartialExpandedPattern name op )
     tdiv n d
         | d == 0 = Nothing
         | otherwise = Just (quot n d)

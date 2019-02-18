@@ -69,6 +69,8 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Bool as Bool
+import           Kore.Builtin.Builtin
+                 ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
@@ -128,27 +130,24 @@ symbolVerifiers =
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
     , ( elementKey
-      , Builtin.verifySymbol assertSort [anySort, anySort]
+      , Builtin.verifySymbol assertSort [acceptAnySort, acceptAnySort]
       )
     , ( lookupKey
-      , Builtin.verifySymbol anySort [assertSort, anySort]
+      , Builtin.verifySymbol acceptAnySort [assertSort, acceptAnySort]
       )
     , ( unitKey
       , Builtin.verifySymbol assertSort []
       )
     , ( updateKey
-      , Builtin.verifySymbol assertSort [assertSort, anySort, anySort]
+      , Builtin.verifySymbol assertSort [assertSort, acceptAnySort, acceptAnySort]
       )
     , ( in_keysKey
-      , Builtin.verifySymbol Bool.assertSort [anySort, assertSort]
+      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
       )
     , ( keysKey
       , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
       )
     ]
-  where
-    anySort :: Builtin.SortVerifier
-    anySort = const $ const $ Right ()
 
 type Builtin variable =
     Map (ConcreteStepPattern Object) (StepPattern Object variable)
