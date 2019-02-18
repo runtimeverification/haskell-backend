@@ -232,7 +232,7 @@ makeEvaluateBuiltin
   where
     values :: [StepPattern level variable]
     -- Maps assume that their keys are relatively functional.
-    values = map snd (Map.toList m)
+    values = Map.elems m
     ceils :: [Predicate level variable]
     (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) values)
 makeEvaluateBuiltin
@@ -249,3 +249,4 @@ makeEvaluateBuiltin
   =
     -- Sets assume that their elements are relatively functional.
     (makeTruePredicate, SimplificationProof)
+makeEvaluateBuiltin _tools _ = (makeTruePredicate, SimplificationProof)

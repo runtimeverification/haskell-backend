@@ -71,3 +71,5 @@ simplifyBuiltin =
             -- MultiOr propagates \bottom children upward.
             return (Domain.BuiltinList <$> sequenceA _list)
         Domain.BuiltinSet set -> (return . pure) (Domain.BuiltinSet set)
+        Domain.BuiltinInteger int -> (return . pure) (Domain.BuiltinInteger int)
+        Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
