@@ -151,7 +151,7 @@ signatureToKey
     -> Integer
     -> ByteString
 signatureToKey messageHash r s v =
-      assert (28 <= v && v <= 34)
+      assert (27 <= v && v <= 34)
     $ ByteString.drop 1
     $ encodePoint compressed
     $ recoverPublicKey recId (r, s) messageHash
@@ -165,10 +165,10 @@ recoverPublicKey
     -> Integer
     -> Point
 recoverPublicKey recId (r, s) e =
-      assert (recId > 0)
-    $ assert (r > 0)
-    $ assert (s > 0)
-    $ assert (pt_x < p)
+      assert (recId >= 0)
+    $ assert (r >= 0)
+    $ assert (s >= 0)
+    $ assert (pt_x <= p)
     $ assert (pointMul p256k1 n pt == PointO)
     $ pointAddTwoMuls
             p256k1
@@ -187,7 +187,7 @@ recoverPublicKey recId (r, s) e =
 
     pt = decompressPt pt_x (recId .&. 1 == 1)
 
-    decompressPt x signBit = Point x (if signBit then y else p - y)
+    decompressPt x signBit = Point x (if signBit /= even y then y else p - y)
       where
         y = sqrtMod p $
               (powMod p x 3)

@@ -300,6 +300,9 @@ string2IntStringSymbol = builtinSymbol "string2intString"
 ecdsaRecoverSymbol :: SymbolOrAlias Object
 ecdsaRecoverSymbol = builtinSymbol "ECDSARecover"
 
+keccakSymbol :: SymbolOrAlias Object
+keccakSymbol = builtinSymbol "KECCAK"
+
 -- -------------------------------------------------------------
 -- * Sorts
 
@@ -1032,6 +1035,11 @@ kryptoModule =
                 stringSort
                 [stringSort, intSort, stringSort, stringSort]
                 [hookAttribute "KRYPTO.ecdsaRecover"]
+            , hookedSymbolDecl
+                keccakSymbol
+                stringSort
+                [stringSort]
+                [hookAttribute "KRYPTO.keccak256"]
             ]
         }
 
