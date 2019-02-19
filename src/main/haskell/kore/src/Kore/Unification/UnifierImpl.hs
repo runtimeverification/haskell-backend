@@ -35,8 +35,7 @@ import qualified Kore.Step.ExpandedPattern as Predicated
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 liftPredicateSubstitutionSimplifier )
+                 ( PredicateSubstitutionSimplifier (..) )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
@@ -134,7 +133,7 @@ simplifyAnds tools substitutionSimplifier patterns = do
                 (result, _) <-
                     termUnification
                         tools
-                        substitutionSimplifier'
+                        substitutionSimplifier
                         (ExpandedPattern.term intermediate)
                         pat
                 (predSubst, _) <-
@@ -151,9 +150,6 @@ simplifyAnds tools substitutionSimplifier patterns = do
                     ( ExpandedPattern.term result )
                     ( Predicated.predicate predSubst )
                     ( Predicated.substitution predSubst )
-              where
-                substitutionSimplifier' =
-                    liftPredicateSubstitutionSimplifier substitutionSimplifier
 
 
 groupSubstitutionByVariable

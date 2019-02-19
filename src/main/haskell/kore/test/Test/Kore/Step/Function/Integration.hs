@@ -32,6 +32,8 @@ import           Kore.Step.Function.Data as AttemptedAxiom
 import           Kore.Step.Function.EvaluationStrategy
                  ( builtinEvaluation, definitionEvaluation,
                  firstFullEvaluation, simplifierWithFallback )
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.Function.UserDefined
                  ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -72,7 +74,8 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.functionalConstr10Id
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (axiomEvaluator
                         (Mock.functionalConstr10 (mkVar Mock.x))
                         (Mock.g (mkVar Mock.x))
@@ -91,7 +94,8 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.functionalConstr10Id
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (builtinEvaluation $ axiomEvaluator
                         (Mock.functionalConstr10 (mkVar Mock.x))
                         (Mock.g (mkVar Mock.x))
@@ -111,7 +115,8 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.functionalConstr10Id
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -137,7 +142,8 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.functionalConstr10Id
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
                             (\_ _ _ _ -> notApplicableAxiomEvaluator)
@@ -161,7 +167,8 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.functionalConstr10Id
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
                         (Mock.functionalConstr10 (mkVar Mock.x))
                         (Mock.functional10 (mkVar Mock.x))
@@ -183,7 +190,8 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.functionalConstr10Id
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
                         (Mock.functionalConstr10 (mkVar Mock.x))
                         (Mock.functional10 (mkVar Mock.x))
@@ -212,7 +220,8 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.functionalConstr10Id
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
                         (Mock.functionalConstr10 (mkVar Mock.x))
                         (Mock.functional10 (mkVar Mock.x))
@@ -236,7 +245,8 @@ test_functionIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                (Map.singleton Mock.cId
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.cId)
                     ( appliedMockEvaluator Predicated
                         { term   = Mock.d
                         , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
@@ -261,21 +271,21 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.cId
+                    [   ( AxiomIdentifier.Application Mock.cId
                         , appliedMockEvaluator Predicated
                             { term = Mock.e
                             , predicate = makeCeilPredicate Mock.cg
                             , substitution = mempty
                             }
                         )
-                    ,   ( Mock.dId
+                    ,   ( AxiomIdentifier.Application Mock.dId
                         , appliedMockEvaluator Predicated
                             { term = Mock.e
                             , predicate = makeCeilPredicate Mock.cf
                             , substitution = mempty
                             }
                         )
-                    ,   (Mock.functionalConstr10Id
+                    ,   ( AxiomIdentifier.Application Mock.functionalConstr10Id
                         , axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
                             (Mock.functional11 (mkVar Mock.x))
@@ -296,10 +306,10 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.cId
+                    [   ( AxiomIdentifier.Application Mock.cId
                         , axiomEvaluator Mock.c Mock.d
                         )
-                    ,   ( Mock.dId
+                    ,   ( AxiomIdentifier.Application Mock.dId
                         , appliedMockEvaluator Predicated
                             { term = Mock.e
                             , predicate =
@@ -330,7 +340,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.cId
+                    [   ( AxiomIdentifier.Application Mock.cId
                         , appliedMockEvaluator Predicated
                             { term = Mock.d
                             , predicate = makeTruePredicate
@@ -341,7 +351,7 @@ test_functionIntegration =
                                 ]
                             }
                         )
-                    ,   ( Mock.dId
+                    ,   ( AxiomIdentifier.Application Mock.dId
                         , appliedMockEvaluator Predicated
                             { term = Mock.e
                             , predicate = makeTruePredicate
@@ -375,7 +385,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , appliedMockEvaluator Predicated
                             { term = Mock.a
                             , predicate =
@@ -410,7 +420,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (appliedMockEvaluator Predicated
                                 { term = Mock.b
@@ -442,7 +452,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (firstFullEvaluation
                                 [ axiomEvaluator
@@ -484,7 +494,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (axiomEvaluator
                                 (Mock.f (Mock.g (mkVar Mock.x)))
@@ -516,7 +526,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (axiomEvaluator
                                 (Mock.f (Mock.g (mkVar Mock.x)))
@@ -579,7 +589,7 @@ test_functionIntegration =
             evaluate
                 mockMetadataTools
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , definitionEvaluation
                             [ axiom
                                 (Mock.f Mock.a)

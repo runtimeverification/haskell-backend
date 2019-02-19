@@ -12,7 +12,6 @@ module Kore.Step.Function.Registry
     , axiomPatternsToEvaluators
     ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Foldable as Foldable
 import           Data.List
                  ( partition )
@@ -23,7 +22,6 @@ import           Data.Maybe
                  ( fromMaybe, isJust, mapMaybe )
 
 import           Kore.AST.Kore
-import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.Attribute.Simplification
                  ( Simplification (..) )
@@ -42,6 +40,10 @@ import           Kore.Step.Function.Data
 import           Kore.Step.Function.EvaluationStrategy
                  ( definitionEvaluation, firstFullEvaluation,
                  simplifierWithFallback )
+import           Kore.Step.Function.Identifier
+                 ( AxiomIdentifier )
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+                 ( extract )
 import           Kore.Step.Function.UserDefined
                  ( ruleFunctionEvaluator )
 import           Kore.Step.StepperAttributes
@@ -54,7 +56,7 @@ extractFunctionAxioms
         MetaOrObject level
     => level
     -> VerifiedModule StepperAttributes AxiomPatternAttributes
-    -> Map (Id level) [EqualityRule level Variable]
+    -> Map (AxiomIdentifier level) [EqualityRule level Variable]
 extractFunctionAxioms level =
     \imod ->
         Foldable.foldl'
@@ -64,9 +66,9 @@ extractFunctionAxioms level =
   where
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
-        :: Map (Id level) [EqualityRule level Variable]
+        :: Map (AxiomIdentifier level) [EqualityRule level Variable]
         -> VerifiedModule StepperAttributes AxiomPatternAttributes
-        -> Map (Id level) [EqualityRule level Variable]
+        -> Map (AxiomIdentifier level) [EqualityRule level Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
       where
@@ -76,9 +78,9 @@ extractFunctionAxioms level =
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
     extractSentenceAxiom
-        :: Map (Id level) [EqualityRule level Variable]
+        :: Map (AxiomIdentifier level) [EqualityRule level Variable]
         -> (attrs, VerifiedKoreSentenceAxiom)
-        -> Map (Id level) [EqualityRule level Variable]
+        -> Map (AxiomIdentifier level) [EqualityRule level Variable]
     extractSentenceAxiom axioms (_, sentence) =
         let
             namedAxiom = axiomToIdAxiomPatternPair level sentence
@@ -87,9 +89,9 @@ extractFunctionAxioms level =
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
-        :: Map (Id level) [EqualityRule level Variable]
-        -> (Id level, EqualityRule level Variable)
-        -> Map (Id level) [EqualityRule level Variable]
+        :: Map (AxiomIdentifier level) [EqualityRule level Variable]
+        -> (AxiomIdentifier level, EqualityRule level Variable)
+        -> Map (AxiomIdentifier level) [EqualityRule level Variable]
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
@@ -97,39 +99,23 @@ axiomToIdAxiomPatternPair
     :: MetaOrObject level
     => level
     -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
-    -> Maybe (Id level, EqualityRule level Variable)
+    -> Maybe (AxiomIdentifier level, EqualityRule level Variable)
 axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
     case verifiedKoreSentenceToAxiomPattern level axiom of
         Left _ -> Nothing
         Right
-            (FunctionAxiomPattern
-                axiomPat@(EqualityRule RulePattern { left }))
-          ->
-            case (Cofree.tailF . fromPurePattern) left of
-                ApplicationPattern Application { applicationSymbolOrAlias } ->
-                    case symbolOrAliasParams of
-                        [] -> return (symbolOrAliasConstructor, axiomPat)
-                        _ ->
-                            -- TODO (thomas.tuegel): Handle matching for
-                            -- parameterized symbols, then enable extraction of
-                            -- their axioms.
-                            Nothing
-                  where
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor
-                        , symbolOrAliasParams
-                        }
-                      =
-                        applicationSymbolOrAlias
-                _ -> Nothing
+            (FunctionAxiomPattern axiomPat@(EqualityRule RulePattern { left }))
+          -> do
+            identifier <- AxiomIdentifier.extract left
+            return (identifier, axiomPat)
         Right (RewriteAxiomPattern _) -> Nothing
 
 -- |Converts a registry of 'RulePattern's to one of
 -- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
     :: forall level
-    .  Map.Map (Id level) [EqualityRule level Variable]
-    -> Map.Map (Id level) (BuiltinAndAxiomSimplifier level)
+    .  Map.Map (AxiomIdentifier level) [EqualityRule level Variable]
+    -> Map.Map (AxiomIdentifier level) (BuiltinAndAxiomSimplifier level)
 axiomPatternsToEvaluators axiomPatterns =
     Map.map
         (fromMaybe (error "Unexpected Nothing"))

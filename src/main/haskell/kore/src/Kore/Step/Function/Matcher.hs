@@ -27,6 +27,8 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+import           Kore.AST.Common
+                 ( SymbolOrAlias (symbolOrAliasConstructor) )
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
@@ -142,14 +144,20 @@ unificationWithAppMatchOnTop tools substitutionSimplifier first second
   = case first of
     (App_ firstHead firstChildren) ->
         case second of
-            (App_ secondHead secondChildren) ->
-                if firstHead == secondHead
-                then
-                    unifyJoin
+            (App_ secondHead secondChildren)
+                | firstHead == secondHead
+                  -> unifyJoin
                         tools
                         substitutionSimplifier
                         (zip firstChildren secondChildren)
-                else error
+                | symbolOrAliasConstructor firstHead
+                    == symbolOrAliasConstructor secondHead
+                -- The application heads have the same symbol or alias
+                -- constructor with different parameters,
+                -- but we do not handle unification of symbol parameters.
+                  -> throwError (UnificationError UnsupportedPatterns)
+                | otherwise
+                  -> error
                     (  "Unexpected unequal heads: "
                     ++ show firstHead ++ " and "
                     ++ show secondHead ++ "."
@@ -254,12 +262,16 @@ matchEqualHeadPatterns
                             quantifiedVariables
                             (zip firstChildren secondChildren)
                     else case simplifySortInjections tools first second of
-                        SortInjectionSimplification.NotInjection ->
+                        Nothing -> nothing
+                        Just SortInjectionSimplification.NotInjection ->
                             nothing
-                        SortInjectionSimplification.NotMatching ->
+                        Just SortInjectionSimplification.NotMatching ->
                             nothing
-                        SortInjectionSimplification.Matching SortInjectionMatch
-                            { firstChild, secondChild } ->
+                        Just
+                            (SortInjectionSimplification.Matching
+                                SortInjectionMatch
+                                    { firstChild, secondChild }
+                            ) ->
                                 matchJoin
                                     tools
                                     substitutionSimplifier

@@ -130,6 +130,7 @@ def endsLevel(line):
     return line.startswith("ending ")
 
 def readDebug(debug, it, indent_level):
+    dropThing = False
     while True:
         try:
             line = next(it)
@@ -137,11 +138,18 @@ def readDebug(debug, it, indent_level):
             break
         line_debug = parseLine(line, indent_level)
         if startsLevel(line):
-            debug.add(readDebug(line_debug, it, indent_level + 1))
+            childLine = readDebug(line_debug, it, indent_level + 1)
+            if " D_Step " in line:
+                line_debug.expand()
+            if not (childLine is None):
+                debug.add(childLine)
             continue
         debug.add(line_debug)
         if endsLevel(line):
+            dropThing = line.endswith("result: ()")
             break
+    if dropThing:
+        return None
     return debug
 
 class LineAttributes:
@@ -203,7 +211,7 @@ class WindowState:
 
 
     def updateHeight(self, y):
-        if self.__selected_line - self.__first_window_line - 1 >= y:
+        if self.__selected_line - self.__first_window_line >= y:
             self.__first_window_line = self.__selected_line - (y - 1)/2
 
 class WindowPainter:
@@ -216,6 +224,8 @@ class WindowPainter:
         self.__window.erase()
         window_line = 0
         for (line_attrs, line) in state.lines(y):
+            assert window_line >= 0
+            assert window_line < y
             self.__putLine(
                 window_line, x, line, line_attrs)
             window_line += 1

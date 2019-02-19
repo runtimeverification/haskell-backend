@@ -51,7 +51,7 @@ module Kore.Builtin.Map
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT )
+                 ( ExceptT, MaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -89,6 +89,8 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( normalize )
+import           Kore.Unification.Error
+                 ( UnificationOrSubstitutionError (..) )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -541,7 +543,7 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
-    :: forall level variable m p expanded proof .
+    :: forall level variable m err p expanded proof .
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
@@ -552,12 +554,13 @@ unifyEquals
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> m (expanded, proof))
-    -> (p -> p -> MaybeT m (expanded, proof))
+    -> (p -> p -> (err m) (expanded, proof))
+    -> (p -> p -> MaybeT (err m) (expanded, proof))
 unifyEquals
     simplificationType
     tools
@@ -584,7 +587,7 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT m (expanded, proof)
+        -> MaybeT (err m) (expanded, proof)
 
     unifyEquals0 dv1@(DV_ resultSort (Domain.BuiltinMap map1)) =
         \case
@@ -646,7 +649,7 @@ unifyEquals
         => Sort level  -- ^ result sort
         -> Map k (StepPattern level variable)
         -> Map k (StepPattern level variable)
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsConcrete resultSort map1 map2 = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
@@ -679,7 +682,7 @@ unifyEquals
         -> p  -- ^ concrete map
         -> Map k p  -- ^ framed concrete map
         -> p  -- ^ framing variable
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsFramed1
         resultSort
         dv1@(DV_ _ (Domain.BuiltinMap map1))
@@ -710,7 +713,8 @@ unifyEquals
                 -- Elements of map2 missing from map1
                 remainder2 = Map.difference map2 map1
 
-        normalized <- normalize tools substitutionSimplifier result
+        normalized <- Monad.Trans.lift $
+            normalize tools substitutionSimplifier result
         return (normalized, SimplificationProof)
       where
         asBuiltinMap = asBuiltinDomainValue resultSort
@@ -725,7 +729,7 @@ unifyEquals
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
         -> p  -- ^ value
-        -> m (expanded, proof)
+        -> (err m) (expanded, proof)
     unifyEqualsElement resultSort map1 element' key2 value2 =
         case Map.toList map1 of
             [(fromConcreteStepPattern -> key1, value1)] ->

@@ -280,7 +280,7 @@ def cleanApplication(line):
         name = symbol.getSubnode(["symbolOrAliasConstructor", "getId"])
         sorts = symbol.getSubnode(["symbolOrAliasParams"])
         nameText = name.text()[8:]
-        if sorts.size():
+        if sorts.size() > 1:
             result = Structure(
                 nameText,
                 [ Structure("", sorts.children())
@@ -293,6 +293,13 @@ def cleanApplication(line):
                 children.children()
             )
         it.element().replaceWith(result)
+    return line
+
+def cleanInj(line):
+    """Removes inj"""
+    it = Iterator(line)
+    while line.find(["\\\"inj\\\""], it):
+        it.element().replaceWith(it.element().child(1))
     return line
 
 def cleanSort(line):
@@ -498,6 +505,15 @@ def clean(line):
         )
     )
 
+def cleanEvmExecStack(line):
+    return (
+        #cleanKseq(
+            cleanInj(
+                line
+            )
+        #)
+    )
+
 def printParseLine(indentLevel, maxOpenParenthesis, line):
     """Rudimentary attempts to split a line and indent it."""
     index = 0
@@ -544,7 +560,7 @@ def parseAndDisplay(line, indentLevel):
 def main(argv):
     sys.setrecursionlimit(4000)
     for line in sys.stdin:
-        print clean(Line(line[:len(line) - 1]))
+        print cleanEvmExecStack(clean(Line(line[:len(line) - 1])))
         sys.stdout.flush()
 
 if __name__ == "__main__":

@@ -37,8 +37,7 @@ import           Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
-                 liftPredicateSubstitutionSimplifier )
+                 ( PredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unification.Data
@@ -85,7 +84,7 @@ unificationProcedure tools substitutionSimplifier p1 p2
         getUnifiedTerm =
             termUnification
                 tools
-                (liftPredicateSubstitutionSimplifier substitutionSimplifier)
+                substitutionSimplifier
                 p1
                 p2
     (pat@Predicated { term, predicate, substitution }, _) <- getUnifiedTerm

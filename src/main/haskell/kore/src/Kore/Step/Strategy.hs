@@ -52,6 +52,7 @@ import           Data.Maybe
 import           Prelude hiding
                  ( all, and, any, or, replicate, seq, sequence )
 
+import Kore.Debug
 
 assert :: Bool -> a -> a
 assert b a = if b then a else error "assertion failed"
@@ -227,7 +228,7 @@ data ConfigNode config = ConfigNode
     deriving (Eq, Show, Functor)
 
 constructExecutionHistory
-    :: forall m config instr . (Monad m, Hashable config)
+    :: forall m config instr . (Monad m, Hashable config, Show config)
     => (instr -> config -> m [config])
     -> [instr]
     -> config
@@ -241,12 +242,17 @@ constructExecutionHistory transit instrs0 config0 =
     pool0 = [ConfigNode config0 0 (hash (config0, 0 :: Int)) []]
 
     step :: [instr] -> [ConfigNode config] -> m [[ConfigNode config]]
-    step [] _pool = pure []
-    step (instr : instrs) pool = do
-        newPool <- mergeDuplicates . concat <$> mapM (getChildNodes instr) pool
-        if null newPool
-            then pure []
-            else (newPool :) <$> step instrs newPool
+    step [] _pool =
+        traceNonErrorMonad D_Step [ debugArg "lastStep" True ]
+        $ pure []
+    step (instr : instrs) pool =
+        traceNonErrorMonad D_Step [ debugArg "lastStep" False ]
+        $ do
+            newPool <-
+                mergeDuplicates . concat <$> mapM (getChildNodes instr) pool
+            if null newPool
+                then pure []
+                else (newPool :) <$> step instrs newPool
 
     getChildNodes :: instr -> ConfigNode config -> m [ConfigNode config]
     getChildNodes instr (ConfigNode config timestep node _) = do
@@ -286,7 +292,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
   -}
 
 constructExecutionGraph
-    :: forall m config instr . (Monad m, Hashable config)
+    :: forall m config instr . (Monad m, Hashable config, Show config)
     => (instr -> config -> m [config])
     -> [instr]
     -> config

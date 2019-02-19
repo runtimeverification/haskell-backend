@@ -43,7 +43,8 @@ termAnd
     -> m (ExpandedPattern level variable, SimplificationProof level)
 
 termUnification
-    ::  ( MetaOrObject level
+    :: forall level variable m err .
+        ( MetaOrObject level
         , FreshVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -52,11 +53,11 @@ termUnification
         , ShowMetaOrObject variable
         , SortedVariable variable
         , MonadCounter m
-        , unifier ~ ExceptT (UnificationOrSubstitutionError level variable)
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level (unifier m)
+    -> PredicateSubstitutionSimplifier level m
     -> StepPattern level variable
     -> StepPattern level variable
-    -> unifier m
+    -> err m
         (ExpandedPattern level variable, SimplificationProof level)

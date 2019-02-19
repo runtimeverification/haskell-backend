@@ -24,6 +24,8 @@ import qualified Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Function.EvaluationStrategy
                  ( firstFullEvaluation )
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -121,7 +123,7 @@ test_applicationSimplification =
                 mockMetadataTools
                 (mockSimplifier [])
                 (Map.singleton
-                    Mock.fId
+                    (AxiomIdentifier.Application Mock.fId)
                     (simplificationEvaluator
                         [ BuiltinAndAxiomSimplifier
                             (const $ const $ const $ const $ return
@@ -249,7 +251,7 @@ test_applicationSimplification =
                         mockMetadataTools
                         (mockSimplifier [])
                         (Map.singleton
-                            Mock.sigmaId
+                            (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator
                                 [ BuiltinAndAxiomSimplifier
                                     (const $ const $ const $ const $
@@ -357,7 +359,7 @@ evaluate
     -> CommonStepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application level)
         (Valid (Variable level) level)
@@ -366,7 +368,7 @@ evaluate
 evaluate
     tools
     simplifier
-    symbolIdToEvaluator
+    axiomIdToEvaluator
     application
   =
     (<$>) fst
@@ -376,5 +378,5 @@ evaluate
         tools
         (Mock.substitutionSimplifier tools)
         simplifier
-        symbolIdToEvaluator
+        axiomIdToEvaluator
         application

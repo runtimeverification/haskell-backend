@@ -168,6 +168,8 @@ from function axioms (used for functional simplification).
 data QualifiedAxiomPattern level variable
     = RewriteAxiomPattern (RewriteRule level variable)
     | FunctionAxiomPattern (EqualityRule level variable)
+    -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
+    -- not only to function-related ones.
     deriving (Eq, Show)
 
 {- | Does the axiom pattern represent a heating rule?
@@ -340,6 +342,8 @@ mkRewriteAxiom lhs rhs requires =
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'FunctionAxiomPattern'.
  -}
+-- TODO(virgil): Rename the above since it applies to all sorts of axioms,
+-- not only to function-related ones.
 mkFunctionAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side

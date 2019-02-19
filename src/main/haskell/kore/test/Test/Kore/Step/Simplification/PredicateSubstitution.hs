@@ -21,6 +21,8 @@ import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Function.Data
 import           Kore.Step.Function.EvaluationStrategy
                  ( firstFullEvaluation )
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -127,10 +129,12 @@ test_predicateSubstitutionSimplification =
         actual <-
             runSimplifier
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , simplificationEvaluator
                             [ makeEvaluator
-                                    [ (Mock.f Mock.functional00, Mock.functional00)
+                                    [   ( Mock.f Mock.functional00
+                                        , Mock.functional00
+                                        )
                                 , (Mock.f Mock.functional01, Mock.a)
                                 ]
                             ]
@@ -163,7 +167,7 @@ test_predicateSubstitutionSimplification =
         actual <-
             runSimplifier
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , simplificationEvaluator
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
@@ -200,7 +204,7 @@ test_predicateSubstitutionSimplification =
         actual <-
             runSimplifier
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , simplificationEvaluator
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)
@@ -243,7 +247,7 @@ test_predicateSubstitutionSimplification =
         actual <-
             runSimplifier
                 (Map.fromList
-                    [   ( Mock.fId
+                    [   ( AxiomIdentifier.Application Mock.fId
                         , simplificationEvaluator
                             [ makeEvaluator
                                 [ (Mock.f Mock.b, Mock.constr10 Mock.a)

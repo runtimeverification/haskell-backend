@@ -12,23 +12,21 @@ module Kore.Step.Simplification.Data
     , runSimplifier
     , evalSimplifier
     , PredicateSubstitutionSimplifier (..)
-    , liftPredicateSubstitutionSimplifier
     , StepPatternSimplifier (..)
     , CommonStepPatternSimplifier
     , SimplificationProof (..)
     , SimplificationType (..)
     ) where
 
-import           Colog
-                 ( HasLog (..), LogAction (..) )
-import           Control.Concurrent.MVar
-                 ( MVar )
-import           Control.Monad.Reader
-import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Except
-                 ( ExceptT (..), runExceptT )
-import           Data.IORef
-                 ( IORef, modifyIORef, newIORef, readIORef )
+import Colog
+       ( HasLog (..), LogAction (..) )
+import Control.Concurrent.MVar
+       ( MVar )
+import Control.Monad.Reader
+import Control.Monad.Trans.Except
+       ( ExceptT (..), runExceptT )
+import Data.IORef
+       ( IORef, modifyIORef, newIORef, readIORef )
 
 import Kore.AST.Common
        ( SortedVariable, Variable )
@@ -191,12 +189,3 @@ newtype PredicateSubstitutionSimplifier level m =
             , SimplificationProof level
             )
         )
-
-liftPredicateSubstitutionSimplifier
-    :: (MonadTrans t, Monad m)
-    => PredicateSubstitutionSimplifier level m
-    -> PredicateSubstitutionSimplifier level (t m)
-liftPredicateSubstitutionSimplifier
-    (PredicateSubstitutionSimplifier simplifier)
-  =
-    PredicateSubstitutionSimplifier (Monad.Trans.lift . simplifier)

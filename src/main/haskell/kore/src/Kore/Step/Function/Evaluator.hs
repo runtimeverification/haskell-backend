@@ -9,11 +9,14 @@ Portability : portable
 -}
 module Kore.Step.Function.Evaluator
     ( evaluateApplication
+    , evaluatePattern
     ) where
 
 import           Control.Exception
                  ( assert )
 import qualified Data.Map as Map
+import           Data.Maybe
+                 ( fromMaybe )
 import           Data.Reflection
                  ( give )
 import qualified Data.Text as Text
@@ -23,8 +26,6 @@ import           Kore.AST.Valid
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Function.Data
@@ -34,6 +35,10 @@ import           Kore.Step.Function.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Function.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
+import           Kore.Step.Function.Identifier
+                 ( AxiomIdentifier )
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+                 ( extract )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import           Kore.Step.OrOfExpandedPattern
@@ -50,7 +55,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-| 'evaluateApplication' - evaluates functions on an application pattern.
+{-| Evaluates functions on an application pattern.
 -}
 evaluateApplication
     ::  forall level variable.
@@ -70,7 +75,7 @@ evaluateApplication
     -> StepPatternSimplifier level variable
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
+    -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
@@ -84,33 +89,159 @@ evaluateApplication
     tools
     substitutionSimplifier
     simplifier
-    symbolIdToEvaluator
+    axiomIdToEvaluator
     childrenPredicateSubstitution
     (valid :< app)
-  =
-    case Map.lookup symbolId symbolIdToEvaluator of
+  = case maybeEvaluatedPattSimplifier of
         Nothing
-          | give tools isSortInjection_ appHead ->
-            evaluateSortInjection tools unchangedOr app
           | Just hook <- getAppHookString
-          , not(null symbolIdToEvaluator) ->
+          , not(null axiomIdToEvaluator) ->
             error
                 (   "Attempting to evaluate unimplemented hooked operation "
                 ++  hook ++ ".\nSymbol: " ++ show (getId symbolId)
                 )
           | otherwise ->
             return unchanged
+        Just evaluatedPattSimplifier -> evaluatedPattSimplifier
+  where
+    (afterInj, _proof) = evaluateSortInjection tools app
+
+    maybeEvaluatedPattSimplifier =
+        maybeEvaluatePattern
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
+            childrenPredicateSubstitution
+            appPurePattern
+            unchangedOr
+
+    Application { applicationSymbolOrAlias = appHead } = afterInj
+    SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
+
+    appPurePattern = asPurePattern (valid :< ApplicationPattern afterInj)
+
+    unchangedPatt =
+        Predicated
+            { term         = appPurePattern
+            , predicate    = predicate
+            , substitution = substitution
+            }
+      where
+        Predicated { term = (), predicate, substitution } =
+            childrenPredicateSubstitution
+    unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
+    unchanged = (unchangedOr, SimplificationProof)
+
+    getAppHookString =
+        Text.unpack <$> (getHook . hook . symAttributes tools) appHead
+
+{-| Evaluates axioms on patterns.
+-}
+evaluatePattern
+    ::  forall level variable.
+        ( MetaOrObject level
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -- ^ Tools for finding additional information about patterns
+    -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level variable
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
+    -> PredicateSubstitution level variable
+    -- ^ Aggregated children predicate and substitution.
+    -> StepPattern level variable
+    -- ^ The pattern to be evaluated
+    -> OrOfExpandedPattern level variable
+    -- ^ The default value
+    -> Simplifier
+        (OrOfExpandedPattern level variable, SimplificationProof level)
+evaluatePattern
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToEvaluator
+    childrenPredicateSubstitution
+    patt
+    defaultValue
+  =
+    fromMaybe
+        (return (defaultValue, SimplificationProof))
+        (maybeEvaluatePattern
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
+            childrenPredicateSubstitution
+            patt
+            defaultValue
+        )
+
+{-| Evaluates axioms on patterns.
+
+Returns Nothing if there is no axiom for the pattern's identifier.
+-}
+maybeEvaluatePattern
+    ::  forall level variable.
+        ( MetaOrObject level
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -- ^ Tools for finding additional information about patterns
+    -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level variable
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
+    -> PredicateSubstitution level variable
+    -- ^ Aggregated children predicate and substitution.
+    -> StepPattern level variable
+    -- ^ The pattern to be evaluated
+    -> OrOfExpandedPattern level variable
+    -- ^ The default value
+    -> Maybe
+        (Simplifier
+            (OrOfExpandedPattern level variable, SimplificationProof level)
+        )
+maybeEvaluatePattern
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToEvaluator
+    childrenPredicateSubstitution
+    patt
+    defaultValue
+  =
+    case maybeEvaluator of
+        Nothing -> Nothing
         Just (BuiltinAndAxiomSimplifier evaluator) ->
-            traceNonErrorMonad
-                D_Function_evaluateApplication
-                [debugArg "symbolId" (getId symbolId)]
+            Just
+            $ traceNonErrorMonad
+                D_Function_evaluatePattern
+                [ debugArg "axiomIdentifier" identifier ]
             $ do
                 (result, proof) <-
                     evaluator
                         tools
                         substitutionSimplifier
                         simplifier
-                        appPurePattern
+                        patt
                 flattened <- case result of
                     AttemptedAxiom.NotApplicable ->
                         return AttemptedAxiom.NotApplicable
@@ -133,7 +264,8 @@ evaluateApplication
                     childrenPredicateSubstitution
                     (flattened, proof)
                 case merged of
-                    AttemptedAxiom.NotApplicable -> return unchanged
+                    AttemptedAxiom.NotApplicable ->
+                        return (defaultValue, SimplificationProof)
                     AttemptedAxiom.Applied AttemptedAxiomResults
                         { results, remainders } ->
                             return
@@ -141,71 +273,72 @@ evaluateApplication
                                 , SimplificationProof
                                 )
   where
-    Application { applicationSymbolOrAlias = appHead } = app
-    SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
+    identifier :: Maybe (AxiomIdentifier level)
+    identifier = AxiomIdentifier.extract patt
 
-    appPurePattern = asPurePattern (valid :< ApplicationPattern app)
+    maybeEvaluator :: Maybe (BuiltinAndAxiomSimplifier level)
+    maybeEvaluator = do
+        identifier' <- identifier
+        Map.lookup identifier' axiomIdToEvaluator
 
     unchangedPatt =
-        case childrenPredicateSubstitution of
-            Predicated { predicate, substitution } ->
-                Predicated
-                    { term         = appPurePattern
-                    , predicate    = predicate
-                    , substitution = substitution
-                    }
-    unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
-    unchanged = (unchangedOr, SimplificationProof)
-
-    getAppHookString =
-        Text.unpack <$> (getHook . hook . symAttributes tools) appHead
+        Predicated
+            { term         = patt
+            , predicate    = predicate
+            , substitution = substitution
+            }
+      where
+        Predicated { term = (), predicate, substitution } =
+            childrenPredicateSubstitution
 
     simplifyIfNeeded
         :: ExpandedPattern level variable
         -> Simplifier (OrOfExpandedPattern level variable)
-    simplifyIfNeeded patt =
-        if patt == unchangedPatt
+    simplifyIfNeeded toSimplify =
+        if toSimplify == unchangedPatt
             then return (OrOfExpandedPattern.make [unchangedPatt])
             else
                 reevaluateFunctions
                     tools
                     substitutionSimplifier
                     simplifier
-                    patt
-
+                    toSimplify
 
 evaluateSortInjection
     :: (MetaOrObject level, Ord (variable level))
     => MetadataTools level StepperAttributes
-    -> OrOfExpandedPattern level variable
     -> Application level (StepPattern level variable)
-    -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
-evaluateSortInjection tools unchanged ap = case apChild of
+    ->  ( Application level (StepPattern level variable)
+        , SimplificationProof level
+        )
+evaluateSortInjection tools ap
+  | give tools isSortInjection_ apHead
+  = case apChild of
     (App_ apHeadChild grandChildren)
       | give tools isSortInjection_ apHeadChild ->
         let
             [fromSort', toSort'] = symbolOrAliasParams apHeadChild
             apHeadNew = updateSortInjectionSource apHead fromSort'
+            resultApp = apHeadNew grandChildren
         in
             assert (toSort' == fromSort) $
-            return
-                ( OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = apHeadNew grandChildren
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                ( resultApp
                 , SimplificationProof
                 )
-    _ -> return (unchanged, SimplificationProof)
+    _ -> (ap, SimplificationProof)
+  | otherwise = (ap, SimplificationProof)
   where
     apHead = applicationSymbolOrAlias ap
     [fromSort, _] = symbolOrAliasParams apHead
     [apChild] = applicationChildren ap
     updateSortInjectionSource head1 fromSort1 =
-        mkApp toSort1 head1 { symbolOrAliasParams = [fromSort1, toSort1] }
+        \children ->
+            ( Application
+                { applicationSymbolOrAlias =
+                    head1 { symbolOrAliasParams = [fromSort1, toSort1] }
+                , applicationChildren = children
+                }
+            )
       where
         [_, toSort1] = symbolOrAliasParams head1
 
