@@ -18,16 +18,15 @@ module Kore.Step.Simplification.Data
     , SimplificationType (..)
     ) where
 
-import           Colog
-                 ( HasLog (..), LogAction (..) )
-import           Control.Concurrent.MVar
-                 ( MVar )
-import           Control.Monad.Reader
-import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Except
-                 ( ExceptT (..), runExceptT )
-import           Data.IORef
-                 ( IORef, modifyIORef, newIORef, readIORef )
+import Colog
+       ( HasLog (..), LogAction (..) )
+import Control.Concurrent.MVar
+       ( MVar )
+import Control.Monad.Reader
+import Control.Monad.Trans.Except
+       ( ExceptT (..), runExceptT )
+import Data.IORef
+       ( IORef, modifyIORef, newIORef, readIORef )
 
 import Kore.AST.Common
        ( SortedVariable, Variable )
