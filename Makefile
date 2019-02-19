@@ -4,7 +4,7 @@ include include.mk
         test test-kore test-k
 
 kore:
-	stack build $(STACK_BUILD_OPTS)
+	$(STACK_BUILD) $(STACK_BUILD_OPTS)
 
 kore-exec: $(KORE_EXEC)
 
@@ -42,8 +42,7 @@ test-kore: $(STACK_LOCAL_HPC_ROOT)
 
 $(STACK_LOCAL_HPC_ROOT): STACK := $(STACK_TEST)
 $(STACK_LOCAL_HPC_ROOT):
-	$(STACK) build \
-		$(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) \
+	$(STACK_BUILD) $(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) \
 		--test --bench --no-run-benchmarks \
 		--ta --xml=test-results.xml
 
