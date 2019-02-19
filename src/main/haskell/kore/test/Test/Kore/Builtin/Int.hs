@@ -26,9 +26,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
-import qualified Kore.Step.Simplification.AndTerms as AndTerms
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Step.StepperAttributes
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
