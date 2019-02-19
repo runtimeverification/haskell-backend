@@ -28,6 +28,7 @@ STACK_FAST = --fast
 STACK_COVERAGE = --coverage
 
 STACK = stack
+STACK_BUILD = $(STACK) build --pedantic
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
@@ -41,4 +42,4 @@ KORE_EXEC = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-exec
 KORE_EXEC_OPTS =
 
 $(KORE_EXEC):
-	$(STACK) build --pedantic $(STACK_NO_PROFILE) kore:exe:kore-exec
+	$(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-exec
