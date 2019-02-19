@@ -11,8 +11,9 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import Control.Monad.Except
-       ( ExceptT (..) )
+import           Control.Monad.Except
+                 ( ExceptT (..) )
+import qualified Control.Monad.Trans as Monad.Trans
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -20,11 +21,11 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate )
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -38,6 +39,8 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Step.Substitution
+                 ( createPredicatesAndSubstitutionsMerger )
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Error
@@ -86,21 +89,25 @@ unificationProcedure tools substitutionSimplifier p1 p2
                 p1
                 p2
     (pat@Predicated { term, predicate, substitution }, _) <- getUnifiedTerm
-    let
-        (pred', _) = Ceil.makeEvaluateTerm tools term
     if Predicated.isBottom pat
         then return
             (OrOfExpandedPattern.make [], EmptyUnificationProof)
-        else return
-            ( OrOfExpandedPattern.make
-                [ Predicated
-                    { term = ()
-                    , predicate = makeAndPredicate predicate pred'
-                    , substitution
-                    }
-                ]
-            , EmptyUnificationProof
-            )
+        else Monad.Trans.lift $ do
+            (orCeil, _proof) <-
+                Ceil.makeEvaluateTerm tools substitutionSimplifier term
+            (result, _proof) <-
+                OrOfExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
+                    (createPredicatesAndSubstitutionsMerger
+                        tools
+                        substitutionSimplifier
+                    )
+                    Predicated
+                        { term = ()
+                        , predicate
+                        , substitution
+                        }
+                    orCeil
+            return (result, EmptyUnificationProof)
   where
       p1Sort = getSort p1
       p2Sort = getSort p2

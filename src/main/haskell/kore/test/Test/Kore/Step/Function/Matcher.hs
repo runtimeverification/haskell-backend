@@ -388,7 +388,7 @@ test_matcherVariableFunction =
                 [ Predicated
                     { predicate = makeTruePredicate
                     , substitution =
-                        Substitution.wrap [(Mock.x, Mock.functional00)]
+                        Substitution.unsafeWrap [(Mock.x, Mock.functional00)]
                     , term = ()
                     }
                 ]
@@ -402,7 +402,7 @@ test_matcherVariableFunction =
         let expect = Just $ OrOfExpandedPattern.make
                 [ Predicated
                     { predicate = makeCeilPredicate Mock.cf
-                    , substitution = Substitution.wrap [(Mock.x, Mock.cf)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
                     , term = ()
                     }
                 ]
@@ -534,7 +534,8 @@ test_matcherVariableFunction =
             let expect = Just $ OrOfExpandedPattern.make
                     [ Predicated
                         { predicate = makeCeilPredicate Mock.cf
-                        , substitution = Substitution.wrap [(Mock.x, Mock.cf)]
+                        , substitution =
+                            Substitution.unsafeWrap [(Mock.x, Mock.cf)]
                         , term = ()
                         }
                     ]

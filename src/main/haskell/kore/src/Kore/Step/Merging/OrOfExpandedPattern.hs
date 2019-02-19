@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Merging.OrOfExpandedPattern
     ( mergeWithPredicateSubstitution
+    , mergeWithPredicateSubstitutionAssumesEvaluated
     ) where
 
 import Data.Reflection
@@ -19,11 +20,12 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution )
+                 ( PredicateSubstitution, Predicated )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
-                 ( mergeWithPredicateSubstitution )
+                 ( mergeWithPredicateSubstitution,
+                 mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
+                 ( MultiOr, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
@@ -31,6 +33,10 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Step.Substitution
+                 ( PredicateSubstitutionMerger )
+import           Kore.TopBottom
+                 ( TopBottom )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -75,3 +81,42 @@ mergeWithPredicateSubstitution
             )
             patt
     return (evaluated, SimplificationProof)
+
+{-| Ands the given predicate/substitution with the given 'MultiOr'.
+
+Assumes that the initial patterns are simplified, so it does not attempt
+to re-simplify them.
+-}
+mergeWithPredicateSubstitutionAssumesEvaluated
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , Monad m
+        , Ord term
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , SortedVariable variable
+        , TopBottom term
+        , Unparse (variable level)
+        )
+    => PredicateSubstitutionMerger level variable m
+    -> PredicateSubstitution level variable
+    -- ^ PredicateSubstitution to add.
+    -> MultiOr (Predicated level variable term)
+    -- ^ Pattern to which the condition should be added.
+    -> m (MultiOr (Predicated level variable term), SimplificationProof level)
+mergeWithPredicateSubstitutionAssumesEvaluated
+    substitutionMerger
+    toMerge
+    patt
+  = do
+    (evaluated, _proofs) <-
+        OrOfExpandedPattern.traverseWithPairs
+            (ExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
+                    substitutionMerger
+                    toMerge
+            )
+            patt
+    return (evaluated, SimplificationProof)
+

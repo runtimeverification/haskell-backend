@@ -566,7 +566,8 @@ test_equalsSimplification_Patterns =
             Predicated
                 { term = ()
                 , predicate = makeTruePredicate
-                , substitution = Substitution.wrap [(Mock.x, functionalOfA)]
+                , substitution =
+                    Substitution.unsafeWrap [(Mock.x, functionalOfA)]
                 }
                 (mkVar Mock.x)
                 functionalOfA
@@ -577,7 +578,8 @@ test_equalsSimplification_Patterns =
             Predicated
                 { term = ()
                 , predicate = makeTruePredicate
-                , substitution = Substitution.wrap [(Mock.x, functionalOfA)]
+                , substitution =
+                    Substitution.unsafeWrap [(Mock.x, functionalOfA)]
                 }
                 functionalOfA
                 (mkVar Mock.x)
@@ -588,7 +590,7 @@ test_equalsSimplification_Patterns =
             Predicated
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
-                , substitution = Substitution.wrap [(Mock.x, fOfA)]
+                , substitution = Substitution.unsafeWrap [(Mock.x, fOfA)]
                 }
             (mkVar Mock.x)
             fOfA
@@ -599,7 +601,7 @@ test_equalsSimplification_Patterns =
             Predicated
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
-                , substitution = Substitution.wrap [(Mock.x, fOfA)]
+                , substitution = Substitution.unsafeWrap [(Mock.x, fOfA)]
                 }
             fOfA
             (mkVar Mock.x)
@@ -666,7 +668,7 @@ test_equalsSimplification_Patterns =
                 Predicated
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.wrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     }
                 (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
                 (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
@@ -819,7 +821,7 @@ test_equalsSimplification_Patterns =
                         Predicated
                             { term = ()
                             , predicate = makeTruePredicate
-                            , substitution = Substitution.wrap
+                            , substitution = Substitution.unsafeWrap
                                 [(Mock.x, Mock.builtinList [Mock.b])]
                             }
                         term5

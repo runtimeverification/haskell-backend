@@ -19,33 +19,34 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 
 import           Kore.AST.Pure
-import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeCeilPredicate,
-                 makeFalsePredicate, makeMultipleAndPredicate,
-                 makeTruePredicate )
+                 ( makeCeilPredicate )
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm,
+                 predicateSubstitutionToExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
+                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( fmapFlattenWithPairs, make )
+                 ( make, traverseFlattenWithPairs )
 import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
+import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
                  ( isTotal )
 import           Kore.Unparser
+import           Kore.Variables.Fresh
 
 {-| 'simplify' simplifies a 'Ceil' of 'OrOfExpandedPattern'.
 
@@ -57,21 +58,27 @@ A ceil(or) is equal to or(ceil). We also take into account that
 -}
 simplify
     ::  ( MetaOrObject level
+        , FreshVariable variable
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> Ceil level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    -> Simplifier
+        ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
 simplify
     tools
+    substitutionSimplifier
     Ceil { ceilChild = child }
   =
-    simplifyEvaluated tools child
+    simplifyEvaluated tools substitutionSimplifier child
 
 {-| 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
@@ -90,71 +97,87 @@ besides the pattern sort, which will make it even more useful to carry around.
 -}
 simplifyEvaluated
     ::  ( MetaOrObject level
+        , FreshVariable variable
+        , Monad m
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated tools child =
-    ( evaluated, SimplificationProof )
-  where
-    (evaluated, _proofs) =
-        OrOfExpandedPattern.fmapFlattenWithPairs (makeEvaluate tools) child
+    -> m
+        (OrOfExpandedPattern level variable, SimplificationProof level)
+simplifyEvaluated tools substitutionSimplifier child = do
+    (evaluated, _proofs) <-
+        OrOfExpandedPattern.traverseFlattenWithPairs
+            (makeEvaluate tools substitutionSimplifier)
+            child
+    return ( evaluated, SimplificationProof )
 
 {-| Evaluates a ceil given its child as an ExpandedPattern, see 'simplify'
 for details.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
+        , FreshVariable variable
+        , Monad m
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluate tools child
+    -> m
+        (OrOfExpandedPattern level variable, SimplificationProof level)
+makeEvaluate tools substitutionSimplifier child
   | ExpandedPattern.isTop child =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    return (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isBottom child =
-    (OrOfExpandedPattern.make [ExpandedPattern.bottom], SimplificationProof)
-  | otherwise = makeEvaluateNonBoolCeil tools child
+    return (OrOfExpandedPattern.make [], SimplificationProof)
+  | otherwise = makeEvaluateNonBoolCeil tools substitutionSimplifier child
 
 makeEvaluateNonBoolCeil
     ::  ( MetaOrObject level
+        , FreshVariable variable
+        , Monad m
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> m
+        (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolCeil
     tools
-    patt@Predicated {term, predicate, substitution}
+    substitutionSimplifier
+    patt@Predicated {term}
   | (Recursive.project -> _ :< TopPattern _) <- term =
-    ( OrOfExpandedPattern.make [patt]
-    , SimplificationProof
-    )
-  | otherwise =
-    let
-        (termCeil, _proof1) = makeEvaluateTerm tools term
-        ceilPredicate = makeAndPredicate predicate termCeil
-    in
-        ( OrOfExpandedPattern.make
-            [ Predicated
-                { term = mkTop_
-                , predicate = ceilPredicate
-                , substitution = substitution
-                }
-            ]
+    return
+        ( OrOfExpandedPattern.make [patt]
         , SimplificationProof
         )
+  | otherwise = do
+    (termCeil, _proof1) <- makeEvaluateTerm tools substitutionSimplifier term
+    (result, proof) <- And.simplifyEvaluatedMultiPredicateSubstitution
+        tools
+        substitutionSimplifier
+        [ OrOfExpandedPattern.make [erasePredicatedTerm patt]
+        , termCeil
+        ]
+    return (fmap predicateSubstitutionToExpandedPattern result, proof)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -162,63 +185,97 @@ makeEvaluateNonBoolCeil
 -}
 makeEvaluateTerm
     ::  ( MetaOrObject level
+        , FreshVariable variable
+        , Monad m
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> StepPattern level variable
-    -> (Predicate level variable, SimplificationProof level)
+    -> m
+        (OrOfPredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateTerm
     tools
+    substitutionSimplifier
     term@(Recursive.project -> _ :< projected)
   | TopPattern _ <- projected =
-    (makeTruePredicate, SimplificationProof)
+    return
+        ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
+        , SimplificationProof
+        )
   | BottomPattern _ <- projected =
-    (makeFalsePredicate, SimplificationProof)
+    return
+        ( OrOfExpandedPattern.make []
+        , SimplificationProof
+        )
   | isTotalPattern tools term =
-    (makeTruePredicate, SimplificationProof)
+    return
+        ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
+        , SimplificationProof
+        )
   | otherwise =
     case projected of
         ApplicationPattern app
-          | StepperAttributes.isTotal headAttributes ->
+          | StepperAttributes.isTotal headAttributes -> do
+            simplifiedChildren <- mapM
+                (makeEvaluateTerm tools substitutionSimplifier)
+                children
             let
-                (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) children)
-                result = makeMultipleAndPredicate ceils
-            in
-                (result, SimplificationProof)
-          where
+                (ceils, _proofs) = unzip simplifiedChildren
+            And.simplifyEvaluatedMultiPredicateSubstitution
+                tools substitutionSimplifier ceils
+           where
             Application { applicationSymbolOrAlias = patternHead } = app
             Application { applicationChildren = children } = app
             headAttributes = MetadataTools.symAttributes tools patternHead
         DomainValuePattern DomainValue { domainValueChild = child } ->
-            makeEvaluateBuiltin tools child
-        _ ->
-            (makeCeilPredicate term, SimplificationProof)
+            makeEvaluateBuiltin tools substitutionSimplifier child
+        _ -> return
+            ( OrOfExpandedPattern.make
+                [Predicated
+                    { term = ()
+                    , predicate = makeCeilPredicate term
+                    , substitution = mempty
+                    }
+                ]
+            , SimplificationProof
+            )
 
 {-| Evaluates the ceil of a domain value.
 -}
 makeEvaluateBuiltin
-    :: forall level variable .
+    :: forall level variable m .
         ( level ~ Object
+        , FreshVariable variable
+        , Monad m
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> Domain.Builtin (StepPattern level variable)
-    -> (Predicate level variable, SimplificationProof level)
+    -> m
+        (OrOfPredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateBuiltin
     _tools
+    _substitutionSimplifier
     (Domain.BuiltinPattern p)
   =
     case Recursive.project p of
         _ :< StringLiteralPattern _ ->
             -- This should be the only kind of Domain.BuiltinPattern, and it
             -- should be valid and functional if this has passed verification.
-            (makeTruePredicate, SimplificationProof)
+            return
+                ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
+                , SimplificationProof
+                )
         _ ->
             error
                 ( "Ceil not implemented: non-string pattern."
@@ -226,27 +283,48 @@ makeEvaluateBuiltin
                 )
 makeEvaluateBuiltin
     tools
+    substitutionSimplifier
     (Domain.BuiltinMap m)
-  =
-    (makeMultipleAndPredicate ceils, SimplificationProof)
+  = do
+    children <- mapM
+        (makeEvaluateTerm tools substitutionSimplifier)
+        values
+    let
+        ceils :: [OrOfPredicateSubstitution level variable]
+        (ceils, _proofs) = unzip children
+    And.simplifyEvaluatedMultiPredicateSubstitution
+        tools substitutionSimplifier ceils
   where
     values :: [StepPattern level variable]
     -- Maps assume that their keys are relatively functional.
     values = Map.elems m
-    ceils :: [Predicate level variable]
-    (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) values)
 makeEvaluateBuiltin
     tools
+    substitutionSimplifier
     (Domain.BuiltinList l)
-  =
-    (makeMultipleAndPredicate ceils, SimplificationProof)
-  where
-    ceils :: [Predicate level variable]
-    (ceils, _proofs) = unzip (map (makeEvaluateTerm tools) (Foldable.toList l))
-makeEvaluateBuiltin
-    _
-    (Domain.BuiltinSet _)
-  =
+  = do
+    children <- mapM
+        (makeEvaluateTerm tools substitutionSimplifier)
+        (Foldable.toList l)
+    let
+        ceils :: [OrOfPredicateSubstitution level variable]
+        (ceils, _proofs) = unzip children
+    And.simplifyEvaluatedMultiPredicateSubstitution
+        tools substitutionSimplifier ceils
+makeEvaluateBuiltin _tools _substitutionSimplifier (Domain.BuiltinSet _) =
     -- Sets assume that their elements are relatively functional.
-    (makeTruePredicate, SimplificationProof)
-makeEvaluateBuiltin _tools _ = (makeTruePredicate, SimplificationProof)
+    return topPredicateWithProof
+makeEvaluateBuiltin _tools _substitutionSimplifier (Domain.BuiltinBool _) =
+    return topPredicateWithProof
+makeEvaluateBuiltin _tools _substitutionSimplifier (Domain.BuiltinInteger _) =
+    return topPredicateWithProof
+
+topPredicateWithProof
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        )
+    => (OrOfPredicateSubstitution level variable, SimplificationProof level)
+topPredicateWithProof =
+    ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
+    , SimplificationProof
+    )
