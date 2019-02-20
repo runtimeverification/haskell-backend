@@ -392,7 +392,6 @@ ackCommandIgnoreErr proc c = do
     _ <- command proc c
     pure ()
 
-
 -- | A command entirely made out of atoms, with no interesting result.
 simpleCommand :: Solver -> [Text] -> IO ()
 simpleCommand proc = ackCommand proc . List . map Atom
