@@ -127,7 +127,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
             $ sentenceAxiomPattern axiomDeclaration
         (lemma, vars) <-
             runTranslator
-          $ translatePredicate translateUninterpreted
+            $ translatePredicate translateUninterpreted
             $ wrapPredicate pat
         SMT.assert (addQuantifiers vars lemma)
 
