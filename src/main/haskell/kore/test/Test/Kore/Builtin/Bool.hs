@@ -5,6 +5,7 @@ import           Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
 import           Test.Tasty.HUnit
+import           Test.Terse
 
 import qualified Data.Text as Text
 
@@ -20,6 +21,7 @@ import           Kore.Step.StepperAttributes
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
+import Test.Kore.Comparators
 import Test.SMT
 
 test_or :: TestTree
@@ -96,44 +98,30 @@ testUnary symb impl =
     StepperAttributes { hook = Hook { getHook = Just name } } =
         symAttributes testMetadataTools symb
 
--- | "\equal"ed internal Bools that are not equal
-test_unifyEqual_NotEqual :: TestTree
-test_unifyEqual_NotEqual =
-    testCaseWithSolver "unifyEqual BuiltinInteger: Not Equal" $ \solver -> do
-        let dv1 = mkDomainValue boolSort $ Domain.BuiltinBool True
-            dv2 = mkDomainValue boolSort $ Domain.BuiltinBool False
-        actual <- evaluateWith solver $ mkEquals_ dv1 dv2
-        assertEqual "" bottom actual
+test_simplification :: TestTree
+test_simplification =
+  testGroup "simplification of operators with constant arguments"
+    [ testGroup "equality"
+        [ mkEquals_ _True  _False `becomes` bottom
+        , mkEquals_ _False _True  `becomes` bottom
+        , mkEquals_ _True  _True  `becomes` top
+        , mkEquals_ _False _False `becomes` top
+        ]
+    , testGroup "and"
+        [ mkAnd _True  _False `becomes` bottom
+        , mkAnd _False _True  `becomes` bottom
+        , mkAnd _True  _True  `becomes` (pure _True)
+        , mkAnd _False _False `becomes` (pure _False)
+        ]
+    ]
+  where
+    _True  = Bool.asInternal boolSort True
+    _False = Bool.asInternal boolSort False
 
--- | "\equal"ed internal Bools that are equal
-test_unifyEqual_Equal :: TestTree
-test_unifyEqual_Equal =
-    testCaseWithSolver "unifyEqual BuiltinInteger: Equal" $ \solver -> do
-        let dv1 = mkDomainValue boolSort $ Domain.BuiltinBool False
-        actual <- evaluateWith solver $ mkEquals_ dv1 dv1
-        assertEqual "" top actual
-
--- | "\and"ed internal Bools that are not equal
-test_unifyAnd_NotEqual :: TestTree
-test_unifyAnd_NotEqual =
-    testCaseWithSolver "unifyEqual BuiltinInteger: Not Equal" $ \solver -> do
-        let dv1 = mkDomainValue boolSort $ Domain.BuiltinBool True
-            dv2 = mkDomainValue boolSort $ Domain.BuiltinBool False
-        actual <- evaluateWith solver $ mkAnd dv1 dv2
-        assertEqual "" bottom actual
-
--- | "\and"ed internal Bools that are equal
-test_unifyAnd_Equal :: TestTree
-test_unifyAnd_Equal =
-    testCaseWithSolver "unifyEqual BuiltinInteger: Equal" $ \solver -> do
-        let dv1 = mkDomainValue boolSort $ Domain.BuiltinBool False
-        actual <- evaluateWith solver $ mkAnd dv1 dv1
-        assertEqual "" (pure dv1) actual
-
--- | "\and"ed internal Bools that are equal
-test_unifyAndEqual_Equal :: TestTree
-test_unifyAndEqual_Equal =
-    testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
-        let dv = mkDomainValue intSort $ Domain.BuiltinBool True
-        actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv
-        assertEqual "" top actual
+    becomes :: HasCallStack
+            => CommonStepPattern Object
+            -> CommonExpandedPattern Object
+            -> TestTree
+    becomes makerInput =
+      wrapped_maker_expected withSolver
+        (\solver -> evaluateWith solver makerInput)
