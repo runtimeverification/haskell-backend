@@ -19,10 +19,11 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Maybe
-                 ( fromMaybe, isJust, mapMaybe )
+                 ( fromMaybe, mapMaybe )
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
+import           Kore.Attribute.Overload
 import           Kore.Attribute.Simplification
                  ( Simplification (..) )
 import           Kore.IndexedModule.IndexedModule
@@ -116,40 +117,36 @@ axiomPatternsToEvaluators
     :: forall level
     .  Map.Map (AxiomIdentifier level) [EqualityRule level Variable]
     -> Map.Map (AxiomIdentifier level) (BuiltinAndAxiomSimplifier level)
-axiomPatternsToEvaluators axiomPatterns =
-    Map.map
-        (fromMaybe (error "Unexpected Nothing"))
-        -- remove the key if there are no associated function evaluators
-        (Map.filter isJust
-            (Map.map equalitiesToEvaluators axiomPatterns)
-        )
+axiomPatternsToEvaluators =
+    Map.fromAscList . mapMaybe equalitiesToEvaluators . Map.toAscList
   where
     equalitiesToEvaluators
-        :: [EqualityRule level Variable]
-        -> Maybe (BuiltinAndAxiomSimplifier level)
-    equalitiesToEvaluators equalities =
+        :: (AxiomIdentifier level, [EqualityRule level Variable])
+        -> Maybe (AxiomIdentifier level, BuiltinAndAxiomSimplifier level)
+    equalitiesToEvaluators
+        (symbolId, filter (not . ignoreEqualityRule) -> equalities)
+      =
         case (simplificationEvaluator, definitionEvaluator) of
             (Nothing, Nothing) -> Nothing
-            (Just evaluator, Nothing) -> Just evaluator
-            (Nothing, Just evaluator) -> Just evaluator
+            (Just evaluator, Nothing) -> Just (symbolId, evaluator)
+            (Nothing, Just evaluator) -> Just (symbolId, evaluator)
             (Just sEvaluator, Just dEvaluator) ->
-                Just (simplifierWithFallback sEvaluator dEvaluator)
+                Just (symbolId, simplifierWithFallback sEvaluator dEvaluator)
       where
-        simplifications :: [EqualityRule level Variable]
-        nonSimplifications :: [EqualityRule level Variable]
-        (simplifications, nonSimplifications) =
+        simplifications, evaluations :: [EqualityRule level Variable]
+        (simplifications, evaluations) =
             partition isSimplificationRule equalities
-        evaluations :: [EqualityRule level Variable]
-        evaluations =
-            filter
-                (\rule ->
-                    not (isCommRule rule)
-                    && not (isAssocRule rule)
-                    && not (isIdemRule rule)
-                    && not (isUnitRule rule)
-                )
-                nonSimplifications
-        simplification = mapMaybe axiomPatternEvaluator simplifications
+          where
+            isSimplificationRule (EqualityRule RulePattern { attributes }) =
+                isSimplification
+              where
+                Simplification { isSimplification } =
+                    AxiomPatterns.simplification attributes
+        simplification :: [BuiltinAndAxiomSimplifier level]
+        simplification = mkSimplifier <$> simplifications
+          where
+            mkSimplifier simpl =
+                BuiltinAndAxiomSimplifier $ ruleFunctionEvaluator simpl
         simplificationEvaluator =
             if null simplification
                 then Nothing
@@ -158,27 +155,6 @@ axiomPatternsToEvaluators axiomPatterns =
             if null evaluations
                 then Nothing
                 else Just (definitionEvaluation evaluations)
-        isSimplificationRule (EqualityRule RulePattern { attributes }) =
-            isSimplification
-          where
-            Simplification { isSimplification } =
-                AxiomPatterns.simplification attributes
-        isCommRule (EqualityRule RulePattern { attributes }) =
-            isComm
-          where
-            Comm { isComm } = AxiomPatterns.comm attributes
-        isAssocRule (EqualityRule RulePattern { attributes }) =
-            isAssoc
-          where
-            Assoc { isAssoc } = AxiomPatterns.assoc attributes
-        isIdemRule (EqualityRule RulePattern { attributes }) =
-            isIdem
-          where
-            Idem { isIdem } = AxiomPatterns.idem attributes
-        isUnitRule (EqualityRule RulePattern { attributes }) =
-            isUnit
-          where
-            Unit { isUnit } = AxiomPatterns.unit attributes
 
 {- | Return the function evaluator corresponding to the 'AxiomPattern'.
 
@@ -187,20 +163,19 @@ used as a function evaluator, such as if it is an associativity or commutativity
 axiom; this is determined by checking the 'AxiomPatternAttributes'.
 
  -}
-axiomPatternEvaluator
-    :: EqualityRule level Variable
-    -> Maybe (BuiltinAndAxiomSimplifier level)
-axiomPatternEvaluator axiomPat@(EqualityRule RulePattern { attributes })
-    | isAssoc = Nothing
-    | isComm = Nothing
+ignoreEqualityRule :: EqualityRule level Variable -> Bool
+ignoreEqualityRule (EqualityRule RulePattern { attributes })
+    | isAssoc = True
+    | isComm = True
     -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
     -- extraction of their axioms.
-    | isUnit = Nothing
-    | isIdem = Nothing
-    | otherwise =
-        Just (BuiltinAndAxiomSimplifier $ ruleFunctionEvaluator axiomPat)
+    | isUnit = True
+    | isIdem = True
+    | Just _ <- overload = True
+    | otherwise = False
   where
     Assoc { isAssoc } = AxiomPatterns.assoc attributes
     Comm { isComm } = AxiomPatterns.comm attributes
     Unit { isUnit } = AxiomPatterns.unit attributes
     Idem { isIdem } = AxiomPatterns.idem attributes
+    Overload { overload } = AxiomPatterns.overload attributes

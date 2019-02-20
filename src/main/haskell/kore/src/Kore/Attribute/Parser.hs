@@ -35,6 +35,8 @@ module Kore.Attribute.Parser
     , getTwoParams
     , getZeroArguments
     , getOneArgument
+    , getTwoArguments
+    , getSymbolOrAlias
     , Kore.Attribute.Parser.getStringLiteral
     ) where
 
@@ -154,6 +156,8 @@ getTwoParams =
           where
             arity = length params
 
+{- | Accept exactly zero arguments.
+ -}
 getZeroArguments
     :: [CommonKorePattern]
     -> Parser ()
@@ -166,6 +170,8 @@ getZeroArguments =
           where
             arity = length args
 
+{- | Accept exactly one argument.
+ -}
 getOneArgument
     :: [CommonKorePattern]
     -> Parser CommonKorePattern
@@ -178,6 +184,39 @@ getOneArgument =
           where
             arity = length args
 
+{- | Accept exactly two arguments.
+ -}
+getTwoArguments
+    :: [CommonKorePattern]
+    -> Parser (CommonKorePattern, CommonKorePattern)
+getTwoArguments =
+    \case
+        [arg1, arg2] -> return (arg1, arg2)
+        args ->
+            Kore.Error.koreFail
+                ("expected two arguments, found " ++ show arity)
+          where
+            arity = length args
+
+{- | Accept a symbol or alias applied to no arguments.
+ -}
+getSymbolOrAlias :: CommonKorePattern -> Parser (SymbolOrAlias Object)
+getSymbolOrAlias kore =
+    case Recursive.project kore of
+        _ :< UnifiedObjectPattern (ApplicationPattern app)
+          | [] <- applicationChildren -> return symbol
+          | otherwise ->
+            Kore.Error.withLocationAndContext
+                symbol
+                ("symbol '" ++ show symbol ++ "'")
+                (Kore.Error.koreFail "expected zero arguments")
+          where
+            Application { applicationSymbolOrAlias = symbol } = app
+            Application { applicationChildren } = app
+        _ -> Kore.Error.koreFail "expected symbol or alias application"
+
+{- | Accept a string literal.
+ -}
 getStringLiteral :: CommonKorePattern -> Parser (StringLiteral)
 getStringLiteral kore =
     case Recursive.project kore of
