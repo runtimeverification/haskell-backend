@@ -128,7 +128,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
         (lemma, vars) <-
             runTranslator
           $ translatePredicate translateUninterpreted
-          $ wrapPredicate pat
+            $ wrapPredicate pat
         SMT.assert (addQuantifiers vars lemma)
 
     addQuantifiers vars lemma | null vars = lemma
