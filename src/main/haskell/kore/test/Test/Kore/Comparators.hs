@@ -748,18 +748,23 @@ instance
 instance StructEqualWithExplanation (Variable level)
   where
     structFieldsWithNames
-        expected@(Variable _ _)
-        actual@(Variable _ _)
+        expected@(Variable _ _ _)
+        actual@(Variable _ _ _)
       = [ EqWrap
             "variableName = "
             (variableName expected)
             (variableName actual)
+        , EqWrap
+            "variableCounter = "
+            (variableCounter expected)
+            (variableCounter actual)
         , EqWrap
             "variableSort = "
             (variableSort expected)
             (variableSort actual)
         ]
     structConstructorName _ = "Variable"
+
 instance EqualWithExplanation (Variable level)
   where
     compareWithExplanation = structCompareWithExplanation

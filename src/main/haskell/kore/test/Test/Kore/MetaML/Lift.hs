@@ -167,6 +167,7 @@ test_lift =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
                 , forallVariable = Variable
                     { variableName = testId "x"
+                    , variableCounter = mempty
                     , variableSort =
                         SortVariableSort (SortVariable (testId "a"))
                     }
@@ -174,6 +175,7 @@ test_lift =
                     asCommonKorePattern
                         (VariablePattern Variable
                             { variableName = testId "x" :: Id Object
+                            , variableCounter = mempty
                             , variableSort = SortVariableSort
                                 (SortVariable (testId "a"))
                             }
@@ -206,6 +208,7 @@ test_lift =
                     SortVariableSort (SortVariable (testId "a" :: Id Object))
                 , existsVariable = Variable
                     { variableName = testId "x"
+                    , variableCounter = mempty
                     , variableSort =
                         SortVariableSort (SortVariable (testId "a"))
                     }
@@ -213,6 +216,7 @@ test_lift =
                     asCommonKorePattern
                         (VariablePattern Variable
                             { variableName = testId "x" :: Id Object
+                            , variableCounter = mempty
                             , variableSort = SortVariableSort
                                 (SortVariable (testId "a"))
                             }
@@ -233,6 +237,7 @@ test_lift =
         (asCommonKorePattern
             (VariablePattern Variable
                 { variableName = testId "x" :: Id Object
+                , variableCounter = mempty
                 , variableSort = SortVariableSort
                     (SortVariable (testId "a"))
                 }
@@ -270,6 +275,7 @@ test_lift =
         )
         Variable
             { variableName = testId "object" :: Id Object
+            , variableCounter = mempty
             , variableSort =
                 SortVariableSort (SortVariable (testId "v"))
             }

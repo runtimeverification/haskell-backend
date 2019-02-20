@@ -19,7 +19,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Control.Monad.Counter
 import           Kore.AST.Builders
 import           Kore.AST.Kore
 import           Kore.AST.Pure
@@ -220,10 +219,10 @@ axiomPatternsIntegrationTests =
                             patternSort = sortTCell
                             freeVariables =
                                 Set.fromList
-                                    [ asUnified (Variable "VarI1" sortAInt)
-                                    , asUnified (Variable "VarI2" sortAInt)
-                                    , asUnified (Variable "VarDotVar1" sortK)
-                                    , asUnified (Variable "VarDotVar0" sortStateCell)
+                                    [ asUnified (Variable "VarI1" mempty sortAInt)
+                                    , asUnified (Variable "VarI2" mempty sortAInt)
+                                    , asUnified (Variable "VarDotVar1" mempty sortK)
+                                    , asUnified (Variable "VarDotVar0" mempty sortStateCell)
                                     ]
                     koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
                 )
@@ -345,24 +344,28 @@ varI1, varI2, varKRemainder, varStateCell :: CommonStepPattern Object
 varI1 =
     mkVar Variable
         { variableName = testId "VarI1"
+        , variableCounter = mempty
         , variableSort = sortAInt
         }
 
 varI2 =
     mkVar Variable
         { variableName = testId "VarI2"
+        , variableCounter = mempty
         , variableSort = sortAInt
         }
 
 varKRemainder =
     mkVar Variable
         { variableName = testId "VarDotVar1"
+        , variableCounter = mempty
         , variableSort = sortK
         }
 
 varStateCell =
     mkVar Variable
         { variableName = testId "VarDotVar0"
+        , variableCounter = mempty
         , variableSort = sortStateCell
         }
 
@@ -397,7 +400,7 @@ test_refreshRulePattern =
     testCase "Rename target variables" $ do
         let avoiding = AxiomPatterns.freeVariables testRulePattern
             (renaming, rulePattern') =
-                evalCounter $ refreshRulePattern avoiding testRulePattern
+                refreshRulePattern avoiding testRulePattern
             renamed = Set.fromList (Foldable.toList renaming)
             free' = AxiomPatterns.freeVariables rulePattern'
         assertEqual

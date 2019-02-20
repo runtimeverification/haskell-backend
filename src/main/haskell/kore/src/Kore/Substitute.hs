@@ -21,14 +21,11 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Control.Monad.Counter
-       ( MonadCounter )
 import Kore.AST.Common
        ( Exists (..), Forall (..), Pattern (..), SortedVariable )
 import Kore.AST.MetaOrObject
 import Kore.AST.Pure
 import Kore.Variables.Fresh
-       ( FreshVariable, freshVariableSuchThat )
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -42,10 +39,9 @@ may appear in the right-hand side of any substitution, but this is not checked.
 -- TODO (thomas.tuegel): In the future, patterns may have other types of
 -- attributes which need to be re-synthesized after substitution.
 substitute
-    ::  forall m level domain variable attribute.
+    ::  forall level domain variable attribute.
         ( FreshVariable variable
         , MetaOrObject level
-        , MonadCounter m
         , Ord (variable level)
         , SortedVariable variable
         , Traversable domain
@@ -56,31 +52,52 @@ substitute
     -- ^ Substitution
     -> PurePattern level domain variable attribute
     -- ^ Original pattern
-    -> m (PurePattern level domain variable attribute)
+    -> PurePattern level domain variable attribute
 substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
   where
     extractFreeVariables
         :: PurePattern level domain variable attribute
         -> Set (variable level)
     extractFreeVariables = Lens.view lensFreeVariables . extract
+
+    -- | Insert a variable renaming into the substitution.
+    renaming
+        :: variable level  -- ^ Original variable
+        -> variable level  -- ^ Renamed variable
+        -> Map (variable level) (Either (variable level) a)  -- ^ Substitution
+        -> Map (variable level) (Either (variable level) a)
+    renaming variable variable' = Map.insert variable (Left variable')
+
     substituteWorker subst stepPattern
       | Map.null subst' =
         -- If there are no targeted free variables, return the original pattern.
         -- Note that this covers the case of a non-targeted variable pattern,
         -- which produces an error below.
-        return stepPattern
+        stepPattern
       | otherwise =
         case stepPatternHead of
             -- Capturing quantifiers
-            ExistsPattern exists@Exists { existsVariable }
-              | Set.member existsVariable targetFreeVariables -> do
-                exists' <- substituteUnderExists exists
-                (return . Recursive.embed) (attrib' :< ExistsPattern exists')
+            ExistsPattern exists@Exists { existsVariable, existsChild }
+              | Just existsVariable' <- avoidCapture existsVariable ->
+                -- Rename the freshened bound variable in the subterms.
+                let subst'' = renaming existsVariable existsVariable' subst'
+                    exists' =
+                        exists
+                            { existsVariable = existsVariable'
+                            , existsChild = substituteWorker subst'' existsChild
+                            }
+                in Recursive.embed (attrib' :< ExistsPattern exists')
 
-            ForallPattern forall@Forall { forallVariable }
-              | Set.member forallVariable targetFreeVariables -> do
-                forall' <- substituteUnderForall forall
-                (return . Recursive.embed) (attrib' :< ForallPattern forall')
+            ForallPattern forall@Forall { forallVariable, forallChild }
+              | Just forallVariable' <- avoidCapture forallVariable ->
+                -- Rename the freshened bound variable in the subterms.
+                let subst'' = renaming forallVariable forallVariable' subst'
+                    forall' =
+                        forall
+                            { forallVariable = forallVariable'
+                            , forallChild = substituteWorker subst'' forallChild
+                            }
+                in Recursive.embed (attrib' :< ForallPattern forall')
 
             -- Variables
             VariablePattern variable ->
@@ -91,16 +108,15 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
                         -- the top of substituteWorker.
                         error "Internal error: Impossible free variable"
                     Just (Left variable') ->
-                        (return . Recursive.embed)
-                            (attrib' :< VariablePattern variable')
+                        Recursive.embed (attrib' :< VariablePattern variable')
                     Just (Right stepPattern') ->
-                        return stepPattern'
+                        stepPattern'
 
             -- All other patterns
-            _ -> do
-                stepPatternHead' <-
-                    traverse (substituteWorker subst') stepPatternHead
-                (return . Recursive.embed) (attrib' :< stepPatternHead')
+            _ ->
+                let stepPatternHead' =
+                        substituteWorker subst' <$> stepPatternHead
+                in Recursive.embed (attrib' :< stepPatternHead')
       where
         attrib :< stepPatternHead = Recursive.project stepPattern
         freeVariables = Lens.view lensFreeVariables attrib
@@ -111,63 +127,16 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
         subst' = Map.intersection subst (Map.fromSet id freeVariables)
         -- | Free variables of the original pattern that are not targeted.
         originalVariables = Set.difference freeVariables (Map.keysSet subst')
-        -- | Free variables of the target substitutions.
-        targetFreeVariables =
-            Foldable.foldl'
-                Set.union
-                Set.empty
-                (either Set.singleton extractFreeVariables <$> subst')
+        -- | Free variables of the resulting pattern.
         freeVariables' = Set.union originalVariables targetFreeVariables
-
-        {- | Perform capture-avoiding substitution under a binder by renaming.
-
-        The bound variable is freshened with respect to the set of free
-        variables and the given substitution (along with renaming) is applied to
-        the child pattern.  The result is the variable and child pattern after
-        renaming.
-
-        -}
-        substituteUnderBinder variable child = do
-            variable' <- freshVariableSuchThat variable wouldNotCapture
-            -- Rename the freshened bound variable in the subterms.
-            let subst'' = Map.insert variable (Left variable') subst
-            child' <- substituteWorker subst'' child
-            return (variable', child')
           where
-            wouldNotCapture variable' = Set.notMember variable' freeVariables'
-
-        {- | Perform capture-avoiding substitution under 'Exists' by renaming.
-
-        The bound variable is freshened with respect to the set of free
-        variables and the given substitution (along with renaming) is applied to
-        the child pattern.  The result is the 'Exists' binder after renaming.
-
-        -}
-        substituteUnderExists exists = do
-            (existsVariable', existsChild') <-
-                substituteUnderBinder existsVariable existsChild
-            return exists
-                { existsVariable = existsVariable'
-                , existsChild = existsChild'
-                }
-          where
-            Exists { existsVariable, existsChild } = exists
-
-        {- | Perform capture-avoiding substitution under 'Forall' by renaming.
-
-        The bound variable is freshened with respect to the set of free
-        variables and the given substitution (along with renaming) is applied to
-        the child pattern.  The result is the 'Forall' binder after renaming.
-
-        -}
-        substituteUnderForall forall = do
-            (forallVariable', forallChild') <-
-                substituteUnderBinder forallVariable forallChild
-            return forall
-                { forallVariable = forallVariable'
-                , forallChild = forallChild'
-                }
-          where
-            Forall { forallVariable, forallChild } = forall
+            -- | Free variables of the target substitutions.
+            targetFreeVariables =
+                Foldable.foldl'
+                    Set.union
+                    Set.empty
+                    (either Set.singleton extractFreeVariables <$> subst')
+        -- | Rename a bound variable, if needed.
+        avoidCapture = refreshVariable freeVariables'
 
 {-# INLINE substitute #-}

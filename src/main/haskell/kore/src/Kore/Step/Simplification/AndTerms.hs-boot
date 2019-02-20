@@ -3,8 +3,6 @@ module Kore.Step.Simplification.AndTerms where
 import Control.Error
        ( ExceptT )
 
-import Control.Monad.Counter
-       ( MonadCounter )
 import Kore.AST.Common
        ( SortedVariable )
 import Kore.AST.MetaOrObject
@@ -34,7 +32,7 @@ termAnd
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -52,7 +50,7 @@ termUnification
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes

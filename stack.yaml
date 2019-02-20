@@ -47,6 +47,12 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - tasty-hedgehog-0.2.0.0@sha256:83a8b777fa472040979e44dba43c32441f55d5ddb9641a4d53deee4b0e09fa34
+  # TODO (thomas.tuegel): Remove this when haskell-src-exts is updated upstream.
+  - github: ttuegel/haskell-src-exts
+    commit: 363dbd17d91ba58ac877d205c5e82c1672367008
+
+# TODO (thomas.tuegel): Remove this when stylish-haskell is updated upstream.
+allow-newer: true
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

@@ -11,8 +11,6 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import Control.Monad.Counter
-       ( MonadCounter )
 import Control.Monad.Except
        ( ExceptT (..) )
 
@@ -62,7 +60,7 @@ unificationProcedure
         , ShowMetaOrObject variable
         , MetaOrObject level
         , FreshVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads

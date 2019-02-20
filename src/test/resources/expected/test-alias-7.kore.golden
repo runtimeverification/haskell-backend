@@ -55,6 +55,7 @@ Definition
                             , applicationChildren =
                                 [ Variable
                                     { variableName = (Id "N" AstLocationNone) :: Id Object
+                                    , variableCounter = Nothing
                                     , variableSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
@@ -80,6 +81,7 @@ Definition
                                                 { runCofreeT = Identity
                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "N" AstLocationNone) :: Id Object
+                                                        , variableCounter = Nothing
                                                         , variableSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "Nat" AstLocationNone) :: Id Object

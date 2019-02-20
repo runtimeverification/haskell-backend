@@ -545,7 +545,7 @@ unifyEquals
     :: forall level variable m err p expanded proof .
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , Show (variable level)

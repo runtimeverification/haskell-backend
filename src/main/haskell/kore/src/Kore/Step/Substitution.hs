@@ -14,8 +14,6 @@ module Kore.Step.Substitution
     , normalize
     ) where
 
-import Control.Monad.Counter
-       ( MonadCounter )
 import Control.Monad.Except
        ( ExceptT, lift, runExceptT, withExceptT )
 import Data.Foldable
@@ -57,7 +55,6 @@ normalize
     :: forall level variable m .
         ( level ~ Object
         , Monad m
-        , MonadCounter m
         , MetaOrObject level
         , FreshVariable variable
         , SortedVariable variable
@@ -102,7 +99,7 @@ normalizeSubstitutionAfterMerge
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -176,7 +173,7 @@ mergePredicatesAndSubstitutions
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , FreshVariable variable
-       , MonadCounter m
+       , Monad m
        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -220,7 +217,7 @@ mergePredicatesAndSubstitutionsExcept
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , FreshVariable variable
-       , MonadCounter m
+       , Monad m
        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -263,7 +260,7 @@ normalizePredicatedSubstitution
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m

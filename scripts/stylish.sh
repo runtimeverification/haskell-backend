@@ -7,12 +7,10 @@ export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 HS_TOP="$TOP/src/main/haskell/kore"
 HS_SOURCE_DIRS="$HS_TOP/src $HS_TOP/app $HS_TOP/test $HS_TOP/bench"
 
-export PATH=$PATH:$HOME/.local/bin
-
-if ! command -v stylish-haskell >/dev/null; then
-    stack install stylish-haskell
-fi
+# Install stylish-haskell in the local .stack-work
+stack build stylish-haskell
+stylish="$(stack path --local-install-root)/bin/stylish-haskell"
 
 find $HS_SOURCE_DIRS \
     \( -name '*.hs' -o -name '*.hs-boot' \) \
-    -print0 | xargs -0L1 stylish-haskell -i
+    -print0 | xargs -0L1 "$stylish" -i

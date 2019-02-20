@@ -105,22 +105,22 @@ nonLinAS = mkSymbol_ (testId "nonLinA") [] s1
 
 nonLinA, nonLinX, nonLinY :: CommonStepPattern Object
 nonLinA = applySymbol_ nonLinAS []
-nonLinX = mkVar Variable { variableName = testId "x", variableSort = s1 }
-nonLinY = mkVar Variable { variableName = testId "y", variableSort = s1 }
+nonLinX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
+nonLinY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
 
 expBin :: SentenceSymbol Object (CommonStepPattern Object)
 expBin = mkSymbol_ (testId "times") [s1, s1] s1
 
 expA, expX, expY :: CommonStepPattern Object
-expA = mkVar Variable { variableName = testId "a", variableSort = s1 }
-expX = mkVar Variable { variableName = testId "x", variableSort = s1 }
-expY = mkVar Variable { variableName = testId "y", variableSort = s1 }
+expA = mkVar Variable { variableName = testId "a", variableCounter = mempty, variableSort = s1 }
+expX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
+expY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
 
 ex1, ex2, ex3, ex4 :: CommonStepPattern Object
-ex1 = mkVar Variable { variableName = testId "ex1", variableSort = s1 }
-ex2 = mkVar Variable { variableName = testId "ex2", variableSort = s1 }
-ex3 = mkVar Variable { variableName = testId "ex3", variableSort = s1 }
-ex4 = mkVar Variable { variableName = testId "ex4", variableSort = s1 }
+ex1 = mkVar Variable { variableName = testId "ex1", variableCounter = mempty, variableSort = s1 }
+ex2 = mkVar Variable { variableName = testId "ex2", variableCounter = mempty, variableSort = s1 }
+ex3 = mkVar Variable { variableName = testId "ex3", variableCounter = mempty, variableSort = s1 }
+ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, variableSort = s1 }
 
 
 dv1, dv2 :: CommonStepPattern Object
@@ -157,10 +157,10 @@ bA :: CommonStepPattern Object
 bA = applySymbol_ b []
 
 x :: CommonStepPattern Object
-x = mkVar Variable { variableName = testId "x", variableSort = s1 }
+x = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
 
 xs2 :: CommonStepPattern Object
-xs2 = mkVar Variable { variableName = testId "xs2", variableSort = s2 }
+xs2 = mkVar Variable { variableName = testId "xs2", variableCounter = mempty, variableSort = s2 }
 
 sortParam :: Text -> SortVariable level
 sortParam name = SortVariable (testId name)
@@ -233,7 +233,7 @@ unificationSubstitution
 unificationSubstitution = map trans
   where
     trans (v, p) =
-        ( Variable { variableSort = getSort p, variableName = testId v }
+        ( Variable { variableSort = getSort p, variableName = testId v, variableCounter = mempty }
         , p
         )
 

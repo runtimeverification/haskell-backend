@@ -61,6 +61,7 @@ instance LiftableToMetaML (SortVariable Object) where
             , idLocation = AstLocationLifted $ idLocation $ getSortVariable sv
             }
         , variableSort = sortMetaSort
+        , variableCounter = mempty
         }
 
 -- Section 9.2.2 Lift Object Sort Constructors to Meta Symbols
@@ -295,6 +296,7 @@ liftSymbolDeclaration sd =
     freshVariable n s = asCommonMetaPattern $ VariablePattern Variable
         { variableName = Id ("#P" <> (Text.pack . show) (n::Int)) liftedSymbolLocation
         , variableSort = s
+        , variableCounter = mempty
         }
     phis = zipWith freshVariable [1..] patternSorts
     sortParam = SortVariable (Id "#s" liftedSymbolLocation)

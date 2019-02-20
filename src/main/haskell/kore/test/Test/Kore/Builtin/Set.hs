@@ -329,6 +329,7 @@ test_concretizeKeys =
     x =
         Variable
             { variableName = testId "x"
+            , variableCounter = mempty
             , variableSort = intSort
             }
     key = 1
@@ -456,4 +457,4 @@ builtinSet = Set.builtinSet setSort
 
 mkIntVar :: Id Object -> CommonStepPattern Object
 mkIntVar variableName =
-    mkVar Variable { variableName, variableSort = intSort }
+    mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }

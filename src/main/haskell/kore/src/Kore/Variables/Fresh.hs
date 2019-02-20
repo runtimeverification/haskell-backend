@@ -17,101 +17,60 @@ like "var_v_11".
 -}
 module Kore.Variables.Fresh
     ( FreshVariable (..)
-    , freshVariable
-    , freshVariablePrefix
-    , freshVariableSuchThat
-    , module Control.Monad.Counter
+    , nextVariable
     ) where
 
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as Text
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 
-import Control.Monad.Counter
+import Data.Sup
 import Kore.AST.Common
-       ( Variable (..) )
+       ( Variable (..), illegalVariableCounter )
 import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 
 {- | A 'FreshVariable' can be freshened, given a 'Natural' counter.
 -}
-class FreshVariable var where
-    {-|Given an existing variable, generate a fresh one of
-    the same kind.
-    -}
-    freshVariableWith :: MetaOrObject level => var level -> Natural -> var level
+class (forall level. Ord (variable level)) => FreshVariable variable where
+    {- | Refresh a variable, renaming it avoid the given set.
 
-    {-|Given an existing variable and a predicate, generate a
-    fresh variable of the same kind satisfying the predicate.
-    By default, die in flames if the predicate is not satisfied.
-    -}
-    freshVariableSuchThatWith
+    If the given variable occurs in the set, @refreshVariable@ must return
+    'Just' a fresh variable which does not occur in the set. If the given
+    variable does /not/ occur in the set, @refreshVariable@ /may/ return
+    'Nothing'.
+
+     -}
+    refreshVariable
         :: MetaOrObject level
-        => var level
-        -> (var level -> Bool)
-        -> Natural
-        -> var level
-    freshVariableSuchThatWith var p n =
-        let var' = freshVariableWith var n in
-        if p var'
-            then var'
-            else error "Cannot generate variable satisfying predicate"
-
-{-| The prefix used to generate fresh variables.  It intentionally contains
-a non-id symbol @_@ to avoid clashing with user-defined ids.
--}
-freshVariablePrefix :: Text
-freshVariablePrefix = "var_"
-
-variableSeparator :: Text
-variableSeparator = "_"
+        => Set (variable level)
+        -> variable level
+        -> Maybe (variable level)
 
 instance FreshVariable Variable where
-    {-| See the comment at the top of the file for the variable name syntax. -}
-    freshVariableWith var n
-      | not (Text.null prefix) =
-        var
-            { variableName = Id
-                { getId = prefix <> Text.pack (show n)
-                , idLocation = AstLocationGeneratedVariable
-                }
-            }
-      | otherwise =
-        var
-            { variableName = Id
-                { getId =
-                    metaObjectPrefix
-                    <> freshVariablePrefix
-                    <> Text.pack
-                        (filter
-                            (`notElem` ("#`" :: String))
-                            (Text.unpack variableId)
-                        )
-                    <> variableSeparator
-                    <> Text.pack (show n)
-                , idLocation = AstLocationGeneratedVariable
-                }
-            }
+    refreshVariable avoiding variable = do
+        largest <- Set.lookupLT pivotMax avoiding
+        if largest >= pivotMin
+            then Just (nextVariable largest)
+            else Nothing
       where
-        variableId :: Text
-        variableId = getId (variableName var)
-        prefix, _suffix :: Text
-        (prefix, _suffix) = Text.breakOnEnd variableSeparator variableId
-        metaObjectPrefix =
-            case isMetaOrObject var of
-                IsObject -> ""
-                IsMeta   -> "#"
+        pivotMax = variable { variableCounter = Just Sup }
+        pivotMin = variable { variableCounter = Nothing }
 
-freshVariable
-    :: (FreshVariable var, MetaOrObject level, MonadCounter m)
-    => var level
-    -> m (var level)
-freshVariable var = freshVariableWith var <$> increment
-
-freshVariableSuchThat
-    :: (FreshVariable var, MetaOrObject level, MonadCounter m)
-    => var level
-    -> (var level -> Bool)
-    -> m (var level)
-freshVariableSuchThat var predicate =
-    freshVariableSuchThatWith var predicate <$> increment
+{- | Increase the 'variableCounter' of a 'Variable'
+ -}
+nextVariable :: Variable level -> Variable level
+nextVariable variable@Variable { variableName, variableCounter } =
+    variable
+        { variableName = variableName'
+        , variableCounter = variableCounter'
+        }
+  where
+    variableName' =
+        variableName
+            { idLocation = AstLocationGeneratedVariable }
+    variableCounter' =
+        case variableCounter of
+            Nothing -> Just (Element 0)
+            Just (Element a) -> Just (Element (succ a))
+            Just Sup -> illegalVariableCounter

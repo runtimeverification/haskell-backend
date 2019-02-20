@@ -148,6 +148,7 @@ unparameterizedVariable_ name location =
                     , idLocation = location
                     }
                 , variableSort = sortS
+                , variableCounter = mempty
                 }
         )
 

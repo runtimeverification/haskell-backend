@@ -409,6 +409,7 @@ sentenceAliasWithSortArgument
                 , applicationChildren =
                     [ Variable
                         { variableName = testId "x"
+                        , variableCounter = mempty
                         , variableSort = sortArgument
                         }
                     ]
@@ -675,6 +676,7 @@ variable :: VariableName -> Sort level -> Variable level
 variable (VariableName name) sort =
     Variable
         { variableName = testId name
+        , variableCounter = mempty
         , variableSort = sort
         }
 
@@ -745,6 +747,7 @@ simpleExistsEqualsUnifiedPattern
     var =
         Variable
             { variableName = testId name
+            , variableCounter = mempty
             , variableSort = operandSort
             }
 

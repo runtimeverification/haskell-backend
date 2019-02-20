@@ -79,10 +79,13 @@ import           Control.DeepSeq
 import           Data.Default
 import           Data.Hashable
                  ( Hashable (..) )
+import           Data.Maybe
+                 ( catMaybes )
 import           Data.Proxy
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
@@ -90,6 +93,7 @@ import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Kore as Kore
 import           Kore.AST.Pure as Pure
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Unparser
 
 {-|'Symbol' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -110,6 +114,11 @@ data Symbol level = Symbol
 instance Hashable (Symbol level)
 
 instance NFData (Symbol level)
+
+instance Unparse (Symbol level) where
+    unparse Symbol { symbolConstructor, symbolParams } =
+        unparse symbolConstructor
+        <> parameters symbolParams
 
 -- |Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
 -- corresponding to that argument.
@@ -139,6 +148,11 @@ instance Hashable (Alias level)
 
 instance NFData (Alias level)
 
+instance Unparse (Alias level) where
+    unparse Alias { aliasConstructor, aliasParams } =
+        unparse aliasConstructor
+        <> parameters aliasParams
+
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.
 -}
@@ -150,6 +164,9 @@ newtype Attributes =
 instance Hashable Attributes
 
 instance NFData Attributes
+
+instance Unparse Attributes where
+    unparse = attributes . getAttributes
 
 instance Default Attributes where
     def = Attributes []
@@ -176,6 +193,29 @@ instance Hashable patternType => Hashable (SentenceAlias level patternType)
 
 instance NFData patternType => NFData (SentenceAlias level patternType)
 
+instance Unparse patternType => Unparse (SentenceAlias level patternType) where
+    unparse
+        SentenceAlias
+            { sentenceAliasAlias
+            , sentenceAliasSorts
+            , sentenceAliasResultSort
+            , sentenceAliasLeftPattern
+            , sentenceAliasRightPattern
+            , sentenceAliasAttributes
+            }
+      =
+        Pretty.fillSep
+            [ "alias"
+            , unparse sentenceAliasAlias <> arguments sentenceAliasSorts
+            , ":"
+            , unparse sentenceAliasResultSort
+            , "where"
+            , unparse sentenceAliasLeftPattern
+            , ":="
+            , unparse sentenceAliasRightPattern
+            , unparse sentenceAliasAttributes
+            ]
+
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
 @meta-symbol-declaration@ syntactic categories from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
@@ -196,6 +236,23 @@ instance Hashable (SentenceSymbol level patternType)
 
 instance NFData (SentenceSymbol level patternType)
 
+instance Unparse (SentenceSymbol level patternType) where
+    unparse
+        SentenceSymbol
+            { sentenceSymbolSymbol
+            , sentenceSymbolSorts
+            , sentenceSymbolResultSort
+            , sentenceSymbolAttributes
+            }
+      =
+        Pretty.fillSep
+            [ "symbol"
+            , unparse sentenceSymbolSymbol <> arguments sentenceSymbolSorts
+            , ":"
+            , unparse sentenceSymbolResultSort
+            , unparse sentenceSymbolAttributes
+            ]
+
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
@@ -205,6 +262,9 @@ newtype ModuleName = ModuleName { getModuleName :: Text }
 instance Hashable ModuleName
 
 instance NFData ModuleName
+
+instance Unparse ModuleName where
+    unparse = Pretty.pretty . getModuleName
 
 getModuleNameForError :: ModuleName -> String
 getModuleNameForError = Text.unpack . getModuleName
@@ -228,6 +288,15 @@ instance Hashable (SentenceImport pat)
 
 instance NFData (SentenceImport pat)
 
+instance Unparse (SentenceImport patternType) where
+    unparse
+        SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
+      =
+        Pretty.fillSep
+            [ "import", unparse sentenceImportModuleName
+            , unparse sentenceImportAttributes
+            ]
+
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
@@ -242,6 +311,20 @@ data SentenceSort (level :: *) (patternType :: *) =
 instance Hashable (SentenceSort level patternType)
 
 instance NFData (SentenceSort level patternType)
+
+instance Unparse (SentenceSort level patternType) where
+    unparse
+        SentenceSort
+            { sentenceSortName
+            , sentenceSortParameters
+            , sentenceSortAttributes
+            }
+      =
+        Pretty.fillSep
+            [ "sort"
+            , unparse sentenceSortName <> parameters sentenceSortParameters
+            , unparse sentenceSortAttributes
+            ]
 
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -262,6 +345,34 @@ instance
     (NFData sortParam, NFData patternType) =>
     NFData (SentenceAxiom sortParam patternType)
 
+instance
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (SentenceAxiom sortParam patternType)
+  where
+    unparse = unparseAxiom "axiom"
+
+unparseAxiom
+    ::  ( Unparse patternType
+        , Unparse sortParam
+        )
+    => Pretty.Doc ann
+    -> SentenceAxiom sortParam patternType
+    -> Pretty.Doc ann
+unparseAxiom
+    label
+    SentenceAxiom
+        { sentenceAxiomParameters
+        , sentenceAxiomPattern
+        , sentenceAxiomAttributes
+        }
+  =
+    Pretty.fillSep
+        [ label
+        , parameters sentenceAxiomParameters
+        , unparse sentenceAxiomPattern
+        , unparse sentenceAxiomAttributes
+        ]
+
 {-|@SentenceHook@ corresponds to @hook-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
@@ -277,6 +388,12 @@ data SentenceHook (patternType :: *) where
 instance Hashable (SentenceHook patternType)
 
 instance NFData (SentenceHook patternType)
+
+instance Unparse (SentenceHook patternType) where
+    unparse =
+        \case
+            SentenceHookedSort a -> "hooked-" <> unparse a
+            SentenceHookedSymbol a -> "hooked-" <> unparse a
 
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -342,6 +459,20 @@ instance
             SentenceClaimSentence p -> rnf p
             SentenceSortSentence p -> rnf p
             SentenceHookSentence p -> rnf p
+
+instance
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (Sentence level sortParam patternType)
+  where
+     unparse =
+        \case
+            SentenceAliasSentence s -> unparse s
+            SentenceSymbolSentence s -> unparse s
+            SentenceImportSentence s -> unparse s
+            SentenceAxiomSentence s -> unparseAxiom "axiom" s
+            SentenceClaimSentence s -> unparseAxiom "claim" s
+            SentenceSortSentence s -> unparse s
+            SentenceHookSentence s -> unparse s
 
 {- | The attributes associated with a sentence.
 
@@ -410,6 +541,21 @@ instance Hashable sentence => Hashable (Module sentence)
 
 instance NFData sentence => NFData (Module sentence)
 
+instance Unparse sentence => Unparse (Module sentence) where
+    unparse
+        Module { moduleName, moduleSentences, moduleAttributes }
+      =
+        (Pretty.vsep . catMaybes)
+            [ Just ("module" Pretty.<+> unparse moduleName)
+            , case moduleSentences of
+                [] -> Nothing
+                _ ->
+                    (Just . Pretty.indent 4 . Pretty.vsep)
+                        (unparse <$> moduleSentences)
+            , Just "endmodule"
+            , Just (unparse moduleAttributes)
+            ]
+
 {-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
 Because there are plans to extend this to a list of 'Module's, the @definition@
@@ -429,6 +575,11 @@ data Definition (sentence :: *) =
 instance Hashable sentence => Hashable (Definition sentence)
 
 instance NFData sentence => NFData (Definition sentence)
+
+instance Unparse sentence => Unparse (Definition sentence) where
+    unparse Definition { definitionAttributes, definitionModules } =
+        Pretty.vsep
+            (unparse definitionAttributes : map unparse definitionModules)
 
 class SentenceSymbolOrAlias (sentence :: * -> * -> *) where
     getSentenceSymbolOrAliasConstructor
@@ -531,6 +682,15 @@ instance
         \case
             UnifiedMetaSentence metaS -> rnf metaS
             UnifiedObjectSentence objectS -> rnf objectS
+
+instance
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (UnifiedSentence sortParam patternType)
+  where
+    unparse =
+        \case
+            UnifiedMetaSentence sentence -> unparse sentence
+            UnifiedObjectSentence sentence -> unparse sentence
 
 -- |'KoreSentence' instantiates 'UnifiedSentence' to describe sentences fully
 -- corresponding to the @declaration@ syntactic category

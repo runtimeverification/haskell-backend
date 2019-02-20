@@ -17,8 +17,6 @@ import           Control.Applicative
                  ( (<|>) )
 import           Control.Error.Util
                  ( just, nothing )
-import           Control.Monad.Counter
-                 ( MonadCounter )
 import           Control.Monad.Except
 import           Control.Monad.Trans.Except
                  ( ExceptT (..) )
@@ -95,7 +93,7 @@ matchAsUnification
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -128,7 +126,7 @@ unificationWithAppMatchOnTop
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -182,7 +180,7 @@ match
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -219,7 +217,7 @@ matchEqualHeadPatterns
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -459,7 +457,7 @@ matchJoin
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -513,7 +511,7 @@ unifyJoin
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -577,7 +575,7 @@ matchVariableFunction
        , MetaOrObject level
        , Ord (variable level)
        , Unparse (variable level)
-       , MonadCounter m
+       , Monad m
        )
     => MetadataTools level StepperAttributes
     -> Map.Map (variable level) (variable level)

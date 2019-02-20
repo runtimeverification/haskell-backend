@@ -281,6 +281,7 @@ test_simplify =
                 x =
                     mkVar Variable
                         { variableName = testId "x"
+                        , variableCounter = mempty
                         , variableSort = intSort
                         }
                 key = Test.Int.asInternal 1
@@ -408,11 +409,13 @@ test_concretizeKeys =
     x =
         Variable
             { variableName = testId "x"
+            , variableCounter = mempty
             , variableSort = intSort
             }
     v =
         Variable
             { variableName = testId "v"
+            , variableCounter = mempty
             , variableSort = intSort
             }
     key = Test.Int.asInternal 1
@@ -507,7 +510,7 @@ Right asExpandedPattern = Map.asExpandedPattern verifiedModule mapSort
 
 mkIntVar :: Id Object -> CommonStepPattern Object
 mkIntVar variableName =
-    mkVar Variable { variableName, variableSort = intSort }
+    mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
 
 mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
 mockSubstitutionSimplifier =

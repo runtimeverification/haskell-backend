@@ -678,7 +678,7 @@ instance ( MetaOrObject level
 asVariable :: (MetaOrObject level, AsSort level sort)
            => PatternVariable sort level -> Variable level
 asVariable (PatternVariable name location sort) =
-    Variable (Id (Text.pack name) location) (asAst sort)
+    Variable (Id (Text.pack name) location) mempty (asAst sort)
 
 type MetaVariable sort = PatternVariable sort Meta
 metaVariable
@@ -687,7 +687,7 @@ metaVariable
 metaVariable = PatternVariable
 asMetaVariable :: MetaSort sort => MetaVariable sort -> Variable Meta
 asMetaVariable (PatternVariable name location sort) =
-    Variable (Id (Text.pack name) location) (asAst sort)
+    Variable (Id (Text.pack name) location) mempty (asAst sort)
 
 type ObjectVariable sort = PatternVariable sort Object
 objectVariable
@@ -696,4 +696,4 @@ objectVariable
 objectVariable = PatternVariable
 asObjectVariable :: ObjectSort sort => ObjectVariable sort -> Variable Object
 asObjectVariable (PatternVariable name location sort) =
-    Variable (Id (Text.pack name) location) (asAst sort)
+    Variable (Id (Text.pack name) location) mempty (asAst sort)

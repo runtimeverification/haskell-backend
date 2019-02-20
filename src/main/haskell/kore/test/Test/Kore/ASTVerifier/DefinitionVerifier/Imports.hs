@@ -384,6 +384,7 @@ sortVisibilityTests =
         existsVariable =
             Variable
                 { variableName = testId "var"
+                , variableCounter = mempty
                 , variableSort = sort
                 }
     sortReferenceInAndPatternSentence =
@@ -488,6 +489,7 @@ sortVisibilityTests =
                         , applicationChildren =
                             [ Variable
                                 { variableSort = sort
+                                , variableCounter = mempty
                                 , variableName = testId "x"
                                 }
                             ]
@@ -684,6 +686,7 @@ symbolVisibilityTests =
                         (mkExists
                             Variable
                                 { variableName = testId "var"
+                                , variableCounter = mempty
                                 , variableSort = defaultSort
                                 }
                             symbolPattern
@@ -909,6 +912,7 @@ aliasVisibilityTests =
                         (mkExists
                             Variable
                                 { variableName = testId "var"
+                                , variableCounter = mempty
                                 , variableSort = defaultSort
                                 }
                             aliasPattern
@@ -967,6 +971,7 @@ aliasVisibilityTests =
                         , applicationChildren =
                             [ Variable
                                 { variableName = testId "x"
+                                , variableCounter = mempty
                                 , variableSort =
                                     SortVariableSort
                                         (SortVariable (testId "sv1"))

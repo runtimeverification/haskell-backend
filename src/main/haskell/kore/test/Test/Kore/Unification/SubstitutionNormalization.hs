@@ -6,8 +6,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import           Control.Monad.Except
-                 ( runExceptT )
+import qualified Control.Monad.Except as Except
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
@@ -25,7 +24,6 @@ import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.SubstitutionNormalization
-import           Kore.Variables.Fresh
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
@@ -179,9 +177,9 @@ test_substitutionNormalization =
     ]
   where
     v1 :: Sort level -> Variable level
-    v1 = Variable (testId "v1")
+    v1 = Variable (testId "v1") mempty
     x1 :: Sort level -> Variable level
-    x1 = Variable (testId "x1")
+    x1 = Variable (testId "x1") mempty
     f = groundHead "f" AstLocationTest
 
 runNormalizeSubstitution
@@ -192,8 +190,7 @@ runNormalizeSubstitution
         [(Variable level, StepPattern level Variable)]
 runNormalizeSubstitution substitution =
     fmap (Substitution.unwrap . Predicated.substitution)
-    . evalCounter
-    . runExceptT
+    . Except.runExcept
     $ normalizeSubstitution mockMetadataTools (Substitution.wrap substitution)
 
 runNormalizeSubstitutionObject
@@ -203,8 +200,7 @@ runNormalizeSubstitutionObject
         [(Variable Object, StepPattern Object Variable)]
 runNormalizeSubstitutionObject substitution =
     fmap (Substitution.unwrap . Predicated.substitution)
-    . evalCounter
-    . runExceptT
+    . Except.runExcept
     $ normalizeSubstitution mockMetadataToolsO (Substitution.wrap substitution)
   where
     mockMetadataToolsO :: MetadataTools Object StepperAttributes

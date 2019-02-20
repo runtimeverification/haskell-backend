@@ -5,7 +5,6 @@ import           Control.Applicative
 import qualified Control.Lens as Lens
 import           Data.Function
                  ( (&) )
-import qualified Data.Functor.Foldable as Recursive
 import           Data.List
                  ( intercalate )
 import qualified Data.Map as Map
@@ -15,10 +14,8 @@ import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Semigroup
                  ( (<>) )
-import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc.Render.Text
                  ( hPutDoc, putDoc )
 import           Options.Applicative
@@ -68,10 +65,6 @@ import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unparser
                  ( unparse )
-import           Kore.Variables.Free
-                 ( pureAllVariables )
-import           Kore.Variables.Fresh
-                 ( freshVariablePrefix )
 import qualified SMT
 
 import GlobalMain
@@ -312,69 +305,6 @@ parserInfoModifiers =
                 \in PATTERN_FILE."
     <> header "kore-exec - an interpreter for Kore definitions"
 
-externalizeFreshVars :: CommonStepPattern level -> CommonStepPattern level
-externalizeFreshVars pat = Recursive.fold renameFreshLocal pat
-  where
-    allVarsIds :: Set.Set Text
-    allVarsIds = Set.map (getId . variableName) (pureAllVariables pat)
-    freshVarsIds :: Set.Set Text
-    freshVarsIds = Set.filter (Text.isPrefixOf freshVariablePrefix) allVarsIds
-    computeFreshPrefix :: Text -> (Set.Set Text) -> Text
-    computeFreshPrefix pref strings
-      | Set.null matchingStrings = pref
-      -- TODO(traiansf): if executing multiple times (like in stepping),
-      -- names for generated fresh variables will grow longer and longer.
-      -- Consider a mechanism to avoid this.
-      | otherwise = computeFreshPrefix (pref <> "-") matchingStrings
-      where
-        matchingStrings :: Set.Set Text
-        matchingStrings = Set.filter (Text.isPrefixOf pref) strings
-    freshPrefix :: Text
-    freshPrefix =
-        computeFreshPrefix "var"
-            (Set.filter (not . (Text.isPrefixOf freshVariablePrefix)) allVarsIds)
-    renameFreshLocal
-        :: Base (CommonStepPattern level) (CommonStepPattern level)
-        -> CommonStepPattern level
-    renameFreshLocal (_ :< VariablePattern v@(Variable {variableName}))
-      | name `Set.member` freshVarsIds =
-        mkVar v {
-            variableName = variableName
-                { getId =
-                    freshPrefix <> Text.filter (/= '_') name
-                }
-        }
-      where
-        name :: Text
-        name = getId variableName
-    renameFreshLocal
-        (_ :< ExistsPattern (Exists _ v@(Variable {variableName}) existsChild))
-      | name `Set.member` freshVarsIds =
-        mkExists
-            (v {
-                variableName = variableName
-                    { getId = freshPrefix <> Text.filter (/= '_') name
-                    }
-            })
-            existsChild
-      where
-        name :: Text
-        name = getId variableName
-    renameFreshLocal
-        (_ :< ForallPattern (Forall _ v@(Variable {variableName}) forallChild))
-      | name `Set.member` freshVarsIds =
-        mkForall
-            (v {
-                variableName = variableName
-                    { getId = freshPrefix <> Text.filter (/= '_') name
-                    }
-            })
-            forallChild
-      where
-        name :: Text
-        name = getId variableName
-    renameFreshLocal pat' = asPurePattern pat'
-
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
@@ -485,7 +415,7 @@ mainWithOptions
                 either (error . printError) id
                 (Builtin.externalizePattern indexedModule finalPattern)
             unparsed =
-                (unparse . externalizeFreshVars) finalExternalPattern
+                (unparse . externalizeFreshVariables) finalExternalPattern
         case outputFileName of
             Nothing ->
                 putDoc unparsed

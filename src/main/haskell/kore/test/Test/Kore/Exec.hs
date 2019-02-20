@@ -151,6 +151,7 @@ searchVar :: CommonStepPattern Object
 searchVar =
     mkVar Variable
         { variableName = Id "V" AstLocationTest
+        , variableCounter = mempty
         , variableSort = mySort
         }
 
@@ -255,6 +256,7 @@ functionalAxiom name =
   where
     v = Variable
         { variableName = Id "V" AstLocationTest
+        , variableCounter = mempty
         , variableSort = mySort
         }
     r = SortVariable $ Id "R" AstLocationTest

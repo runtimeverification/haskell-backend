@@ -392,7 +392,7 @@ unifyEquals
         , Show (variable level)
         , Unparse (variable level)
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , p ~ StepPattern level variable

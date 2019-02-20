@@ -340,6 +340,7 @@ variableParserTests =
             Variable
                 { variableName = testId "v"
                 , variableSort = sortVariableSort "s"
+                , variableCounter = mempty
                 }
         , success "v:s1{s2}"
             Variable
@@ -349,6 +350,7 @@ variableParserTests =
                         { sortActualName = testId "s1"
                         , sortActualSorts = [ sortVariableSort "s2" ]
                         }
+                , variableCounter = mempty
                 }
         , FailureWithoutMessage ["", "var", "v:", ":s"]
         ]
@@ -381,6 +383,7 @@ applicationPatternParserTests =
             ( asCommonKorePattern $ VariablePattern Variable
                 { variableName = testId "#v" :: Id Meta
                 , variableSort = sortVariableSort "#Char"
+                , variableCounter = mempty
                 }
             )
         , success "v:s1{s2}"
@@ -391,6 +394,7 @@ applicationPatternParserTests =
                         { sortActualName = testId "s1"
                         , sortActualSorts = [ sortVariableSort "s2" ]
                         }
+                , variableCounter = mempty
                 }
             )
         , success "c{s1,s2}(v1:s1, v2:s2)"
@@ -406,10 +410,12 @@ applicationPatternParserTests =
                     [ asCommonKorePattern $ VariablePattern Variable
                         { variableName = testId "v1" :: Id Object
                         , variableSort = sortVariableSort "s1"
+                        , variableCounter = mempty
                         }
                     , asCommonKorePattern $ VariablePattern Variable
                         { variableName = testId "v2" :: Id Object
                         , variableSort = sortVariableSort "s2"
+                        , variableCounter = mempty
                         }
                     ]
                 }
@@ -509,6 +515,7 @@ existsPatternParserTests =
                         Variable
                             { variableName = testId "#v"
                             , variableSort = sortVariableSort "#Char"
+                            , variableCounter = mempty
                             }
                     , existsChild =
                         asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
@@ -558,6 +565,7 @@ forallPatternParserTests =
                         Variable
                             { variableName = testId "v"
                             , variableSort = sortVariableSort "s1"
+                            , variableCounter = mempty
                             }
                     , forallChild =
                         asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
@@ -629,6 +637,7 @@ memPatternParserTests =
                         VariablePattern Variable
                             { variableName = testId "v" :: Id Object
                             , variableSort = sortVariableSort "s3"
+                            , variableCounter = mempty
                             }
                     , inContainingChild =
                         asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
@@ -785,6 +794,7 @@ variablePatternParserTests =
             ( asCommonKorePattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort = sortVariableSort "s"
+                , variableCounter = mempty
                 }
             )
         , success "v:s1{s2}"
@@ -794,6 +804,7 @@ variablePatternParserTests =
                     { sortActualName=testId "s1"
                     , sortActualSorts = [ sortVariableSort "s2" ]
                     }
+                , variableCounter = mempty
                 }
             )
             , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
@@ -822,6 +833,7 @@ sentenceAliasParserTests =
                             [ Variable
                                 { variableName = testId "X" :: Id Object
                                 , variableSort = sortVariableSort "s2"
+                                , variableCounter = mempty
                                 }
                             ]
                         }
@@ -871,10 +883,12 @@ sentenceAliasParserTests =
                                 [ Variable
                                     { variableName = testId "X" :: Id Object
                                     , variableSort = sortVariableSort "s3"
+                                    , variableCounter = mempty
                                     }
                                 , Variable
                                     { variableName = testId "Y" :: Id Object
                                     , variableSort = sortVariableSort "s4"
+                                    , variableCounter = mempty
                                     }
                                 ]
                             }
@@ -889,10 +903,12 @@ sentenceAliasParserTests =
                                 [ asCommonKorePattern $ VariablePattern Variable
                                     { variableName = testId "X" :: Id Object
                                     , variableSort = sortVariableSort "s3"
+                                    , variableCounter = mempty
                                     }
                                 , asCommonKorePattern $ VariablePattern Variable
                                     { variableName = testId "Y" :: Id Object
                                     , variableSort = sortVariableSort "s4"
+                                    , variableCounter = mempty
                                     }
                                 ]
                             }
@@ -990,6 +1006,7 @@ sentenceAliasParserTests =
                         Variable
                             { variableName = testId name
                             , variableSort = resultSort
+                            , variableCounter = mempty
                             }
                     argument name = mkVar (var name)
                     varA = var "a"
@@ -1032,6 +1049,7 @@ sentenceAliasParserTests =
                         Variable
                             { variableName = testId "a"
                             , variableSort = resultSort
+                            , variableCounter = mempty
                             }
                     arg = mkVar var
                 in asSentence SentenceAlias

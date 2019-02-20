@@ -23,22 +23,29 @@ module Kore.Step.Pattern
     , toKoreSentenceAxiom
     , toKoreModule
     , substitute
+    , externalizeFreshVariables
     ) where
 
+import           Control.Comonad
 import qualified Control.Lens as Lens
+import           Control.Monad.Reader
+                 ( Reader )
+import qualified Control.Monad.Reader as Reader
+import qualified Data.Foldable as Foldable
 import           Data.Functor.Foldable
                  ( Base )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 
-import           Control.Monad.Counter
-                 ( MonadCounter )
 import           Kore.Annotation.Valid
                  ( Valid (..) )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
-                 ( Pattern (..), SortedVariable )
+                 ( Exists (..), Forall (..), Pattern (..),
+                 SortedVariable (..) )
 import qualified Kore.AST.Common as Base
 import           Kore.AST.Kore
                  ( KorePattern, UnifiedPattern (..), UnifiedSortVariable,
@@ -52,7 +59,6 @@ import           Kore.Error
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
 import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 type StepPattern level variable =
     PurePattern level Domain.Builtin variable (Valid (variable level) level)
@@ -66,6 +72,9 @@ type ConcreteStepPattern level = StepPattern level Concrete
 @mapVariables@ is lazy: it descends into its argument only as the result is
 demanded. Intermediate allocation from composing multiple transformations with
 @mapVariables@ is amortized; the intermediate trees are never fully resident.
+
+__Warning__: @mapVariables@ will capture variables if the provided mapping is
+not injective!
 
 See also: 'traverseVariables'
 
@@ -87,6 +96,9 @@ mapVariables mapping =
 returns. When composing multiple transformations with @traverseVariables@, the
 intermediate trees will be fully allocated; @mapVariables@ is more composable in
 this respect.
+
+__Warning__: @traverseVariables@ will capture variables if the provided
+traversal is not injective!
 
 See also: 'mapVariables'
 
@@ -327,14 +339,126 @@ may appear in the right-hand side of any substitution, but this is not checked.
 substitute
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , MonadCounter m
         , Ord (variable level)
         , SortedVariable variable
         )
     => Map (variable level) (StepPattern level variable)
     -> StepPattern level variable
-    -> m (StepPattern level variable)
+    -> StepPattern level variable
 substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
   where
     getFreeVariables Valid { freeVariables } = freeVariables
     setFreeVariables valid freeVariables = valid { freeVariables }
+
+{- | Reset the 'variableCounter' of all 'Variables'.
+
+@externalizeFreshVariables@ resets the 'variableCounter' of all variables, while
+ensuring that no 'Variable' in the result is accidentally captured.
+
+ -}
+externalizeFreshVariables
+    :: forall level. MetaOrObject level
+    => StepPattern level Variable
+    -> StepPattern level Variable
+externalizeFreshVariables stepPattern =
+    Reader.runReader
+        (Recursive.fold externalizeFreshVariablesWorker stepPattern)
+        renamedFreeVariables
+  where
+    -- | 'originalFreeVariables' are present in the original pattern; they do
+    -- not have a generated counter. 'generatedFreeVariables' have a generated
+    -- counter, usually because they were introduced by applying some axiom.
+    (originalFreeVariables, generatedFreeVariables) =
+        Set.partition Base.isOriginalVariable freeVariables
+      where
+        Valid { freeVariables } = extract stepPattern
+
+    -- | The map of generated free variables, renamed to be unique from the
+    -- original free variables.
+    (renamedFreeVariables, _) =
+        Foldable.foldl' rename initial generatedFreeVariables
+      where
+        initial = (Map.empty, originalFreeVariables)
+        rename (renaming, avoiding) variable =
+            let
+                variable' = safeVariable avoiding variable
+                renaming' = Map.insert variable variable' renaming
+                avoiding' = Set.insert variable' avoiding
+            in
+                (renaming', avoiding')
+
+    {- | Look up a variable renaming.
+
+    The original (not generated) variables of the pattern are never renamed, so
+    these variables are not present in the Map of renamed variables.
+
+     -}
+    lookupVariable variable =
+        Reader.asks (Map.lookup variable) >>= \case
+            Nothing -> return variable
+            Just variable' -> return variable'
+
+    {- | Externalize a variable safely.
+
+    The variable's counter is incremented until its externalized form is unique
+    among the set of avoided variables. The externalized form is returned.
+
+     -}
+    safeVariable avoiding variable =
+        head  -- 'head' is safe because 'iterate' creates an infinite list
+        $ dropWhile wouldCapture
+        $ Base.externalizeFreshVariable
+        <$> iterate nextVariable variable
+      where
+        wouldCapture var = Set.member var avoiding
+
+    underBinder freeVariables' variable child = do
+        let variable' = safeVariable freeVariables' variable
+        child' <- Reader.local (Map.insert variable variable') child
+        return (variable', child')
+
+    externalizeFreshVariablesWorker
+        ::  Base
+                (CommonStepPattern level)
+                (Reader
+                    (Map (Variable level) (Variable level))
+                    (CommonStepPattern level)
+                )
+        ->  (Reader
+                (Map (Variable level) (Variable level))
+                (CommonStepPattern level)
+            )
+    externalizeFreshVariablesWorker (valid :< patt) = do
+        valid' <- Valid.traverseVariables lookupVariable valid
+        let Valid { freeVariables = freeVariables' } = valid'
+        patt' <-
+            case patt of
+                ExistsPattern exists -> do
+                    let Exists { existsVariable, existsChild } = exists
+                    (existsVariable', existsChild') <-
+                        underBinder
+                            freeVariables'
+                            existsVariable
+                            existsChild
+                    let exists' =
+                            exists
+                                { existsVariable = existsVariable'
+                                , existsChild = existsChild'
+                                }
+                    return (ExistsPattern exists')
+                ForallPattern forall -> do
+                    let Forall { forallVariable, forallChild } = forall
+                    (forallVariable', forallChild') <-
+                        underBinder
+                            freeVariables'
+                            forallVariable
+                            forallChild
+                    let forall' =
+                            forall
+                                { forallVariable = forallVariable'
+                                , forallChild = forallChild'
+                                }
+                    return (ForallPattern forall')
+                _ ->
+                    Base.traverseVariables lookupVariable patt >>= sequence
+        (return . Recursive.embed) (valid' :< patt')

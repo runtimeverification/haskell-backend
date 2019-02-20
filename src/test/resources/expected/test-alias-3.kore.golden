@@ -68,6 +68,7 @@ Definition
                             , applicationChildren =
                                 [ Variable
                                     { variableName = (Id "X" AstLocationNone) :: Id Object
+                                    , variableCounter = Nothing
                                     , variableSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "S" AstLocationNone) :: Id Object
@@ -76,6 +77,7 @@ Definition
                                     }
                                 , Variable
                                     { variableName = (Id "Y" AstLocationNone) :: Id Object
+                                    , variableCounter = Nothing
                                     , variableSort =
                                         SortActualSort SortActual
                                             { sortActualName = (Id "S" AstLocationNone) :: Id Object
@@ -99,6 +101,7 @@ Definition
                                                 { runCofreeT = Identity
                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "Y" AstLocationNone) :: Id Object
+                                                        , variableCounter = Nothing
                                                         , variableSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "S" AstLocationNone) :: Id Object
@@ -111,6 +114,7 @@ Definition
                                                 { runCofreeT = Identity
                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableCounter = Nothing
                                                         , variableSort =
                                                             SortActualSort SortActual
                                                                 { sortActualName = (Id "S" AstLocationNone) :: Id Object

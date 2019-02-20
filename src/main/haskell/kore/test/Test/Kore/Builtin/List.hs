@@ -157,6 +157,7 @@ test_simplify =
             x =
                 mkVar Variable
                     { variableName = testId "x"
+                    , variableCounter = mempty
                     , variableSort = intSort
                     }
             original =

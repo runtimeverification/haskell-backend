@@ -25,13 +25,16 @@ import           Data.Sequence
                  ( Seq )
 import           Data.Set
                  ( Set )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Void
                  ( Void )
 import           GHC.Generics
                  ( Generic )
 
-import Kore.Annotation.Valid
-import Kore.AST.Pure
+import           Kore.Annotation.Valid
+import           Kore.AST.Pure
+import qualified Kore.Builtin.Error as Builtin
+import           Kore.Unparser
 
 type Key = PurePattern Object Builtin Concrete (Valid (Concrete Object) Object)
 
@@ -71,3 +74,13 @@ instance Hashable child => Hashable (Builtin child) where
                 salt `hashWithSalt` (5::Int) `hashWithSalt` bool
 
 instance NFData child => NFData (Builtin child)
+
+instance Unparse child => Unparse (Builtin child) where
+    unparse =
+        \case
+            BuiltinPattern child -> unparse child
+            BuiltinMap _ -> Builtin.notImplementedInternal
+            BuiltinList _ -> Builtin.notImplementedInternal
+            BuiltinSet _ -> Builtin.notImplementedInternal
+            BuiltinInteger int -> Pretty.dquotes (Pretty.pretty int)
+            BuiltinBool bool -> Pretty.dquotes (Pretty.pretty bool)

@@ -22,6 +22,7 @@ Definition
                                                 { runCofreeT = Identity
                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableCounter = Nothing
                                                         , variableSort =
                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                                         })
@@ -32,6 +33,7 @@ Definition
                                                 { runCofreeT = Identity
                                                     { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (VariablePattern Variable
                                                         { variableName = (Id "X" AstLocationNone) :: Id Object
+                                                        , variableCounter = Nothing
                                                         , variableSort =
                                                             SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                                                         })

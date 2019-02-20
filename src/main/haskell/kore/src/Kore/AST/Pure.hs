@@ -76,6 +76,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Sort
 import           Kore.TopBottom
                  ( TopBottom (..) )
+import           Kore.Unparser
 
 {- | The abstract syntax of Kore at a fixed level @level@.
 
@@ -160,6 +161,16 @@ instance
   where
     rnf (Recursive.project -> annotation :< pat) =
         rnf annotation `seq` rnf pat `seq` ()
+
+instance
+    ( Functor domain
+    , Unparse (variable level)
+    , Unparse (domain self)
+    , self ~ PurePattern level domain variable annotation
+    ) =>
+    Unparse (PurePattern level domain variable annotation)
+  where
+    unparse (Recursive.project -> _ :< pat) = unparse pat
 
 type instance Base (PurePattern level domain variable annotation) =
     CofreeF (Pattern level domain variable) annotation

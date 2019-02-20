@@ -50,7 +50,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( ExceptT, MaybeT )
-import           Control.Monad.Counter
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -513,7 +512,7 @@ unifyEquals
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
         , Unparse (variable level)
-        , MonadCounter m
+        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , p ~ StepPattern level variable

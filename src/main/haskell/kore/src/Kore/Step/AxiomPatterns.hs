@@ -43,6 +43,7 @@ import qualified Control.Lens.TH.Rules as Lens
 import qualified Control.Monad as Monad
 import           Data.Default
                  ( Default (..) )
+import qualified Data.Foldable as Foldable
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -365,41 +366,34 @@ to avoid collision with any variables in the given set.
 
  -}
 refreshRulePattern
-    :: forall variable level m
+    :: forall variable level
     .   ( FreshVariable variable
         , SortedVariable variable
         , Ord (variable level)
         , MetaOrObject level
-        , MonadCounter m
         )
     => Set (variable level)  -- ^ Variables to avoid
     -> RulePattern level variable
-    -> m (Map (variable level) (variable level), RulePattern level variable)
-refreshRulePattern avoid0 rulePattern = do
-    (_, rename) <- refreshVariables originalFreeVariables
-    let subst = mkVar <$> rename
-    left' <- Pattern.substitute subst left
-    right' <- Pattern.substitute subst right
-    requires' <- Predicate.substitute subst requires
-    let rulePattern' =
+    -> (Map (variable level) (variable level), RulePattern level variable)
+refreshRulePattern avoid0 rulePattern =
+    let (_, rename) = refreshVariables originalFreeVariables
+        subst = mkVar <$> rename
+        left' = Pattern.substitute subst left
+        right' = Pattern.substitute subst right
+        requires' = Predicate.substitute subst requires
+        rulePattern' =
             rulePattern
                 { left = left'
                 , right = right'
                 , requires = requires'
                 }
-    return (rename, rulePattern')
+    in (rename, rulePattern')
   where
     RulePattern { left, right, requires } = rulePattern
     originalFreeVariables = freeVariables rulePattern
-    refreshVariables =
-        Monad.foldM refreshOneVariable (avoid0, Map.empty)
+    refreshVariables = Foldable.foldl' refreshOneVariable (avoid0, Map.empty)
     refreshOneVariable (avoid, rename) var
-      | Set.notMember var avoid =
-        -- The variable does not collide with any others, so renaming is not
-        -- necessary.
-        return (Set.insert var avoid, rename)
-      | otherwise = do
-        var' <- freshVariableSuchThat var (\v -> Set.notMember v avoid)
+      | Just var' <- refreshVariable avoid var =
         let avoid' =
                 -- Avoid the freshly-generated variable in future renamings.
                 Set.insert var' avoid
@@ -407,7 +401,11 @@ refreshRulePattern avoid0 rulePattern = do
                 -- Record a mapping from the original variable to the
                 -- freshly-generated variable.
                 Map.insert var var' rename
-        return (avoid', rename')
+        in (avoid', rename')
+      | otherwise =
+        -- The variable does not collide with any others, so renaming is not
+        -- necessary.
+        (Set.insert var avoid, rename)
 
 {- | Extract the free variables of a 'RulePattern'.
  -}

@@ -100,7 +100,7 @@ simplify
     times
   = do
     let substitution' = Substitution.toMap substitution
-    substitutedPredicate <- Predicate.substitute substitution' predicate
+        substitutedPredicate = Predicate.substitute substitution' predicate
     -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
     -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
     -- This was needed because, when we need to simplify 'requires' clauses,

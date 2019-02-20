@@ -5,9 +5,13 @@ module Test.Kore.Step.Simplification.Application
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.List as List
 import qualified Data.Map as Map
+import           Data.Ord
+                 ( comparing )
 import qualified Data.Set as Set
 
+import           Data.Sup
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -198,7 +202,8 @@ test_applicationSimplification =
             --        (f(a)=f(b) and g(a)=g(b) and f(a)=g(a)) and
             --        [x=f(a), y=g(a), z=f(b)]
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
-            let expect =
+            let z' = Mock.z { variableCounter = Just (Element 1) }
+                expect =
                     OrOfExpandedPattern.make
                         [ Predicated
                             { term = fOfA
@@ -209,11 +214,13 @@ test_applicationSimplification =
                                         (makeEqualsPredicate fOfA fOfB)
                                         (makeEqualsPredicate gOfA gOfB)
                                     )
-                            , substitution = Substitution.unsafeWrap
-                                [ (freshVariableWith Mock.z 1, gOfB)
-                                , (Mock.x, fOfA)
-                                , (Mock.y, gOfA)
-                                ]
+                            , substitution =
+                                Substitution.unsafeWrap
+                                $ List.sortBy (comparing fst)
+                                    [ (z', gOfB)
+                                    , (Mock.x, fOfA)
+                                    , (Mock.y, gOfA)
+                                    ]
                             }
                         ]
             actual <-
@@ -225,7 +232,7 @@ test_applicationSimplification =
                             , SortedVariable variable
                             )
                         => variable Object
-                    zvar = freshVariableWith (fromVariable Mock.z) 1
+                    zvar = fromVariable z'
                     result
                         :: forall variable
                         .   ( FreshVariable variable

@@ -24,7 +24,9 @@ import           Data.String
 import           Data.Text.Prettyprint.Doc as Doc
 import           Data.Text.Prettyprint.Doc.Render.String
 import           Data.Void
+import           Numeric.Natural
 
+import           Data.Sup
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Kore
 import           Kore.AST.Pure
@@ -166,6 +168,9 @@ instance PrettyPrint Void where
 instance PrettyPrint () where
     prettyPrint _ () = "()"
 
+instance PrettyPrint Natural where
+    prettyPrint _  = pretty
+
 instance MetaOrObject level => PrettyPrint (Id level) where
     prettyPrint flags id'@(Id _ _) =
         betweenParentheses
@@ -275,9 +280,10 @@ instance PrettyPrint ModuleName where
             )
 
 instance MetaOrObject level => PrettyPrint (Variable level) where
-    prettyPrint _ var@(Variable _ _) =
+    prettyPrint _ var@(Variable _ _ _) =
         writeStructure "Variable"
             [ writeFieldOneLine "variableName" variableName var
+            , writeFieldOneLine "variableCounter" variableCounter var
             , writeFieldNewLine "variableSort" variableSort var
             ]
 
@@ -774,6 +780,11 @@ instance PrettyPrint a => PrettyPrint (Maybe a) where
     prettyPrint flags (Just x) =
         writeOneFieldStruct flags "Just" x
     prettyPrint _ Nothing = "Nothing"
+
+instance PrettyPrint a => PrettyPrint (Sup a) where
+    prettyPrint flags (Element x) =
+        writeOneFieldStruct flags "Element" x
+    prettyPrint _ Sup = "Sup"
 
 instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (Either a b) where
     prettyPrint flags (Left x) =

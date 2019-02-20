@@ -105,7 +105,7 @@ termEquals
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -127,7 +127,7 @@ termEqualsAnd
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -187,7 +187,7 @@ maybeTermEquals
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
@@ -224,7 +224,7 @@ termUnification
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
@@ -273,7 +273,7 @@ termAnd
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level m
@@ -319,7 +319,7 @@ maybeTermAnd
         , Show (variable level)
         , Unparse (variable level)
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
@@ -336,7 +336,7 @@ maybeTermAnd = maybeTransformTerm andFunctions
 andFunctions
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , MonadCounter m
+        , Monad m
         , Ord (variable level)
         , OrdMetaOrObject variable
         , Show (variable level)
@@ -361,7 +361,7 @@ andFunctions =
 equalsFunctions
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , MonadCounter m
+        , Monad m
         , Ord (variable level)
         , OrdMetaOrObject variable
         , Show (variable level)
@@ -388,7 +388,7 @@ andEqualsFunctions
         ( Eq (variable level)
         , FreshVariable variable
         , MetaOrObject level
-        , MonadCounter m
+        , Monad m
         , Ord (variable level)
         , OrdMetaOrObject variable
         , Show (variable level)
@@ -483,7 +483,7 @@ maybeTransformTerm
         , Ord (variable Object)
         , Show (variable level)
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => [TermTransformationOld level variable m]
@@ -551,7 +551,7 @@ toExpanded transformer tools first second =
         )
 
 transformerLift
-    :: MonadCounter m
+    :: Monad m
     =>  (  SimplificationType
         -> MetadataTools level StepperAttributes
         -> StepPattern level variable
@@ -570,7 +570,7 @@ transformerLift
   = liftExpandedPattern (transformation simplificationType tools first second)
 
 transformerLiftOld
-  :: MonadCounter m
+  :: Monad m
   =>  (  MetadataTools level StepperAttributes
       -> StepPattern level variable
       -> StepPattern level variable
@@ -587,7 +587,7 @@ transformerLiftOld
   = liftExpandedPattern (transformation tools first second)
 
 liftExpandedPattern
-    :: MonadCounter m
+    :: Monad m
     => Maybe (ExpandedPattern level variable, SimplificationProof level)
     -> MaybeT m (ExpandedPattern level variable , SimplificationProof level)
 liftExpandedPattern = MaybeT . return
@@ -768,7 +768,7 @@ equalInjectiveHeadsAndEquals
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , MonadCounter m
+        , Monad m
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
@@ -842,7 +842,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
     ::  forall level variable m err .
         ( Ord (variable level)
         , MetaOrObject level
-        , MonadCounter m
+        , Monad m
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
