@@ -191,8 +191,6 @@ import qualified Text.Megaparsec.Char.Lexer as Lexer
 import           Text.Read
                  ( readMaybe )
 
-import Debug.Trace
-
 -- | Results of checking for satisfiability.
 data Result = Sat         -- ^ The assertions are satisfiable
             | Unsat       -- ^ The assertions are unsatisfiable
@@ -330,7 +328,7 @@ newSolver exe opts mbLog = do
             errs <- Text.Lazy.hGetLine hErr
             info ("[stderr] " <> errs)
 
-    let send c = traceShow c $ do
+    let send c = do
             (info . Text.Builder.toLazyText) ("[send] " <> buildSExpr c)
             sendSExpr hIn c
             hPutChar hIn '\n'
