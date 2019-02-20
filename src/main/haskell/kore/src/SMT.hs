@@ -204,7 +204,6 @@ The declared name is returned as an expression for convenience.
 escapeId :: Text -> Text
 escapeId name = "|" <> name <> "|"
 
-
 -- | Declares a general SExpr to SMT.
 declare :: MonadSMT m => Text -> SExpr -> m SExpr
 declare name typ =
