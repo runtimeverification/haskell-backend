@@ -167,6 +167,24 @@ unit_5 =
             ]
         )
 
+-- | Tests that translateSMT can translate `f(0)` into a
+-- dummy variable `<0>`, where `f` is an uninterpreted function.
+unit_6 :: Assertion
+unit_6 =
+    assertRefuted
+    $ makeEqualsPredicate
+        (Builtin.Bool.asInternal True)
+        (mkApp boolSort Builtin.andBoolSymbol
+            [ mkApp boolSort Builtin.eqIntSymbol
+                [ mkApp intSort Builtin.dummyIntSymbol [Builtin.Int.intLiteral 0]
+                , Builtin.Int.intLiteral 123
+                ]
+            , mkApp boolSort Builtin.eqIntSymbol
+                [ mkApp intSort Builtin.dummyIntSymbol [Builtin.Int.intLiteral 0]
+                , Builtin.Int.intLiteral 456
+                ]
+            ]
+        )
 
 unit_div :: Assertion
 unit_div =
