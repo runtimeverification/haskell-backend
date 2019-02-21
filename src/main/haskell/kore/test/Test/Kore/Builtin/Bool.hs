@@ -13,7 +13,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
-import qualified Kore.Domain.Builtin as Domain
+import           Kore.Domain.Builtin()
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
@@ -21,7 +21,7 @@ import           Kore.Step.StepperAttributes
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Comparators
+import Test.Kore.Comparators()
 import Test.SMT
 
 test_or :: TestTree
