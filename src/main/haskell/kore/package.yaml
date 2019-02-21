@@ -48,6 +48,7 @@ dependencies:
   - mtl
   - optparse-applicative
   - parser-combinators
+  - pipes
   - prettyprinter
   - process
   - recursion-schemes

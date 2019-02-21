@@ -36,6 +36,8 @@ module Kore.Step.OrOfExpandedPattern
     , traverseFlattenWithPairsGeneric
     ) where
 
+import           Control.Applicative
+                 ( Alternative )
 import           Control.DeepSeq
                  ( NFData )
 import           Data.List
@@ -70,8 +72,17 @@ patterns.
 
 -}
 newtype MultiOr child = MultiOr { getMultiOr :: [child] }
-  deriving
-    (Applicative, Eq, Foldable, Functor, Generic, Monad, Show, Traversable)
+    deriving
+        ( Alternative
+        , Applicative
+        , Eq
+        , Foldable
+        , Functor
+        , Generic
+        , Monad
+        , Show
+        , Traversable
+        )
 
 instance NFData child => NFData (MultiOr child)
 
