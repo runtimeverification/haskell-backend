@@ -130,6 +130,10 @@ log2IntSymbol = builtinSymbol "log2Int"
 emodIntSymbol :: SymbolOrAlias Object
 emodIntSymbol = builtinSymbol "emodInt"
 
+-- an unhooked, uninterpreted function f : Int -> Int
+dummyIntSymbol :: SymbolOrAlias Object
+dummyIntSymbol = builtinSymbol "f"
+
 -- ** KEQUAL
 
 keqBoolSymbol :: SymbolOrAlias Object
@@ -554,6 +558,39 @@ hookedSymbolDecl
             , symbolParams = []
             }
 
+-- | Declare a symbol with no hook.
+unhookedSymbolDecl
+    :: SymbolOrAlias Object
+    -- ^ symbol
+    -> Sort Object
+    -- ^ result sort
+    -> [Sort Object]
+    -- ^ argument sorts
+    -> [CommonKorePattern]
+    -- ^ declaration attributes
+    -> KoreSentence
+unhookedSymbolDecl
+    SymbolOrAlias { symbolOrAliasConstructor }
+    sentenceSymbolResultSort
+    sentenceSymbolSorts
+    (Attributes -> sentenceSymbolAttributes)
+  =
+    asSentence sentence
+  where
+    sentence :: KoreSentenceSymbol Object
+    sentence =
+        SentenceSymbol
+            { sentenceSymbolSymbol
+            , sentenceSymbolSorts
+            , sentenceSymbolResultSort
+            , sentenceSymbolAttributes
+            }
+    sentenceSymbolSymbol =
+        Symbol
+            { symbolConstructor = symbolOrAliasConstructor
+            , symbolParams = []
+            }
+
 importKoreModule :: ModuleName -> KoreSentence
 importKoreModule moduleName =
     asSentence sentence
@@ -648,6 +685,8 @@ intModule =
                 [hookAttribute "INT.tmod", smtlibAttribute "mod"]
             , binarySymbolDecl emodIntSymbol
                 [hookAttribute "INT.emod", smtlibAttribute "mod"]
+            , unhookedUnarySymbolDecl dummyIntSymbol
+                []
             , binarySymbolDecl andIntSymbol
                 [hookAttribute "INT.and"]
             , binarySymbolDecl orIntSymbol
@@ -680,6 +719,9 @@ intModule =
 
     binarySymbolDecl symbol =
         hookedSymbolDecl symbol intSort [intSort, intSort]
+
+    unhookedUnarySymbolDecl symbol =
+        unhookedSymbolDecl symbol intSort [intSort]
 
 -- ** KEQUAL
 

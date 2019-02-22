@@ -168,7 +168,9 @@ translatePredicate translateUninterpreted predicate =
                 return $ SMT.int $ Builtin.Int.extractIntDomainValue
                     "while translating dv to SMT.int" dv
             ApplicationPattern app ->
-                translateApplication app
+                (<|>)
+                    (translateApplication app)
+                    (translateUninterpreted SMT.tInt pat)
             _ -> empty
 
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
@@ -191,7 +193,9 @@ translatePredicate translateUninterpreted predicate =
                 -- will fail to translate.
                 SMT.not <$> translateBool notChild
             ApplicationPattern app ->
-                translateApplication app
+                (<|>)
+                    (translateApplication app)
+                    (translateUninterpreted SMT.tBool pat)
             _ -> empty
 
     translateApplication
