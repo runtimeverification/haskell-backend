@@ -25,7 +25,7 @@ import qualified Kore.Attribute.Parser as Parser
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload =
     Overload
-        { overload :: Maybe (SymbolOrAlias Object, SymbolOrAlias Object) }
+        { getOverload :: Maybe (SymbolOrAlias Object, SymbolOrAlias Object) }
     deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Overload where
@@ -33,7 +33,7 @@ instance Semigroup Overload where
     (<>) _                     b = b
 
 instance Monoid Overload where
-    mempty = Overload { overload = Nothing }
+    mempty = Overload { getOverload = Nothing }
 
 instance Default Overload where
     def = mempty
@@ -78,13 +78,13 @@ overloadAttribute symbol1 symbol2 =
 instance ParseAttributes Overload where
     parseAttribute = withApplication parseApplication
       where
-        parseApplication params args Overload { overload }
-          | Just _ <- overload = failDuplicate
+        parseApplication params args Overload { getOverload }
+          | Just _ <- getOverload = failDuplicate
           | otherwise = do
             Parser.getZeroParams params
             (arg1, arg2) <- Parser.getTwoArguments args
             symbol1 <- Parser.getSymbolOrAlias arg1
             symbol2 <- Parser.getSymbolOrAlias arg2
-            return Overload { overload = Just (symbol1, symbol2) }
+            return Overload { getOverload = Just (symbol1, symbol2) }
         withApplication = Parser.withApplication overloadId
         failDuplicate = Parser.failDuplicate overloadId

@@ -23,19 +23,20 @@ import           Data.Maybe
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
+import           Kore.Attribute.Axiom
+                 ( Assoc (Assoc), Comm (Comm), Idem (Idem), Unit (Unit) )
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Overload
 import           Kore.Attribute.Simplification
                  ( Simplification (..) )
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Step.AxiomPatterns
-                 ( Assoc (Assoc), AxiomPatternAttributes, Comm (Comm),
-                 EqualityRule (EqualityRule), Idem (Idem),
+                 ( EqualityRule (EqualityRule),
                  QualifiedAxiomPattern (FunctionAxiomPattern, RewriteAxiomPattern),
-                 RulePattern (RulePattern), Unit (Unit),
+                 RulePattern (RulePattern),
                  verifiedKoreSentenceToAxiomPattern )
-import qualified Kore.Step.AxiomPatterns as AxiomPatterns
-                 ( Assoc (..), AxiomPatternAttributes (..), Comm (..),
-                 Idem (..), RulePattern (..), Unit (..) )
+import qualified Kore.Step.AxiomPatterns
+                 ( RulePattern (..) )
 import           Kore.Step.Function.Data
                  ( BuiltinAndAxiomSimplifier (..) )
 import           Kore.Step.Function.EvaluationStrategy
@@ -56,7 +57,7 @@ extractFunctionAxioms
     ::  forall level.
         MetaOrObject level
     => level
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -> Map (AxiomIdentifier level) [EqualityRule level Variable]
 extractFunctionAxioms level =
     \imod ->
@@ -68,7 +69,7 @@ extractFunctionAxioms level =
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
         :: Map (AxiomIdentifier level) [EqualityRule level Variable]
-        -> VerifiedModule StepperAttributes AxiomPatternAttributes
+        -> VerifiedModule StepperAttributes Attribute.Axiom
         -> Map (AxiomIdentifier level) [EqualityRule level Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
@@ -141,7 +142,7 @@ axiomPatternsToEvaluators =
                 isSimplification
               where
                 Simplification { isSimplification } =
-                    AxiomPatterns.simplification attributes
+                    Attribute.simplification attributes
         simplification :: [BuiltinAndAxiomSimplifier level]
         simplification = mkSimplifier <$> simplifications
           where
@@ -171,11 +172,11 @@ ignoreEqualityRule (EqualityRule RulePattern { attributes })
     -- extraction of their axioms.
     | isUnit = True
     | isIdem = True
-    | Just _ <- overload = True
+    | Just _ <- getOverload = True
     | otherwise = False
   where
-    Assoc { isAssoc } = AxiomPatterns.assoc attributes
-    Comm { isComm } = AxiomPatterns.comm attributes
-    Unit { isUnit } = AxiomPatterns.unit attributes
-    Idem { isIdem } = AxiomPatterns.idem attributes
-    Overload { overload } = AxiomPatterns.overload attributes
+    Assoc { isAssoc } = Attribute.assoc attributes
+    Comm { isComm } = Attribute.comm attributes
+    Unit { isUnit } = Attribute.unit attributes
+    Idem { isIdem } = Attribute.idem attributes
+    Overload { getOverload } = Attribute.overload attributes

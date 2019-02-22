@@ -28,6 +28,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Meta, Object (..) )
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
@@ -41,9 +42,8 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  unwrapPredicate )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes (trusted),
-                 EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), Trusted (..), extractRewriteAxioms,
+                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern), extractRewriteAxioms,
                  extractRewriteClaims )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
@@ -119,7 +119,7 @@ data Execution =
 
 -- | Symbolic execution
 exec
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -137,7 +137,7 @@ exec indexedModule strategy purePattern = do
 
 -- | Symbolic search
 search
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -176,9 +176,9 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
 -- | Proving a spec given as a module containing rules to be proven
 prove
     :: Limit Natural
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> Simplifier (Either (CommonStepPattern Object) ())
 prove limit definitionModule specModule = do
@@ -207,18 +207,17 @@ prove limit definitionModule specModule = do
     makeClaim (attributes, rule) = Claim { rule , attributes }
     simplifyRuleOnSecond
         :: MetadataTools Object StepperAttributes
-        -> (AxiomPatternAttributes, Rewrite)
-        -> Simplifier (AxiomPatternAttributes, Rewrite)
+        -> (Attribute.Axiom, Rewrite)
+        -> Simplifier (Attribute.Axiom, Rewrite)
     simplifyRuleOnSecond tools (atts, rule) = do
         rule' <- simplifyRewriteRule tools rule
         return (atts, rule')
     extractUntrustedClaims :: [Claim Object] -> [Rewrite]
-    extractUntrustedClaims =
-        map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)
+    extractUntrustedClaims = map Claim.rule . filter (not . Claim.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.
 execute
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -261,7 +260,7 @@ execute verifiedModule strategy inputPattern
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -> MetadataTools Object StepperAttributes
     -> Simplifier Initialized
 initialize verifiedModule tools =

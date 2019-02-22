@@ -27,6 +27,7 @@ import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -34,7 +35,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes, RewriteRule )
+                 ( RewriteRule )
 import           Kore.Step.BaseStep
                  ( StepProof, StepResult (StepResult), stepWithRewriteRule )
 import qualified Kore.Step.BaseStep as StepResult
@@ -123,7 +124,7 @@ verify
     -> Either
         (Kore.Error.Error VerifyError)
         (Map
-            ModuleName (VerifiedModule StepperAttributes AxiomPatternAttributes)
+            ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
         )
 verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
@@ -135,8 +136,8 @@ verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
+    -> VerifiedModule StepperAttributes Attribute.Axiom
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =
@@ -166,11 +167,11 @@ constructorFunctions ixm =
         (attrs, attributes, constructorFunctions importedModule)
 
 verifiedModules
-    :: Map ModuleName (VerifiedModule StepperAttributes AxiomPatternAttributes)
+    :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
+verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 testMetadataTools :: MetadataTools Object StepperAttributes

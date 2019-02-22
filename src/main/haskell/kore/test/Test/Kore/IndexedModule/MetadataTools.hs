@@ -15,6 +15,7 @@ import           Kore.AST.Kore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import qualified Kore.Attribute.Null as Attribute
@@ -26,8 +27,6 @@ import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
-import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes )
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 
@@ -104,7 +103,7 @@ testDefinition =
                 ]
             }
 
-testVerifiedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
+testVerifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 testVerifiedModule =
     case
         verifyAndIndexDefinition

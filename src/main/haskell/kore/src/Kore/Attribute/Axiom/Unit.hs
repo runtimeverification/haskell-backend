@@ -1,12 +1,12 @@
 {-|
-Module      : Kore.Attribute.Unit
+Module      : Kore.Attribute.Axiom.Unit
 Description : Unit axiom attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
-module Kore.Attribute.Unit
+module Kore.Attribute.Axiom.Unit
     ( Unit (..)
     , unitId, unitSymbol, unitAttribute
     ) where

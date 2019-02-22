@@ -12,6 +12,7 @@ import Data.List
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
@@ -19,8 +20,7 @@ import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
-                 RulePattern (RulePattern) )
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
@@ -91,7 +91,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
-                    , attributes = def { concrete = Concrete True }
+                    , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
                 (mockSimplifier [])
@@ -107,7 +107,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 Mock.a
                     , right = Mock.functionalConstr11 Mock.a
                     , requires = makeTruePredicate
-                    , attributes = def { concrete = Concrete True }
+                    , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
                 (mockSimplifier [])

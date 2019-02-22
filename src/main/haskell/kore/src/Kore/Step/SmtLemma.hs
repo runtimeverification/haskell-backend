@@ -27,13 +27,13 @@ import qualified Data.Text as Text
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.SmtLemma
 import           Kore.Attribute.Smtlib
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-import           Kore.Step.AxiomPatterns
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
 import           Kore.Step.TranslateSMT
@@ -58,7 +58,7 @@ declareSMTLemmas
             param
             (KorePattern dom Variable (Unified (Valid (Unified Variable))))
             StepperAttributes
-            AxiomPatternAttributes
+            Attribute.Axiom
     -> m ()
 declareSMTLemmas m = SMT.liftSMT $ do
     mapM_ declareSort (indexedModuleObjectSortDescriptions m)
@@ -110,7 +110,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
             _ -> pure ()
     declareRule
         :: forall sortParam . (Given (MetadataTools Object StepperAttributes))
-        => ( AxiomPatternAttributes
+        => ( Attribute.Axiom
            , SentenceAxiom
                 sortParam
                 (KorePattern
@@ -121,7 +121,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
            )
         -> SMT (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
-        guard (isSmtLemma $ smtLemma atts)
+        guard (isSmtLemma $ Attribute.smtLemma atts)
         pat <- getRight
             $ fromKorePattern Object
             $ sentenceAxiomPattern axiomDeclaration

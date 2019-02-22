@@ -42,6 +42,7 @@ import           Data.Text
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Builtin.Bool as Bool
@@ -60,8 +61,6 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes )
 import           Kore.Step.Function.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Function.Identifier as AxiomIdentifier
@@ -115,7 +114,7 @@ koreVerifiers =
 
  -}
 koreEvaluators
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
     -> Map (AxiomIdentifier Object) Builtin.Function
 koreEvaluators = evaluators builtins
@@ -144,7 +143,7 @@ koreEvaluators = evaluators builtins
 evaluators
     :: Map Text Builtin.Function
     -- ^ Builtin functions indexed by name
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
     -> Map (AxiomIdentifier Object) Builtin.Function
 evaluators builtins indexedModule =
@@ -156,7 +155,7 @@ evaluators builtins indexedModule =
         )
   where
     hookedSymbolAttributes
-        :: VerifiedModule StepperAttributes AxiomPatternAttributes
+        :: VerifiedModule StepperAttributes Attribute.Axiom
         -> Map (Id Object) StepperAttributes
     hookedSymbolAttributes im =
         Map.union
@@ -168,7 +167,7 @@ evaluators builtins indexedModule =
         justAttributes (attrs, _) = attrs
 
     importHookedSymbolAttributes
-        :: (a, b, VerifiedModule StepperAttributes AxiomPatternAttributes)
+        :: (a, b, VerifiedModule StepperAttributes Attribute.Axiom)
         -> Map (Id Object) StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 

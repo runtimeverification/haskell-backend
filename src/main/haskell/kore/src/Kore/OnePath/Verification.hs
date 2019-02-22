@@ -11,6 +11,7 @@ This should be imported qualified.
 module Kore.OnePath.Verification
     ( Axiom (..)
     , Claim (..)
+    , isTrusted
     , defaultStrategy
     , verify
     ) where
@@ -34,6 +35,7 @@ import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
                  ( IsMetaOrObject (..), MetaOrObject (..) )
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -42,8 +44,7 @@ import           Kore.OnePath.Step
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes, RewriteRule (RewriteRule),
-                 RulePattern (RulePattern) )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern
@@ -66,8 +67,13 @@ import           Kore.Step.Strategy
 -}
 data Claim level = Claim
     { rule :: !(RewriteRule level Variable)
-    , attributes :: !AxiomPatternAttributes
+    , attributes :: !Attribute.Axiom
     }
+
+-- | Is the 'Claim' trusted?
+isTrusted :: Claim level -> Bool
+isTrusted Claim { attributes = Attribute.Axiom { trusted } }=
+    Attribute.isTrusted trusted
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
