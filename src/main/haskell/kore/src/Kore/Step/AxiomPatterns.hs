@@ -21,6 +21,7 @@ module Kore.Step.AxiomPatterns
     , lensTrusted, Trusted (..)
     , lensSimplification, Simplification (..)
     , lensOverload, Overload
+    , lensLabel, Label
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -66,6 +67,7 @@ import qualified Kore.Attribute.Axiom.Concrete as Axiom
 import           Kore.Attribute.Comm
 import           Kore.Attribute.HeatCool
 import           Kore.Attribute.Idem
+import           Kore.Attribute.Label
 import           Kore.Attribute.Overload
                  ( Overload )
 import           Kore.Attribute.Parser
@@ -109,6 +111,9 @@ data AxiomPatternAttributes =
     , overload :: !Overload
     -- ^ The axiom is an overloaded-production axiom.
     , smtLemma :: !SmtLemma
+    -- ^ The axiom should be sent to SMT as a lemma.
+    , label :: !Label
+    -- ^ The user-defined label associated with the axiom.
     }
     deriving (Eq, Ord, Show, Generic)
 
@@ -130,6 +135,7 @@ instance Default AxiomPatternAttributes where
             , simplification = def
             , overload = def
             , smtLemma = def
+            , label = def
             }
 
 instance ParseAttributes AxiomPatternAttributes where
@@ -145,6 +151,7 @@ instance ParseAttributes AxiomPatternAttributes where
         Monad.>=> lensSimplification (parseAttribute attr)
         Monad.>=> lensOverload (parseAttribute attr)
         Monad.>=> lensSmtLemma (parseAttribute attr)
+        Monad.>=> lensLabel (parseAttribute attr)
 
 newtype AxiomPatternError = AxiomPatternError ()
 
