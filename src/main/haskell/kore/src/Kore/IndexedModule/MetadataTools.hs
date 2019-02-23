@@ -22,12 +22,13 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.Attribute.Subsort
-import Kore.IndexedModule.IndexedModule
-import Kore.IndexedModule.Resolvers
-import Kore.Sort
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import qualified Kore.Attribute.Sort as Attribute
+import           Kore.Attribute.Subsort
+import           Kore.IndexedModule.IndexedModule
+import           Kore.IndexedModule.Resolvers
+import           Kore.Sort
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
@@ -36,7 +37,7 @@ data MetadataTools level attributes = MetadataTools
     -- ^ get the attributes of a symbol or alias
     , symbolOrAliasType :: SymbolOrAlias level -> HeadType
     -- ^ whether a symbol or alias is a symbol
-    , sortAttributes :: Sort level -> attributes
+    , sortAttributes :: Sort level -> Attribute.Sort
     -- ^ get the attributes of a sort
     , isSubsortOf :: Sort level -> Sort level -> Bool
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,

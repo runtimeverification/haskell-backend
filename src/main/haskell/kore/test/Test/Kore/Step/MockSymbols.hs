@@ -20,6 +20,7 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
+import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -33,6 +34,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
@@ -1222,43 +1224,43 @@ headTypeMapping =
         )
     ]
 
-sortAttributesMapping :: [(Sort Object, StepperAttributes)]
+sortAttributesMapping :: [(Sort Object, Attribute.Sort)]
 sortAttributesMapping =
     [   ( testSort
-        , Mock.defaultAttributes
+        , Default.def
         )
     ,   ( testSort0
-        , Mock.defaultAttributes
+        , Default.def
         )
     ,   ( testSort1
-        , Mock.defaultAttributes
+        , Default.def
         )
     ,   ( topSort
-        , Mock.defaultAttributes
+        , Default.def
         )
     ,   ( subSort
-        , Mock.defaultAttributes
+        , Default.def
         )
     ,   ( subSubSort
-        , Mock.defaultAttributes
+        , Default.def
         )
     ,   ( otherSort
-        , Mock.defaultAttributes
+        , Default.def
         )
     ,   ( mapSort
-        , Mock.defaultAttributes { hook = Hook (Just "MAP.Map") }
+        , Default.def { Attribute.hook = Hook (Just "MAP.Map") }
         )
     ,   ( listSort
-        , Mock.defaultAttributes { hook = Hook (Just "LIST.List") }
+        , Default.def { Attribute.hook = Hook (Just "LIST.List") }
         )
     ,   ( setSort
-        , Mock.defaultAttributes { hook = Hook (Just "SET.Set") }
+        , Default.def { Attribute.hook = Hook (Just "SET.Set") }
         )
     ,   ( intSort
-        , Mock.defaultAttributes { hook = Hook (Just "INT.Int") }
+        , Default.def { Attribute.hook = Hook (Just "INT.Int") }
         )
     ,   ( boolSort
-        , Mock.defaultAttributes { hook = Hook (Just "BOOL.Bool") }
+        , Default.def { Attribute.hook = Hook (Just "BOOL.Bool") }
         )
     ]
 

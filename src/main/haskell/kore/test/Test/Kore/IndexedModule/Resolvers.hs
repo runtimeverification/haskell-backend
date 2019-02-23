@@ -19,6 +19,7 @@ import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
@@ -146,7 +147,7 @@ test_resolvers :: [TestTree]
 test_resolvers =
     [ testCase "object sort"
         (assertEqual ""
-            (Right (def :: Attribute.Null, SentenceSort
+            (Right (def :: Attribute.Sort, SentenceSort
                 { sentenceSortName = testId "s1"
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes [strictAttribute]
@@ -156,7 +157,7 @@ test_resolvers =
         )
     , testCase "meta sort"
         (assertEqual ""
-            (Right (def :: Attribute.Null, SentenceSort
+            (Right (def :: Attribute.Sort, SentenceSort
                 { sentenceSortName = charMetaId
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes []
