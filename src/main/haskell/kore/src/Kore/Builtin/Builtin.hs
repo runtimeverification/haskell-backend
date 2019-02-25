@@ -31,6 +31,9 @@ module Kore.Builtin.Builtin
     , makeNonEncodedDomainValueVerifier
       -- * Declaring builtin verifiers
     , verifySortDecl
+    , getUnitId
+    , assertSymbolHook
+    , assertSymbolResultSort
     , verifySort
     , acceptAnySort
     , verifySymbol
@@ -63,6 +66,7 @@ import           Control.Error
                  ( MaybeT (..), fromMaybe )
 import           Control.Monad
                  ( zipWithM_ )
+import qualified Control.Monad as Monad
 import qualified Data.Functor.Foldable as Recursive
 import           Data.HashMap.Strict
                  ( HashMap )
@@ -78,6 +82,7 @@ import           Text.Megaparsec
                  ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
+import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
@@ -88,13 +93,16 @@ import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Builtin.Error
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
                  ( Error )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( SortDescription, VerifiedModule )
+                 ( KoreIndexedModule, SortDescription, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
@@ -131,9 +139,13 @@ type HookedSortDescription = SortDescription Object Domain.Builtin
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
-       KoreSentenceSort Object
+        KoreIndexedModule Attribute.Null Attribute.Null
+    -- ^ Indexed module, to look up symbol declarations
+    ->  KoreSentenceSort Object
     -- ^ Sort declaration to verify
-    -> Either (Error VerifyError) ()
+    ->  Attribute.Sort
+    -- ^ Declared sort attributes
+    ->  Either (Error VerifyError) ()
 
 type SortVerifier =
         (Id Object -> Either (Error VerifyError) HookedSortDescription)
@@ -197,7 +209,7 @@ sortDeclVerifier Verifiers { sortDeclVerifiers } hook =
                 -- 1. the sort is not hooked, or
                 -- 2. there is no SortVerifier registered to the hooked name.
                 -- In either case, there is nothing more to do.
-                \_ -> pure ()
+                \_ _ _ -> pure ()
             Just verifier ->
                 -- Invoke the verifier that is registered to this builtin sort.
                 verifier
@@ -239,13 +251,89 @@ notImplemented =
 
  -}
 verifySortDecl :: SortDeclVerifier
-verifySortDecl SentenceSort { sentenceSortParameters } =
-    case sentenceSortParameters of
-        [] -> pure ()
-        _ ->
+verifySortDecl _ SentenceSort { sentenceSortParameters } _ =
+    getZeroParams sentenceSortParameters
+
+{- | Throw a 'VerifyError' if there are any sort parameters.
+ -}
+getZeroParams :: [SortVariable level] -> Either (Error VerifyError) ()
+getZeroParams =
+    \case
+        [] -> return ()
+        params ->
             Kore.Error.koreFail
-                ("Expected 0 sort parameters, found "
-                    ++ show (length sentenceSortParameters))
+                ("Expected 0 sort parameters, found " ++ show (length params))
+
+{- | Get the identifier of the @unit@ sort attribute.
+
+Fail if the attribute is missing.
+
+ -}
+getUnitId
+    :: Attribute.Sort
+    -- ^ Sort attributes
+    -> Either (Error VerifyError) (Id Object)
+getUnitId Attribute.Sort { unit = Attribute.Sort.Unit sortUnit } =
+    case sortUnit of
+        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+            return symbolOrAliasConstructor
+        Nothing -> Kore.Error.koreFail "Missing 'unit' attribute."
+
+{- | Check that the symbol's @hook@ attribute matches the expected value.
+
+Fail if the symbol is not defined or the attribute is missing.
+
+ -}
+assertSymbolHook
+    :: KoreIndexedModule declAttrs axiomAttrs
+    -> Id Object
+    -- ^ Symbol identifier
+    -> Text
+    -- ^ Expected hook
+    -> Either (Error VerifyError) ()
+assertSymbolHook indexedModule symbolId expected = do
+    (_, decl) <- IndexedModule.resolveSymbol indexedModule symbolId
+    let
+        SentenceSymbol { sentenceSymbolAttributes = attrs } = decl
+        SentenceSymbol { sentenceSymbolSymbol = symbol } = decl
+    Hook { getHook } <- Verifier.Attributes.parseAttributes attrs
+    case getHook of
+        Just hook
+          | hook == expected -> return ()
+          | otherwise ->
+            Kore.Error.koreFailWithLocations
+                [symbol]
+                ("Symbol is not hooked to builtin symbol '"
+                    ++ expectedForError ++ "'")
+          where
+            expectedForError = Text.unpack expected
+        Nothing ->
+            Kore.Error.koreFailWithLocations
+                [symbol]
+                "Missing 'hook' attribute"
+
+{- | Check that the symbol's result sort matches the expected value.
+
+Fail if the symbol is not defined.
+
+ -}
+assertSymbolResultSort
+    :: KoreIndexedModule declAttrs axiomAttrs
+    -> Id Object
+    -- ^ Symbol identifier
+    -> Sort Object
+    -- ^ Expected result sort
+    -> Either (Error VerifyError) ()
+assertSymbolResultSort indexedModule symbolId expectedSort = do
+    (_, decl) <- IndexedModule.resolveSymbol indexedModule symbolId
+    let
+        SentenceSymbol { sentenceSymbolResultSort = actualSort } = decl
+        SentenceSymbol { sentenceSymbolSymbol = symbol } = decl
+    Monad.unless (actualSort == expectedSort)
+        $ Kore.Error.koreFailWithLocations
+            [symbol]
+            ("Symbol does not return sort '"
+                ++ unparseToString expectedSort ++ "'")
 
 {- | Verify the occurrence of a builtin sort.
 

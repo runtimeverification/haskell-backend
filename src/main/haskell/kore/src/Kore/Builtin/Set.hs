@@ -67,6 +67,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure as Kore
+import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -122,7 +123,18 @@ assertSort findSort = Builtin.verifySort findSort sort
 
  -}
 sortDeclVerifiers :: Builtin.SortDeclVerifiers
-sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
+sortDeclVerifiers =
+    HashMap.fromList [ (sort, verifySortDecl) ]
+  where
+    verifySortDecl indexedModule sentenceSort attrs = do
+        Builtin.verifySortDecl indexedModule sentenceSort attrs
+        unitId <- Builtin.getUnitId attrs
+        Builtin.assertSymbolHook indexedModule unitId unitKey
+        Builtin.assertSymbolResultSort indexedModule unitId expectedSort
+        return ()
+      where
+        SentenceSort { sentenceSortName } = sentenceSort
+        expectedSort = mkSort sentenceSortName
 
 {- | Verify that hooked symbol declarations are well-formed.
 

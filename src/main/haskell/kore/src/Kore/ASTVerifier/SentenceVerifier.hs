@@ -27,6 +27,7 @@ import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import           Kore.ASTVerifier.SortVerifier
+import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -312,7 +313,15 @@ verifyHookSentence
                 indexedModule
                 attributesVerification
                 sentenceSortAttributes
-        Builtin.sortDeclVerifier builtinVerifiers hook sentence
+        attrs <-
+            Attribute.Parser.liftParser
+            $ Attribute.Parser.parseAttributes sentenceSortAttributes
+        Builtin.sortDeclVerifier
+            builtinVerifiers
+            hook
+            (makeIndexedModuleAttributesNull indexedModule)
+            sentence
+            attrs
         return verified
 
     verifyHookedSymbol
