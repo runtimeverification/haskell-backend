@@ -36,7 +36,6 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Reflection
                  ( Given )
-import qualified Data.Reflection as Reflection
 import           Data.Semigroup
                  ( (<>) )
 import           Data.Text
@@ -64,7 +63,7 @@ import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, extractMetadataTools )
+                 ( MetadataTools )
 import           Kore.Step.Function.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Function.Identifier as AxiomIdentifier
@@ -212,19 +211,17 @@ asPattern DomainValue { domainValueSort, domainValueChild } =
 
 {- | Externalize all builtin domain values in the given pattern.
 
-    All builtins will be rendered using their concrete Kore syntax. The given
-    indexed module must define the appropriate hooks.
+All builtins will be rendered using their concrete Kore syntax.
 
-    See also: 'asPattern'
+See also: 'asPattern'
 
  -}
 -- TODO (thomas.tuegel): Transform from Domain.Builtin to Domain.External.
 externalizePattern
-    :: VerifiedModule StepperAttributes axiomAttrs
-    -- ^ indexed module defining hooks for builtin domains
+    :: Given (MetadataTools Object StepperAttributes)
+    => CommonStepPattern Object
     -> CommonStepPattern Object
-    -> CommonStepPattern Object
-externalizePattern indexedModule =
+externalizePattern =
     Recursive.fold externalizePatternWorker
   where
     externalizePatternWorker
@@ -232,11 +229,8 @@ externalizePattern indexedModule =
         ->  CommonStepPattern Object
     externalizePatternWorker (ann :< pat) =
         case pat of
-            DomainValuePattern dv -> Reflection.give tools asPattern dv
+            DomainValuePattern dv -> asPattern dv
             _ -> Recursive.embed (ann :< pat)
-
-    tools :: MetadataTools Object StepperAttributes
-    tools = extractMetadataTools indexedModule
 
 {- | Extract the meta-level pattern argument of a domain value.
 
