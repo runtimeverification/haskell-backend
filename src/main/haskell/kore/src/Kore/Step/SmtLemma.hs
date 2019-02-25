@@ -24,6 +24,8 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
 import qualified Data.Text as Text
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
@@ -60,10 +62,12 @@ declareSMTLemmas
             StepperAttributes
             AxiomPatternAttributes
     -> m ()
-declareSMTLemmas m = SMT.liftSMT $ do
-    mapM_ declareSort (indexedModuleObjectSortDescriptions m)
-    mapM_ declareSymbol (indexedModuleObjectSymbolSentences m)
-    mapM_ declareRule (indexedModuleAxioms m)
+declareSMTLemmas m =
+      SMT.liftSMT
+    $ do
+        mapM_ declareSort (indexedModuleObjectSortDescriptions m)
+        mapM_ declareSymbol (indexedModuleObjectSymbolSentences m)
+        mapM_ declareRule (indexedModuleAxioms m)
   where
     declareSort
         :: (Given (MetadataTools Object StepperAttributes))
@@ -143,13 +147,22 @@ declareSMTLemmas m = SMT.liftSMT $ do
         :: Given (MetadataTools Object StepperAttributes)
         => Sort Object
         -> MaybeT SMT SExpr
-    translateSort sort@(SortActualSort (SortActual _ children)) =
-        case getSmtlib $ smtlib $ sortAttributes given sort of
-            Just sExpr -> do
-                children' <- mapM translateSort children
-                pure $ applySExpr sExpr children'
-            Nothing -> mzero
+    translateSort sort@(SortActualSort (SortActual _ children))
+        | lookupHook sort == Just "INT.Int"   = return (SMT.Atom "Int")
+        | lookupHook sort == Just "BOOL.Bool" = return (SMT.Atom "Bool")
+        | otherwise =
+            case getSmtlib $ smtlib $ sortAttributes given sort of
+                Just sExpr -> do
+                    children' <- mapM translateSort children
+                    pure $ applySExpr sExpr children'
+                Nothing -> mzero
     translateSort _ = mzero
+
+    lookupHook
+        :: Given (MetadataTools Object StepperAttributes)
+        => Sort Object
+        -> Maybe Text
+    lookupHook sort = getHook $ hook $ sortAttributes given sort
 
 getRight :: Alternative m => Either a b -> m b
 getRight (Right a) = pure a
