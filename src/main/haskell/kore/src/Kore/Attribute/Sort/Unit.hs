@@ -17,10 +17,7 @@ import Data.Default
 import GHC.Generics
        ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.AST.Kore
 
 -- | @Unit@ represents the @unit@ attribute for sorts.
 newtype Unit = Unit { getUnit :: Maybe (SymbolOrAlias Object) }
@@ -66,16 +63,3 @@ unitAttribute symbol =
                         }
                 ]
             }
-
-instance ParseAttributes Unit where
-    parseAttribute = withApplication parseApplication
-      where
-        parseApplication params args Unit { getUnit }
-          | Just _ <- getUnit = failDuplicate
-          | otherwise = do
-            Parser.getZeroParams params
-            arg <- Parser.getOneArgument args
-            symbol <- Parser.getSymbolOrAlias arg
-            return Unit { getUnit = Just symbol }
-        withApplication = Parser.withApplication unitId
-        failDuplicate = Parser.failDuplicate unitId

@@ -62,6 +62,7 @@ import           Kore.AST.Sentence
 import qualified Kore.Attribute.Hook.Hook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Error
                  ( Error, castError )
 import qualified Kore.Error
@@ -227,7 +228,7 @@ getSymbolOrAlias kore =
 
 {- | Accept a string literal.
  -}
-getStringLiteral :: CommonKorePattern -> Parser (StringLiteral)
+getStringLiteral :: CommonKorePattern -> Parser StringLiteral
 getStringLiteral kore =
     case Recursive.project kore of
         _ :< UnifiedMetaPattern (StringLiteralPattern lit) -> return lit
@@ -237,6 +238,7 @@ instance ParseAttributes Attribute.Sort where
     parseAttribute attr =
         Attribute.lensHook (parseAttribute attr)
         Monad.>=> Attribute.lensSmtlib (parseAttribute attr)
+        Monad.>=> Attribute.lensUnit (parseAttribute attr)
 
 {- | Parse the @hook@ Kore attribute, if present.
 
@@ -276,8 +278,7 @@ parseSExpr syntax =
                 _ -> incompleteParse
   where
     noParse = Kore.Error.koreFail "failed to parse S-expression"
-    incompleteParse =
-        Kore.Error.koreFail "failed to parse entire argument"
+    incompleteParse = Kore.Error.koreFail "failed to parse entire argument"
 
 instance ParseAttributes Attribute.Smtlib where
     parseAttribute =
@@ -291,3 +292,16 @@ instance ParseAttributes Attribute.Smtlib where
       where
         withApplication' = withApplication Attribute.smtlibId
         failDuplicate' = failDuplicate Attribute.smtlibId
+
+instance ParseAttributes Attribute.Sort.Unit where
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Attribute.Sort.Unit { getUnit }
+          | Just _ <- getUnit = failDuplicate'
+          | otherwise = do
+            getZeroParams params
+            arg <- getOneArgument args
+            symbol <- getSymbolOrAlias arg
+            return Attribute.Sort.Unit { getUnit = Just symbol }
+        withApplication' = withApplication Attribute.Sort.unitId
+        failDuplicate' = failDuplicate Attribute.Sort.unitId
