@@ -37,7 +37,8 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, merge, toExpandedPattern )
+                 ( extractPatterns, make, merge, toExpandedPattern,
+                 toPredicate )
 import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
@@ -238,9 +239,12 @@ makeEvaluateFunctionalOr
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateFunctionalOr tools substitutionSimplifier first seconds = do
+    (firstCeil, _proof0) <- Ceil.makeEvaluate tools substitutionSimplifier first
+    secondCeilsWithProofs <- mapM
+        (Ceil.makeEvaluate tools substitutionSimplifier)
+        seconds
     let
-        (firstCeil, _proof0) = Ceil.makeEvaluate tools first
-        secondCeils = map (dropProof . Ceil.makeEvaluate tools) seconds
+        (secondCeils, _proofs) = unzip secondCeilsWithProofs
         (firstNotCeil, _proof1) = Not.simplifyEvaluated firstCeil
         secondNotCeils = map (dropProof . Not.simplifyEvaluated) secondCeils
         oneNotBottom =
@@ -354,19 +358,17 @@ makeEvaluate
     second@Predicated
         { term = secondTerm }
   = do
+    (firstCeil, _proof1) <-
+        Ceil.makeEvaluate
+            tools
+            substitutionSimplifier
+            first { term = if termsAreEqual then mkTop_ else firstTerm }
+    (secondCeil, _proof2) <-
+        Ceil.makeEvaluate
+            tools
+            substitutionSimplifier
+            second { term = if termsAreEqual then mkTop_ else secondTerm }
     let
-        (firstCeil, _proof1) =
-            Ceil.makeEvaluate tools
-                first
-                    { term =
-                        if termsAreEqual then mkTop_ else firstTerm
-                    }
-        (secondCeil, _proof2) =
-            Ceil.makeEvaluate tools
-                second
-                    { term =
-                        if termsAreEqual then mkTop_ else secondTerm
-                    }
         (firstCeilNegation, _proof3) = Not.simplifyEvaluated firstCeil
         (secondCeilNegation, _proof4) = Not.simplifyEvaluated secondCeil
     (termEquality, _proof) <-
@@ -510,8 +512,17 @@ makeEvaluateTermsToPredicateSubstitution
                 , SimplificationProof
                 )
         Just (predicatedOr, _proof) -> do
-            let (firstCeil, _proof1) = Ceil.makeEvaluateTerm tools first
-                (secondCeil, _proof2) = Ceil.makeEvaluateTerm tools second
+            (firstCeilOr, _proof1) <-
+                Ceil.makeEvaluateTerm tools substitutionSimplifier first
+            (secondCeilOr, _proof2) <-
+                Ceil.makeEvaluateTerm tools substitutionSimplifier second
+            let
+                firstCeil =
+                    OrOfExpandedPattern.toPredicate
+                        (fmap ExpandedPattern.toPredicate firstCeilOr)
+                secondCeil =
+                    OrOfExpandedPattern.toPredicate
+                        (fmap ExpandedPattern.toPredicate secondCeilOr)
                 firstCeilNegation = makeNotPredicate firstCeil
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =

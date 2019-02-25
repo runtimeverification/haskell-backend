@@ -18,6 +18,7 @@ import           Control.Applicative
 import           Control.Error.Util
                  ( just, nothing )
 import           Control.Monad.Except
+import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
@@ -31,9 +32,13 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -55,7 +60,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutionsExcept )
+                 ( createPredicatesAndSubstitutionsMergerExcept,
+                 mergePredicatesAndSubstitutionsExcept )
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import           Kore.Unification.Procedure
@@ -203,7 +209,8 @@ match
   =
     matchEqualHeadPatterns
         tools substitutionSimplifier quantifiedVariables first second
-    <|> matchVariableFunction tools quantifiedVariables first second
+    <|> matchVariableFunction
+        tools substitutionSimplifier quantifiedVariables first second
 
 matchEqualHeadPatterns
     ::  forall level variable m.
@@ -570,36 +577,52 @@ unifyJoin tools substitutionSimplifier patterns = do
 -- assumes that, when applying the match to a pattern p, it will be split
 -- into (p-replacing-lhs-by-rhs[subst] and predicate) or (p and not predicate)
 matchVariableFunction
-    :: ( Show (variable level)
-       , SortedVariable variable
-       , MetaOrObject level
-       , Ord (variable level)
-       , Unparse (variable level)
-       , Monad m
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , Monad m
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , SortedVariable variable
+        , Unparse (variable level)
        )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT m (OrOfPredicateSubstitution level variable)
+    -> MaybeT
+        (ExceptT
+            (UnificationOrSubstitutionError level variable)
+            m
+        )
+        (OrOfPredicateSubstitution level variable)
 matchVariableFunction
     tools
+    substitutionSimplifier
     quantifiedVariables
     (Var_ var)
     second
   | not (var `Map.member` quantifiedVariables)
     && isFunctionPattern tools second
-  = case Ceil.makeEvaluateTerm tools second of
-        (predicate, _proof) ->
-            just $
-                OrOfExpandedPattern.make
-                    [ Predicated
-                        { term = ()
-                        , predicate
-                        , substitution = Substitution.wrap [(var, second)]
-                        }
-                    ]
-matchVariableFunction _ _ _ _ = nothing
+  = Monad.Trans.lift $ do
+    (ceilOr, _proof) <- Monad.Trans.lift $
+        Ceil.makeEvaluateTerm tools substitutionSimplifier second
+    (result, _proof) <-
+        OrOfExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
+            (createPredicatesAndSubstitutionsMergerExcept
+                tools
+                substitutionSimplifier
+            )
+            Predicated
+                { term = ()
+                , predicate = makeTruePredicate
+                , substitution = Substitution.wrap [(var, second)]
+                }
+            ceilOr
+    return result
+matchVariableFunction _ _ _ _ _ = nothing
 
 checkVariableEscapeOr
     ::  ( MetaOrObject level

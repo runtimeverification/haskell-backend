@@ -8,16 +8,23 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Substitution
-    ( mergePredicatesAndSubstitutions
+    ( PredicateSubstitutionMerger (..)
+    , createLiftedPredicatesAndSubstitutionsMerger
+    , createPredicatesAndSubstitutionsMerger
+    , createPredicatesAndSubstitutionsMergerExcept
+    , mergePredicatesAndSubstitutions
     , mergePredicatesAndSubstitutionsExcept
     , normalizePredicatedSubstitution
     , normalize
     ) where
 
-import Control.Monad.Except
-       ( ExceptT, lift, runExceptT, withExceptT )
-import Data.Foldable
-       ( fold )
+import           Control.Monad.Except
+                 ( ExceptT, lift, runExceptT, withExceptT )
+import           Control.Monad.Trans.Class
+                 ( MonadTrans )
+import qualified Control.Monad.Trans.Class as Monad.Trans
+import           Data.Foldable
+                 ( fold )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -49,6 +56,13 @@ import           Kore.Unification.UnifierImpl
                  ( normalizeSubstitutionDuplication )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+
+newtype PredicateSubstitutionMerger level variable m =
+    PredicateSubstitutionMerger
+    (  [Predicate level variable]
+    -> [Substitution level variable]
+    -> m (PredicateSubstitution level variable)
+    )
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
@@ -158,9 +172,6 @@ into a condition.
 
 If it does not know how to merge the substitutions, it will transform them into
 predicates and redo the merge.
-
-TODO(virgil): Reconsider: should this return an Either or is it safe to just
-make everything a Predicate?
 
 hs-boot: Please remember to update the hs-boot file when changing the signature.
 -}
@@ -292,3 +303,96 @@ normalizePredicatedSubstitution
             )
         Right (Predicated { predicate = p, substitution = s }, _) ->
             (Predicated term p s, EmptyUnificationProof)
+
+{-| Creates a 'PredicateSubstitutionMerger' that returns errors on unifications it
+can't handle.
+-}
+createPredicatesAndSubstitutionsMergerExcept
+    :: forall level variable m err .
+        ( Show (variable level)
+        , Unparse (variable level)
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        , Monad m
+        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionMerger level variable (err m)
+createPredicatesAndSubstitutionsMergerExcept tools substitutionSimplifier =
+    PredicateSubstitutionMerger worker
+  where
+    worker
+        :: [Predicate level variable]
+        -> [Substitution level variable]
+        -> (err m) (PredicateSubstitution level variable)
+    worker predicates substitutions = do
+        (merged, _proof) <- mergePredicatesAndSubstitutionsExcept
+            tools substitutionSimplifier predicates substitutions
+        return merged
+
+{-| Creates a 'PredicateSubstitutionMerger' that creates predicates for
+unifications it can't handle.
+-}
+createPredicatesAndSubstitutionsMerger
+    :: forall level variable m .
+        ( Show (variable level)
+        , Unparse (variable level)
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        , Monad m
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionMerger level variable m
+createPredicatesAndSubstitutionsMerger tools substitutionSimplifier =
+    PredicateSubstitutionMerger worker
+  where
+    worker
+        :: [Predicate level variable]
+        -> [Substitution level variable]
+        -> m (PredicateSubstitution level variable)
+    worker predicates substitutions = do
+        (merged, _proof) <- mergePredicatesAndSubstitutions
+            tools substitutionSimplifier predicates substitutions
+        return merged
+
+{-| Creates a 'PredicateSubstitutionMerger' that creates predicates for
+unifications it can't handle and whose result is in any monad transformer
+over the base monad.
+-}
+createLiftedPredicatesAndSubstitutionsMerger
+    :: forall level variable m t .
+        ( Show (variable level)
+        , Unparse (variable level)
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        , Monad m
+        , MonadTrans t
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionMerger level variable (t m)
+createLiftedPredicatesAndSubstitutionsMerger tools substitutionSimplifier =
+    PredicateSubstitutionMerger worker
+  where
+    worker
+        :: [Predicate level variable]
+        -> [Substitution level variable]
+        -> (t m) (PredicateSubstitution level variable)
+    worker predicates substitutions = Monad.Trans.lift $ do
+        (merged, _proof) <- mergePredicatesAndSubstitutions
+            tools substitutionSimplifier predicates substitutions
+        return merged

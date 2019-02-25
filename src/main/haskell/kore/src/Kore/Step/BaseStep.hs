@@ -575,7 +575,6 @@ applyUnificationToRhs
                         initialSubstitution
                 }
         }
-  where
 
 keepGoodResults
     :: ExceptT

@@ -31,6 +31,7 @@ module Kore.Step.OrOfExpandedPattern
     , crossProductGenericF
     , extractPatterns
     , toExpandedPattern
+    , toPredicate
     , traverseWithPairs
     , traverseFlattenWithPairs
     , traverseFlattenWithPairsGeneric
@@ -47,7 +48,8 @@ import           GHC.Generics
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( Predicate, makeFalsePredicate, makeOrPredicate,
+                 makeTruePredicate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -95,6 +97,11 @@ type OrOfExpandedPattern level variable
 -}
 type OrOfPredicateSubstitution level variable
     = OrOfPredicated level variable ()
+
+{-| 'OrOfPredicate' is a 'MultiOr' of 'Predicate'.
+-}
+type OrOfPredicate level variable =
+    MultiOr (Predicate level variable)
 
 {-| 'CommonOrOfExpandedPattern' particularizes 'OrOfExpandedPattern' to
 'Variable', following the same convention as the other Common* types.
@@ -483,3 +490,16 @@ toExpandedPattern (MultiOr patts) =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
+
+{-| Transforms an 'OrOfPredicate' into a 'Predicate'. -}
+toPredicate
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        )
+    => OrOfPredicate level variable -> Predicate level variable
+toPredicate (MultiOr []) = makeFalsePredicate
+toPredicate (MultiOr (predicate : predicates)) =
+    foldl' makeOrPredicate predicate predicates

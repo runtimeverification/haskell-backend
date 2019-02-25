@@ -8,7 +8,8 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Merging.ExpandedPattern
-    ( mergeWithPredicateSubstitution
+    ( mergeWithPredicateSubstitutionAssumesEvaluated
+    , mergeWithPredicateSubstitution
     ) where
 
 import Data.Reflection
@@ -29,7 +30,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
+                 ( PredicateSubstitutionMerger (PredicateSubstitutionMerger),
+                 mergePredicatesAndSubstitutions )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -125,6 +127,56 @@ mergeWithEvaluatedCondition
             substitutionSimplifier
             [predPredicate]
             [pattSubstitution, predSubstitution]
+    return
+        ( Predicated
+            { term = pattTerm
+            , predicate = mergedPredicate
+            , substitution = mergedSubstitution
+            }
+        , SimplificationProof
+        )
+
+{-| Ands the given predicate/substitution with the given pattern.
+
+Assumes that the initial patterns are simplified, so it does not attempt
+to re-simplify them.
+-}
+mergeWithPredicateSubstitutionAssumesEvaluated
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , Monad m
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , SortedVariable variable
+        , Unparse (variable level)
+        )
+    => PredicateSubstitutionMerger level variable m
+    -> PredicateSubstitution level variable
+    -> Predicated level variable term
+    -> m (Predicated level variable term, SimplificationProof level)
+mergeWithPredicateSubstitutionAssumesEvaluated
+    (PredicateSubstitutionMerger substitutionMerger)
+    Predicated
+        { term = ()
+        , predicate = predPredicate
+        , substitution = predSubstitution
+        }
+    Predicated
+        { term = pattTerm
+        , predicate = pattPredicate
+        , substitution = pattSubstitution
+        }  -- The predicate was already included in the PredicateSubstitution
+  = do
+    Predicated
+        { term = ()
+        , predicate = mergedPredicate
+        , substitution = mergedSubstitution
+        } <-
+            substitutionMerger
+                [pattPredicate, predPredicate]
+                [pattSubstitution, predSubstitution]
     return
         ( Predicated
             { term = pattTerm

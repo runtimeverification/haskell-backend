@@ -180,7 +180,7 @@ simplifyInternal
                 axiomIdToEvaluator
                 (valid :< p)
         BottomPattern p -> return $ Bottom.simplify p
-        CeilPattern p -> return $ Ceil.simplify tools p
+        CeilPattern p -> Ceil.simplify tools substitutionSimplifier p
         DomainValuePattern p -> return $ DomainValue.simplify tools p
         EqualsPattern p -> Equals.simplify tools substitutionSimplifier p
         ExistsPattern p ->
@@ -189,7 +189,7 @@ simplifyInternal
         ForallPattern p -> return $ Forall.simplify p
         IffPattern p -> return $ Iff.simplify p
         ImpliesPattern p -> return $ Implies.simplify p
-        InPattern p -> return $ In.simplify tools p
+        InPattern p -> In.simplify tools substitutionSimplifier p
         -- TODO(virgil): Move next up through patterns.
         NextPattern p -> return $ Next.simplify p
         NotPattern p -> return $ Not.simplify p
