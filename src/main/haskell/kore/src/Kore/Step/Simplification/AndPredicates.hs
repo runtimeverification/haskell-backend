@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.Simplification.And
+Module      : Kore.Step.Simplification.AndPredicates
 Description : Tools for And PredicateSubstitution simplification.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA

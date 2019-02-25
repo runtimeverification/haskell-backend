@@ -304,6 +304,9 @@ normalizePredicatedSubstitution
         Right (Predicated { predicate = p, substitution = s }, _) ->
             (Predicated term p s, EmptyUnificationProof)
 
+{-| Creates a 'PredicateSubstitutionMerger' that returns errors on unifications it
+can't handle.
+-}
 createPredicatesAndSubstitutionsMergerExcept
     :: forall level variable m err .
         ( Show (variable level)
@@ -332,6 +335,9 @@ createPredicatesAndSubstitutionsMergerExcept tools substitutionSimplifier =
             tools substitutionSimplifier predicates substitutions
         return merged
 
+{-| Creates a 'PredicateSubstitutionMerger' that creates predicates for
+unifications it can't handle.
+-}
 createPredicatesAndSubstitutionsMerger
     :: forall level variable m .
         ( Show (variable level)
@@ -359,6 +365,10 @@ createPredicatesAndSubstitutionsMerger tools substitutionSimplifier =
             tools substitutionSimplifier predicates substitutions
         return merged
 
+{-| Creates a 'PredicateSubstitutionMerger' that creates predicates for
+unifications it can't handle and whose result is in any monad transformer
+over the base monad.
+-}
 createLiftedPredicatesAndSubstitutionsMerger
     :: forall level variable m t .
         ( Show (variable level)
