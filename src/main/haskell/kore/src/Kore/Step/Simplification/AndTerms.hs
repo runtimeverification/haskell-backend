@@ -811,7 +811,9 @@ variableFunctionAndEquals
                         ++ show second
                         ++ " returned multiple results: "
                         ++ show resultOr
-                        ++ "."
+                        ++ ". This could happen, as an example, when"
+                        ++ " defining ceil(f(x))=g(x), and the evaluation for"
+                        ++ " g(x) splits the configuration."
                         )
     Predicated
         { term = ()
