@@ -127,6 +127,9 @@ sortDeclVerifiers =
         unitId <- Builtin.getUnitId attrs
         Builtin.assertSymbolHook indexedModule unitId unitKey
         Builtin.assertSymbolResultSort indexedModule unitId expectedSort
+        elementId <- Builtin.getElementId attrs
+        Builtin.assertSymbolHook indexedModule elementId elementKey
+        Builtin.assertSymbolResultSort indexedModule elementId expectedSort
         return ()
       where
         SentenceSort { sentenceSortName } = sentenceSort
@@ -386,8 +389,8 @@ asPattern indexedModule dvSort = do
     let
         symbolUnit = lookupSymbolUnit dvSort
         applyUnit = mkApp dvSort symbolUnit []
-    symbolElement <- lookupSymbolElement dvSort indexedModule
-    let applyElement (key, value) =
+        symbolElement = lookupSymbolElement dvSort
+        applyElement (key, value) =
             mkApp dvSort symbolElement [fromConcreteStepPattern key, value]
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
     let applyConcat map1 map2 = mkApp dvSort symbolConcat [map1, map2]
@@ -475,13 +478,17 @@ lookupSymbolLookup
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 
-{- | Find the symbol hooked to @MAP.element@ in an indexed module.
+{- | Find the symbol hooked to @element@.
+
+It is an error if the sort does not provide a @element@ attribute; this is
+checked during verification.
+
  -}
 lookupSymbolElement
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol elementKey
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolElement = Builtin.lookupSymbolElement
 
 {- | Find the symbol hooked to @MAP.concat@ in an indexed module.
  -}

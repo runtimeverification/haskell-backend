@@ -11,6 +11,7 @@ import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Injective
 import           Kore.Attribute.Smtlib
+import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
 import           Kore.Step.Pattern
@@ -169,6 +170,9 @@ unitList2Symbol = builtinSymbol "unitList2"
 
 elementListSymbol :: SymbolOrAlias Object
 elementListSymbol = builtinSymbol "elementList"
+
+elementList2Symbol :: SymbolOrAlias Object
+elementList2Symbol = builtinSymbol "elementList2"
 
 concatListSymbol :: SymbolOrAlias Object
 concatListSymbol = builtinSymbol "concatList"
@@ -418,6 +422,7 @@ listSortDecl =
         listSort
         [ hookAttribute "LIST.List"
         , Sort.unitAttribute unitListSymbol
+        , Sort.elementAttribute elementListSymbol
         ]
 
 -- | Another sort with the same hook
@@ -435,6 +440,7 @@ listSortDecl2 =
         listSort2
         [ hookAttribute "LIST.List"
         , Sort.unitAttribute unitList2Symbol
+        , Sort.elementAttribute elementList2Symbol
         ]
 
 -- ** Map
@@ -454,6 +460,7 @@ mapSortDecl =
         mapSort
         [ hookAttribute "MAP.Map"
         , Sort.unitAttribute unitMapSymbol
+        , Sort.elementAttribute elementMapSymbol
         ]
 
 -- ** Pair
@@ -502,6 +509,7 @@ setSortDecl =
         setSort
         [ hookAttribute "SET.Set"
         , Sort.unitAttribute unitSetSymbol
+        , Sort.elementAttribute elementSetSymbol
         ]
 
 -- ** String
@@ -865,6 +873,13 @@ listModule =
                 listSort2
                 []
                 [hookAttribute "LIST.unit"]
+            , hookedSymbolDecl
+                elementList2Symbol
+                listSort2
+                [intSort]
+                [ hookAttribute "LIST.element"
+                , functionalAttribute
+                ]
             ]
         }
 

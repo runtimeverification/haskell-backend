@@ -14,6 +14,7 @@ module Kore.Attribute.Sort
     , lensHook
     , lensSmtlib
     , lensUnit
+    , lensElement
     ) where
 
 import Control.DeepSeq
@@ -26,16 +27,19 @@ import GHC.Generics
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.Attribute.Hook.Hook
 import           Kore.Attribute.Smtlib.Smtlib
+import           Kore.Attribute.Sort.Element
 import           Kore.Attribute.Sort.Unit
 
 data Sort =
     Sort
-        { hook   :: !Hook
+        { hook    :: !Hook
         -- ^ The builtin sort hooked to the sort.
-        , smtlib :: !Smtlib
+        , smtlib  :: !Smtlib
         -- ^ The user-defined translation of the sort for SMT.
-        , unit   :: !Unit
+        , unit    :: !Unit
         -- ^ The unit symbol associated with the sort.
+        , element :: !Element
+        -- ^ The element symbol associated with the sort.
         }
     deriving (Eq, Generic, Ord, Show)
 
@@ -46,9 +50,10 @@ instance NFData Sort
 defaultSortAttributes :: Sort
 defaultSortAttributes =
     Sort
-        { hook   = def
-        , smtlib = def
-        , unit   = def
+        { hook    = def
+        , smtlib  = def
+        , unit    = def
+        , element = def
         }
 
 -- | See also: 'defaultSortAttributes'

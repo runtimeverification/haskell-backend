@@ -62,6 +62,7 @@ import           Kore.AST.Sentence
 import qualified Kore.Attribute.Hook.Hook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Error
                  ( Error, castError )
@@ -239,6 +240,7 @@ instance ParseAttributes Attribute.Sort where
         Attribute.lensHook (parseAttribute attr)
         Monad.>=> Attribute.lensSmtlib (parseAttribute attr)
         Monad.>=> Attribute.lensUnit (parseAttribute attr)
+        Monad.>=> Attribute.lensElement (parseAttribute attr)
 
 {- | Parse the @hook@ Kore attribute, if present.
 
@@ -305,3 +307,16 @@ instance ParseAttributes Attribute.Sort.Unit where
             return Attribute.Sort.Unit { getUnit = Just symbol }
         withApplication' = withApplication Attribute.Sort.unitId
         failDuplicate' = failDuplicate Attribute.Sort.unitId
+
+instance ParseAttributes Attribute.Sort.Element where
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Attribute.Sort.Element { getElement }
+          | Just _ <- getElement = failDuplicate'
+          | otherwise = do
+            getZeroParams params
+            arg <- getOneArgument args
+            symbol <- getSymbolOrAlias arg
+            return Attribute.Sort.Element { getElement = Just symbol }
+        withApplication' = withApplication Attribute.Sort.elementId
+        failDuplicate' = failDuplicate Attribute.Sort.elementId

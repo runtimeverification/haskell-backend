@@ -32,6 +32,7 @@ module Kore.Builtin.Builtin
       -- * Declaring builtin verifiers
     , verifySortDecl
     , getUnitId
+    , getElementId
     , assertSymbolHook
     , assertSymbolResultSort
     , verifySort
@@ -55,6 +56,7 @@ module Kore.Builtin.Builtin
     , appliedFunction
     , lookupSymbol
     , lookupSymbolUnit
+    , lookupSymbolElement
     , isSymbol
     , expectNormalConcreteTerm
     , getAttemptedAxiom
@@ -99,6 +101,7 @@ import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Builtin.Error
 import qualified Kore.Domain.Builtin as Domain
@@ -282,6 +285,21 @@ getUnitId Attribute.Sort { unit = Attribute.Sort.Unit sortUnit } =
         Just SymbolOrAlias { symbolOrAliasConstructor } ->
             return symbolOrAliasConstructor
         Nothing -> Kore.Error.koreFail "Missing 'unit' attribute."
+
+{- | Get the identifier of the @element@ sort attribute.
+
+Fail if the attribute is missing.
+
+ -}
+getElementId
+    :: Attribute.Sort
+    -- ^ Sort attributes
+    -> Either (Error VerifyError) (Id Object)
+getElementId Attribute.Sort { element = Attribute.Sort.Element sortElement } =
+    case sortElement of
+        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+            return symbolOrAliasConstructor
+        Nothing -> Kore.Error.koreFail "Missing 'element' attribute."
 
 {- | Check that the symbol's @hook@ attribute matches the expected value.
 
@@ -825,6 +843,32 @@ lookupSymbolUnit theSort =
     tools = Reflection.given
 
     Attribute.Sort { unit = Attribute.Sort.Unit { getUnit } } =
+        sortAttributes tools theSort
+
+{- | Find the symbol hooked to @element@.
+
+It is an error if the sort does not provide a @element@ attribute; this is
+checked during verification.
+
+ -}
+lookupSymbolElement
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolElement theSort =
+    case getElement of
+        Just symbol -> symbol
+        Nothing ->
+            (error . unlines)
+                [ "Internal error: missing 'element' attribute of sort '"
+                    ++ unparseToString theSort ++ "'"
+                , "This should be a verification error."
+                ]
+  where
+    tools :: MetadataTools Object StepperAttributes
+    tools = Reflection.given
+
+    Attribute.Sort { element = Attribute.Sort.Element { getElement } } =
         sortAttributes tools theSort
 
 {- | Is the given symbol hooked to the named builtin?
