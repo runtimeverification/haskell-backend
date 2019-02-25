@@ -27,6 +27,7 @@ module Kore.Builtin
     , asPattern
     , externalizePattern
     , asMetaPattern
+    , unparseStepPattern
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -40,6 +41,8 @@ import           Data.Semigroup
                  ( (<>) )
 import           Data.Text
                  ( Text )
+import           Data.Text.Prettyprint.Doc
+                 ( Doc )
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
@@ -71,6 +74,8 @@ import qualified Kore.Step.Function.Identifier as AxiomIdentifier
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
+import           Kore.Unparser
+                 ( Unparse (..) )
 
 {- | The default type of builtin domain values.
  -}
@@ -189,10 +194,12 @@ evaluators builtins indexedModule =
 
  -}
 asPattern
-    :: Given (MetadataTools Object StepperAttributes)
-    => Builtin
+    ::  ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        )
+    => DomainValue Object Domain.Builtin (StepPattern Object variable)
     -- ^ domain value
-    -> CommonStepPattern Object
+    -> StepPattern Object variable
 asPattern DomainValue { domainValueSort, domainValueChild } =
     case domainValueChild of
         Domain.BuiltinPattern _ ->
@@ -218,15 +225,18 @@ See also: 'asPattern'
  -}
 -- TODO (thomas.tuegel): Transform from Domain.Builtin to Domain.External.
 externalizePattern
-    :: Given (MetadataTools Object StepperAttributes)
-    => CommonStepPattern Object
-    -> CommonStepPattern Object
+    ::  forall variable.
+        ( Given (MetadataTools Object StepperAttributes)
+        , Ord (variable Object)
+        )
+    =>  StepPattern Object variable
+    ->  StepPattern Object variable
 externalizePattern =
     Recursive.fold externalizePatternWorker
   where
     externalizePatternWorker
-        ::  Base (CommonStepPattern Object) (CommonStepPattern Object)
-        ->  CommonStepPattern Object
+        ::  Base (StepPattern Object variable) (StepPattern Object variable)
+        ->  StepPattern Object variable
     externalizePatternWorker (ann :< pat) =
         case pat of
             DomainValuePattern dv -> asPattern dv
@@ -250,3 +260,15 @@ asMetaPattern =
         Domain.BuiltinSet _ -> notImplementedInternal
         Domain.BuiltinInteger _ -> notImplementedInternal
         Domain.BuiltinBool _ -> notImplementedInternal
+
+{- | Unparse a 'StepPattern'.
+
+ -}
+unparseStepPattern
+    ::  ( Given (MetadataTools Object StepperAttributes)
+        , Unparse (variable Object)
+        , Ord (variable Object)
+        )
+    => StepPattern Object variable
+    -> Doc ann
+unparseStepPattern = unparse . externalizePattern
