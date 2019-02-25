@@ -50,6 +50,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( Given )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
@@ -298,15 +300,18 @@ builtinFunctions =
 
  -}
 asPattern
-    :: Ord (variable Object)
+    ::  ( Ord (variable Object)
+        , Given (MetadataTools Object StepperAttributes)
+        )
     => VerifiedModule declAttrs axiomAttrs
     -- ^ indexed module where pattern would appear
     -> Sort Object
     -> Either (Kore.Error e)
         (Builtin variable -> StepPattern Object variable)
 asPattern indexedModule dvSort = do
-    symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = mkApp dvSort symbolUnit []
+    let
+        symbolUnit = lookupSymbolUnit dvSort
+        applyUnit = mkApp dvSort symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
     let applyElement elem' = mkApp dvSort symbolElement [elem']
     symbolConcat <- lookupSymbolConcat dvSort indexedModule
@@ -322,7 +327,9 @@ asPattern indexedModule dvSort = do
 
  -}
 asExpandedPattern
-    :: Ord (variable Object)
+    ::  ( Ord (variable Object)
+        , Given (MetadataTools Object StepperAttributes)
+        )
     => VerifiedModule declAttrs axiomAttrs
     -- ^ dictionary of Map constructor symbols
     -> Sort Object
@@ -331,13 +338,17 @@ asExpandedPattern
 asExpandedPattern symbols resultSort =
     (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
 
-{- | Find the symbol hooked to @LIST.unit@ in an indexed module.
+{- | Find the symbol hooked to @unit@.
+
+It is an error if the sort does not provide a @unit@ attribute; this is checked
+during verification.
+
  -}
 lookupSymbolUnit
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol unitKey
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolUnit = Builtin.lookupSymbolUnit
 
 {- | Find the symbol hooked to @LIST.element@ in an indexed module.
  -}

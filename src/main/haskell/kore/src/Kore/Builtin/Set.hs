@@ -56,6 +56,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( Given )
 import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
@@ -386,7 +388,9 @@ See also: 'sort'
 
  -}
 asPattern
-    :: Ord (variable Object)
+    ::  ( Ord (variable Object)
+        , Given (MetadataTools Object StepperAttributes)
+        )
     => VerifiedModule declAttrs axiomAttrs
     -- ^ indexed module where pattern would appear
     -> Sort Object
@@ -394,8 +398,9 @@ asPattern
         (Kore.Error e)
         (Builtin -> StepPattern Object variable)
 asPattern indexedModule dvSort = do
-    symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = mkApp dvSort symbolUnit []
+    let
+        symbolUnit = lookupSymbolUnit dvSort
+        applyUnit = mkApp dvSort symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
     let applyElement elem' =
             mkApp dvSort symbolElement [fromConcreteStepPattern elem']
@@ -412,7 +417,9 @@ asPattern indexedModule dvSort = do
 
  -}
 asExpandedPattern
-    :: Ord (variable Object)
+    ::  ( Ord (variable Object)
+        , Given (MetadataTools Object StepperAttributes)
+        )
     => VerifiedModule declAttrs axiomAttrs
     -- ^ dictionary of Map constructor symbols
     -> Sort Object
@@ -446,13 +453,17 @@ toListKey = "SET.set2list"
 sizeKey :: IsString s => s
 sizeKey = "SET.size"
 
-{- | Find the symbol hooked to @SET.unit@ in an indexed module.
+{- | Find the symbol hooked to @unit@.
+
+It is an error if the sort does not provide a @unit@ attribute; this is checked
+during verification.
+
  -}
 lookupSymbolUnit
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol unitKey
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolUnit = Builtin.lookupSymbolUnit
 
 {- | Find the symbol hooked to @SET.element@ in an indexed module.
  -}

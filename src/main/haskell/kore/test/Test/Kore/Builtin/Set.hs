@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
+import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
@@ -443,11 +444,15 @@ mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set.Builtin -> CommonStepPattern Object
-Right asPattern = Set.asPattern verifiedModule setSort
+Right asPattern =
+    Reflection.give testMetadataTools
+    Set.asPattern verifiedModule setSort
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
-Right asExpandedPattern = Set.asExpandedPattern verifiedModule setSort
+Right asExpandedPattern =
+    Reflection.give testMetadataTools
+    Set.asExpandedPattern verifiedModule setSort
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 builtinSet :: Set.Builtin -> CommonStepPattern Object

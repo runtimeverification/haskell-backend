@@ -54,6 +54,7 @@ module Kore.Builtin.Builtin
     , runParser
     , appliedFunction
     , lookupSymbol
+    , lookupSymbolUnit
     , isSymbol
     , expectNormalConcreteTerm
     , getAttemptedAxiom
@@ -71,6 +72,9 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
+import           Data.Reflection
+                 ( Given )
+import qualified Data.Reflection as Reflection
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -796,6 +800,32 @@ lookupSymbol builtinName builtinSort indexedModule
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []
         }
+
+{- | Find the symbol hooked to @unit@.
+
+It is an error if the sort does not provide a @unit@ attribute; this is checked
+during verification.
+
+ -}
+lookupSymbolUnit
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolUnit theSort =
+    case getUnit of
+        Just symbol -> symbol
+        Nothing ->
+            (error . unlines)
+                [ "Internal error: missing 'unit' attribute of sort '"
+                    ++ unparseToString theSort ++ "'"
+                , "This should be a verification error."
+                ]
+  where
+    tools :: MetadataTools Object StepperAttributes
+    tools = Reflection.given
+
+    Attribute.Sort { unit = Attribute.Sort.Unit { getUnit } } =
+        sortAttributes tools theSort
 
 {- | Is the given symbol hooked to the named builtin?
  -}

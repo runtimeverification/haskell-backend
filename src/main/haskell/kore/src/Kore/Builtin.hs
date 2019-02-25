@@ -34,6 +34,9 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import           Data.Reflection
+                 ( Given )
+import qualified Data.Reflection as Reflection
 import           Data.Semigroup
                  ( (<>) )
 import           Data.Text
@@ -61,6 +64,8 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools, extractMetadataTools )
 import           Kore.Step.Function.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Function.Identifier as AxiomIdentifier
@@ -186,7 +191,8 @@ evaluators builtins indexedModule =
 
  -}
 asPattern
-    :: VerifiedModule declAttrs axiomAttrs
+    :: Given (MetadataTools Object StepperAttributes)
+    => VerifiedModule declAttrs axiomAttrs
     -- ^ indexed module defining hooks for builtin domains
     -> Builtin
     -- ^ domain value
@@ -220,7 +226,7 @@ asPattern
  -}
 -- TODO (thomas.tuegel): Transform from Domain.Builtin to Domain.External.
 externalizePattern
-    :: VerifiedModule declAttrs axiomAttrs
+    :: VerifiedModule StepperAttributes axiomAttrs
     -- ^ indexed module defining hooks for builtin domains
     -> CommonStepPattern Object
     -> Either (Error e) (CommonStepPattern Object)
@@ -230,8 +236,11 @@ externalizePattern indexedModule =
     externalizePatternWorker (ann :< pat) =
         case pat of
             DomainValuePattern dv ->
-                asPattern indexedModule =<< sequence dv
+                Reflection.give tools asPattern indexedModule =<< sequence dv
             _ -> Recursive.embed . (ann :<) <$> sequence pat
+
+    tools :: MetadataTools Object StepperAttributes
+    tools = extractMetadataTools indexedModule
 
 {- | Extract the meta-level pattern argument of a domain value.
 

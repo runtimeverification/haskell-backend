@@ -7,6 +7,7 @@ import qualified Hedgehog.Range as Range
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
+import qualified Data.Reflection as Reflection
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
@@ -207,8 +208,12 @@ mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern :: List.Builtin Variable -> CommonStepPattern Object
-Right asPattern = List.asPattern verifiedModule listSort
+Right asPattern =
+    Reflection.give testMetadataTools
+    List.asPattern verifiedModule listSort
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asExpandedPattern :: List.Builtin Variable -> CommonExpandedPattern Object
-Right asExpandedPattern = List.asExpandedPattern verifiedModule listSort
+Right asExpandedPattern =
+    Reflection.give testMetadataTools
+    List.asExpandedPattern verifiedModule listSort

@@ -11,6 +11,7 @@ import qualified Data.Default as Default
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
 import           Prelude hiding
                  ( concatMap )
@@ -500,11 +501,15 @@ test_concretizeKeysAxiom =
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonStepPattern Object
-Right asPattern = Map.asPattern verifiedModule mapSort
+Right asPattern =
+    Reflection.give testMetadataTools
+    Map.asPattern verifiedModule mapSort
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asExpandedPattern :: Map.Builtin Variable -> CommonExpandedPattern Object
-Right asExpandedPattern = Map.asExpandedPattern verifiedModule mapSort
+Right asExpandedPattern =
+    Reflection.give testMetadataTools
+    Map.asExpandedPattern verifiedModule mapSort
 
 -- * Constructors
 

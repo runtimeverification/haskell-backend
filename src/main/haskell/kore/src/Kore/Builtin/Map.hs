@@ -57,6 +57,8 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( Given )
 import qualified Data.Set as Set
 import           Data.String
                  ( IsString )
@@ -371,17 +373,19 @@ builtinFunctions =
 
  -}
 asPattern
-    :: Ord (variable Object)
+    :: ( Ord (variable Object)
+       , Given (MetadataTools Object StepperAttributes)
+       )
     => VerifiedModule declAttrs axiomAttrs
     -- ^ indexed module where pattern would appear
     -> Sort Object
     -> Either
         (Kore.Error e)
         (Builtin variable -> StepPattern Object variable)
-asPattern indexedModule dvSort
-  = do
-    symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = mkApp dvSort symbolUnit []
+asPattern indexedModule dvSort = do
+    let
+        symbolUnit = lookupSymbolUnit dvSort
+        applyUnit = mkApp dvSort symbolUnit []
     symbolElement <- lookupSymbolElement dvSort indexedModule
     let applyElement (key, value) =
             mkApp dvSort symbolElement [fromConcreteStepPattern key, value]
@@ -397,7 +401,9 @@ asPattern indexedModule dvSort
 
  -}
 asExpandedPattern
-    :: Ord (variable Object)
+    ::  ( Ord (variable Object)
+        , Given (MetadataTools Object StepperAttributes)
+        )
     => VerifiedModule declAttrs axiomAttrs
     -- ^ dictionary of Map constructor symbols
     -> Kore.Sort Object
@@ -441,13 +447,17 @@ asBuiltinDomainValue
 asBuiltinDomainValue resultSort map' =
     mkDomainValue resultSort (Domain.BuiltinMap map')
 
-{- | Find the symbol hooked to @MAP.unit@ in an indexed module.
+{- | Find the symbol hooked to @unit@.
+
+It is an error if the sort does not provide a @unit@ attribute; this is checked
+during verification.
+
  -}
 lookupSymbolUnit
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol unitKey
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolUnit = Builtin.lookupSymbolUnit
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
