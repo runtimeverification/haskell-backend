@@ -60,7 +60,6 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as String
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
@@ -192,28 +191,23 @@ evaluators builtins indexedModule =
  -}
 asPattern
     :: Given (MetadataTools Object StepperAttributes)
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ indexed module defining hooks for builtin domains
-    -> Builtin
+    => Builtin
     -- ^ domain value
-    -> Either (Error e) (CommonStepPattern Object)
-asPattern
-    indexedModule
-    DomainValue { domainValueSort, domainValueChild }
-  =
+    -> CommonStepPattern Object
+asPattern DomainValue { domainValueSort, domainValueChild } =
     case domainValueChild of
         Domain.BuiltinPattern _ ->
-            return (mkDomainValue domainValueSort domainValueChild)
+            mkDomainValue domainValueSort domainValueChild
         Domain.BuiltinMap map' ->
-            Map.asPattern indexedModule domainValueSort <*> pure map'
+            Map.asPattern domainValueSort map'
         Domain.BuiltinList list ->
-            List.asPattern indexedModule domainValueSort <*> pure list
+            List.asPattern domainValueSort list
         Domain.BuiltinSet set ->
-            Set.asPattern indexedModule domainValueSort <*> pure set
+            Set.asPattern domainValueSort set
         Domain.BuiltinInteger int ->
-            return $ Int.asPattern domainValueSort int
+            Int.asPattern domainValueSort int
         Domain.BuiltinBool bool ->
-            return $ Bool.asPattern domainValueSort bool
+            Bool.asPattern domainValueSort bool
 
 
 {- | Externalize all builtin domain values in the given pattern.
@@ -229,15 +223,17 @@ externalizePattern
     :: VerifiedModule StepperAttributes axiomAttrs
     -- ^ indexed module defining hooks for builtin domains
     -> CommonStepPattern Object
-    -> Either (Error e) (CommonStepPattern Object)
+    -> CommonStepPattern Object
 externalizePattern indexedModule =
     Recursive.fold externalizePatternWorker
   where
+    externalizePatternWorker
+        ::  Base (CommonStepPattern Object) (CommonStepPattern Object)
+        ->  CommonStepPattern Object
     externalizePatternWorker (ann :< pat) =
         case pat of
-            DomainValuePattern dv ->
-                Reflection.give tools asPattern indexedModule =<< sequence dv
-            _ -> Recursive.embed . (ann :<) <$> sequence pat
+            DomainValuePattern dv -> Reflection.give tools asPattern dv
+            _ -> Recursive.embed (ann :< pat)
 
     tools :: MetadataTools Object StepperAttributes
     tools = extractMetadataTools indexedModule

@@ -377,29 +377,24 @@ asPattern
     :: ( Ord (variable Object)
        , Given (MetadataTools Object StepperAttributes)
        )
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ indexed module where pattern would appear
-    -> Sort Object
-    -> Either
-        (Kore.Error e)
-        (Builtin variable -> StepPattern Object variable)
-asPattern _ dvSort = do
-    let
-        applyUnit =
-            mkApp dvSort symbolUnit []
-          where
-            symbolUnit = lookupSymbolUnit dvSort
-        applyElement (key, value) =
-            mkApp dvSort symbolElement [fromConcreteStepPattern key, value]
-          where
-            symbolElement = lookupSymbolElement dvSort
-        applyConcat map1 map2 =
-            mkApp dvSort symbolConcat [map1, map2]
-          where
-            symbolConcat = lookupSymbolConcat dvSort
-        asPattern0 result =
-            foldr applyConcat applyUnit (applyElement <$> Map.toAscList result)
-    return asPattern0
+    => Sort Object
+    -> Builtin variable
+    -> StepPattern Object variable
+asPattern dvSort result =
+    foldr applyConcat applyUnit (applyElement <$> Map.toAscList result)
+  where
+    applyUnit =
+        mkApp dvSort symbolUnit []
+      where
+        symbolUnit = lookupSymbolUnit dvSort
+    applyElement (key, value) =
+        mkApp dvSort symbolElement [fromConcreteStepPattern key, value]
+      where
+        symbolElement = lookupSymbolElement dvSort
+    applyConcat map1 map2 =
+        mkApp dvSort symbolConcat [map1, map2]
+      where
+        symbolConcat = lookupSymbolConcat dvSort
 
 {- | Render a 'Map' as an extended domain value pattern.
 
@@ -410,17 +405,11 @@ asExpandedPattern
     ::  ( Ord (variable Object)
         , Given (MetadataTools Object StepperAttributes)
         )
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ dictionary of Map constructor symbols
-    -> Kore.Sort Object
-    -> Either
-        (Kore.Error e)
-        (Builtin variable -> ExpandedPattern Object variable)
-asExpandedPattern symbols resultSort =
-    asExpandedPattern0 <$> asPattern symbols resultSort
-  where
-    asExpandedPattern0 = \asPattern0 builtin ->
-        ExpandedPattern.fromPurePattern $ asPattern0 builtin
+    => Kore.Sort Object
+    -> Builtin variable
+    -> ExpandedPattern Object variable
+asExpandedPattern resultSort =
+    ExpandedPattern.fromPurePattern . asPattern resultSort
 
 concatKey :: IsString s => s
 concatKey = "MAP.concat"

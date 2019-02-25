@@ -501,15 +501,12 @@ test_concretizeKeysAxiom =
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonStepPattern Object
-Right asPattern =
-    Reflection.give testMetadataTools
-    Map.asPattern verifiedModule mapSort
+asPattern = Reflection.give testMetadataTools Map.asPattern mapSort
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asExpandedPattern :: Map.Builtin Variable -> CommonExpandedPattern Object
-Right asExpandedPattern =
-    Reflection.give testMetadataTools
-    Map.asExpandedPattern verifiedModule mapSort
+asExpandedPattern =
+    Reflection.give testMetadataTools Map.asExpandedPattern mapSort
 
 -- * Constructors
 

@@ -444,15 +444,12 @@ mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern :: Set.Builtin -> CommonStepPattern Object
-Right asPattern =
-    Reflection.give testMetadataTools
-    Set.asPattern verifiedModule setSort
+asPattern = Reflection.give testMetadataTools Set.asPattern setSort
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
-Right asExpandedPattern =
-    Reflection.give testMetadataTools
-    Set.asExpandedPattern verifiedModule setSort
+asExpandedPattern =
+    Reflection.give testMetadataTools Set.asExpandedPattern setSort
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 builtinSet :: Set.Builtin -> CommonStepPattern Object

@@ -304,46 +304,39 @@ asPattern
     ::  ( Ord (variable Object)
         , Given (MetadataTools Object StepperAttributes)
         )
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ indexed module where pattern would appear
-    -> Sort Object
-    -> Either (Kore.Error e)
-        (Builtin variable -> StepPattern Object variable)
-asPattern _ dvSort = do
-    let
-        applyUnit =
-            mkApp dvSort symbolUnit []
-          where
-            symbolUnit = lookupSymbolUnit dvSort
-        applyElement elem' =
-            mkApp dvSort symbolElement [elem']
-          where
-            symbolElement = lookupSymbolElement dvSort
-        applyConcat list1 list2 =
-            mkApp dvSort symbolConcat [list1, list2]
-          where
-            symbolConcat = lookupSymbolConcat dvSort
-        asPattern0 list =
-            foldr applyConcat applyUnit
-            $ Foldable.toList (applyElement <$> list)
-    return asPattern0
+    => Sort Object
+    -> Builtin variable
+    -> StepPattern Object variable
+asPattern dvSort list =
+    foldr applyConcat applyUnit $ Foldable.toList (applyElement <$> list)
+  where
+    applyUnit =
+        mkApp dvSort symbolUnit []
+      where
+        symbolUnit = lookupSymbolUnit dvSort
+    applyElement elem' =
+        mkApp dvSort symbolElement [elem']
+      where
+        symbolElement = lookupSymbolElement dvSort
+    applyConcat list1 list2 =
+        mkApp dvSort symbolConcat [list1, list2]
+      where
+        symbolConcat = lookupSymbolConcat dvSort
 
 {- | Render a 'Seq' as an extended domain value pattern.
 
-    See also: 'asPattern'
+See also: 'asPattern'
 
  -}
 asExpandedPattern
     ::  ( Ord (variable Object)
         , Given (MetadataTools Object StepperAttributes)
         )
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ dictionary of Map constructor symbols
-    -> Sort Object
-    -> Either (Kore.Error e)
-        (Builtin variable -> ExpandedPattern Object variable)
-asExpandedPattern symbols resultSort =
-    (ExpandedPattern.fromPurePattern .) <$> asPattern symbols resultSort
+    => Sort Object
+    -> Builtin variable
+    -> ExpandedPattern Object variable
+asExpandedPattern resultSort =
+    ExpandedPattern.fromPurePattern . asPattern resultSort
 
 {- | Find the symbol hooked to @unit@.
 

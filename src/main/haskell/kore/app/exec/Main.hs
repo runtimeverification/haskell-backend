@@ -422,8 +422,7 @@ mainWithOptions
                 )
         let
             finalExternalPattern =
-                either (error . printError) id
-                (Builtin.externalizePattern indexedModule finalPattern)
+                Builtin.externalizePattern indexedModule finalPattern
             unparsed =
                 (unparse . externalizeFreshVariables) finalExternalPattern
         case outputFileName of

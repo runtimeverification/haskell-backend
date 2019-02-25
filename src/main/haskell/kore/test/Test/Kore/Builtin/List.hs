@@ -208,12 +208,9 @@ mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern :: List.Builtin Variable -> CommonStepPattern Object
-Right asPattern =
-    Reflection.give testMetadataTools
-    List.asPattern verifiedModule listSort
+asPattern = Reflection.give testMetadataTools List.asPattern listSort
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asExpandedPattern :: List.Builtin Variable -> CommonExpandedPattern Object
-Right asExpandedPattern =
-    Reflection.give testMetadataTools
-    List.asExpandedPattern verifiedModule listSort
+asExpandedPattern =
+    Reflection.give testMetadataTools List.asExpandedPattern listSort
