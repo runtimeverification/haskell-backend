@@ -100,28 +100,28 @@ testUnary symb impl =
 
 test_simplification :: TestTree
 test_simplification =
-  testGroup "simplification of operators with constant arguments"
-    [ testGroup "equality"
-        [ mkEquals_ _True  _False `becomes` bottom
-        , mkEquals_ _False _True  `becomes` bottom
-        , mkEquals_ _True  _True  `becomes` top
-        , mkEquals_ _False _False `becomes` top
+    testGroup "simplification of operators with constant arguments"
+        [ testGroup "equality"
+            [ mkEquals_ _True  _False `becomes` bottom
+            , mkEquals_ _False _True  `becomes` bottom
+            , mkEquals_ _True  _True  `becomes` top
+            , mkEquals_ _False _False `becomes` top
+            ]
+        , testGroup "and"
+            [ mkAnd _True  _False `becomes` bottom
+            , mkAnd _False _True  `becomes` bottom
+            , mkAnd _True  _True  `becomes` (pure _True)
+            , mkAnd _False _False `becomes` (pure _False)
+            ]
         ]
-    , testGroup "and"
-        [ mkAnd _True  _False `becomes` bottom
-        , mkAnd _False _True  `becomes` bottom
-        , mkAnd _True  _True  `becomes` (pure _True)
-        , mkAnd _False _False `becomes` (pure _False)
-        ]
-    ]
-  where
-    _True  = Bool.asInternal boolSort True
-    _False = Bool.asInternal boolSort False
+      where
+      _True  = Bool.asInternal boolSort True
+      _False = Bool.asInternal boolSort False
 
-    becomes :: HasCallStack
-            => CommonStepPattern Object
-            -> CommonExpandedPattern Object
-            -> TestTree
-    becomes makerInput =
-      wrapped_maker_expected withSolver
-        (\solver -> evaluateWith solver makerInput)
+      becomes :: HasCallStack
+              => CommonStepPattern Object
+              -> CommonExpandedPattern Object
+              -> TestTree
+      becomes makerInput =
+          wrapped_maker_expected withSolver
+            (\solver -> evaluateWith solver makerInput)

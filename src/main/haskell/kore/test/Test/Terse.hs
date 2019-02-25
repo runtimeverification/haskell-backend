@@ -100,24 +100,24 @@ equals_ = actual_expected
 -- > 3 + 4 `'unequals'` 8  "name"
 unequals :: (HasCallStack, Eq a, Show a) => a -> a -> String -> TestTree
 unequals actual unexpected name =
-  actual_predicate_name actual (/= unexpected) name
+    actual_predicate_name actual (/= unexpected) name
 
 -- |
 -- > 3 + 4 `'unequals'` 8
 unequals_ :: (HasCallStack, Eq a, Show a) => a -> a -> TestTree
 unequals_ actual unexpected =
-  unequals actual unexpected ""
+    unequals actual unexpected ""
 
 
 -- |
 -- > 1 `has` [(isPositive, True), (isEven, False) ] "name"
 has :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> String -> TestTree
 has value tuples name=
-  testCase name (traverse_ checkOne tuples)
-  where
-    checkOne :: (a->Bool, Bool) -> Assertion
-    checkOne (predicate, expected) =
-      assertEqual "" expected (predicate value)
+    testCase name (traverse_ checkOne tuples)
+      where
+        checkOne :: (a->Bool, Bool) -> Assertion
+        checkOne (predicate, expected) =
+            assertEqual "" expected (predicate value)
 
 -- |
 -- > 1 `has_` [(isPositive, True), (isEven, False) ]
@@ -130,16 +130,16 @@ has_ value tuples = has value tuples "Has properties"
 gives :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> String -> TestTree
 gives predicate tuples name =
   testCase name (traverse_ checkOne tuples)
-  where
-    checkOne :: (a, Bool) -> Assertion
-    checkOne (value, expected) =
-      assertEqual "" expected (predicate value)
+    where
+      checkOne :: (a, Bool) -> Assertion
+      checkOne (value, expected) =
+          assertEqual "" expected (predicate value)
 
 -- |
 -- > isOdd `gives_` [ (1, True), (2, False) ]
 gives_ :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> TestTree
 gives_ predicate tuples =
-  gives predicate tuples "Gives"
+    gives predicate tuples "Gives"
 
 
 -- $builderFunctions
@@ -155,57 +155,57 @@ gives_ predicate tuples =
 -- > actual_predicate_name 3 isOdd "check odd numbers"
 actual_predicate_name :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
 actual_predicate_name actual predicate name =
-  testCase name $
-    assertEqual "" True $ predicate actual
+    testCase name $
+        assertEqual "" True $ predicate actual
 
 -- |
 -- > actual_predicate 3 isOdd
 actual_predicate :: HasCallStack => a -> (a -> Bool) -> TestTree
 actual_predicate actual predicate =
-  actual_predicate_name actual predicate "actual_predicate with no name"
+    actual_predicate_name actual predicate "actual_predicate with no name"
 
 -- |
 -- > actual_expected_name (+ 1 1) 2 "addition" "(+ 1 1) should be 2"
 actual_expected_name_intention
-  :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
-  => a -> a -> String -> String -> TestTree
+    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    => a -> a -> String -> String -> TestTree
 actual_expected_name_intention actual expected name intention =
-  testCase name $
-    assertEqualWithExplanation intention expected actual
+    testCase name $
+        assertEqualWithExplanation intention expected actual
 
 -- |
 -- > actual_expected_name (+ 1 1) 2 "addition"
 actual_expected_name
-  :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
-  => a -> a -> String -> TestTree
+    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    => a -> a -> String -> TestTree
 actual_expected_name actual expected name =
-  actual_expected_name_intention actual expected name ""
+    actual_expected_name_intention actual expected name ""
 
 -- |
 -- > actual_expected (+ 1 1) 2
 actual_expected
-  :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
-  => a -> a -> TestTree
+    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    => a -> a -> TestTree
 actual_expected actual expected =
-  actual_expected_name actual expected "actual_expected with no name"
+    actual_expected_name actual expected "actual_expected with no name"
 
 
 -- |
 -- > f_2_expected_name (+) (1, 2) 3 "addition"
 f_2_expected_name
-  :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
-  => (a -> b -> e) -> (a, b) -> e -> String -> TestTree
+    :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
+    => (a -> b -> e) -> (a, b) -> e -> String -> TestTree
 f_2_expected_name f (arg1, arg2) expected name =
-  testCase name $
-    assertEqualWithExplanation "" expected (f arg1 arg2)
+    testCase name $
+        assertEqualWithExplanation "" expected (f arg1 arg2)
 
 -- |
 -- > f_2_expected (+) (1, 2) 3
 f_2_expected
-  :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
-  => (a -> b -> e) -> (a, b) -> e -> TestTree
+    :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
+    => (a -> b -> e) -> (a, b) -> e -> TestTree
 f_2_expected f tuple expected =
-  f_2_expected_name f tuple expected "f_2_expected with no name"
+    f_2_expected_name f tuple expected "f_2_expected with no name"
 
 
 -- $wrappedFunctions
@@ -244,13 +244,13 @@ f_2_expected f tuple expected =
 -- > the test input to produce the value to be tested.
 
 wrapped_maker_expected_name_intention
-  :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
-  =>  ((IO a -> TestTree) -> TestTree)
-  -> (a -> IO b)  -- ^ take raw input, produce value to be checked
-  -> b            -- ^ the expected value
-  -> String       -- ^ the name of the generated test case
-  -> String       -- ^ a description of the intention of the comparison
-  -> TestTree
+    :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
+    =>  ((IO a -> TestTree) -> TestTree)
+    -> (a -> IO b)  -- ^ take raw input, produce value to be checked
+    -> b            -- ^ the expected value
+    -> String       -- ^ the name of the generated test case
+    -> String       -- ^ a description of the intention of the comparison
+    -> TestTree
 wrapped_maker_expected_name_intention wrapper maker expected name intention =
     wrapper $ \getResource ->
         testCase name $ do
@@ -258,27 +258,27 @@ wrapped_maker_expected_name_intention wrapper maker expected name intention =
             maker resource >>= assertEqualWithExplanation intention expected
 
 wrapped_maker_expected_name
-  :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
-  =>  ((IO a -> TestTree) -> TestTree)
-  -> (a -> IO b)  -- ^ take raw input, produce value to be checked
-  -> b            -- ^ the expected value
-  -> String       -- ^ the name of the generated test case
-  -> TestTree
+    :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
+    =>  ((IO a -> TestTree) -> TestTree)
+    -> (a -> IO b)  -- ^ take raw input, produce value to be checked
+    -> b            -- ^ the expected value
+    -> String       -- ^ the name of the generated test case
+    -> TestTree
 wrapped_maker_expected_name wrapper maker expected name =
-  wrapped_maker_expected_name_intention
-    wrapper maker expected name
-    ""
+    wrapped_maker_expected_name_intention
+        wrapper maker expected name
+        ""
 
 wrapped_maker_expected
-  :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
-  =>  ((IO a -> TestTree) -> TestTree)
-  -> (a -> IO b)  -- ^ take raw input, produce value to be checked
-  -> b            -- ^ the expected value
-  -> TestTree
+    :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
+    =>  ((IO a -> TestTree) -> TestTree)
+    -> (a -> IO b)  -- ^ take raw input, produce value to be checked
+    -> b            -- ^ the expected value
+    -> TestTree
 wrapped_maker_expected wrapper maker expected =
-  wrapped_maker_expected_name
-    wrapper maker expected
-    "resource test with no name"
+    wrapped_maker_expected_name
+        wrapper maker expected
+        "resource test with no name"
 
 
 
