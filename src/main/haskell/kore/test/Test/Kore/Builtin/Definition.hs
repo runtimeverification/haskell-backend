@@ -11,6 +11,7 @@ import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Injective
 import           Kore.Attribute.Smtlib
+import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
 import           Kore.Step.Pattern
 
@@ -162,6 +163,9 @@ injSymbol lSort rSort =
 
 unitListSymbol :: SymbolOrAlias Object
 unitListSymbol = builtinSymbol "unitList"
+
+unitList2Symbol :: SymbolOrAlias Object
+unitList2Symbol = builtinSymbol "unitList2"
 
 elementListSymbol :: SymbolOrAlias Object
 elementListSymbol = builtinSymbol "elementList"
@@ -326,8 +330,13 @@ sortDecl sort =
             }
 
 -- | Declare a hooked sort.
-hookedSortDecl :: Sort Object -> Text -> KoreSentence
-hookedSortDecl sort hook =
+hookedSortDecl
+    :: Sort Object
+    -- ^ declared sort
+    -> [CommonKorePattern]
+    -- ^ declaration attributes
+    -> KoreSentence
+hookedSortDecl sort attrs =
     (asSentence . SentenceHookedSort) sentence
   where
     sentence :: KoreSentenceSort Object
@@ -337,7 +346,7 @@ hookedSortDecl sort hook =
                 let SortActualSort SortActual { sortActualName } = sort
                 in sortActualName
             , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes [ hookAttribute hook ]
+            , sentenceSortAttributes = Attributes attrs
             }
 
 -- ** Bool
@@ -352,7 +361,7 @@ boolSort =
 
 -- | Declare 'boolSort' in a Kore module.
 boolSortDecl :: KoreSentence
-boolSortDecl = hookedSortDecl boolSort "BOOL.Bool"
+boolSortDecl = hookedSortDecl boolSort [ hookAttribute "BOOL.Bool" ]
 
 -- ** Int
 
@@ -366,7 +375,7 @@ intSort =
 
 -- | Declare 'intSort' in a Kore module.
 intSortDecl :: KoreSentence
-intSortDecl = hookedSortDecl intSort "INT.Int"
+intSortDecl = hookedSortDecl intSort [ hookAttribute "INT.Int" ]
 
 -- ** KEQUAL
 
@@ -404,7 +413,12 @@ listSort =
 
 -- | Declare 'listSort' in a Kore module.
 listSortDecl :: KoreSentence
-listSortDecl = hookedSortDecl listSort "LIST.List"
+listSortDecl =
+    hookedSortDecl
+        listSort
+        [ hookAttribute "LIST.List"
+        , Sort.unitAttribute unitListSymbol
+        ]
 
 -- | Another sort with the same hook
 listSort2 :: Sort Object
@@ -416,7 +430,12 @@ listSort2 =
 
 -- | Declare 'listSort' in a Kore module.
 listSortDecl2 :: KoreSentence
-listSortDecl2 = hookedSortDecl listSort2 "LIST.List"
+listSortDecl2 =
+    hookedSortDecl
+        listSort2
+        [ hookAttribute "LIST.List"
+        , Sort.unitAttribute unitList2Symbol
+        ]
 
 -- ** Map
 
@@ -430,7 +449,12 @@ mapSort =
 
 -- | Declare 'mapSort' in a Kore module.
 mapSortDecl :: KoreSentence
-mapSortDecl = hookedSortDecl mapSort "MAP.Map"
+mapSortDecl =
+    hookedSortDecl
+        mapSort
+        [ hookAttribute "MAP.Map"
+        , Sort.unitAttribute unitMapSymbol
+        ]
 
 -- ** Pair
 
@@ -473,7 +497,12 @@ setSort =
 
 -- | Declare 'setSort' in a Kore module.
 setSortDecl :: KoreSentence
-setSortDecl = hookedSortDecl setSort "SET.Set"
+setSortDecl =
+    hookedSortDecl
+        setSort
+        [ hookAttribute "SET.Set"
+        , Sort.unitAttribute unitSetSymbol
+        ]
 
 -- ** String
 
@@ -487,7 +516,10 @@ stringSort =
 
 -- | Declare 'stringSort' in a Kore module.
 stringSortDecl :: KoreSentence
-stringSortDecl = hookedSortDecl stringSort "STRING.String"
+stringSortDecl =
+    hookedSortDecl
+        stringSort
+        [ hookAttribute "STRING.String" ]
 
 -- -------------------------------------------------------------
 -- * Modules
@@ -828,6 +860,11 @@ listModule =
                 [hookAttribute "LIST.get"]
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
+            , hookedSymbolDecl
+                unitList2Symbol
+                listSort2
+                []
+                [hookAttribute "LIST.unit"]
             ]
         }
 
