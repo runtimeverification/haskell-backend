@@ -130,6 +130,9 @@ sortDeclVerifiers =
         elementId <- Builtin.getElementId attrs
         Builtin.assertSymbolHook indexedModule elementId elementKey
         Builtin.assertSymbolResultSort indexedModule elementId expectedSort
+        concatId <- Builtin.getConcatId attrs
+        Builtin.assertSymbolHook indexedModule concatId concatKey
+        Builtin.assertSymbolResultSort indexedModule concatId expectedSort
         return ()
       where
         SentenceSort { sentenceSortName } = sentenceSort
@@ -365,14 +368,9 @@ builtinFunctions =
 
 {- | Render a 'Map' as a domain value pattern of the given sort.
 
-    The result sort should be hooked to the builtin @Map@ sort, but this is not
-    checked.
+The result sort must be hooked to the builtin @Map@ sort.
 
-    The constructed pattern will be valid in the contexed of the given indexed
-    module. It is an error if the indexed module does not define symbols hooked
-    to @MAP.unit@, @MAP.element@, and @MAP.concat@.
-
-    See also: 'sort'
+See also: 'sort'
 
  -}
 asPattern
@@ -385,15 +383,20 @@ asPattern
     -> Either
         (Kore.Error e)
         (Builtin variable -> StepPattern Object variable)
-asPattern indexedModule dvSort = do
+asPattern _ dvSort = do
     let
-        symbolUnit = lookupSymbolUnit dvSort
-        applyUnit = mkApp dvSort symbolUnit []
-        symbolElement = lookupSymbolElement dvSort
+        applyUnit =
+            mkApp dvSort symbolUnit []
+          where
+            symbolUnit = lookupSymbolUnit dvSort
         applyElement (key, value) =
             mkApp dvSort symbolElement [fromConcreteStepPattern key, value]
-    symbolConcat <- lookupSymbolConcat dvSort indexedModule
-    let applyConcat map1 map2 = mkApp dvSort symbolConcat [map1, map2]
+          where
+            symbolElement = lookupSymbolElement dvSort
+        applyConcat map1 map2 =
+            mkApp dvSort symbolConcat [map1, map2]
+          where
+            symbolConcat = lookupSymbolConcat dvSort
         asPattern0 result =
             foldr applyConcat applyUnit (applyElement <$> Map.toAscList result)
     return asPattern0
@@ -490,13 +493,17 @@ lookupSymbolElement
     -> SymbolOrAlias Object
 lookupSymbolElement = Builtin.lookupSymbolElement
 
-{- | Find the symbol hooked to @MAP.concat@ in an indexed module.
+{- | Find the symbol hooked to @concat@.
+
+It is an error if the sort does not provide a @concat@ attribute; this is
+checked during verification.
+
  -}
 lookupSymbolConcat
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol concatKey
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolConcat = Builtin.lookupSymbolConcat
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}

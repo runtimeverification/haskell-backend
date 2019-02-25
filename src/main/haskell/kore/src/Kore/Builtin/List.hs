@@ -121,6 +121,9 @@ sortDeclVerifiers =
         elementId <- Builtin.getElementId attrs
         Builtin.assertSymbolHook indexedModule elementId elementKey
         Builtin.assertSymbolResultSort indexedModule elementId expectedSort
+        concatId <- Builtin.getConcatId attrs
+        Builtin.assertSymbolHook indexedModule concatId concatKey
+        Builtin.assertSymbolResultSort indexedModule concatId expectedSort
         return ()
       where
         SentenceSort { sentenceSortName } = sentenceSort
@@ -292,14 +295,9 @@ builtinFunctions =
 
 {- | Render a 'Seq' as a domain value pattern of the given sort.
 
-    The result sort should be hooked to the builtin @List@ sort, but this is not
-    checked.
+The result sort must be hooked to the builtin @List@ sort.
 
-    The constructed pattern will be valid in the contexed of the given indexed
-    module. It is an error if the indexed module does not define symbols hooked
-    to @LIST.unit@, @LIST.element@, and @LIST.concat@.
-
-    See also: 'sort'
+See also: 'sort'
 
  -}
 asPattern
@@ -311,15 +309,21 @@ asPattern
     -> Sort Object
     -> Either (Kore.Error e)
         (Builtin variable -> StepPattern Object variable)
-asPattern indexedModule dvSort = do
+asPattern _ dvSort = do
     let
-        symbolUnit = lookupSymbolUnit dvSort
-        applyUnit = mkApp dvSort symbolUnit []
-        symbolElement = lookupSymbolElement dvSort
-        applyElement elem' = mkApp dvSort symbolElement [elem']
-    symbolConcat <- lookupSymbolConcat dvSort indexedModule
-    let applyConcat list1 list2 = mkApp dvSort symbolConcat [list1, list2]
-    let asPattern0 list =
+        applyUnit =
+            mkApp dvSort symbolUnit []
+          where
+            symbolUnit = lookupSymbolUnit dvSort
+        applyElement elem' =
+            mkApp dvSort symbolElement [elem']
+          where
+            symbolElement = lookupSymbolElement dvSort
+        applyConcat list1 list2 =
+            mkApp dvSort symbolConcat [list1, list2]
+          where
+            symbolConcat = lookupSymbolConcat dvSort
+        asPattern0 list =
             foldr applyConcat applyUnit
             $ Foldable.toList (applyElement <$> list)
     return asPattern0
@@ -365,13 +369,17 @@ lookupSymbolElement
     -> SymbolOrAlias Object
 lookupSymbolElement = Builtin.lookupSymbolElement
 
-{- | Find the symbol hooked to @LIST.concat@ in an indexed module.
+{- | Find the symbol hooked to @concat@.
+
+It is an error if the sort does not provide a @concat@ attribute; this is
+checked during verification.
+
  -}
 lookupSymbolConcat
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol concatKey
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolConcat = Builtin.lookupSymbolConcat
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}

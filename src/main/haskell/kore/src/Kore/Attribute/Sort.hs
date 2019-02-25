@@ -15,6 +15,7 @@ module Kore.Attribute.Sort
     , lensSmtlib
     , lensUnit
     , lensElement
+    , lensConcat
     ) where
 
 import Control.DeepSeq
@@ -27,6 +28,7 @@ import GHC.Generics
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.Attribute.Hook.Hook
 import           Kore.Attribute.Smtlib.Smtlib
+import           Kore.Attribute.Sort.Concat
 import           Kore.Attribute.Sort.Element
 import           Kore.Attribute.Sort.Unit
 
@@ -40,6 +42,8 @@ data Sort =
         -- ^ The unit symbol associated with the sort.
         , element :: !Element
         -- ^ The element symbol associated with the sort.
+        , concat  :: !Concat
+        -- ^ The concat symbol associated with the sort.
         }
     deriving (Eq, Generic, Ord, Show)
 
@@ -54,6 +58,7 @@ defaultSortAttributes =
         , smtlib  = def
         , unit    = def
         , element = def
+        , concat  = def
         }
 
 -- | See also: 'defaultSortAttributes'

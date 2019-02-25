@@ -33,6 +33,7 @@ module Kore.Builtin.Builtin
     , verifySortDecl
     , getUnitId
     , getElementId
+    , getConcatId
     , assertSymbolHook
     , assertSymbolResultSort
     , verifySort
@@ -57,6 +58,7 @@ module Kore.Builtin.Builtin
     , lookupSymbol
     , lookupSymbolUnit
     , lookupSymbolElement
+    , lookupSymbolConcat
     , isSymbol
     , expectNormalConcreteTerm
     , getAttemptedAxiom
@@ -101,6 +103,7 @@ import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Builtin.Error
@@ -300,6 +303,21 @@ getElementId Attribute.Sort { element = Attribute.Sort.Element sortElement } =
         Just SymbolOrAlias { symbolOrAliasConstructor } ->
             return symbolOrAliasConstructor
         Nothing -> Kore.Error.koreFail "Missing 'element' attribute."
+
+{- | Get the identifier of the @concat@ sort attribute.
+
+Fail if the attribute is missing.
+
+ -}
+getConcatId
+    :: Attribute.Sort
+    -- ^ Sort attributes
+    -> Either (Error VerifyError) (Id Object)
+getConcatId Attribute.Sort { concat = Attribute.Sort.Concat sortConcat } =
+    case sortConcat of
+        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+            return symbolOrAliasConstructor
+        Nothing -> Kore.Error.koreFail "Missing 'concat' attribute."
 
 {- | Check that the symbol's @hook@ attribute matches the expected value.
 
@@ -869,6 +887,32 @@ lookupSymbolElement theSort =
     tools = Reflection.given
 
     Attribute.Sort { element = Attribute.Sort.Element { getElement } } =
+        sortAttributes tools theSort
+
+{- | Find the symbol hooked to @concat@.
+
+It is an error if the sort does not provide a @concat@ attribute; this is
+checked during verification.
+
+ -}
+lookupSymbolConcat
+    :: Given (MetadataTools Object StepperAttributes)
+    => Sort Object
+    -> SymbolOrAlias Object
+lookupSymbolConcat theSort =
+    case getConcat of
+        Just symbol -> symbol
+        Nothing ->
+            (error . unlines)
+                [ "Internal error: missing 'concat' attribute of sort '"
+                    ++ unparseToString theSort ++ "'"
+                , "This should be a verification error."
+                ]
+  where
+    tools :: MetadataTools Object StepperAttributes
+    tools = Reflection.given
+
+    Attribute.Sort { concat = Attribute.Sort.Concat { getConcat } } =
         sortAttributes tools theSort
 
 {- | Is the given symbol hooked to the named builtin?

@@ -11,6 +11,7 @@ import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Injective
 import           Kore.Attribute.Smtlib
+import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
@@ -176,6 +177,9 @@ elementList2Symbol = builtinSymbol "elementList2"
 
 concatListSymbol :: SymbolOrAlias Object
 concatListSymbol = builtinSymbol "concatList"
+
+concatList2Symbol :: SymbolOrAlias Object
+concatList2Symbol = builtinSymbol "concatList2"
 
 getListSymbol :: SymbolOrAlias Object
 getListSymbol = builtinSymbol "getList"
@@ -423,6 +427,7 @@ listSortDecl =
         [ hookAttribute "LIST.List"
         , Sort.unitAttribute unitListSymbol
         , Sort.elementAttribute elementListSymbol
+        , Sort.concatAttribute concatListSymbol
         ]
 
 -- | Another sort with the same hook
@@ -441,6 +446,7 @@ listSortDecl2 =
         [ hookAttribute "LIST.List"
         , Sort.unitAttribute unitList2Symbol
         , Sort.elementAttribute elementList2Symbol
+        , Sort.concatAttribute concatList2Symbol
         ]
 
 -- ** Map
@@ -461,6 +467,7 @@ mapSortDecl =
         [ hookAttribute "MAP.Map"
         , Sort.unitAttribute unitMapSymbol
         , Sort.elementAttribute elementMapSymbol
+        , Sort.concatAttribute concatMapSymbol
         ]
 
 -- ** Pair
@@ -510,6 +517,7 @@ setSortDecl =
         [ hookAttribute "SET.Set"
         , Sort.unitAttribute unitSetSymbol
         , Sort.elementAttribute elementSetSymbol
+        , Sort.concatAttribute concatSetSymbol
         ]
 
 -- ** String
@@ -878,6 +886,13 @@ listModule =
                 listSort2
                 [intSort]
                 [ hookAttribute "LIST.element"
+                , functionalAttribute
+                ]
+            , hookedSymbolDecl
+                concatList2Symbol
+                listSort2
+                [listSort2, listSort2]
+                [ hookAttribute "LIST.concat"
                 , functionalAttribute
                 ]
             ]
