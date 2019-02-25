@@ -43,17 +43,13 @@ import           Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
                  ( AttemptedAxiom (..), applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
-import           Kore.Step.Simplification.Equals
-                 ( makeEvaluate )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unparser
@@ -139,7 +135,7 @@ evalKEq
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
-evalKEq true tools substitutionSimplifier _ (valid :< app) =
+evalKEq true _ _ _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
@@ -147,17 +143,16 @@ evalKEq true tools substitutionSimplifier _ (valid :< app) =
     false = not true
     Valid { patternSort } = valid
     Application { applicationChildren } = app
-    evalEq t1 t2 = do
-        (result, _proof) <- makeEvaluate tools substitutionSimplifier ep1 ep2
-        case () of
-            _ | OrOfExpandedPattern.isTrue result ->
-                purePatternAxiomEvaluator (Bool.asInternal patternSort true)
-              | OrOfExpandedPattern.isFalse result ->
-                purePatternAxiomEvaluator (Bool.asInternal patternSort false)
-              | otherwise -> notApplicableAxiomEvaluator
-      where
-        ep1 = ExpandedPattern.fromPurePattern t1
-        ep2 = ExpandedPattern.fromPurePattern t2
+    evalEq t1 t2 = purePatternAxiomEvaluator $
+        mkOr
+            (mkAnd
+                (Bool.asInternal patternSort true)
+                (mkEquals patternSort t1 t2)
+            )
+            (mkAnd
+                (Bool.asInternal patternSort false)
+                (mkNot $ mkEquals patternSort t1 t2)
+            )
 
 evalKIte
     ::  forall variable

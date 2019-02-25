@@ -18,8 +18,6 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
 
-import           Test.Kore
-                 ( testId )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -52,21 +50,22 @@ testBinary symb impl =
     StepperAttributes { hook = Hook { getHook = Just name } } =
         symAttributes testMetadataTools symb
 
+-- testCaseWithSolver "equals with variable" $ \solver -> do
+--         let original = pat keqBoolSymbol
+--             expect = ExpandedPattern.fromPurePattern original
+--         actual <- evaluateWith solver original
+--         assertEqual "" expect actual
+
+--     , testCaseWithSolver "not equals with variable" $ \solver -> do
+--         let original = pat kneqBoolSymbol
+--             expect = ExpandedPattern.fromPurePattern original
+--         actual <- evaluateWith solver original
+--         assertEqual "" expect actual
+
+
 test_KEqual :: [TestTree]
 test_KEqual =
-    [ testCaseWithSolver "equals with variable" $ \solver -> do
-        let original = pat keqBoolSymbol
-            expect = ExpandedPattern.fromPurePattern original
-        actual <- evaluateWith solver original
-        assertEqual "" expect actual
-
-    , testCaseWithSolver "not equals with variable" $ \solver -> do
-        let original = pat kneqBoolSymbol
-            expect = ExpandedPattern.fromPurePattern original
-        actual <- evaluateWith solver original
-        assertEqual "" expect actual
-
-    , testCaseWithSolver "dotk equals dotk" $ \solver -> do
+    [ testCaseWithSolver "dotk equals dotk" $ \solver -> do
         let expect =
                 ExpandedPattern.fromPurePattern
                 $ Test.Bool.asInternal True
@@ -137,7 +136,7 @@ test_KEqual =
                     boolSort
                     keqBoolSymbol
                     [ mkApp
-                        boolSort
+                        kSort
                         kseqSymbol
                         [ mkApp
                             kItemSort
@@ -166,15 +165,6 @@ test_KEqual =
         actual <- runSMT $ evaluate original
         assertEqual "" expect actual
     ]
-  where
-    pat symbol = mkApp boolSort symbol
-        [ Test.Bool.asInternal True
-        , mkVar Variable
-            { variableName = testId "x"
-            , variableCounter = mempty
-            , variableSort = boolSort
-            }
-        ]
 
 test_KIte :: [TestTree]
 test_KIte =

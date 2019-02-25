@@ -81,6 +81,7 @@ evaluate
     let simplified' =
             case refute of
                 Just False -> ExpandedPattern.bottom
+                Just True -> ExpandedPattern.top
                 _ -> OrOfExpandedPattern.toExpandedPattern simplified
         (subst, _proof) = asPredicateSubstitution simplified'
     return (subst, SimplificationProof)
@@ -128,13 +129,18 @@ refutePredicate
 refutePredicate korePredicate =
     case isMetaOrObject (Proxy :: Proxy level) of
         IsMeta   -> return Nothing
-        IsObject ->
-            SMT.inNewScope $ runMaybeT $ do
-                smtPredicate <- goTranslatePredicate korePredicate
-                SMT.assert smtPredicate
-                result <- SMT.check
-                case result of
-                    Unsat -> return False
+        IsObject -> SMT.inNewScope $ runMaybeT $ do
+                smtPredicate <-
+                    goTranslatePredicate korePredicate
+                smtPredicate' <-
+                    goTranslatePredicate (makeNotPredicate korePredicate)
+                result <- SMT.inNewScope
+                    (SMT.assert smtPredicate >> SMT.check)
+                result' <- SMT.inNewScope
+                    (SMT.assert smtPredicate' >> SMT.check)
+                case (result, result') of
+                    (Unsat, _) -> return False
+                    (_, Unsat) -> return True
                     _ -> empty
 
 goTranslatePredicate

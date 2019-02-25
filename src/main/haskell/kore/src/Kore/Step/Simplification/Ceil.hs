@@ -177,7 +177,7 @@ makeEvaluateTerm
     (makeTruePredicate, SimplificationProof)
   | BottomPattern _ <- projected =
     (makeFalsePredicate, SimplificationProof)
-  | isTotalPattern tools term =
+  | isTotalPattern tools term = -- trace ("###Simp.Ceil.isTotalPattern" ++ show term)
     (makeTruePredicate, SimplificationProof)
   | otherwise =
     case projected of
