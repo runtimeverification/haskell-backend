@@ -803,7 +803,7 @@ unify
     -> IO (Maybe (CommonExpandedPattern level))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+        $ evalSimplifier emptyLogger noRepl
         $ runMaybeT
         $ (<$>) fst
         $ unification
@@ -824,5 +824,5 @@ simplify
 simplify tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ evalSimplifier emptyLogger noRepl
     $ termAnd tools (Mock.substitutionSimplifier tools) first second

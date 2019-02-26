@@ -380,7 +380,7 @@ evaluate
   =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ evalSimplifier emptyLogger noRepl
     $ simplify
         tools
         (Mock.substitutionSimplifier tools)

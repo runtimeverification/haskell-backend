@@ -82,6 +82,7 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern as Pattern
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 {- | Attributes specific to interpreting axiom patterns.
@@ -173,6 +174,13 @@ newtype EqualityRule level variable = EqualityRule (RulePattern level variable)
 -}
 newtype RewriteRule level variable = RewriteRule (RulePattern level variable)
     deriving (Eq, Show)
+
+instance (Unparse (variable level), Ord (variable level)) => Unparse (RewriteRule level variable) where
+    unparse (RewriteRule RulePattern { left, right, requires } ) =
+        unparse
+            $ Valid.mkImplies
+                (Valid.mkAnd left (Predicate.unwrapPredicate requires))
+                right
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).

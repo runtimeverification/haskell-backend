@@ -266,7 +266,7 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
     let expect = (unificationResult resultTerm subst predicate, proof)
     Right (subst', proof') <-
         runSMT
-        $ evalSimplifier emptyLogger
+        $ evalSimplifier emptyLogger noRepl
         $ runExceptT
         $ simplifyAnds
             tools
@@ -293,7 +293,7 @@ andSimplifyFailure term1 term2 err = do
     let expect = Left (UnificationError err)
     actual <-
         runSMT
-        $ evalSimplifier emptyLogger
+        $ evalSimplifier emptyLogger noRepl
         $ runExceptT
         $ simplifyAnds
             tools
@@ -316,7 +316,7 @@ andSimplifyException message term1 term2 exceptionMessage =
         test = do
             var <-
                 runSMT
-                $ evalSimplifier emptyLogger
+                $ evalSimplifier emptyLogger noRepl
                 $ runExceptT
                 $ simplifyAnds
                     tools
@@ -347,7 +347,7 @@ unificationProcedureSuccess
     testCase message $ do
         Right (results, proof') <-
             runSMT
-            $ evalSimplifier emptyLogger
+            $ evalSimplifier emptyLogger noRepl
             $ runExceptT
             $ unificationProcedure
                 tools
@@ -733,7 +733,7 @@ injUnificationTests =
 
 simplifyPattern :: UnificationTerm Object -> IO (UnificationTerm Object)
 simplifyPattern (UnificationTerm term) = do
-    Predicated { term = term' } <- runSMT $ evalSimplifier emptyLogger simplifier
+    Predicated { term = term' } <- runSMT $ evalSimplifier emptyLogger noRepl simplifier
     return $ UnificationTerm term'
   where
     simplifier = do

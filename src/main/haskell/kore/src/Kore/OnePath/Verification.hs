@@ -15,8 +15,14 @@ module Kore.OnePath.Verification
     , verify
     ) where
 
+import Control.Monad.IO.Class
+       ( liftIO )
+import Control.Monad.Reader
+       ( ask )
 import Control.Monad.Trans.Except
        ( ExceptT, throwE )
+import Data.Proxy
+       ( Proxy (..) )
 import Numeric.Natural
        ( Natural )
 
@@ -27,7 +33,7 @@ import qualified Data.Limit as Limit
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
+                 ( IsMetaOrObject (..), MetaOrObject (..) )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -49,8 +55,8 @@ import           Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( Environment (proveClaim), PredicateSubstitutionSimplifier,
+                 Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
@@ -62,7 +68,6 @@ data Claim level = Claim
     { rule :: !(RewriteRule level Variable)
     , attributes :: !AxiomPatternAttributes
     }
-
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
@@ -182,8 +187,12 @@ verifyClaim
     simplifier
     substitutionSimplifier
     strategyBuilder
-    (RewriteRule RulePattern {left, right, requires}, stepLimit)
+    (rule@(RewriteRule RulePattern {left, right, requires}), stepLimit)
   = do
+    pc <- proveClaim <$> ask
+    liftIO' $ case isMetaOrObject (Proxy @level) of
+        IsObject -> pc rule
+        IsMeta -> pure ()
     let
         strategy =
             Limit.takeWithin
@@ -208,3 +217,6 @@ verifyClaim
         StrategyPattern.RewritePattern p : _ -> throwE p
         StrategyPattern.Stuck p : _ -> throwE p
         StrategyPattern.Bottom : _ -> error "Unexpected bottom pattern."
+  where
+    liftIO' :: IO () -> ExceptT (CommonExpandedPattern level) Simplifier ()
+    liftIO' = liftIO

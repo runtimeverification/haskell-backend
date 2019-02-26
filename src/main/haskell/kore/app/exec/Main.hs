@@ -21,7 +21,7 @@ import           Data.Text.Prettyprint.Doc.Render.Text
 import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
                  long, metavar, option, progDesc, readerError, str, strOption,
-                 value )
+                 switch, value )
 import           System.Exit
                  ( ExitCode (..), exitWith )
 import           System.IO
@@ -51,6 +51,7 @@ import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Predicate.Predicate
                  ( makePredicate )
+import qualified Kore.Repl as Repl
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes )
 import           Kore.Step.ExpandedPattern
@@ -198,6 +199,7 @@ data KoreExecOptions = KoreExecOptions
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
+    , koreRepl            :: !Bool
     }
 
 -- | Command Line Argument Parser
@@ -246,6 +248,10 @@ parseKoreExecOptions =
         <*> parseKoreLogOptions
         <*> pure Nothing
         <*> optional parseKoreProveOptions
+        <*> switch
+            ( long "repl"
+            <> help "Enable REPL mode for prove"
+            )
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
@@ -330,6 +336,7 @@ mainWithOptions
         , koreLogOptions
         , koreSearchOptions
         , koreProveOptions
+        , koreRepl
         }
   = do
         let
@@ -339,6 +346,10 @@ mainWithOptions
                     { SMT.timeOut = smtTimeOut
                     , SMT.preludeFile = smtPrelude
                     }
+            repl =
+                if koreRepl
+                    then Repl.proveClaim
+                    else const . pure $ ()
         parsedDefinition <- parseDefinition definitionFileName
         indexedDefinition@(indexedModules, _) <-
             verifyDefinitionWithBase
@@ -381,7 +392,7 @@ mainWithOptions
             clockSomethingIO "Executing"
             $ withLogger koreLogOptions (\logger ->
                 SMT.runSMT smtConfig
-                $ evalSimplifier logger
+                $ evalSimplifier logger repl
                 $ case proveParameters of
                     Nothing -> do
                         let purePattern =

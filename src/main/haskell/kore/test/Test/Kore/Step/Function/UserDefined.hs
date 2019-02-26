@@ -260,7 +260,7 @@ evaluateWithAxiom
     evaluated =
         (<$>) fst
         $ SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+        $ evalSimplifier emptyLogger noRepl
         $ ruleFunctionEvaluator
             axiom
             metadataTools
