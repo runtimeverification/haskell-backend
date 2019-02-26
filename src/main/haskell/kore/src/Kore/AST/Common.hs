@@ -121,6 +121,10 @@ Particularly, this is the type of variable in patterns returned by the parser.
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
+-- Note: `variableCounter` needs to be after `variableName` and `variableSort`
+-- to ensure that a `refreshVariable` generates variables with the same name
+-- and sort (due to the lexicographic order induced by deriving `Ord`).
+--
 -- Invariant [variableCounter = Just Sup]:
 -- No function returns a value that would match the pattern:
 --
@@ -130,8 +134,8 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -- the set of variables that must not be captured.
 data Variable level = Variable
     { variableName :: !(Id level)
-    , variableCounter :: !(Maybe (Sup Natural))
     , variableSort :: !(Sort level)
+    , variableCounter :: !(Maybe (Sup Natural))
     }
     deriving (Show, Eq, Ord, Generic)
 

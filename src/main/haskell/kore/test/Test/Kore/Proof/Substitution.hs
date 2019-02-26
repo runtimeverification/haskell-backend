@@ -117,7 +117,7 @@ genUnaryPatterns size = do
   [mkNot a, mkNext a, mkForall (var $ Text.pack $ show size) a]
 
 var :: MetaOrObject level => Text -> Variable level
-var x = Variable (noLocationId x) mempty (mkSort "S")
+var x = Variable (noLocationId x) (mkSort "S") mempty
 
 var_ :: MetaOrObject level => Text -> Id level -> Variable level
-var_ x s = Variable (noLocationId x) mempty (mkSort s)
+var_ x s = Variable (noLocationId x) (mkSort s) mempty

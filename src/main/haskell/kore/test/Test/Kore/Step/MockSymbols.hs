@@ -502,21 +502,21 @@ sigmaSymbol = SymbolOrAlias
     }
 
 var_x_1 :: Variable Object
-var_x_1 = Variable (testId "x") (Just (Element 1)) testSort
+var_x_1 = Variable (testId "x") testSort (Just (Element 1))
 var_y_1 :: Variable Object
-var_y_1 = Variable (testId "y") (Just (Element 1)) testSort
+var_y_1 = Variable (testId "y") testSort (Just (Element 1))
 var_z_1 :: Variable Object
-var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
+var_z_1 = Variable (testId "z") testSort (Just (Element 1))
 x :: Variable Object
-x = Variable (testId "x") mempty testSort
+x = Variable (testId "x") testSort mempty
 y :: Variable Object
-y = Variable (testId "y") mempty testSort
+y = Variable (testId "y") testSort mempty
 z :: Variable Object
-z = Variable (testId "z") mempty testSort
+z = Variable (testId "z") testSort mempty
 m :: Variable Object
-m = Variable (testId "m") mempty mapSort
+m = Variable (testId "m") mapSort mempty
 xInt :: Variable Object
-xInt = Variable (testId "xInt") mempty intSort
+xInt = Variable (testId "xInt") intSort mempty
 
 a :: Ord (variable Object) => StepPattern Object variable
 a = mkApp testSort aSymbol []

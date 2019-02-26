@@ -407,7 +407,7 @@ makeAnd
 makeAnd p1 p2 = makeAndPredicate p1 p2
 
 a, b, c, d :: Sort level -> Variable level
-a = Variable (testId "#a") mempty
-b = Variable (testId "#b") mempty
-c = Variable (testId "#c") mempty
-d = Variable (testId "#d") mempty
+a = \sort -> Variable (testId "#a") sort mempty
+b = \sort -> Variable (testId "#b") sort mempty
+c = \sort -> Variable (testId "#c") sort mempty
+d = \sort -> Variable (testId "#d") sort mempty

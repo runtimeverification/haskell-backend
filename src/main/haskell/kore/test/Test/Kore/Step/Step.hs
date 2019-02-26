@@ -49,10 +49,10 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Tasty.HUnit.Extensions
 
 v1, a1, b1, x1 :: Sort Meta -> Variable Meta
-v1 = Variable (testId "#v1") mempty
-a1 = Variable (testId "#a1") mempty
-b1 = Variable (testId "#b1") mempty
-x1 = Variable (testId "#x1") mempty
+v1 = \sort -> Variable (testId "#v1") sort mempty
+a1 = \sort -> Variable (testId "#a1") sort mempty
+b1 = \sort -> Variable (testId "#b1") sort mempty
+x1 = \sort -> Variable (testId "#x1") sort mempty
 
 rewriteIdentity :: RewriteRule Meta Variable
 rewriteIdentity =
@@ -107,7 +107,8 @@ expectTwoAxioms =
 
 actualTwoAxioms :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 actualTwoAxioms =
-    runStep
+    List.sortBy (comparing fst)
+    <$> runStep
         mockMetadataTools
         Predicated
             { term = mkVar (v1 patternMetaSort)

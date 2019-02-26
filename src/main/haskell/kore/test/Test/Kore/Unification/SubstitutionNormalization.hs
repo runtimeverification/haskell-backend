@@ -177,9 +177,9 @@ test_substitutionNormalization =
     ]
   where
     v1 :: Sort level -> Variable level
-    v1 = Variable (testId "v1") mempty
+    v1 = \sort -> Variable (testId "v1") sort mempty
     x1 :: Sort level -> Variable level
-    x1 = Variable (testId "x1") mempty
+    x1 = \sort -> Variable (testId "x1") sort mempty
     f = groundHead "f" AstLocationTest
 
 runNormalizeSubstitution

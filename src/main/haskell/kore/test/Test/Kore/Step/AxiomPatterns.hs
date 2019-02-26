@@ -219,10 +219,10 @@ axiomPatternsIntegrationTests =
                             patternSort = sortTCell
                             freeVariables =
                                 Set.fromList
-                                    [ asUnified (Variable "VarI1" mempty sortAInt)
-                                    , asUnified (Variable "VarI2" mempty sortAInt)
-                                    , asUnified (Variable "VarDotVar1" mempty sortK)
-                                    , asUnified (Variable "VarDotVar0" mempty sortStateCell)
+                                    [ asUnified (Variable "VarI1" sortAInt mempty)
+                                    , asUnified (Variable "VarI2" sortAInt mempty)
+                                    , asUnified (Variable "VarDotVar1" sortK mempty)
+                                    , asUnified (Variable "VarDotVar0" sortStateCell mempty)
                                     ]
                     koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
                 )

@@ -773,13 +773,13 @@ test_baseStep =
     ]
   where
     v1, a1, b1, c1, x1, y1, var_a1_0 :: Sort Meta -> Variable Meta
-    v1 = Variable (testId "#v1") mempty
-    a1 = Variable (testId "#a1") mempty
-    b1 = Variable (testId "#b1") mempty
-    c1 = Variable (testId "#c1") mempty
-    x1 = Variable (testId "#x1") mempty
-    y1 = Variable (testId "#y1") mempty
-    var_a1_0 = Variable (testId "#a1") (Just (Element 0))
+    v1 = \sort -> Variable (testId "#v1") sort mempty
+    a1 = \sort -> Variable (testId "#a1") sort mempty
+    b1 = \sort -> Variable (testId "#b1") sort mempty
+    c1 = \sort -> Variable (testId "#c1") sort mempty
+    x1 = \sort -> Variable (testId "#x1") sort mempty
+    y1 = \sort -> Variable (testId "#y1") sort mempty
+    var_a1_0 = \sort -> Variable (testId "#a1") sort (Just (Element 0))
 
     identicalVariablesAssertion var = do
         let expect = Right

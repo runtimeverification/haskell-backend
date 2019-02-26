@@ -133,8 +133,8 @@ instance UnliftableFromMetaML (Variable Object) where
                 [uVariableName, uVariableSort] ->
                     pure Variable
                         <*> unliftFromMeta uVariableName
-                        <*> pure mempty
                         <*> unliftFromMeta uVariableSort
+                        <*> pure mempty
                 _ -> Nothing
         | otherwise = Nothing
     unliftFromMeta _ = Nothing

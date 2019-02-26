@@ -295,7 +295,7 @@ variableGen patternSort =
                     ]
       where
         freshVariable =
-            Variable <$> idGen level <*> pure mempty <*> pure patternSort
+            Variable <$> idGen level <*> pure patternSort <*> pure mempty
 
 unifiedVariableGen :: Unified Sort -> Gen (Unified Variable)
 unifiedVariableGen = transformUnified unifiedVariableGenWorker
