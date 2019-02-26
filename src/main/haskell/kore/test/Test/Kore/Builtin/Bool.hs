@@ -115,13 +115,13 @@ test_simplification =
             ]
         ]
       where
-      _True  = Bool.asInternal boolSort True
-      _False = Bool.asInternal boolSort False
+        _True  = Bool.asInternal boolSort True
+        _False = Bool.asInternal boolSort False
 
-      becomes :: HasCallStack
-              => CommonStepPattern Object
-              -> CommonExpandedPattern Object
-              -> TestTree
-      becomes makerInput =
-          wrapped_maker_expected withSolver
-            (\solver -> evaluateWith solver makerInput)
+        becomes :: HasCallStack
+                => CommonStepPattern Object
+                -> CommonExpandedPattern Object
+                -> TestTree
+        becomes makerInput =
+            wrapped_maker_expected withSolver
+                (\solver -> evaluateWith solver makerInput)
