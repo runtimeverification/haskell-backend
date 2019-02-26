@@ -162,7 +162,7 @@ evalKEq true _ _ _ (valid :< app) =
                 (MultiOr
                     [ Predicated
                         (Bool.asInternal patternSort false)
-                        ( Predicate.makeNotPredicate $ 
+                        ( Predicate.makeNotPredicate $
                             Predicate.makeEqualsPredicate t1 t2
                         )
                         mempty

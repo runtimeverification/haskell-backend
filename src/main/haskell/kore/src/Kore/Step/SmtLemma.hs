@@ -23,9 +23,9 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
-import qualified Data.Text as Text
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
@@ -101,7 +101,7 @@ declareSMTLemmas m =
         -> SMT (Maybe ())
     declareSymbol (atts, symDeclaration) = runMaybeT $
         case getSmtlib $ smtlib atts of
-            Just (SMT.List (SMT.Atom name : _)) -> do
+            Just (SMT.Atom name) -> do
                 inputSorts <-
                     mapM
                         translateSort

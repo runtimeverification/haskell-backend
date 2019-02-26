@@ -4,7 +4,7 @@ module LEM
 
   syntax PgmState ::= "Start" | "Stop" 
 
-  syntax Int ::= f ( Int ) [function, smtlib((f #0)), functional]
+  syntax Int ::= f ( Int ) [function, smtlib(f), functional]
 
   rule f(1) => f(2) [smt-lemma]
   
