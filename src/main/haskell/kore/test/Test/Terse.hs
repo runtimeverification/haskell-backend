@@ -1,57 +1,57 @@
 module Test.Terse
-  ( -- Builder functions that make what's being tested stand out
-    -- more than test support code. Especially useful for building
-    -- tabular tests in this style:
-    --
-    --
-    -- > testGroup "The values have properties that fit their ids"
-    -- > [ tT `has_` [ (isTop, True),   (isBottom, False) ]
-    -- > , tm `has_` [ (isTop, False),  (isBottom, False) ]
-    -- > , tM `has_` [ (isTop, False),  (isBottom, False) ]
-    -- > , t_ `has_` [ (isTop, False),  (isBottom, True) ]
-    -- > , unequals tm tM      "we need distinct 'middle' values"
-    -- > ...
-    --
-    --
-    -- * Common Functions
-    --
-    -- $commonFunctions
-    satisfies
-  , equals
-  , unequals
-  , has
-  , gives
-    -- * Variants
-  , satisfies_
-  , equals_
-  , unequals_
-  , has_
-  , gives_
+    (   -- Builder functions that make what's being tested stand out
+        -- more than test support code. Especially useful for building
+        -- tabular tests in this style:
+        --
+        --
+        -- > testGroup "The values have properties that fit their ids"
+        -- > [ tT `has_` [ (isTop, True),   (isBottom, False) ]
+        -- > , tm `has_` [ (isTop, False),  (isBottom, False) ]
+        -- > , tM `has_` [ (isTop, False),  (isBottom, False) ]
+        -- > , t_ `has_` [ (isTop, False),  (isBottom, True) ]
+        -- > , unequals tm tM      "we need distinct 'middle' values"
+        -- > ...
+        --
+        --
+        -- * Common Functions
+        --
+        -- $commonFunctions
+        satisfies
+    , equals
+    , unequals
+    , has
+    , gives
+        -- * Variants
+    , satisfies_
+    , equals_
+    , unequals_
+    , has_
+    , gives_
 
-    -- * Builder Functions
-    --
-    -- $builderFunctions
+        -- * Builder Functions
+        --
+        -- $builderFunctions
 
-  , actual_predicate_name
-  , actual_predicate
-  , actual_expected_name_intention
-  , actual_expected_name
-  , actual_expected
-  , f_2_expected_name
-  , f_2_expected
+    , actual_predicate_name
+    , actual_predicate
+    , actual_expected_name_intention
+    , actual_expected_name
+    , actual_expected
+    , f_2_expected_name
+    , f_2_expected
 
-    -- * Builder Functions that work with wrapped resources
-    --
-    -- $resourceFunctions
+        -- * Builder Functions that work with wrapped resources
+        --
+        -- $resourceFunctions
 
-  , wrapped_maker_expected_name_intention
-  , wrapped_maker_expected_name
-  , wrapped_maker_expected
+    , wrapped_maker_expected_name_intention
+    , wrapped_maker_expected_name
+    , wrapped_maker_expected
 
-    -- * Rationale
-    --
-    -- $rationale
-  ) where
+        -- * Rationale
+        --
+        -- $rationale
+    ) where
 
 import Data.Foldable
        ( traverse_ )
@@ -87,13 +87,15 @@ satisfies_ = actual_predicate
 -- |
 -- > 3 + 4 `equals` 7  "addition works"
 equals
-  :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
-  => a -> a -> String -> TestTree
+    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    => a -> a -> String -> TestTree
 equals = actual_expected_name
 
 -- |
 -- > 3 + 4 `equals_` 7
-equals_ :: (HasCallStack, Eq a, Show a, EqualWithExplanation a) => a -> a -> TestTree
+equals_
+    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    => a -> a -> TestTree
 equals_ = actual_expected
 
 -- |
@@ -112,12 +114,12 @@ unequals_ actual unexpected =
 -- |
 -- > 1 `has` [(isPositive, True), (isEven, False) ] "name"
 has :: forall a . HasCallStack => a -> [(a -> Bool, Bool)] -> String -> TestTree
-has value tuples name=
+has value tuples name =
     testCase name (traverse_ checkOne tuples)
-      where
-        checkOne :: (a->Bool, Bool) -> Assertion
-        checkOne (predicate, expected) =
-            assertEqual "" expected (predicate value)
+  where
+    checkOne :: (a->Bool, Bool) -> Assertion
+    checkOne (predicate, expected) =
+        assertEqual "" expected (predicate value)
 
 -- |
 -- > 1 `has_` [(isPositive, True), (isEven, False) ]
@@ -127,13 +129,15 @@ has_ value tuples = has value tuples "Has properties"
 
 -- |
 -- > isOdd `gives` [ (1, True), (2, False) ] "arity checks"
-gives :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> String -> TestTree
+gives
+    :: forall a . HasCallStack
+    => (a -> Bool) -> [(a, Bool)] -> String -> TestTree
 gives predicate tuples name =
-  testCase name (traverse_ checkOne tuples)
-    where
-      checkOne :: (a, Bool) -> Assertion
-      checkOne (value, expected) =
-          assertEqual "" expected (predicate value)
+    testCase name (traverse_ checkOne tuples)
+  where
+    checkOne :: (a, Bool) -> Assertion
+    checkOne (value, expected) =
+        assertEqual "" expected (predicate value)
 
 -- |
 -- > isOdd `gives_` [ (1, True), (2, False) ]
