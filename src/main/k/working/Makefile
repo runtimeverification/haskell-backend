@@ -4,11 +4,12 @@ TOPTARGETS := all clean test test-k golden
 
 .PHONY: $(TOPTARGETS)
 
-SUBDIRS := $(wildcard */.)
+SUBMAKES := $(shell find ./ ! -path ./Makefile -name Makefile)
 
 # The subdirectory targets should not run in parallel, due to issues with
 # running multiple concurrent krun processes.
-$(TOPTARGETS):
-	for subdir in $(SUBDIRS); do \
-		$(MAKE) -C "$$subdir" $(MAKECMDGOALS); \
-	done
+.NOTPARALLEL:  $(SUBMAKES:=.make)
+$(TOPTARGETS): $(SUBMAKES:=.make)
+
+%/Makefile.make:
+	$(MAKE) --directory $* $(MAKECMDGOALS)
