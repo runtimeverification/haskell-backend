@@ -24,7 +24,6 @@ module Kore.Builtin
     , koreVerifiers
     , koreEvaluators
     , evaluators
-    , asPattern
     , externalizePattern
     , asMetaPattern
     ) where
@@ -41,7 +40,6 @@ import           Data.Text
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
                  ( Hook (..) )
@@ -176,29 +174,6 @@ evaluators builtins indexedModule =
             name <- getHook
             impl <- Map.lookup name builtins
             pure impl
-
-{- | Represent a 'Builtin' domain value as an object-level pattern.
-
-    Any builtins with an internal representation are externalized to their
-    concrete Kore syntax. The given indexed module must define the appropriate
-    hooks.
-
- -}
-asPattern
-    :: Ord (variable Object)
-    => DomainValue Object Domain.Builtin (StepPattern Object variable)
-    -- ^ domain value
-    -> StepPattern Object variable
-asPattern DomainValue { domainValueSort, domainValueChild } =
-    case domainValueChild of
-        Domain.BuiltinExternal _ ->
-            mkDomainValue domainValueSort domainValueChild
-        Domain.BuiltinMap  builtin -> Map.asPattern  builtin
-        Domain.BuiltinList builtin -> List.asPattern builtin
-        Domain.BuiltinSet  builtin -> Set.asPattern  builtin
-        Domain.BuiltinInt  builtin -> Int.asPattern  builtin
-        Domain.BuiltinBool builtin -> Bool.asPattern builtin
-
 
 {- | Externalize all builtin domain values in the given pattern.
 
