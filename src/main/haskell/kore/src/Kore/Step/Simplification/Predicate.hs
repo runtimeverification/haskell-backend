@@ -11,6 +11,8 @@ module Kore.Step.Simplification.Predicate
     ( simplifyPartial
     ) where
 
+import qualified Data.Text.Prettyprint.Doc as Pretty
+
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
@@ -23,6 +25,7 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (StepPatternSimplifier) )
+import           Kore.Unparser
 
 {-| Simplifies a predicate, producing another predicate and a substitution,
 without trying to reapply the substitution on the predicate.
@@ -31,7 +34,10 @@ TODO(virgil): Make this fully simplify.
 -}
 simplifyPartial
     ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Ord (variable level)
         , Show (variable level)
+        , Unparse (variable level)
         )
     => PredicateSubstitutionSimplifier level Simplifier
     -> StepPatternSimplifier level variable
@@ -65,5 +71,9 @@ simplifyPartial
                     }
                 , SimplificationProof
                 )
-        [patt] -> error ("Expecting a top term! " ++ show patt)
+        [patt] ->
+            (error . show . Pretty.vsep)
+                [ "Expecting a top term!"
+                , unparse patt
+                ]
         _ -> error ("Expecting at most one result " ++ show patternOr)
