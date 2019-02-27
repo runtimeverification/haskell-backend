@@ -37,16 +37,20 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
-import qualified Kore.Builtin.Error as Builtin
-import           Kore.Domain.External
-import           Kore.Unparser
+import Kore.Annotation.Valid
+import Kore.AST.Pure
+import Kore.Domain.External
+import Kore.Unparser
 
 -- * Helpers
 
 type Key = PurePattern Object Builtin Concrete (Valid (Concrete Object) Object)
 
+{- | Unparse a builtin collection type, given its symbols and children.
+
+The children are already unparsed.
+
+ -}
 unparseCollection
     :: SymbolOrAlias Object  -- ^ unit symbol
     -> SymbolOrAlias Object  -- ^ element symbol
@@ -258,9 +262,9 @@ instance Unparse child => Unparse (Builtin child) where
             BuiltinExternal external -> unparse external
             BuiltinInt builtinInt -> unparse builtinInt
             BuiltinBool builtinBool -> unparse builtinBool
-            BuiltinMap _ -> Builtin.notImplementedInternal
-            BuiltinList _ -> Builtin.notImplementedInternal
-            BuiltinSet _ -> Builtin.notImplementedInternal
+            BuiltinMap builtinMap -> unparse builtinMap
+            BuiltinList builtinList -> unparse builtinList
+            BuiltinSet builtinSet -> unparse builtinSet
 
 deriveEq1 ''InternalMap
 deriveOrd1 ''InternalMap
