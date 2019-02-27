@@ -57,8 +57,8 @@ data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
 data Environment = Environment
-    { solver  :: !(MVar Solver)
-    , logger  :: !(LogAction Simplifier LogMessage)
+    { solver     :: !(MVar Solver)
+    , logger     :: !(LogAction Simplifier LogMessage)
     , proveClaim :: !(RewriteRule Object Variable -> IO ())
     }
 
