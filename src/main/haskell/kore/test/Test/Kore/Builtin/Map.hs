@@ -491,6 +491,12 @@ test_concretizeKeysAxiom =
             )
         ]
 
+hprop_unparse :: Property
+hprop_unparse =
+    hpropUnparse (asInternal <$> genConcreteMap genValue)
+  where
+    genValue = Test.Int.asInternal <$> genInteger
+
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonStepPattern Object
 asPattern =
@@ -502,6 +508,12 @@ asPattern =
 asExpandedPattern :: Map.Builtin Variable -> CommonExpandedPattern Object
 asExpandedPattern =
     Reflection.give testMetadataTools Map.asExpandedPattern mapSort
+
+-- | Specialize 'Map.asInternal' to the builtin sort 'listSort'.
+asInternal
+    :: Map.Builtin Variable
+    -> CommonStepPattern Object
+asInternal = Map.asInternal testMetadataTools mapSort
 
 -- * Constructors
 

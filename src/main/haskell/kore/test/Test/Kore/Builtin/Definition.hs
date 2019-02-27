@@ -268,25 +268,25 @@ pairSymbol lSort rSort =
 -- ** Set
 
 unitSetSymbol :: SymbolOrAlias Object
-unitSetSymbol = builtinSymbol Set.unitKey
+unitSetSymbol = builtinSymbol "unitSet"
 
 elementSetSymbol :: SymbolOrAlias Object
-elementSetSymbol = builtinSymbol Set.elementKey
+elementSetSymbol = builtinSymbol "elementSet"
 
 concatSetSymbol :: SymbolOrAlias Object
-concatSetSymbol = builtinSymbol Set.concatKey
+concatSetSymbol = builtinSymbol "concatSet"
 
 inSetSymbol :: SymbolOrAlias Object
-inSetSymbol = builtinSymbol Set.inKey
+inSetSymbol = builtinSymbol "inSet"
 
 differenceSetSymbol :: SymbolOrAlias Object
-differenceSetSymbol = builtinSymbol Set.differenceKey
+differenceSetSymbol = builtinSymbol "differenceSet"
 
 toListSetSymbol :: SymbolOrAlias Object
-toListSetSymbol = builtinSymbol Set.toListKey
+toListSetSymbol = builtinSymbol "toListSet"
 
 sizeSetSymbol :: SymbolOrAlias Object
-sizeSetSymbol = builtinSymbol Set.sizeKey
+sizeSetSymbol = builtinSymbol "sizeSet"
 
 -- ** String
 
@@ -375,6 +375,13 @@ boolSort =
 boolSortDecl :: KoreSentence
 boolSortDecl = hookedSortDecl boolSort [ hookAttribute "BOOL.Bool" ]
 
+builtinBool :: Bool -> InternalBool
+builtinBool builtinBoolValue =
+    InternalBool
+        { builtinBoolSort = boolSort
+        , builtinBoolValue
+        }
+
 -- ** Int
 
 -- | A sort to hook to the builtin @INT.Int@.
@@ -388,6 +395,13 @@ intSort =
 -- | Declare 'intSort' in a Kore module.
 intSortDecl :: KoreSentence
 intSortDecl = hookedSortDecl intSort [ hookAttribute "INT.Int" ]
+
+builtinInt :: Integer -> InternalInt
+builtinInt builtinIntValue =
+    InternalInt
+        { builtinIntSort = intSort
+        , builtinIntValue
+        }
 
 -- ** KEQUAL
 

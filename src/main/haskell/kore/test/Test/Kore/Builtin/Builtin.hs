@@ -1,9 +1,10 @@
 module Test.Kore.Builtin.Builtin where
 
-import Test.Tasty
-       ( TestTree )
-import Test.Tasty.HUnit
-       ( assertEqual )
+import qualified Hedgehog
+import           Test.Tasty
+                 ( TestTree )
+import           Test.Tasty.HUnit
+                 ( assertEqual )
 
 import           Control.Concurrent.MVar
                  ( MVar )
@@ -21,6 +22,7 @@ import           Data.Proxy
 import           GHC.Stack
                  ( HasCallStack )
 
+import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -33,6 +35,8 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import           Kore.Parser.Parser
+                 ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
@@ -51,6 +55,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
+import           Kore.Unparser
+                 ( unparseToString )
 import           SMT
                  ( MonadSMT (..), SMT, Solver )
 import qualified SMT
@@ -282,3 +288,17 @@ runStepResultWith solver configuration axiom =
                     axiom
                 )
     in runReaderT (SMT.getSMT smt) solver
+
+
+-- | Test unparsing internalized patterns.
+hpropUnparse
+    :: Hedgehog.Gen (CommonStepPattern Object)
+    -- ^ Generate patterns with internal representations
+    -> Hedgehog.Property
+hpropUnparse gen = Hedgehog.property $ do
+    builtin <- Hedgehog.forAll gen
+    let syntax = unparseToString builtin
+        expected =
+            (Kore.eraseAnnotations . toKorePattern)
+                (Builtin.externalizePattern builtin)
+    Right expected Hedgehog.=== parseKorePattern "<test>" syntax

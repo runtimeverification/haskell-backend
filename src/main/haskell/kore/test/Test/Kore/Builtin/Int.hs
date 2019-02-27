@@ -2,8 +2,7 @@
 
 module Test.Kore.Builtin.Int where
 
-import           Hedgehog hiding
-                 ( property )
+import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
@@ -373,3 +372,6 @@ test_unifyAndEqual_Equal =
         let dv = asInternal 0
         actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv
         assertEqual "" top actual
+
+hprop_unparse :: Property
+hprop_unparse = hpropUnparse (asInternal <$> genInteger)

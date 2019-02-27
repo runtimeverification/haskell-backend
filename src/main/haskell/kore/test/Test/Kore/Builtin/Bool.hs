@@ -1,7 +1,6 @@
 module Test.Kore.Builtin.Bool where
 
-import           Hedgehog hiding
-                 ( property )
+import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -124,3 +123,6 @@ test_simplification =
         becomes makerInput =
             wrapped_maker_expected withSolver
                 (\solver -> evaluateWith solver makerInput)
+
+hprop_unparse :: Property
+hprop_unparse = hpropUnparse (asInternal <$> Gen.bool)

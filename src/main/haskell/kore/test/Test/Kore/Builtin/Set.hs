@@ -60,6 +60,9 @@ genSetConcreteIntegerPattern :: Gen (Set (ConcreteStepPattern Object))
 genSetConcreteIntegerPattern =
     Set.map Test.Int.asInternal <$> genSetInteger
 
+genConcreteSet :: Gen Set.Builtin
+genConcreteSet = genSetConcreteIntegerPattern
+
 genSetPattern :: Gen (CommonStepPattern Object)
 genSetPattern = asPattern <$> genSetConcreteIntegerPattern
 
@@ -430,6 +433,9 @@ test_isBuiltin =
         assertBool ""
             (not (Set.isSymbolUnit mockHookTools Mock.concatSetSymbol))
     ]
+
+hprop_unparse :: Property
+hprop_unparse = hpropUnparse (asInternal <$> genConcreteSet)
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
