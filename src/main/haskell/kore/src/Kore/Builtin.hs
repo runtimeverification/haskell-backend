@@ -194,9 +194,7 @@ evaluators builtins indexedModule =
 
  -}
 asPattern
-    ::  ( Given (MetadataTools Object StepperAttributes)
-        , Ord (variable Object)
-        )
+    :: Ord (variable Object)
     => DomainValue Object Domain.Builtin (StepPattern Object variable)
     -- ^ domain value
     -> StepPattern Object variable
@@ -204,7 +202,7 @@ asPattern DomainValue { domainValueSort, domainValueChild } =
     case domainValueChild of
         Domain.BuiltinExternal _ ->
             mkDomainValue domainValueSort domainValueChild
-        Domain.BuiltinMap  builtin -> Map.asPattern builtin
+        Domain.BuiltinMap  builtin -> Map.asPattern  builtin
         Domain.BuiltinList builtin -> List.asPattern builtin
         Domain.BuiltinSet  builtin -> Set.asPattern  builtin
         Domain.BuiltinInt  builtin -> Int.asPattern  builtin
@@ -220,22 +218,31 @@ See also: 'asPattern'
  -}
 -- TODO (thomas.tuegel): Transform from Domain.Internal to Domain.External.
 externalizePattern
-    ::  forall variable.
-        ( Given (MetadataTools Object StepperAttributes)
-        , Ord (variable Object)
-        )
+    ::  forall variable. Ord (variable Object)
     =>  StepPattern Object variable
     ->  StepPattern Object variable
 externalizePattern =
-    Recursive.fold externalizePatternWorker
+    Recursive.unfold externalizePatternWorker
   where
     externalizePatternWorker
-        ::  Base (StepPattern Object variable) (StepPattern Object variable)
-        ->  StepPattern Object variable
-    externalizePatternWorker (ann :< pat) =
+        ::  StepPattern Object variable
+        ->  Base (StepPattern Object variable) (StepPattern Object variable)
+    externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
         case pat of
-            DomainValuePattern dv -> asPattern dv
-            _ -> Recursive.embed (ann :< pat)
+            DomainValuePattern DomainValue { domainValueChild } ->
+                case domainValueChild of
+                    Domain.BuiltinExternal _ -> original
+                    Domain.BuiltinMap  builtin ->
+                        Recursive.project (Map.asPattern builtin)
+                    Domain.BuiltinList builtin ->
+                        Recursive.project (List.asPattern builtin)
+                    Domain.BuiltinSet  builtin ->
+                        Recursive.project (Set.asPattern builtin)
+                    Domain.BuiltinInt  builtin ->
+                        Recursive.project (Int.asPattern builtin)
+                    Domain.BuiltinBool builtin ->
+                        Recursive.project (Bool.asPattern builtin)
+            _ -> original
 
 {- | Extract the meta-level pattern argument of a domain value.
 
