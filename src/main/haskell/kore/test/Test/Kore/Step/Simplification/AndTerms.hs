@@ -103,7 +103,8 @@ test_andTermsSimplification =
                     Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(Mock.x, fOfA)]
+                        , substitution =
+                            Substitution.unsafeWrap [(Mock.x, fOfA)]
                         }
             actual <-
                 simplifyUnify
@@ -116,7 +117,8 @@ test_andTermsSimplification =
                     Predicated
                         { term = fOfA
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(Mock.x, fOfA)]
+                        , substitution =
+                            Substitution.unsafeWrap [(Mock.x, fOfA)]
                         }
             actual <-
                 simplifyUnify
@@ -550,7 +552,8 @@ test_andTermsSimplification =
                     Just Predicated
                         { term = Mock.builtinMap [(Mock.aConcrete, Mock.b)]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(Mock.x, Mock.b)]
+                        , substitution =
+                            Substitution.unsafeWrap [(Mock.x, Mock.b)]
                         }
             actual <-
                 unify
@@ -714,12 +717,12 @@ test_andTermsSimplification =
             let term5 = Mock.concatList
                         (Mock.builtinList [Mock.a])
                         (mkVar Mock.x)
-                term6 = Mock.builtinList $ [Mock.a, Mock.b]
+                term6 = Mock.builtinList [Mock.a, Mock.b]
                 expect =
                     Just Predicated
-                        { term = Mock.builtinList $ [Mock.a, Mock.b]
+                        { term = Mock.builtinList [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap
+                        , substitution = Substitution.unsafeWrap
                             [(Mock.x, Mock.builtinList [Mock.b])]
                         }
             actual <- unify mockMetadataTools term5 term6

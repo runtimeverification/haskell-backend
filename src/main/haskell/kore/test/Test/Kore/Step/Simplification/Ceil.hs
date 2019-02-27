@@ -12,6 +12,8 @@ import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Logger.Output as Logger
+                 ( emptyLogger )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
@@ -26,13 +28,19 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
+import qualified SMT
 
+import           Test.Kore
+                 ( noRepl )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.MockSymbols
                  ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -40,10 +48,10 @@ import           Test.Tasty.HUnit.Extensions
 
 test_ceilSimplification :: [TestTree]
 test_ceilSimplification =
-    [ testCase "Ceil - or distribution"
+    [ testCase "Ceil - or distribution" $ do
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfA
@@ -55,89 +63,86 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
+        actual <- evaluate mockMetadataTools
+            (makeCeil
+                [somethingOfAExpanded, somethingOfBExpanded]
             )
-            (evaluate mockMetadataTools
-                (makeCeil
-                    [somethingOfAExpanded, somethingOfBExpanded]
-                )
-            )
-        )
+        assertEqualWithExplanation "" expected actual
     , testCase "Ceil - bool operations"
         (do
             -- ceil(top) = top
+            actual1 <- evaluate mockMetadataTools
+                (makeCeil
+                    [ExpandedPattern.top]
+                )
             assertEqualWithExplanation "ceil(top)"
                 (OrOfExpandedPattern.make
                     [ ExpandedPattern.top ]
                 )
-                (evaluate mockMetadataTools
-                    (makeCeil
-                        [ExpandedPattern.top]
-                    )
-                )
+                actual1
             -- ceil(bottom) = bottom
+            actual2 <- evaluate mockMetadataTools
+                (makeCeil
+                    []
+                )
             assertEqualWithExplanation "ceil(bottom)"
                 (OrOfExpandedPattern.make
                     []
                 )
-                (evaluate mockMetadataTools
-                    (makeCeil
-                        []
-                    )
-                )
+                actual2
         )
     , testCase "expanded Ceil - bool operations"
         (do
             -- ceil(top) = top
+            actual1 <- makeEvaluate mockMetadataTools
+                (ExpandedPattern.top :: CommonExpandedPattern Object)
             assertEqualWithExplanation "ceil(top)"
                 (OrOfExpandedPattern.make
                     [ ExpandedPattern.top ]
                 )
-                (makeEvaluate mockMetadataTools
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
-                )
+                actual1
             -- ceil(bottom) = bottom
+            actual2 <- makeEvaluate mockMetadataTools
+                (ExpandedPattern.bottom :: CommonExpandedPattern Object)
             assertEqualWithExplanation "ceil(bottom)"
                 (OrOfExpandedPattern.make
                     []
                 )
-                (makeEvaluate mockMetadataTools
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
-                )
+                actual2
         )
-    , testCase "ceil with predicates and substitutions"
+    , testCase "ceil with predicates and substitutions" $ do
         -- if term is not functional, then
         -- ceil(term and predicate and subst)
         --     = top and (ceil(term) and predicate) and subst
-        (assertEqualWithExplanation "ceil(something(a) and equals(f(a), g(a)))"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate somethingOfA)
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term = somethingOfA
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
-                    }
-            )
-        )
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = somethingOfA
+                , predicate = makeEqualsPredicate fOfA gOfA
+                , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                }
+        assertEqualWithExplanation "ceil(something(a) and equals(f(a), g(a)))"
+            expected
+            actual
     , let
         constructorTerm = Mock.constr20 somethingOfA somethingOfB
       in
-        testCase "ceil with constructors"
+        testCase "ceil with constructors" $ do
             -- if term is a non-functional-constructor(params), then
             -- ceil(term and predicate and subst)
             --     = top and (ceil(term) and predicate) and subst
-            (assertEqualWithExplanation
-                "ceil(constr(something(a), something(b)) and eq(f(a), g(a)))"
-                (OrOfExpandedPattern.make
+            let
+                expected = OrOfExpandedPattern.make
                     [ Predicated
                         { term = mkTop_
                         , predicate =
@@ -147,36 +152,36 @@ test_ceilSimplification =
                                     (makeCeilPredicate somethingOfA)
                                     (makeCeilPredicate somethingOfB)
                                 )
-                        , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                        , substitution =
+                            Substitution.unsafeWrap [(Mock.x, fOfB)]
                         }
                     ]
-                )
-                (makeEvaluate mockMetadataTools
-                    Predicated
-                        { term = constructorTerm
-                        , predicate = makeEqualsPredicate fOfA gOfA
-                        , substitution = Substitution.wrap [(Mock.x, fOfB)]
-                        }
-                )
-            )
-    , testCase "ceil of constructors is top"
-        (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make [ExpandedPattern.top])
-            (makeEvaluate mockMetadataTools
+            actual <- makeEvaluate mockMetadataTools
                 Predicated
-                    { term = Mock.constr10 Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
+                    { term = constructorTerm
+                    , predicate = makeEqualsPredicate fOfA gOfA
+                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
                     }
-            )
-        )
-    , testCase "ceil with functional symbols"
+            assertEqualWithExplanation
+                "ceil(constr(something(a), something(b)) and eq(f(a), g(a)))"
+                expected
+                actual
+    , testCase "ceil of constructors is top" $ do
+        let
+            expected = OrOfExpandedPattern.make [ExpandedPattern.top]
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = Mock.constr10 Mock.a
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqualWithExplanation "" expected actual
+    , testCase "ceil with functional symbols" $ do
         -- if term is a functional(params), then
         -- ceil(term and predicate and subst)
         --     = top and (ceil(params) and predicate) and subst
-        (assertEqualWithExplanation
-            "ceil(functional(something(a), something(b)) and eq(f(a), g(a)))"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -186,99 +191,99 @@ test_ceilSimplification =
                                 (makeCeilPredicate somethingOfA)
                                 (makeCeilPredicate somethingOfB)
                             )
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term = Mock.functional20 somethingOfA somethingOfB
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
-                    }
-            )
-        )
-    , testCase "ceil with function symbols"
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = Mock.functional20 somethingOfA somethingOfB
+                , predicate = makeEqualsPredicate fOfA gOfA
+                , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                }
+        assertEqualWithExplanation
+            "ceil(functional(something(a), something(b)) and eq(f(a), g(a)))"
+            expected
+            actual
+    , testCase "ceil with function symbols" $ do
         -- if term is a function(params), then
         -- ceil(term and predicate and subst)
         --     = top and (ceil(term) and predicate) and subst
-        (assertEqualWithExplanation
-            "ceil(f(a)) and eq(f(a), g(a)))"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term = fOfA
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
-                    }
-            )
-        )
-    , testCase "ceil with function symbols"
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = fOfA
+                , predicate = makeEqualsPredicate fOfA gOfA
+                , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                }
+        assertEqualWithExplanation
+            "ceil(f(a)) and eq(f(a), g(a)))"
+            expected
+            actual
+    , testCase "ceil with function symbols" $ do
         -- if term is a functional(params), then
         -- ceil(term and predicate and subst)
         --     = top and (ceil(params) and predicate) and subst
-        (assertEqualWithExplanation
-            "ceil(f(a)) and eq(f(a), g(a)))"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term = fOfA
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
-                    }
-            )
-        )
-    , testCase "ceil with functional terms"
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = fOfA
+                , predicate = makeEqualsPredicate fOfA gOfA
+                , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                }
+        assertEqualWithExplanation
+            "ceil(f(a)) and eq(f(a), g(a)))"
+            expected
+            actual
+    , testCase "ceil with functional terms" $ do
         -- if term is functional, then
         -- ceil(term and predicate and subst)
         --     = top and predicate and subst
-        (assertEqualWithExplanation
-            "ceil(functional and eq(f(a), g(a)))"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term = Mock.a
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
-                    }
-            )
-        )
-    , testCase "ceil with functional composition"
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = Mock.a
+                , predicate = makeEqualsPredicate fOfA gOfA
+                , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                }
+        assertEqualWithExplanation
+            "ceil(functional and eq(f(a), g(a)))"
+            expected
+            actual
+    , testCase "ceil with functional composition" $ do
         -- if term is functional(non-funct, non-funct), then
         -- ceil(term and predicate and subst)
         --     = top and
         --       ceil(non-funct) and ceil(non-funct) and predicate and
         --       subst
-        (assertEqualWithExplanation
-            "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -288,50 +293,47 @@ test_ceilSimplification =
                                 (makeCeilPredicate fOfA)
                                 (makeCeilPredicate fOfB)
                             )
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term = Mock.functional20 fOfA fOfB
-                    , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(Mock.x, fOfB)]
-                    }
-            )
-        )
-    , testCase "ceil with normal domain value"
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = Mock.functional20 fOfA fOfB
+                , predicate = makeEqualsPredicate fOfA gOfA
+                , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                }
+        assertEqualWithExplanation
+            "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
+            expected
+            actual
+    , testCase "ceil with normal domain value" $ do
         -- ceil(1) = top
-        (assertEqualWithExplanation
-            "ceil(1)"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term =
-                        mkDomainValue
-                            testSort
-                            (Domain.BuiltinPattern
-                                $ eraseAnnotations
-                                $ mkStringLiteral "a"
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-            )
-        )
-    , testCase "ceil with map domain value"
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term =
+                    mkDomainValue
+                        testSort
+                        (Domain.BuiltinPattern
+                            $ eraseAnnotations
+                            $ mkStringLiteral "a"
+                        )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqualWithExplanation "ceil(1)" expected actual
+    , testCase "ceil with map domain value" $ do
         -- maps assume that their keys are relatively functional, so
         -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
-        (assertEqualWithExplanation
-            "ceil(map)"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -341,22 +343,19 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term =
-                        Mock.builtinMap
-                            [(asConcrete fOfA, fOfB), (asConcrete gOfA, gOfB)]
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-            )
-        )
-    , testCase "ceil with list domain value"
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term =
+                    Mock.builtinMap
+                        [(asConcrete fOfA, fOfB), (asConcrete gOfA, gOfB)]
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqualWithExplanation "ceil(map)" expected actual
+    , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)
-        (assertEqualWithExplanation
-            "ceil(list)"
-            (OrOfExpandedPattern.make
+        let
+            expected = OrOfExpandedPattern.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -366,30 +365,25 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term = Mock.builtinList [fOfA, fOfB]
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-            )
-        )
-    , testCase "ceil with set domain value"
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = Mock.builtinList [fOfA, fOfB]
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqualWithExplanation "ceil(list)" expected actual
+    , testCase "ceil with set domain value" $ do
         -- sets assume that their elements are relatively functional,
         -- so ceil({a, b}) = top
-        (assertEqualWithExplanation
-            "ceil(set)"
-            (OrOfExpandedPattern.make [ ExpandedPattern.top ]
-            )
-            (makeEvaluate mockMetadataTools
-                Predicated
-                    { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-            )
-        )
+        let
+            expected = OrOfExpandedPattern.make [ ExpandedPattern.top ]
+        actual <- makeEvaluate mockMetadataTools
+            Predicated
+                { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqualWithExplanation "ceil(set)" expected actual
     ]
   where
     fOfA :: StepPattern Object Variable
@@ -435,10 +429,12 @@ evaluate
         )
     => MetadataTools level StepperAttributes
     -> Ceil level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    -> IO (CommonOrOfExpandedPattern level)
 evaluate tools ceil =
-    case Ceil.simplify tools ceil of
-        (result, _proof) -> result
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger noRepl
+    $ Ceil.simplify tools (Mock.substitutionSimplifier tools) ceil
 
 
 makeEvaluate
@@ -446,7 +442,9 @@ makeEvaluate
         )
     => MetadataTools level StepperAttributes
     -> CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    -> IO (CommonOrOfExpandedPattern level)
 makeEvaluate tools child =
-    case Ceil.makeEvaluate tools child of
-        (result, _proof) -> result
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger noRepl
+    $ Ceil.makeEvaluate tools (Mock.substitutionSimplifier tools) child

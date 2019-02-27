@@ -151,24 +151,13 @@ test_mergeAndNormalizeSubstitutions =
                     ]
             assertEqual "" expect actual
 
-    -- TODO(Vladimir): this should be fixed by making use of the predicate from
-    -- `solveGroupSubstitutions`.
     , testCase "Constructor and constructor of function with variables"
         -- [x=constructor(y)] + [x=constructor(f(y))]
         $ do
-            let expect =
-                    Right Predicated
-                        { term = ()
-                        , predicate =
-                            makeEqualsPredicate
-                                ( mkVar Mock.y )
-                                ( Mock.f (mkVar Mock.y) )
-                        , substitution = Substitution.unsafeWrap
-                            [   ( Mock.x
-                                , Mock.constr10 (Mock.f (mkVar Mock.y))
-                                )
-                            ]
-                        }
+            let
+                expect =
+                    Left $ SubstitutionError
+                        (NonCtorCircularVariableDependency [Mock.y])
             actual <-
                 normalize
                     [   ( Mock.x
@@ -184,20 +173,10 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Constructor and constructor of functional symbol"
         -- [x=constructor(y)] + [x=constructor(functional(y))]
         $ do
-            let expect =
-                    Right Predicated
-                        { term = ()
-                        , predicate =
-                            makeEqualsPredicate
-                                ( mkVar Mock.y )
-                                ( Mock.functional10 (mkVar Mock.y) )
-                        , substitution = Substitution.unsafeWrap
-                            [   ( Mock.x
-                                , Mock.constr10
-                                    (Mock.functional10 $ mkVar Mock.y)
-                                )
-                            ]
-                        }
+            let
+                expect =
+                    Left $ SubstitutionError
+                        (NonCtorCircularVariableDependency [Mock.y])
             actual <-
                 normalize
                     [   ( Mock.x

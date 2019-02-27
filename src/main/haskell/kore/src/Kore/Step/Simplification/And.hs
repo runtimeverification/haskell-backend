@@ -152,7 +152,8 @@ simplifyEvaluated tools substitutionSimplifier first second
         OrOfExpandedPattern.crossProductGenericF
             (makeEvaluate tools substitutionSimplifier) first second
     return
-        -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
+        -- TODO: It's not obvious at all when filtering occurs and when it
+        -- doesn't.
         ( OrOfExpandedPattern.filterOr
             -- TODO: Remove fst.
             (fst <$> orWithProof)

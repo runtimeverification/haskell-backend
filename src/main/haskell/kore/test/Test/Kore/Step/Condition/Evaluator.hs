@@ -101,7 +101,7 @@ div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 assertRefuted :: CommonPredicate Object -> Assertion
 assertRefuted prop = give testMetadataTools $ do
     let expect = Just False
-    actual <- SMT.runSMT SMT.defaultConfig $ Evaluator.refutePredicate prop
+    actual <- SMT.runSMT SMT.defaultConfig $ Evaluator.decidePredicate prop
     assertEqual "" expect actual
 
 unit_1 :: Assertion

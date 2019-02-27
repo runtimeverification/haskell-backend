@@ -21,16 +21,18 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
+                 ( MultiOr, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( crossProductGeneric, flatten, isFalse, isTrue, make )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unparser
+import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'In' pattern with 'OrOfExpandedPattern'
 children.
@@ -46,24 +48,30 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify
     ::  ( MetaOrObject level
+        , FreshVariable variable
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> In level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
+    -> Simplifier
+        ( OrOfExpandedPattern level variable
         , SimplificationProof level
         )
 simplify
     tools
+    substitutionSimplifier
     In
         { inContainedChild = first
         , inContainingChild = second
         }
   =
-    simplifyEvaluatedIn tools first second
+    simplifyEvaluatedIn tools substitutionSimplifier first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -78,56 +86,93 @@ besides the pattern sort, which will make it even more useful to carry around.
 
 -}
 simplifyEvaluatedIn
-    ::  ( MetaOrObject level
+    :: forall level variable .
+        ( MetaOrObject level
+        , FreshVariable variable
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluatedIn tools first second
+    -> Simplifier
+        (OrOfExpandedPattern level variable, SimplificationProof level)
+simplifyEvaluatedIn tools substitutionSimplifier first second
   | OrOfExpandedPattern.isFalse first =
-    (OrOfExpandedPattern.make [], SimplificationProof)
+    return (OrOfExpandedPattern.make [], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
-    (OrOfExpandedPattern.make [], SimplificationProof)
+    return (OrOfExpandedPattern.make [], SimplificationProof)
 
   | OrOfExpandedPattern.isTrue first =
-    Ceil.simplifyEvaluated tools second
+    Ceil.simplifyEvaluated tools substitutionSimplifier second
   | OrOfExpandedPattern.isTrue second =
-    Ceil.simplifyEvaluated tools first
+    Ceil.simplifyEvaluated tools substitutionSimplifier first
 
-  | otherwise =
+  | otherwise = do
+    let
+        crossProduct
+            :: MultiOr
+                (Simplifier
+                    ( OrOfExpandedPattern level variable
+                    , SimplificationProof level
+                    )
+                )
+        crossProduct =
+            OrOfExpandedPattern.crossProductGeneric
+                (makeEvaluateIn tools substitutionSimplifier)
+                first
+                second
+    orOfOrProof <- sequence crossProduct
+    let
+        orOfOr :: MultiOr (OrOfExpandedPattern level variable)
+        orOfOr = fmap dropProof orOfOrProof
     -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
+    return (OrOfExpandedPattern.flatten orOfOr, SimplificationProof)
+  where
+    dropProof
+        :: (OrOfExpandedPattern level variable, SimplificationProof level)
+        -> OrOfExpandedPattern level variable
+    dropProof = fst
+
+    {-
     ( OrOfExpandedPattern.flatten
         -- TODO: Remove fst.
         (fst <$> OrOfExpandedPattern.crossProductGeneric
-            (makeEvaluateIn tools) first second
+            (makeEvaluateIn tools substitutionSimplifier) first second
         )
     , SimplificationProof
     )
+    -}
 
 makeEvaluateIn
     ::  ( MetaOrObject level
+        , FreshVariable variable
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level Simplifier
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluateIn tools first second
+    -> Simplifier
+        (OrOfExpandedPattern level variable, SimplificationProof level)
+makeEvaluateIn tools substitutionSimplifier first second
   | ExpandedPattern.isTop first =
-    Ceil.makeEvaluate tools second
+    Ceil.makeEvaluate tools substitutionSimplifier second
   | ExpandedPattern.isTop second =
-    Ceil.makeEvaluate tools first
+    Ceil.makeEvaluate tools substitutionSimplifier first
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
-    (OrOfExpandedPattern.make [], SimplificationProof)
-  | otherwise = makeEvaluateNonBoolIn first second
+    return (OrOfExpandedPattern.make [], SimplificationProof)
+  | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
     ::  ( MetaOrObject level
