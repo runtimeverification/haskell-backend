@@ -45,9 +45,11 @@ test_domainValueSimplification =
                     { term =
                         mkDomainValue
                             testSort
-                            (Domain.BuiltinPattern
-                                $ eraseAnnotations
-                                $ mkStringLiteral "a"
+                            (Domain.BuiltinExternal Domain.External
+                                { domainValueSort = testSort
+                                , domainValueChild =
+                                    eraseAnnotations $ mkStringLiteral "a"
+                                }
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -58,9 +60,11 @@ test_domainValueSimplification =
                 mockMetadataTools
                 (DomainValue
                     testSort
-                    (Domain.BuiltinPattern
-                        $ eraseAnnotations
-                        $ mkStringLiteral "a"
+                    (Domain.BuiltinExternal Domain.External
+                        { domainValueSort = testSort
+                        , domainValueChild =
+                            eraseAnnotations $ mkStringLiteral "a"
+                        }
                     )
                 )
             )
@@ -71,12 +75,7 @@ test_domainValueSimplification =
             (OrOfExpandedPattern.make [])
             (evaluate
                 mockMetadataTools
-                (DomainValue
-                    testSort
-                    (Domain.BuiltinMap
-                        (Map.fromList [(Mock.aConcrete, bottom)])
-                    )
-                )
+                (mkMapDomainValue [(Mock.aConcrete, bottom)])
             )
         )
     , testCase "\\bottom propagates through builtin List"
@@ -85,15 +84,40 @@ test_domainValueSimplification =
             (OrOfExpandedPattern.make [])
             (evaluate
                 mockMetadataTools
-                (DomainValue
-                    testSort
-                    (Domain.BuiltinList (Seq.fromList [bottom]))
-                )
+                (mkListDomainValue [bottom])
             )
         )
     ]
   where
     bottom = OrOfExpandedPattern.make [ExpandedPattern.bottom]
+
+mkMapDomainValue
+    :: [(Domain.Key, child)]
+    -> DomainValue Object Domain.Builtin child
+mkMapDomainValue children =
+    DomainValue
+        Mock.mapSort
+        (Domain.BuiltinMap Domain.InternalMap
+            { builtinMapSort = Mock.mapSort
+            , builtinMapUnit = Mock.unitMapSymbol
+            , builtinMapElement = Mock.elementMapSymbol
+            , builtinMapConcat = Mock.concatMapSymbol
+            , builtinMapChild = Map.fromList children
+            }
+        )
+
+mkListDomainValue :: [child] -> DomainValue Object Domain.Builtin child
+mkListDomainValue children =
+    DomainValue
+        Mock.listSort
+        (Domain.BuiltinList Domain.InternalList
+            { builtinListSort = Mock.listSort
+            , builtinListUnit = Mock.unitListSymbol
+            , builtinListElement = Mock.elementListSymbol
+            , builtinListConcat = Mock.concatListSymbol
+            , builtinListChild = Seq.fromList children
+            }
+        )
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools = Mock.makeMetadataTools [] [] [] []

@@ -29,8 +29,11 @@ import GHC.Generics
 import Kore.AST.Pure
 import Kore.Unparser
 
-newtype External child =
-    External { getExternal :: CommonPurePattern Meta (Const Void) }
+data External child =
+    External
+        { domainValueSort :: Sort Object
+        , domainValueChild :: CommonPurePattern Meta (Const Void)
+        }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 deriveEq1 ''External
@@ -42,6 +45,9 @@ instance Hashable (External child)
 instance NFData (External child)
 
 instance Unparse (External child) where
-    unparse (External lit) = unparse lit
+    unparse (External { domainValueSort, domainValueChild }) =
+        "\\dv"
+        <> parameters [domainValueSort]
+        <> arguments [domainValueChild]
 
 type CommonExternalPattern level = CommonPurePattern level External

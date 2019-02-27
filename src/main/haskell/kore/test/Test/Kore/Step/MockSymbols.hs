@@ -35,6 +35,9 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Concat as Attribute
+import qualified Kore.Attribute.Sort.Element as Attribute
+import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
@@ -1248,13 +1251,28 @@ sortAttributesMapping =
         , Default.def
         )
     ,   ( mapSort
-        , Default.def { Attribute.hook = Hook (Just "MAP.Map") }
+        , Default.def
+            { Attribute.hook = Hook (Just "MAP.Map")
+            , Attribute.unit = Attribute.Unit (Just unitMapSymbol)
+            , Attribute.element = Attribute.Element (Just elementMapSymbol)
+            , Attribute.concat = Attribute.Concat (Just concatMapSymbol)
+            }
         )
     ,   ( listSort
-        , Default.def { Attribute.hook = Hook (Just "LIST.List") }
+        , Default.def
+            { Attribute.hook = Hook (Just "LIST.List")
+            , Attribute.unit = Attribute.Unit (Just unitListSymbol)
+            , Attribute.element = Attribute.Element (Just elementListSymbol)
+            , Attribute.concat = Attribute.Concat (Just concatListSymbol)
+            }
         )
     ,   ( setSort
-        , Default.def { Attribute.hook = Hook (Just "SET.Set") }
+        , Default.def
+            { Attribute.hook = Hook (Just "SET.Set")
+            , Attribute.unit = Attribute.Unit (Just unitSetSymbol)
+            , Attribute.element = Attribute.Element (Just elementSetSymbol)
+            , Attribute.concat = Attribute.Concat (Just concatSetSymbol)
+            }
         )
     ,   ( intSort
         , Default.def { Attribute.hook = Hook (Just "INT.Int") }
@@ -1361,19 +1379,43 @@ builtinMap
     :: Ord (variable Object)
     => [(ConcreteStepPattern Object, StepPattern Object variable)]
     -> StepPattern Object variable
-builtinMap = mkDomainValue mapSort . Domain.BuiltinMap . Map.fromList
+builtinMap child =
+    mkDomainValue mapSort
+    $ Domain.BuiltinMap Domain.InternalMap
+        { builtinMapSort = mapSort
+        , builtinMapUnit = unitMapSymbol
+        , builtinMapElement = elementMapSymbol
+        , builtinMapConcat = concatMapSymbol
+        , builtinMapChild = Map.fromList child
+        }
 
 builtinList
     :: Ord (variable Object)
     => [StepPattern Object variable]
     -> StepPattern Object variable
-builtinList = mkDomainValue listSort . Domain.BuiltinList . Seq.fromList
+builtinList child =
+    mkDomainValue listSort
+    $ Domain.BuiltinList Domain.InternalList
+        { builtinListSort = listSort
+        , builtinListUnit = unitListSymbol
+        , builtinListElement = elementListSymbol
+        , builtinListConcat = concatListSymbol
+        , builtinListChild = Seq.fromList child
+        }
 
 builtinSet
     :: Ord (variable Object)
     => [ConcreteStepPattern Object]
     -> StepPattern Object variable
-builtinSet = mkDomainValue setSort . Domain.BuiltinSet . Set.fromList
+builtinSet child =
+    mkDomainValue setSort
+    $ Domain.BuiltinSet Domain.InternalSet
+        { builtinSetSort = setSort
+        , builtinSetUnit = unitSetSymbol
+        , builtinSetElement = elementSetSymbol
+        , builtinSetConcat = concatSetSymbol
+        , builtinSetChild = Set.fromList child
+        }
 
 builtinInt
     :: Ord (variable Object)

@@ -7,6 +7,7 @@ import qualified Hedgehog.Range as Range
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Reflection as Reflection
 import           Data.Sequence
                  ( Seq )
@@ -17,7 +18,6 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.List as List
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.ExpandedPattern
@@ -161,13 +161,8 @@ test_simplify =
                     , variableCounter = mempty
                     , variableSort = intSort
                     }
-            original =
-                mkDomainValue listSort
-                $ Domain.BuiltinList (Seq.fromList [mkAnd x mkTop_])
-            expected =
-                ExpandedPattern.fromPurePattern
-                $ mkDomainValue listSort
-                $ Domain.BuiltinList (Seq.fromList [x])
+            original = asInternal [mkAnd x mkTop_]
+            expected = asExpandedPattern [x]
         (===) expected =<< evaluate original
 
 test_isBuiltin :: [TestTree]
@@ -207,10 +202,31 @@ mockHookTools :: MetadataTools Object Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
-asPattern :: List.Builtin Variable -> CommonStepPattern Object
-asPattern = Reflection.give testMetadataTools List.asPattern listSort
+asPattern
+    :: Foldable f
+    => f (CommonStepPattern Object)
+    -> CommonStepPattern Object
+asPattern =
+    Reflection.give testMetadataTools List.asPattern
+    . builtinList
+    . Foldable.toList
 
--- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
-asExpandedPattern :: List.Builtin Variable -> CommonExpandedPattern Object
+-- | Specialize 'List.asInternal' to the builtin sort 'listSort'.
+asInternal
+    :: Foldable f
+    => f (CommonStepPattern Object)
+    -> CommonStepPattern Object
+asInternal =
+    List.asInternal testMetadataTools listSort
+    . Seq.fromList
+    . Foldable.toList
+
+-- | Specialize 'List.asExpandedPattern' to the builtin sort 'listSort'.
+asExpandedPattern
+    :: Foldable f
+    => f (CommonStepPattern Object)
+    -> CommonExpandedPattern Object
 asExpandedPattern =
     Reflection.give testMetadataTools List.asExpandedPattern listSort
+    . Seq.fromList
+    . Foldable.toList

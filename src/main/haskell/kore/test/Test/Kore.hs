@@ -405,26 +405,35 @@ domainValueGen childGen domainValueSort = do
     domainValueChild <- childGen domainValueSort
     return DomainValue { domainValueSort, domainValueChild }
 
-externalDomainGen :: Sort Object -> Gen (Domain.Builtin child)
-externalDomainGen _ =
-    Domain.BuiltinPattern
-        . Kore.AST.Pure.eraseAnnotations
-        . mkStringLiteral
-        . getStringLiteral
-        <$> stringLiteralGen
+genBuiltinExternal :: Sort Object -> Gen (Domain.Builtin child)
+genBuiltinExternal domainValueSort =
+    Domain.BuiltinExternal <$> genExternal domainValueSort
 
-builtinDomainGen :: Sort Object -> Gen (Domain.Builtin child)
-builtinDomainGen _ = Gen.choice
-    [ Domain.BuiltinPattern
-        . Kore.AST.Pure.eraseAnnotations
-        . mkStringLiteral
-        . getStringLiteral
-        <$> stringLiteralGen
-    , Domain.BuiltinInteger <$> genInteger
-    , Domain.BuiltinBool <$> Gen.bool
+genBuiltin :: Sort Object -> Gen (Domain.Builtin child)
+genBuiltin domainValueSort = Gen.choice
+    [ genBuiltinExternal domainValueSort
+    , Domain.BuiltinInt <$> genInternalInt domainValueSort
+    , Domain.BuiltinBool <$> genInternalBool domainValueSort
     ]
+
+genInternalInt :: Sort Object -> Gen Domain.InternalInt
+genInternalInt builtinIntSort =
+    Domain.InternalInt builtinIntSort <$> genInteger
   where
     genInteger = Gen.integral (Range.linear (-1024) 1024)
+
+genInternalBool :: Sort Object -> Gen Domain.InternalBool
+genInternalBool builtinBoolSort =
+    Domain.InternalBool builtinBoolSort <$> Gen.bool
+
+genExternal :: Sort Object -> Gen (Domain.External child)
+genExternal domainValueSort =
+    Domain.External
+        domainValueSort
+        . Kore.AST.Pure.eraseAnnotations
+        . mkStringLiteral
+        . getStringLiteral
+        <$> stringLiteralGen
 
 existsGen
     :: MetaOrObject level
@@ -540,7 +549,7 @@ stepPatternChildGen patternSort =
               | otherwise ->
                 mkVar <$> variableGen patternSort
             IsObject ->
-                mkDomainValue patternSort <$> builtinDomainGen patternSort
+                mkDomainValue patternSort <$> genBuiltin patternSort
       | otherwise =
         (Gen.small . Gen.frequency)
             [ (1, stepPatternAndGen)
@@ -666,7 +675,7 @@ korePatternChildGen patternSort' =
     korePatternGenDomainValue :: level ~ Object => Gen CommonKorePattern
     korePatternGenDomainValue =
         asCommonKorePattern . DomainValuePattern
-            <$> domainValueGen externalDomainGen patternSort'
+            <$> domainValueGen genBuiltinExternal patternSort'
 
     korePatternGenNext :: level ~ Object => Gen CommonKorePattern
     korePatternGenNext =

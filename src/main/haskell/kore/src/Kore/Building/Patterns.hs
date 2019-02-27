@@ -200,9 +200,12 @@ instance
         DomainValuePattern DomainValue
             { domainValueSort = asAst sort
             , domainValueChild =
-                Domain.BuiltinPattern
-                $ Kore.AST.Pure.eraseAnnotations
-                $ mkStringLiteral literal
+                Domain.BuiltinExternal Domain.External
+                    { domainValueSort = asAst sort
+                    , domainValueChild =
+                        Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral literal
+                    }
             }
       where
         externalChild :: CommonKorePattern

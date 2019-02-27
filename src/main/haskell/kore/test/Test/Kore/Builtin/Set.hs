@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
 import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import           Data.Set
@@ -20,7 +21,6 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Set as Set
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate as Predicate
@@ -243,7 +243,7 @@ asSymbolicPattern result
     | otherwise =
         foldr1 applyConcat (applyElement <$> Set.toAscList result)
   where
-    applyUnit = mkDomainValue setSort $ Domain.BuiltinSet Set.empty
+    applyUnit = mkApp setSort unitSetSymbol []
     applyElement key = mkApp setSort elementSetSymbol [key]
     applyConcat set1 set2 = mkApp setSort concatSetSymbol [set1, set2]
 
@@ -301,11 +301,11 @@ test_unifyFramingVariable =
             let
                 expect =
                     Predicated
-                        { term = builtinSet concreteSet
+                        { term = asInternal concreteSet
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [(frameVar, builtinSet remainder)]
+                                [(frameVar, asInternal remainder)]
                         }
             (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
         )
@@ -443,17 +443,23 @@ mockHookTools :: MetadataTools Object Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
-asPattern :: Set.Builtin -> CommonStepPattern Object
-asPattern = Reflection.give testMetadataTools Set.asPattern setSort
+asPattern
+    :: Foldable f
+    => f (ConcreteStepPattern Object)
+    -> CommonStepPattern Object
+asPattern =
+    Reflection.give testMetadataTools Set.asPattern
+    . builtinSet
+    . Foldable.toList
 
--- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
+-- | Specialize 'Set.asExpandedPattern' to the builtin sort 'setSort'.
 asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
 asExpandedPattern =
     Reflection.give testMetadataTools Set.asExpandedPattern setSort
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-builtinSet :: Set.Builtin -> CommonStepPattern Object
-builtinSet = Set.builtinSet setSort
+asInternal :: Set.Builtin -> CommonStepPattern Object
+asInternal = Set.builtinSet testMetadataTools setSort
 
 -- * Constructors
 

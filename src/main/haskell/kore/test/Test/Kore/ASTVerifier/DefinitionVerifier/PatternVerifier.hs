@@ -517,9 +517,12 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Domain.BuiltinPattern
-                    $ Kore.AST.Pure.eraseAnnotations
-                    $ mkStringLiteral "abcd"  -- Not a decimal integer
+                Domain.BuiltinExternal Domain.External
+                    { domainValueSort = intSort
+                    , domainValueChild =
+                        Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral "abcd"  -- Not a decimal integer
+                    }
             }
         )
         (NamePrefix "dummy")
@@ -532,9 +535,12 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Domain.BuiltinPattern
-                $ Kore.AST.Pure.eraseAnnotations
-                $ mkStringLiteral "-256"
+                Domain.BuiltinExternal Domain.External
+                    { domainValueSort = intSort
+                    , domainValueChild =
+                        Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral "-256"
+                    }
             }
         )
         (NamePrefix "dummy")
@@ -547,9 +553,12 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Domain.BuiltinPattern
-                $ Kore.AST.Pure.eraseAnnotations
-                $ mkStringLiteral "1024"
+                Domain.BuiltinExternal Domain.External
+                    { domainValueSort = intSort
+                    , domainValueChild =
+                        Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral "1024"
+                    }
             }
         )
         (NamePrefix "dummy")
@@ -562,9 +571,12 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Domain.BuiltinPattern
-                $ Kore.AST.Pure.eraseAnnotations
-                $ mkStringLiteral "+128"
+                Domain.BuiltinExternal Domain.External
+                    { domainValueSort = intSort
+                    , domainValueChild =
+                        Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral "+128"
+                    }
             }
         )
         (NamePrefix "dummy")
@@ -590,9 +602,12 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Domain.BuiltinPattern
-                    $ Kore.AST.Pure.eraseAnnotations
-                    $ mkStringLiteral "untrue"  -- Not a BOOL.Bool
+                Domain.BuiltinExternal Domain.External
+                    { domainValueSort = boolSort
+                    , domainValueChild =
+                        Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral "untrue"  -- Not a BOOL.Bool
+                    }
             }
         )
         (NamePrefix "dummy")
@@ -605,9 +620,12 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Domain.BuiltinPattern
-                    $ Kore.AST.Pure.eraseAnnotations
-                    $ mkStringLiteral "true"
+                Domain.BuiltinExternal Domain.External
+                    { domainValueSort = boolSort
+                    , domainValueChild =
+                        Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral "true"
+                    }
             }
         )
         (NamePrefix "dummy")
@@ -620,9 +638,12 @@ test_patternVerifier =
         (DomainValuePattern DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Domain.BuiltinPattern
-                    $ Kore.AST.Pure.eraseAnnotations
-                    $ mkStringLiteral "false"
+                Domain.BuiltinExternal Domain.External
+                    { domainValueSort = boolSort
+                    , domainValueChild =
+                        Kore.AST.Pure.eraseAnnotations
+                        $ mkStringLiteral "false"
+                    }
             }
         )
         (NamePrefix "dummy")

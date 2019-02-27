@@ -34,12 +34,17 @@ Definition
                                         { domainValueSort =
                                             SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                                         , domainValueChild =
-                                            Domain.BuiltinString PurePattern
-                                                { getPurePattern = CofreeT
-                                                    { runCofreeT = Identity
-                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "f")
+                                            Domain.BuiltinExternal Domain.External
+                                                { domainValueSort =
+                                                    SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
+                                                , domainValueChild =
+                                                    PurePattern
+                                                        { getPurePattern = CofreeT
+                                                            { runCofreeT = Identity
+                                                                { runIdentity = Null :< StringLiteralPattern (StringLiteral "f")
+                                                                }
+                                                            }
                                                         }
-                                                    }
                                                 }
                                         })
                                     }

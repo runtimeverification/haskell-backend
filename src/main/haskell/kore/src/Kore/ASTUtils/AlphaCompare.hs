@@ -390,6 +390,7 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
         compareBuiltin domainValueChild1 domainValueChild2
       | otherwise = return False
 
+    -- TODO (thomas.tuegel): This is all wrong.
     compareBuiltin
         :: (level ~ Object, Ord (var level))
         => Domain.Builtin (PurePattern level Domain.Builtin var annotation)
@@ -397,24 +398,36 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
         -> Reader ([var level], [var level]) Bool
     compareBuiltin dv1 dv2 =
         case (dv1, dv2) of
-            (Domain.BuiltinList l1, Domain.BuiltinList l2) ->
+            (Domain.BuiltinList builtin1, Domain.BuiltinList builtin2) ->
                 compareChildren (Foldable.toList l1) (Foldable.toList l2)
-            (Domain.BuiltinSet s1, Domain.BuiltinSet s2) ->
+              where
+                Domain.InternalList { builtinListChild = l1 } = builtin1
+                Domain.InternalList { builtinListChild = l2 } = builtin2
+            (Domain.BuiltinSet builtin1, Domain.BuiltinSet builtin2) ->
                 (return . and)
                     (zipWith (==) (Set.toAscList s1) (Set.toAscList s2))
-            (Domain.BuiltinMap m1, Domain.BuiltinMap m2) -> do
+              where
+                Domain.InternalSet { builtinSetChild = s1 } = builtin1
+                Domain.InternalSet { builtinSetChild = s2 } = builtin2
+            (Domain.BuiltinMap builtin1, Domain.BuiltinMap builtin2) -> do
                 let
                     (keys1, values1) = unzip (Map.toAscList m1)
                     (keys2, values2) = unzip (Map.toAscList m2)
                 alphaEqChildren <- compareChildren values1 values2
                 return (and $ alphaEqChildren : zipWith (==) keys1 keys2)
-            (Domain.BuiltinPattern p1, Domain.BuiltinPattern p2) -> do
+              where
+                Domain.InternalMap { builtinMapChild = m1 } = builtin1
+                Domain.InternalMap { builtinMapChild = m2 } = builtin2
+            (Domain.BuiltinExternal builtin1, Domain.BuiltinExternal builtin2) -> do
                 let worker =
                         alphaEqWorker
                             (Pure.castVoidDomainValues p1)
                             (Pure.castVoidDomainValues p2)
                 return (runReader worker ([], []))
-            (Domain.BuiltinInteger i1, Domain.BuiltinInteger i2) ->
+              where
+                Domain.External { domainValueChild = p1 } = builtin1
+                Domain.External { domainValueChild = p2 } = builtin2
+            (Domain.BuiltinInt i1, Domain.BuiltinInt i2) ->
                 return $ i1 == i2
             (Domain.BuiltinBool b1, Domain.BuiltinBool b2) ->
                 return $ b1 == b2

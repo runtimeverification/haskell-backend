@@ -58,6 +58,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Error
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -107,8 +108,26 @@ symbolVerifiers =
  -}
 patternVerifier :: Builtin.DomainValueVerifier child
 patternVerifier =
-    Builtin.makeEncodedDomainValueVerifier sort
-        (Builtin.parseEncodeDomainValue parse Domain.BuiltinBool)
+    Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
+  where
+    patternVerifierWorker domainValue =
+        case domainValueChild of
+            Domain.BuiltinExternal builtin
+              | StringLiteral_ lit <- externalChild -> do
+                builtinBoolValue <- Builtin.parseString parse lit
+                (return . Domain.BuiltinBool)
+                    Domain.InternalBool
+                        { builtinBoolSort = domainValueSort
+                        , builtinBoolValue
+                        }
+              where
+                Domain.External { domainValueChild = externalChild } = builtin
+            Domain.BuiltinBool _ -> return domainValueChild
+            _ -> Kore.Error.koreFail
+                    "Expected literal string or internal value"
+      where
+        DomainValue { domainValueChild } = domainValue
+        DomainValue { domainValueSort } = domainValue
 
 -- | get the value from a (possibly encoded) domain value
 extractBoolDomainValue
@@ -117,9 +136,11 @@ extractBoolDomainValue
     -> Bool
 extractBoolDomainValue ctx DomainValue { domainValueChild } =
     case domainValueChild of
-        Domain.BuiltinBool bool -> bool
-        _ -> Builtin.verifierBug $ Text.unpack ctx ++ ": "
-            ++ "Bool builtin should be internal"
+        Domain.BuiltinBool Domain.InternalBool { builtinBoolValue } ->
+            builtinBoolValue
+        _ ->
+            Builtin.verifierBug
+            $ Text.unpack ctx ++ ": Bool builtin should be internal"
 
 {- | Parse an integer string literal.
  -}
@@ -142,7 +163,12 @@ asInternal
     => Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> StepPattern Object variable
-asInternal resultSort = mkDomainValue resultSort . Domain.BuiltinBool
+asInternal builtinBoolSort builtinBoolValue =
+    mkDomainValue builtinBoolSort
+    $ Domain.BuiltinBool Domain.InternalBool
+        { builtinBoolSort
+        , builtinBoolValue
+        }
 
 {- | Render a 'Bool' as a domain value pattern of the given sort.
 
@@ -154,14 +180,17 @@ asInternal resultSort = mkDomainValue resultSort . Domain.BuiltinBool
  -}
 asPattern
     :: Ord (variable Object)
-    => Sort Object  -- ^ resulting sort
-    -> Bool  -- ^ builtin value to render
+    => Domain.InternalBool  -- ^ builtin value to render
     -> StepPattern Object variable
-asPattern resultSort =
-    mkDomainValue resultSort
-        . Domain.BuiltinPattern
-        . eraseAnnotations
-        . asMetaPattern
+asPattern builtin =
+    mkDomainValue builtinBoolSort
+    $ Domain.BuiltinExternal Domain.External
+        { domainValueSort = builtinBoolSort
+        , domainValueChild = eraseAnnotations $ asMetaPattern bool
+        }
+  where
+    Domain.InternalBool { builtinBoolSort } = builtin
+    Domain.InternalBool { builtinBoolValue = bool } = builtin
 
 asMetaPattern
     :: Functor domain

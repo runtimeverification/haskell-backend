@@ -8,14 +8,14 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Valid
-import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.StepperAttributes
 
-import Test.Kore.Builtin.Builtin
-import Test.Kore.Builtin.Definition
-import Test.SMT
+import           Test.Kore.Builtin.Builtin
+import           Test.Kore.Builtin.Definition
+import qualified Test.Kore.Builtin.Int as Test.Int
+import           Test.SMT
 
 testKeyRecover :: Text -> Integer -> Text -> Text -> Text -> TestTree
 testKeyRecover messageHash v r s result =
@@ -23,7 +23,7 @@ testKeyRecover messageHash v r s result =
         let expect = String.asExpandedPattern stringSort result
         actual <- evaluate $ mkApp stringSort ecdsaRecoverSymbol
             [ String.asPattern stringSort messageHash
-            , Int.asPattern intSort v
+            , Test.Int.asInternal v
             , String.asPattern stringSort r
             , String.asPattern stringSort s
             ]

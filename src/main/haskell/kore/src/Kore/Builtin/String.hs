@@ -178,12 +178,15 @@ expectBuiltinString ctx =
     \case
         DV_ _ domain ->
             case domain of
-                Domain.BuiltinPattern (StringLiteral_ lit) ->
+                Domain.BuiltinExternal external
+                  | StringLiteral_ lit <- domainValueChild ->
                     (return . Builtin.runParser ctx)
                         (Builtin.parseString parse lit)
+                  where
+                    Domain.External { domainValueChild } = external
                 _ ->
                     Builtin.verifierBug
-                        (Text.unpack ctx ++ ": Domain value argument is not a string")
+                    $ Text.unpack ctx ++ ": Domain value is not a string"
         _ ->
             empty
 
@@ -215,11 +218,12 @@ asConcretePattern
     :: Sort Object  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> ConcreteStepPattern Object
-asConcretePattern domainValueSort =
+asConcretePattern domainValueSort builtinStringChild =
     mkDomainValue domainValueSort
-        . Domain.BuiltinPattern
-        . eraseAnnotations
-        . asMetaPattern
+    $ Domain.BuiltinExternal Domain.External
+        { domainValueSort
+        , domainValueChild = eraseAnnotations $ asMetaPattern builtinStringChild
+        }
 
 asMetaPattern
     :: Functor domain

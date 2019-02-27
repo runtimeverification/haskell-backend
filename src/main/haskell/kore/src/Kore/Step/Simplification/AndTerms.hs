@@ -1225,8 +1225,8 @@ domainValueAndEqualsAssumesDifferent
     -> StepPattern level variable
     -> Maybe (StepPattern level variable, SimplificationProof level)
 domainValueAndEqualsAssumesDifferent
-    first@(DV_ _ (Domain.BuiltinPattern _))
-    second@(DV_ _ (Domain.BuiltinPattern _))
+    first@(DV_ _ (Domain.BuiltinExternal _))
+    second@(DV_ _ (Domain.BuiltinExternal _))
   =
     assert (first /= second) $ return (mkBottom_, SimplificationProof)
 domainValueAndEqualsAssumesDifferent
@@ -1235,8 +1235,8 @@ domainValueAndEqualsAssumesDifferent
   =
     assert (first /= second) $ return (mkBottom_, SimplificationProof)
 domainValueAndEqualsAssumesDifferent
-    first@(DV_ _ (Domain.BuiltinInteger _))
-    second@(DV_ _ (Domain.BuiltinInteger _))
+    first@(DV_ _ (Domain.BuiltinInt _))
+    second@(DV_ _ (Domain.BuiltinInt _))
   =
     assert (first /= second) $ return (mkBottom_, SimplificationProof)
 domainValueAndEqualsAssumesDifferent _ _ = empty

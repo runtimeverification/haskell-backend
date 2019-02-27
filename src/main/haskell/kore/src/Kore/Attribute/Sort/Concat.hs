@@ -11,29 +11,8 @@ module Kore.Attribute.Sort.Concat
     , concatId, concatSymbol, concatAttribute
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
-import GHC.Generics
-       ( Generic )
-
 import Kore.AST.Kore
-
--- | @Concat@ represents the @concat@ attribute for sorts.
-newtype Concat = Concat { getConcat :: Maybe (SymbolOrAlias Object) }
-    deriving (Generic, Eq, Ord, Show)
-
-instance Semigroup Concat where
-    (<>) a@(Concat (Just _)) _ = a
-    (<>) _                     b = b
-
-instance Monoid Concat where
-    mempty = Concat { getConcat = Nothing }
-
-instance Default Concat where
-    def = mempty
-
-instance NFData Concat
+import Kore.Attribute.Sort.Concat.Concat
 
 -- | Kore identifier representing the @concat@ attribute symbol.
 concatId :: Id Object

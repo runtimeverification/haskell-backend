@@ -23,11 +23,9 @@ module Kore.Builtin.List
     , Builtin
     , returnList
     , asPattern
+    , asInternal
     , asExpandedPattern
       -- * Symbols
-    , lookupSymbolUnit
-    , lookupSymbolElement
-    , lookupSymbolConcat
     , lookupSymbolGet
     , isSymbolConcat
     , isSymbolElement
@@ -45,13 +43,13 @@ import           Control.Applicative
 import           Control.Error
                  ( ExceptT, MaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
-import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
+import qualified Data.Reflection as Reflection
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
@@ -169,29 +167,32 @@ expectBuiltinList ctx =
     \case
         DV_ _ domain ->
             case domain of
-                Domain.BuiltinList list -> return list
-                _ -> Builtin.verifierBug (Text.unpack ctx ++ ": Domain value is not a list")
+                Domain.BuiltinList Domain.InternalList { builtinListChild } ->
+                    return builtinListChild
+                _ ->
+                    Builtin.verifierBug
+                    $ Text.unpack ctx ++ ": Domain value is not a list"
         _ ->
             empty
 
 returnList
     :: (Monad m, Ord (variable Object))
-    => Sort Object
-    -> (Builtin variable)
+    => MetadataTools Object StepperAttributes
+    -> Sort Object
+    -> Builtin variable
     -> m (AttemptedAxiom Object variable)
-returnList resultSort list =
+returnList tools builtinListSort builtinListChild =
     Builtin.appliedFunction
-        $ ExpandedPattern.fromPurePattern
-        $ mkDomainValue resultSort
-        $ Domain.BuiltinList list
+    $ Reflection.give tools
+    $ asExpandedPattern builtinListSort builtinListChild
 
 evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ _ resultSort = \arguments ->
+    evalElement0 tools _ resultSort = \arguments ->
         case arguments of
-            [elem'] -> returnList resultSort (Seq.singleton elem')
+            [elem'] -> returnList tools resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity elementKey
 
 evalGet :: Builtin.Function
@@ -236,9 +237,9 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 _ _ resultSort =
+    evalUnit0 tools _ resultSort =
         \case
-            [] -> returnList resultSort Seq.empty
+            [] -> returnList tools resultSort Seq.empty
             _ -> Builtin.wrongArity "LIST.unit"
 
 evalConcat :: Builtin.Function
@@ -252,7 +253,7 @@ evalConcat =
         -> Sort Object
         -> [StepPattern Object variable]
         -> Simplifier (AttemptedAxiom Object variable)
-    evalConcat0 _ _ resultSort = \arguments ->
+    evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_list1, _list2) =
@@ -278,7 +279,7 @@ evalConcat =
                 bothConcrete = do
                     _list1 <- expectBuiltinList concatKey _list1
                     _list2 <- expectBuiltinList concatKey _list2
-                    returnList resultSort (_list1 <> _list2)
+                    returnList tools resultSort (_list1 <> _list2)
             leftIdentity <|> rightIdentity <|> bothConcrete
         )
 
@@ -301,27 +302,42 @@ See also: 'sort'
 
  -}
 asPattern
-    ::  ( Ord (variable Object)
-        , Given (MetadataTools Object StepperAttributes)
-        )
-    => Sort Object
+    :: Ord (variable Object)
+    => Domain.InternalList (StepPattern Object variable)
+    -> StepPattern Object variable
+asPattern builtin =
+    foldr concat' unit (element <$> list)
+  where
+    Domain.InternalList { builtinListSort = builtinSort } = builtin
+    Domain.InternalList { builtinListChild = list } = builtin
+    Domain.InternalList { builtinListUnit = unitSymbol } = builtin
+    Domain.InternalList { builtinListElement = elementSymbol } = builtin
+    Domain.InternalList { builtinListConcat = concatSymbol } = builtin
+
+    apply = mkApp builtinSort
+    unit = apply unitSymbol []
+    element elem' = apply elementSymbol [elem']
+    concat' list1 list2 = apply concatSymbol [list1, list2]
+
+{- | Render a 'Seq' as an expanded internal list pattern.
+ -}
+asInternal
+    :: Ord (variable Object)
+    => MetadataTools Object attrs
+    -> Sort Object
     -> Builtin variable
     -> StepPattern Object variable
-asPattern dvSort list =
-    foldr applyConcat applyUnit $ Foldable.toList (applyElement <$> list)
+asInternal tools builtinListSort builtinListChild =
+    mkDomainValue builtinListSort
+    $ Domain.BuiltinList Domain.InternalList
+        { builtinListSort
+        , builtinListUnit = Builtin.lookupSymbolUnit builtinListSort attrs
+        , builtinListElement = Builtin.lookupSymbolElement builtinListSort attrs
+        , builtinListConcat = Builtin.lookupSymbolConcat builtinListSort attrs
+        , builtinListChild
+        }
   where
-    applyUnit =
-        mkApp dvSort symbolUnit []
-      where
-        symbolUnit = lookupSymbolUnit dvSort
-    applyElement elem' =
-        mkApp dvSort symbolElement [elem']
-      where
-        symbolElement = lookupSymbolElement dvSort
-    applyConcat list1 list2 =
-        mkApp dvSort symbolConcat [list1, list2]
-      where
-        symbolConcat = lookupSymbolConcat dvSort
+    attrs = sortAttributes tools builtinListSort
 
 {- | Render a 'Seq' as an extended domain value pattern.
 
@@ -336,43 +352,10 @@ asExpandedPattern
     -> Builtin variable
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asPattern resultSort
-
-{- | Find the symbol hooked to @unit@.
-
-It is an error if the sort does not provide a @unit@ attribute; this is checked
-during verification.
-
- -}
-lookupSymbolUnit
-    :: Given (MetadataTools Object StepperAttributes)
-    => Sort Object
-    -> SymbolOrAlias Object
-lookupSymbolUnit = Builtin.lookupSymbolUnit
-
-{- | Find the symbol hooked to @element@.
-
-It is an error if the sort does not provide a @element@ attribute; this is
-checked during verification.
-
- -}
-lookupSymbolElement
-    :: Given (MetadataTools Object StepperAttributes)
-    => Sort Object
-    -> SymbolOrAlias Object
-lookupSymbolElement = Builtin.lookupSymbolElement
-
-{- | Find the symbol hooked to @concat@.
-
-It is an error if the sort does not provide a @concat@ attribute; this is
-checked during verification.
-
- -}
-lookupSymbolConcat
-    :: Given (MetadataTools Object StepperAttributes)
-    => Sort Object
-    -> SymbolOrAlias Object
-lookupSymbolConcat = Builtin.lookupSymbolConcat
+    ExpandedPattern.fromPurePattern . asInternal tools resultSort
+  where
+    tools :: MetadataTools Object StepperAttributes
+    tools = Reflection.given
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
@@ -460,28 +443,26 @@ unifyEquals
         -> StepPattern level variable
         -> MaybeT (err m) (expanded, proof)
 
-    unifyEquals0 dv1@(DV_ resultSort (Domain.BuiltinList list1)) =
+    unifyEquals0 dv1@(DV_ _ (Domain.BuiltinList builtin1)) =
         \case
-            dv2@(DV_ _ builtin2) ->
-                case builtin2 of
-                    Domain.BuiltinList list2 ->
-                        Monad.Trans.lift
-                        $ unifyEqualsConcrete resultSort list1 list2
-                    _ ->
-                        (error . unlines)
-                            [ "Cannot unify a builtin List domain value:"
-                            , show dv1
-                            , "with:"
-                            , show dv2
-                            , "This should have been a sort error."
-                            ]
+            dv2@(DV_ _ child2)
+              | Domain.BuiltinList builtin2 <- child2 ->
+                Monad.Trans.lift $ unifyEqualsConcrete builtin1 builtin2
+              | otherwise ->
+                (error . unlines)
+                    [ "Cannot unify a builtin List domain value:"
+                    , show dv1
+                    , "with:"
+                    , show dv2
+                    , "This should have been a sort error."
+                    ]
             app@(App_ symbol2 args2)
               | isSymbolConcat hookTools symbol2 ->
                 Monad.Trans.lift $ case args2 of
-                    [ DV_ _ (Domain.BuiltinList list2), x@(Var_ _) ] ->
-                        unifyEqualsFramedRight resultSort dv1 list2 x
-                    [ x@(Var_ _), DV_ _ (Domain.BuiltinList list2) ] ->
-                        unifyEqualsFramedLeft resultSort dv1 x list2
+                    [ DV_ _ (Domain.BuiltinList builtin2), x@(Var_ _) ] ->
+                        unifyEqualsFramedRight builtin1 builtin2 x
+                    [ x@(Var_ _), DV_ _ (Domain.BuiltinList builtin2) ] ->
+                        unifyEqualsFramedLeft builtin1 x builtin2
                     [ _, _ ] ->
                         Builtin.unifyEqualsUnsolved
                             simplificationType
@@ -498,86 +479,93 @@ unifyEquals
 
     unifyEqualsConcrete
         :: (level ~ Object)
-        => Sort level
-        -> Seq p
-        -> Seq p
+        => Domain.InternalList p
+        -> Domain.InternalList p
         -> (err m) (expanded, proof)
-    unifyEqualsConcrete dvSort list1 list2
+    unifyEqualsConcrete builtin1 builtin2
       | Seq.length list1 /= Seq.length list2 =
         return (ExpandedPattern.bottom, SimplificationProof)
       | otherwise =
-        do
+        Reflection.give tools $ do
             unified <-
                 sequence $ Seq.zipWith simplifyChild list1 list2
             let
                 propagatedUnified =
                     (propagatePredicates . discardProofs) unified
-                result = asBuiltinDomainList <$> propagatedUnified
+                result = asExpandedPattern builtinListSort =<< propagatedUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = mkDomainValue dvSort . Domain.BuiltinList
+        Domain.InternalList { builtinListSort } = builtin1
+        Domain.InternalList { builtinListChild = list1 } = builtin1
+        Domain.InternalList { builtinListChild = list2 } = builtin2
 
     unifyEqualsFramedRight
         :: (level ~ Object)
-        => Sort level
-        -> p
-        -> Seq p
+        => Domain.InternalList p
+        -> Domain.InternalList p
         -> p
         -> (err m) (expanded, proof)
     unifyEqualsFramedRight
-        resultSort
-        dv1@(DV_ _ (Domain.BuiltinList list1))
-        prefix2
+        builtin1
+        builtin2
         frame2
       | Seq.length prefix2 > Seq.length list1 =
         return (ExpandedPattern.bottom, SimplificationProof)
       | otherwise =
         do
-            (prefixUnified, _) <- unifyEqualsConcrete resultSort prefix1 prefix2
+            (prefixUnified, _) <-
+                unifyEqualsConcrete
+                    builtin1 { Domain.builtinListChild = prefix1 }
+                    builtin2
             (suffixUnified, _) <- simplifyChild frame2 listSuffix1
             let result =
-                    pure dv1
+                    pure (mkDomainValue builtinListSort internal1)
                     <* prefixUnified
                     <* suffixUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = mkDomainValue resultSort . Domain.BuiltinList
+        internal1 = Domain.BuiltinList builtin1
+        Domain.InternalList { builtinListSort } = builtin1
+        Domain.InternalList { builtinListChild = list1 } = builtin1
+        Domain.InternalList { builtinListChild = prefix2 } = builtin2
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length prefix2
-        listSuffix1 = asBuiltinDomainList suffix1
-    unifyEqualsFramedRight _ _ _ _ = error "The impossible happened."
+        listSuffix1 = asInternal tools builtinListSort suffix1
 
     unifyEqualsFramedLeft
         :: level ~ Object
-        => Sort level
+        => Domain.InternalList p
         -> p
-        -> p
-        -> Seq p
+        -> Domain.InternalList p
         -> (err m) (expanded, proof)
     unifyEqualsFramedLeft
-        resultSort
-        dv1@(DV_ _ (Domain.BuiltinList list1))
+        builtin1
         frame2
-        suffix2
+        builtin2
       | Seq.length suffix2 > Seq.length list1 =
         return (ExpandedPattern.bottom, SimplificationProof)
       | otherwise =
         do
             (prefixUnified, _) <- simplifyChild frame2 listPrefix1
-            (suffixUnified, _) <- unifyEqualsConcrete resultSort suffix1 suffix2
+            (suffixUnified, _) <-
+                unifyEqualsConcrete
+                    builtin1 { Domain.builtinListChild = suffix1 }
+                    builtin2
             let result =
-                    pure dv1
+                    pure (mkDomainValue builtinListSort internal1)
                     <* prefixUnified
                     <* suffixUnified
             return (result, SimplificationProof)
       where
-        asBuiltinDomainList = mkDomainValue resultSort . Domain.BuiltinList
+        internal1 = Domain.BuiltinList builtin1
+        Domain.InternalList { builtinListSort } = builtin1
+        Domain.InternalList { builtinListChild = list1 } = builtin1
+        Domain.InternalList { builtinListChild = suffix2 } = builtin2
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length list1 - Seq.length suffix2
-        listPrefix1 = asBuiltinDomainList prefix1
-    unifyEqualsFramedLeft _ _ _ _ = error "The impossible happened."
+        listPrefix1 = asInternal tools builtinListSort prefix1
 
 concatKey :: IsString s => s
 concatKey = "LIST.concat"

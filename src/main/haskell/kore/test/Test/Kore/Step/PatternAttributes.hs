@@ -51,9 +51,11 @@ test_patternAttributes =
                 dv = DomainValue
                     { domainValueSort = testSort
                     , domainValueChild =
-                        Domain.BuiltinPattern
-                        $ eraseAnnotations
-                        $ mkStringLiteral "10"
+                        Domain.BuiltinExternal Domain.External
+                            { domainValueSort = Mock.testSort
+                            , domainValueChild =
+                                eraseAnnotations $ mkStringLiteral "10"
+                            }
                     }
             assertEqualWithExplanation "FunctionalDomainValue"
                 (FunctionalDomainValue dv)
@@ -303,9 +305,11 @@ test_patternAttributes =
                 dv :: CommonStepPattern Object
                 dv = mkDomainValue
                         Mock.testSort
-                        (Domain.BuiltinPattern
-                            $ eraseAnnotations
-                            $ mkStringLiteral "a"
+                        (Domain.BuiltinExternal Domain.External
+                            { domainValueSort = Mock.testSort
+                            , domainValueChild =
+                                eraseAnnotations $ mkStringLiteral "a"
+                            }
                         )
             assertEqualWithExplanation "domain values are constructor-like"
                 (Right [ConstructorLikeProof])
@@ -401,9 +405,11 @@ test_patternAttributes =
                 dv :: CommonStepPattern Object
                 dv = mkDomainValue
                         Mock.testSort
-                        (Domain.BuiltinPattern
-                            $ eraseAnnotations
-                            $ mkStringLiteral "a"
+                        (Domain.BuiltinExternal Domain.External
+                            { domainValueSort = Mock.testSort
+                            , domainValueChild =
+                                eraseAnnotations $ mkStringLiteral "a"
+                            }
                         )
             assertEqualWithExplanation
                 "domain values are constructor-modulo-like"

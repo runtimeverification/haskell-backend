@@ -464,12 +464,20 @@ Definition
                                                 , sortActualSorts = []
                                                 }
                                         , domainValueChild =
-                                            Domain.BuiltinString PurePattern
-                                                { getPurePattern = CofreeT
-                                                    { runCofreeT = Identity
-                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "true")
+                                            Domain.BuiltinExternal Domain.External
+                                                { domainValueSort =
+                                                    SortActualSort SortActual
+                                                        { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                                                        , sortActualSorts = []
                                                         }
-                                                    }
+                                                , domainValueChild =
+                                                    PurePattern
+                                                        { getPurePattern = CofreeT
+                                                            { runCofreeT = Identity
+                                                                { runIdentity = Null :< StringLiteralPattern (StringLiteral "true")
+                                                                }
+                                                            }
+                                                        }
                                                 }
                                         })
                                     }
@@ -509,12 +517,20 @@ Definition
                                                 , sortActualSorts = []
                                                 }
                                         , domainValueChild =
-                                            Domain.BuiltinString PurePattern
-                                                { getPurePattern = CofreeT
-                                                    { runCofreeT = Identity
-                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "false")
+                                            Domain.BuiltinExternal Domain.External
+                                                { domainValueSort =
+                                                    SortActualSort SortActual
+                                                        { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                                                        , sortActualSorts = []
                                                         }
-                                                    }
+                                                , domainValueChild =
+                                                    PurePattern
+                                                        { getPurePattern = CofreeT
+                                                            { runCofreeT = Identity
+                                                                { runIdentity = Null :< StringLiteralPattern (StringLiteral "false")
+                                                                }
+                                                            }
+                                                        }
                                                 }
                                         })
                                     }

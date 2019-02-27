@@ -266,11 +266,11 @@ makeEvaluateBuiltin
 makeEvaluateBuiltin
     _tools
     _substitutionSimplifier
-    (Domain.BuiltinPattern p)
+    (Domain.BuiltinExternal Domain.External { domainValueChild = p })
   =
     case Recursive.project p of
         _ :< StringLiteralPattern _ ->
-            -- This should be the only kind of Domain.BuiltinPattern, and it
+            -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return
                 ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
@@ -284,7 +284,7 @@ makeEvaluateBuiltin
 makeEvaluateBuiltin
     tools
     substitutionSimplifier
-    (Domain.BuiltinMap m)
+    (Domain.BuiltinMap Domain.InternalMap { builtinMapChild = m })
   = do
     children <- mapM
         (makeEvaluateTerm tools substitutionSimplifier)
@@ -316,7 +316,7 @@ makeEvaluateBuiltin _tools _substitutionSimplifier (Domain.BuiltinSet _) =
     return topPredicateWithProof
 makeEvaluateBuiltin _tools _substitutionSimplifier (Domain.BuiltinBool _) =
     return topPredicateWithProof
-makeEvaluateBuiltin _tools _substitutionSimplifier (Domain.BuiltinInteger _) =
+makeEvaluateBuiltin _tools _substitutionSimplifier (Domain.BuiltinInt _) =
     return topPredicateWithProof
 
 topPredicateWithProof

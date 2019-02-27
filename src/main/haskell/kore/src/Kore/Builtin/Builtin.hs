@@ -76,9 +76,6 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Reflection
-                 ( Given )
-import qualified Data.Reflection as Reflection
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -512,7 +509,8 @@ verifyHookedSortDomainValue verifiers hookSort dv = do
 defaultDomainValueVerifier
     :: DomainValueVerifier child
 defaultDomainValueVerifier
-    dv@(DomainValue _ (Domain.BuiltinPattern (StringLiteral_ _)))
+    dv@(DomainValue _ (Domain.BuiltinExternal ext))
+  | Domain.External { domainValueChild = StringLiteral_ _ } <- ext
   =
     return dv
 defaultDomainValueVerifier _ =
@@ -522,13 +520,15 @@ defaultDomainValueVerifier _ =
 makeEncodedDomainValueVerifier
     :: Text
     -- ^ Builtin sort identifier
-    -> ( DomainValue Object Domain.Builtin child
-        -> Either (Error VerifyError) (Domain.Builtin child) )
+    ->  (   DomainValue Object Domain.Builtin child
+        ->  Either (Error VerifyError) (Domain.Builtin child)
+        )
     -- ^ encoding function for the builtin sort
     -> DomainValueVerifier child
-makeEncodedDomainValueVerifier _builtinSort encodeSort domainVal = do
-    dvChild' <- encodeSort domainVal
-    return $ domainVal {domainValueChild = dvChild'}
+makeEncodedDomainValueVerifier _builtinSort encodeSort domainVal =
+    Kore.Error.withContext "While parsing domain value" $ do
+        dvChild' <- encodeSort domainVal
+        return $ domainVal { domainValueChild = dvChild' }
 
 -- | Construct a 'DomainValueVerifier' for a sort with no builtin encoding
 makeNonEncodedDomainValueVerifier
@@ -537,7 +537,8 @@ makeNonEncodedDomainValueVerifier
         -> Either (Error VerifyError) () )
     -> DomainValueVerifier child
 makeNonEncodedDomainValueVerifier _builtinName verifyNoEncode domainValue =
-    verifyNoEncode domainValue >> return domainValue
+    Kore.Error.withContext "While parsing domain value"
+        (verifyNoEncode domainValue >> return domainValue)
 
 
 {- | Run a parser in a domain value pattern and construct the builtin
@@ -556,10 +557,13 @@ parseEncodeDomainValue
 parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
     Kore.Error.withContext "While parsing domain value"
         $ case domainValueChild of
-            Domain.BuiltinPattern (StringLiteral_ lit) -> do
-                val <- (parseString parser lit)
+            Domain.BuiltinExternal builtin -> do
+                val <- parseString parser lit
                 return $ ctor val
-            Domain.BuiltinInteger _ -> return domainValueChild
+              where
+                Domain.External { domainValueChild = StringLiteral_ lit } =
+                    builtin
+            Domain.BuiltinInt _ -> return domainValueChild
             Domain.BuiltinBool _ -> return domainValueChild
             _ -> Kore.Error.koreFail
                     "Expected literal string or internal value"
@@ -580,8 +584,11 @@ parseDomainValue
   =
     Kore.Error.withContext "While parsing domain value"
         $ case domainValueChild of
-            Domain.BuiltinPattern (StringLiteral_ lit) ->
+            Domain.BuiltinExternal ext
+              | StringLiteral_ lit <- child ->
                 parseString parser lit
+              where
+                Domain.External { domainValueChild = child } = ext
             _ -> Kore.Error.koreFail
                     "Domain value argument must be a literal string."
 
@@ -844,24 +851,18 @@ during verification.
 
  -}
 lookupSymbolUnit
-    :: Given (MetadataTools Object StepperAttributes)
-    => Sort Object
+    :: Sort Object
+    -> Attribute.Sort
     -> SymbolOrAlias Object
-lookupSymbolUnit theSort =
+lookupSymbolUnit theSort attrs =
     case getUnit of
         Just symbol -> symbol
         Nothing ->
-            (error . unlines)
-                [ "Internal error: missing 'unit' attribute of sort '"
-                    ++ unparseToString theSort ++ "'"
-                , "This should be a verification error."
-                ]
+            verifierBug
+            $ "missing 'unit' attribute of sort '"
+            ++ unparseToString theSort ++ "'"
   where
-    tools :: MetadataTools Object StepperAttributes
-    tools = Reflection.given
-
-    Attribute.Sort { unit = Attribute.Sort.Unit { getUnit } } =
-        sortAttributes tools theSort
+    Attribute.Sort { unit = Attribute.Sort.Unit { getUnit } } = attrs
 
 {- | Find the symbol hooked to @element@.
 
@@ -870,24 +871,18 @@ checked during verification.
 
  -}
 lookupSymbolElement
-    :: Given (MetadataTools Object StepperAttributes)
-    => Sort Object
+    :: Sort Object
+    -> Attribute.Sort
     -> SymbolOrAlias Object
-lookupSymbolElement theSort =
+lookupSymbolElement theSort attrs =
     case getElement of
         Just symbol -> symbol
         Nothing ->
-            (error . unlines)
-                [ "Internal error: missing 'element' attribute of sort '"
-                    ++ unparseToString theSort ++ "'"
-                , "This should be a verification error."
-                ]
+            verifierBug
+            $ "missing 'element' attribute of sort '"
+            ++ unparseToString theSort ++ "'"
   where
-    tools :: MetadataTools Object StepperAttributes
-    tools = Reflection.given
-
-    Attribute.Sort { element = Attribute.Sort.Element { getElement } } =
-        sortAttributes tools theSort
+    Attribute.Sort { element = Attribute.Sort.Element { getElement } } = attrs
 
 {- | Find the symbol hooked to @concat@.
 
@@ -896,24 +891,18 @@ checked during verification.
 
  -}
 lookupSymbolConcat
-    :: Given (MetadataTools Object StepperAttributes)
-    => Sort Object
+    :: Sort Object
+    -> Attribute.Sort
     -> SymbolOrAlias Object
-lookupSymbolConcat theSort =
+lookupSymbolConcat theSort attrs =
     case getConcat of
         Just symbol -> symbol
         Nothing ->
-            (error . unlines)
-                [ "Internal error: missing 'concat' attribute of sort '"
-                    ++ unparseToString theSort ++ "'"
-                , "This should be a verification error."
-                ]
+            verifierBug
+            $ "missing 'concat' attribute of sort '"
+            ++ unparseToString theSort ++ "'"
   where
-    tools :: MetadataTools Object StepperAttributes
-    tools = Reflection.given
-
-    Attribute.Sort { concat = Attribute.Sort.Concat { getConcat } } =
-        sortAttributes tools theSort
+    Attribute.Sort { concat = Attribute.Sort.Concat { getConcat } } = attrs
 
 {- | Is the given symbol hooked to the named builtin?
  -}

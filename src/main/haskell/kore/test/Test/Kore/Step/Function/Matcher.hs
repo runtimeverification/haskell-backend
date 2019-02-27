@@ -158,14 +158,18 @@ test_matcherEqualHeads =
         actual <-
             matchDefinition mockMetadataTools
                 (mkDomainValue Mock.testSort1
-                    $ Domain.BuiltinPattern
-                    $ eraseAnnotations
-                    $ mkStringLiteral "10"
+                    $ Domain.BuiltinExternal Domain.External
+                        { domainValueSort = Mock.testSort1
+                        , domainValueChild =
+                            eraseAnnotations $ mkStringLiteral "10"
+                        }
                 )
                 (mkDomainValue Mock.testSort1
-                    $ Domain.BuiltinPattern
-                    $ eraseAnnotations
-                    $ mkStringLiteral "10"
+                    $ Domain.BuiltinExternal Domain.External
+                        { domainValueSort = Mock.testSort1
+                        , domainValueChild =
+                            eraseAnnotations $ mkStringLiteral "10"
+                        }
                 )
         assertEqualWithExplanation "" expect actual
 

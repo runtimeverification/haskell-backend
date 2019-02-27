@@ -21,7 +21,6 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.Map as Map
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -286,15 +285,8 @@ test_simplify =
                         , variableSort = intSort
                         }
                 key = Test.Int.asInternal 1
-                original =
-                    mkDomainValue mapSort
-                    $ Domain.BuiltinMap
-                    $ Map.fromList [(key, mkAnd x mkTop_)]
-                expected =
-                    ExpandedPattern.fromPurePattern
-                    $ mkDomainValue mapSort
-                    $ Domain.BuiltinMap
-                    $ Map.fromList [(key, x)]
+                original = asPattern $ Map.fromList [(key, mkAnd x mkTop_)]
+                expected = asExpandedPattern $ Map.fromList [(key, x)]
             actual <- evaluateWith solver original
             assertEqualWithExplanation "expected simplified Map" expected actual
         )
@@ -359,7 +351,7 @@ asSymbolicPattern result
     | otherwise =
         foldr1 applyConcat (applyElement <$> Map.toAscList result)
   where
-    applyUnit = mkDomainValue mapSort $ Domain.BuiltinMap Map.empty
+    applyUnit = mkApp mapSort unitMapSymbol []
     applyElement (key, value) = elementMap key value
     applyConcat map1 map2 = concatMap map1 map2
 
@@ -501,7 +493,10 @@ test_concretizeKeysAxiom =
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map.Builtin Variable -> CommonStepPattern Object
-asPattern = Reflection.give testMetadataTools Map.asPattern mapSort
+asPattern =
+    Reflection.give testMetadataTools Map.asPattern
+    . builtinMap
+    . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asExpandedPattern :: Map.Builtin Variable -> CommonExpandedPattern Object

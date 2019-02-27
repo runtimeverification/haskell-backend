@@ -13,7 +13,6 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Domain.Builtin ()
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
@@ -115,8 +114,8 @@ test_simplification =
             ]
         ]
       where
-        _True  = Bool.asInternal boolSort True
-        _False = Bool.asInternal boolSort False
+        _True  = asInternal True
+        _False = asInternal False
 
         becomes :: HasCallStack
                 => CommonStepPattern Object

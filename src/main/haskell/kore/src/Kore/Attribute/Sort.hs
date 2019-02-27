@@ -28,9 +28,9 @@ import GHC.Generics
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.Attribute.Hook.Hook
 import           Kore.Attribute.Smtlib.Smtlib
-import           Kore.Attribute.Sort.Concat
-import           Kore.Attribute.Sort.Element
-import           Kore.Attribute.Sort.Unit
+import           Kore.Attribute.Sort.Concat.Concat
+import           Kore.Attribute.Sort.Element.Element
+import           Kore.Attribute.Sort.Unit.Unit
 
 data Sort =
     Sort

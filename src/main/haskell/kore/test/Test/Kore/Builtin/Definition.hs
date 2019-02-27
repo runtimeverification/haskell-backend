@@ -1,7 +1,10 @@
 module Test.Kore.Builtin.Definition where
 
-import Data.Text
-       ( Text )
+import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
@@ -15,6 +18,7 @@ import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
+import           Kore.Domain.Builtin
 import           Kore.Step.Pattern
 
 import Test.Kore
@@ -430,6 +434,18 @@ listSortDecl =
         , Sort.concatAttribute concatListSymbol
         ]
 
+builtinList
+    :: [CommonStepPattern Object]
+    -> InternalList (CommonStepPattern Object)
+builtinList children =
+    InternalList
+        { builtinListSort = listSort
+        , builtinListUnit = unitListSymbol
+        , builtinListElement = elementListSymbol
+        , builtinListConcat = concatListSymbol
+        , builtinListChild = Seq.fromList children
+        }
+
 -- | Another sort with the same hook
 listSort2 :: Sort Object
 listSort2 =
@@ -469,6 +485,18 @@ mapSortDecl =
         , Sort.elementAttribute elementMapSymbol
         , Sort.concatAttribute concatMapSymbol
         ]
+
+builtinMap
+    :: [(ConcreteStepPattern Object, CommonStepPattern Object)]
+    -> InternalMap (CommonStepPattern Object)
+builtinMap children =
+    InternalMap
+        { builtinMapSort = mapSort
+        , builtinMapUnit = unitMapSymbol
+        , builtinMapElement = elementMapSymbol
+        , builtinMapConcat = concatMapSymbol
+        , builtinMapChild = Map.fromList children
+        }
 
 -- ** Pair
 
@@ -519,6 +547,18 @@ setSortDecl =
         , Sort.elementAttribute elementSetSymbol
         , Sort.concatAttribute concatSetSymbol
         ]
+
+builtinSet
+    :: [ConcreteStepPattern Object]
+    -> InternalSet
+builtinSet children =
+    InternalSet
+        { builtinSetSort = setSort
+        , builtinSetUnit = unitSetSymbol
+        , builtinSetElement = elementSetSymbol
+        , builtinSetConcat = concatSetSymbol
+        , builtinSetChild = Set.fromList children
+        }
 
 -- ** String
 

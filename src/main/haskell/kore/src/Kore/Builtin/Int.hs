@@ -94,6 +94,7 @@ import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Error
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -181,8 +182,26 @@ symbolVerifiers =
  -}
 patternVerifier :: Builtin.DomainValueVerifier child
 patternVerifier =
-    Builtin.makeEncodedDomainValueVerifier sort
-        (Builtin.parseEncodeDomainValue parse Domain.BuiltinInteger)
+    Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
+  where
+    patternVerifierWorker domainValue =
+        case domainValueChild of
+            Domain.BuiltinExternal external
+              | StringLiteral_ lit <- externalChild -> do
+                builtinIntValue <- Builtin.parseString parse lit
+                (return . Domain.BuiltinInt)
+                    Domain.InternalInt
+                        { builtinIntSort = domainValueSort
+                        , builtinIntValue
+                        }
+              where
+                Domain.External { domainValueChild = externalChild } = external
+            Domain.BuiltinInt _ -> return domainValueChild
+            _ -> Kore.Error.koreFail
+                    "Expected literal string or internal value"
+      where
+        DomainValue { domainValueChild } = domainValue
+        DomainValue { domainValueSort } = domainValue
 
 -- | get the value from a (possibly encoded) domain value
 extractIntDomainValue
@@ -191,9 +210,11 @@ extractIntDomainValue
     -> Integer
 extractIntDomainValue ctx DomainValue { domainValueChild } =
     case domainValueChild of
-        Domain.BuiltinInteger int -> int
-        _ -> Builtin.verifierBug $ Text.unpack ctx ++ ": "
-            ++ "Int builtin should be internal"
+        Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
+            builtinIntValue
+        _ ->
+            Builtin.verifierBug
+            $ Text.unpack ctx ++ ": Int builtin should be internal"
 
 {- | Parse a string literal as an integer.
  -}
@@ -204,9 +225,9 @@ parse = Parsec.signed noSpace Parsec.decimal
 
 {- | Abort function evaluation if the argument is not a Int domain value.
 
-    If the operand pattern is not a domain value, the function is simply
-    'NotApplicable'. If the operand is a domain value, but not represented
-    by a 'BuiltinDomainMap', it is a bug.
+If the operand pattern is not a domain value, the function is simply
+'NotApplicable'. If the operand is a domain value, but not represented
+by a 'BuiltinDomainMap', it is a bug.
 
  -}
 expectBuiltinInt
@@ -218,23 +239,27 @@ expectBuiltinInt ctx =
     \case
         DV_ _ domain ->
             case domain of
-                Domain.BuiltinPattern (StringLiteral_ lit) ->
+                Domain.BuiltinExternal external
+                  | StringLiteral_ lit <- domainValueChild ->
                     (return . Builtin.runParser ctx)
                         (Builtin.parseString parse lit)
-                Domain.BuiltinInteger int -> return int
+                  where
+                    Domain.External { domainValueChild } = external
+                Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
+                    return builtinIntValue
                 _ ->
                     Builtin.verifierBug
-                        (Text.unpack ctx ++ ": Domain value argument is not a "
-                            ++ "string or internal value")
+                    $ Text.unpack ctx
+                    ++ ": Domain value is not a string or internal value"
         _ ->
             empty
 
 {- | Render an 'Integer' as an internal domain value pattern of the given sort.
 
-  The result sort should be hooked to the builtin @Int@ sort, but this is not
-  checked.
+The result sort should be hooked to the builtin @Int@ sort, but this is not
+checked.
 
-  See also: 'sort'
+See also: 'sort'
 
  -}
 asInternal
@@ -242,10 +267,13 @@ asInternal
     => Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> StepPattern Object variable
-asInternal resultSort =
+asInternal builtinIntSort builtinIntValue =
     fromConcreteStepPattern
-        . mkDomainValue resultSort
-        . Domain.BuiltinInteger
+    $ mkDomainValue builtinIntSort
+    $ Domain.BuiltinInt Domain.InternalInt
+        { builtinIntSort
+        , builtinIntValue
+        }
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
@@ -257,11 +285,17 @@ asInternal resultSort =
  -}
 asPattern
     :: Ord (variable Object)
-    => Sort Object  -- ^ resulting sort
-    -> Integer  -- ^ builtin value to render
+    => Domain.InternalInt  -- ^ builtin value to render
     -> StepPattern Object variable
-asPattern resultSort result =
-    fromConcreteStepPattern (asConcretePattern resultSort result)
+asPattern builtin =
+    mkDomainValue builtinIntSort
+    $ Domain.BuiltinExternal Domain.External
+        { domainValueSort = builtinIntSort
+        , domainValueChild = eraseAnnotations $ asMetaPattern int
+        }
+  where
+    Domain.InternalInt { builtinIntSort } = builtin
+    Domain.InternalInt { builtinIntValue = int } = builtin
 
 {- | Render an 'Integer' as a concrete domain value pattern of the given sort.
 
@@ -275,11 +309,12 @@ asConcretePattern
     :: Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> ConcreteStepPattern Object
-asConcretePattern domainValueSort =
+asConcretePattern domainValueSort builtinIntChild =
     mkDomainValue domainValueSort
-        . Domain.BuiltinPattern
-        . eraseAnnotations
-        . asMetaPattern
+    $ Domain.BuiltinExternal Domain.External
+        { domainValueSort
+        , domainValueChild = eraseAnnotations $ asMetaPattern builtinIntChild
+        }
 
 asMetaPattern
     :: Functor domain

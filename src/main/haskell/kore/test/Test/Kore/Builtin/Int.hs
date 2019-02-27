@@ -22,7 +22,6 @@ import           GHC.Integer.Logarithms
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Int as Int
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
@@ -337,8 +336,8 @@ testInt name = testSymbolWithSolver evaluate name intSort
 test_unifyEqual_NotEqual :: TestTree
 test_unifyEqual_NotEqual =
     testCaseWithSolver "unifyEqual BuiltinInteger: Not Equal" $ \solver -> do
-        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 1
-            dv2 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        let dv1 = asInternal 1
+            dv2 = asInternal 2
         actual <- evaluateWith solver $ mkEquals_ dv1 dv2
         assertEqual "" bottom actual
 
@@ -346,7 +345,7 @@ test_unifyEqual_NotEqual =
 test_unifyEqual_Equal :: TestTree
 test_unifyEqual_Equal =
     testCaseWithSolver "unifyEqual BuiltinInteger: Equal" $ \solver -> do
-        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        let dv1 = asInternal 2
         actual <- evaluateWith solver $ mkEquals_ dv1 dv1
         assertEqual "" top actual
 
@@ -354,8 +353,8 @@ test_unifyEqual_Equal =
 test_unifyAnd_NotEqual :: TestTree
 test_unifyAnd_NotEqual =
     testCaseWithSolver "unifyAnd BuiltinInteger: Not Equal" $ \solver -> do
-        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 1
-            dv2 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        let dv1 = asInternal 1
+            dv2 = asInternal 2
         actual <- evaluateWith solver $ mkAnd dv1 dv2
         assertEqual "" bottom actual
 
@@ -363,7 +362,7 @@ test_unifyAnd_NotEqual =
 test_unifyAnd_Equal :: TestTree
 test_unifyAnd_Equal =
     testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
-        let dv1 = mkDomainValue intSort $ Domain.BuiltinInteger 2
+        let dv1 = asInternal 2
         actual <- evaluateWith solver $ mkAnd dv1 dv1
         assertEqual "" (pure dv1) actual
 
@@ -371,6 +370,6 @@ test_unifyAnd_Equal =
 test_unifyAndEqual_Equal :: TestTree
 test_unifyAndEqual_Equal =
     testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
-        let dv = mkDomainValue intSort $ Domain.BuiltinInteger 0
+        let dv = asInternal 0
         actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv
         assertEqual "" top actual

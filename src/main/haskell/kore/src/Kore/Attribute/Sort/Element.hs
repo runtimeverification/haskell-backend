@@ -11,29 +11,8 @@ module Kore.Attribute.Sort.Element
     , elementId, elementSymbol, elementAttribute
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
-import GHC.Generics
-       ( Generic )
-
 import Kore.AST.Kore
-
--- | @Element@ represents the @element@ attribute for sorts.
-newtype Element = Element { getElement :: Maybe (SymbolOrAlias Object) }
-    deriving (Generic, Eq, Ord, Show)
-
-instance Semigroup Element where
-    (<>) a@(Element (Just _)) _ = a
-    (<>) _                     b = b
-
-instance Monoid Element where
-    mempty = Element { getElement = Nothing }
-
-instance Default Element where
-    def = mempty
-
-instance NFData Element
+import Kore.Attribute.Sort.Element.Element
 
 -- | Kore identifier representing the @element@ attribute symbol.
 elementId :: Id Object

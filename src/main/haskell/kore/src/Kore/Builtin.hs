@@ -202,18 +202,13 @@ asPattern
     -> StepPattern Object variable
 asPattern DomainValue { domainValueSort, domainValueChild } =
     case domainValueChild of
-        Domain.BuiltinPattern _ ->
+        Domain.BuiltinExternal _ ->
             mkDomainValue domainValueSort domainValueChild
-        Domain.BuiltinMap map' ->
-            Map.asPattern domainValueSort map'
-        Domain.BuiltinList list ->
-            List.asPattern domainValueSort list
-        Domain.BuiltinSet set ->
-            Set.asPattern domainValueSort set
-        Domain.BuiltinInteger int ->
-            Int.asPattern domainValueSort int
-        Domain.BuiltinBool bool ->
-            Bool.asPattern domainValueSort bool
+        Domain.BuiltinMap  builtin -> Map.asPattern builtin
+        Domain.BuiltinList builtin -> List.asPattern builtin
+        Domain.BuiltinSet  builtin -> Set.asPattern  builtin
+        Domain.BuiltinInt  builtin -> Int.asPattern  builtin
+        Domain.BuiltinBool builtin -> Bool.asPattern builtin
 
 
 {- | Externalize all builtin domain values in the given pattern.
@@ -223,7 +218,7 @@ All builtins will be rendered using their concrete Kore syntax.
 See also: 'asPattern'
 
  -}
--- TODO (thomas.tuegel): Transform from Domain.Builtin to Domain.External.
+-- TODO (thomas.tuegel): Transform from Domain.Internal to Domain.External.
 externalizePattern
     ::  forall variable.
         ( Given (MetadataTools Object StepperAttributes)
@@ -254,11 +249,14 @@ asMetaPattern
     -> PurePattern Meta domain Variable (Annotation.Null Meta)
 asMetaPattern =
     \case
-        Domain.BuiltinPattern pat -> castVoidDomainValues pat
+        Domain.BuiltinExternal ext ->
+            castVoidDomainValues domainValueChild
+          where
+            Domain.External { domainValueChild } = ext
         Domain.BuiltinMap _ -> notImplementedInternal
         Domain.BuiltinList _ -> notImplementedInternal
         Domain.BuiltinSet _ -> notImplementedInternal
-        Domain.BuiltinInteger _ -> notImplementedInternal
+        Domain.BuiltinInt _ -> notImplementedInternal
         Domain.BuiltinBool _ -> notImplementedInternal
 
 {- | Unparse a 'StepPattern'.

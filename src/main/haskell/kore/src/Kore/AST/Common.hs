@@ -525,10 +525,7 @@ instance
     (Unparse (domain child), level ~ Object) =>
     Unparse (DomainValue level domain child)
   where
-    unparse DomainValue { domainValueSort, domainValueChild } =
-        "\\dv"
-        <> parameters [domainValueSort]
-        <> arguments' [unparse domainValueChild]
+    unparse DomainValue { domainValueChild } = unparse domainValueChild
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,

@@ -13,12 +13,10 @@ import Test.Tasty.HUnit
 import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
-import qualified Data.Sequence as Seq
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Map as Map
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -358,8 +356,7 @@ test_substituteMap =
             actual
     ]
   where
-    mkDomainBuiltinMap =
-        mkDomainValue Mock.testSort . Domain.BuiltinMap . Map.fromList
+    mkDomainBuiltinMap = Mock.builtinMap
 
 test_substituteList :: [TestTree]
 test_substituteList =
@@ -396,8 +393,7 @@ test_substituteList =
             actual
     ]
   where
-    mkDomainBuiltinList =
-        mkDomainValue Mock.testSort . Domain.BuiltinList . Seq.fromList
+    mkDomainBuiltinList = Mock.builtinList
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =

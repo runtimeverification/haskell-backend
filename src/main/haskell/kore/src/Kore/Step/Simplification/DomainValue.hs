@@ -61,7 +61,9 @@ simplifyBuiltin
             (Domain.Builtin (StepPattern Object variable)))
 simplifyBuiltin =
     \case
-        Domain.BuiltinPattern pat -> (return . pure) (Domain.BuiltinPattern pat)
+        Domain.BuiltinExternal _ext -> do
+            _ext <- sequence _ext
+            return (Domain.BuiltinExternal <$> sequenceA _ext)
         Domain.BuiltinMap _map -> do
             _map <- sequence _map
             -- MultiOr propagates \bottom children upward.
@@ -71,5 +73,5 @@ simplifyBuiltin =
             -- MultiOr propagates \bottom children upward.
             return (Domain.BuiltinList <$> sequenceA _list)
         Domain.BuiltinSet set -> (return . pure) (Domain.BuiltinSet set)
-        Domain.BuiltinInteger int -> (return . pure) (Domain.BuiltinInteger int)
+        Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
         Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
