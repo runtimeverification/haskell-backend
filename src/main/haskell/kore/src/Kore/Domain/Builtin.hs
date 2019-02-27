@@ -62,6 +62,8 @@ unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
 
 -- * Builtin Map
 
+{- | Internal representation of the builtin @MAP.Map@ domain.
+ -}
 data InternalMap child =
     InternalMap
         { builtinMapSort :: !(Sort Object)
@@ -104,8 +106,10 @@ instance Unparse child => Unparse (InternalMap child) where
         unparseElementArguments (key, value) =
             arguments' [unparse key, unparse value]
 
--- * Internal List
+-- * Builtin List
 
+{- | Internal representation of the builtin @LIST.List@ domain.
+ -}
 data InternalList child =
     InternalList
         { builtinListSort :: !(Sort Object)
@@ -146,8 +150,10 @@ instance Unparse child => Unparse (InternalList child) where
         InternalList { builtinListElement } = builtinList
         InternalList { builtinListConcat } = builtinList
 
--- * Internal Set
+-- * Builtin Set
 
+{- | Internal representation of the builtin @SET.Set@ domain.
+ -}
 data InternalSet =
     InternalSet
         { builtinSetSort :: !(Sort Object)
@@ -179,8 +185,10 @@ instance Unparse InternalSet where
         InternalSet { builtinSetElement } = builtinSet
         InternalSet { builtinSetConcat } = builtinSet
 
--- * Internal Int
+-- * Builtin Int
 
+{- | Internal representation of the builtin @INT.Int@ domain.
+ -}
 data InternalInt =
     InternalInt
         { builtinIntSort :: !(Sort Object)
@@ -200,6 +208,8 @@ instance Unparse InternalInt where
 
 -- * Builtin Bool
 
+{- | Internal representation of the builtin @BOOL.Bool@ domain.
+ -}
 data InternalBool =
     InternalBool
         { builtinBoolSort :: !(Sort Object)
