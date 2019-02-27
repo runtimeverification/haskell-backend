@@ -27,7 +27,6 @@ module Kore.Builtin
     , asPattern
     , externalizePattern
     , asMetaPattern
-    , unparseStepPattern
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -35,14 +34,10 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( Given )
 import           Data.Semigroup
                  ( (<>) )
 import           Data.Text
                  ( Text )
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
@@ -65,8 +60,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
 import           Kore.Step.Function.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Function.Identifier as AxiomIdentifier
@@ -74,8 +67,6 @@ import qualified Kore.Step.Function.Identifier as AxiomIdentifier
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
-import           Kore.Unparser
-                 ( Unparse (..) )
 
 {- | The default type of builtin domain values.
  -}
@@ -265,15 +256,3 @@ asMetaPattern =
         Domain.BuiltinSet _ -> notImplementedInternal
         Domain.BuiltinInt _ -> notImplementedInternal
         Domain.BuiltinBool _ -> notImplementedInternal
-
-{- | Unparse a 'StepPattern'.
-
- -}
-unparseStepPattern
-    ::  ( Given (MetadataTools Object StepperAttributes)
-        , Unparse (variable Object)
-        , Ord (variable Object)
-        )
-    => StepPattern Object variable
-    -> Doc ann
-unparseStepPattern = unparse . externalizePattern

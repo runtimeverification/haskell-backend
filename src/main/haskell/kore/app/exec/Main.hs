@@ -68,6 +68,8 @@ import           Kore.Step.SmtLemma
                  ( declareSMTLemmas )
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
+import           Kore.Unparser
+                 ( unparse )
 import qualified SMT
 
 import GlobalMain
@@ -427,10 +429,7 @@ mainWithOptions
                                 indexedModule
                                 specIndexedModule
                 )
-        let
-            unparsed =
-                Reflection.give tools Builtin.unparseStepPattern
-                $ externalizeFreshVariables finalPattern
+        let unparsed = (unparse . externalizeFreshVariables) finalPattern
         case outputFileName of
             Nothing ->
                 putDoc unparsed
