@@ -225,7 +225,11 @@ instance Unparse InternalBool where
     unparse InternalBool { builtinBoolSort, builtinBoolValue } =
         "\\dv"
         <> parameters [builtinBoolSort]
-        <> arguments' [Pretty.dquotes $ Pretty.pretty builtinBoolValue]
+        <> arguments' [Pretty.dquotes value]
+      where
+        value
+          | builtinBoolValue = "true"
+          | otherwise        = "false"
 
 -- * Builtin domain representations
 
