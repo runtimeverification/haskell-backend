@@ -8,7 +8,8 @@ SUBMAKES := $(shell find ./ ! -path ./Makefile -name Makefile)
 
 # The subdirectory targets should not run in parallel, due to issues with
 # running multiple concurrent krun processes.
-$(TOPTARGETS):
-	for submake in $(SUBMAKES); do \
-		$(MAKE) -C "$$(dirname $$submake)" $(MAKECMDGOALS); \
-	done
+.NOTPARALLEL:  $(SUBMAKES:=.make)
+$(TOPTARGETS): $(SUBMAKES:=.make)
+
+%/Makefile.make:
+	$(MAKE) -C $* $(MAKECMDGOALS)
