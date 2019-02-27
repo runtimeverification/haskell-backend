@@ -12,4 +12,4 @@ SUBMAKES := $(shell find ./ ! -path ./Makefile -name Makefile)
 $(TOPTARGETS): $(SUBMAKES:=.make)
 
 %/Makefile.make:
-	$(MAKE) -C $* $(MAKECMDGOALS)
+	$(MAKE) --directory $* $(MAKECMDGOALS)
