@@ -827,9 +827,10 @@ stepWithRemainders tools substitutionSimplifier patt rules
             patt
     case resultOrError of
         Left _ -> error $
-            "Error while applying a \\rewrite axiom to the pattern."
+            "Not implemented error "
+            ++ " while applying a \\rewrite axiom to the pattern."
             ++ " We decided to end the execution because we don't understand"
-            ++ "this case well enough at the moment."
+            ++ " this case well enough at the moment."
         Right result -> return result
 
 unwrapStepErrorVariables
