@@ -465,7 +465,7 @@ asExpandedPattern =
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal :: Set.Builtin -> CommonStepPattern Object
-asInternal = Set.builtinSet testMetadataTools setSort
+asInternal = Set.asInternal testMetadataTools setSort
 
 -- * Constructors
 

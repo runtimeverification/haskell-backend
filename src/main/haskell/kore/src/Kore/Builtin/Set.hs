@@ -22,7 +22,7 @@ module Kore.Builtin.Set
     , builtinFunctions
     , Builtin
     , returnSet
-    , builtinSet
+    , asInternal
     , asPattern
     , asExpandedPattern
       -- * Symbols
@@ -211,7 +211,7 @@ returnSet
 returnSet tools resultSort set =
     Builtin.appliedFunction
     $ ExpandedPattern.fromPurePattern
-    $ builtinSet tools resultSort set
+    $ asInternal tools resultSort set
 
 evalElement :: Builtin.Function
 evalElement =
@@ -372,13 +372,13 @@ valid external representation. Use 'asPattern' to construct an externally-valid
 pattern.
 
  -}
-builtinSet
+asInternal
     :: Ord (variable Object)
     => MetadataTools Object attrs
     -> Sort Object
     -> Builtin
     -> StepPattern Object variable
-builtinSet tools builtinSetSort builtinSetChild =
+asInternal tools builtinSetSort builtinSetChild =
     mkDomainValue builtinSetSort
     $ Domain.BuiltinSet Domain.InternalSet
         { builtinSetSort
@@ -428,7 +428,7 @@ asExpandedPattern
     -> Builtin
     -> ExpandedPattern Object variable
 asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . builtinSet tools resultSort
+    ExpandedPattern.fromPurePattern . asInternal tools resultSort
   where
     tools :: MetadataTools Object StepperAttributes
     tools = Reflection.given
@@ -620,7 +620,7 @@ unifyEquals
         Reflection.give tools $ do
             (remainder, _) <-
                 unifyEqualsChildren var
-                $ builtinSet tools builtinSetSort
+                $ asInternal tools builtinSetSort
                 $ Set.difference set1 set2
             let result =
                     -- Return the concrete set, but capture any predicates and
