@@ -271,6 +271,8 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools Map.empty)
+            Map.empty
             [unificationProblem term1 term2]
     let
         subst'' =
@@ -298,6 +300,8 @@ andSimplifyFailure term1 term2 err = do
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools Map.empty)
+            Map.empty
             [unificationProblem term1 term2]
     assertEqualWithPrinter show "" expect actual
 
@@ -321,6 +325,8 @@ andSimplifyException message term1 term2 exceptionMessage =
                 $ simplifyAnds
                     tools
                     (Mock.substitutionSimplifier tools)
+                    (Simplifier.create tools Map.empty)
+                    Map.empty
                     [unificationProblem term1 term2]
             _ <- evaluate var
             assertFailure "This evaluation should fail"
@@ -352,6 +358,8 @@ unificationProcedureSuccess
             $ unificationProcedure
                 tools
                 (Mock.substitutionSimplifier tools)
+                (Simplifier.create tools Map.empty)
+                Map.empty
                 term1
                 term2
         let
@@ -742,6 +750,7 @@ simplifyPattern (UnificationTerm term) = do
                 tools
                 (Mock.substitutionSimplifier tools)
                 (Simplifier.create tools functionRegistry)
+                functionRegistry
                 expandedPattern
         case
             OrOfExpandedPattern.extractPatterns

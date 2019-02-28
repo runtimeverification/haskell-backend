@@ -403,6 +403,7 @@ runVerification
         metadataTools
         simplifier
         (Mock.substitutionSimplifier metadataTools)
+        Map.empty
         (OnePath.defaultStrategy claims axioms)
         ( map (\c -> (Claim.rule c, stepLimit))
         . filter (not . isTrusted . trusted . Claim.attributes)

@@ -9,8 +9,9 @@ module Test.Kore.Step.Function.Matcher
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Control.Monad.Except
-       ( ExceptT, runExceptT )
+import           Control.Monad.Except
+                 ( ExceptT, runExceptT )
+import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -31,6 +32,8 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unification.Error
@@ -902,6 +905,8 @@ unificationWithMatch tools first second = do
         $ unificationWithAppMatchOnTop
             tools
             (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools Map.empty)
+            Map.empty
             first
             second
     case eitherResult of
@@ -942,5 +947,7 @@ match tools first second =
         matchAsUnification
             tools
             (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools Map.empty)
+            Map.empty
             first
             second

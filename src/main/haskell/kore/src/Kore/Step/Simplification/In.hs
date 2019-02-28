@@ -20,6 +20,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -28,7 +30,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unparser
@@ -57,7 +59,11 @@ simplify
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> In level (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -66,12 +72,15 @@ simplify
 simplify
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     In
         { inContainedChild = first
         , inContainingChild = second
         }
   =
-    simplifyEvaluatedIn tools substitutionSimplifier first second
+    simplifyEvaluatedIn
+        tools substitutionSimplifier simplifier axiomIdToSimplifier first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -97,21 +106,28 @@ simplifyEvaluatedIn
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluatedIn tools substitutionSimplifier first second
+simplifyEvaluatedIn
+    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | OrOfExpandedPattern.isFalse first =
     return (OrOfExpandedPattern.make [], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
     return (OrOfExpandedPattern.make [], SimplificationProof)
 
   | OrOfExpandedPattern.isTrue first =
-    Ceil.simplifyEvaluated tools substitutionSimplifier second
+    Ceil.simplifyEvaluated
+        tools substitutionSimplifier simplifier axiomIdToSimplifier second
   | OrOfExpandedPattern.isTrue second =
-    Ceil.simplifyEvaluated tools substitutionSimplifier first
+    Ceil.simplifyEvaluated
+        tools substitutionSimplifier simplifier axiomIdToSimplifier first
 
   | otherwise = do
     let
@@ -124,7 +140,9 @@ simplifyEvaluatedIn tools substitutionSimplifier first second
                 )
         crossProduct =
             OrOfExpandedPattern.crossProductGeneric
-                (makeEvaluateIn tools substitutionSimplifier)
+                (makeEvaluateIn
+                    tools substitutionSimplifier simplifier axiomIdToSimplifier
+                )
                 first
                 second
     orOfOrProof <- sequence crossProduct
@@ -160,16 +178,23 @@ makeEvaluateIn
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluateIn tools substitutionSimplifier first second
+makeEvaluateIn
+    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | ExpandedPattern.isTop first =
-    Ceil.makeEvaluate tools substitutionSimplifier second
+    Ceil.makeEvaluate
+        tools substitutionSimplifier simplifier axiomIdToSimplifier second
   | ExpandedPattern.isTop second =
-    Ceil.makeEvaluate tools substitutionSimplifier first
+    Ceil.makeEvaluate
+        tools substitutionSimplifier simplifier axiomIdToSimplifier first
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
     return (OrOfExpandedPattern.make [], SimplificationProof)
   | otherwise = return $ makeEvaluateNonBoolIn first second

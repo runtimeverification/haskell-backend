@@ -51,9 +51,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 import qualified SMT
 
 import           Test.Kore
@@ -425,28 +422,19 @@ evaluateWithAxioms tools axioms patt =
         $ evalSimplifier emptyLogger noRepl
         $ ExpandedPattern.simplify
             tools
-            (PredicateSubstitution.create tools simplifier)
+            (PredicateSubstitution.create tools simplifier axiomIdToSimplifier)
             simplifier
+            axiomIdToSimplifier
             patt
   where
-    simplifier
-        ::  ( FreshVariable variable
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , Show (variable Meta)
-            , Show (variable Object)
-            , Unparse (variable Object)
-            , SortedVariable variable
-            )
-        => StepPatternSimplifier Object variable
-    simplifier =
-        Simplifier.create
-            tools
-            (Map.unionWith
-                simplifierWithFallback
-                builtinAxioms
-                axioms
-            )
+    simplifier :: StepPatternSimplifier Object
+    simplifier = Simplifier.create tools axiomIdToSimplifier
+    axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap Object
+    axiomIdToSimplifier =
+        Map.unionWith
+            simplifierWithFallback
+            builtinAxioms
+            axioms
     builtinAxioms :: BuiltinAndAxiomSimplifierMap Object
     builtinAxioms =
         Map.fromList

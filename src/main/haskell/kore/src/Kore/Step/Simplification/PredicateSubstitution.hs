@@ -23,6 +23,8 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier, StepPatternSimplifier )
@@ -43,22 +45,12 @@ import           Kore.Variables.Fresh
 -}
 create
     :: MetadataTools level StepperAttributes
-    ->  (forall variable0
-        .   ( FreshVariable variable0
-            , MetaOrObject level
-            , Ord (variable0 level)
-            , OrdMetaOrObject variable0
-            , Show (variable0 level)
-            , ShowMetaOrObject variable0
-            , Unparse (variable0 level)
-            , SortedVariable variable0
-            )
-        => StepPatternSimplifier level variable0
-        )
-    -> PredicateSubstitutionSimplifier level Simplifier
-create tools simplifier =
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSubstitutionSimplifier level
+create tools simplifier axiomIdToSimplifier =
     PredicateSubstitutionSimplifier
-        (\p -> simplify tools simplifier p 0)
+        (\p -> simplify tools simplifier axiomIdToSimplifier p 0)
 
 {-| Simplifies a predicate-substitution by applying the substitution to the
 predicate, simplifying the result and repeating with the new
@@ -75,18 +67,9 @@ simplify
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    ->  (forall variable0
-        .   ( FreshVariable variable0
-            , MetaOrObject level
-            , Ord (variable0 level)
-            , OrdMetaOrObject variable0
-            , Show (variable0 level)
-            , ShowMetaOrObject variable0
-            , Unparse (variable0 level)
-            , SortedVariable variable0
-            )
-        => StepPatternSimplifier level variable0
-        )
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -> Int
     -> Simplifier
@@ -96,6 +79,7 @@ simplify
 simplify
     tools
     simplifier
+    axiomIdToSimplifier
     initialValue@Predicated { predicate, substitution }
     times
   = do
@@ -139,13 +123,15 @@ simplify
                         mergePredicatesAndSubstitutions
                             tools
                             substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
                             [simplifiedPredicate]
                             [substitution, simplifiedSubstitution]
                     return (mergedPredicateSubstitution, SimplificationProof)
   where
     substitutionSimplifier =
         PredicateSubstitutionSimplifier
-            (\p -> simplify tools simplifier p (times + 1))
+            (\p -> simplify tools simplifier axiomIdToSimplifier p (times + 1))
 
 assertDistinctVariables
     :: forall level variable

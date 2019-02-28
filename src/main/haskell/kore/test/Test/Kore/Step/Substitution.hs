@@ -4,6 +4,7 @@ module Test.Kore.Step.Substitution
 
 import           Control.Monad.Except
 import qualified Control.Monad.Morph as Morph
+import qualified Data.Map as Map
 import           Test.Tasty
                  ( TestTree )
 import           Test.Tasty.HUnit
@@ -20,6 +21,7 @@ import           Kore.Step.Pattern
                  ( StepPattern )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept,
                  normalizePredicatedSubstitution )
@@ -314,6 +316,8 @@ test_mergeAndNormalizeSubstitutions =
             . mergePredicatesAndSubstitutionsExcept
                 mockMetadataTools
                 (Mock.substitutionSimplifier mockMetadataTools)
+                (Simplifier.create mockMetadataTools Map.empty)
+                Map.empty
                 []
             $ Substitution.wrap <$> [s1, s2]
         return result
@@ -328,7 +332,9 @@ test_mergeAndNormalizeSubstitutions =
         $ normalizePredicatedSubstitution
             mockMetadataTools
             (Mock.substitutionSimplifier mockMetadataTools)
-            Predicated {term = (), predicate, substitution}
+            (Simplifier.create mockMetadataTools Map.empty)
+            Map.empty
+        Predicated {term = (), predicate, substitution}
 
 -- | Run an 'SMT' computation with the default configuration.
 runSMT :: SMT a -> IO a

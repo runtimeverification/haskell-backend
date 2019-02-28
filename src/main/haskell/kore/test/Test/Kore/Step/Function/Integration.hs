@@ -52,7 +52,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified SMT
 
@@ -147,7 +146,7 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
+                            (\_ _ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -655,12 +654,13 @@ mapVariables =
 mockEvaluator
     :: AttemptedAxiom level variable
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
-mockEvaluator evaluation _ _ _ _ =
+mockEvaluator evaluation _ _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 evaluate
@@ -676,22 +676,13 @@ evaluate metadataTools functionIdToEvaluator patt =
     $ Pattern.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
-    substitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
+    substitutionSimplifier :: PredicateSubstitutionSimplifier level
     substitutionSimplifier =
-        PredicateSubstitution.create metadataTools patternSimplifier
+        PredicateSubstitution.create
+            metadataTools patternSimplifier functionIdToEvaluator
     patternSimplifier
-        ::  ( MetaOrObject level
-            , SortedVariable variable
-            , Ord (variable level)
-            , Show (variable level)
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , Show (variable Meta)
-            , Show (variable Object)
-            , Unparse (variable level)
-            , FreshVariable variable
-            )
-        => StepPatternSimplifier level variable
+        ::  ( MetaOrObject level )
+        => StepPatternSimplifier level
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
 mockMetadataTools :: MetadataTools Object StepperAttributes

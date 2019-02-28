@@ -41,7 +41,7 @@ import           Kore.Step.Pattern
                  ( CommonStepPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (SimplificationProof), Simplifier,
+                 SimplificationProof (SimplificationProof),
                  StepPatternSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
                  ( create )
@@ -49,9 +49,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 import qualified SMT
 
 import           Test.Kore
@@ -513,7 +510,7 @@ test_builtinEvaluation =
 failingEvaluator :: BuiltinAndAxiomSimplifier Object
 failingEvaluator =
     BuiltinAndAxiomSimplifier
-        (const $ const $ const $ const $
+        (const $ const $ const $ const $ const $
             return (AttemptedAxiom.NotApplicable, SimplificationProof)
         )
 
@@ -564,22 +561,15 @@ evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger noRepl
     $ simplifier
-        metadataTools substitutionSimplifier patternSimplifier patt
+        metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where
-    substitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
+    substitutionSimplifier :: PredicateSubstitutionSimplifier level
     substitutionSimplifier =
-        PredicateSubstitution.create metadataTools patternSimplifier
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            Map.empty
     patternSimplifier
-        ::  ( MetaOrObject level
-            , SortedVariable variable
-            , Ord (variable level)
-            , Show (variable level)
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , Show (variable Meta)
-            , Show (variable Object)
-            , Unparse (variable level)
-            , FreshVariable variable
-            )
-        => StepPatternSimplifier level variable
+        ::  ( MetaOrObject level )
+        => StepPatternSimplifier level
     patternSimplifier = Simplifier.create metadataTools Map.empty

@@ -13,7 +13,6 @@ module Kore.Step.Simplification.Data
     , evalSimplifier
     , PredicateSubstitutionSimplifier (..)
     , StepPatternSimplifier (..)
-    , CommonStepPatternSimplifier
     , SimplificationProof (..)
     , SimplificationType (..)
     , Environment (..)
@@ -28,7 +27,7 @@ import Control.Monad.Trans.Except
        ( ExceptT (..), runExceptT )
 
 import Kore.AST.Common
-       ( SortedVariable, Variable )
+       ( SortedVariable )
 import Kore.AST.MetaOrObject
 import Kore.Logger
        ( LogMessage )
@@ -143,12 +142,21 @@ evalSimplifier
 evalSimplifier logger repl simplifier =
     runSimplifier simplifier logger repl
 
-{-| 'StepPatternSimplifier' wraps a function that evaluates
-Kore functions on StepPatterns.
+{-| Wraps a function that evaluates Kore functions on StepPatterns.
 -}
-newtype StepPatternSimplifier level variable =
+newtype StepPatternSimplifier level =
     StepPatternSimplifier
-        ( PredicateSubstitutionSimplifier level Simplifier
+        ( forall variable
+        .   ( FreshVariable variable
+            , MetaOrObject level
+            , Ord (variable level)
+            , OrdMetaOrObject variable
+            , Show (variable level)
+            , ShowMetaOrObject variable
+            , Unparse (variable level)
+            , SortedVariable variable
+            )
+        => PredicateSubstitutionSimplifier level
         -> StepPattern level variable
         -> Simplifier
             ( OrOfExpandedPattern level variable
@@ -156,18 +164,11 @@ newtype StepPatternSimplifier level variable =
             )
         )
 
-{-| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
-Kore functions on CommonPurePatterns.
--}
-type CommonStepPatternSimplifier level =
-    StepPatternSimplifier level Variable
-
-
 {-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies
 'PredicateSubstitution's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSubstitutionSimplifier level m =
+newtype PredicateSubstitutionSimplifier level =
     PredicateSubstitutionSimplifier
         (forall variable
         .   ( FreshVariable variable
@@ -180,7 +181,7 @@ newtype PredicateSubstitutionSimplifier level m =
             , SortedVariable variable
             )
         => PredicateSubstitution level variable
-        -> m
+        -> Simplifier
             ( PredicateSubstitution level variable
             , SimplificationProof level
             )

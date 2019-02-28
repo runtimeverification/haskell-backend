@@ -69,25 +69,10 @@ mkPair lSort rSort l r =
     mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
 substitutionSimplifier
-    :: MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    :: MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
 substitutionSimplifier tools =
-    PredicateSubstitution.create
-        tools
-        (StepPatternSimplifier
-            (\_ p ->
-                return
-                    ( OrOfExpandedPattern.make
-                        [ Predicated
-                            { term = mkTop_
-                            , predicate = Predicate.wrapPredicate p
-                            , substitution = mempty
-                            }
-                        ]
-                    , SimplificationProof
-                    )
-            )
-        )
+    PredicateSubstitution.create tools stepSimplifier evaluators
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
@@ -176,11 +161,27 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
 
-testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
+testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
 evaluators :: BuiltinAndAxiomSimplifierMap Object
 evaluators = Builtin.koreEvaluators verifiedModule
+
+stepSimplifier :: StepPatternSimplifier level
+stepSimplifier =
+    StepPatternSimplifier
+        (\_ p ->
+            return
+                ( OrOfExpandedPattern.make
+                    [ Predicated
+                        { term = mkTop_
+                        , predicate = Predicate.wrapPredicate p
+                        , substitution = mempty
+                        }
+                    ]
+                , SimplificationProof
+                )
+        )
 
 evaluate
     :: MonadSMT m
@@ -234,6 +235,8 @@ runStepResult configuration axiom =
         (stepWithRewriteRule
             testMetadataTools
             testSubstitutionSimplifier
+            stepSimplifier
+            evaluators
             configuration
             axiom
         )
@@ -277,6 +280,8 @@ runStepResultWith solver configuration axiom =
                 (stepWithRewriteRule
                     testMetadataTools
                     testSubstitutionSimplifier
+                    stepSimplifier
+                    evaluators
                     configuration
                     axiom
                 )
