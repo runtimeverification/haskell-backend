@@ -8,18 +8,6 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION): $(DEFINITION_NAME).k
 	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module SEARCH
 
-%.search.star.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all
-
-%.search.plus.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps
-
-%.search.one.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step
-
-%.search.final.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
-
 %.search.star.unreachable.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all --pattern '<k> unreachable </k>'
 

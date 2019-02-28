@@ -22,6 +22,15 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.krepl: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m VERIFICATION $<
 
+%.search.star.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all
+
+%.search.plus.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps
+
+%.search.one.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step
+
 %.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
