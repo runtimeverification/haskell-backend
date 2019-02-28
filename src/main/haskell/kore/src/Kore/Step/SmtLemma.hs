@@ -23,6 +23,8 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
+import           Data.Text
+                 ( Text )
 import qualified Data.Text as Text
 
 import           Kore.AST.Kore
@@ -143,13 +145,22 @@ declareSMTLemmas m = SMT.liftSMT $ do
         :: Given (MetadataTools Object StepperAttributes)
         => Sort Object
         -> MaybeT SMT SExpr
-    translateSort sort@(SortActualSort (SortActual _ children)) =
-        case getSmtlib $ smtlib $ sortAttributes given sort of
-            Just sExpr -> do
-                children' <- mapM translateSort children
-                pure $ applySExpr sExpr children'
-            Nothing -> mzero
+    translateSort sort@(SortActualSort (SortActual _ children))
+        | lookupHook sort == Just "INT.Int"   = return (SMT.Atom "Int")
+        | lookupHook sort == Just "BOOL.Bool" = return (SMT.Atom "Bool")
+        | otherwise =
+            case getSmtlib $ smtlib $ sortAttributes given sort of
+                Just sExpr -> do
+                    children' <- mapM translateSort children
+                    pure $ applySExpr sExpr children'
+                Nothing -> mzero
     translateSort _ = mzero
+
+    lookupHook
+        :: Given (MetadataTools Object StepperAttributes)
+        => Sort Object
+        -> Maybe Text
+    lookupHook sort = getHook $ hook $ sortAttributes given sort
 
 getRight :: Alternative m => Either a b -> m b
 getRight (Right a) = pure a
