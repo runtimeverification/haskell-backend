@@ -320,7 +320,6 @@ test_ceilSimplification =
             Predicated
                 { term =
                     mkDomainValue
-                        testSort
                         (Domain.BuiltinExternal Domain.External
                             { domainValueSort = Mock.testSort
                             , domainValueChild =

@@ -13,10 +13,12 @@ module Kore.ASTUtils.AlphaCompare
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Control.Lens as Lens
 import           Control.Monad.Reader
                  ( Reader, runReader )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
+import qualified Data.Function as Function
 import qualified Data.Functor.Foldable as Recursive
 import           Data.List
 import qualified Data.Map as Map
@@ -72,7 +74,10 @@ alphaEq e1' e2' = Reader.runReader (alphaEqWorker e1' e2') ([], [])
             (CharLiteralPattern lit1, CharLiteralPattern lit2) ->
                 compareCharLiteral lit1 lit2
             (DomainValuePattern dv1, DomainValuePattern dv2) ->
-                compareDomainValue dv1 dv2
+                Function.on
+                    compareDomainValue
+                    (Lens.view Domain.lensDomainValue)
+                    dv1 dv2
             (EqualsPattern eq1, EqualsPattern eq2) -> compareEquals eq1 eq2
             (ExistsPattern ex1, ExistsPattern ex2) -> compareExists ex1 ex2
             (ForallPattern fa1, ForallPattern fa2) -> compareForall fa1 fa2

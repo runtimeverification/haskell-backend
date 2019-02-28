@@ -10,6 +10,8 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 module Kore.Domain.External
     ( External (..)
+    , lensDomainValueSort
+    , lensDomainValueChild
     , CommonExternalPattern
     , Domain (..)
     ) where
@@ -27,6 +29,8 @@ import Data.Void
 import GHC.Generics
        ( Generic )
 
+import Control.Lens.TH.Rules
+       ( makeLenses )
 import Kore.AST.Pure
 import Kore.Domain.Class
 import Kore.Unparser
@@ -38,6 +42,7 @@ data External child =
         }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
+makeLenses ''External
 deriveEq1 ''External
 deriveOrd1 ''External
 deriveShow1 ''External
@@ -53,6 +58,17 @@ instance Unparse (External child) where
         <> arguments [domainValueChild]
 
 instance Domain External where
-    domainSort External { domainValueSort } = domainValueSort
+    lensDomainValue mapDomainValue external =
+        getExternal <$> mapDomainValue original
+      where
+        original = DomainValue { domainValueSort, domainValueChild = external }
+          where
+            External { domainValueSort } = external
+        getExternal
+            :: forall child
+            .  DomainValue Object External child
+            -> External child
+        getExternal DomainValue { domainValueSort, domainValueChild } =
+            domainValueChild { domainValueSort } :: External child
 
 type CommonExternalPattern level = CommonPurePattern level External

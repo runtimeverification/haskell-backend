@@ -125,14 +125,12 @@ ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, va
 
 dv1, dv2 :: CommonStepPattern Object
 dv1 =
-    mkDomainValue s1
-    $ Domain.BuiltinExternal Domain.External
+    mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
         , domainValueChild = eraseAnnotations $ mkStringLiteral "dv1"
         }
 dv2 =
-    mkDomainValue s1
-    $ Domain.BuiltinExternal Domain.External
+    mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
         , domainValueChild = eraseAnnotations $ mkStringLiteral "dv."
         }

@@ -152,10 +152,10 @@ patternVerifier =
 -- | get the value from a (possibly encoded) domain value
 extractStringDomainValue
     :: Text -- ^ error message Context
-    -> DomainValue Object Domain.Builtin child
+    -> Domain.Builtin child
     -> Text
-extractStringDomainValue ctx dv =
-    Builtin.runParser ctx $ Builtin.parseDomainValue parse dv
+extractStringDomainValue ctx =
+    Builtin.runParser ctx . Builtin.parseDomainValue parse
 
 {- | Parse a string literal.
  -}
@@ -219,11 +219,12 @@ asConcretePattern
     -> Text  -- ^ builtin value to render
     -> ConcreteStepPattern Object
 asConcretePattern domainValueSort builtinStringChild =
-    mkDomainValue domainValueSort
-    $ Domain.BuiltinExternal Domain.External
-        { domainValueSort
-        , domainValueChild = eraseAnnotations $ asMetaPattern builtinStringChild
-        }
+    (mkDomainValue . Domain.BuiltinExternal)
+        Domain.External
+            { domainValueSort
+            , domainValueChild =
+                eraseAnnotations $ asMetaPattern builtinStringChild
+            }
 
 asMetaPattern
     :: Functor domain

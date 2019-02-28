@@ -30,23 +30,18 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern (Domain.BuiltinExternal Domain.External
                                         { domainValueSort =
                                             SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                                         , domainValueChild =
-                                            Domain.BuiltinExternal Domain.External
-                                                { domainValueSort =
-                                                    SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
-                                                , domainValueChild =
-                                                    PurePattern
-                                                        { getPurePattern = CofreeT
-                                                            { runCofreeT = Identity
-                                                                { runIdentity = Null :< StringLiteralPattern (StringLiteral "f")
-                                                                }
-                                                            }
+                                            PurePattern
+                                                { getPurePattern = CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "f")
                                                         }
+                                                    }
                                                 }
-                                        })
+                                        }))
                                     }
                                 }
                             }

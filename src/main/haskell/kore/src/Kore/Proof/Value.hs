@@ -50,9 +50,7 @@ import           Kore.Step.StepperAttributes
 data ValueF level child where
     Constructor :: !(Pattern.Application level child) -> ValueF level child
     SortInjection :: !(Pattern.Application level child) -> ValueF level child
-    DomainValue
-        :: !(Pattern.DomainValue Object Domain.Builtin child)
-        -> ValueF Object child
+    DomainValue :: !(Domain.Builtin child) -> ValueF Object child
 
 deriving instance Eq child => Eq (ValueF level child)
 deriving instance Ord child => Ord (ValueF level child)

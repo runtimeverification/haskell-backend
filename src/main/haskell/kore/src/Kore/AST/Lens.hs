@@ -18,10 +18,11 @@ import           Control.Lens hiding
 import qualified Data.Functor.Foldable as Recursive
 
 import Kore.AST.Pure
+import Kore.Domain.Class
 
 patternLens
     ::  forall f level domain variable1 variable2 annotation.
-        (Applicative f, Traversable domain)
+        (Applicative f, Domain domain, Traversable domain)
     => (Sort level -> f (Sort level))  -- ^ Operand sorts
     -> (Sort level -> f (Sort level))
     -- ^ Result sorts, and operand sorts when the two are equal
@@ -47,7 +48,7 @@ patternLens
             BottomPattern bot0 -> BottomPattern <$> patternLensBottom bot0
             CeilPattern ceil0 -> CeilPattern <$> patternLensCeil ceil0
             DomainValuePattern dv0 ->
-                DomainValuePattern <$> patternLensDomainValue dv0
+                DomainValuePattern <$> patternLensDomain dv0
             EqualsPattern eq0 -> EqualsPattern <$> patternLensEquals eq0
             ExistsPattern ex0 -> ExistsPattern <$> patternLensExists ex0
             FloorPattern flr0 -> FloorPattern <$> patternLensFloor flr0
@@ -81,17 +82,22 @@ patternLens
             <*> lensResultSort ceilResultSort
             <*> lensChild ceilChild
 
-    patternLensDomainValue
+    patternLensDomain
         :: level ~ Object
-        => DomainValue level domain
-            (PurePattern level domain variable1 annotation)
-        -> f
-            (DomainValue level domain
-                (PurePattern level domain variable2 annotation))
-    patternLensDomainValue DomainValue { domainValueSort, domainValueChild } =
-        DomainValue
-            <$> lensResultSort domainValueSort
-            <*> traverse lensChild domainValueChild
+        => domain (PurePattern level domain variable1 annotation)
+        -> f (domain (PurePattern level domain variable2 annotation))
+    patternLensDomain =
+        lensDomainValue patternLensDomainValue
+      where
+        patternLensDomainValue
+            DomainValue
+                { domainValueSort
+                , domainValueChild
+                }
+          =
+            DomainValue
+                <$> lensResultSort domainValueSort
+                <*> traverse lensChild domainValueChild
 
     patternLensEquals
         Equals
@@ -193,14 +199,14 @@ patternLens
 
 -- | The sort returned by a top-level constructor.
 resultSort
-    :: Traversable domain
+    :: (Domain domain, Traversable domain)
     => Traversal' (PurePattern level domain variable annotation) (Sort level)
 resultSort = \f -> patternLens pure f pure pure
 
 -- | All sub-expressions which are 'Pattern's.
 -- Use partsOf allChildren to get a lens to a List.
 allChildren
-    :: Traversable domain
+    :: (Domain domain, Traversable domain)
     => Traversal'
         (PurePattern level domain variable annotation)
         (PurePattern level domain variable annotation)
@@ -208,7 +214,7 @@ allChildren = patternLens pure pure pure
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
-    :: (MetaOrObject level, Traversable domain)
+    :: (MetaOrObject level, Domain domain, Traversable domain)
     => [Int]
     ->  (  PurePattern level domain variable annotation
         -> PurePattern level domain variable annotation
@@ -221,7 +227,7 @@ localInPattern path f pat = pat & inPath path %~ f
 -- The ints represent subpatterns in the obvious way:
 -- [0,1] points to b in \ceil(a /\ b), etc.
 inPath
-    :: (MetaOrObject level, Applicative f, Traversable domain)
+    :: (MetaOrObject level, Applicative f, Domain domain, Traversable domain)
     => [Int]
     ->  (  PurePattern level domain variable annotation
         -> f (PurePattern level domain variable annotation)

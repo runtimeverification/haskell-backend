@@ -18,6 +18,7 @@ module Kore.MetaML.Lift
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Control.Lens as Lens
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Text
                  ( Text )
@@ -170,9 +171,11 @@ liftObjectReducer p = case p of
         ]
     DomainValuePattern dvp ->
         applyMetaMLPatternHead DomainValuePatternType
-            [ liftToMeta (domainValueSort dvp)
-            , mempty <$ Builtin.asMetaPattern (domainValueChild dvp)
+            [ liftToMeta domainValueSort
+            , mempty <$ Builtin.asMetaPattern dvp
             ]
+      where
+        DomainValue { domainValueSort } = Lens.view Domain.lensDomainValue dvp
     EqualsPattern cp -> applyMetaMLPatternHead EqualsPatternType
         [ liftToMeta (equalsOperandSort cp)
         , liftToMeta (equalsResultSort cp)

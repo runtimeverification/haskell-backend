@@ -1151,7 +1151,7 @@ data Pattern level domain variable child where
     CeilPattern
         :: !(Ceil level child) -> Pattern level domain variable child
     DomainValuePattern
-        :: !(DomainValue Object domain child)
+        :: !(domain child)
         -> Pattern Object domain variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level domain variable child
@@ -1188,28 +1188,19 @@ $newDefinitionGroup
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
 instance
-    ( Ord level
-    , Ord (variable level)
-    , Ord1 domain
-    ) =>
-    Ord1 (Pattern level domain variable)
-  where
-    liftCompare = $(makeLiftCompare ''Pattern)
-
-instance
-    ( Eq level
-    , Eq (variable level)
-    , Eq1 domain
-    ) =>
+    (Eq (variable level), Eq1 domain) =>
     Eq1 (Pattern level domain variable)
   where
     liftEq = $(makeLiftEq ''Pattern)
 
 instance
-    ( Show level
-    , Show (variable level)
-    , Show1 domain
-    ) =>
+    (Ord (variable level), Ord1 domain) =>
+    Ord1 (Pattern level domain variable)
+  where
+    liftCompare = $(makeLiftCompare ''Pattern)
+
+instance
+    (Show (variable level), Show1 domain) =>
     Show1 (Pattern level domain variable)
   where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
@@ -1273,23 +1264,23 @@ instance
             TopPattern p -> rnf p
             VariablePattern p -> rnf p
 
-deriving instance
-    ( Eq child
-    , Eq (variable level)
-    , Eq1 domain
-    ) => Eq (Pattern level domain variable child)
+instance
+    (Eq child, Eq (variable level), Eq1 domain) =>
+    Eq (Pattern level domain variable child)
+  where
+    (==) = eq1
 
-deriving instance
-    ( Show child
-    , Show (variable level)
-    , Show1 domain
-    ) => Show (Pattern level domain variable child)
+instance
+    (Ord child, Ord (variable level), Ord1 domain) =>
+    Ord (Pattern level domain variable child)
+  where
+    compare = compare1
 
-deriving instance
-    ( Ord child
-    , Ord (variable level)
-    , Ord1 domain
-    ) => Ord (Pattern level domain variable child)
+instance
+    (Show child, Show (variable level), Show1 domain) =>
+    Show (Pattern level domain variable child)
+  where
+    showsPrec = showsPrec1
 
 deriving instance Functor domain => Functor (Pattern level domain variable)
 
@@ -1517,11 +1508,7 @@ mapDomainValues
 mapDomainValues mapping =
     \case
         -- Non-trivial case
-        DomainValuePattern dvP ->
-            DomainValuePattern dvP
-                { domainValueChild = mapping domainValueChild }
-          where
-            DomainValue { domainValueChild } = dvP
+        DomainValuePattern domainP -> DomainValuePattern (mapping domainP)
         -- Trivial cases
         AndPattern andP -> AndPattern andP
         ApplicationPattern appP -> ApplicationPattern appP

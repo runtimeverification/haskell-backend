@@ -157,19 +157,17 @@ test_matcherEqualHeads =
         let expect = Just $ OrOfExpandedPattern.make [Predicated.topPredicate]
         actual <-
             matchDefinition mockMetadataTools
-                (mkDomainValue Mock.testSort1
-                    $ Domain.BuiltinExternal Domain.External
-                        { domainValueSort = Mock.testSort1
-                        , domainValueChild =
-                            eraseAnnotations $ mkStringLiteral "10"
-                        }
+                (mkDomainValue $ Domain.BuiltinExternal Domain.External
+                    { domainValueSort = Mock.testSort1
+                    , domainValueChild =
+                        eraseAnnotations $ mkStringLiteral "10"
+                    }
                 )
-                (mkDomainValue Mock.testSort1
-                    $ Domain.BuiltinExternal Domain.External
-                        { domainValueSort = Mock.testSort1
-                        , domainValueChild =
-                            eraseAnnotations $ mkStringLiteral "10"
-                        }
+                (mkDomainValue $ Domain.BuiltinExternal Domain.External
+                    { domainValueSort = Mock.testSort1
+                    , domainValueChild =
+                        eraseAnnotations $ mkStringLiteral "10"
+                    }
                 )
         assertEqualWithExplanation "" expect actual
 

@@ -12,11 +12,30 @@ module Kore.Domain.Builtin
     ( Builtin (..)
     , Key
     , InternalMap (..)
+    , lensBuiltinMapSort
+    , lensBuiltinMapUnit
+    , lensBuiltinMapElement
+    , lensBuiltinMapConcat
+    , lensBuiltinMapChild
     , InternalList (..)
+    , lensBuiltinListSort
+    , lensBuiltinListUnit
+    , lensBuiltinListElement
+    , lensBuiltinListConcat
+    , lensBuiltinListChild
     , InternalSet (..)
+    , lensBuiltinSetSort
+    , lensBuiltinSetUnit
+    , lensBuiltinSetElement
+    , lensBuiltinSetConcat
+    , lensBuiltinSetChild
     , InternalInt (..)
+    , lensBuiltinIntSort
+    , lensBuiltinIntValue
     , InternalBool (..)
-    , External (..)
+    , lensBuiltinBoolSort
+    , lensBuiltinBoolValue
+    , module Kore.Domain.External
     , Domain (..)
     ) where
 
@@ -38,6 +57,8 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
+import Control.Lens.TH.Rules
+       ( makeLenses )
 import Kore.Annotation.Valid
 import Kore.AST.Pure
 import Kore.Domain.Class
@@ -268,15 +289,48 @@ instance Unparse child => Unparse (Builtin child) where
             BuiltinList builtinList -> unparse builtinList
             BuiltinSet builtinSet -> unparse builtinSet
 
+makeLenses ''InternalMap
+makeLenses ''InternalList
+makeLenses ''InternalSet
+makeLenses ''InternalInt
+makeLenses ''InternalBool
+
 instance Domain Builtin where
-    domainSort =
-        \case
-            BuiltinExternal external -> domainSort external
-            BuiltinInt  InternalInt  { builtinIntSort  } -> builtinIntSort
-            BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
-            BuiltinMap  InternalMap  { builtinMapSort  } -> builtinMapSort
-            BuiltinList InternalList { builtinListSort } -> builtinListSort
-            BuiltinSet  InternalSet  { builtinSetSort  } -> builtinSetSort
+    lensDomainValue mapDomainValue builtin =
+        getBuiltin <$> mapDomainValue original
+      where
+        original =
+            DomainValue
+                { domainValueChild = builtin
+                , domainValueSort = originalSort
+                }
+        originalSort =
+            case builtin of
+                BuiltinExternal External { domainValueSort } -> domainValueSort
+                BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
+                BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
+                BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
+                BuiltinList InternalList { builtinListSort } -> builtinListSort
+                BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
+        getBuiltin
+            :: forall child
+            .  DomainValue Object Builtin child
+            -> Builtin child
+        getBuiltin DomainValue { domainValueSort, domainValueChild } =
+            case domainValueChild of
+                BuiltinExternal external ->
+                    BuiltinExternal
+                        (external { domainValueSort } :: External child)
+                BuiltinInt internal ->
+                    BuiltinInt internal { builtinIntSort = domainValueSort }
+                BuiltinBool internal ->
+                    BuiltinBool internal { builtinBoolSort = domainValueSort }
+                BuiltinMap internal ->
+                    BuiltinMap internal { builtinMapSort = domainValueSort }
+                BuiltinList internal ->
+                    BuiltinList internal { builtinListSort = domainValueSort }
+                BuiltinSet internal ->
+                    BuiltinSet internal { builtinSetSort = domainValueSort }
 
 deriveEq1 ''InternalMap
 deriveOrd1 ''InternalMap

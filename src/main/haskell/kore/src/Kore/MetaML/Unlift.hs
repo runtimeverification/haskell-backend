@@ -266,7 +266,7 @@ unliftDomainValuePattern
 unliftDomainValuePattern [rSort, rChild] =
     do
         domainValueSort <- unliftFromMeta (unliftResultOriginal rSort)
-        domainValueChild <-
+        domain <-
             case Recursive.project (unliftResultOriginal rChild) of
                 _ :< StringLiteralPattern (StringLiteral lit) ->
                     pure $ Domain.BuiltinExternal Domain.External
@@ -277,12 +277,7 @@ unliftDomainValuePattern [rSort, rChild] =
                         }
                 _ ->
                     Nothing
-        pure
-            (DomainValuePattern DomainValue
-                { domainValueSort
-                , domainValueChild
-                }
-            )
+        pure (DomainValuePattern domain)
 unliftDomainValuePattern _ = Nothing
 
 unliftTopBottomPattern

@@ -720,10 +720,7 @@ mlConstructorRemainderParser childParser x patternType =
                                 , domainValueChild
                                 }
                     (return . DomainValuePattern)
-                        DomainValue
-                            { domainValueSort
-                            , domainValueChild = Domain.BuiltinExternal external
-                            }
+                        (Domain.BuiltinExternal external)
         NextPatternType ->
             case isMetaOrObject (toProxy x) of
                 IsMeta -> unsupportedPatternType Meta NextPatternType

@@ -11,14 +11,21 @@ import           Control.Monad
 import           Data.CallStack
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Classes
+import           Data.Functor.Const
+                 ( Const (..) )
 import           Data.Functor.Foldable
 import           Data.List
                  ( intercalate, isInfixOf )
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Sequence
                  ( Seq )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Void
+                 ( Void )
 
 import Data.Sup
 
@@ -268,8 +275,11 @@ instance EqualWithExplanation EWEString
         rawCompareWithExplanation s1 s2
     printWithExplanation (EWEString s) = show s
 
-instance EqualWithExplanation Integer
-  where
+instance EqualWithExplanation Integer where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation Bool where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
@@ -320,6 +330,15 @@ instance EqualWithExplanation a => EqualWithExplanation (Set a) where
 
     printWithExplanation = printWithExplanation . Set.toList
 
+instance
+    (EqualWithExplanation a, EqualWithExplanation k) =>
+    EqualWithExplanation (Map k a)
+  where
+    compareWithExplanation expected actual =
+        compareWithExplanation (Map.toAscList expected) (Map.toAscList actual)
+
+    printWithExplanation = printWithExplanation . Map.toList
+
 instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
     => WrapperEqualWithExplanation (Fix thing)
   where
@@ -328,6 +347,24 @@ instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fi
 
 instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
     => EqualWithExplanation (Fix thing)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation Void where
+    compareWithExplanation = \case {}
+    printWithExplanation = \case {}
+
+instance
+    (EqualWithExplanation a, Show a) =>
+    WrapperEqualWithExplanation (Const a b)
+  where
+    wrapperField (Const a) (Const b) = EqWrap "" a b
+    wrapperConstructorName _ = "Const"
+
+instance
+    (EqualWithExplanation a, Show a) =>
+    EqualWithExplanation (Const a b)
   where
     compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show

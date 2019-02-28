@@ -1380,8 +1380,7 @@ builtinMap
     => [(ConcreteStepPattern Object, StepPattern Object variable)]
     -> StepPattern Object variable
 builtinMap child =
-    mkDomainValue mapSort
-    $ Domain.BuiltinMap Domain.InternalMap
+    mkDomainValue $ Domain.BuiltinMap Domain.InternalMap
         { builtinMapSort = mapSort
         , builtinMapUnit = unitMapSymbol
         , builtinMapElement = elementMapSymbol
@@ -1394,8 +1393,7 @@ builtinList
     => [StepPattern Object variable]
     -> StepPattern Object variable
 builtinList child =
-    mkDomainValue listSort
-    $ Domain.BuiltinList Domain.InternalList
+    mkDomainValue $ Domain.BuiltinList Domain.InternalList
         { builtinListSort = listSort
         , builtinListUnit = unitListSymbol
         , builtinListElement = elementListSymbol
@@ -1408,8 +1406,7 @@ builtinSet
     => [ConcreteStepPattern Object]
     -> StepPattern Object variable
 builtinSet child =
-    mkDomainValue setSort
-    $ Domain.BuiltinSet Domain.InternalSet
+    mkDomainValue $ Domain.BuiltinSet Domain.InternalSet
         { builtinSetSort = setSort
         , builtinSetUnit = unitSetSymbol
         , builtinSetElement = elementSetSymbol

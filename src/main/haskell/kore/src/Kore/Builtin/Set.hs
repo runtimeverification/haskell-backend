@@ -379,14 +379,17 @@ asInternal
     -> Builtin
     -> StepPattern Object variable
 asInternal tools builtinSetSort builtinSetChild =
-    mkDomainValue builtinSetSort
-    $ Domain.BuiltinSet Domain.InternalSet
-        { builtinSetSort
-        , builtinSetUnit = Builtin.lookupSymbolUnit builtinSetSort attrs
-        , builtinSetElement = Builtin.lookupSymbolElement builtinSetSort attrs
-        , builtinSetConcat = Builtin.lookupSymbolConcat builtinSetSort attrs
-        , builtinSetChild
-        }
+    (mkDomainValue . Domain.BuiltinSet)
+        Domain.InternalSet
+            { builtinSetSort
+            , builtinSetUnit =
+                Builtin.lookupSymbolUnit builtinSetSort attrs
+            , builtinSetElement =
+                Builtin.lookupSymbolElement builtinSetSort attrs
+            , builtinSetConcat =
+                Builtin.lookupSymbolConcat builtinSetSort attrs
+            , builtinSetChild
+            }
   where
     attrs = sortAttributes tools builtinSetSort
 

@@ -43,6 +43,7 @@ import           Data.Text
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
+import           Kore.Domain.Class
 
 pattern And_
     :: Functor dom
@@ -70,9 +71,8 @@ pattern Ceil_
     -> PurePattern level dom var (Annotation.Null level)
 
 pattern DV_
-  :: Functor dom => (level ~ Object) =>
-     Sort level
-  -> dom (PurePattern level dom var (Annotation.Null level))
+  :: Domain dom => (level ~ Object)
+  => dom (PurePattern level dom var (Annotation.Null level))
   -> PurePattern level dom var (Annotation.Null level)
 
 pattern Equals_
@@ -210,14 +210,10 @@ pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
         (asPurePattern . (:<) mempty . CeilPattern)
             Ceil { ceilOperandSort, ceilResultSort, ceilChild }
 
-pattern DV_ domainValueSort domainValueChild <-
-    (Recursive.project -> _ :< DomainValuePattern
-        DomainValue { domainValueSort, domainValueChild }
-    )
+pattern DV_ domainValue <-
+    (Recursive.project -> _ :< DomainValuePattern domainValue)
   where
-    DV_ domainValueSort domainValueChild =
-        (asPurePattern . (:<) mempty . DomainValuePattern)
-            DomainValue { domainValueSort, domainValueChild }
+    DV_ domainValue = asPurePattern (mempty :< DomainValuePattern domainValue)
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->

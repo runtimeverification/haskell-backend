@@ -69,6 +69,7 @@ module Kore.Builtin.Builtin
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( MaybeT (..), fromMaybe )
+import qualified Control.Lens as Lens
 import           Control.Monad
                  ( zipWithM_ )
 import qualified Control.Monad as Monad
@@ -105,6 +106,7 @@ import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Builtin.Error
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Domain.Class
 import           Kore.Error
                  ( Error )
 import qualified Kore.Error
@@ -181,8 +183,7 @@ type SymbolVerifiers = HashMap Text SymbolVerifier
 
 -}
 type DomainValueVerifier child =
-       DomainValue Object Domain.Builtin child
-    -> Either (Error VerifyError) (DomainValue Object Domain.Builtin child)
+       Domain.Builtin child -> Either (Error VerifyError) (Domain.Builtin child)
 
 -- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each builtin
 type DomainValueVerifiers child = (HashMap Text (DomainValueVerifier child))
@@ -468,31 +469,32 @@ verifySymbolArguments
 verifyDomainValue
     :: DomainValueVerifiers child
     -> (Id Object -> Either (Error VerifyError) HookedSortDescription)
-    -> DomainValue Object Domain.Builtin child
-    -> Either (Error VerifyError) (DomainValue Object Domain.Builtin child)
+    -> Domain.Builtin child
+    -> Either (Error VerifyError) (Domain.Builtin child)
 verifyDomainValue
     verifiers
     findSort
-    dv@DomainValue { domainValueSort = (SortActualSort _) }
-  = do
-    mHookSort <- lookupHookSort findSort $ domainValueSort dv
-    case mHookSort of
-        Nothing -> defaultDomainValueVerifier dv
-        Just hookSort -> verifyHookedSortDomainValue verifiers hookSort dv
-verifyDomainValue
-    _verifiers
-    _findSort
-    dv@DomainValue { domainValueSort = (SortVariableSort _) }
+    domain
   =
-    defaultDomainValueVerifier dv
+    case domainValueSort of
+        SortActualSort _ -> do
+            mHookSort <- lookupHookSort findSort domainValueSort
+            case mHookSort of
+                Nothing -> defaultDomainValueVerifier domain
+                Just hookSort ->
+                    verifyHookedSortDomainValue verifiers hookSort domain
+        SortVariableSort _ -> do
+            defaultDomainValueVerifier domain
+  where
+    DomainValue { domainValueSort } = Lens.view lensDomainValue domain
 
 {- | In the case of a hooked sort, lookup the specific verifier for the hook
   sort and attempt to encode the domain value. -}
 verifyHookedSortDomainValue
     :: DomainValueVerifiers child
     -> Text
-    -> DomainValue Object Domain.Builtin child
-    -> Either (Error VerifyError) (DomainValue Object Domain.Builtin child)
+    -> Domain.Builtin child
+    -> Either (Error VerifyError) (Domain.Builtin child)
 verifyHookedSortDomainValue verifiers hookSort dv = do
     verifier <- case HashMap.lookup hookSort verifiers of
         Nothing -> return defaultDomainValueVerifier
@@ -509,7 +511,7 @@ verifyHookedSortDomainValue verifiers hookSort dv = do
 defaultDomainValueVerifier
     :: DomainValueVerifier child
 defaultDomainValueVerifier
-    dv@(DomainValue _ (Domain.BuiltinExternal ext))
+    dv@(Domain.BuiltinExternal ext)
   | Domain.External { domainValueChild = StringLiteral_ _ } <- ext
   =
     return dv
@@ -520,21 +522,19 @@ defaultDomainValueVerifier _ =
 makeEncodedDomainValueVerifier
     :: Text
     -- ^ Builtin sort identifier
-    ->  (   DomainValue Object Domain.Builtin child
+    ->  (   Domain.Builtin child
         ->  Either (Error VerifyError) (Domain.Builtin child)
         )
     -- ^ encoding function for the builtin sort
     -> DomainValueVerifier child
-makeEncodedDomainValueVerifier _builtinSort encodeSort domainVal =
-    Kore.Error.withContext "While parsing domain value" $ do
-        dvChild' <- encodeSort domainVal
-        return $ domainVal { domainValueChild = dvChild' }
+makeEncodedDomainValueVerifier _builtinSort encodeSort domain =
+    Kore.Error.withContext "While parsing domain value"
+        (encodeSort domain)
 
 -- | Construct a 'DomainValueVerifier' for a sort with no builtin encoding
 makeNonEncodedDomainValueVerifier
     :: Text
-    -> ( DomainValue Object Domain.Builtin child
-        -> Either (Error VerifyError) () )
+    -> (Domain.Builtin child -> Either (Error VerifyError) ())
     -> DomainValueVerifier child
 makeNonEncodedDomainValueVerifier _builtinName verifyNoEncode domainValue =
     Kore.Error.withContext "While parsing domain value"
@@ -576,11 +576,11 @@ parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
  -}
 parseDomainValue
     :: Parser a
-    -> DomainValue Object Domain.Builtin child
+    -> Domain.Builtin child
     -> Either (Error VerifyError) a
 parseDomainValue
     parser
-    DomainValue { domainValueChild }
+    domainValueChild
   =
     Kore.Error.withContext "While parsing domain value"
         $ case domainValueChild of
@@ -635,7 +635,7 @@ unaryOperator
     :: forall a b
     .   (   forall variable
         .   Text
-        ->  DomainValue Object Domain.Builtin (StepPattern Object variable)
+        ->  Domain.Builtin (StepPattern Object variable)
         ->  a
         )
     -- ^ Parse operand
@@ -657,7 +657,7 @@ unaryOperator
   =
     functionEvaluator unaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (StepPattern Object variable) -> a
     get = extractVal ctx
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
@@ -689,7 +689,7 @@ binaryOperator
     :: forall a b
     .   (  forall variable
         .  Text
-        -> DomainValue Object Domain.Builtin (StepPattern Object variable)
+        -> Domain.Builtin (StepPattern Object variable)
         -> a
         )
     -- ^ Extract domain value
@@ -710,7 +710,7 @@ binaryOperator
   =
     functionEvaluator binaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (StepPattern Object variable) -> a
     get = extractVal ctx
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
@@ -742,7 +742,7 @@ ternaryOperator
     :: forall a b
     .   (  forall variable
         .  Text
-        -> DomainValue Object Domain.Builtin (StepPattern Object variable)
+        -> Domain.Builtin (StepPattern Object variable)
         -> a
         )
     -- ^ Extract domain value
@@ -763,7 +763,7 @@ ternaryOperator
   =
     functionEvaluator ternaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (StepPattern Object variable) -> a
     get = extractVal ctx
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)

@@ -414,17 +414,13 @@ test_lift =
             ]
         )
         (asCommonKorePattern
-            (DomainValuePattern DomainValue
-                { domainValueSort =
-                    SortVariableSort (SortVariable (testId "Int"))
-                , domainValueChild =
-                    Domain.BuiltinExternal Domain.External
-                        { domainValueSort =
-                            SortVariableSort (SortVariable (testId "Int"))
-                        , domainValueChild =
-                            castMetaDomainValues (mempty <$ metaStringPattern)
-                        }
-                }
+            (DomainValuePattern $ Domain.BuiltinExternal
+                Domain.External
+                    { domainValueSort =
+                        SortVariableSort (SortVariable (testId "Int"))
+                    , domainValueChild =
+                        castMetaDomainValues (mempty <$ metaStringPattern)
+                    }
             )
         :: CommonKorePattern)
     , testLiftUnlift "Application"

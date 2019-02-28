@@ -233,7 +233,7 @@ makeEvaluateTerm
             Application { applicationSymbolOrAlias = patternHead } = app
             Application { applicationChildren = children } = app
             headAttributes = MetadataTools.symAttributes tools patternHead
-        DomainValuePattern DomainValue { domainValueChild = child } ->
+        DomainValuePattern child ->
             makeEvaluateBuiltin tools substitutionSimplifier child
         _ -> return
             ( OrOfExpandedPattern.make

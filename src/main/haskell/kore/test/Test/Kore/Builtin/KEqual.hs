@@ -88,13 +88,13 @@ test_KEqual =
                 mkApp
                     boolSort
                     keqBoolSymbol
-                    [ mkDomainValue idSort
+                    [ mkDomainValue
                         $ Domain.BuiltinExternal Domain.External
                             { domainValueSort = idSort
                             , domainValueChild =
                                 eraseAnnotations $ mkStringLiteral "t"
                             }
-                    , mkDomainValue idSort
+                    , mkDomainValue
                         $ Domain.BuiltinExternal Domain.External
                             { domainValueSort = idSort
                             , domainValueChild =
@@ -115,7 +115,7 @@ test_KEqual =
                     [ mkApp
                         kItemSort
                         (injSymbol idSort kItemSort)
-                        [ mkDomainValue idSort
+                        [ mkDomainValue
                             $ Domain.BuiltinExternal Domain.External
                                 { domainValueSort = idSort
                                 , domainValueChild =
@@ -125,7 +125,7 @@ test_KEqual =
                     , mkApp
                         kItemSort
                         (injSymbol idSort kItemSort)
-                        [ mkDomainValue idSort
+                        [ mkDomainValue
                             $ Domain.BuiltinExternal Domain.External
                                 { domainValueSort = idSort
                                 , domainValueChild =
@@ -150,7 +150,7 @@ test_KEqual =
                         [ mkApp
                             kItemSort
                             (injSymbol idSort kItemSort)
-                            [ mkDomainValue idSort
+                            [ mkDomainValue
                                 $ Domain.BuiltinExternal Domain.External
                                     { domainValueSort = idSort
                                     , domainValueChild =
@@ -165,7 +165,7 @@ test_KEqual =
                         [ mkApp
                             kItemSort
                             (injSymbol idSort kItemSort)
-                            [ mkDomainValue idSort
+                            [ mkDomainValue
                                 $ Domain.BuiltinExternal Domain.External
                                     { domainValueSort = idSort
                                     , domainValueChild =

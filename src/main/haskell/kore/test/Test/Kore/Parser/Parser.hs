@@ -472,7 +472,7 @@ domainValuePatternParserTests =
         [ success "\\dv{s1}(\"a\")"
             $ Kore.AST.Kore.eraseAnnotations
             $ patternPureToKore
-            $ mkDomainValue (sortVariableSort "s1")
+            $ mkDomainValue
             $ Domain.BuiltinExternal Domain.External
                 { domainValueSort = sortVariableSort "s1"
                 , domainValueChild =
@@ -985,7 +985,7 @@ sentenceAliasParserTests =
                     , sentenceAliasRightPattern =
                         Kore.AST.Kore.eraseAnnotations
                         $ patternPureToKore
-                        $ mkDomainValue resultSort
+                        $ mkDomainValue
                         $ Domain.BuiltinExternal Domain.External
                             { domainValueSort = resultSort
                             , domainValueChild =

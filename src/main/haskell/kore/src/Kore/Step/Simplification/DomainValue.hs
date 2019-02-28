@@ -36,15 +36,15 @@ simplify
        , SortedVariable variable
        )
     => MetadataTools Object attrs
-    -> DomainValue Object Domain.Builtin (OrOfExpandedPattern Object variable)
+    -> Domain.Builtin (OrOfExpandedPattern Object variable)
     -> ( OrOfExpandedPattern Object variable
        , SimplificationProof Object
        )
-simplify _ DomainValue { domainValueSort, domainValueChild } =
+simplify _ builtin =
     ( OrOfExpandedPattern.filterOr
         (do
-            child <- simplifyBuiltin domainValueChild
-            return (mkDomainValue domainValueSort <$> child)
+            child <- simplifyBuiltin builtin
+            return (mkDomainValue <$> child)
         )
     , SimplificationProof
     )

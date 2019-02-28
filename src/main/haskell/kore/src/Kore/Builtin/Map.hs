@@ -381,14 +381,17 @@ asInternal
     -> Builtin variable
     -> StepPattern Object variable
 asInternal tools builtinMapSort builtinMapChild =
-    mkDomainValue builtinMapSort
-    $ Domain.BuiltinMap Domain.InternalMap
-        { builtinMapSort
-        , builtinMapUnit = Builtin.lookupSymbolUnit builtinMapSort attrs
-        , builtinMapElement = Builtin.lookupSymbolElement builtinMapSort attrs
-        , builtinMapConcat = Builtin.lookupSymbolConcat builtinMapSort attrs
-        , builtinMapChild
-        }
+    (mkDomainValue . Domain.BuiltinMap)
+        Domain.InternalMap
+            { builtinMapSort
+            , builtinMapUnit =
+                Builtin.lookupSymbolUnit builtinMapSort attrs
+            , builtinMapElement =
+                Builtin.lookupSymbolElement builtinMapSort attrs
+            , builtinMapConcat =
+                Builtin.lookupSymbolConcat builtinMapSort attrs
+            , builtinMapChild
+            }
   where
     attrs = sortAttributes tools builtinMapSort
 

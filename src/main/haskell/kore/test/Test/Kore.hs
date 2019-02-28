@@ -397,14 +397,6 @@ equalsGen
     -> Gen (Equals level child)
 equalsGen = equalsInGen Equals
 
-domainValueGen
-    :: (Sort level -> Gen (domain child))
-    -> Sort level
-    -> Gen (DomainValue level domain child)
-domainValueGen childGen domainValueSort = do
-    domainValueChild <- childGen domainValueSort
-    return DomainValue { domainValueSort, domainValueChild }
-
 genBuiltinExternal :: Sort Object -> Gen (Domain.Builtin child)
 genBuiltinExternal domainValueSort =
     Domain.BuiltinExternal <$> genExternal domainValueSort
@@ -549,7 +541,7 @@ stepPatternChildGen patternSort =
               | otherwise ->
                 mkVar <$> variableGen patternSort
             IsObject ->
-                mkDomainValue patternSort <$> genBuiltin patternSort
+                mkDomainValue <$> genBuiltin patternSort
       | otherwise =
         (Gen.small . Gen.frequency)
             [ (1, stepPatternAndGen)
@@ -675,7 +667,7 @@ korePatternChildGen patternSort' =
     korePatternGenDomainValue :: level ~ Object => Gen CommonKorePattern
     korePatternGenDomainValue =
         asCommonKorePattern . DomainValuePattern
-            <$> domainValueGen genBuiltinExternal patternSort'
+            <$> genBuiltinExternal patternSort'
 
     korePatternGenNext :: level ~ Object => Gen CommonKorePattern
     korePatternGenNext =

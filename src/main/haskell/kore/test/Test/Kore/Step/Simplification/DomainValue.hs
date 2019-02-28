@@ -44,7 +44,6 @@ test_domainValueSimplification =
                 [ Predicated
                     { term =
                         mkDomainValue
-                            testSort
                             (Domain.BuiltinExternal Domain.External
                                 { domainValueSort = testSort
                                 , domainValueChild =
@@ -58,14 +57,11 @@ test_domainValueSimplification =
             )
             (evaluate
                 mockMetadataTools
-                (DomainValue
-                    testSort
-                    (Domain.BuiltinExternal Domain.External
-                        { domainValueSort = testSort
-                        , domainValueChild =
-                            eraseAnnotations $ mkStringLiteral "a"
-                        }
-                    )
+                (Domain.BuiltinExternal Domain.External
+                    { domainValueSort = testSort
+                    , domainValueChild =
+                        eraseAnnotations $ mkStringLiteral "a"
+                    }
                 )
             )
         )
@@ -93,31 +89,25 @@ test_domainValueSimplification =
 
 mkMapDomainValue
     :: [(Domain.Key, child)]
-    -> DomainValue Object Domain.Builtin child
+    -> Domain.Builtin child
 mkMapDomainValue children =
-    DomainValue
-        Mock.mapSort
-        (Domain.BuiltinMap Domain.InternalMap
-            { builtinMapSort = Mock.mapSort
-            , builtinMapUnit = Mock.unitMapSymbol
-            , builtinMapElement = Mock.elementMapSymbol
-            , builtinMapConcat = Mock.concatMapSymbol
-            , builtinMapChild = Map.fromList children
-            }
-        )
+    Domain.BuiltinMap Domain.InternalMap
+        { builtinMapSort = Mock.mapSort
+        , builtinMapUnit = Mock.unitMapSymbol
+        , builtinMapElement = Mock.elementMapSymbol
+        , builtinMapConcat = Mock.concatMapSymbol
+        , builtinMapChild = Map.fromList children
+        }
 
-mkListDomainValue :: [child] -> DomainValue Object Domain.Builtin child
+mkListDomainValue :: [child] -> Domain.Builtin child
 mkListDomainValue children =
-    DomainValue
-        Mock.listSort
-        (Domain.BuiltinList Domain.InternalList
-            { builtinListSort = Mock.listSort
-            , builtinListUnit = Mock.unitListSymbol
-            , builtinListElement = Mock.elementListSymbol
-            , builtinListConcat = Mock.concatListSymbol
-            , builtinListChild = Seq.fromList children
-            }
-        )
+    Domain.BuiltinList Domain.InternalList
+        { builtinListSort = Mock.listSort
+        , builtinListUnit = Mock.unitListSymbol
+        , builtinListElement = Mock.elementListSymbol
+        , builtinListConcat = Mock.concatListSymbol
+        , builtinListChild = Seq.fromList children
+        }
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools = Mock.makeMetadataTools [] [] [] []
@@ -125,7 +115,7 @@ mockMetadataTools = Mock.makeMetadataTools [] [] [] []
 evaluate
     :: (MetaOrObject Object)
     => MetadataTools Object attrs
-    -> DomainValue Object Domain.Builtin (CommonOrOfExpandedPattern Object)
+    -> Domain.Builtin (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate tools domainValue =
     case simplify tools domainValue of

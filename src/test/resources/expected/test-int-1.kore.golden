@@ -1407,29 +1407,21 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern (Domain.BuiltinExternal Domain.External
                                         { domainValueSort =
                                             SortActualSort SortActual
                                                 { sortActualName = (Id "Int" AstLocationNone) :: Id Object
                                                 , sortActualSorts = []
                                                 }
                                         , domainValueChild =
-                                            Domain.BuiltinExternal Domain.External
-                                                { domainValueSort =
-                                                    SortActualSort SortActual
-                                                        { sortActualName = (Id "Int" AstLocationNone) :: Id Object
-                                                        , sortActualSorts = []
+                                            PurePattern
+                                                { getPurePattern = CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "0")
                                                         }
-                                                , domainValueChild =
-                                                    PurePattern
-                                                        { getPurePattern = CofreeT
-                                                            { runCofreeT = Identity
-                                                                { runIdentity = Null :< StringLiteralPattern (StringLiteral "0")
-                                                                }
-                                                            }
-                                                        }
+                                                    }
                                                 }
-                                        })
+                                        }))
                                     }
                                 }
                             }
@@ -1460,29 +1452,21 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern (Domain.BuiltinExternal Domain.External
                                         { domainValueSort =
                                             SortActualSort SortActual
                                                 { sortActualName = (Id "Int" AstLocationNone) :: Id Object
                                                 , sortActualSorts = []
                                                 }
                                         , domainValueChild =
-                                            Domain.BuiltinExternal Domain.External
-                                                { domainValueSort =
-                                                    SortActualSort SortActual
-                                                        { sortActualName = (Id "Int" AstLocationNone) :: Id Object
-                                                        , sortActualSorts = []
+                                            PurePattern
+                                                { getPurePattern = CofreeT
+                                                    { runCofreeT = Identity
+                                                        { runIdentity = Null :< StringLiteralPattern (StringLiteral "1")
                                                         }
-                                                , domainValueChild =
-                                                    PurePattern
-                                                        { getPurePattern = CofreeT
-                                                            { runCofreeT = Identity
-                                                                { runIdentity = Null :< StringLiteralPattern (StringLiteral "1")
-                                                                }
-                                                            }
-                                                        }
+                                                    }
                                                 }
-                                        })
+                                        }))
                                     }
                                 }
                             }

@@ -137,11 +137,8 @@ isPreconstructedPattern
     -> Either err (PartialPatternProof (FunctionalProof level variable))
 isPreconstructedPattern err (_ :< pattern') =
     case pattern' of
-        DomainValuePattern dv@DomainValue { domainValueChild } ->
-            (Right . Descend)
-                (FunctionalDomainValue dv
-                    { domainValueChild = () <$ domainValueChild }
-                )
+        DomainValuePattern domain ->
+            (Right . Descend) (FunctionalDomainValue $ () <$ domain)
         StringLiteralPattern str ->
             Right (DoNotDescend (FunctionalStringLiteral str))
         CharLiteralPattern char ->

@@ -328,14 +328,17 @@ asInternal
     -> Builtin variable
     -> StepPattern Object variable
 asInternal tools builtinListSort builtinListChild =
-    mkDomainValue builtinListSort
-    $ Domain.BuiltinList Domain.InternalList
-        { builtinListSort
-        , builtinListUnit = Builtin.lookupSymbolUnit builtinListSort attrs
-        , builtinListElement = Builtin.lookupSymbolElement builtinListSort attrs
-        , builtinListConcat = Builtin.lookupSymbolConcat builtinListSort attrs
-        , builtinListChild
-        }
+    (mkDomainValue . Domain.BuiltinList)
+        Domain.InternalList
+            { builtinListSort
+            , builtinListUnit =
+                Builtin.lookupSymbolUnit builtinListSort attrs
+            , builtinListElement =
+                Builtin.lookupSymbolElement builtinListSort attrs
+            , builtinListConcat =
+                Builtin.lookupSymbolConcat builtinListSort attrs
+            , builtinListChild
+            }
   where
     attrs = sortAttributes tools builtinListSort
 
@@ -519,7 +522,7 @@ unifyEquals
                     builtin2
             (suffixUnified, _) <- simplifyChild frame2 listSuffix1
             let result =
-                    pure (mkDomainValue builtinListSort internal1)
+                    pure (mkDomainValue internal1)
                     <* prefixUnified
                     <* suffixUnified
             return (result, SimplificationProof)
@@ -553,7 +556,7 @@ unifyEquals
                     builtin1 { Domain.builtinListChild = suffix1 }
                     builtin2
             let result =
-                    pure (mkDomainValue builtinListSort internal1)
+                    pure (mkDomainValue internal1)
                     <* prefixUnified
                     <* suffixUnified
             return (result, SimplificationProof)

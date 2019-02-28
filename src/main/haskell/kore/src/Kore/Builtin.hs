@@ -195,8 +195,8 @@ externalizePattern =
         ->  Base (StepPattern Object variable) (StepPattern Object variable)
     externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
         case pat of
-            DomainValuePattern DomainValue { domainValueChild } ->
-                case domainValueChild of
+            DomainValuePattern domain ->
+                case domain of
                     Domain.BuiltinExternal _ -> original
                     Domain.BuiltinMap  builtin ->
                         Recursive.project (Map.asPattern builtin)

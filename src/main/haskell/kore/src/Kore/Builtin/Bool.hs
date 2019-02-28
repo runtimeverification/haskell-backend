@@ -110,8 +110,8 @@ patternVerifier :: Builtin.DomainValueVerifier child
 patternVerifier =
     Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
   where
-    patternVerifierWorker domainValue =
-        case domainValueChild of
+    patternVerifierWorker domain =
+        case domain of
             Domain.BuiltinExternal builtin
               | StringLiteral_ lit <- externalChild -> do
                 builtinBoolValue <- Builtin.parseString parse lit
@@ -121,21 +121,19 @@ patternVerifier =
                         , builtinBoolValue
                         }
               where
+                Domain.External { domainValueSort } = builtin
                 Domain.External { domainValueChild = externalChild } = builtin
-            Domain.BuiltinBool _ -> return domainValueChild
+            Domain.BuiltinBool _ -> return domain
             _ -> Kore.Error.koreFail
                     "Expected literal string or internal value"
-      where
-        DomainValue { domainValueChild } = domainValue
-        DomainValue { domainValueSort } = domainValue
 
 -- | get the value from a (possibly encoded) domain value
 extractBoolDomainValue
     :: Text -- ^ error message Context
-    -> DomainValue Object Domain.Builtin child
+    -> Domain.Builtin child
     -> Bool
-extractBoolDomainValue ctx DomainValue { domainValueChild } =
-    case domainValueChild of
+extractBoolDomainValue ctx =
+    \case
         Domain.BuiltinBool Domain.InternalBool { builtinBoolValue } ->
             builtinBoolValue
         _ ->
@@ -164,11 +162,11 @@ asInternal
     -> Bool  -- ^ builtin value to render
     -> StepPattern Object variable
 asInternal builtinBoolSort builtinBoolValue =
-    mkDomainValue builtinBoolSort
-    $ Domain.BuiltinBool Domain.InternalBool
-        { builtinBoolSort
-        , builtinBoolValue
-        }
+    (mkDomainValue . Domain.BuiltinBool)
+        Domain.InternalBool
+            { builtinBoolSort
+            , builtinBoolValue
+            }
 
 {- | Render a 'Bool' as a domain value pattern of the given sort.
 
@@ -183,11 +181,11 @@ asPattern
     => Domain.InternalBool  -- ^ builtin value to render
     -> StepPattern Object variable
 asPattern builtin =
-    mkDomainValue builtinBoolSort
-    $ Domain.BuiltinExternal Domain.External
-        { domainValueSort = builtinBoolSort
-        , domainValueChild = eraseAnnotations $ asMetaPattern bool
-        }
+    (mkDomainValue . Domain.BuiltinExternal)
+        Domain.External
+            { domainValueSort = builtinBoolSort
+            , domainValueChild = eraseAnnotations $ asMetaPattern bool
+            }
   where
     Domain.InternalBool { builtinBoolSort } = builtin
     Domain.InternalBool { builtinBoolValue = bool } = builtin

@@ -184,8 +184,8 @@ patternVerifier :: Builtin.DomainValueVerifier child
 patternVerifier =
     Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
   where
-    patternVerifierWorker domainValue =
-        case domainValueChild of
+    patternVerifierWorker domain =
+        case domain of
             Domain.BuiltinExternal external
               | StringLiteral_ lit <- externalChild -> do
                 builtinIntValue <- Builtin.parseString parse lit
@@ -195,21 +195,19 @@ patternVerifier =
                         , builtinIntValue
                         }
               where
+                Domain.External { domainValueSort } = external
                 Domain.External { domainValueChild = externalChild } = external
-            Domain.BuiltinInt _ -> return domainValueChild
+            Domain.BuiltinInt _ -> return domain
             _ -> Kore.Error.koreFail
                     "Expected literal string or internal value"
-      where
-        DomainValue { domainValueChild } = domainValue
-        DomainValue { domainValueSort } = domainValue
 
 -- | get the value from a (possibly encoded) domain value
 extractIntDomainValue
     :: Text -- ^ error message Context
-    -> DomainValue Object Domain.Builtin child
+    -> Domain.Builtin child
     -> Integer
-extractIntDomainValue ctx DomainValue { domainValueChild } =
-    case domainValueChild of
+extractIntDomainValue ctx =
+    \case
         Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
             builtinIntValue
         _ ->
@@ -268,12 +266,11 @@ asInternal
     -> Integer  -- ^ builtin value to render
     -> StepPattern Object variable
 asInternal builtinIntSort builtinIntValue =
-    fromConcreteStepPattern
-    $ mkDomainValue builtinIntSort
-    $ Domain.BuiltinInt Domain.InternalInt
-        { builtinIntSort
-        , builtinIntValue
-        }
+    (fromConcreteStepPattern . mkDomainValue . Domain.BuiltinInt)
+        Domain.InternalInt
+            { builtinIntSort
+            , builtinIntValue
+            }
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
@@ -288,11 +285,11 @@ asPattern
     => Domain.InternalInt  -- ^ builtin value to render
     -> StepPattern Object variable
 asPattern builtin =
-    mkDomainValue builtinIntSort
-    $ Domain.BuiltinExternal Domain.External
-        { domainValueSort = builtinIntSort
-        , domainValueChild = eraseAnnotations $ asMetaPattern int
-        }
+    (mkDomainValue . Domain.BuiltinExternal)
+        Domain.External
+            { domainValueSort = builtinIntSort
+            , domainValueChild = eraseAnnotations $ asMetaPattern int
+            }
   where
     Domain.InternalInt { builtinIntSort } = builtin
     Domain.InternalInt { builtinIntValue = int } = builtin
@@ -310,11 +307,12 @@ asConcretePattern
     -> Integer  -- ^ builtin value to render
     -> ConcreteStepPattern Object
 asConcretePattern domainValueSort builtinIntChild =
-    mkDomainValue domainValueSort
-    $ Domain.BuiltinExternal Domain.External
-        { domainValueSort
-        , domainValueChild = eraseAnnotations $ asMetaPattern builtinIntChild
-        }
+    (mkDomainValue . Domain.BuiltinExternal)
+        Domain.External
+            { domainValueSort
+            , domainValueChild =
+                eraseAnnotations $ asMetaPattern builtinIntChild
+            }
 
 asMetaPattern
     :: Functor domain

@@ -393,7 +393,6 @@ test_equalsSimplification_Patterns =
             mockMetadataTools
             Predicated.topPredicate
             (mkDomainValue
-                testSort
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
                     , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
@@ -401,7 +400,6 @@ test_equalsSimplification_Patterns =
                 )
             )
             (mkDomainValue
-                testSort
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
                     , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
@@ -414,7 +412,6 @@ test_equalsSimplification_Patterns =
             mockMetadataTools
             Predicated.bottomPredicate
             (mkDomainValue
-                testSort
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
                     , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
@@ -422,7 +419,6 @@ test_equalsSimplification_Patterns =
                 )
             )
             (mkDomainValue
-                testSort
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
                     , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
@@ -435,7 +431,6 @@ test_equalsSimplification_Patterns =
             mockMetadataTools
             Predicated.bottomPredicate
             (mkDomainValue
-                testSort
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
                     , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
@@ -443,7 +438,6 @@ test_equalsSimplification_Patterns =
                 )
             )
             (mkDomainValue
-                testSort2
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort2
                     , domainValueChild = eraseAnnotations $ mkStringLiteral "a"

@@ -197,16 +197,12 @@ instance
     ) => ProperPattern Object sort (ObjectDomainValue pattern1 sort)
   where
     asProperPattern (ObjectDomainValue sort child) =
-        DomainValuePattern DomainValue
-            { domainValueSort = asAst sort
-            , domainValueChild =
-                Domain.BuiltinExternal Domain.External
-                    { domainValueSort = asAst sort
-                    , domainValueChild =
-                        Kore.AST.Pure.eraseAnnotations
-                        $ mkStringLiteral literal
-                    }
-            }
+        DomainValuePattern $ Domain.BuiltinExternal
+            Domain.External
+                { domainValueSort = asAst sort
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations $ mkStringLiteral literal
+                }
       where
         externalChild :: CommonKorePattern
         externalChild = asAst child
