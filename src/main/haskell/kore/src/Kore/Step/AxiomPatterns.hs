@@ -84,7 +84,8 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern as Pattern
-import           Kore.Unparser (Unparse, unparse)
+import           Kore.Unparser
+                 ( Unparse, unparse )
 import           Kore.Variables.Fresh
 
 {- | Attributes specific to interpreting axiom patterns.
