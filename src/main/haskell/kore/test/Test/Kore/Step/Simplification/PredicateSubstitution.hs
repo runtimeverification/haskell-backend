@@ -293,7 +293,7 @@ runSimplifier patternSimplifierMap predicateSubstitution =
         (PredicateSubstitutionSimplifier unwrapped) ->
             (<$>) fst
             $ SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger
+            $ evalSimplifier emptyLogger noRepl
             $ unwrapped predicateSubstitution
   where
     simplifier =

@@ -34,6 +34,7 @@ dependencies:
   - deepseq
   - deriving-compat
   - errors
+  - extra
   - fgl
   - free
   - gitrev

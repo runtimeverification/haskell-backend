@@ -16,6 +16,7 @@ module Kore.Step.Simplification.Data
     , CommonStepPatternSimplifier
     , SimplificationProof (..)
     , SimplificationType (..)
+    , Environment (..)
     ) where
 
 import Colog
@@ -31,6 +32,8 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Logger
        ( LogMessage )
+import Kore.Step.AxiomPatterns
+       ( RewriteRule )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution )
 import Kore.Step.OrOfExpandedPattern
@@ -42,7 +45,6 @@ import SimpleSMT
        ( Solver )
 import SMT
        ( MonadSMT, SMT (..), liftSMT, withSolver' )
-
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
 -}
@@ -55,8 +57,9 @@ data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
 data Environment = Environment
-    { envSolver  :: !(MVar Solver)
-    , envLogger  :: !(LogAction Simplifier LogMessage)
+    { solver     :: !(MVar Solver)
+    , logger     :: !(LogAction Simplifier LogMessage)
+    , proveClaim :: !(RewriteRule Object Variable -> IO ())
     }
 
 newtype Simplifier a = Simplifier
@@ -66,7 +69,7 @@ newtype Simplifier a = Simplifier
 
 instance MonadSMT Simplifier where
     liftSMT :: SMT a -> Simplifier a
-    liftSMT = Simplifier . withReaderT envSolver . getSMT
+    liftSMT = Simplifier . withReaderT solver . getSMT
 
 instance MonadIO Simplifier where
     liftIO :: IO a -> Simplifier a
@@ -82,18 +85,18 @@ instance MonadReader Environment Simplifier where
 instance HasLog Environment LogMessage Simplifier where
     getLogAction
         :: Environment -> LogAction Simplifier LogMessage
-    getLogAction = envLogger
+    getLogAction = logger
 
     setLogAction
         :: LogAction Simplifier LogMessage -> Environment -> Environment
-    setLogAction l env = env { envLogger = l }
+    setLogAction l env = env { logger = l }
 
 instance HasLog Environment LogMessage (ExceptT e Simplifier) where
     getLogAction
         :: Environment -> LogAction (ExceptT e Simplifier) LogMessage
     getLogAction =
         (\f -> LogAction (\str -> ExceptT $ pure <$> f str))
-            . unLogAction . envLogger
+            . unLogAction . logger
 
     setLogAction
         :: LogAction (ExceptT e Simplifier) LogMessage
@@ -119,10 +122,12 @@ runSimplifier
     -- ^ simplifier computation
     -> LogAction Simplifier LogMessage
     -- ^ initial counter for fresh variables
+    -> (RewriteRule Object Variable -> IO ())
+    -- ^ repl handler
     -> SMT a
-runSimplifier (Simplifier s) logger =
+runSimplifier (Simplifier s) logger repl =
     withSolver' $ \solver -> do
-        a <- runReaderT s $ Environment solver logger
+        a <- runReaderT s $ Environment solver logger repl
         pure a
 
 {- | Evaluate a simplifier computation.
@@ -130,9 +135,13 @@ runSimplifier (Simplifier s) logger =
 Only the result is returned; the counter is discarded.
 
   -}
-evalSimplifier :: LogAction Simplifier LogMessage -> Simplifier a -> SMT a
-evalSimplifier logger simplifier =
-    runSimplifier simplifier logger
+evalSimplifier
+    :: LogAction Simplifier LogMessage
+    -> (RewriteRule Object Variable -> IO ())
+    -> Simplifier a
+    -> SMT a
+evalSimplifier logger repl simplifier =
+    runSimplifier simplifier logger repl
 
 {-| 'StepPatternSimplifier' wraps a function that evaluates
 Kore functions on StepPatterns.

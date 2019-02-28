@@ -428,7 +428,7 @@ evaluate
 evaluate patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ evalSimplifier emptyLogger noRepl
     $ simplify
         mockMetadataTools
         (Mock.substitutionSimplifier mockMetadataTools)
@@ -441,7 +441,7 @@ evaluatePatterns
 evaluatePatterns first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ evalSimplifier emptyLogger noRepl
     $ makeEvaluate
             mockMetadataTools
             (Mock.substitutionSimplifier mockMetadataTools)
