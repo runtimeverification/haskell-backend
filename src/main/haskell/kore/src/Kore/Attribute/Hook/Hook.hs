@@ -1,3 +1,12 @@
+{-|
+Module      : Kore.Attribute.Sort.Hook.Hook
+Description : Hook attribute
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+Maintainer  : thomas.tuegel@runtimeverification.com
+
+-}
+
 module Kore.Attribute.Hook.Hook
     ( Hook (..)
     , emptyHook

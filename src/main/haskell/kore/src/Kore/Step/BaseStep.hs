@@ -256,9 +256,7 @@ newtype UnificationProcedure level =
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
-        -- ^ Evaluates functions.
         -> BuiltinAndAxiomSimplifierMap level
-        -- ^ Map from symbol IDs to defined functions
         -> StepPattern level variable
         -> StepPattern level variable
         -> ExceptT
