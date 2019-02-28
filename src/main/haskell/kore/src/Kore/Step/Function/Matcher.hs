@@ -37,6 +37,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.OrOfExpandedPattern
@@ -56,7 +58,8 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplificatio
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -99,19 +102,28 @@ matchAsUnification
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> StepPattern level variable
     -> ExceptT
         (UnificationOrSubstitutionError level variable)
-        m
+        Simplifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
-matchAsUnification tools substitutionSimplifier first second
+matchAsUnification
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    first
+    second
   = do
     result <- runMaybeT matchResult
     case result of
@@ -119,7 +131,14 @@ matchAsUnification tools substitutionSimplifier first second
         Just r -> return (r, EmptyUnificationProof)
   where
     matchResult =
-        match tools substitutionSimplifier Map.empty first second
+        match
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            Map.empty
+            first
+            second
 
 unificationWithAppMatchOnTop
     ::  ( FreshVariable variable
@@ -132,19 +151,28 @@ unificationWithAppMatchOnTop
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> StepPattern level variable
     -> ExceptT
         (UnificationOrSubstitutionError level variable)
-        m
+        Simplifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
-unificationWithAppMatchOnTop tools substitutionSimplifier first second
+unificationWithAppMatchOnTop
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    first
+    second
   = case first of
     (App_ firstHead firstChildren) ->
         case second of
@@ -153,6 +181,8 @@ unificationWithAppMatchOnTop tools substitutionSimplifier first second
                   -> unifyJoin
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         (zip firstChildren secondChildren)
                 | symbolOrAliasConstructor firstHead
                     == symbolOrAliasConstructor secondHead
@@ -186,10 +216,13 @@ match
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
@@ -197,23 +230,37 @@ match
     -> MaybeT
         (ExceptT
             (UnificationOrSubstitutionError level variable)
-            m
+            Simplifier
         )
         (OrOfPredicateSubstitution level variable)
 match
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     quantifiedVariables
     first
     second
   =
     matchEqualHeadPatterns
-        tools substitutionSimplifier quantifiedVariables first second
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        quantifiedVariables
+        first
+        second
     <|> matchVariableFunction
-        tools substitutionSimplifier quantifiedVariables first second
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        quantifiedVariables
+        first
+        second
 
 matchEqualHeadPatterns
-    ::  forall level variable m.
+    ::  forall level variable .
         ( Show (variable level)
         , SortedVariable variable
         , MetaOrObject level
@@ -224,22 +271,27 @@ matchEqualHeadPatterns
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
     -> MaybeT
         (ExceptT
             (UnificationOrSubstitutionError level variable)
-            m
+            Simplifier
         )
         (OrOfPredicateSubstitution level variable)
 matchEqualHeadPatterns
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     quantifiedVariables
     first
     second
@@ -251,6 +303,8 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -264,6 +318,8 @@ matchEqualHeadPatterns
                         matchJoin
                             tools
                             substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
                             quantifiedVariables
                             (zip firstChildren secondChildren)
                     else case simplifySortInjections tools first second of
@@ -280,6 +336,8 @@ matchEqualHeadPatterns
                                 matchJoin
                                     tools
                                     substitutionSimplifier
+                                    simplifier
+                                    axiomIdToSimplifier
                                     quantifiedVariables
                                     [(firstChild, secondChild)]
                 _ -> nothing
@@ -290,6 +348,8 @@ matchEqualHeadPatterns
                     match
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -304,6 +364,8 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -316,6 +378,8 @@ matchEqualHeadPatterns
                     <$> match
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         (Map.insert
                             firstVariable secondVariable quantifiedVariables
                         )
@@ -328,6 +392,8 @@ matchEqualHeadPatterns
                     match
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -340,6 +406,8 @@ matchEqualHeadPatterns
                         (match
                             tools
                             substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
                             (Map.insert
                                 firstVariable
                                 secondVariable
@@ -355,6 +423,8 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -366,6 +436,8 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -377,6 +449,8 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -388,6 +462,8 @@ matchEqualHeadPatterns
                     match
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -398,6 +474,8 @@ matchEqualHeadPatterns
                     match
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -408,6 +486,8 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -419,6 +499,8 @@ matchEqualHeadPatterns
                     matchJoin
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -446,14 +528,14 @@ matchEqualHeadPatterns
         :: MaybeT
             (ExceptT
                 (UnificationOrSubstitutionError level variable)
-                m
+                Simplifier
             )
             (OrOfPredicateSubstitution level variable)
     justTop = just
         (OrOfExpandedPattern.make [Predicated.topPredicate])
 
 matchJoin
-    :: forall level variable m .
+    :: forall level variable .
         ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -464,20 +546,28 @@ matchJoin
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
     -> [(StepPattern level variable, StepPattern level variable)]
     -> MaybeT
         (ExceptT
             (UnificationOrSubstitutionError level variable)
-            m
+            Simplifier
         )
         (OrOfPredicateSubstitution level variable)
 matchJoin
-    tools substitutionSimplifier quantifiedVariables patterns
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    quantifiedVariables
+    patterns
   = do
     matched <-
         traverse
@@ -485,6 +575,8 @@ matchJoin
                 match
                     tools
                     substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
                     quantifiedVariables
             )
             patterns
@@ -495,19 +587,21 @@ matchJoin
             :: [PredicateSubstitution level variable]
             -> ExceptT
                 (UnificationOrSubstitutionError level variable)
-                m
+                Simplifier
                 (PredicateSubstitution level variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 (map Predicated.predicate items)
                 (map Predicated.substitution items)
             return result
     OrOfExpandedPattern.filterOr <$> traverse (lift . merge) crossProduct
 
 unifyJoin
-    :: forall level variable m .
+    :: forall level variable .
         ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -518,24 +612,31 @@ unifyJoin
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> [(StepPattern level variable, StepPattern level variable)]
     -> ExceptT
         (UnificationOrSubstitutionError level variable)
-        m
+        Simplifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
-unifyJoin tools substitutionSimplifier patterns = do
+unifyJoin
+    tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
+  = do
     matchedWithProofs <-
         traverse
             (uncurry $
                 unificationProcedure
                     tools
                     substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
             )
             patterns
     let
@@ -547,12 +648,14 @@ unifyJoin tools substitutionSimplifier patterns = do
             :: [PredicateSubstitution level variable]
             -> ExceptT
                 (UnificationOrSubstitutionError level variable)
-                m
+                Simplifier
                 (PredicateSubstitution level variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 (map Predicated.predicate items)
                 (map Predicated.substitution items)
             return result
@@ -579,7 +682,6 @@ unifyJoin tools substitutionSimplifier patterns = do
 matchVariableFunction
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , Monad m
         , Ord (variable level)
         , OrdMetaOrObject variable
         , Show (variable level)
@@ -588,19 +690,25 @@ matchVariableFunction
         , Unparse (variable level)
        )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
     -> MaybeT
         (ExceptT
             (UnificationOrSubstitutionError level variable)
-            m
+            Simplifier
         )
         (OrOfPredicateSubstitution level variable)
 matchVariableFunction
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     quantifiedVariables
     (Var_ var)
     second
@@ -608,12 +716,19 @@ matchVariableFunction
     && isFunctionPattern tools second
   = Monad.Trans.lift $ do
     (ceilOr, _proof) <- Monad.Trans.lift $
-        Ceil.makeEvaluateTerm tools substitutionSimplifier second
+        Ceil.makeEvaluateTerm
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            second
     (result, _proof) <-
         OrOfExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
             (createPredicatesAndSubstitutionsMergerExcept
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
             )
             Predicated
                 { term = ()
@@ -622,7 +737,7 @@ matchVariableFunction
                 }
             ceilOr
     return result
-matchVariableFunction _ _ _ _ _ = nothing
+matchVariableFunction _ _ _ _ _ _ _ = nothing
 
 checkVariableEscapeOr
     ::  ( MetaOrObject level

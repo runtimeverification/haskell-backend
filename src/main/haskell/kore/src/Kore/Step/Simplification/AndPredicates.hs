@@ -18,12 +18,15 @@ import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..) )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -32,9 +35,8 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 simplifyEvaluatedMultiPredicateSubstitution
-    :: forall level variable m .
+    :: forall level variable .
         ( MetaOrObject level
-        , Monad m
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -44,12 +46,18 @@ simplifyEvaluatedMultiPredicateSubstitution
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> [OrOfPredicateSubstitution level variable]
-    -> m
+    -> Simplifier
         (OrOfPredicateSubstitution level variable, SimplificationProof level)
 simplifyEvaluatedMultiPredicateSubstitution
-    tools substitutionSimplifier predicateSubstitutions
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSubstitution
+    predicateSubstitutions
   = do
     let
         crossProduct :: MultiOr [PredicateSubstitution level variable]
@@ -63,11 +71,13 @@ simplifyEvaluatedMultiPredicateSubstitution
   where
     andPredicateSubstitutions
         :: [PredicateSubstitution level variable]
-        -> m (PredicateSubstitution level variable)
+        -> Simplifier (PredicateSubstitution level variable)
     andPredicateSubstitutions predicateSubstitutions0 = do
         (result, _proof) <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSubstitution
             (map ExpandedPattern.predicate predicateSubstitutions0)
             (map ExpandedPattern.substitution predicateSubstitutions0)
         return result

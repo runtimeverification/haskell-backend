@@ -87,11 +87,12 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..) )
+                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), SimplificationType )
+                 SimplificationProof (..), SimplificationType, Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -507,11 +508,10 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable m err p expanded proof.
+    :: forall level variable err p expanded proof.
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
         , Unparse (variable level)
-        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , p ~ StepPattern level variable
@@ -521,13 +521,19 @@ unifyEquals
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> (err m) (expanded, proof))
-    -> (p -> p -> MaybeT (err m) (expanded, proof))
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
+    -> (p -> p -> (err Simplifier) (expanded, proof))
+    -> (p -> p -> MaybeT (err Simplifier) (expanded, proof))
 unifyEquals
     simplificationType
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     unifyEqualsChildren
   =
     unifyEquals0
@@ -546,7 +552,7 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT (err m) (expanded, proof)
+        -> MaybeT (err Simplifier) (expanded, proof)
     unifyEquals0
         (DV_ _ (Domain.BuiltinSet builtin1))
         (DV_ _ (Domain.BuiltinSet builtin2))
@@ -597,7 +603,7 @@ unifyEquals
         :: level ~ Object
         => Domain.InternalSet
         -> Domain.InternalSet
-        -> (err m) (expanded, proof)
+        -> (err Simplifier) (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2
       | set1 == set2 =
         return (unified, SimplificationProof)
@@ -617,7 +623,7 @@ unifyEquals
         => Domain.InternalSet  -- ^ concrete set
         -> Domain.InternalSet -- ^ framed concrete set
         -> StepPattern level variable  -- ^ framing variable
-        -> (err m) (expanded, proof)
+        -> (err Simplifier) (expanded, proof)
     unifyEqualsFramed builtin1 builtin2 var
       | Set.isSubsetOf set2 set1 =
         Reflection.give tools $ do
@@ -630,7 +636,12 @@ unifyEquals
                     -- substitutions from unifying the framing variable.
                     asExpandedPattern builtinSetSort set1 <* remainder
             normalized <- Monad.Trans.lift $
-                normalize tools substitutionSimplifier result
+                normalize
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    result
             return (normalized, SimplificationProof)
 
       | otherwise =
@@ -645,7 +656,7 @@ unifyEquals
         => Domain.InternalSet  -- ^ concrete set
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
-        -> (err m) (expanded, proof)
+        -> (err Simplifier) (expanded, proof)
     unifyEqualsElement builtin1 element' key2 =
         case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->

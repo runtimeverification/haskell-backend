@@ -348,6 +348,7 @@ test_functionRegistry =
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)
                 (Simplifier.create testMetadataTools testEvaluators)
+                testEvaluators
                 (makeExpandedPattern (mkApp sortS gHead []))
         let actual =
                 ExpandedPattern.term $ head

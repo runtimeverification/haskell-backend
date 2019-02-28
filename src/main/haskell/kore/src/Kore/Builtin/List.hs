@@ -202,7 +202,7 @@ evalGet =
     evalGet0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
+        -> StepPatternSimplifier Object
         -> Sort Object
         -> [StepPattern Object variable]
         -> Simplifier (AttemptedAxiom Object variable)
@@ -249,7 +249,7 @@ evalConcat =
     evalConcat0
         :: Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
+        -> StepPatternSimplifier Object
         -> Sort Object
         -> [StepPattern Object variable]
         -> Simplifier (AttemptedAxiom Object variable)
@@ -419,7 +419,7 @@ unifyEquals
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
     -> (p -> p -> (err m) (expanded, proof))
     -> (p -> p -> MaybeT (err m) (expanded, proof))
 unifyEquals

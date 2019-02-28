@@ -521,7 +521,7 @@ mkIntVar :: Id Object -> CommonStepPattern Object
 mkIntVar variableName =
     mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
 
-mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
+mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level
 mockSubstitutionSimplifier =
     PredicateSubstitutionSimplifier
         (\x -> return (x, SimplificationProof))

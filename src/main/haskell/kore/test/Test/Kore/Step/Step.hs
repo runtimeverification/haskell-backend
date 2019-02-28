@@ -463,6 +463,7 @@ runStep metadataTools configuration axioms =
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
+            Map.empty
         )
         [allRewrites axioms]
         (configuration, mempty)
@@ -487,6 +488,7 @@ runSteps metadataTools stepLimit configuration axioms =
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
+            Map.empty
         )
         (Limit.replicate stepLimit $ allRewrites axioms)
         (configuration, mempty)

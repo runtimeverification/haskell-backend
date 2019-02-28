@@ -45,8 +45,9 @@ import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..), applicationAxiomSimplifier,
-                 notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
+                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap,
+                 applicationAxiomSimplifier, notApplicableAxiomEvaluator,
+                 purePatternAxiomEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -129,8 +130,11 @@ evalKEq
         )
     => Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
-    -> PredicateSubstitutionSimplifier Object Simplifier
-    -> StepPatternSimplifier Object variable
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
@@ -139,7 +143,14 @@ evalKEq
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
-evalKEq true tools substitutionSimplifier _ (valid :< app) =
+evalKEq
+    true
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    (valid :< app)
+  =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
@@ -148,7 +159,14 @@ evalKEq true tools substitutionSimplifier _ (valid :< app) =
     Valid { patternSort } = valid
     Application { applicationChildren } = app
     evalEq t1 t2 = do
-        (result, _proof) <- makeEvaluate tools substitutionSimplifier ep1 ep2
+        (result, _proof) <-
+            makeEvaluate
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                ep1
+                ep2
         case () of
             _ | OrOfExpandedPattern.isTrue result ->
                 purePatternAxiomEvaluator (Bool.asInternal patternSort true)
@@ -167,8 +185,10 @@ evalKIte
         , ShowMetaOrObject variable
         )
     => MetadataTools.MetadataTools Object StepperAttributes
-    -> PredicateSubstitutionSimplifier Object Simplifier
-    -> StepPatternSimplifier Object variable
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
@@ -177,7 +197,7 @@ evalKIte
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
-evalKIte _ _ _ (_ :< app) =
+evalKIte _ _ _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2

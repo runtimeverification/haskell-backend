@@ -38,6 +38,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
 import           Kore.Step.TranslateSMT
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 import           SMT
                  ( MonadSMT, Result (..), SExpr (..), SMT )
 import qualified SMT
@@ -50,15 +52,18 @@ If the predicate is non-trivial (not @\\top{_}()@ or @\\bottom{_}()@),
  -}
 evaluate
     ::  forall level variable .
-        ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        ( FreshVariable variable
         , Given (MetadataTools level StepperAttributes)
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , SortedVariable variable
+        , Unparse (variable level)
         )
-    => PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    => PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
     -> Predicate level variable
     -- ^ The condition to be evaluated.

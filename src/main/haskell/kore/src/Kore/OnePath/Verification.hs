@@ -53,6 +53,8 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import           Kore.Step.ExpandedPattern as Predicated
                  ( Predicated (..) )
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
 import           Kore.Step.Simplification.Data
@@ -91,10 +93,12 @@ If the verification succeeds, it returns ().
 verify
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> StepPatternSimplifier level Variable
+    -> StepPatternSimplifier level
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
     -- ^ Simplifies predicates
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     ->  (  CommonStepPattern level
         -> [Strategy
             (Prim
@@ -116,6 +120,7 @@ verify
     metadataTools
     simplifier
     substitutionSimplifier
+    axiomIdToSimplifier
     strategyBuilder
   =
     mapM_
@@ -123,6 +128,7 @@ verify
             metadataTools
             simplifier
             substitutionSimplifier
+            axiomIdToSimplifier
             strategyBuilder
         )
 
@@ -173,8 +179,10 @@ defaultStrategy
 verifyClaim
     :: forall level . (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> StepPatternSimplifier level Variable
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     ->  (  CommonStepPattern level
         -> [Strategy
             (Prim
@@ -192,6 +200,7 @@ verifyClaim
     metadataTools
     simplifier
     substitutionSimplifier
+    axiomIdToSimplifier
     strategyBuilder
     (rule@(RewriteRule RulePattern {left, right, requires}), stepLimit)
   = do
@@ -210,7 +219,9 @@ verifyClaim
                 Predicated
                     {term = left, predicate = requires, substitution = mempty}
     executionGraph <- Monad.Trans.lift $ runStrategy
-        (transitionRule metadataTools substitutionSimplifier simplifier)
+        (transitionRule
+            metadataTools substitutionSimplifier simplifier axiomIdToSimplifier
+        )
         strategy
         ( startPattern, mempty )
     let

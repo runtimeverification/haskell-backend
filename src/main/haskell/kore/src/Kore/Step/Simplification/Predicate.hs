@@ -24,8 +24,11 @@ import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (StepPatternSimplifier) )
+                 Simplifier, StepPatternSimplifier (StepPatternSimplifier),
+                 StepPatternSimplifier )
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {-| Simplifies a predicate, producing another predicate and a substitution,
 without trying to reapply the substitution on the predicate.
@@ -33,14 +36,17 @@ without trying to reapply the substitution on the predicate.
 TODO(virgil): Make this fully simplify.
 -}
 simplifyPartial
-    ::  ( MetaOrObject level
-        , SortedVariable variable
+    ::  ( FreshVariable variable
+        , MetaOrObject level
         , Ord (variable level)
+        , OrdMetaOrObject variable
         , Show (variable level)
+        , ShowMetaOrObject variable
         , Unparse (variable level)
+        , SortedVariable variable
         )
-    => PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    => PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -> Predicate level variable
     -> Simplifier
         ( PredicateSubstitution level variable

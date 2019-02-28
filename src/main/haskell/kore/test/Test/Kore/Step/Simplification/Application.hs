@@ -38,7 +38,7 @@ import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( CommonStepPatternSimplifier, SimplificationProof (..),
+                 ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -91,7 +91,7 @@ test_applicationSimplification =
         actual <-
             evaluate
                 mockMetadataTools
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
                     testSort
@@ -108,7 +108,7 @@ test_applicationSimplification =
         actual <-
             evaluate
                 mockMetadataTools
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
                     testSort
@@ -125,12 +125,12 @@ test_applicationSimplification =
         actual <-
             evaluate
                 mockMetadataTools
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
                     (simplificationEvaluator
                         [ BuiltinAndAxiomSimplifier
-                            (const $ const $ const $ const $ return
+                            (const $ const $ const $ const $ const $ return
                                 ( AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results =
                                         OrOfExpandedPattern.make [gOfAExpanded]
@@ -172,7 +172,7 @@ test_applicationSimplification =
             actual <-
                 evaluate
                     mockMetadataTools
-                    (mockSimplifier [])
+                    (mockSimplifier noSimplification)
                     Map.empty
                     (makeApplication
                         testSort
@@ -256,12 +256,12 @@ test_applicationSimplification =
                 in
                     evaluate
                         mockMetadataTools
-                        (mockSimplifier [])
+                        (mockSimplifier noSimplification)
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator
                                 [ BuiltinAndAxiomSimplifier
-                                    (const $ const $ const $ const $
+                                    (const $ const $ const $ const $ const $
                                         return (result, SimplificationProof)
                                     )
                                 ]
@@ -333,6 +333,13 @@ test_applicationSimplification =
             Mock.sortAttributesMapping
             Mock.subsorts
 
+    noSimplification
+        ::  [   ( StepPattern level Variable
+                , ([ExpandedPattern level Variable], SimplificationProof level)
+                )
+            ]
+    noSimplification = []
+
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier Object]
     -> BuiltinAndAxiomSimplifier Object
@@ -363,7 +370,7 @@ makeApplication patternSort symbol patterns =
 evaluate
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> CommonStepPatternSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators

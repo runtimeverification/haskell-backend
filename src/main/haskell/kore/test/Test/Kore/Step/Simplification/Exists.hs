@@ -283,6 +283,7 @@ evaluate tools exists =
         tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create tools Map.empty)
+        Map.empty
         exists
 
 makeEvaluate
@@ -299,5 +300,6 @@ makeEvaluate tools variable child =
         tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create tools Map.empty)
+        Map.empty
         variable
         child

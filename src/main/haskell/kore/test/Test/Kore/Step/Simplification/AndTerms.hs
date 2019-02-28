@@ -10,6 +10,7 @@ import Test.Tasty.HUnit
 import           Control.Error
                  ( MaybeT (..) )
 import qualified Control.Error as Error
+import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -27,6 +28,8 @@ import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
@@ -816,7 +819,13 @@ unify tools first second =
         -- The unification error is discarded because, for testing purposes, we
         -- are not interested in the /reason/ unification failed. For the tests,
         -- the failure is almost always due to unsupported patterns anyway.
-        Error.hushT $ termUnification tools substitutionSimplifier first second
+        Error.hushT $ termUnification
+            tools
+            substitutionSimplifier
+            (Simplifier.create tools Map.empty)
+            Map.empty
+            first
+            second
 
 simplify
     :: MetaOrObject level
@@ -828,4 +837,10 @@ simplify tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger noRepl
-    $ termAnd tools (Mock.substitutionSimplifier tools) first second
+    $ termAnd
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        Map.empty
+        first
+        second

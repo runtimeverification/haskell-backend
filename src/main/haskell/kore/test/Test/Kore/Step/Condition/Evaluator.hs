@@ -68,8 +68,15 @@ evaluate predicate =
     $ evalSimplifier emptyLogger noRepl
     $ Evaluator.evaluate
         testSubstitutionSimplifier
-        (mockSimplifier [])
+        (mockSimplifier noSimplification)
         predicate
+
+noSimplification
+    ::  [   ( StepPattern level Variable
+            , ([ExpandedPattern level Variable], SimplificationProof level)
+            )
+        ]
+noSimplification = []
 
 -- ----------------------------------------------------------------
 -- Refute Int predicates

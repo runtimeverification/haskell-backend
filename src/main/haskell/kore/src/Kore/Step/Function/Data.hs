@@ -86,8 +86,9 @@ newtype BuiltinAndAxiomSimplifier level =
             , ShowMetaOrObject variable
             )
         => MetadataTools level StepperAttributes
-        -> PredicateSubstitutionSimplifier level Simplifier
-        -> StepPatternSimplifier level variable
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier level
+        -> BuiltinAndAxiomSimplifierMap level
         -> StepPattern level variable
         -> Simplifier
             ( AttemptedAxiom level variable
@@ -197,8 +198,9 @@ applicationAxiomSimplifier
             , ShowMetaOrObject variable
             )
         => MetadataTools level StepperAttributes
-        -> PredicateSubstitutionSimplifier level Simplifier
-        -> StepPatternSimplifier level variable
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier level
+        -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
             (Application level)
             (Valid (variable level) level)
@@ -225,8 +227,9 @@ applicationAxiomSimplifier applicationSimplifier =
                 , ShowMetaOrObject variable
                 )
             => MetadataTools level StepperAttributes
-            -> PredicateSubstitutionSimplifier level Simplifier
-            -> StepPatternSimplifier level variable
+            -> PredicateSubstitutionSimplifier level
+            -> StepPatternSimplifier level
+            -> BuiltinAndAxiomSimplifierMap level
             -> StepPattern level variable
             -> Simplifier
                 ( AttemptedAxiom level variable
@@ -237,12 +240,17 @@ applicationAxiomSimplifier applicationSimplifier =
         tools
         substitutionSimplifier
         simplifier
+        axiomIdToSimplifier
         patt
       =
         case fromPurePattern patt of
             (valid :< ApplicationPattern p) ->
                 applicationSimplifier
-                    tools substitutionSimplifier simplifier (valid :< p)
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    (valid :< p)
             _ -> error
                 ("Expected an application pattern, but got: " ++ show patt)
 

@@ -31,9 +31,12 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..) )
+                 ( PredicateSubstitutionSimplifier (..), Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
@@ -88,7 +91,7 @@ simplifyCombinedItems =
     addContents other proofItems = other : proofItems
 
 simplifyAnds
-    ::  forall level variable m unifier.
+    ::  forall level variable unifier.
         ( MetaOrObject level
         , Eq level
         , Ord (variable level)
@@ -98,30 +101,37 @@ simplifyAnds
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , Monad m
         , unifier ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> [StepPattern level variable]
-    -> unifier m
+    -> unifier Simplifier
         (ExpandedPattern level variable, UnificationProof level variable)
-simplifyAnds _ _ [] = throwError (UnificationError UnsupportedPatterns)
-simplifyAnds tools substitutionSimplifier patterns = do
-     result <- foldM
+simplifyAnds _ _ _ _ [] = throwError (UnificationError UnsupportedPatterns)
+simplifyAnds
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    patterns
+  = do
+    result <- foldM
         simplifyAnds'
         ExpandedPattern.top
         patterns
-     if Predicate.isFalse . ExpandedPattern.predicate $ result
-         then return ( ExpandedPattern.bottom, EmptyUnificationProof )
-         else return ( result, EmptyUnificationProof )
+    if Predicate.isFalse . ExpandedPattern.predicate $ result
+        then return ( ExpandedPattern.bottom, EmptyUnificationProof )
+        else return ( result, EmptyUnificationProof )
   where
     simplifyAnds'
         :: ExpandedPattern level variable
         -> StepPattern level variable
         -> ExceptT
             ( UnificationOrSubstitutionError level variable )
-            m
+            Simplifier
             ( ExpandedPattern level variable )
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
@@ -132,12 +142,16 @@ simplifyAnds tools substitutionSimplifier patterns = do
                     termUnification
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         (ExpandedPattern.term intermediate)
                         pat
                 (predSubst, _) <-
                     mergePredicatesAndSubstitutionsExcept
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                         [ ExpandedPattern.predicate result
                         , ExpandedPattern.predicate intermediate
                         ]
@@ -175,22 +189,36 @@ solveGroupedSubstitution
        , ShowMetaOrObject variable
        , SortedVariable variable
        , FreshVariable variable
-       , Monad m
        )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> variable level
     -> [StepPattern level variable]
     -> ExceptT
         ( UnificationOrSubstitutionError level variable )
-        m
+        Simplifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-solveGroupedSubstitution _ _ _ [] =
+solveGroupedSubstitution _ _ _ _ _ [] =
     throwError (UnificationError UnsupportedPatterns)
-solveGroupedSubstitution tools substitutionSimplifier var patterns = do
-    (predSubst, proof) <- simplifyAnds tools substitutionSimplifier patterns
+solveGroupedSubstitution
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    var
+    patterns
+  = do
+    (predSubst, proof) <-
+        simplifyAnds
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            patterns
     return
         ( Predicated
             { term = ()
@@ -211,7 +239,7 @@ solveGroupedSubstitution tools substitutionSimplifier var patterns = do
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: forall variable level m
+    :: forall variable level
     .   ( MetaOrObject level
         , Eq level
         , Ord (variable level)
@@ -221,18 +249,25 @@ normalizeSubstitutionDuplication
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> Substitution level variable
     -> ExceptT
         ( UnificationOrSubstitutionError level variable )
-        m
+        Simplifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-normalizeSubstitutionDuplication tools substitutionSimplifier subst =
+normalizeSubstitutionDuplication
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    subst
+  =
     if null nonSingletonSubstitutions || Substitution.isNormalized subst
         then return
             ( Predicated () Predicate.makeTruePredicate subst
@@ -243,13 +278,22 @@ normalizeSubstitutionDuplication tools substitutionSimplifier subst =
                 mergePredicateSubstitutionList
                 <$> mapM
                     (uncurry
-                        $ solveGroupedSubstitution tools substitutionSimplifier
+                        $ solveGroupedSubstitution
+                            tools
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
                     )
                     varAndSubstList
             (finalSubst, proof) <-
-                normalizeSubstitutionDuplication tools substitutionSimplifier
-                    $ (Substitution.wrap $ concat singletonSubstitutions)
-                        <> Predicated.substitution predSubst
+                normalizeSubstitutionDuplication
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    (  Substitution.wrap (concat singletonSubstitutions)
+                    <> Predicated.substitution predSubst
+                    )
             let
                 pred' =
                     Predicate.makeAndPredicate

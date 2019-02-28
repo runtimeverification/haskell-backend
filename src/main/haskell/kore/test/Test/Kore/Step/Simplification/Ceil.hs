@@ -7,6 +7,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import qualified Data.Map as Map
+
+import qualified Data.Sup as Sup
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
@@ -20,7 +23,18 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom, top )
+                 ( bottom, mapVariables, top )
+import           Kore.Step.Function.Data
+                 ( AttemptedAxiom,
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
+                 BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Function.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import qualified Kore.Step.Function.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -29,10 +43,16 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( PredicateSubstitutionSimplifier,
+                 SimplificationProof (SimplificationProof), Simplifier,
+                 StepPatternSimplifier, evalSimplifier )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 import qualified SMT
 
 import           Test.Kore
@@ -306,6 +326,46 @@ test_ceilSimplification =
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
             expected
             actual
+    , testCase "ceil with axioms" $ do
+        -- if term is functional(non-funct, non-funct), then
+        -- ceil(term and predicate and subst)
+        --     = top and
+        --       ceil(non-funct) and ceil(non-funct) and predicate and
+        --       subst
+        let
+            expected = OrOfExpandedPattern.make
+                [ Predicated
+                    { term = mkTop_
+                    , predicate =
+                        makeAndPredicate
+                            (makeEqualsPredicate fOfA gOfA)
+                            (makeEqualsPredicate Mock.a Mock.cf)
+                    , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    }
+                ]
+        actual <- makeEvaluateWithAxioms
+            mockMetadataTools
+            (Map.singleton
+                (AxiomIdentifier.Ceil
+                    (AxiomIdentifier.Application Mock.fId)
+                )
+                (appliedMockEvaluator
+                    Predicated
+                        { term = mkTop_
+                        , predicate = makeEqualsPredicate Mock.a Mock.cf
+                        , substitution = mempty
+                        }
+                )
+            )
+            Predicated
+                { term = Mock.functional20 fOfA fOfB
+                , predicate = makeEqualsPredicate fOfA gOfA
+                , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                }
+        assertEqualWithExplanation
+            "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
+            expected
+            actual
     , testCase "ceil with normal domain value" $ do
         -- ceil(1) = top
         let
@@ -414,6 +474,41 @@ test_ceilSimplification =
     asConcrete p =
         let Just r = asConcreteStepPattern p in r
 
+appliedMockEvaluator
+    :: CommonExpandedPattern level -> BuiltinAndAxiomSimplifier level
+appliedMockEvaluator result =
+    BuiltinAndAxiomSimplifier
+    $ mockEvaluator
+    $ AttemptedAxiom.Applied AttemptedAxiomResults
+        { results = OrOfExpandedPattern.make
+            [Test.Kore.Step.Simplification.Ceil.mapVariables result]
+        , remainders = OrOfExpandedPattern.make []
+        }
+
+mockEvaluator
+    :: AttemptedAxiom level variable
+    -> MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> StepPattern level variable
+    -> Simplifier
+        (AttemptedAxiom level variable, SimplificationProof level)
+mockEvaluator evaluation _ _ _ _ _ =
+    return (evaluation, SimplificationProof)
+
+mapVariables
+    ::  ( FreshVariable variable
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        )
+    => CommonExpandedPattern level
+    -> ExpandedPattern level variable
+mapVariables =
+    ExpandedPattern.mapVariables $ \v ->
+        fromVariable v { variableCounter = Just (Sup.Element 1) }
+
 makeCeil
     :: Ord (variable Object)
     => [ExpandedPattern Object variable]
@@ -435,17 +530,35 @@ evaluate tools ceil =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger noRepl
-    $ Ceil.simplify tools (Mock.substitutionSimplifier tools) ceil
-
+    $ Ceil.simplify
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools Map.empty)
+        Map.empty
+        ceil
 
 makeEvaluate
-    ::  ( MetaOrObject level
-        )
+    ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
     -> CommonExpandedPattern level
     -> IO (CommonOrOfExpandedPattern level)
 makeEvaluate tools child =
+    makeEvaluateWithAxioms tools Map.empty child
+
+makeEvaluateWithAxioms
+    ::  ( MetaOrObject level )
+    => MetadataTools level StepperAttributes
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
+    -> CommonExpandedPattern level
+    -> IO (CommonOrOfExpandedPattern level)
+makeEvaluateWithAxioms tools axiomIdToSimplifier child =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger noRepl
-    $ Ceil.makeEvaluate tools (Mock.substitutionSimplifier tools) child
+    $ Ceil.makeEvaluate
+        tools
+        (Mock.substitutionSimplifier tools)
+        (Simplifier.create tools axiomIdToSimplifier)
+        axiomIdToSimplifier
+        child

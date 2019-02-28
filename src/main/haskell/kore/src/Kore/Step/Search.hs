@@ -39,6 +39,8 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Function.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -132,14 +134,24 @@ matchWith
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> MaybeT Simplifier (OrOfPredicateSubstitution level variable)
-matchWith tools substitutionSimplifier simplifier e1 e2 = do
+matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-
-        hushT $ unificationProcedure tools substitutionSimplifier t1 t2
+        hushT $
+            unificationProcedure
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                t1
+                t2
     let
         mergeAndEvaluate
             :: PredicateSubstitution level variable
@@ -152,6 +164,8 @@ matchWith tools substitutionSimplifier simplifier e1 e2 = do
                 mergePredicatesAndSubstitutions
                     tools
                     substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
                     [ Predicated.predicate predSubst
                     , Predicated.predicate e1
                     , Predicated.predicate e2
@@ -164,6 +178,8 @@ matchWith tools substitutionSimplifier simplifier e1 e2 = do
             mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 [ Predicated.predicate evaluated
                 ]
                 [ Predicated.substitution merged
