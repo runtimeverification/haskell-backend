@@ -19,6 +19,13 @@ metaVariable = Variable
     , variableSort = SortVariableSort (SortVariable (testId "#s"))
     }
 
+metaVariableDifferentSort :: Variable Meta
+metaVariableDifferentSort = Variable
+    { variableName = testId "#v"
+    , variableCounter = mempty
+    , variableSort = SortVariableSort (SortVariable (testId "#s1"))
+    }
+
 test_refreshVariable :: [TestTree]
 test_refreshVariable =
     [ testCase "refreshVariable - avoid empty set" $
@@ -31,6 +38,10 @@ test_refreshVariable =
 
     , testCase "refreshVariable - avoid fresh" $
         assertBool "Expected another fresh variable"     (fresh0   < fresh1)
+
+    , testCase "refreshVariable - expecting the same sort" $
+        assertBool "Expected fresh variable has same sort as original"
+            (variableSort original == variableSort fresh2)
     ]
   where
     original = metaVariable
@@ -38,3 +49,5 @@ test_refreshVariable =
     Just fresh0 = refreshVariable avoid0 original
     avoid1 = Set.insert fresh0 avoid0
     Just fresh1 = refreshVariable avoid1 original
+    avoid2 = Set.singleton metaVariableDifferentSort
+    Just fresh2 = refreshVariable avoid2 original
