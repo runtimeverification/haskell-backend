@@ -19,17 +19,17 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+import qualified Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( firstFullEvaluation )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
-import           Kore.Step.Function.Data
-import qualified Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.EvaluationStrategy
-                 ( firstFullEvaluation )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern

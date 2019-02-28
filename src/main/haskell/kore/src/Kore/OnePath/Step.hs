@@ -32,6 +32,8 @@ import           Kore.AST.Valid
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
@@ -45,8 +47,6 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as Predicated
                  ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data

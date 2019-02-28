@@ -44,12 +44,13 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiom (..),
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
+                 notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..), applicationAxiomSimplifier,
-                 notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
-import           Kore.Step.Function.Data
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr (..) )
 import           Kore.Step.Pattern

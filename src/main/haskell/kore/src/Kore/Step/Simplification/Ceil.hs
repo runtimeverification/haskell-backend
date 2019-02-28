@@ -28,12 +28,12 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..), erasePredicatedTerm,
                  predicateSubstitutionToExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
 import           Kore.Step.OrOfExpandedPattern

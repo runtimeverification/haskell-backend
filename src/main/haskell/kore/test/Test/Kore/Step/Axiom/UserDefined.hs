@@ -1,4 +1,4 @@
-module Test.Kore.Step.Function.UserDefined (test_userDefinedFunction) where
+module Test.Kore.Step.Axiom.UserDefined (test_userDefinedFunction) where
 
 import Test.Tasty
        ( TestTree )
@@ -19,6 +19,15 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
+import           Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 CommonAttemptedAxiom )
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import           Kore.Step.Axiom.UserDefined
+                 ( equalityRuleEvaluator )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
                  RulePattern (RulePattern) )
@@ -26,15 +35,6 @@ import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern, Predicated (..), bottom )
-import           Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 CommonAttemptedAxiom )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.UserDefined
-                 ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -281,7 +281,7 @@ evaluateWithAxiom
         (<$>) fst
         $ SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger noRepl
-        $ ruleFunctionEvaluator
+        $ equalityRuleEvaluator
             axiom
             metadataTools
             (Mock.substitutionSimplifier metadataTools)

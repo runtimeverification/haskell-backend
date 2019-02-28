@@ -21,10 +21,10 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier, StepPatternSimplifier )

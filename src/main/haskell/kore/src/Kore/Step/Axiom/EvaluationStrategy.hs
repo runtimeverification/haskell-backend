@@ -1,13 +1,13 @@
 {-|
-Module      : Kore.Step.Function.EvaluationStrategy
-Description : Various strategies for evaluating functions.
+Module      : Kore.Step.Axiom.EvaluationStrategy
+Description : Various strategies for axiom/builtin-based simplification.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Function.EvaluationStrategy
+module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
     , firstFullEvaluation
@@ -31,6 +31,16 @@ import           Kore.AST.Valid
                  ( pattern App_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiom,
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import qualified Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.Matcher
+                 ( unificationWithAppMatchOnTop )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
@@ -44,16 +54,6 @@ import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.Matcher
-                 ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, isFalse, make )
 import           Kore.Step.Pattern
@@ -180,8 +180,7 @@ evaluateBuiltin
     isPattConcrete = isJust (asConcretePurePattern patt)
     isValue pat = isJust $
         Value.fromConcreteStepPattern tools =<< asConcreteStepPattern pat
-    -- TODO(virgil): Send this from outside after replacing `These` as a
-    -- representation for application evaluators.
+    -- TODO(virgil): Send this from outside.
     getAppHookString appHead =
         Text.unpack <$> (getHook . hook . symAttributes tools) appHead
 

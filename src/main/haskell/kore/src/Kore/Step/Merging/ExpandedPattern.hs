@@ -19,12 +19,12 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,

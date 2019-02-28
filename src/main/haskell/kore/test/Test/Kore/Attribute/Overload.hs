@@ -14,8 +14,8 @@ import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-import           Kore.Step.Function.Registry
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import           Kore.Step.Axiom.Registry
 
 import           Test.Kore
 import           Test.Kore.Attribute.Parser
@@ -111,7 +111,7 @@ test_ignore =
             Just _ -> assertFailure "Should ignore overloaded production axiom"
   where
     evaluators =
-        axiomPatternsToEvaluators $ extractFunctionAxioms Object indexedModule
+        axiomPatternsToEvaluators $ extractEqualityAxioms Object indexedModule
       where
         Just indexedModule = Map.lookup testModuleName verifiedModules
           where
