@@ -86,6 +86,7 @@ evaluate
     let simplified' =
             case refute of
                 Just False -> ExpandedPattern.bottom
+                Just True -> ExpandedPattern.top
                 _ -> OrOfExpandedPattern.toExpandedPattern simplified
         (subst, _proof) = asPredicateSubstitution simplified'
     return (subst, SimplificationProof)
