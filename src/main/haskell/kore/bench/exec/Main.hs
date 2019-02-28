@@ -185,7 +185,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
         -> IO (CommonStepPattern Object)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+        $ evalSimplifier emptyLogger (const (pure ()))
         $ exec verifiedModule strategy purePattern
       where
         unlimited :: Limit Natural
