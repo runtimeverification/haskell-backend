@@ -526,7 +526,34 @@ assert proc e = ackCommand proc $ fun "assert" [e]
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
 check proc =
-  do res <- command proc (List [ Atom "check-sat" ])
+  do res <- command proc (List [ Atom "check-sat-using"
+                               , (List [ Atom "or-else"
+                                       , (List [ Atom "using-params"
+                                               , Atom "smt"
+                                               , Atom ":random-seed"
+                                               , Atom "3"
+                                               , Atom ":timeout"
+                                               , Atom "1000"
+                                               ]
+                                         )
+                                       , (List [ Atom "using-params"
+                                               , Atom "smt"
+                                               , Atom ":random-seed"
+                                               , Atom "2"
+                                               , Atom ":timeout"
+                                               , Atom "2000"
+                                               ]
+                                         )
+                                       , (List [ Atom "using-params"
+                                               , Atom "smt"
+                                               , Atom ":random-seed"
+                                               , Atom "1"
+                                               ]
+                                         )
+                                      ]
+                                 )
+                               ]
+                         )
      case res of
        Atom "unsat"   -> return Unsat
        Atom "unknown" -> return Unknown

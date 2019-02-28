@@ -95,7 +95,7 @@ defaultConfig =
                               -- and uninterpreted functions
         , preludeFile = Nothing
         , logFile = Nothing
-        , timeOut = TimeOut (Limit 40)
+        , timeOut = TimeOut (Limit 5000)
         }
 
 {- | Query an external SMT solver.
