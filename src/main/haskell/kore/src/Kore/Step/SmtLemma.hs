@@ -99,17 +99,22 @@ declareSMTLemmas m = SMT.liftSMT $ do
         -> SMT (Maybe ())
     declareSymbol (atts, symDeclaration) = runMaybeT $
         case getSmtlib $ smtlib atts of
-            Just (SMT.List (SMT.Atom name : _)) -> do
-                inputSorts <-
-                    mapM
-                        translateSort
-                        (sentenceSymbolSorts symDeclaration)
-                resultSort <-
-                    translateSort
-                        (sentenceSymbolResultSort symDeclaration)
-                _ <- SMT.declareFun name inputSorts resultSort
-                pure ()
+            Just sExpr
+              | SMT.Atom name <- sExpr -> declareSymbolWorker name
+              | (SMT.List (SMT.Atom name : _)) <- sExpr ->
+                declareSymbolWorker name
             _ -> pure ()
+      where
+        declareSymbolWorker name = do
+            inputSorts <-
+                mapM
+                    translateSort
+                    (sentenceSymbolSorts symDeclaration)
+            resultSort <-
+                translateSort
+                    (sentenceSymbolResultSort symDeclaration)
+            _ <- SMT.declareFun name inputSorts resultSort
+            pure ()
     declareRule
         :: forall sortParam . (Given (MetadataTools Object StepperAttributes))
         => ( AxiomPatternAttributes
