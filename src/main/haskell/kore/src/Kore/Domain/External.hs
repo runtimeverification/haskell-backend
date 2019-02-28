@@ -11,6 +11,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module Kore.Domain.External
     ( External (..)
     , CommonExternalPattern
+    , Domain (..)
     ) where
 
 import Control.DeepSeq
@@ -27,6 +28,7 @@ import GHC.Generics
        ( Generic )
 
 import Kore.AST.Pure
+import Kore.Domain.Class
 import Kore.Unparser
 
 data External child =
@@ -49,5 +51,8 @@ instance Unparse (External child) where
         "\\dv"
         <> parameters [domainValueSort]
         <> arguments [domainValueChild]
+
+instance Domain External where
+    domainSort External { domainValueSort } = domainValueSort
 
 type CommonExternalPattern level = CommonPurePattern level External

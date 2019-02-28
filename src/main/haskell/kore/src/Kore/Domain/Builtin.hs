@@ -16,7 +16,8 @@ module Kore.Domain.Builtin
     , InternalSet (..)
     , InternalInt (..)
     , InternalBool (..)
-    , module Kore.Domain.External
+    , External (..)
+    , Domain (..)
     ) where
 
 import           Control.DeepSeq
@@ -39,6 +40,7 @@ import           GHC.Generics
 
 import Kore.Annotation.Valid
 import Kore.AST.Pure
+import Kore.Domain.Class
 import Kore.Domain.External
 import Kore.Unparser
 
@@ -265,6 +267,16 @@ instance Unparse child => Unparse (Builtin child) where
             BuiltinMap builtinMap -> unparse builtinMap
             BuiltinList builtinList -> unparse builtinList
             BuiltinSet builtinSet -> unparse builtinSet
+
+instance Domain Builtin where
+    domainSort =
+        \case
+            BuiltinExternal external -> domainSort external
+            BuiltinInt  InternalInt  { builtinIntSort  } -> builtinIntSort
+            BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
+            BuiltinMap  InternalMap  { builtinMapSort  } -> builtinMapSort
+            BuiltinList InternalList { builtinListSort } -> builtinListSort
+            BuiltinSet  InternalSet  { builtinSetSort  } -> builtinSetSort
 
 deriveEq1 ''InternalMap
 deriveOrd1 ''InternalMap
