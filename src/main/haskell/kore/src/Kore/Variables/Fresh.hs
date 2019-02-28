@@ -51,11 +51,12 @@ instance FreshVariable Variable where
     refreshVariable avoiding variable = do
         largest <- Set.lookupLT pivotMax avoiding
         if largest >= pivotMin
-            then Just (nextVariable largest)
+            then Just (fixSort . nextVariable $ largest)
             else Nothing
       where
         pivotMax = variable { variableCounter = Just Sup }
         pivotMin = variable { variableCounter = Nothing }
+        fixSort var = var { variableSort = variableSort variable }
 
 {- | Increase the 'variableCounter' of a 'Variable'
  -}

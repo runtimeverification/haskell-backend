@@ -218,6 +218,7 @@ transitionRule
             (configs, proof') <-
                 ExpandedPattern.simplify
                     tools substitutionSimplifier simplifier config
+
             let
                 proof'' = proof <> simplificationProof proof'
                 prove config' = (config', proof'')

@@ -85,7 +85,7 @@ import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import qualified Kore.Unification.Data as Unification.Proof
 import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError )
+                 ( UnificationError (..), UnificationOrSubstitutionError )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
@@ -500,19 +500,32 @@ applyUnificationToRhs
 
         variablesInLeftAxiom :: Set.Set (variable level)
         variablesInLeftAxiom =
-            (extractAxiomVariables . Valid.freeVariables . extract) axiomLeft
-        fromStepperVariable
+            extractVariables axiomVariableFromStepper
+            . Valid.freeVariables
+            . extract
+            $ axiomLeft
+        axiomVariableFromStepper
             :: StepperVariable variable level
             -> Maybe (variable level)
-        fromStepperVariable (AxiomVariable v) = Just v
-        fromStepperVariable (ConfigurationVariable _) = Nothing
-        extractAxiomVariables
-            :: Set.Set (StepperVariable variable level)
+        axiomVariableFromStepper (AxiomVariable v) = Just v
+        axiomVariableFromStepper (ConfigurationVariable _) = Nothing
+        configVariableFromStepper
+            :: StepperVariable variable level
+            -> Maybe (variable level)
+        configVariableFromStepper (AxiomVariable _) = Nothing
+        configVariableFromStepper (ConfigurationVariable v) = Just v
+        extractVariables
+            :: (StepperVariable variable level -> Maybe (variable level))
+            -> Set.Set (StepperVariable variable level)
             -> Set.Set (variable level)
-        extractAxiomVariables =
-            Set.fromList . mapMaybe fromStepperVariable . Set.toList
-        substitutions :: Set.Set (variable level)
-        substitutions = extractAxiomVariables (Map.keysSet substitution)
+        extractVariables selector =
+            Set.fromList . mapMaybe selector . Set.toList
+        axiomVarsInSubstitutions :: Set.Set (variable level)
+        axiomVarsInSubstitutions = extractVariables axiomVariableFromStepper
+            $ Map.keysSet substitution
+        configVarsInSubstitutions :: Set.Set (variable level)
+        configVarsInSubstitutions = extractVariables configVariableFromStepper
+            $ Map.keysSet substitution
 
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
     -- for the proof.
@@ -520,23 +533,27 @@ applyUnificationToRhs
     condition <- unwrapPredicateVariables normalizedCondition
     remainderPredicate <- unwrapPredicateVariables normalizedRemainderPredicate
 
-    if Predicate.isFalse condition
-        || variablesInLeftAxiom `Set.isSubsetOf` substitutions
-        then return ()
-        else
-            (error . unlines)
+    let isBottom = Predicate.isFalse condition
+        allVarsCovered = Set.isSubsetOf
+                            variablesInLeftAxiom axiomVarsInSubstitutions
+        symbolicPattern = not (Set.null configVarsInSubstitutions)
+
+    when (not (isBottom || allVarsCovered || symbolicPattern))
+        $ (error . unlines)
             [ "While applying axiom:", show axiom
             , "to configuration:", show expandedPattern
             , "Unexpected non-false predicate:", show condition
-            , "when substitutions:", show substitutions
+            , "when substitutions:", show axiomVarsInSubstitutions
             , "do not cover all variables in left axiom:"
             , show variablesInLeftAxiom
             ]
 
     let
         orElse :: a -> a -> a
-        p1 `orElse` p2 = if Predicate.isFalse condition then p2 else p1
-    return StepResult
+        p1 `orElse` p2 = if isBottom then p2 else p1
+    if not(isBottom) && not(allVarsCovered) && symbolicPattern
+    then throwE (StepErrorUnification UnsupportedPatterns)
+    else return StepResult
         { rewrittenPattern = Predicated
             { term = result `orElse` mkBottom_
             , predicate = condition
@@ -671,7 +688,9 @@ stepWithRemaindersForUnifier
     -- ^ Rewriting axiom
     -> ExpandedPattern level variable
     -- ^ Configuration being rewritten.
-    -> Simplifier
+    -> ExceptT
+        (StepError level variable)
+        Simplifier
         ( OrStepResult level variable
         , StepProof level variable
         )
@@ -695,51 +714,46 @@ stepWithRemaindersForUnifier
     (rule : rules)
     patt
   = do
-    resultsEither <- runExceptT
-        $ stepWithRule
+    resultsWithProofs <-
+        stepWithRule
             tools
             unification
             substitutionSimplifier
             patt
             rule
-    case resultsEither of
-        Left _ ->
-            stepWithRemaindersForUnifier
-                tools unification substitutionSimplifier rules patt
-        Right resultsWithProofs -> do
-            let
-                (results, proofs) = unzip resultsWithProofs
-                rewritten :: [OrOfExpandedPattern level variable]
-                remainders ::  [ExpandedPattern level variable]
-                (rewritten, remainders) =
-                    if null results
-                    then ([], [patt])
-                    else unzip (map splitStepResult results)
-            rewrittenRemaindersWithProofs <-
-                mapM
-                    (stepWithRemaindersForUnifier
-                        tools
-                        unification
-                        substitutionSimplifier
-                        rules
-                    )
-                    remainders
-            let
-                rewrittenRemainders :: [OrStepResult level variable]
-                rewrittenRemainderProofs :: [StepProof level variable]
-                (rewrittenRemainders, rewrittenRemainderProofs) =
-                    unzip rewrittenRemaindersWithProofs
-                alreadyRewritten :: OrStepResult level variable
-                alreadyRewritten =
-                    OrStepResult
-                        { rewrittenPattern =
-                            OrOfExpandedPattern.mergeAll rewritten
-                        , remainder = OrOfExpandedPattern.make []
-                        }
-            return
-                ( foldl' mergeResults alreadyRewritten rewrittenRemainders
-                , mconcat proofs <> mconcat rewrittenRemainderProofs
-                )
+    let
+        (results, proofs) = unzip resultsWithProofs
+        rewritten :: [OrOfExpandedPattern level variable]
+        remainders ::  [ExpandedPattern level variable]
+        (rewritten, remainders) =
+            if null results
+            then ([], [patt])
+            else unzip (map splitStepResult results)
+    rewrittenRemaindersWithProofs <-
+        mapM
+            (stepWithRemaindersForUnifier
+                tools
+                unification
+                substitutionSimplifier
+                rules
+            )
+            remainders
+    let
+        rewrittenRemainders :: [OrStepResult level variable]
+        rewrittenRemainderProofs :: [StepProof level variable]
+        (rewrittenRemainders, rewrittenRemainderProofs) =
+            unzip rewrittenRemaindersWithProofs
+        alreadyRewritten :: OrStepResult level variable
+        alreadyRewritten =
+            OrStepResult
+                { rewrittenPattern =
+                    OrOfExpandedPattern.mergeAll rewritten
+                , remainder = OrOfExpandedPattern.make []
+                }
+    return
+        ( foldl' mergeResults alreadyRewritten rewrittenRemainders
+        , mconcat proofs <> mconcat rewrittenRemainderProofs
+        )
   where
     mergeResults
         :: OrStepResult level variable
@@ -802,13 +816,22 @@ stepWithRemainders
         ( OrStepResult level variable
         , StepProof level variable
         )
-stepWithRemainders tools substitutionSimplifier patt rules =
-    stepWithRemaindersForUnifier
-        tools
-        (UnificationProcedure unificationProcedure)
-        substitutionSimplifier
-        (map (\ (RewriteRule rule) -> rule) rules)
-        patt
+stepWithRemainders tools substitutionSimplifier patt rules
+  = do
+    resultOrError <- runExceptT
+        $ stepWithRemaindersForUnifier
+            tools
+            (UnificationProcedure unificationProcedure)
+            substitutionSimplifier
+            (map (\ (RewriteRule rule) -> rule) rules)
+            patt
+    case resultOrError of
+        Left _ -> error $
+            "Not implemented error "
+            ++ " while applying a \\rewrite axiom to the pattern."
+            ++ " We decided to end the execution because we don't understand"
+            ++ " this case well enough at the moment."
+        Right result -> return result
 
 unwrapStepErrorVariables
     :: Functor m
