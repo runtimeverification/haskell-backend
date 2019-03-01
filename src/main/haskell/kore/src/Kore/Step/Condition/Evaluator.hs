@@ -15,7 +15,7 @@ module Kore.Step.Condition.Evaluator
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT, runMaybeT )
+                 ( runMaybeT )
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
@@ -41,7 +41,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import           SMT
-                 ( MonadSMT, Result (..), SExpr (..), SMT )
+                 ( MonadSMT, Result (..), SExpr (..) )
 import qualified SMT
 
 {- | Attempt to evaluate a predicate.
@@ -135,36 +135,30 @@ decidePredicate korePredicate =
     case isMetaOrObject (Proxy :: Proxy level) of
         IsMeta   -> return Nothing
         IsObject -> SMT.inNewScope $ runMaybeT $ do
-                smtPredicate <-
-                    goTranslatePredicate korePredicate
-                -- smtPredicate' <-
-                --     goTranslatePredicate (makeNotPredicate korePredicate)
-                result <- SMT.inNewScope
+            (smtPredicate, smtNotPredicate) <-
+                evalTranslator $ do
+                    -- Translate predicates in the same context to re-use
+                    -- variable declarations.
+                    smtPredicate <-
+                        translatePredicate
+                            translateUninterpreted
+                            korePredicate
+                    smtNotPredicate <-
+                        translatePredicate
+                            translateUninterpreted
+                            (makeNotPredicate korePredicate)
+                    return (smtPredicate, smtNotPredicate)
+            -- Enter new scopes to check the predicate and its negation.
+            result <-
+                SMT.inNewScope
                     (SMT.assert smtPredicate >> SMT.check)
-                -- result' <- SMT.inNewScope
-                --     (SMT.assert smtPredicate' >> SMT.check)
-                -- case (result, result') of
-                --     (Unsat, _) -> return False
-                --     (_, Unsat) -> return True
-                --     _ -> empty
-                case result of
-                    Unsat -> return False
-                    _ -> empty
-
-goTranslatePredicate
-    :: forall variable.
-        (Ord (variable Object)
-        , Given (MetadataTools Object StepperAttributes)
-        , Unparse (variable Object)
-        )
-    => Predicate Object variable
-    -> MaybeT SMT SExpr
-goTranslatePredicate predicate = do
-    let translator =
-            translatePredicate
-                translateUninterpreted
-                predicate
-    evalTranslator translator
+            notResult <-
+                SMT.inNewScope
+                    (SMT.assert smtNotPredicate >> SMT.check)
+            case (result, notResult) of
+                (Unsat, _) -> return False
+                (_, Unsat) -> return True
+                _ -> empty
 
 translateUninterpreted
     :: Ord p
