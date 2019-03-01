@@ -12,7 +12,6 @@ import           Data.Maybe
                  ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
-import qualified Data.Reflection as Reflection
 import           Data.Semigroup
                  ( (<>) )
 import           Data.Text
@@ -47,8 +46,6 @@ import           Kore.Error
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, extractMetadataTools )
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
 import           Kore.Parser.Parser
@@ -64,8 +61,6 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.SmtLemma
-                 ( declareSMTLemmas )
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unparser
@@ -362,8 +357,6 @@ mainWithOptions
                 parsedDefinition
         indexedModule <-
             constructorFunctions <$> mainModule mainModuleName indexedModules
-        let tools :: MetadataTools Object StepperAttributes
-            tools = extractMetadataTools indexedModule
         searchParameters <-
             case koreSearchOptions of
                 Nothing -> return Nothing
@@ -399,9 +392,7 @@ mainWithOptions
             $ withLogger koreLogOptions (\logger ->
                 SMT.runSMT smtConfig
                 $ evalSimplifier logger repl
-                $ do
-                  Reflection.give tools declareSMTLemmas indexedModule
-                  case proveParameters of
+                $ case proveParameters of
                     Nothing -> do
                         let purePattern =
                                 fromMaybe
