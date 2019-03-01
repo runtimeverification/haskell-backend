@@ -9,7 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Condition.Evaluator
     ( evaluate
-    , refutePredicate
+    , decidePredicate
     ) where
 
 import           Control.Applicative
@@ -82,10 +82,11 @@ evaluate
         case () of
             _ | OrOfExpandedPattern.isTrue simplified -> return (Just True)
               | OrOfExpandedPattern.isFalse simplified -> return (Just False)
-              | otherwise -> refutePredicate predicate
+              | otherwise -> decidePredicate predicate
     let simplified' =
             case refute of
                 Just False -> ExpandedPattern.bottom
+                Just True -> ExpandedPattern.top
                 _ -> OrOfExpandedPattern.toExpandedPattern simplified
         (subst, _proof) = asPredicateSubstitution simplified'
     return (subst, SimplificationProof)
@@ -118,7 +119,7 @@ asPredicateSubstitution
 The predicate is always sent to the external solver, even if it is trivial.
 
  -}
-refutePredicate
+decidePredicate
     :: forall level variable m.
        ( Given (MetadataTools level StepperAttributes)
        , MetaOrObject level
@@ -130,14 +131,22 @@ refutePredicate
        )
     => Predicate level variable
     -> m (Maybe Bool)
-refutePredicate korePredicate =
+decidePredicate korePredicate =
     case isMetaOrObject (Proxy :: Proxy level) of
         IsMeta   -> return Nothing
-        IsObject ->
-            SMT.inNewScope $ runMaybeT $ do
-                smtPredicate <- goTranslatePredicate korePredicate
-                SMT.assert smtPredicate
-                result <- SMT.check
+        IsObject -> SMT.inNewScope $ runMaybeT $ do
+                smtPredicate <-
+                    goTranslatePredicate korePredicate
+                -- smtPredicate' <-
+                --     goTranslatePredicate (makeNotPredicate korePredicate)
+                result <- SMT.inNewScope
+                    (SMT.assert smtPredicate >> SMT.check)
+                -- result' <- SMT.inNewScope
+                --     (SMT.assert smtPredicate' >> SMT.check)
+                -- case (result, result') of
+                --     (Unsat, _) -> return False
+                --     (_, Unsat) -> return True
+                --     _ -> empty
                 case result of
                     Unsat -> return False
                     _ -> empty
