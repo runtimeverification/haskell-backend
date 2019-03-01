@@ -11,6 +11,10 @@ module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
     , evalSimplifier
+    , evalSimplifierBranch
+    , gather
+    , gatherAll
+    , scatter
     , PredicateSubstitutionSimplifier (..)
     , StepPatternSimplifier (..)
     , SimplificationProof (..)
@@ -18,32 +22,45 @@ module Kore.Step.Simplification.Data
     , Environment (..)
     ) where
 
-import Colog
-       ( HasLog (..), LogAction (..) )
-import Control.Concurrent.MVar
-       ( MVar )
-import Control.Monad.Reader
-import Control.Monad.Trans.Except
-       ( ExceptT (..), runExceptT )
+import           Colog
+                 ( HasLog (..), LogAction (..) )
+import           Control.Concurrent.MVar
+                 ( MVar )
+import           Control.Monad.Reader
+import           Control.Monad.State.Class
+                 ( MonadState )
+import qualified Control.Monad.Trans.Class as Monad.Trans
+import           Control.Monad.Trans.Except
+                 ( ExceptT (..), runExceptT )
+import qualified Data.Foldable as Foldable
+import           Data.Typeable
+import           GHC.Stack
+                 ( HasCallStack )
 
-import Kore.AST.Common
-       ( SortedVariable )
-import Kore.AST.MetaOrObject
-import Kore.Logger
-       ( LogMessage )
-import Kore.Step.AxiomPatterns
-       ( RewriteRule )
-import Kore.Step.Pattern
-import Kore.Step.Representation.ExpandedPattern
-       ( PredicateSubstitution )
-import Kore.Step.Representation.OrOfExpandedPattern
-       ( OrOfExpandedPattern )
-import Kore.Unparser
-import Kore.Variables.Fresh
-import SimpleSMT
-       ( Solver )
-import SMT
-       ( MonadSMT, SMT (..), liftSMT, withSolver' )
+import           Kore.AST.Common
+                 ( SortedVariable )
+import           Kore.AST.MetaOrObject
+import           Kore.Logger
+                 ( LogMessage )
+import           Kore.Step.AxiomPatterns
+                 ( RewriteRule )
+import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( PredicateSubstitution )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
+import           Kore.TopBottom
+import           Kore.Unparser
+import           Kore.Variables.Fresh
+import           ListT
+import           SimpleSMT
+                 ( Solver )
+import           SMT
+                 ( MonadSMT, SMT (..), liftSMT, withSolver' )
+
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
 -}
@@ -55,24 +72,80 @@ simplification of a MetaMLPattern was correct.
 data SimplificationProof level = SimplificationProof
     deriving (Show, Eq)
 
+-- * Branching
+
+-- | 'BranchT' extends any 'Monad' with disjoint branches.
+newtype BranchT m a =
+    -- Pay no attention to the ListT behind the curtain!
+    BranchT (ListT m a)
+    deriving
+        ( Alternative
+        , Applicative
+        , Functor
+        , Monad
+        , MonadIO
+        , MonadPlus
+        , MonadTrans
+        , Typeable
+        )
+
+deriving instance MonadReader r m => MonadReader r (BranchT m)
+
+deriving instance MonadState s m => MonadState s (BranchT m)
+
+{- | Collect the values produced along the disjoint branches.
+ -}
+getBranches :: Applicative m => BranchT m a -> m [a]
+getBranches (BranchT as) = toListM as
+
+-- * Simplifier
+
 data Environment = Environment
     { solver     :: !(MVar Solver)
     , logger     :: !(LogAction Simplifier LogMessage)
     , proveClaim :: !(RewriteRule Object Variable -> IO ())
     }
 
+{- | @Simplifier@ represents a simplification action.
+
+Broadly, the goal of simplification is to promote 'Or' (disjunction) to the top
+level. Many @Simplifier@s return a 'MultiOr' for this reason; we can think of
+this as external branching. @Simplifier@ also allows internal branching through
+'Alternative'. Branches are created with '<|>':
+@
+let
+    simplifier1 :: Simplifier a
+    simplifier2 :: Simplifier a
+in
+    simplifier1 <|> simplifier2  -- A 'Simplifier' with two internal branches.
+@
+
+Branches are pruned with 'empty':
+@
+do
+    unless condition empty
+    continue  -- This simplifier would not be reached if "condition" is 'False'.
+@
+
+Use 'scatter' and 'gather' to translate between internal and external branches.
+
+A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
+
+A @Simplifier@ can write to the log through 'HasLog'.
+
+ -}
 newtype Simplifier a = Simplifier
-    { getSimplifier :: ReaderT Environment IO a
+    { getSimplifier :: BranchT (ReaderT Environment IO) a
     }
-    deriving (Applicative, Functor, Monad)
+    deriving (Alternative, Applicative, Functor, Monad, MonadPlus)
 
 instance MonadSMT Simplifier where
     liftSMT :: SMT a -> Simplifier a
-    liftSMT = Simplifier . withReaderT solver . getSMT
+    liftSMT = Simplifier . lift . withReaderT solver . getSMT
 
 instance MonadIO Simplifier where
     liftIO :: IO a -> Simplifier a
-    liftIO ma = Simplifier . ReaderT $ const ma
+    liftIO ma = Simplifier . lift . ReaderT $ const ma
 
 instance MonadReader Environment Simplifier where
     ask :: Simplifier Environment
@@ -111,36 +184,124 @@ instance HasLog Environment LogMessage (ExceptT e Simplifier) where
                 res <- runExceptT (action msg)
                 return $ either (const ()) id res
 
-{- | Run a simplifier computation.
+{- | Run a simplification, returning the results along all branches.
+ -}
+evalSimplifierBranch
+    :: LogAction Simplifier LogMessage
+    -- ^ initial counter for fresh variables
+    -> (RewriteRule Object Variable -> IO ())
+    -- ^ repl handler
+    -> Simplifier a
+    -- ^ simplifier computation
+    -> SMT [a]
+evalSimplifierBranch logger repl (Simplifier simpl) =
+    withSolver' $ \solver ->
+        runReaderT (getBranches simpl) $ Environment solver logger repl
 
-  The result is returned along with the final 'Counter'.
+{- | Run a simplification, returning the result of only one branch.
+
+__Warning__: @runSimplifier@ calls 'error' if the 'Simplifier' does not contain
+exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
+that may branch.
 
  -}
 runSimplifier
-    :: Simplifier a
+    :: HasCallStack
+    => Simplifier a
     -- ^ simplifier computation
     -> LogAction Simplifier LogMessage
     -- ^ initial counter for fresh variables
     -> (RewriteRule Object Variable -> IO ())
     -- ^ repl handler
     -> SMT a
-runSimplifier (Simplifier s) logger repl =
-    withSolver' $ \solver -> do
-        a <- runReaderT s $ Environment solver logger repl
-        pure a
+runSimplifier simpl logger repl =
+    evalSimplifierBranch logger repl simpl
+    >>= \case
+        [] -> error "runSimplifier: Empty Simplifier"
+        [r] -> return r
+        _ -> error "runSimplifier: Simplifier returned many branches"
 
-{- | Evaluate a simplifier computation.
+{- | Evaluate a simplifier computation, returning the result of only one branch.
 
-Only the result is returned; the counter is discarded.
+__Warning__: @evalSimplifier@ calls 'error' if the 'Simplifier' does not contain
+exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
+that may branch.
 
   -}
 evalSimplifier
-    :: LogAction Simplifier LogMessage
+    :: HasCallStack
+    => LogAction Simplifier LogMessage
     -> (RewriteRule Object Variable -> IO ())
     -> Simplifier a
     -> SMT a
 evalSimplifier logger repl simplifier =
     runSimplifier simplifier logger repl
+
+{- | Collect results from many simplification branches into one result.
+
+@gather@ collects and merges the results of the internal branches on top and the
+results of the integrated branches below and returns all the results together in
+one branch.
+
+Examples:
+
+@
+gather (pure a <|> pure b) === pure ('OrOfExpandedPattern.make' [a, b])
+@
+
+@
+gather empty === pure ('OrOfExpandedPattern.make' [])
+@
+
+See also: 'scatter'
+
+ -}
+gather
+    :: (Ord a, TopBottom a)
+    => Simplifier a
+    -> Simplifier (MultiOr a)
+gather simpl =
+    Simplifier $ Monad.Trans.lift
+    $ OrOfExpandedPattern.make <$> getBranches (getSimplifier simpl)
+
+{- | Collect results from many simplification branches into one result.
+
+@gatherAll@ collects and merges the results of the internal branches on top and
+the results of the integrated branches below and returns all the results
+together in one branch.
+
+See also: 'scatter', 'gather'
+
+ -}
+gatherAll
+    :: (Ord a, TopBottom a)
+    => Simplifier (MultiOr a)
+    -> Simplifier (MultiOr a)
+gatherAll simpl =
+    Simplifier $ Monad.Trans.lift
+    $ OrOfExpandedPattern.mergeAll <$> getBranches (getSimplifier simpl)
+
+{- | Disperse results into many simplification branches.
+
+Examples:
+
+@
+scatter ('OrOfExpandedPattern.make' [a, b]) === (pure a <|> pure b)
+@
+
+@
+scatter ('OrOfExpandedPattern.make' []) === empty
+@
+
+See also: 'gather'
+
+ -}
+scatter
+    :: MultiOr a
+    -> Simplifier a
+scatter ors = Foldable.asum (pure <$> ors)
+
+-- * Implementation
 
 {-| Wraps a function that evaluates Kore functions on StepPatterns.
 -}
