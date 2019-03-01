@@ -139,7 +139,11 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 config
                 a
         case result of
-            Left _ -> pure []
+            Left _ -> error $
+                "Not implemented error \
+                \while applying a \\rewrite axiom to the pattern. \
+                \We decided to end the execution because we don't \
+                \understand this case well enough at the moment."
             Right results ->
                 Log.withLogScope "transitionRule" $
                     return $ mapMaybe (patternFromResult proof) results
