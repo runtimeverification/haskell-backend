@@ -100,17 +100,22 @@ declareSMTLemmas m = SMT.liftSMT $ do
         -> SMT (Maybe ())
     declareSymbol (atts, symDeclaration) = runMaybeT $
         case getSmtlib $ smtlib atts of
-            Just (SMT.List (SMT.Atom name : _)) -> do
-                inputSorts <-
-                    mapM
-                        translateSort
-                        (sentenceSymbolSorts symDeclaration)
-                resultSort <-
-                    translateSort
-                        (sentenceSymbolResultSort symDeclaration)
-                _ <- SMT.declareFun name inputSorts resultSort
-                pure ()
+            Just sExpr
+              | SMT.Atom name <- sExpr -> declareSymbolWorker name
+              | (SMT.List (SMT.Atom name : _)) <- sExpr ->
+                declareSymbolWorker name
             _ -> pure ()
+      where
+        declareSymbolWorker name = do
+            inputSorts <-
+                mapM
+                    translateSort
+                    (sentenceSymbolSorts symDeclaration)
+            resultSort <-
+                translateSort
+                    (sentenceSymbolResultSort symDeclaration)
+            _ <- SMT.declareFun name inputSorts resultSort
+            pure ()
     declareRule
         :: forall sortParam . (Given (MetadataTools Object StepperAttributes))
         => ( Attribute.Axiom
@@ -146,7 +151,10 @@ declareSMTLemmas m = SMT.liftSMT $ do
         :: Given (MetadataTools Object StepperAttributes)
         => Sort Object
         -> MaybeT SMT SExpr
-    translateSort sort@(SortActualSort (SortActual _ children)) =
+    translateSort sort@(SortActualSort (SortActual _ children))
+      | Just "INT.Int"   <- getHook = return (SMT.Atom "Int")
+      | Just "BOOL.Bool" <- getHook = return (SMT.Atom "Bool")
+      | otherwise =
         case getSmtlib of
             Just sExpr -> do
                 children' <- mapM translateSort children
@@ -156,6 +164,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
         tools :: MetadataTools Object StepperAttributes
         tools = given
         attrs = sortAttributes tools sort
+        Attribute.Sort { hook = Hook { getHook } } = attrs
         Attribute.Sort { smtlib = Smtlib { getSmtlib } } = attrs
     translateSort _ = mzero
 

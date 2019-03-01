@@ -57,7 +57,7 @@ import           Kore.Step.Function.Matcher
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, isFalse, make )
 import           Kore.Step.Pattern
-                 ( StepPattern )
+                 ( StepPattern, asConcreteStepPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
@@ -68,6 +68,8 @@ import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+
+import qualified Kore.Proof.Value as Value
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -163,10 +165,12 @@ evaluateBuiltin
     case result of
         AttemptedAxiom.NotApplicable
           | isPattConcrete
-          , Just hook <- getAppHookString ->
+          , App_ appHead children <- patt
+          , Just hook <- getAppHookString appHead
+          , all isValue children ->
             error
                 (   "Expecting hook " ++ hook
-                ++  " to reduce concrete pattern\n\t"
+               ++  " to reduce concrete pattern\n\t"
                 ++ show patt
                 )
           | otherwise ->
@@ -174,13 +178,11 @@ evaluateBuiltin
         AttemptedAxiom.Applied _ -> return (result, SimplificationProof)
   where
     isPattConcrete = isJust (asConcretePurePattern patt)
-    appHead = case patt of
-        App_ head0 _children -> head0
-        _ -> error
-            ("Expected an application pattern, but got " ++ show patt ++ ".")
+    isValue pat = isJust $
+        Value.fromConcreteStepPattern tools =<< asConcreteStepPattern pat
     -- TODO(virgil): Send this from outside after replacing `These` as a
     -- representation for application evaluators.
-    getAppHookString =
+    getAppHookString appHead =
         Text.unpack <$> (getHook . hook . symAttributes tools) appHead
 
 applyFirstSimplifierThatWorks
