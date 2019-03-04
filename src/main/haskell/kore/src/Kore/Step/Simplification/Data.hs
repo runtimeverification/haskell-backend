@@ -11,6 +11,7 @@ module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
     , evalSimplifier
+    , BranchT, runBranchT
     , evalSimplifierBranch
     , gather
     , gatherAll
@@ -26,10 +27,10 @@ import           Colog
                  ( HasLog (..), LogAction (..) )
 import           Control.Concurrent.MVar
                  ( MVar )
+import qualified Control.Monad as Monad
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT (..), runExceptT )
 import qualified Data.Foldable as Foldable
@@ -52,7 +53,6 @@ import           Kore.Step.Representation.MultiOr
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import           Kore.TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import           ListT
@@ -77,7 +77,7 @@ data SimplificationProof level = SimplificationProof
 -- | 'BranchT' extends any 'Monad' with disjoint branches.
 newtype BranchT m a =
     -- Pay no attention to the ListT behind the curtain!
-    BranchT (ListT m a)
+    BranchT { runBranchT :: ListT m a }
     deriving
         ( Alternative
         , Applicative
@@ -135,17 +135,17 @@ A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
 newtype Simplifier a = Simplifier
-    { getSimplifier :: BranchT (ReaderT Environment IO) a
+    { getSimplifier :: ReaderT Environment IO a
     }
-    deriving (Alternative, Applicative, Functor, Monad, MonadPlus)
+    deriving (Applicative, Functor, Monad)
 
 instance MonadSMT Simplifier where
     liftSMT :: SMT a -> Simplifier a
-    liftSMT = Simplifier . lift . withReaderT solver . getSMT
+    liftSMT = Simplifier . withReaderT solver . getSMT
 
 instance MonadIO Simplifier where
     liftIO :: IO a -> Simplifier a
-    liftIO ma = Simplifier . lift . ReaderT $ const ma
+    liftIO ma = Simplifier . ReaderT $ const ma
 
 instance MonadReader Environment Simplifier where
     ask :: Simplifier Environment
@@ -191,12 +191,11 @@ evalSimplifierBranch
     -- ^ initial counter for fresh variables
     -> (RewriteRule Object Variable -> IO ())
     -- ^ repl handler
-    -> Simplifier a
+    -> BranchT Simplifier a
     -- ^ simplifier computation
     -> SMT [a]
-evalSimplifierBranch logger repl (Simplifier simpl) =
-    withSolver' $ \solver ->
-        runReaderT (getBranches simpl) $ Environment solver logger repl
+evalSimplifierBranch logger repl =
+    evalSimplifier logger repl . getBranches
 
 {- | Run a simplification, returning the result of only one branch.
 
@@ -215,11 +214,7 @@ runSimplifier
     -- ^ repl handler
     -> SMT a
 runSimplifier simpl logger repl =
-    evalSimplifierBranch logger repl simpl
-    >>= \case
-        [] -> error "runSimplifier: Empty Simplifier"
-        [r] -> return r
-        _ -> error "runSimplifier: Simplifier returned many branches"
+    evalSimplifier logger repl simpl
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -234,8 +229,9 @@ evalSimplifier
     -> (RewriteRule Object Variable -> IO ())
     -> Simplifier a
     -> SMT a
-evalSimplifier logger repl simplifier =
-    runSimplifier simplifier logger repl
+evalSimplifier logger repl (Simplifier simpl) =
+    withSolver' $ \solver ->
+        runReaderT simpl (Environment solver logger repl)
 
 {- | Collect results from many simplification branches into one result.
 
@@ -256,13 +252,8 @@ gather empty === pure ('OrOfExpandedPattern.make' [])
 See also: 'scatter'
 
  -}
-gather
-    :: (Ord a, TopBottom a)
-    => Simplifier a
-    -> Simplifier (MultiOr a)
-gather simpl =
-    Simplifier $ Monad.Trans.lift
-    $ OrOfExpandedPattern.make <$> getBranches (getSimplifier simpl)
+gather :: BranchT Simplifier a -> Simplifier (MultiOr a)
+gather simpl = OrOfExpandedPattern.MultiOr <$> getBranches simpl
 
 {- | Collect results from many simplification branches into one result.
 
@@ -273,13 +264,8 @@ together in one branch.
 See also: 'scatter', 'gather'
 
  -}
-gatherAll
-    :: (Ord a, TopBottom a)
-    => Simplifier (MultiOr a)
-    -> Simplifier (MultiOr a)
-gatherAll simpl =
-    Simplifier $ Monad.Trans.lift
-    $ OrOfExpandedPattern.mergeAll <$> getBranches (getSimplifier simpl)
+gatherAll :: BranchT Simplifier (MultiOr a) -> Simplifier (MultiOr a)
+gatherAll simpl = Monad.join <$> gather simpl
 
 {- | Disperse results into many simplification branches.
 
@@ -298,7 +284,7 @@ See also: 'gather'
  -}
 scatter
     :: MultiOr a
-    -> Simplifier a
+    -> BranchT Simplifier a
 scatter ors = Foldable.asum (pure <$> ors)
 
 -- * Implementation
