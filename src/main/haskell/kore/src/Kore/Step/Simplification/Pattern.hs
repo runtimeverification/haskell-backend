@@ -16,10 +16,10 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern

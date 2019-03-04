@@ -74,10 +74,10 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Step.Axiom.Data
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes

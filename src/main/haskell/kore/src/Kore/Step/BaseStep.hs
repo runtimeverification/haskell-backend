@@ -58,6 +58,8 @@ import qualified Kore.Logger as Log
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeNotPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
@@ -67,8 +69,6 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
                  ( toPredicate )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -239,7 +239,7 @@ stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
 -- | Wraps functions such as 'unificationProcedure' and
--- 'Kore.Step.Function.Matcher.matchAsUnification' to be used in
+-- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
 -- 'stepWithRule'.
 newtype UnificationProcedure level =
     UnificationProcedure

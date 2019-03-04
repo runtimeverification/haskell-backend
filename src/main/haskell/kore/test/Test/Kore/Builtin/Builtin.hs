@@ -38,6 +38,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Parser.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Axiom.Data
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
@@ -48,7 +49,6 @@ import           Kore.Step.Error
                  ( StepError )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
-import           Kore.Step.Function.Data
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data

@@ -58,9 +58,9 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Step.Function.Identifier
+import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes

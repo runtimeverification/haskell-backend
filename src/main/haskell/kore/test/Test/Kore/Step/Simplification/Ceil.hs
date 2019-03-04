@@ -20,21 +20,21 @@ import           Kore.Logger.Output as Logger
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom, mapVariables, top )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Function.Data as AttemptedAxiom
+import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( bottom, mapVariables, top )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern

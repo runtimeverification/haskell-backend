@@ -19,10 +19,10 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution,
                  mergeWithPredicateSubstitutionAssumesEvaluated )

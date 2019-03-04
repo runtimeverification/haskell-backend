@@ -41,6 +41,14 @@ import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  unwrapPredicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( builtinEvaluation, simplifierWithFallback )
+import           Kore.Step.Axiom.Identifier
+                 ( AxiomIdentifier )
+import           Kore.Step.Axiom.Registry
+                 ( axiomPatternsToEvaluators, extractEqualityAxioms )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
                  RulePattern (RulePattern), extractRewriteAxioms,
@@ -53,14 +61,6 @@ import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..), toMLPattern )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Function.EvaluationStrategy
-                 ( builtinEvaluation, simplifierWithFallback )
-import           Kore.Step.Function.Identifier
-                 ( AxiomIdentifier )
-import           Kore.Step.Function.Registry
-                 ( axiomPatternsToEvaluators, extractFunctionAxioms )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -279,7 +279,7 @@ initialize verifiedModule tools =
     do
         functionAxioms <-
             simplifyFunctionAxioms tools
-                (extractFunctionAxioms Object verifiedModule)
+                (extractEqualityAxioms Object verifiedModule)
         rewriteRules <-
             mapM (simplifyRewriteRule tools)
                 (extractRewriteAxioms Object verifiedModule)

@@ -46,13 +46,13 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..), erasePredicatedTerm )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom, bottomPredicate, fromPurePattern,
                  isBottom, toPredicate, top, topPredicate )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern

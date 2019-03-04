@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.Function.Matcher
+Module      : Kore.Step.Axiom.Matcher
 Description : Matches free-form patterns which can be used when applying
               Equals rules.
 Copyright   : (c) Runtime Verification, 2018
@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Function.Matcher
+module Kore.Step.Axiom.Matcher
     ( matchAsUnification
     , unificationWithAppMatchOnTop
     ) where
@@ -34,11 +34,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.OrOfExpandedPattern

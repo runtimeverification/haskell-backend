@@ -1,4 +1,4 @@
-module Test.Kore.Step.Function.Matcher
+module Test.Kore.Step.Axiom.Matcher
     ( test_matcherEqualHeads
     , test_matcherVariableFunction
     , test_matcherNonVarToPattern
@@ -21,11 +21,11 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
+import           Kore.Step.Axiom.Matcher
+                 ( matchAsUnification, unificationWithAppMatchOnTop )
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.Function.Matcher
-                 ( matchAsUnification, unificationWithAppMatchOnTop )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern

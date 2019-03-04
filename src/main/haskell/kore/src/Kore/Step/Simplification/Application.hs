@@ -19,12 +19,12 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.OrOfExpandedPattern

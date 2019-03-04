@@ -15,7 +15,7 @@ module Kore.Step.Simplification.Simplifier
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier (..) )

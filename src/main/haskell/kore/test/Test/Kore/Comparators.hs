@@ -33,6 +33,13 @@ import           Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
+import           Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import           Kore.Step.Axiom.Identifier
+                 ( AxiomIdentifier )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.BaseStep
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
@@ -41,13 +48,6 @@ import           Kore.Step.BaseStep as OrStepResult
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.Identifier
-                 ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
 import           Kore.Step.OrOfExpandedPattern
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError

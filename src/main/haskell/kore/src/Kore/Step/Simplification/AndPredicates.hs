@@ -14,12 +14,12 @@ module Kore.Step.Simplification.AndPredicates
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern

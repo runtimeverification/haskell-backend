@@ -1,13 +1,13 @@
 {-|
-Module      : Kore.Step.Function.Data
-Description : Data structures used for function evaluation.
+Module      : Kore.Step.Axiom.Data
+Description : Data structures used for axiom-based evaluation.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Function.Data
+module Kore.Step.Axiom.Data
     ( BuiltinAndAxiomSimplifier (..)
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
@@ -36,7 +36,7 @@ import           Kore.AST.Valid
                  ( Valid )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.Function.Identifier
+import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, makeFromSinglePurePattern )
@@ -54,8 +54,8 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-| 'BuiltinAndAxiomSimplifier' simplifies 'Application' patterns using either
-an axiom or builtin code.
+{-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
+or builtin code.
 
 Arguments:
 
@@ -65,12 +65,16 @@ patterns such as their sorts, whether they are constructors or hooked.
 * 'StepPatternSimplifier' is a Function for simplifying patterns, used for
 the post-processing of the function application results.
 
-* 'Application' is the pattern to be evaluated.
+* BuiltinAndAxiomSimplifierMap is a map from pattern identifiers to the
+'BuiltinAndAxiomSimplifier's that handle those patterns.
+
+* 'StepPattern' is the pattern to be evaluated.
 
 Return value:
 
-It returns the result of appling the function, together with a proof certifying
-that the function was applied correctly (which is only a placeholder right now).
+It returns the result of simplifying the pattern with builtins and
+axioms, together with a proof certifying that it was simplified correctly
+(which is only a placeholder right now).
 -}
 newtype BuiltinAndAxiomSimplifier level =
     BuiltinAndAxiomSimplifier

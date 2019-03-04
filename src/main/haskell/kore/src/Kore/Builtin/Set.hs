@@ -83,11 +83,11 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, sortAttributes )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
