@@ -9,8 +9,10 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Predicate
     ( simplifyPartial
+    , simplifyPartialBranch
     ) where
 
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Pure
@@ -23,12 +25,48 @@ import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (StepPatternSimplifier),
-                 StepPatternSimplifier )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+
+{-| Simplifies a predicate, producing another predicate and a substitution,
+without trying to reapply the substitution on the predicate.
+
+TODO(virgil): Make this fully simplify.
+-}
+simplifyPartialBranch
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , Unparse (variable level)
+        , SortedVariable variable
+        )
+    => PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> Predicate level variable
+    -> BranchT Simplifier (PredicateSubstitution level variable)
+simplifyPartialBranch
+    substitutionSimplifier
+    (StepPatternSimplifier simplifier)
+    predicate
+  = do
+    (patternOr, _proof) <-
+        Monad.Trans.lift
+        $ simplifier substitutionSimplifier (unwrapPredicate predicate)
+    scatter (eraseTerm <$> patternOr)
+  where
+    eraseTerm predicated
+      | Top_ _ <- simplifiedTerm = predicated { term = () }
+      | otherwise =
+        (error . show . Pretty.vsep)
+            [ "Expecting a \\top term, but found:"
+            , unparse predicated
+            ]
+      where
+        Predicated { term = simplifiedTerm } = predicated
 
 {-| Simplifies a predicate, producing another predicate and a substitution,
 without trying to reapply the substitution on the predicate.
@@ -64,22 +102,20 @@ simplifyPartial
             ( Predicated.bottomPredicate
             , SimplificationProof
             )
-        [ Predicated
-                { term = Top_ _
-                , predicate = simplifiedPredicate
-                , substitution = simplifiedSubstitution
-                }
-            ] -> return
-                ( Predicated
-                    { term = ()
-                    , predicate = simplifiedPredicate
-                    , substitution = simplifiedSubstitution
-                    }
-                , SimplificationProof
-                )
-        [patt] ->
+        [ predicated ] ->
+            return (eraseTerm predicated, SimplificationProof)
+        patts ->
             (error . show . Pretty.vsep)
-                [ "Expecting a top term!"
-                , unparse patt
-                ]
-        _ -> error ("Expecting at most one result " ++ show patternOr)
+                ( "Expecting at most one result, but found:"
+                : (unparse <$> patts)
+                )
+  where
+    eraseTerm predicated
+      | Top_ _ <- simplifiedTerm = predicated { term = () }
+      | otherwise =
+        (error . show . Pretty.vsep)
+            [ "Expecting a \\top term, but found:"
+            , unparse predicated
+            ]
+      where
+        Predicated { term = simplifiedTerm } = predicated
