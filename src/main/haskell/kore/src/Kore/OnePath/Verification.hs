@@ -41,6 +41,8 @@ import           Kore.OnePath.Step
                  onePathFollowupStep, transitionRule )
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes, RewriteRule (RewriteRule),
                  RulePattern (RulePattern) )
@@ -52,8 +54,6 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import           Kore.Step.ExpandedPattern as Predicated
                  ( Predicated (..) )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
 import           Kore.Step.Simplification.Data

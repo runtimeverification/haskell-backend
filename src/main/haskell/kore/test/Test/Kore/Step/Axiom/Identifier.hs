@@ -1,4 +1,4 @@
-module Test.Kore.Step.Function.Identifier where
+module Test.Kore.Step.Axiom.Identifier where
 
 import Test.Tasty
        ( TestTree )
@@ -11,9 +11,9 @@ import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Valid
                  ( mkAnd, mkCeil_ )
-import           Kore.Step.Function.Identifier
+import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Pattern
                  ( StepPattern )
 

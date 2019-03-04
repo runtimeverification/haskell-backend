@@ -1,14 +1,14 @@
 {-|
-Module      : Kore.Step.Function.Registry
-Description : Creates a registry of function evaluators
+Module      : Kore.Step.Axiom.Registry
+Description : Creates a registry of axiom/builtin-based evaluators.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Function.Registry
-    ( extractFunctionAxioms
+module Kore.Step.Axiom.Registry
+    ( extractEqualityAxioms
     , axiomPatternsToEvaluators
     ) where
 
@@ -27,6 +27,17 @@ import           Kore.Attribute.Overload
 import           Kore.Attribute.Simplification
                  ( Simplification (..) )
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifier (..) )
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( definitionEvaluation, firstFullEvaluation,
+                 simplifierWithFallback )
+import           Kore.Step.Axiom.Identifier
+                 ( AxiomIdentifier )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( extract )
+import           Kore.Step.Axiom.UserDefined
+                 ( equalityRuleEvaluator )
 import           Kore.Step.AxiomPatterns
                  ( Assoc (Assoc), AxiomPatternAttributes, Comm (Comm),
                  EqualityRule (EqualityRule), Idem (Idem),
@@ -36,29 +47,18 @@ import           Kore.Step.AxiomPatterns
 import qualified Kore.Step.AxiomPatterns as AxiomPatterns
                  ( Assoc (..), AxiomPatternAttributes (..), Comm (..),
                  Idem (..), RulePattern (..), Unit (..) )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifier (..) )
-import           Kore.Step.Function.EvaluationStrategy
-                 ( definitionEvaluation, firstFullEvaluation,
-                 simplifierWithFallback )
-import           Kore.Step.Function.Identifier
-                 ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( extract )
-import           Kore.Step.Function.UserDefined
-                 ( ruleFunctionEvaluator )
 import           Kore.Step.StepperAttributes
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
  -}
-extractFunctionAxioms
+extractEqualityAxioms
     ::  forall level.
         MetaOrObject level
     => level
     -> VerifiedModule StepperAttributes AxiomPatternAttributes
     -> Map (AxiomIdentifier level) [EqualityRule level Variable]
-extractFunctionAxioms level =
+extractEqualityAxioms level =
     \imod ->
         Foldable.foldl'
             extractModuleAxioms
@@ -146,7 +146,7 @@ axiomPatternsToEvaluators =
         simplification = mkSimplifier <$> simplifications
           where
             mkSimplifier simpl =
-                BuiltinAndAxiomSimplifier $ ruleFunctionEvaluator simpl
+                BuiltinAndAxiomSimplifier $ equalityRuleEvaluator simpl
         simplificationEvaluator =
             if null simplification
                 then Nothing
@@ -156,10 +156,10 @@ axiomPatternsToEvaluators =
                 then Nothing
                 else Just (definitionEvaluation evaluations)
 
-{- | Return the function evaluator corresponding to the 'AxiomPattern'.
+{- | Return the evaluator corresponding to the 'AxiomPattern'.
 
 @axiomPatternEvaluator@ returns 'Nothing' if the axiom pattern should not be
-used as a function evaluator, such as if it is an associativity or commutativity
+used as an evaluator, such as if it is an associativity or commutativity
 axiom; this is determined by checking the 'AxiomPatternAttributes'.
 
  -}

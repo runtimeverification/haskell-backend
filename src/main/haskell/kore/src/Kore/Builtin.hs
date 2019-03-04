@@ -60,12 +60,12 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Step.Axiom.Identifier
+                 ( AxiomIdentifier )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes )
-import           Kore.Step.Function.Identifier
-                 ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )

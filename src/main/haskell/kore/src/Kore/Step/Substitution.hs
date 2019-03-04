@@ -35,13 +35,13 @@ import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeMultipleAndPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..),
                  substitutionToPredicate )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( bottom )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..), Simplifier,
                  StepPatternSimplifier )

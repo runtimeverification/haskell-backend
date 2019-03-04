@@ -10,10 +10,10 @@ import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Predicate.Predicate
        ( Predicate )
+import Kore.Step.Axiom.Data
+       ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.ExpandedPattern
        ( PredicateSubstitution )
-import Kore.Step.Function.Data
-       ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, Simplifier, StepPatternSimplifier )
 import Kore.Step.StepperAttributes
