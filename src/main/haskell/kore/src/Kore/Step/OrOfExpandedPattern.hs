@@ -73,7 +73,7 @@ patterns.
 -}
 newtype MultiOr child = MultiOr { getMultiOr :: [child] }
   deriving
-    (Applicative, Eq, Foldable, Functor, Generic, Monad, Show, Traversable)
+    (Applicative, Eq, Foldable, Functor, Generic, Monad, Ord, Show, Traversable)
 
 instance NFData child => NFData (MultiOr child)
 

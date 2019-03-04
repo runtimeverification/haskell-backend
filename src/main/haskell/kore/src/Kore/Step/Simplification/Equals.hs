@@ -676,12 +676,24 @@ makeEvaluateTermsToPredicateSubstitution
                     axiomIdToSimplfier
                     second
             let
+                toPredicateSafe
+                    ps@Predicated {term = (), predicate, substitution}
+                  | Substitution.null substitution =
+                    predicate
+                  | otherwise =
+                    error
+                        (  "Unimplemented: we should split the configuration"
+                        ++ " for or with nonempty substitution."
+                        ++ " input=" ++ show ps
+                        ++ ", first=" ++ show first
+                        ++ ", second=" ++ show second
+                        )
                 firstCeil =
                     OrOfExpandedPattern.toPredicate
-                        (fmap ExpandedPattern.toPredicate firstCeilOr)
+                        (fmap toPredicateSafe firstCeilOr)
                 secondCeil =
                     OrOfExpandedPattern.toPredicate
-                        (fmap ExpandedPattern.toPredicate secondCeilOr)
+                        (fmap toPredicateSafe secondCeilOr)
                 firstCeilNegation = makeNotPredicate firstCeil
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =
