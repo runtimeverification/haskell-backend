@@ -1,12 +1,13 @@
 module Test.Kore.Exec
     ( test_exec
     , test_search
+    , test_execGetExitCode
     ) where
 
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( testCase )
+       ( assertEqual, testCase )
 
 import           Control.Applicative
                  ( liftA2 )
@@ -19,6 +20,8 @@ import           Data.Set
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
+import           System.Exit
+                 ( ExitCode (..) )
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
@@ -29,6 +32,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
+import           Kore.Attribute.Hook
 import qualified Kore.Builtin as Builtin
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
@@ -50,9 +54,10 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import qualified SMT
 
-import Test.Kore
-import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import           Test.Kore
+import qualified Test.Kore.Builtin.Int as Int
+import           Test.Kore.Comparators ()
+import           Test.Tasty.HUnit.Extensions
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
@@ -280,3 +285,88 @@ applyToNoArgs sort name =
             , symbolOrAliasParams = []
             }
         []
+
+test_execGetExitCode :: TestTree
+test_execGetExitCode =
+    testGroup "execGetExitCode"
+    [ makeTestCase "No getExitCode symbol => ExitSuccess"
+      testModuleNoSymbol 42 ExitSuccess
+    , makeTestCase "No getExitCode simplification axiom => ExitFailure 111"
+      testModuleNoAxiom 42 $ ExitFailure 111
+    , makeTestCase "Exit cell contains 0 => ExitSuccess"
+      testModuleSuccessfulSimplification 0 ExitSuccess
+    , makeTestCase "Exit cell contains 42 => ExitFailure 42"
+      testModuleSuccessfulSimplification 42 $ ExitFailure 42
+    ]
+  where
+    unlimited :: Limit Integer
+    unlimited = Unlimited
+
+    makeTestCase name testModule inputInteger expectedCode =
+        testCase name $
+        actual testModule inputInteger >>= assertEqual "" expectedCode
+
+    actual testModule exitCode =
+        SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier emptyLogger noRepl
+        $ execGetExitCode
+        (verifiedMyModule $ testModule)
+        (Limit.replicate unlimited . anyRewrite)
+        $ Int.intLiteral exitCode
+
+    -- Module with no getExitCode symbol
+    testModuleNoSymbol = Module
+        { moduleName = ModuleName "MY-MODULE"
+        , moduleSentences = []
+        , moduleAttributes = Attributes []
+        }
+    -- simplification of the exit code pattern will not produce an integer
+    -- (no axiom present for the symbol)
+    testModuleNoAxiom = Module
+        { moduleName = ModuleName "MY-MODULE"
+        , moduleSentences =
+          [ asSentence intSortDecl
+          , asSentence getExitCodeDecl
+          ]
+        , moduleAttributes = Attributes []
+        }
+    -- simplification succeeds
+    testModuleSuccessfulSimplification = Module
+        { moduleName = ModuleName "MY-MODULE"
+        , moduleSentences =
+            [ asSentence intSortDecl
+            , asSentence getExitCodeDecl
+            , mockGetExitCodeAxiom
+            ]
+        , moduleAttributes = Attributes []
+        }
+
+    myIntSortId = Id "Int" AstLocationTest
+
+    myIntSort = SortActualSort $ SortActual myIntSortId []
+
+    intSortDecl :: VerifiedKoreSentenceSort Object
+    intSortDecl = SentenceSort
+        { sentenceSortName = myIntSortId
+        , sentenceSortParameters = []
+        , sentenceSortAttributes =
+            Attributes [ hookAttribute "INT.Int" ]
+        }
+
+    getExitCodeDecl :: VerifiedKoreSentenceSymbol Object
+    getExitCodeDecl =
+        ( mkSymbol_ (testId "LblgetExitCode") [ myIntSort ] myIntSort )
+        { sentenceSymbolAttributes = Attributes [ functionalAttribute ] }
+
+    mockGetExitCodeAxiom =
+        mkFunctionAxiom
+        (mkApp myIntSort getExitCodeSym [mkVar v])
+        (mkVar v)
+        $ Just $ mkTop myIntSort
+      where
+        v = Variable
+            { variableName = Id "V" AstLocationTest
+            , variableCounter = mempty
+            , variableSort = myIntSort
+            }
+        getExitCodeSym = SymbolOrAlias (testId "LblgetExitCode") []
