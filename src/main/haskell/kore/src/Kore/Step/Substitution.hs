@@ -23,8 +23,7 @@ import           Control.Monad.Except
 import           Control.Monad.Trans.Class
                  ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Data.Foldable
-                 ( fold )
+import qualified Data.Foldable as Foldable
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -41,10 +40,7 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..),
                  substitutionToPredicate )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..), Simplifier,
-                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
                  ( UnificationProof (EmptyUnificationProof) )
@@ -158,18 +154,18 @@ normalizeSubstitutionAfterMerge
             makeMultipleAndPredicate
                 [predicate, duplicationPredicate, normalizePredicate]
 
-    (resultPredicateSubstitution, _proof) <-
-        lift $ substitutionSimplifier
+    results <-
+        lift $ gather $ substitutionSimplifier
             Predicated
                 { term = ()
                 , predicate = mergedPredicate
                 , substitution = normalizedSubstitution
                 }
 
-    return
-        ( resultPredicateSubstitution
-        , proof
-        )
+    case Foldable.toList results of
+        [] -> return (ExpandedPattern.bottomPredicate, proof)
+        [result] -> return (result, proof)
+        _ -> error "Not implemented"
   where
     normalizeSubstitutionDuplication' =
         normalizeSubstitutionDuplication
@@ -276,7 +272,7 @@ mergePredicatesAndSubstitutionsExcept
     substitutions
   = do
     let
-        mergedSubstitution = fold substitutions
+        mergedSubstitution = Foldable.fold substitutions
         mergedPredicate = makeMultipleAndPredicate predicates
     (Predicated {predicate, substitution}, _proof) <-
         normalizeSubstitutionAfterMerge

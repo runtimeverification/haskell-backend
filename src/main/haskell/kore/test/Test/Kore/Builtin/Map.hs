@@ -522,6 +522,4 @@ mkIntVar variableName =
     mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
 
 mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level
-mockSubstitutionSimplifier =
-    PredicateSubstitutionSimplifier
-        (\x -> return (x, SimplificationProof))
+mockSubstitutionSimplifier = PredicateSubstitutionSimplifier return

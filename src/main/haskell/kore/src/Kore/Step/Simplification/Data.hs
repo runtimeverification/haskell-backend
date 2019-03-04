@@ -11,7 +11,7 @@ module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
     , evalSimplifier
-    , BranchT, runBranchT
+    , BranchT, runBranchT, getBranches
     , evalSimplifierBranch
     , gather
     , gatherAll
@@ -317,19 +317,17 @@ that it applies the substitution on the predicate.
 -}
 newtype PredicateSubstitutionSimplifier level =
     PredicateSubstitutionSimplifier
-        (forall variable
-        .   ( FreshVariable variable
-            , MetaOrObject level
-            , Ord (variable level)
-            , OrdMetaOrObject variable
-            , Show (variable level)
-            , ShowMetaOrObject variable
-            , Unparse (variable level)
-            , SortedVariable variable
-            )
-        => PredicateSubstitution level variable
-        -> Simplifier
-            ( PredicateSubstitution level variable
-            , SimplificationProof level
-            )
-        )
+        { getPredicateSubstitutionSimplifier
+            ::  forall variable
+            .   ( FreshVariable variable
+                , MetaOrObject level
+                , Ord (variable level)
+                , OrdMetaOrObject variable
+                , Show (variable level)
+                , ShowMetaOrObject variable
+                , Unparse (variable level)
+                , SortedVariable variable
+                )
+            => PredicateSubstitution level variable
+            -> BranchT Simplifier (PredicateSubstitution level variable)
+        }

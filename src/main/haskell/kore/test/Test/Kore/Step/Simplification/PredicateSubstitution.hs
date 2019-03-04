@@ -26,10 +26,8 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (SimplificationProof), Simplifier,
-                 evalSimplifier )
+import           Kore.Step.Simplification.Data hiding
+                 ( runSimplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PSSimplifier
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -53,11 +51,11 @@ test_predicateSubstitutionSimplification =
     [ testCase "Identity for top and bottom" $ do
         actualBottom <- runSimplifier Map.empty Predicated.bottomPredicate
         assertEqualWithExplanation ""
-            Predicated.bottomPredicate
+            []
             actualBottom
         actualTop <- runSimplifier Map.empty Predicated.topPredicate
         assertEqualWithExplanation ""
-            Predicated.topPredicate
+            [Predicated.topPredicate]
             actualTop
 
     , testCase "Applies substitution to predicate" $ do
@@ -86,7 +84,7 @@ test_predicateSubstitutionSimplification =
                         , (Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" [expect] actual
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
@@ -114,7 +112,7 @@ test_predicateSubstitutionSimplification =
                         , (Mock.y, Mock.functional01)
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" [expect] actual
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
@@ -152,7 +150,7 @@ test_predicateSubstitutionSimplification =
                         , (Mock.y, Mock.functional01)
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" [expect] actual
 
     , testCase "Merges substitution from predicate simplification" $ do
         let expect =
@@ -186,7 +184,7 @@ test_predicateSubstitutionSimplification =
                         [ (Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" [expect] actual
 
     , testCase "Reapplies substitution from predicate simplification" $ do
         let expect =
@@ -229,7 +227,7 @@ test_predicateSubstitutionSimplification =
                         [ (Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" [expect] actual
 
     , testCase "Simplifies after reapplying substitution" $ do
         let expect =
@@ -273,7 +271,7 @@ test_predicateSubstitutionSimplification =
                         [ (Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" [expect] actual
     ]
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
@@ -287,16 +285,14 @@ mockMetadataTools =
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap Object
     -> CommonPredicateSubstitution Object
-    -> IO (CommonPredicateSubstitution Object)
+    -> IO [CommonPredicateSubstitution Object]
 runSimplifier patternSimplifierMap predicateSubstitution =
-    case simplifier of
-        (PredicateSubstitutionSimplifier unwrapped) ->
-            (<$>) fst
-            $ SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger noRepl
-            $ unwrapped predicateSubstitution
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger noRepl
+    $ getBranches
+    $ simplifier predicateSubstitution
   where
-    simplifier =
+    PredicateSubstitutionSimplifier simplifier =
         PSSimplifier.create
             mockMetadataTools
             (Simplifier.create mockMetadataTools patternSimplifierMap)
@@ -345,4 +341,3 @@ simpleEvaluator ((from, to) : ps) patt
         )
   | otherwise =
     simpleEvaluator ps patt
-

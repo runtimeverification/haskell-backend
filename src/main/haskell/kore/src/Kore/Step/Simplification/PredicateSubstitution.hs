@@ -9,7 +9,6 @@ Portability : portable
 -}
 module Kore.Step.Simplification.PredicateSubstitution
     ( create
-    , simplify
     , simplifyBranch
     ) where
 
@@ -49,7 +48,7 @@ create
     -> PredicateSubstitutionSimplifier level
 create tools simplifier axiomIdToSimplifier =
     PredicateSubstitutionSimplifier
-        (\p -> simplify tools simplifier axiomIdToSimplifier p 0)
+        (simplifyBranch tools simplifier axiomIdToSimplifier 0)
 
 {-| Simplifies a predicate-substitution by applying the substitution to the
 predicate, simplifying the result and repeating with the new
@@ -69,15 +68,15 @@ simplifyBranch
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
     -> Int
+    -> PredicateSubstitution level variable
     -> BranchT Simplifier (PredicateSubstitution level variable)
 simplifyBranch
     tools
     simplifier
     axiomIdToSimplifier
-    initialValue@Predicated { predicate, substitution }
     times
+    initialValue@Predicated { predicate, substitution }
   = do
     let substitution' = Substitution.toMap substitution
         substitutedPredicate = Predicate.substitute substitution' predicate
@@ -120,88 +119,7 @@ simplifyBranch
   where
     substitutionSimplifier =
         PredicateSubstitutionSimplifier
-            (\p -> simplify tools simplifier axiomIdToSimplifier p (times + 1))
-
-{-| Simplifies a predicate-substitution by applying the substitution to the
-predicate, simplifying the result and repeating with the new
-substitution-predicate.
--}
-simplify
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , FreshVariable variable
-        )
-    => MetadataTools level StepperAttributes
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
-    -> Int
-    -> Simplifier
-        ( PredicateSubstitution level variable
-        , SimplificationProof level
-        )
-simplify
-    tools
-    simplifier
-    axiomIdToSimplifier
-    initialValue@Predicated { predicate, substitution }
-    times
-  = do
-    let substitution' = Substitution.toMap substitution
-        substitutedPredicate = Predicate.substitute substitution' predicate
-    -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
-    -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
-    -- This was needed because, when we need to simplify 'requires' clauses,
-    -- this needs to run more than once.
-    if substitutedPredicate == predicate && times > 1
-        then return (initialValue, SimplificationProof)
-        else do
-            (   Predicated
-                    { predicate = simplifiedPredicate
-                    , substitution = simplifiedSubstitution
-                    }
-                , _proof
-                ) <-
-                    Predicate.simplifyPartial
-                        substitutionSimplifier
-                        simplifier
-                        substitutedPredicate
-
-            if Substitution.null simplifiedSubstitution
-                then return
-                    ( Predicated
-                        { term = ()
-                        , predicate = simplifiedPredicate
-                        , substitution
-                        }
-                    , SimplificationProof
-                    )
-                else do
-                    -- TODO(virgil): Optimize. Since both substitution and
-                    -- simplifiedSubstitution have distinct variables, it is
-                    -- enough to check that, say, simplifiedSubstitution's
-                    -- variables are not among substitution's variables.
-                    assertDistinctVariables
-                        (substitution <> simplifiedSubstitution)
-                    (mergedPredicateSubstitution, _proof) <-
-                        mergePredicatesAndSubstitutions
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
-                            [simplifiedPredicate]
-                            [substitution, simplifiedSubstitution]
-                    return (mergedPredicateSubstitution, SimplificationProof)
-  where
-    substitutionSimplifier =
-        PredicateSubstitutionSimplifier
-            (\p -> simplify tools simplifier axiomIdToSimplifier p (times + 1))
+            (simplifyBranch tools simplifier axiomIdToSimplifier (times + 1))
 
 assertDistinctVariables
     :: forall level variable m
