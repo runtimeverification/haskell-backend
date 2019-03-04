@@ -5,6 +5,7 @@
     -optF --ingredient=Test.Tasty.Runners.consoleTestReporter
     -optF --ingredient=Test.Tasty.Runners.listingTests
     -optF --ingredient=Test.Tasty.Runners.AntXML.antXMLRunner
+    -optF --generated-module=Driver
 #-}
 
 {-
