@@ -87,7 +87,7 @@ extractPatterns = getMultiAnd
 {- | Simplify the conjunction.
 
 The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
-idempotency property of conunction (@\\and(φ,φ)=φ@) is applied to remove
+idempotency property of conjunction (@\\and(φ,φ)=φ@) is applied to remove
 duplicated items from the result.
 
 See also: 'filterUnique'
