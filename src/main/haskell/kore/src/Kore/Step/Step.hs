@@ -26,18 +26,19 @@ module Kore.Step.Step
     , runStrategy
     ) where
 
-import Control.Monad.Except
-       ( runExceptT )
-import Data.Foldable
-       ( toList )
-import Data.Maybe
-       ( mapMaybe )
-import Data.Semigroup
-       ( (<>) )
-import GHC.Stack
-       ( HasCallStack )
-import Numeric.Natural
-       ( Natural )
+import           Control.Monad.Except
+                 ( runExceptT )
+import           Data.Foldable
+                 ( toList )
+import           Data.Maybe
+                 ( mapMaybe )
+import           Data.Semigroup
+                 ( (<>) )
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import           GHC.Stack
+                 ( HasCallStack )
+import           Numeric.Natural
+                 ( Natural )
 
 import           Kore.AST.Common
                  ( Variable )
@@ -69,6 +70,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -129,21 +131,25 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = ExpandedPattern.filterOr configs
             return (prove <$> toList nonEmptyConfigs)
-    transitionRewrite a (config, proof) = do
-        result <- runExceptT
+    transitionRewrite rule (config, proof) = do
+        result <-
+            runExceptT
             $ stepWithRewriteRule
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
                 config
-                a
+                rule
         case result of
-            Left _ -> error $
-                "Not implemented error \
-                \while applying a \\rewrite axiom to the pattern. \
-                \We decided to end the execution because we don't \
-                \understand this case well enough at the moment."
+            Left _ ->
+                (error . show . Pretty.vsep)
+                    [ "Could not apply the axiom:"
+                    , unparse rule
+                    , "to the configuration:"
+                    , unparse config
+                    , "Un-implemented unification case; aborting execution."
+                    ]
             Right results ->
                 Log.withLogScope "transitionRule" $
                     return $ mapMaybe (patternFromResult proof) results
