@@ -10,10 +10,10 @@ import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.Representation.OrOfExpandedPattern
-       ( OrOfPredicateSubstitution )
 import Kore.Step.Pattern
        ( StepPattern )
+import Kore.Step.Representation.OrOfExpandedPattern
+       ( OrOfPredicateSubstitution )
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
        StepPatternSimplifier )
