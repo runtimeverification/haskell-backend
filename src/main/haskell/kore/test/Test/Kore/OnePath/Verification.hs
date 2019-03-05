@@ -397,7 +397,7 @@ runVerification
     claims
   =
     SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ runExceptT
     $ OnePath.verify
         metadataTools

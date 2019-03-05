@@ -27,7 +27,6 @@ module Test.Kore
     , metaModuleGen
     , variableGen
     , Logger.emptyLogger
-    , noRepl
     ) where
 
 import           Hedgehog
@@ -1047,6 +1046,3 @@ orOfExpandedPatternGen
     => Gen (CommonOrOfExpandedPattern level)
 orOfExpandedPatternGen =
     filterOr . MultiOr <$> Gen.list (Range.linear 0 64) expandedPatternGen
-
-noRepl :: a -> IO ()
-noRepl = const . pure $ ()

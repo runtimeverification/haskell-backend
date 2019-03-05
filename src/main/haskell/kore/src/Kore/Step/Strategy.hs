@@ -40,14 +40,18 @@ module Kore.Step.Strategy
     , assert
     ) where
 
+import           Data.Foldable
+                 ( asum )
 import           Data.Function
                  ( on )
+import           Data.Functor.Foldable
+                 ( Base )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
 import           Data.Hashable
 import           Data.List
-                 ( groupBy )
+                 ( find, groupBy )
 import           Data.Maybe
 import           Prelude hiding
                  ( all, and, any, or, replicate, seq, sequence )
@@ -275,6 +279,56 @@ constructExecutionHistory transit instrs0 config0 =
         (nodeId node)
         (concat $ map parents nodes)
     mergeDuplicates0 _ = error "The impossible happened"
+
+
+-- | TODO: Docs. Does not do state merging at all yet.
+executionHistoryStep
+    :: forall m config
+    .  Monad m
+    => Hashable config
+    => Show config
+    => (config -> m [config])
+    -- ^ state stepper
+    -> ExecutionGraph config
+    -- ^ execution graph so far
+    -> Graph.Node
+    -- ^ current "selected" node
+    -> m (ExecutionGraph config)
+    -- ^ graph with one more step executed for the selected node
+executionHistoryStep transit eg@ExecutionGraph { root, graph, history } node
+    | nodeIsNotLeaf = error "Node has already been evaluated"
+    | otherwise = case configNode0 of
+        Nothing -> error "ExecutionGraph not setup properly; node does not exist"
+        Just configNode@ConfigNode { config } -> do
+            configs <- transit config
+            let
+                nodes   = mkConfigNodes configNode <$> configs
+            pure . toGraph $ history ++ [nodes]
+  where
+    nodeIsNotLeaf :: Bool
+    nodeIsNotLeaf = length (Graph.out graph node) == 0
+
+    configNode0 :: Maybe (ConfigNode config)
+    configNode0 = asum $ find ((== node) . nodeId) <$> history
+
+    mkConfigNodes :: ConfigNode config -> config -> ConfigNode config
+    mkConfigNodes ConfigNode { timestep, nodeId } config =
+        ConfigNode
+            config
+            (timestep + 1)
+            (hash (config, timestep+1))
+            [nodeId]
+
+-- TODO: Docs.
+emptyExecutionGraph
+    :: forall config
+    .  Hashable config
+    => config
+    -> ExecutionGraph config
+emptyExecutionGraph config = toGraph [[configNode]]
+  where
+    configNode :: ConfigNode config
+    configNode = ConfigNode config 0 (hash (config, 0 :: Int)) []
 
 {- | Execute a 'Strategy'.
 

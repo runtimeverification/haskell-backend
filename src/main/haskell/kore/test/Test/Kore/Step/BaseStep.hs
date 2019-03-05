@@ -1308,7 +1308,7 @@ runStepWithRemainders
 runStepWithRemainders metadataTools configuration axioms =
     fst
     <$> SMT.runSMT SMT.defaultConfig
-            ( evalSimplifier emptyLogger noRepl
+            ( evalSimplifier emptyLogger
             $ stepWithRemainders
                 metadataTools
                 (Mock.substitutionSimplifier metadataTools)
@@ -1330,7 +1330,7 @@ runSingleStepWithRemainder
         )
 runSingleStepWithRemainder metadataTools configuration axiom =
     SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ runExceptT
     $ stepWithRewriteRule
         metadataTools

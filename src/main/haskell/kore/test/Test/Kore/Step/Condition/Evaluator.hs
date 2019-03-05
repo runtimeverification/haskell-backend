@@ -65,7 +65,7 @@ evaluate predicate =
     (<$>) fst
     $ give testMetadataTools
     $ Trans.lift
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ Evaluator.evaluate
         testSubstitutionSimplifier
         (mockSimplifier [])

@@ -12,6 +12,7 @@ module Kore.Exec
     ( exec
     , search
     , prove
+    , proveWithRepl
     , Rewrite
     , Equality
     ) where
@@ -40,6 +41,7 @@ import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  unwrapPredicate )
+import qualified Kore.Repl as Repl
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes (trusted),
                  EqualityRule (EqualityRule), RewriteRule (RewriteRule),
@@ -173,6 +175,7 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
   where
     Valid { patternSort } = extract purePattern
 
+
 -- | Proving a spec given as a module containing rules to be proven
 prove
     :: Limit Natural
@@ -202,6 +205,45 @@ prove limit definitionModule specModule = do
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
 
     return $ Bifunctor.first toMLPattern result
+
+  where
+    makeClaim (attributes, rule) = Claim { rule , attributes }
+    simplifyRuleOnSecond
+        :: MetadataTools Object StepperAttributes
+        -> (AxiomPatternAttributes, Rewrite)
+        -> Simplifier (AxiomPatternAttributes, Rewrite)
+    simplifyRuleOnSecond tools (atts, rule) = do
+        rule' <- simplifyRewriteRule tools rule
+        return (atts, rule')
+    extractUntrustedClaims :: [Claim Object] -> [Rewrite]
+    extractUntrustedClaims =
+        map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)
+
+-- | TODO: Docs
+proveWithRepl
+    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    -- ^ The main module
+    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -- ^ The spec module
+    -> Simplifier ()
+proveWithRepl definitionModule specModule = do
+    let
+        tools = extractMetadataTools definitionModule
+    Initialized { rewriteRules, simplifier, substitutionSimplifier } <-
+        initialize definitionModule tools
+    specAxioms <-
+        mapM (simplifyRuleOnSecond tools)
+            (extractRewriteClaims Object specModule)
+    let
+        axioms = fmap Axiom rewriteRules
+        claims = fmap makeClaim specAxioms
+
+    Repl.runRepl
+        tools
+        simplifier
+        substitutionSimplifier
+        axioms
+        claims
 
   where
     makeClaim (attributes, rule) = Claim { rule , attributes }

@@ -34,6 +34,10 @@ pedantic:
 ghcid:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-exec"
 
+ghcid-repl:
+	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-repl"
+
+
 # TODO(Vladimir): remove 'hyperlink-source' when we upgrade from lts-12.10 (8.4.3)
 hoogle-gen:
 	$(stack) haddock; $(stack) hoogle generate --rebuild --no-haddock-hyperlink-source  -- --local

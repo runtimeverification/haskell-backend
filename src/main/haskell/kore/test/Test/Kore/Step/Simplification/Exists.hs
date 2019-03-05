@@ -278,7 +278,7 @@ evaluate
 evaluate tools exists =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ Exists.simplify
         tools
         (Mock.substitutionSimplifier tools)
@@ -294,7 +294,7 @@ makeEvaluate
 makeEvaluate tools variable child =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ Exists.makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)

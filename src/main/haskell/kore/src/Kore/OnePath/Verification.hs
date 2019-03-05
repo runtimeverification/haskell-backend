@@ -38,14 +38,18 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
                  ( Prim, StrategyPattern, onePathFirstStep,
-                 onePathFollowupStep, transitionRule )
+                 onePathFollowupStep )
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
+import qualified Kore.OnePath.Step as OnePath
+                 ( transitionRule )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes, RewriteRule (RewriteRule),
                  RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
+import           Kore.Step.BaseStep
+                 ( StepProof )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
 import           Kore.Step.ExpandedPattern as ExpandedPattern
@@ -55,8 +59,8 @@ import           Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
 import           Kore.Step.Simplification.Data
-                 ( Environment (proveClaim), PredicateSubstitutionSimplifier,
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
@@ -187,12 +191,8 @@ verifyClaim
     simplifier
     substitutionSimplifier
     strategyBuilder
-    (rule@(RewriteRule RulePattern {left, right, requires}), stepLimit)
+    ((RewriteRule RulePattern {left, right, requires}), stepLimit)
   = do
-    pc <- proveClaim <$> ask
-    liftIO' $ case isMetaOrObject (Proxy @level) of
-        IsObject -> pc rule
-        IsMeta -> pure ()
     let
         strategy =
             Limit.takeWithin
@@ -204,7 +204,7 @@ verifyClaim
                 Predicated
                     {term = left, predicate = requires, substitution = mempty}
     executionGraph <- Monad.Trans.lift $ runStrategy
-        (transitionRule metadataTools substitutionSimplifier simplifier)
+        transitionRule'
         strategy
         ( startPattern, mempty )
     let
@@ -220,3 +220,13 @@ verifyClaim
   where
     liftIO' :: IO () -> ExceptT (CommonExpandedPattern level) Simplifier ()
     liftIO' = liftIO
+
+    transitionRule'
+        :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+        -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
+        -> Simplifier [(StrategyPattern (CommonExpandedPattern level), StepProof level Variable)]
+    transitionRule' =
+        OnePath.transitionRule
+            metadataTools
+            substitutionSimplifier
+            simplifier

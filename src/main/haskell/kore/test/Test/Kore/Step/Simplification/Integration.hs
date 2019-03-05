@@ -422,7 +422,7 @@ evaluateWithAxioms
 evaluateWithAxioms tools axioms patt =
     (<$>) fst
         $ SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger noRepl
+        $ evalSimplifier emptyLogger
         $ ExpandedPattern.simplify
             tools
             (PredicateSubstitution.create tools simplifier)
