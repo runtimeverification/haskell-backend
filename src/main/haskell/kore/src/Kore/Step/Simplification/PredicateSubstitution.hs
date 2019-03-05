@@ -9,7 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.PredicateSubstitution
     ( create
-    , simplifyBranch
+    , simplify
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans
@@ -48,13 +48,15 @@ create
     -> PredicateSubstitutionSimplifier level
 create tools simplifier axiomIdToSimplifier =
     PredicateSubstitutionSimplifier
-        (simplifyBranch tools simplifier axiomIdToSimplifier 0)
+        (simplify tools simplifier axiomIdToSimplifier 0)
 
-{-| Simplifies a predicate-substitution by applying the substitution to the
-predicate, simplifying the result and repeating with the new
-substitution-predicate.
+{- | Simplify a 'PredicateSubstitution'.
+
+@simplify@ applies the substitution to the predicate and simplifies the
+result. The result is re-simplified once.
+
 -}
-simplifyBranch
+simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Ord (variable level)
@@ -71,7 +73,7 @@ simplifyBranch
     -> Int
     -> PredicateSubstitution level variable
     -> BranchT Simplifier (PredicateSubstitution level variable)
-simplifyBranch
+simplify
     tools
     simplifier
     axiomIdToSimplifier
@@ -119,7 +121,7 @@ simplifyBranch
   where
     substitutionSimplifier =
         PredicateSubstitutionSimplifier
-            (simplifyBranch tools simplifier axiomIdToSimplifier (times + 1))
+            (simplify tools simplifier axiomIdToSimplifier (times + 1))
 
 assertDistinctVariables
     :: forall level variable m
