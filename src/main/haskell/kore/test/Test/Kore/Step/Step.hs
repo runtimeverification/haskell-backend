@@ -1,10 +1,13 @@
-module Test.Kore.Step.Step (test_simpleStrategy, test_stepStrategy) where
+module Test.Kore.Step.Step
+    ( test_simpleStrategy
+    , test_stepStrategy
+    , test_unificationError
+    ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
 
+import qualified Control.Exception as Exception
 import           Data.Default
                  ( def )
 import qualified Data.List as List
@@ -389,9 +392,46 @@ actualStepLimit =
             }
         axiomsSimpleStrategy
 
+test_unificationError :: TestTree
+test_unificationError =
+    testCase "Throws unification error" $ do
+        result <- Exception.try actualUnificationError
+        case result of
+            Left (Exception.ErrorCall _) -> return ()
+            Right _ -> assertFailure "Expected unification error"
+
+actualUnificationError
+    :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
+actualUnificationError =
+    runStep
+        mockMetadataTools
+        Predicated
+            { term =
+                metaSigma
+                    (mkVar $ a1 patternMetaSort)
+                    (metaI (mkVar $ b1 patternMetaSort))
+            , predicate = makeTruePredicate
+            , substitution = mempty
+            }
+        [axiomMetaSigmaId]
+
+mockSymbolAttributes :: SymbolOrAlias Meta -> StepperAttributes
+mockSymbolAttributes patternHead =
+    defaultStepperAttributes
+        { constructor = Constructor { isConstructor }
+        , functional = Functional { isDeclaredFunctional }
+        , function = Function { isDeclaredFunction }
+        , injective = Injective { isDeclaredInjective }
+        }
+  where
+    isConstructor = patternHead /= iSymbol
+    isDeclaredFunctional = patternHead /= iSymbol
+    isDeclaredFunction = patternHead /= iSymbol
+    isDeclaredInjective = patternHead /= iSymbol
+
 mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { symAttributes = const Mock.constructorFunctionalAttributes
+    { symAttributes = mockSymbolAttributes
     , symbolOrAliasType = const HeadType.Symbol
     , sortAttributes = const def
     , isSubsortOf = const $ const False
@@ -409,6 +449,19 @@ metaSigma
     -> CommonStepPattern Meta
     -> CommonStepPattern Meta
 metaSigma p1 p2 = mkApp patternMetaSort sigmaSymbol [p1, p2]
+
+axiomMetaSigmaId :: RewriteRule Meta Variable
+axiomMetaSigmaId =
+    RewriteRule RulePattern
+        { left =
+            metaSigma
+                (mkVar $ x1 patternMetaSort)
+                (mkVar $ x1 patternMetaSort)
+        , right =
+            mkVar $ x1 patternMetaSort
+        , requires = makeTruePredicate
+        , attributes = def
+        }
 
 
 fSymbol :: SymbolOrAlias Meta
@@ -445,6 +498,17 @@ metaH
     :: CommonStepPattern Meta
     -> CommonStepPattern Meta
 metaH p = mkApp patternMetaSort hSymbol [p]
+
+iSymbol :: SymbolOrAlias Meta
+iSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#i" AstLocationTest
+    , symbolOrAliasParams = []
+    }
+
+metaI
+    :: CommonStepPattern Meta
+    -> CommonStepPattern Meta
+metaI p = mkApp patternMetaSort iSymbol [p]
 
 runStep
     :: MetaOrObject level

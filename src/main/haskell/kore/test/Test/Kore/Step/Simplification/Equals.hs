@@ -341,25 +341,25 @@ test_equalsSimplification_ExpandedPatterns =
                                         (makeAndPredicate
                                             (makeAndPredicate
                                                 (makeEqualsPredicate hOfA hOfB)
-                                                (makeEqualsPredicate fOfA fOfB)
+                                                (makeCeilPredicate hOfA)
                                             )
-                                            (makeCeilPredicate hOfA)
+                                            (makeEqualsPredicate fOfA fOfB)
                                         )
-                                        (makeEqualsPredicate gOfA gOfB)
+                                        (makeCeilPredicate hOfB)
                                     )
-                                    (makeCeilPredicate hOfB)
+                                    (makeEqualsPredicate gOfA gOfB)
                                 )
                                 (makeAndPredicate
                                     (makeNotPredicate
                                         (makeAndPredicate
-                                            (makeEqualsPredicate fOfA fOfB)
                                             (makeCeilPredicate hOfA)
+                                            (makeEqualsPredicate fOfA fOfB)
                                         )
                                     )
                                     (makeNotPredicate
                                         (makeAndPredicate
-                                            (makeEqualsPredicate gOfA gOfB)
                                             (makeCeilPredicate hOfB)
+                                            (makeEqualsPredicate gOfA gOfB)
                                         )
                                     )
                                 )

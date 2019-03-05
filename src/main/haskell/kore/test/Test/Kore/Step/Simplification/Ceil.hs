@@ -140,8 +140,8 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
-                            (makeCeilPredicate somethingOfA)
+                        (makeCeilPredicate somethingOfA)
+                        (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
@@ -167,11 +167,11 @@ test_ceilSimplification =
                         { term = mkTop_
                         , predicate =
                             makeAndPredicate
-                                (makeEqualsPredicate fOfA gOfA)
                                 (makeAndPredicate
                                     (makeCeilPredicate somethingOfA)
                                     (makeCeilPredicate somethingOfB)
                                 )
+                                (makeEqualsPredicate fOfA gOfA)
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, fOfB)]
                         }
@@ -206,11 +206,11 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
                             (makeAndPredicate
                                 (makeCeilPredicate somethingOfA)
                                 (makeCeilPredicate somethingOfB)
                             )
+                            (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
@@ -234,8 +234,8 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate fOfA)
+                            (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
@@ -259,8 +259,8 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
                             (makeCeilPredicate fOfA)
+                            (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
@@ -308,11 +308,11 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
                             (makeAndPredicate
                                 (makeCeilPredicate fOfA)
                                 (makeCeilPredicate fOfB)
                             )
+                            (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
@@ -338,8 +338,8 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate fOfA gOfA)
                             (makeEqualsPredicate Mock.a Mock.cf)
+                            (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]

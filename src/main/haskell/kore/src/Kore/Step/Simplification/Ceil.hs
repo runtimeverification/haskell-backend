@@ -36,6 +36,8 @@ import           Kore.Step.ExpandedPattern
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
+import qualified Kore.Step.MultiAnd as MultiAnd
+                 ( make )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -231,9 +233,11 @@ makeEvaluateNonBoolCeil
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
-        [ OrOfExpandedPattern.make [erasePredicatedTerm patt]
-        , termCeil
-        ]
+        (MultiAnd.make
+            [ OrOfExpandedPattern.make [erasePredicatedTerm patt]
+            , termCeil
+            ]
+        )
     return (fmap predicateSubstitutionToExpandedPattern result, proof)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
@@ -292,7 +296,11 @@ makeEvaluateTerm
             let
                 (ceils, _proofs) = unzip simplifiedChildren
             And.simplifyEvaluatedMultiPredicateSubstitution
-                tools substitutionSimplifier simplifier axiomIdToEvaluator ceils
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
+                (MultiAnd.make ceils)
           where
             Application { applicationSymbolOrAlias = patternHead } = app
             Application { applicationChildren = children } = app
@@ -395,7 +403,11 @@ makeEvaluateBuiltin
         ceils :: [OrOfPredicateSubstitution level variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicateSubstitution
-        tools substitutionSimplifier simplifier axiomIdToEvaluator ceils
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToEvaluator
+        (MultiAnd.make ceils)
   where
     values :: [StepPattern level variable]
     -- Maps assume that their keys are relatively functional.
@@ -416,7 +428,11 @@ makeEvaluateBuiltin
         ceils :: [OrOfPredicateSubstitution level variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicateSubstitution
-        tools substitutionSimplifier simplifier axiomIdToEvaluator ceils
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToEvaluator
+        (MultiAnd.make ceils)
 makeEvaluateBuiltin
     _tools
     _substitutionSimplifier
