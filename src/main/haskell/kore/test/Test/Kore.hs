@@ -57,6 +57,7 @@ import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
 
 {- | @Context@ stores the variables and sort variables in scope.
@@ -1047,7 +1048,7 @@ orOfExpandedPatternGen
     :: MetaOrObject level
     => Gen (CommonOrOfExpandedPattern level)
 orOfExpandedPatternGen =
-    filterOr . MultiOr <$> Gen.list (Range.linear 0 64) expandedPatternGen
+    MultiOr.make <$> Gen.list (Range.linear 0 64) expandedPatternGen
 
 noRepl :: a -> IO ()
 noRepl = const . pure $ ()

@@ -37,7 +37,7 @@ import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (Predicated) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
@@ -64,14 +64,14 @@ test_definitionEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.g Mock.c
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
         actual <-
             evaluate
@@ -89,7 +89,7 @@ test_definitionEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
@@ -97,7 +97,7 @@ test_definitionEvaluation =
                                     [(Mock.x, Mock.a)]
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make
+                        , remainders = MultiOr.make
                             [ Predicated
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate =
@@ -126,8 +126,8 @@ test_definitionEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make []
-                        , remainders = OrOfExpandedPattern.make
+                        { results = MultiOr.make []
+                        , remainders = MultiOr.make
                             [ Predicated
                                 { term = Mock.functionalConstr10 Mock.b
                                 , predicate = makeTruePredicate
@@ -151,7 +151,7 @@ test_definitionEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
@@ -165,7 +165,7 @@ test_definitionEvaluation =
                                     [(Mock.x, Mock.b)]
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make
+                        , remainders = MultiOr.make
                             [ Predicated
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate = makeAndPredicate
@@ -209,14 +209,14 @@ test_firstFullEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.g Mock.c
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
         actual <-
             evaluate
@@ -233,14 +233,14 @@ test_firstFullEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
         actual <-
             evaluate
@@ -263,14 +263,14 @@ test_firstFullEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
         actual <-
             evaluate
@@ -355,14 +355,14 @@ test_simplifierWithFallback =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
         actual <-
             evaluate
@@ -383,7 +383,7 @@ test_simplifierWithFallback =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
@@ -391,7 +391,7 @@ test_simplifierWithFallback =
                                     [(Mock.x, Mock.b)]
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make
+                        , remainders = MultiOr.make
                             [ Predicated
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate =
@@ -423,14 +423,14 @@ test_simplifierWithFallback =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
         actual <-
             evaluate
@@ -474,14 +474,14 @@ test_builtinEvaluation =
             expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
         actual <-
             evaluate

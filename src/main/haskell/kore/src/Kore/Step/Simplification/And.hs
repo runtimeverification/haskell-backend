@@ -27,10 +27,12 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, isBottom, isTop )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( crossProductGenericF, filterOr, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( crossProductGenericF, filterOr, isFalse, isTrue, make )
+                 ( isFalse, isTrue )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
@@ -162,9 +164,9 @@ simplifyEvaluated
     first
     second
   | OrOfExpandedPattern.isFalse first =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
 
   | OrOfExpandedPattern.isTrue first =
     return (second, SimplificationProof)
@@ -173,7 +175,7 @@ simplifyEvaluated
 
   | otherwise = do
     orWithProof <-
-        OrOfExpandedPattern.crossProductGenericF
+        MultiOr.crossProductGenericF
             (makeEvaluate
                 tools
                 substitutionSimplifier
@@ -185,7 +187,7 @@ simplifyEvaluated
     return
         -- TODO: It's not obvious at all when filtering occurs and when it
         -- doesn't.
-        ( OrOfExpandedPattern.filterOr
+        ( MultiOr.filterOr
             -- TODO: Remove fst.
             (fst <$> orWithProof)
         , SimplificationProof

@@ -19,10 +19,12 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( fmapWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( fmapWithPairs, isFalse, isTrue )
+                 ( isFalse, isTrue )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -89,7 +91,7 @@ simplifyEvaluated variable simplified
   | otherwise =
     let
         (patt, _proofs) =
-            OrOfExpandedPattern.fmapWithPairs (makeEvaluate variable) simplified
+            MultiOr.fmapWithPairs (makeEvaluate variable) simplified
       in
         ( patt
         , SimplificationProof

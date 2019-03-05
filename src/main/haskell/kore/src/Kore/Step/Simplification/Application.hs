@@ -28,10 +28,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
@@ -96,9 +96,9 @@ simplify
     let
         -- The "Propagation Or" inference rule together with
         -- "Propagation Bottom" for the case when a child or is empty.
-        orDistributedChildren = OrOfExpandedPattern.fullCrossProduct children
+        orDistributedChildren = MultiOr.fullCrossProduct children
     (unflattenedOr, _proofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairsGeneric
+        MultiOr.traverseFlattenWithPairsGeneric
             (makeAndEvaluateApplications
                 tools
                 substitutionSimplifier

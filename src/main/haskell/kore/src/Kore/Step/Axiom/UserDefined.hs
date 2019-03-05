@@ -46,7 +46,7 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -155,12 +155,12 @@ equalityRuleEvaluator
                     remainderPattern
         return
             ( AttemptedAxiomResults
-                { results = OrOfExpandedPattern.make
+                { results = MultiOr.make
                     (case rewritingCondition of
                         PredicateFalse -> []
                         _ -> [rewrittenPattern]
                     )
-                , remainders = OrOfExpandedPattern.make
+                , remainders = MultiOr.make
                     (case remainderCondition of
                         PredicateFalse -> []
                         _ -> [rewrittenRemainder]

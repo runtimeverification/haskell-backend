@@ -42,10 +42,10 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( flatten, make, merge, traverseWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( flatten, make, merge, traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..),
@@ -131,7 +131,7 @@ evaluateApplication
       where
         Predicated { term = (), predicate, substitution } =
             childrenPredicateSubstitution
-    unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
+    unchangedOr = MultiOr.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
 
     getAppHookString =
@@ -255,7 +255,7 @@ maybeEvaluatePattern
                             return
                                 (AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results =
-                                        OrOfExpandedPattern.flatten simplified
+                                        MultiOr.flatten simplified
                                     , remainders = orRemainders
                                     }
                                 )
@@ -272,7 +272,7 @@ maybeEvaluatePattern
                     AttemptedAxiom.Applied AttemptedAxiomResults
                         { results, remainders } ->
                             return
-                                ( OrOfExpandedPattern.merge results remainders
+                                ( MultiOr.merge results remainders
                                 , SimplificationProof
                                 )
   where
@@ -299,7 +299,7 @@ maybeEvaluatePattern
         -> Simplifier (OrOfExpandedPattern level variable)
     simplifyIfNeeded toSimplify =
         if toSimplify == unchangedPatt
-            then return (OrOfExpandedPattern.make [unchangedPatt])
+            then return (MultiOr.make [unchangedPatt])
             else
                 reevaluateFunctions
                     tools
@@ -396,7 +396,7 @@ reevaluateFunctions
                 }
             pattOr
     (evaluatedPatt, _) <-
-        OrOfExpandedPattern.traverseWithPairs
+        MultiOr.traverseWithPairs
             (ExpandedPattern.simplifyPredicate
                 tools
                 substitutionSimplifier

@@ -50,7 +50,7 @@ import           Kore.Step.Error
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
@@ -179,7 +179,7 @@ stepSimplifier =
     StepPatternSimplifier
         (\_ p ->
             return
-                ( OrOfExpandedPattern.make
+                ( MultiOr.make
                     [ Predicated
                         { term = mkTop_
                         , predicate = Predicate.wrapPredicate p

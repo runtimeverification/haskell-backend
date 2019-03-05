@@ -20,7 +20,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -59,7 +59,7 @@ simplifyPartial
   = do
     (patternOr, _proof) <-
         simplifier substitutionSimplifier (unwrapPredicate predicate)
-    case OrOfExpandedPattern.extractPatterns patternOr of
+    case MultiOr.extractPatterns patternOr of
         [] -> return
             ( Predicated.bottomPredicate
             , SimplificationProof

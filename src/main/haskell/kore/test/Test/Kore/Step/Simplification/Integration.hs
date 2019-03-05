@@ -35,10 +35,10 @@ import           Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -61,7 +61,7 @@ import           Test.Tasty.HUnit.Extensions
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration =
     [ testCase "owise condition - main case" $ do
-        let expect = OrOfExpandedPattern.make []
+        let expect = MultiOr.make []
         actual <-
             evaluate
                 mockMetadataTools
@@ -99,7 +99,7 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
 
     , testCase "owise condition - owise case" $ do
-        let expect = OrOfExpandedPattern.make [ExpandedPattern.top]
+        let expect = MultiOr.make [ExpandedPattern.top]
         actual <-
             evaluate
                 mockMetadataTools
@@ -138,7 +138,7 @@ test_simplificationIntegration =
 
      , testCase "map-like simplification" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = mkTop_
                         , predicate = makeCeilPredicate
@@ -171,7 +171,7 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     , testCase "map function, non-matching" $ do
         let
-            expect = OrOfExpandedPattern.make
+            expect = MultiOr.make
                 [ Predicated
                     { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
@@ -213,7 +213,7 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     , testCase "map function, matching" $ do
         let
-            expect = OrOfExpandedPattern.make
+            expect = MultiOr.make
                 [ Predicated
                     { term = Mock.c
                     , predicate = makeTruePredicate
@@ -261,7 +261,7 @@ test_substitute :: [TestTree]
 test_substitute =
     [ testCase "Substitution under unary functional constructor" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ ExpandedPattern.Predicated
                         { term =
                             Mock.functionalConstr20
@@ -293,7 +293,7 @@ test_substitute =
 
     , testCase "Substitution" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ ExpandedPattern.Predicated
                         { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                         , predicate = makeTruePredicate
@@ -322,7 +322,7 @@ test_substituteMap :: [TestTree]
 test_substituteMap =
     [ testCase "Substitution applied to Map elements" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ ExpandedPattern.Predicated
                         { term =
                             Mock.functionalConstr20
@@ -359,7 +359,7 @@ test_substituteList :: [TestTree]
 test_substituteList =
     [ testCase "Substitution applied to List elements" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ ExpandedPattern.Predicated
                         { term =
                             Mock.functionalConstr20

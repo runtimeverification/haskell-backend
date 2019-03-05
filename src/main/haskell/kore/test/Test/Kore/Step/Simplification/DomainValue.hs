@@ -20,10 +20,10 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -40,7 +40,7 @@ test_domainValueSimplification :: [TestTree]
 test_domainValueSimplification =
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ Predicated
                     { term =
                         mkDomainValue
@@ -68,7 +68,7 @@ test_domainValueSimplification =
     , testCase "\\bottom propagates through builtin Map"
         (assertEqualWithExplanation
             "Expected \\bottom to propagate to the top level"
-            (OrOfExpandedPattern.make [])
+            (MultiOr.make [])
             (evaluate
                 mockMetadataTools
                 (mkMapDomainValue [(Mock.aConcrete, bottom)])
@@ -77,7 +77,7 @@ test_domainValueSimplification =
     , testCase "\\bottom propagates through builtin List"
         (assertEqualWithExplanation
             "Expected \\bottom to propagate to the top level"
-            (OrOfExpandedPattern.make [])
+            (MultiOr.make [])
             (evaluate
                 mockMetadataTools
                 (mkListDomainValue [bottom])
@@ -85,7 +85,7 @@ test_domainValueSimplification =
         )
     ]
   where
-    bottom = OrOfExpandedPattern.make [ExpandedPattern.bottom]
+    bottom = MultiOr.make [ExpandedPattern.bottom]
 
 mkMapDomainValue
     :: [(Domain.Key, child)]

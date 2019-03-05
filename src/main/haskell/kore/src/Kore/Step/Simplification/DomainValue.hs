@@ -19,9 +19,11 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( MultiOr, OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -41,7 +43,7 @@ simplify
        , SimplificationProof Object
        )
 simplify _ builtin =
-    ( OrOfExpandedPattern.filterOr
+    ( MultiOr.filterOr
         (do
             child <- simplifyBuiltin builtin
             return (mkDomainValue <$> child)

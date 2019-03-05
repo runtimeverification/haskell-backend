@@ -36,10 +36,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, mapVariables, top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
@@ -71,7 +71,7 @@ test_ceilSimplification =
     [ testCase "Ceil - or distribution" $ do
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfA
@@ -96,7 +96,7 @@ test_ceilSimplification =
                     [ExpandedPattern.top]
                 )
             assertEqualWithExplanation "ceil(top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 actual1
@@ -106,7 +106,7 @@ test_ceilSimplification =
                     []
                 )
             assertEqualWithExplanation "ceil(bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 actual2
@@ -117,7 +117,7 @@ test_ceilSimplification =
             actual1 <- makeEvaluate mockMetadataTools
                 (ExpandedPattern.top :: CommonExpandedPattern Object)
             assertEqualWithExplanation "ceil(top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 actual1
@@ -125,7 +125,7 @@ test_ceilSimplification =
             actual2 <- makeEvaluate mockMetadataTools
                 (ExpandedPattern.bottom :: CommonExpandedPattern Object)
             assertEqualWithExplanation "ceil(bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 actual2
@@ -135,7 +135,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(term) and predicate) and subst
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -162,7 +162,7 @@ test_ceilSimplification =
             -- ceil(term and predicate and subst)
             --     = top and (ceil(term) and predicate) and subst
             let
-                expected = OrOfExpandedPattern.make
+                expected = MultiOr.make
                     [ Predicated
                         { term = mkTop_
                         , predicate =
@@ -188,7 +188,7 @@ test_ceilSimplification =
                 actual
     , testCase "ceil of constructors is top" $ do
         let
-            expected = OrOfExpandedPattern.make [ExpandedPattern.top]
+            expected = MultiOr.make [ExpandedPattern.top]
         actual <- makeEvaluate mockMetadataTools
             Predicated
                 { term = Mock.constr10 Mock.a
@@ -201,7 +201,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(params) and predicate) and subst
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -229,7 +229,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(term) and predicate) and subst
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -254,7 +254,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(params) and predicate) and subst
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -279,7 +279,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and predicate and subst
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
@@ -303,7 +303,7 @@ test_ceilSimplification =
         --       ceil(non-funct) and ceil(non-funct) and predicate and
         --       subst
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -333,7 +333,7 @@ test_ceilSimplification =
         --       ceil(non-funct) and ceil(non-funct) and predicate and
         --       subst
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -369,7 +369,7 @@ test_ceilSimplification =
     , testCase "ceil with normal domain value" $ do
         -- ceil(1) = top
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate = makeTruePredicate
@@ -394,7 +394,7 @@ test_ceilSimplification =
         -- maps assume that their keys are relatively functional, so
         -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -416,7 +416,7 @@ test_ceilSimplification =
     , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)
         let
-            expected = OrOfExpandedPattern.make
+            expected = MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -437,7 +437,7 @@ test_ceilSimplification =
         -- sets assume that their elements are relatively functional,
         -- so ceil({a, b}) = top
         let
-            expected = OrOfExpandedPattern.make [ ExpandedPattern.top ]
+            expected = MultiOr.make [ ExpandedPattern.top ]
         actual <- makeEvaluate mockMetadataTools
             Predicated
                 { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
@@ -480,9 +480,9 @@ appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
     $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = OrOfExpandedPattern.make
+        { results = MultiOr.make
             [Test.Kore.Step.Simplification.Ceil.mapVariables result]
-        , remainders = OrOfExpandedPattern.make []
+        , remainders = MultiOr.make []
         }
 
 mockEvaluator
@@ -517,7 +517,7 @@ makeCeil patterns =
     Ceil
         { ceilOperandSort = testSort
         , ceilResultSort  = testSort
-        , ceilChild       = OrOfExpandedPattern.make patterns
+        , ceilChild       = MultiOr.make patterns
         }
 
 evaluate

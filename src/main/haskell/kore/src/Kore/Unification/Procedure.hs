@@ -29,10 +29,10 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -86,7 +86,7 @@ unificationProcedure
 unificationProcedure
     tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
   | p1Sort /= p2Sort =
-    return (OrOfExpandedPattern.make [], EmptyUnificationProof)
+    return (MultiOr.make [], EmptyUnificationProof)
   | otherwise = do
     let
         getUnifiedTerm =
@@ -100,7 +100,7 @@ unificationProcedure
     (pat@Predicated { term, predicate, substitution }, _) <- getUnifiedTerm
     if Predicated.isBottom pat
         then return
-            (OrOfExpandedPattern.make [], EmptyUnificationProof)
+            (MultiOr.make [], EmptyUnificationProof)
         else Monad.Trans.lift $ do
             (orCeil, _proof) <-
                 Ceil.makeEvaluateTerm

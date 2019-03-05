@@ -41,10 +41,10 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
                  ( make )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make, traverseFlattenWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, traverseFlattenWithPairs )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -140,7 +140,7 @@ simplifyEvaluated
     tools substitutionSimplifier simplifier axiomIdToEvaluator child
   = do
     (evaluated, _proofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairs
+        MultiOr.traverseFlattenWithPairs
             (makeEvaluate
                 tools
                 substitutionSimplifier
@@ -177,9 +177,9 @@ makeEvaluate
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate tools substitutionSimplifier simplifier axiomIdToEvaluator child
   | ExpandedPattern.isTop child =
-    return (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    return (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isBottom child =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
   | otherwise =
         makeEvaluateNonBoolCeil
             tools
@@ -218,7 +218,7 @@ makeEvaluateNonBoolCeil
     patt@Predicated {term}
   | (Recursive.project -> _ :< TopPattern _) <- term =
     return
-        ( OrOfExpandedPattern.make [patt]
+        ( MultiOr.make [patt]
         , SimplificationProof
         )
   | otherwise = do
@@ -234,7 +234,7 @@ makeEvaluateNonBoolCeil
         simplifier
         axiomIdToEvaluator
         (MultiAnd.make
-            [ OrOfExpandedPattern.make [erasePredicatedTerm patt]
+            [ MultiOr.make [erasePredicatedTerm patt]
             , termCeil
             ]
         )
@@ -274,14 +274,14 @@ makeEvaluateTerm
     term@(Recursive.project -> _ :< projected)
   | TopPattern _ <- projected =
     return
-        ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
+        ( MultiOr.make [ExpandedPattern.topPredicate]
         , SimplificationProof
         )
   | BottomPattern _ <- projected =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
   | isTotalPattern tools term =
     return
-        ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
+        ( MultiOr.make [ExpandedPattern.topPredicate]
         , SimplificationProof
         )
   | otherwise =
@@ -324,7 +324,7 @@ makeEvaluateTerm
                     , substitution = mempty
                     }
                 (mkCeil_ term)
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = mkTop_
                         , predicate = makeCeilPredicate term
@@ -379,7 +379,7 @@ makeEvaluateBuiltin
             -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return
-                ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
+                ( MultiOr.make [ExpandedPattern.topPredicate]
                 , SimplificationProof
                 )
         _ ->
@@ -465,6 +465,6 @@ topPredicateWithProof
         )
     => (OrOfPredicateSubstitution level variable, SimplificationProof level)
 topPredicateWithProof =
-    ( OrOfExpandedPattern.make [ExpandedPattern.topPredicate]
+    ( MultiOr.make [ExpandedPattern.topPredicate]
     , SimplificationProof
     )

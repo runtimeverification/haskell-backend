@@ -31,10 +31,12 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( toMLPattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make, traverseFlattenWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, make, traverseFlattenWithPairs )
+                 ( isFalse, isTrue )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -153,7 +155,7 @@ simplifyEvaluated
     return (simplified, SimplificationProof)
   | otherwise = do
     (evaluated, _proofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairs
+        MultiOr.traverseFlattenWithPairs
             (makeEvaluate
                 tools
                 substitutionSimplifier
@@ -236,7 +238,7 @@ makeEvaluateNoFreeVarInSubstitution
     variable
     patt@Predicated { term, predicate, substitution }
   =
-    (OrOfExpandedPattern.make [simplifiedPattern], SimplificationProof)
+    (MultiOr.make [simplifiedPattern], SimplificationProof)
   where
     termHasVariable =
         Set.member variable (freePureVariables term)

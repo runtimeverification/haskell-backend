@@ -60,7 +60,7 @@ import           Kore.Step.BaseStep as StepResult
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.OrOfExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -129,7 +129,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 proof'' = proof <> simplificationProof proof'
                 prove config' = (config', proof'')
                 -- Filter out ⊥ patterns
-                nonEmptyConfigs = ExpandedPattern.filterOr configs
+                nonEmptyConfigs = MultiOr.filterOr configs
             return (prove <$> toList nonEmptyConfigs)
     transitionRewrite rule (config, proof) = do
         result <-

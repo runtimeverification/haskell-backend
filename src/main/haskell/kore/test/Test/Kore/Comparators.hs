@@ -50,7 +50,7 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.Representation.OrOfExpandedPattern
+import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
 import           Kore.Unification.Error

@@ -41,10 +41,10 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( traverseWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -186,7 +186,7 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                 , Predicated.substitution evaluated
                 ]
     (result, _proof) <-
-        lift $ OrOfExpandedPattern.traverseWithPairs mergeAndEvaluate unifier
+        lift $ MultiOr.traverseWithPairs mergeAndEvaluate unifier
     if isBottom result
         then nothing
         else return result
