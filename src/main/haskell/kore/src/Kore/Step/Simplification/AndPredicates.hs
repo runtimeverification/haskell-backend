@@ -24,10 +24,12 @@ import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
                  ( extractPatterns )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( MultiOr, OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -66,7 +68,7 @@ simplifyEvaluatedMultiPredicateSubstitution
     let
         crossProduct :: MultiOr [PredicateSubstitution level variable]
         crossProduct =
-            OrOfExpandedPattern.fullCrossProduct
+            MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicateSubstitutions)
     result <- traverse andPredicateSubstitutions crossProduct
     return

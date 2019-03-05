@@ -18,10 +18,12 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, toExpandedPattern )
+                 ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -60,7 +62,7 @@ simplifyEvaluated
     => OrOfExpandedPattern Object variable
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
 simplifyEvaluated simplified =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [ Predicated
             { term =
                 mkNext

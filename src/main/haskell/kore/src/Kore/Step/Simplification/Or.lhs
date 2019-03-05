@@ -30,7 +30,7 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
@@ -103,13 +103,13 @@ with the second.
 \begin{code}
 simplifyEvaluated first second
 
-  | (head1 : tail1) <- OrOfExpandedPattern.extractPatterns first
-  , (head2 : tail2) <- OrOfExpandedPattern.extractPatterns second
+  | (head1 : tail1) <- MultiOr.extractPatterns first
+  , (head2 : tail2) <- MultiOr.extractPatterns second
   , Just (result, proof) <- simplifySinglePatterns head1 head2
-  = (OrOfExpandedPattern.make $ result : (tail1 ++ tail2), proof)
+  = (MultiOr.make $ result : (tail1 ++ tail2), proof)
 
   | otherwise =
-    ( OrOfExpandedPattern.merge first second
+    ( MultiOr.merge first second
     , SimplificationProof
     )
 

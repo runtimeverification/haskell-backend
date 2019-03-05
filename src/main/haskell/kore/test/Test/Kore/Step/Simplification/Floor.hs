@@ -17,10 +17,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -37,7 +37,7 @@ test_floorSimplification =
     [ testCase "Floor - or distribution"
         -- floor(a or b) = (top and floor(a)) or (top and floor(b))
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate = makeFloorPredicate (mkOr a b)
@@ -55,7 +55,7 @@ test_floorSimplification =
         (do
             -- floor(top) = top
             assertEqualWithExplanation "floor(top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 (evaluate
@@ -65,7 +65,7 @@ test_floorSimplification =
                 )
             -- floor(bottom) = bottom
             assertEqualWithExplanation "floor(bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 (evaluate
@@ -78,7 +78,7 @@ test_floorSimplification =
         (do
             -- floor(top) = top
             assertEqualWithExplanation "floor(top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 (makeEvaluate
@@ -86,7 +86,7 @@ test_floorSimplification =
                 )
             -- floor(bottom) = bottom
             assertEqualWithExplanation "floor(bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 (makeEvaluate
@@ -97,7 +97,7 @@ test_floorSimplification =
         -- floor(term and predicate and subst)
         --     = top and (floor(term) and predicate) and subst
         (assertEqualWithExplanation "floor(top)"
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -164,7 +164,7 @@ makeFloor patterns =
     Floor
         { floorOperandSort = testSort
         , floorResultSort  = testSort
-        , floorChild       = OrOfExpandedPattern.make patterns
+        , floorChild       = MultiOr.make patterns
         }
 
 evaluate

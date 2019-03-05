@@ -22,10 +22,14 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( crossProductGeneric, flatten, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( MultiOr, OrOfExpandedPattern )
+                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( crossProductGeneric, flatten, isFalse, isTrue, make )
+                 ( isFalse, isTrue )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
@@ -118,9 +122,9 @@ simplifyEvaluatedIn
 simplifyEvaluatedIn
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | OrOfExpandedPattern.isFalse first =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
 
   | OrOfExpandedPattern.isTrue first =
     Ceil.simplifyEvaluated
@@ -139,7 +143,7 @@ simplifyEvaluatedIn
                     )
                 )
         crossProduct =
-            OrOfExpandedPattern.crossProductGeneric
+            MultiOr.crossProductGeneric
                 (makeEvaluateIn
                     tools substitutionSimplifier simplifier axiomIdToSimplifier
                 )
@@ -150,7 +154,7 @@ simplifyEvaluatedIn
         orOfOr :: MultiOr (OrOfExpandedPattern level variable)
         orOfOr = fmap dropProof orOfOrProof
     -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
-    return (OrOfExpandedPattern.flatten orOfOr, SimplificationProof)
+    return (MultiOr.flatten orOfOr, SimplificationProof)
   where
     dropProof
         :: (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -158,9 +162,9 @@ simplifyEvaluatedIn
     dropProof = fst
 
     {-
-    ( OrOfExpandedPattern.flatten
+    ( MultiOr.flatten
         -- TODO: Remove fst.
-        (fst <$> OrOfExpandedPattern.crossProductGeneric
+        (fst <$> MultiOr.crossProductGeneric
             (makeEvaluateIn tools substitutionSimplifier) first second
         )
     , SimplificationProof
@@ -196,7 +200,7 @@ makeEvaluateIn
     Ceil.makeEvaluate
         tools substitutionSimplifier simplifier axiomIdToSimplifier first
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
   | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
@@ -210,7 +214,7 @@ makeEvaluateNonBoolIn
     -> ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolIn patt1 patt2 =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [ Predicated
             { term = mkTop_
             , predicate =

@@ -40,10 +40,10 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Pattern
                  ( StepPattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make, merge )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, makeFromSinglePurePattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, merge )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -134,9 +134,9 @@ instance (Ord level, Ord (variable level))
             }
       =
         AttemptedAxiomResults
-            { results = OrOfExpandedPattern.merge firstResults secondResults
+            { results = MultiOr.merge firstResults secondResults
             , remainders =
-                    OrOfExpandedPattern.merge firstRemainders secondRemainders
+                    MultiOr.merge firstRemainders secondRemainders
             }
 
 instance (Ord level, Ord (variable level))
@@ -144,8 +144,8 @@ instance (Ord level, Ord (variable level))
   where
     mempty =
         AttemptedAxiomResults
-            { results = OrOfExpandedPattern.make []
-            , remainders = OrOfExpandedPattern.make []
+            { results = MultiOr.make []
+            , remainders = MultiOr.make []
             }
 
 {-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
@@ -180,7 +180,7 @@ purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
             { results = makeFromSinglePurePattern p
-            , remainders = OrOfExpandedPattern.make []
+            , remainders = MultiOr.make []
             }
         , SimplificationProof
         )

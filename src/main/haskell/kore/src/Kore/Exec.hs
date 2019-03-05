@@ -62,9 +62,9 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..), toMLPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
@@ -163,7 +163,7 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
         searchGraph searchConfig (match searchPattern) executionGraph
     let
         solutions =
-            concatMap OrOfExpandedPattern.extractPatterns solutionsLists
+            concatMap MultiOr.extractPatterns solutionsLists
         orPredicate =
             makeMultipleOrPredicate
                 (Predicated.toPredicate <$> solutions)
@@ -247,7 +247,7 @@ execute verifiedModule strategy inputPattern
             (ExpandedPattern.fromPurePattern inputPattern)
     let
         initialPattern =
-            case OrOfExpandedPattern.extractPatterns simplifiedPatterns of
+            case MultiOr.extractPatterns simplifiedPatterns of
                 [] -> ExpandedPattern.bottomOf patternSort
                 (config : _) -> config
           where
@@ -351,7 +351,7 @@ simplifyRulePattern
 simplifyRulePattern tools rulePattern = do
     let RulePattern { left } = rulePattern
     (simplifiedLeft, _proof) <- simplifyPattern tools left
-    case OrOfExpandedPattern.extractPatterns simplifiedLeft of
+    case MultiOr.extractPatterns simplifiedLeft of
         [ Predicated { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
             let subst = Substitution.toMap substitution

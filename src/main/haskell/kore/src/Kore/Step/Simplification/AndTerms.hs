@@ -58,10 +58,12 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom, bottomPredicate, fromPurePattern,
                  isBottom, toPredicate, top, topPredicate )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, toPredicate )
+                 ( toPredicate )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  SimplificationType, Simplifier, StepPatternSimplifier )
@@ -137,7 +139,7 @@ termEquals
             axiomIdToSimplifier
             first
             second
-    return (OrOfExpandedPattern.make [erasePredicatedTerm result], proof)
+    return (MultiOr.make [erasePredicatedTerm result], proof)
 
 termEqualsAnd
     :: forall level variable err .
@@ -823,7 +825,7 @@ bottomTermEquals
             axiomIdToSimplifier
             second
 
-    case OrOfExpandedPattern.extractPatterns secondCeil of
+    case MultiOr.extractPatterns secondCeil of
         [] -> return (ExpandedPattern.top, SimplificationProof)
         [ Predicated
             {term = (), predicate = PredicateTrue, substitution}
@@ -951,7 +953,7 @@ variableFunctionAndEquals
                         simplifier
                         axiomIdToSimplifier
                         second
-                case OrOfExpandedPattern.extractPatterns resultOr of
+                case MultiOr.extractPatterns resultOr of
                     [] -> return ExpandedPattern.bottomPredicate
                     [resultPredicateSubstitution] ->
                         return resultPredicateSubstitution

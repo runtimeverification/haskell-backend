@@ -70,10 +70,10 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as PredicateSubstitution
                  ( toPredicate )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, make, merge, mergeAll )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, merge, mergeAll )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier, StepPatternSimplifier )
@@ -388,7 +388,7 @@ stepWithRule
                 axiom''
                 config'
             )
-            (OrOfExpandedPattern.extractPatterns unificationSolutions)
+            (MultiOr.extractPatterns unificationSolutions)
     return (attachProof <$> results)
 
 applyUnificationToRhs
@@ -727,8 +727,8 @@ stepWithRemaindersForUnifier
     patt
   = return
     ( OrStepResult
-        { rewrittenPattern = OrOfExpandedPattern.make []
-        , remainder = OrOfExpandedPattern.make [patt]
+        { rewrittenPattern = MultiOr.make []
+        , remainder = MultiOr.make [patt]
         }
     , mempty
     )
@@ -778,8 +778,8 @@ stepWithRemaindersForUnifier
         alreadyRewritten =
             OrStepResult
                 { rewrittenPattern =
-                    OrOfExpandedPattern.mergeAll rewritten
-                , remainder = OrOfExpandedPattern.make []
+                    MultiOr.mergeAll rewritten
+                , remainder = MultiOr.make []
                 }
     return
         ( foldl' mergeResults alreadyRewritten rewrittenRemainders
@@ -802,9 +802,9 @@ stepWithRemaindersForUnifier
       =
         OrStepResult
             { rewrittenPattern =
-                OrOfExpandedPattern.merge firstPattern secondPattern
+                MultiOr.merge firstPattern secondPattern
             , remainder =
-                OrOfExpandedPattern.merge firstRemainder secondRemainder
+                MultiOr.merge firstRemainder secondRemainder
             }
     splitStepResult
         :: StepResult level variable
@@ -814,7 +814,7 @@ stepWithRemaindersForUnifier
     splitStepResult
         StepResult { rewrittenPattern, remainder }
       =
-        ( OrOfExpandedPattern.make [rewrittenPattern]
+        ( MultiOr.make [rewrittenPattern]
         , remainder
         )
 

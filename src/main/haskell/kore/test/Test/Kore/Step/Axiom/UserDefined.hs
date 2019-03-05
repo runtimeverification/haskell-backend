@@ -36,7 +36,7 @@ import           Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern, Predicated (..), bottom )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), StepPatternSimplifier,
@@ -60,14 +60,14 @@ test_userDefinedFunction =
     [ testCase "Applies one step" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrOfExpandedPattern.make
+                    { results = MultiOr.make
                         [ Predicated
                             { term = Mock.functionalConstr11 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
                         ]
-                    , remainders = OrOfExpandedPattern.make []
+                    , remainders = MultiOr.make []
                     }
         actual <-
             evaluateWithAxiom
@@ -117,8 +117,8 @@ test_userDefinedFunction =
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrOfExpandedPattern.make []
-                    , remainders = OrOfExpandedPattern.make
+                    { results = MultiOr.make []
+                    , remainders = MultiOr.make
                         [ Predicated
                             { term = Mock.functionalConstr10 (mkVar Mock.x)
                             , predicate = makeTruePredicate
@@ -144,8 +144,8 @@ test_userDefinedFunction =
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results =
-                        OrOfExpandedPattern.make [ ExpandedPattern.bottom ]
-                    , remainders = OrOfExpandedPattern.make []
+                        MultiOr.make [ ExpandedPattern.bottom ]
+                    , remainders = MultiOr.make []
                     }
         actual <-
             evaluateWithAxiom
@@ -167,7 +167,7 @@ test_userDefinedFunction =
     , testCase "Preserves step substitution" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrOfExpandedPattern.make
+                    { results = MultiOr.make
                         [ Predicated
                             { term = Mock.g (mkVar Mock.z)
                             , predicate = makeTruePredicate
@@ -175,7 +175,7 @@ test_userDefinedFunction =
                                 [(Mock.y, mkVar Mock.z)]
                             }
                         ]
-                    , remainders = OrOfExpandedPattern.make
+                    , remainders = MultiOr.make
                         [ Predicated
                             { term = Mock.functionalConstr20
                                 (mkVar Mock.y)

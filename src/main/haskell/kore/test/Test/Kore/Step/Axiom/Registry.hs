@@ -39,7 +39,7 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -351,7 +351,7 @@ test_functionRegistry =
                 (makeExpandedPattern (mkApp sortS gHead []))
         let actual =
                 ExpandedPattern.term $ head
-                $ OrOfExpandedPattern.extractPatterns simplified
+                $ MultiOr.extractPatterns simplified
         assertEqual "" expect actual
     ]
   where

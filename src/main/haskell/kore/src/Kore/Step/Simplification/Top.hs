@@ -16,10 +16,10 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -33,4 +33,4 @@ simplify
        , SimplificationProof level
        )
 simplify _ =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [ExpandedPattern.top], SimplificationProof)

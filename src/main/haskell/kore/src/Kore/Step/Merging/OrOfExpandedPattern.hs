@@ -26,10 +26,12 @@ import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution, Predicated )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( MultiOr, OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -78,7 +80,7 @@ mergeWithPredicateSubstitution
     patt
   = do
     (evaluated, _proofs) <-
-        OrOfExpandedPattern.traverseWithPairs
+        MultiOr.traverseWithPairs
             (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
                 tools
                 substitutionSimplifier
@@ -120,7 +122,7 @@ mergeWithPredicateSubstitutionAssumesEvaluated
     patt
   = do
     (evaluated, _proofs) <-
-        OrOfExpandedPattern.traverseWithPairs
+        MultiOr.traverseWithPairs
             (ExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
                     substitutionMerger
                     toMerge

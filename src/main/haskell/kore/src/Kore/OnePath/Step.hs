@@ -47,8 +47,7 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.OrOfExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -231,7 +230,7 @@ transitionRule
                 proof'' = proof <> simplificationProof proof'
                 prove config' = (config', proof'')
                 -- Filter out ⊥ patterns
-                nonEmptyConfigs = ExpandedPattern.filterOr configs
+                nonEmptyConfigs = MultiOr.filterOr configs
             if null nonEmptyConfigs
                 then return [(Bottom, proof'')]
                 else return (prove <$> map wrapper (toList nonEmptyConfigs))
@@ -286,7 +285,7 @@ transitionRule
             rewriteResults =
                 map
                     (\ p -> (RewritePattern p, combinedProof))
-                    (OrOfExpandedPattern.extractPatterns rewrittenPattern)
+                    (MultiOr.extractPatterns rewrittenPattern)
 
             remainderResults
                 ::  [   ( StrategyPattern (CommonExpandedPattern level)
@@ -296,7 +295,7 @@ transitionRule
             remainderResults =
                 map
                     (\ p -> (Stuck p, combinedProof))
-                    (OrOfExpandedPattern.extractPatterns remainder)
+                    (MultiOr.extractPatterns remainder)
 
         if null rewriteResults
             then return ((Bottom, combinedProof) : remainderResults)
@@ -350,7 +349,7 @@ transitionRule
                         , finalProof
                         )
                     )
-                    (ExpandedPattern.extractPatterns orResult)
+                    (MultiOr.extractPatterns orResult)
         if null patternsWithProofs
             then return [(Bottom, finalProof)]
             else return patternsWithProofs

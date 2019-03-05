@@ -18,10 +18,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
@@ -46,7 +46,7 @@ test_existsSimplification =
     [ testCase "Exists - or distribution" $ do
         -- exists(a or b) = exists(a) or exists(b)
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = mkExists Mock.x something1OfX
                         , predicate = makeTruePredicate
@@ -68,7 +68,7 @@ test_existsSimplification =
 
     , testGroup "Exists - Predicates"
         [ testCase "Top" $ do
-            let expect = OrOfExpandedPattern.make [ ExpandedPattern.top ]
+            let expect = MultiOr.make [ ExpandedPattern.top ]
             actual <-
                 evaluate mockMetadataTools
                     (makeExists
@@ -78,12 +78,12 @@ test_existsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "Bottom" $ do
-            let expect = OrOfExpandedPattern.make []
+            let expect = MultiOr.make []
             actual <-evaluate mockMetadataTools (makeExists Mock.x [])
             assertEqualWithExplanation "" expect actual
 
         , testCase "Expanded Top" $ do
-            let expect = OrOfExpandedPattern.make [ ExpandedPattern.top ]
+            let expect = MultiOr.make [ ExpandedPattern.top ]
             actual <-
                 makeEvaluate mockMetadataTools
                     Mock.x
@@ -91,7 +91,7 @@ test_existsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "Expanded Bottom" $ do
-            let expect = OrOfExpandedPattern.make []
+            let expect = MultiOr.make []
             actual <-
                 makeEvaluate mockMetadataTools
                     Mock.x
@@ -103,7 +103,7 @@ test_existsSimplification =
         -- exists x . (t(x) and p(x) and [x = alpha, others])
         --    = t(alpha) and p(alpha) and [others]
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = Mock.f gOfA
                         , predicate =
@@ -128,7 +128,7 @@ test_existsSimplification =
         --    = t and p and s
         --    if t, p, s do not depend on x.
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = fOfA
                         , predicate = makeCeilPredicate gOfA
@@ -150,7 +150,7 @@ test_existsSimplification =
         --    = (exists x . t(x)) and p and s
         --    if p, s do not depend on x.
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = mkExists Mock.x fOfX
                         , predicate = makeCeilPredicate gOfA
@@ -172,7 +172,7 @@ test_existsSimplification =
         --    = t and (exists x . p(x)) and s
         --    if t, s do not depend on x.
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = fOfA
                         , predicate =
@@ -195,7 +195,7 @@ test_existsSimplification =
         --    = exists x . (t(x) and p(x)) and Top and s
         --    if s do not depend on x.
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term =
                             mkExists Mock.x (mkAnd fOfX (mkEquals_ fOfX gOfA))
@@ -216,7 +216,7 @@ test_existsSimplification =
     , testCase "exists reevaluates" $ do
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
-        let expect = OrOfExpandedPattern.make [ ExpandedPattern.top ]
+        let expect = MultiOr.make [ ExpandedPattern.top ]
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
@@ -260,7 +260,7 @@ makeExists variable patterns =
     Exists
         { existsSort = testSort
         , existsVariable = variable
-        , existsChild = OrOfExpandedPattern.make patterns
+        , existsChild = MultiOr.make patterns
         }
 
 testSort :: Sort Object
