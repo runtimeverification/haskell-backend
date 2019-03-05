@@ -5,10 +5,9 @@ module Test.Kore.Step.Step
     ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
 
+import qualified Control.Exception as Exception
 import           Data.Default
                  ( def )
 import qualified Data.List as List
@@ -395,9 +394,11 @@ actualStepLimit =
 
 test_unificationError :: TestTree
 test_unificationError =
-    testCase "Throws unification error"
-        (assertEqualWithExplanation "Expected unification error" []
-            =<< actualUnificationError)
+    testCase "Throws unification error" $ do
+        result <- Exception.try actualUnificationError
+        case result of
+            Left (Exception.ErrorCall _) -> return ()
+            Right _ -> assertFailure "Expected unification error"
 
 actualUnificationError
     :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
