@@ -9,10 +9,10 @@ import Kore.AST.MetaOrObject
        ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
+import Kore.Step.Axiom.Data
+       ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.ExpandedPattern
        ( ExpandedPattern )
-import Kore.Step.Function.Data
-       ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Pattern
        ( StepPattern )
 import Kore.Step.Simplification.Data

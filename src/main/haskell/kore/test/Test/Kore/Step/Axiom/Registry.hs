@@ -1,4 +1,4 @@
-module Test.Kore.Step.Function.Registry (test_functionRegistry) where
+module Test.Kore.Step.Axiom.Registry (test_functionRegistry) where
 
 import Test.Tasty
        ( TestTree )
@@ -29,15 +29,15 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.Axiom.Data
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
+import           Kore.Step.Axiom.Registry
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes, extractRewriteAxioms )
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Function.Registry
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -295,7 +295,7 @@ testEvaluators
     :: BuiltinAndAxiomSimplifierMap Object
 testEvaluators =
     axiomPatternsToEvaluators
-    $ extractFunctionAxioms Object testIndexedModule
+    $ extractEqualityAxioms Object testIndexedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools testIndexedModule

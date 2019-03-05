@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.Function.UserDefined
+Module      : Kore.Step.Axiom.UserDefined
 Description : Evaluates user-defined functions in a pattern.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,9 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Function.UserDefined
+module Kore.Step.Axiom.UserDefined
     ( StepPatternSimplifier
-    , ruleFunctionEvaluator
+    , equalityRuleEvaluator
     ) where
 
 import Control.Monad.Except
@@ -23,6 +23,15 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse )
+import           Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Axiom.Matcher
+                 ( matchAsUnification )
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
                  RulePattern (..) )
@@ -36,15 +45,6 @@ import           Kore.Step.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
-import           Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Function.Matcher
-                 ( matchAsUnification )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -58,12 +58,11 @@ import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
 
-{-| 'ruleFunctionEvaluator' evaluates a user-defined function. After
-evaluating the function, it tries to re-evaluate all functions on the result.
-
-The function is assumed to be defined through an axiom.
+{-| Evaluates a pattern using user-defined axioms. After
+evaluating the pattern, it tries to re-apply all axioms on the result.
 -}
-ruleFunctionEvaluator
+-- TODO: Rename to equalityRuleEvaluator
+equalityRuleEvaluator
     ::  forall level variable.
         ( FreshVariable variable
         , SortedVariable variable
@@ -88,7 +87,7 @@ ruleFunctionEvaluator
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
-ruleFunctionEvaluator
+equalityRuleEvaluator
     (EqualityRule rule)
     tools
     substitutionSimplifier

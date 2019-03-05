@@ -14,12 +14,16 @@ module Kore.Step.Simplification.AndPredicates
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.ExpandedPattern
                  ( PredicateSubstitution )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Step.MultiAnd as MultiAnd
+                 ( extractPatterns )
 import           Kore.Step.OrOfExpandedPattern
                  ( MultiOr, OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
@@ -49,7 +53,7 @@ simplifyEvaluatedMultiPredicateSubstitution
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> [OrOfPredicateSubstitution level variable]
+    -> MultiAnd (OrOfPredicateSubstitution level variable)
     -> Simplifier
         (OrOfPredicateSubstitution level variable, SimplificationProof level)
 simplifyEvaluatedMultiPredicateSubstitution
@@ -62,7 +66,8 @@ simplifyEvaluatedMultiPredicateSubstitution
     let
         crossProduct :: MultiOr [PredicateSubstitution level variable]
         crossProduct =
-            OrOfExpandedPattern.fullCrossProduct predicateSubstitutions
+            OrOfExpandedPattern.fullCrossProduct
+                (MultiAnd.extractPatterns predicateSubstitutions)
     result <- traverse andPredicateSubstitutions crossProduct
     return
         ( result

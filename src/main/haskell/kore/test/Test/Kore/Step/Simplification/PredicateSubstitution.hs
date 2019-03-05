@@ -15,14 +15,14 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( firstFullEvaluation )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.ExpandedPattern
                  ( CommonPredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.Function.Data
-import           Kore.Step.Function.EvaluationStrategy
-                 ( firstFullEvaluation )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern

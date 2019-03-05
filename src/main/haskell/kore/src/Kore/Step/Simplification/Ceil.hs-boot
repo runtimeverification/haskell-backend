@@ -8,7 +8,7 @@ import Kore.AST.MetaOrObject
        ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
-import Kore.Step.Function.Data
+import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.OrOfExpandedPattern
        ( OrOfPredicateSubstitution )

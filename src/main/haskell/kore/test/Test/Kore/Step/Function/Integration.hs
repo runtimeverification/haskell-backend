@@ -18,6 +18,16 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+import           Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( builtinEvaluation, definitionEvaluation,
+                 firstFullEvaluation, simplifierWithFallback )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
+import           Kore.Step.Axiom.UserDefined
+                 ( equalityRuleEvaluator )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
@@ -27,16 +37,6 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
                  Predicated (Predicated) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), mapVariables )
-import           Kore.Step.Function.Data
-import           Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.EvaluationStrategy
-                 ( builtinEvaluation, definitionEvaluation,
-                 firstFullEvaluation, simplifierWithFallback )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Function.UserDefined
-                 ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -613,7 +613,7 @@ axiomEvaluator
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
-        (ruleFunctionEvaluator (axiom left right makeTruePredicate))
+        (equalityRuleEvaluator (axiom left right makeTruePredicate))
 
 axiom
     :: CommonStepPattern Object

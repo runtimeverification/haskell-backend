@@ -34,13 +34,13 @@ import           Kore.AST.MetaOrObject
                  ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern

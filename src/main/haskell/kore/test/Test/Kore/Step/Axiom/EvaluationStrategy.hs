@@ -1,4 +1,4 @@
-module Test.Kore.Step.Function.EvaluationStrategy where
+module Test.Kore.Step.Axiom.EvaluationStrategy where
 
 import Test.Tasty
        ( TestTree )
@@ -17,6 +17,16 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
+import           Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import           Kore.Step.Axiom.EvaluationStrategy
+import           Kore.Step.Axiom.UserDefined
+                 ( equalityRuleEvaluator )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.AxiomPatterns
@@ -25,16 +35,6 @@ import           Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (Predicated) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
-import           Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.EvaluationStrategy
-import           Kore.Step.Function.UserDefined
-                 ( ruleFunctionEvaluator )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Pattern
@@ -520,7 +520,7 @@ axiomEvaluator
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
-        (ruleFunctionEvaluator (axiom left right makeTruePredicate))
+        (equalityRuleEvaluator (axiom left right makeTruePredicate))
 
 axiomEvaluatorWithRemainder
     :: CommonStepPattern Object

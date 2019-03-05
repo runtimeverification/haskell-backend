@@ -23,6 +23,13 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( builtinEvaluation, simplifierWithFallback )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
+import           Kore.Step.Axiom.Registry
+                 ( axiomPatternsToEvaluators )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
@@ -30,13 +37,6 @@ import           Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-import           Kore.Step.Function.EvaluationStrategy
-                 ( builtinEvaluation, simplifierWithFallback )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Function.Registry
-                 ( axiomPatternsToEvaluators )
 import           Kore.Step.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern

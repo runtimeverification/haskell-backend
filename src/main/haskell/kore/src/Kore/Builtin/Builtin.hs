@@ -101,17 +101,17 @@ import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( top )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
+import           Kore.Step.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( top )
 import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
