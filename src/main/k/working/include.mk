@@ -10,6 +10,15 @@ DEFINITION := $(KOMPILED)/definition.kore
 $(DEFINITION) : $(DEFINITION_NAME).k
 	$(KOMPILE) $(KOMPILE_OPTS) $<
 
+# From make 3.82 news: http://cvs.savannah.gnu.org/viewvc/*checkout*/make/make/NEWS?revision=2.120
+# * WARNING: Backward-incompatibility!
+#   The pattern-specific variables and pattern rules are now applied in the
+#   shortest stem first order instead of the definition order (variables
+#   and rules with the same stem length are still applied in the definition
+#   order). This produces the usually-desired behavior where more specific
+#   patterns are preferred. To detect this feature search for 'shortest-stem'
+#   in the .FEATURES special variable.
+
 %.krun: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $<
 
