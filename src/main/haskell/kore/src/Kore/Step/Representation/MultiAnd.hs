@@ -14,14 +14,16 @@ module Kore.Step.Representation.MultiAnd
     , make
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import qualified Data.Set as Set
-import           GHC.Generics
-                 ( Generic )
+import Control.DeepSeq
+       ( NFData )
+import GHC.Generics
+       ( Generic )
 
-import Kore.TopBottom
-       ( TopBottom (..) )
+import           Kore.Step.Representation.Semilattice
+                 ( Semilattice )
+import qualified Kore.Step.Representation.Semilattice as Semilattice
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 
 {-| 'MultiAnd' is a Matching logic and of its children
 
@@ -41,6 +43,15 @@ newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
 
 instance NFData child => NFData (MultiAnd child)
 
+instance (Ord child, TopBottom child) => Semilattice MultiAnd child
+  where
+    elementType _ term
+      | isTop term = Semilattice.Neutral
+      | isBottom term = Semilattice.Absorbing
+      | otherwise = Semilattice.Other
+    toList (MultiAnd children) = children
+    fromList children = MultiAnd children
+
 instance TopBottom child => TopBottom (MultiAnd child)
   where
     isTop (MultiAnd []) = True
@@ -48,90 +59,19 @@ instance TopBottom child => TopBottom (MultiAnd child)
     isBottom (MultiAnd [child]) = isBottom child
     isBottom _ = False
 
-{-| 'AndBool' is an some sort of Bool data type used when evaluating things
-inside an 'MultiAnd'.
--}
--- TODO(virgil): Refactor, this is the same as OrBool. Make it a
--- Top | Bottom | Other or a Maybe Bool.
-data AndBool = AndTrue | AndFalse | AndUnknown
-
-{-|Does a very simple attempt to check whether a pattern
-is top or bottom.
--}
--- TODO(virgil): Refactor, this is the same as patternToOrBool
-patternToAndBool
-    :: TopBottom term
-    => term -> AndBool
-patternToAndBool patt
-  | isTop patt = AndTrue
-  | isBottom patt = AndFalse
-  | otherwise = AndUnknown
-
 {-| 'make' constructs a normalized 'MultiAnd'.
 -}
 make
     :: (Ord term, TopBottom term)
     => [term]
     -> MultiAnd term
-make patts = filterAnd (MultiAnd patts)
+make = Semilattice.makeTerm
 
 {-| Returns the patterns inside an @\and@.
 -}
+-- TODO(virgil): rename as toList
 extractPatterns
     :: TopBottom term
     => MultiAnd term
     -> [term]
 extractPatterns = getMultiAnd
-
-
-{- | Simplify the conjunction.
-
-The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
-idempotency property of conjunction (@\\and(φ,φ)=φ@) is applied to remove
-duplicated items from the result.
-
-See also: 'filterUnique'
--}
-filterAnd
-    :: (Ord term, TopBottom term)
-    => MultiAnd term
-    -> MultiAnd term
-filterAnd =
-    filterGeneric patternToAndBool . filterUnique
-
-
-{- | Simplify the conjunction by eliminating duplicate elements.
-
-The idempotency property of conjunction (@\\and(φ,φ)=φ@) is applied to remove
-duplicated items from the result.
-
-Note: Items are compared with their Ord instance. This does not attempt
-to account separately for things like α-equivalence, so, if that is not
-included in the Ord instance, items containing @\\forall@ and
-@\\exists@ may be considered inequal although they are equivalent in
-a logical sense.
-
--}
-filterUnique :: Ord a => MultiAnd a -> MultiAnd a
-filterUnique = MultiAnd . Set.toList . Set.fromList . getMultiAnd
-
-{-| 'filterGeneric' simplifies a MultiAnd according to a function which
-evaluates its children to true/false/unknown.
--}
-filterGeneric
-    :: (child -> AndBool)
-    -> MultiAnd child
-    -> MultiAnd child
-filterGeneric andFilter (MultiAnd patts) =
-    go andFilter [] patts
-  where
-    go  :: (child -> AndBool)
-        -> [child]
-        -> [child]
-        -> MultiAnd child
-    go _ filtered [] = MultiAnd (reverse filtered)
-    go filterAnd' filtered (element:unfiltered) =
-        case filterAnd' element of
-            AndFalse -> MultiAnd [element]
-            AndTrue -> go filterAnd' filtered unfiltered
-            AndUnknown -> go filterAnd' (element:filtered) unfiltered

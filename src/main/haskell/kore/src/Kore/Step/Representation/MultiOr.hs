@@ -28,16 +28,18 @@ module Kore.Step.Representation.MultiOr
     , traverseFlattenWithPairsGeneric
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.List
-                 ( foldl' )
-import qualified Data.Set as Set
-import           GHC.Generics
-                 ( Generic )
+import Control.DeepSeq
+       ( NFData )
+import Data.List
+       ( foldl' )
+import GHC.Generics
+       ( Generic )
 
-import Kore.TopBottom
-       ( TopBottom (..) )
+import           Kore.Step.Representation.Semilattice
+                 ( Semilattice )
+import qualified Kore.Step.Representation.Semilattice as Semilattice
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -58,6 +60,15 @@ newtype MultiOr child = MultiOr { getMultiOr :: [child] }
 
 instance NFData child => NFData (MultiOr child)
 
+instance (Ord child, TopBottom child) => Semilattice MultiOr child
+  where
+    elementType _ term
+      | isTop term = Semilattice.Absorbing
+      | isBottom term = Semilattice.Neutral
+      | otherwise = Semilattice.Other
+    toList (MultiOr children) = children
+    fromList children = MultiOr children
+
 instance TopBottom child => TopBottom (MultiOr child)
   where
     isTop (MultiOr [child]) = isTop child
@@ -65,41 +76,18 @@ instance TopBottom child => TopBottom (MultiOr child)
     isBottom (MultiOr []) = True
     isBottom _ = False
 
-{-| 'OrBool' is an some sort of Bool data type used when evaluating things
-inside an 'MultiOr'.
--}
-data OrBool = OrTrue | OrFalse | OrUnknown
-
 {- | Simplify the disjunction.
 
 The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
 idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
 duplicated items from the result.
-
-See also: 'filterUnique'
-
 -}
+-- TODO(virgil): consider removing this.
 filterOr
     :: (Ord term, TopBottom term)
     => MultiOr term
     -> MultiOr term
-filterOr =
-    filterGeneric patternToOrBool . filterUnique
-
-{- | Simplify the disjunction by eliminating duplicate elements.
-
-The idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
-duplicated items from the result.
-
-Note: Items are compared with their Ord instance. This does not attempt
-to account separately for things like α-equivalence, so, if that is not
-included in the Ord instance, items containing @\\forall@ and
-@\\exists@ may be considered inequal although they are equivalent in
-a logical sense.
-
--}
-filterUnique :: Ord a => MultiOr a -> MultiOr a
-filterUnique = MultiOr . Set.toList . Set.fromList . getMultiOr
+filterOr = Semilattice.simplify
 
 {-| 'make' constructs a normalized 'MultiOr'.
 -}
@@ -107,7 +95,7 @@ make
     :: (Ord term, TopBottom term)
     => [term]
     -> MultiOr term
-make patts = filterOr (MultiOr patts)
+make = Semilattice.makeTerm
 
 {- | Construct a normalized 'MultiOr' from a single pattern.
 -}
@@ -121,6 +109,7 @@ singleton patt = make [patt]
 
 It returns the patterns inside an @\or@.
 -}
+-- TODO(virgil): rename as toList
 extractPatterns
     :: MultiOr term
     -> [term]
@@ -137,7 +126,7 @@ fmapWithPairs
     -> MultiOr term
     -> (MultiOr term, [a])
 fmapWithPairs mapper patt =
-    ( filterOr (fmap fst mapped)
+    ( Semilattice.simplify (fmap fst mapped)
     , extractPatterns (fmap snd mapped)
     )
   where
@@ -164,7 +153,7 @@ traverseWithPairs
 traverseWithPairs mapper patt = do
     mapped <- traverse mapper patt
     return
-        ( filterOr (fmap fst mapped)
+        ( Semilattice.simplify (fmap fst mapped)
         , extractPatterns (fmap snd mapped)
         )
 
@@ -273,43 +262,11 @@ flatten
     => MultiOr (MultiOr term)
     -> MultiOr term
 flatten ors =
-    filterOr (flattenGeneric ors)
-
-{-| 'patternToOrBool' does a very simple attempt to check whether a pattern
-is top or bottom.
--}
-patternToOrBool
-    :: TopBottom term
-    => term -> OrBool
-patternToOrBool patt
-  | isTop patt = OrTrue
-  | isBottom patt = OrFalse
-  | otherwise = OrUnknown
-
-{-| 'filterGeneric' simplifies a MultiOr according to a function which
-evaluates its children to true/false/unknown.
--}
-filterGeneric
-    :: (child -> OrBool)
-    -> MultiOr child
-    -> MultiOr child
-filterGeneric orFilter (MultiOr patts) =
-    go orFilter [] patts
-  where
-    go  :: (child -> OrBool)
-        -> [child]
-        -> [child]
-        -> MultiOr child
-    go _ filtered [] = MultiOr (reverse filtered)
-    go filterOr' filtered (element:unfiltered) =
-        case filterOr' element of
-            OrTrue -> MultiOr [element]
-            OrFalse -> go filterOr' filtered unfiltered
-            OrUnknown -> go filterOr' (element:filtered) unfiltered
+    Semilattice.simplify (flattenGeneric ors)
 
 {- | Merge two disjunctions of items.
 
-The result is simplified with the 'filterOr' function.
+The result is simplified with the 'Semilattice.simplify' function.
 
 -}
 merge
@@ -318,11 +275,11 @@ merge
     -> MultiOr term
     -> MultiOr term
 merge patts1 patts2 =
-    filterOr (mergeGeneric patts1 patts2)
+    Semilattice.simplify (mergeGeneric patts1 patts2)
 
 {- | Merge any number of disjunctions of items.
 
-The result is simplified with the 'filterOr' function.
+The result is simplified with the 'Semilattice.simplify' function.
 
 -}
 mergeAll
@@ -330,7 +287,7 @@ mergeAll
     => [MultiOr term]
     -> MultiOr term
 mergeAll ors =
-    filterOr (foldl' mergeGeneric (make []) ors)
+    Semilattice.simplify (foldl' mergeGeneric (make []) ors)
 
 {-| 'merge' merges two 'MultiOr'.
 -}
