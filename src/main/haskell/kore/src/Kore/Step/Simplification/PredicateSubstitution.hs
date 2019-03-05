@@ -88,7 +88,7 @@ simplifyBranch
         then return initialValue
         else do
             simplified <-
-                Predicate.simplifyPartialBranch
+                Predicate.simplify
                     substitutionSimplifier
                     simplifier
                     substitutedPredicate
