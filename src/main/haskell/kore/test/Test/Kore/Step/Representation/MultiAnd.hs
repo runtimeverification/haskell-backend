@@ -1,13 +1,13 @@
-module Test.Kore.Step.MultiAnd where
+module Test.Kore.Step.Representation.MultiAnd where
 
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import           Kore.Step.MultiAnd
+import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
-import qualified Kore.Step.MultiAnd as MultiAnd
+import qualified Kore.Step.Representation.MultiAnd as MultiAnd
 import           Kore.TopBottom
                  ( TopBottom (..) )
 

@@ -53,9 +53,9 @@ import           Kore.Parser.Parser
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import qualified Kore.Repl as Repl
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search

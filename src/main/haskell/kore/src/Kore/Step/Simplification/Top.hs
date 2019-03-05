@@ -14,11 +14,11 @@ module Kore.Step.Simplification.Top
 import           Kore.AST.Common
                  ( Top (..) )
 import           Kore.AST.MetaOrObject
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( top )
-import           Kore.Step.OrOfExpandedPattern
+import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )

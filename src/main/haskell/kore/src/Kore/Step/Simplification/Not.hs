@@ -19,15 +19,15 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( toMLPattern, top )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, isFalse, isTrue, make, toExpandedPattern )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( toMLPattern, top )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( extractPatterns, isFalse, isTrue, make, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser

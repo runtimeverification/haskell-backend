@@ -22,8 +22,8 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.StepperAttributes
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool

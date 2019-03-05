@@ -49,14 +49,14 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (Predicated) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
-import           Kore.Step.ExpandedPattern as Predicated
-                 ( Predicated (..) )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (Predicated) )
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( fromPurePattern )
+import           Kore.Step.Representation.ExpandedPattern as Predicated
+                 ( Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( Environment (proveClaim), PredicateSubstitutionSimplifier,
                  Simplifier, StepPatternSimplifier )

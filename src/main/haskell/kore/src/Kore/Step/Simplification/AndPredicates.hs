@@ -16,17 +16,17 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.MultiAnd
+import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
-import qualified Kore.Step.MultiAnd as MultiAnd
+import qualified Kore.Step.Representation.MultiAnd as MultiAnd
                  ( extractPatterns )
-import           Kore.Step.OrOfExpandedPattern
+import           Kore.Step.Representation.OrOfExpandedPattern
                  ( MultiOr, OrOfPredicateSubstitution )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),

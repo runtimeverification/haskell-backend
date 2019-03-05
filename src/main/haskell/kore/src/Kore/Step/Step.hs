@@ -57,10 +57,10 @@ import           Kore.Step.BaseStep
                  simplificationProof, stepWithRewriteRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )

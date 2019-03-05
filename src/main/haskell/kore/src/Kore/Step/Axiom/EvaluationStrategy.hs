@@ -50,14 +50,14 @@ import           Kore.Step.BaseStep
                  stepWithRemaindersForUnifier )
 import qualified Kore.Step.BaseStep as OrStepResult
                  ( OrStepResult (..) )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, isFalse, make )
 import           Kore.Step.Pattern
                  ( StepPattern, asConcreteStepPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( fromPurePattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( extractPatterns, isFalse, make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )

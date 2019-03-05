@@ -15,10 +15,10 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Pattern
                  ( StepPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier

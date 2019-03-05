@@ -1,11 +1,11 @@
-module Test.Kore.Step.OrOfExpandedPattern where
+module Test.Kore.Step.Representation.OrOfExpandedPattern where
 
 import           Hedgehog
                  ( Property, (===) )
 import qualified Hedgehog
 
 import Kore.AST.MetaOrObject
-import Kore.Step.OrOfExpandedPattern
+import Kore.Step.Representation.OrOfExpandedPattern
 
 import Test.Kore
 

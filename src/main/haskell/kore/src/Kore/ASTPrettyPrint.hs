@@ -35,7 +35,7 @@ import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

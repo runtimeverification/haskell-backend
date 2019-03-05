@@ -30,21 +30,21 @@ import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm,
-                 predicateSubstitutionToExpandedPattern )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
-import qualified Kore.Step.MultiAnd as MultiAnd
-                 ( make )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, traverseFlattenWithPairs )
 import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm,
+                 predicateSubstitutionToExpandedPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiAnd as MultiAnd
+                 ( make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make, traverseFlattenWithPairs )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),

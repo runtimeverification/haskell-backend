@@ -17,9 +17,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Pattern
                  ( StepPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )

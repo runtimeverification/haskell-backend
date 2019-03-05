@@ -14,12 +14,12 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), isBottom, isTop )
-import           Kore.Step.OrOfExpandedPattern
-                 ( MultiOr (..), OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..), isBottom, isTop )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( MultiOr (..), OrOfExpandedPattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Unification.Substitution

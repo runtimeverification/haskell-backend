@@ -13,8 +13,8 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.StepperAttributes
 
 import Test.Kore.Builtin.Builtin
