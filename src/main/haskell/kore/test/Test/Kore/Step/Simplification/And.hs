@@ -18,10 +18,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.And
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
@@ -47,30 +47,30 @@ test_andSimplification :: [TestTree]
 test_andSimplification =
     [ testCase "And truth table" $ do
         assertEqualWithExplanation "false and false = false"
-            (OrOfExpandedPattern.make [])
+            (MultiOr.make [])
             =<< evaluate (makeAnd [] [])
         assertEqualWithExplanation "false and true = false"
-            (OrOfExpandedPattern.make [])
+            (MultiOr.make [])
             =<< evaluate (makeAnd [] [ExpandedPattern.top])
         assertEqualWithExplanation "true and false = false"
-            (OrOfExpandedPattern.make [])
+            (MultiOr.make [])
             =<< evaluate (makeAnd [ExpandedPattern.top] [])
         assertEqualWithExplanation "true and true = true"
-            (OrOfExpandedPattern.make [ExpandedPattern.top])
+            (MultiOr.make [ExpandedPattern.top])
             =<< evaluate (makeAnd [ExpandedPattern.top] [ExpandedPattern.top])
 
     , testCase "And with booleans" $ do
         assertEqualWithExplanation "false and something = false"
-            (OrOfExpandedPattern.make [])
+            (MultiOr.make [])
             =<< evaluate (makeAnd [] [fOfXExpanded])
         assertEqualWithExplanation "something and false = false"
-            (OrOfExpandedPattern.make [])
+            (MultiOr.make [])
             =<< evaluate (makeAnd [fOfXExpanded] [])
         assertEqualWithExplanation "true and something = something"
-            (OrOfExpandedPattern.make [fOfXExpanded])
+            (MultiOr.make [fOfXExpanded])
             =<< evaluate (makeAnd [ExpandedPattern.top] [fOfXExpanded])
         assertEqualWithExplanation "something and true = something"
-            (OrOfExpandedPattern.make [fOfXExpanded])
+            (MultiOr.make [fOfXExpanded])
             =<< evaluate (makeAnd [fOfXExpanded] [ExpandedPattern.top])
 
     , testCase "And with partial booleans" $ do
@@ -325,7 +325,7 @@ test_andSimplification =
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
     , testCase "And-Or distribution" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
@@ -418,8 +418,8 @@ makeAnd
 makeAnd first second =
     And
         { andSort = findSort (first ++ second)
-        , andFirst = OrOfExpandedPattern.make first
-        , andSecond = OrOfExpandedPattern.make second
+        , andFirst = MultiOr.make first
+        , andSecond = MultiOr.make second
         }
 
 findSort :: [CommonExpandedPattern Object] -> Sort Object

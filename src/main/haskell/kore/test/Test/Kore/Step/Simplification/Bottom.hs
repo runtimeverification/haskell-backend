@@ -12,10 +12,10 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.Bottom
                  ( simplify )
 
@@ -27,7 +27,7 @@ test_bottomSimplification :: [TestTree]
 test_bottomSimplification =
     [ testCase "Bottom evaluates to bottom"
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ ExpandedPattern.bottom ]
             )
             (evaluate

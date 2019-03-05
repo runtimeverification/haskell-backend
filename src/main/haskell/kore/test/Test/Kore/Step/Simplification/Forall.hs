@@ -15,10 +15,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import qualified Kore.Step.Simplification.Forall as Forall
                  ( makeEvaluate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -32,7 +32,7 @@ test_forallSimplification =
     [ testCase "Forall - or distribution"
         -- forall(a or b) = forall(a) or forall(b)
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ Predicated
                     { term = mkForall Mock.x something1OfX
                     , predicate = makeTruePredicate
@@ -56,7 +56,7 @@ test_forallSimplification =
         (do
             -- forall(top) = top
             assertEqualWithExplanation "forall(top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 (evaluate
@@ -67,7 +67,7 @@ test_forallSimplification =
                 )
             -- forall(bottom) = bottom
             assertEqualWithExplanation "forall(bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 (evaluate
@@ -244,7 +244,7 @@ makeForall variable patterns =
     Forall
         { forallSort = testSort
         , forallVariable  = variable
-        , forallChild       = OrOfExpandedPattern.make patterns
+        , forallChild       = MultiOr.make patterns
         }
 
 testSort :: Sort Object

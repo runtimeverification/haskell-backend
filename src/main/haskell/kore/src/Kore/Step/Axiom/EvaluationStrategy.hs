@@ -56,8 +56,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, make )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, isFalse, make )
+                 ( isFalse )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
@@ -230,7 +232,7 @@ applyFirstSimplifierThatWorks
             , remainders = orRemainders
             } -> do
                 when
-                    (length (OrOfExpandedPattern.extractPatterns orResults) > 1
+                    (length (MultiOr.extractPatterns orResults) > 1
                     && not (acceptsMultipleResults multipleResults)
                     )
                     -- We should only allow multiple simplification results
@@ -319,12 +321,12 @@ evaluateWithDefinitionAxioms
     let OrStepResult { rewrittenPattern, remainder } = case resultOrError of
             Right (result, _proof) -> result
             Left _ -> OrStepResult
-                { rewrittenPattern = OrOfExpandedPattern.make []
-                , remainder = OrOfExpandedPattern.make [expanded]
+                { rewrittenPattern = MultiOr.make []
+                , remainder = MultiOr.make [expanded]
                 }
     let
         remainderResults :: [ExpandedPattern level variable]
-        remainderResults = OrOfExpandedPattern.extractPatterns remainder
+        remainderResults = MultiOr.extractPatterns remainder
 
         simplifyPredicate
             :: ExpandedPattern level variable
@@ -345,7 +347,7 @@ evaluateWithDefinitionAxioms
     return
         ( AttemptedAxiom.Applied AttemptedAxiomResults
             { results = rewrittenPattern
-            , remainders = OrOfExpandedPattern.make simplifiedRemainderResults
+            , remainders = MultiOr.make simplifiedRemainderResults
             }
         , SimplificationProof
         )

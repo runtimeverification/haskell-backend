@@ -44,10 +44,12 @@ import           Kore.Step.RecursiveAttributes
 import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( MultiOr, OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( MultiOr (..), filterOr, fullCrossProduct, make )
+                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )
@@ -532,7 +534,7 @@ matchEqualHeadPatterns
             )
             (OrOfPredicateSubstitution level variable)
     justTop = just
-        (OrOfExpandedPattern.make [Predicated.topPredicate])
+        (MultiOr.make [Predicated.topPredicate])
 
 matchJoin
     :: forall level variable .
@@ -582,7 +584,7 @@ matchJoin
             patterns
     let
         crossProduct :: MultiOr [PredicateSubstitution level variable]
-        crossProduct = OrOfExpandedPattern.fullCrossProduct matched
+        crossProduct = MultiOr.fullCrossProduct matched
         merge
             :: [PredicateSubstitution level variable]
             -> ExceptT
@@ -598,7 +600,7 @@ matchJoin
                 (map Predicated.predicate items)
                 (map Predicated.substitution items)
             return result
-    OrOfExpandedPattern.filterOr <$> traverse (lift . merge) crossProduct
+    MultiOr.filterOr <$> traverse (lift . merge) crossProduct
 
 unifyJoin
     :: forall level variable .
@@ -643,7 +645,7 @@ unifyJoin
         matched :: [OrOfPredicateSubstitution level variable]
         (matched, _proof) = unzip matchedWithProofs
         crossProduct :: MultiOr [PredicateSubstitution level variable]
-        crossProduct = OrOfExpandedPattern.fullCrossProduct matched
+        crossProduct = MultiOr.fullCrossProduct matched
         merge
             :: [PredicateSubstitution level variable]
             -> ExceptT
@@ -659,9 +661,9 @@ unifyJoin
                 (map Predicated.predicate items)
                 (map Predicated.substitution items)
             return result
-    mergedItems <- mapM merge (OrOfExpandedPattern.getMultiOr crossProduct)
+    mergedItems <- mapM merge (MultiOr.extractPatterns crossProduct)
     return
-        ( OrOfExpandedPattern.make mergedItems
+        ( MultiOr.make mergedItems
         , EmptyUnificationProof
         )
 

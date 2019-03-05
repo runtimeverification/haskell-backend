@@ -16,10 +16,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -34,7 +34,7 @@ test_iffSimplification =
         (do
             -- iff(top, top) = top
             assertEqualWithExplanation "iff(top,top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 (evaluate
@@ -45,7 +45,7 @@ test_iffSimplification =
                 )
             -- iff(bottom,bottom) = top
             assertEqualWithExplanation "iff(bottom,bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 (evaluate
@@ -56,7 +56,7 @@ test_iffSimplification =
                 )
             -- iff(top, bottom) = bottom
             assertEqualWithExplanation "iff(top,bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 (evaluate
@@ -67,7 +67,7 @@ test_iffSimplification =
                 )
             -- iff(bottom, top) = bottom
             assertEqualWithExplanation "iff(bottom,top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 (evaluate
@@ -81,7 +81,7 @@ test_iffSimplification =
         (do
             -- iff(top, p) = p
             assertEqualWithExplanation "iff(top,p)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
@@ -102,7 +102,7 @@ test_iffSimplification =
                 )
             -- iff(p, top) = p
             assertEqualWithExplanation "iff(p, top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
@@ -123,7 +123,7 @@ test_iffSimplification =
                 )
             -- iff(bottom,p) = not p
             assertEqualWithExplanation "iff(bottom,p)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = mkNot Mock.a
                         , predicate = makeTruePredicate
@@ -144,7 +144,7 @@ test_iffSimplification =
                 )
             -- iff(p,bottom) = not p
             assertEqualWithExplanation "iff(p,bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = mkNot Mock.a
                         , predicate = makeTruePredicate
@@ -168,7 +168,7 @@ test_iffSimplification =
         (do
             -- iff(top,top) = top
             assertEqualWithExplanation "iff(top,top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 (makeEvaluate
@@ -177,7 +177,7 @@ test_iffSimplification =
                 )
             -- iff(bottom,bottom) = bottom
             assertEqualWithExplanation "iff(bottom,bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ ExpandedPattern.top ]
                 )
                 (makeEvaluate
@@ -186,7 +186,7 @@ test_iffSimplification =
                 )
             -- iff(top,bottom) = bottom
             assertEqualWithExplanation "iff(top,bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 (makeEvaluate
@@ -195,7 +195,7 @@ test_iffSimplification =
                 )
             -- iff(bottom,top) = bottom
             assertEqualWithExplanation "iff(bottom,top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     []
                 )
                 (makeEvaluate
@@ -207,7 +207,7 @@ test_iffSimplification =
         (do
             -- iff(top, p) = p
             assertEqualWithExplanation "iff(top,p)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
@@ -225,7 +225,7 @@ test_iffSimplification =
                 )
             -- iff(p, top) = p
             assertEqualWithExplanation "iff(p, top)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = Mock.a
                         , predicate = makeTruePredicate
@@ -243,7 +243,7 @@ test_iffSimplification =
                 )
             -- iff(bottom,p) = not p
             assertEqualWithExplanation "iff(bottom,p)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = mkNot Mock.a
                         , predicate = makeTruePredicate
@@ -261,7 +261,7 @@ test_iffSimplification =
                 )
             -- iff(p,bottom) = not p
             assertEqualWithExplanation "iff(p,bottom)"
-                (OrOfExpandedPattern.make
+                (MultiOr.make
                     [ Predicated
                         { term = mkNot Mock.a
                         , predicate = makeTruePredicate
@@ -282,7 +282,7 @@ test_iffSimplification =
         -- iff(top and predicate1 and subst1, top and predicate2 and subst2)
         --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
         (assertEqualWithExplanation "iff(top and predicate, top and predicate)"
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ Predicated
                     { term = mkTop_
                     , predicate =
@@ -314,7 +314,7 @@ test_iffSimplification =
         )
     , testCase "iff with generic patterns"
         (assertEqualWithExplanation "iff(generic, generic)"
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ Predicated
                     { term =
                         mkIff
@@ -360,8 +360,8 @@ makeIff
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
-        , iffFirst  = OrOfExpandedPattern.make first
-        , iffSecond = OrOfExpandedPattern.make second
+        , iffFirst  = MultiOr.make first
+        , iffSecond = MultiOr.make second
         }
 
 evaluate

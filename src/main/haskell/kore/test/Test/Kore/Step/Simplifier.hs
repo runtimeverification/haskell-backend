@@ -14,10 +14,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( mapVariables )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
@@ -93,7 +93,7 @@ mockSimplifierHelper
         (OrOfExpandedPattern level variable0, SimplificationProof level)
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
-        ( OrOfExpandedPattern.make
+        ( MultiOr.make
             [ convertExpandedVariables
                 (unevaluatedConverter (convertPatternVariables patt))
             ]
@@ -107,7 +107,7 @@ mockSimplifierHelper
   =
     if patt == convertPatternVariables unevaluatedPatt
         then return
-            ( OrOfExpandedPattern.make (map convertExpandedVariables patts)
+            ( MultiOr.make (map convertExpandedVariables patts)
             , proof
             )
         else

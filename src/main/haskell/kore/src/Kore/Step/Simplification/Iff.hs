@@ -22,10 +22,12 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..), substitutionToPredicate )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, isFalse, isTrue, make, toExpandedPattern )
+                 ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import qualified Kore.Step.Simplification.Not as Not
@@ -101,8 +103,8 @@ simplifyEvaluated first second
                 (OrOfExpandedPattern.toExpandedPattern first)
                 (OrOfExpandedPattern.toExpandedPattern second)
   where
-    firstPatterns = OrOfExpandedPattern.extractPatterns first
-    secondPatterns = OrOfExpandedPattern.extractPatterns second
+    firstPatterns = MultiOr.extractPatterns first
+    secondPatterns = MultiOr.extractPatterns second
 
 {-| evaluates an 'Iff' given its two 'ExpandedPattern' children.
 
@@ -120,11 +122,11 @@ makeEvaluate
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate first second
   | ExpandedPattern.isTop first =
-    (OrOfExpandedPattern.make [second], SimplificationProof)
+    (MultiOr.make [second], SimplificationProof)
   | ExpandedPattern.isBottom first =
     (fst $ Not.makeEvaluate second, SimplificationProof)
   | ExpandedPattern.isTop second =
-    (OrOfExpandedPattern.make [first], SimplificationProof)
+    (MultiOr.make [first], SimplificationProof)
   | ExpandedPattern.isBottom second =
     (fst $ Not.makeEvaluate first, SimplificationProof)
   | otherwise =
@@ -154,7 +156,7 @@ makeEvaluateNonBoolIff
   | (Recursive.project -> _ :< TopPattern _) <- firstTerm
   , (Recursive.project -> _ :< TopPattern _) <- secondTerm
   =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [ Predicated
             { term = firstTerm
             , predicate =
@@ -172,7 +174,7 @@ makeEvaluateNonBoolIff
     , SimplificationProof
     )
   | otherwise =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [ Predicated
             { term = mkIff
                 (ExpandedPattern.toMLPattern patt1)

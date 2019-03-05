@@ -36,7 +36,7 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -1046,7 +1046,7 @@ test_baseStepMultipleRemainder =
         let
             expected =
                 OrStepResult
-                    { rewrittenPattern = OrOfExpandedPattern.make
+                    { rewrittenPattern = MultiOr.make
                         [ Predicated
                             { term = Mock.cg
                             , predicate = makeCeilPredicate Mock.cg
@@ -1054,7 +1054,7 @@ test_baseStepMultipleRemainder =
                                 Substitution.wrap [(Mock.x, Mock.a)]
                             }
                         ]
-                    , remainder = OrOfExpandedPattern.make
+                    , remainder = MultiOr.make
                         [ Predicated
                             { term =
                                 Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -1113,7 +1113,7 @@ test_baseStepMultipleRemainder =
                     (makeCeilPredicate Mock.cg)
             expected =
                 OrStepResult
-                    { rewrittenPattern = OrOfExpandedPattern.make
+                    { rewrittenPattern = MultiOr.make
                         [ Predicated
                             { term = Mock.cf
                             , predicate = unificationNotBottom
@@ -1134,7 +1134,7 @@ test_baseStepMultipleRemainder =
                                 Substitution.wrap [(Mock.x, Mock.b)]
                             }
                         ]
-                    , remainder = OrOfExpandedPattern.make
+                    , remainder = MultiOr.make
                         [ Predicated
                             { term =
                                 Mock.functionalConstr30

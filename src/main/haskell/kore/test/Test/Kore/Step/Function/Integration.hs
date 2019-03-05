@@ -38,7 +38,7 @@ import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  Predicated (Predicated) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), mapVariables )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
@@ -634,9 +634,9 @@ appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
     $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = OrOfExpandedPattern.make
+        { results = MultiOr.make
             [Test.Kore.Step.Function.Integration.mapVariables result]
-        , remainders = OrOfExpandedPattern.make []
+        , remainders = MultiOr.make []
         }
 
 mapVariables

@@ -39,11 +39,12 @@ import           Kore.Step.Representation.ExpandedPattern
                  predicateSubstitutionToExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, make, merge )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, merge, toExpandedPattern,
-                 toPredicate )
+                 ( toExpandedPattern, toPredicate )
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -221,7 +222,7 @@ simplifyEvaluated
     first
     second
   | first == second =
-    return (OrOfExpandedPattern.make [Predicated.top], SimplificationProof)
+    return (MultiOr.make [Predicated.top], SimplificationProof)
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
@@ -261,8 +262,8 @@ simplifyEvaluated
                 (OrOfExpandedPattern.toExpandedPattern first)
                 (OrOfExpandedPattern.toExpandedPattern second)
   where
-    firstPatterns = OrOfExpandedPattern.extractPatterns first
-    secondPatterns = OrOfExpandedPattern.extractPatterns second
+    firstPatterns = MultiOr.extractPatterns first
+    secondPatterns = MultiOr.extractPatterns second
     isFunctionPredicated Predicated {term} = isFunctionPattern tools term
 
 makeEvaluateFunctionalOr
@@ -316,7 +317,7 @@ makeEvaluateFunctionalOr
         oneNotBottom =
             foldl'
                 (dropProofFold Or.simplifyEvaluated)
-                (OrOfExpandedPattern.make [])
+                (MultiOr.make [])
                 secondCeils
     allAreBottom <-
         foldM
@@ -328,7 +329,7 @@ makeEvaluateFunctionalOr
                     axiomIdToSimplfier
                 )
             )
-            (OrOfExpandedPattern.make [ExpandedPattern.top])
+            (MultiOr.make [ExpandedPattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
         mapM
@@ -343,7 +344,7 @@ makeEvaluateFunctionalOr
         firstCeil
         (oneNotBottom : firstEqualsSeconds)
     return
-        ( OrOfExpandedPattern.merge allAreBottom oneIsNotBottomEquals
+        ( MultiOr.merge allAreBottom oneIsNotBottomEquals
         , SimplificationProof
         )
   where
@@ -547,7 +548,7 @@ makeEvaluateTermsAssumesNoBottom
     (return . fromMaybe def) result
   where
     def =
-        (OrOfExpandedPattern.make
+        (MultiOr.make
             [ Predicated
                 { term = mkTop_
                 , predicate = makeEqualsPredicate firstTerm secondTerm
@@ -635,7 +636,7 @@ makeEvaluateTermsToPredicateSubstitution
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =
     return
-        ( OrOfExpandedPattern.make [Predicated.topPredicate]
+        ( MultiOr.make [Predicated.topPredicate]
         , SimplificationProof
         )
   | otherwise = do
@@ -651,7 +652,7 @@ makeEvaluateTermsToPredicateSubstitution
     case result of
         Nothing ->
             return
-                ( OrOfExpandedPattern.make
+                ( MultiOr.make
                     [ Predicated
                         { term = ()
                         , predicate = makeEqualsPredicate first second
@@ -699,9 +700,9 @@ makeEvaluateTermsToPredicateSubstitution
                 ceilNegationAnd =
                     makeAndPredicate firstCeilNegation secondCeilNegation
             return
-                ( OrOfExpandedPattern.merge
+                ( MultiOr.merge
                     predicatedOr
-                    (OrOfExpandedPattern.make
+                    (MultiOr.make
                         [ Predicated
                             { term = ()
                             , predicate = ceilNegationAnd

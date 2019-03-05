@@ -46,7 +46,7 @@ import           Kore.Step.Representation.ExpandedPattern
                  Predicated (Predicated) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -374,7 +374,7 @@ unificationProcedureSuccess
                 )
         assertEqualWithExplanation ""
             expect
-            ( map normalize (OrOfExpandedPattern.extractPatterns results)
+            ( map normalize (MultiOr.extractPatterns results)
             , proof'
             )
   where
@@ -753,7 +753,7 @@ simplifyPattern (UnificationTerm term) = do
                 functionRegistry
                 expandedPattern
         case
-            OrOfExpandedPattern.extractPatterns
+            MultiOr.extractPatterns
                 (fst simplifiedPatterns) of
             [] -> return ExpandedPattern.bottom
             (config : _) -> return config

@@ -31,10 +31,10 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
@@ -66,7 +66,7 @@ test_applicationSimplification =
         -- sigma(a or b, c or d) =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = Mock.sigma Mock.a Mock.c
                         , predicate = makeTruePredicate
@@ -104,7 +104,7 @@ test_applicationSimplification =
 
     , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
-        let expect = OrOfExpandedPattern.make [ ExpandedPattern.bottom ]
+        let expect = MultiOr.make [ ExpandedPattern.bottom ]
         actual <-
             evaluate
                 mockMetadataTools
@@ -121,7 +121,7 @@ test_applicationSimplification =
 
     , testCase "Applies functions" $ do
         -- f(a) evaluated to g(a).
-        let expect = OrOfExpandedPattern.make [ gOfAExpanded ]
+        let expect = MultiOr.make [ gOfAExpanded ]
         actual <-
             evaluate
                 mockMetadataTools
@@ -133,8 +133,8 @@ test_applicationSimplification =
                             (const $ const $ const $ const $ const $ return
                                 ( AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results =
-                                        OrOfExpandedPattern.make [gOfAExpanded]
-                                    , remainders = OrOfExpandedPattern.make []
+                                        MultiOr.make [gOfAExpanded]
+                                    , remainders = MultiOr.make []
                                     }
                                 , SimplificationProof
                                 )
@@ -156,7 +156,7 @@ test_applicationSimplification =
             --        and (f(a)=f(b) and g(a)=g(b))
             --        and [x=f(a), y=g(a)]
             let expect =
-                    OrOfExpandedPattern.make
+                    MultiOr.make
                         [ Predicated
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
@@ -204,7 +204,7 @@ test_applicationSimplification =
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
             let z' = Mock.z { variableCounter = Just (Element 1) }
                 expect =
-                    OrOfExpandedPattern.make
+                    MultiOr.make
                         [ Predicated
                             { term = fOfA
                             , predicate =
@@ -243,7 +243,7 @@ test_applicationSimplification =
                             )
                         => AttemptedAxiom Object variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -251,7 +251,7 @@ test_applicationSimplification =
                                     Substitution.wrap [ (zvar, gOfB) ]
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
                 in
                     evaluate
@@ -359,7 +359,7 @@ makeApplication patternSort symbol patterns =
         valid
         Application
             { applicationSymbolOrAlias = symbol
-            , applicationChildren = map OrOfExpandedPattern.make patterns
+            , applicationChildren = map MultiOr.make patterns
             }
   where
     valid = Valid { patternSort, freeVariables }

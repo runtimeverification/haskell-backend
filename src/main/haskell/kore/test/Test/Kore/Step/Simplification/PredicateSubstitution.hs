@@ -24,7 +24,7 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonPredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
@@ -338,8 +338,8 @@ simpleEvaluator ((from, to) : ps) patt
   | from == patt =
     return
         ( Applied AttemptedAxiomResults
-            { results = OrOfExpandedPattern.make [Predicated.fromPurePattern to]
-            , remainders = OrOfExpandedPattern.make []
+            { results = MultiOr.make [Predicated.fromPurePattern to]
+            , remainders = MultiOr.make []
             }
         , SimplificationProof
         )
