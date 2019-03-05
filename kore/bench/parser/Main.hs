@@ -34,14 +34,14 @@ The benchmarks in this module test parsing the following list of files.
 koreFiles :: [FilePath]
 koreFiles =
     map Paths.dataFileName
-    [ "../../../src/main/kore/resources/kore.kore"
-    , "../../../src/test/resources/bool.kore"
-    , "../../../src/test/resources/imp.kore"
-    , "../../../src/test/resources/imp2.kore"
-    , "../../../src/test/resources/lambda.kore"
-    , "../../../src/test/resources/list.kore"
-    , "../../../src/test/resources/nat.kore"
-    , "../../../src/test/resources/user-meta-nat.kore"
+    [ "../src/main/kore/kore.kore"
+    , "../src/test/resources/bool.kore"
+    , "../src/test/resources/imp.kore"
+    , "../src/test/resources/imp2.kore"
+    , "../src/test/resources/lambda.kore"
+    , "../src/test/resources/list.kore"
+    , "../src/test/resources/nat.kore"
+    , "../src/test/resources/user-meta-nat.kore"
     ]
 
 {- | Declare a parser benchmark
