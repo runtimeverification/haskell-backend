@@ -693,9 +693,9 @@ test_equalsSimplification_Patterns =
                         makeAndPredicate
                             (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
-                        , (Mock.x, fOfA)
+                    , substitution = Substitution.wrap
+                        [ (Mock.x, fOfA)
+                        , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                         ]
                     }
                 (Mock.builtinMap
@@ -717,9 +717,9 @@ test_equalsSimplification_Patterns =
                         makeAndPredicate
                             (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
-                        , (Mock.x, fOfA)
+                    , substitution = Substitution.wrap
+                        [ (Mock.x, fOfA)
+                        , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                         ]
                     }
                 (Mock.builtinMap
@@ -741,9 +741,9 @@ test_equalsSimplification_Patterns =
                         makeAndPredicate
                             (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
-                        , (Mock.x, fOfA)
+                    , substitution = Substitution.wrap
+                        [ (Mock.x, fOfA)
+                        , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                         ]
                     }
                 (Mock.concatMap
@@ -765,9 +765,9 @@ test_equalsSimplification_Patterns =
                         makeAndPredicate
                             (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
-                        , (Mock.x, fOfA)
+                    , substitution = Substitution.wrap
+                        [ (Mock.x, fOfA)
+                        , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                         ]
                     }
                 (Mock.concatMap
