@@ -27,7 +27,7 @@ tags
 .project
 .settings
 *-kompiled/
-src/main/haskell/stack.yaml
+/src/main/haskell/stack.yaml
 .dir-locals.el
 *.prof
 .kprove-*
@@ -35,4 +35,4 @@ src/main/haskell/stack.yaml
 /coverage_report
 /haskell_documentation
 .stack-work-test
-/src/main/haskell/kore/test-results.xml
+/kore/test-results.xml

@@ -56,7 +56,7 @@ pipeline {
   }
   post {
     always {
-      junit 'src/main/haskell/kore/test-results.xml'
+      junit 'kore/test-results.xml'
     }
   }
 }

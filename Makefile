@@ -57,7 +57,7 @@ clean:
 	$(STACK_HADDOCK) clean --full
 	$(STACK_TEST) clean --full
 	find . -name '*.tix' -exec rm -f '{}' \;
-	rm -f src/main/haskell/kore/test-results.xml
+	rm -f kore/test-results.xml
 	rm -rf haskell_documentation
 	rm -rf coverage_report
 	rm -rf $(BUILD_DIR)
