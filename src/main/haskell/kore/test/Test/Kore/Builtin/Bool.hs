@@ -15,8 +15,8 @@ import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Domain.Builtin ()
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.StepperAttributes
 
 import Test.Kore.Builtin.Builtin

@@ -42,13 +42,13 @@ import           Kore.Step.BaseStep
 import           Kore.Step.BaseStep as OrStepResult
                  ( OrStepResult (..) )
 import qualified Kore.Step.BaseStep as StepProof
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
-import qualified Kore.Step.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
                  ( Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )

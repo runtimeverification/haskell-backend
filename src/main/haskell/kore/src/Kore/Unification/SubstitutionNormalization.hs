@@ -32,10 +32,10 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.Unification.Error

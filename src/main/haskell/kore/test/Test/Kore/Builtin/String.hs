@@ -13,8 +13,8 @@ import GHC.Stack
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.String as String
-import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin

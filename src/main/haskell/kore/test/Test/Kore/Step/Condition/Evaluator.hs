@@ -14,8 +14,8 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
 import qualified Kore.Step.Condition.Evaluator as Evaluator
-import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           SMT
                  ( SMT )

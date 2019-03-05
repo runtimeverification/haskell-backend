@@ -21,14 +21,14 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.ExpandedPattern
-                 ( PredicateSubstitution, Predicated )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution,
                  mergeWithPredicateSubstitutionAssumesEvaluated )
-import           Kore.Step.OrOfExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( PredicateSubstitution, Predicated )
+import           Kore.Step.Representation.OrOfExpandedPattern
                  ( MultiOr, OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),

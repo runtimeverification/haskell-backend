@@ -11,7 +11,7 @@ import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.ExpandedPattern
+import Kore.Step.Representation.ExpandedPattern
        ( ExpandedPattern )
 import Kore.Step.Pattern
        ( StepPattern )

@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.MultiAnd
+Module      : Kore.Step.Representation.MultiAnd
 Description : Data structures and functions for manipulating
               And with any number of children.
 Copyright   : (c) Runtime Verification, 2019
@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.MultiAnd
+module Kore.Step.Representation.MultiAnd
     ( MultiAnd
     , extractPatterns
     , make

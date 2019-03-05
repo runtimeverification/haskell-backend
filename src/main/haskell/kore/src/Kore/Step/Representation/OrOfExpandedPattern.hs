@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.OrOfExpandedPattern
+Module      : Kore.Step.Representation.OrOfExpandedPattern
 Description : Data structures and functions for manipulating
               OrOfExpandedPatterns, which occur naturally during
               pattern simplification.
@@ -9,7 +9,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.OrOfExpandedPattern
+module Kore.Step.Representation.OrOfExpandedPattern
     ( CommonOrOfExpandedPattern
     , CommonOrOfPredicateSubstitution
     , MultiOr (..)
@@ -50,10 +50,10 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate, makeFalsePredicate, makeOrPredicate,
                  makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser

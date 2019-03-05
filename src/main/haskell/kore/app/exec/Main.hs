@@ -54,9 +54,9 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Repl as Repl
 import           Kore.Step.AxiomPatterns
                  ( AxiomPatternAttributes )
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search

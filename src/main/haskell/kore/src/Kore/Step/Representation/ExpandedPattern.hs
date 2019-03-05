@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.ExpandedPattern
+Module      : Kore.Step.Respresentation.ExpandedPattern
 Description : Data structures and functions for manipulating
               ExpandedPatterns, i.e. a representation of patterns
               optimized for the stepper.
@@ -9,19 +9,19 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.ExpandedPattern
+module Kore.Step.Representation.ExpandedPattern
     ( Predicated (..)
     , ExpandedPattern
     , CommonExpandedPattern
     , PredicateSubstitution
     , CommonPredicateSubstitution
-    , Kore.Step.ExpandedPattern.allVariables
+    , Kore.Step.Representation.ExpandedPattern.allVariables
     , erasePredicatedTerm
     , bottom
     , bottomOf
     , isBottom
     , isTop
-    , Kore.Step.ExpandedPattern.mapVariables
+    , Kore.Step.Representation.ExpandedPattern.mapVariables
     , predicateSubstitutionToExpandedPattern
     , substitutionToPredicate
     , toMLPattern
@@ -29,9 +29,9 @@ module Kore.Step.ExpandedPattern
     , topOf
     , topPredicate
     , bottomPredicate
-    , Kore.Step.ExpandedPattern.fromPurePattern
+    , Kore.Step.Representation.ExpandedPattern.fromPurePattern
     , toPredicate
-    , Kore.Step.ExpandedPattern.freeVariables
+    , Kore.Step.Representation.ExpandedPattern.freeVariables
     , freeEpVariables
     ) where
 
