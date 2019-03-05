@@ -51,7 +51,8 @@ instance TopBottom child => TopBottom (MultiAnd child)
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
 inside an 'MultiAnd'.
 -}
--- TODO(virgil): Refactor, this is the same as OrBool
+-- TODO(virgil): Refactor, this is the same as OrBool. Make it a
+-- Top | Bottom | Other or a Maybe Bool.
 data AndBool = AndTrue | AndFalse | AndUnknown
 
 {-|Does a very simple attempt to check whether a pattern
@@ -86,7 +87,7 @@ extractPatterns = getMultiAnd
 {- | Simplify the conjunction.
 
 The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
-idempotency property of disjunction (@\\and(φ,φ)=φ@) is applied to remove
+idempotency property of conunction (@\\and(φ,φ)=φ@) is applied to remove
 duplicated items from the result.
 
 See also: 'filterUnique'
@@ -99,9 +100,9 @@ filterAnd =
     filterGeneric patternToAndBool . filterUnique
 
 
-{- | Simplify the disjunction by eliminating duplicate elements.
+{- | Simplify the conjunction by eliminating duplicate elements.
 
-The idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
+The idempotency property of conjunction (@\\and(φ,φ)=φ@) is applied to remove
 duplicated items from the result.
 
 Note: Items are compared with their Ord instance. This does not attempt
