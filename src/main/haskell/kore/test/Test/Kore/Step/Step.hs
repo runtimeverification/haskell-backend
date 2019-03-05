@@ -33,9 +33,9 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier

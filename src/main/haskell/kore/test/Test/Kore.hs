@@ -55,9 +55,9 @@ import qualified Kore.Logger.Output as Logger
 import           Kore.MetaML.AST
 import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
-import           Kore.Step.ExpandedPattern
-import           Kore.Step.OrOfExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Representation.OrOfExpandedPattern
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}

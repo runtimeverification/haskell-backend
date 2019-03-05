@@ -25,12 +25,12 @@ import qualified Data.Functor.Foldable as Recursive
 import           Kore.AST.Pure
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.OrOfExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( extractPatterns, make, merge )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )

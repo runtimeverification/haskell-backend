@@ -14,13 +14,13 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
-import           Kore.Step.OrOfExpandedPattern
+import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
 import           Kore.Step.Simplification.And
                  ( makeEvaluate, simplify )

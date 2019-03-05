@@ -38,12 +38,12 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, merge )
 import           Kore.Step.Pattern
                  ( StepPattern )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( make, merge )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )

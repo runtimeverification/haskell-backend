@@ -48,20 +48,20 @@ import           Kore.Predicate.Predicate
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), bottom, bottomPredicate, fromPurePattern,
-                 isBottom, toPredicate, top, topPredicate )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, make, toPredicate )
 import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( Predicated (..), bottom, bottomPredicate, fromPurePattern,
+                 isBottom, toPredicate, top, topPredicate )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( extractPatterns, make, toPredicate )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  SimplificationType, Simplifier, StepPatternSimplifier )

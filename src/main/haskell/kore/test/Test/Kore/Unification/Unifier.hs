@@ -40,13 +40,13 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution,
                  Predicated (Predicated) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-import           Kore.Step.Pattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern

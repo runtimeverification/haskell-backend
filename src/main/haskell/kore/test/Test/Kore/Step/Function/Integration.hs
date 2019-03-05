@@ -32,14 +32,14 @@ import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern,
                  Predicated (Predicated) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), mapVariables )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( make )
-import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier, StepPatternSimplifier,

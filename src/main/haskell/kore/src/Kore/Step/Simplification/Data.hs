@@ -33,11 +33,11 @@ import Kore.Logger
        ( LogMessage )
 import Kore.Step.AxiomPatterns
        ( RewriteRule )
-import Kore.Step.ExpandedPattern
-       ( PredicateSubstitution )
-import Kore.Step.OrOfExpandedPattern
-       ( OrOfExpandedPattern )
 import Kore.Step.Pattern
+import Kore.Step.Representation.ExpandedPattern
+       ( PredicateSubstitution )
+import Kore.Step.Representation.OrOfExpandedPattern
+       ( OrOfExpandedPattern )
 import Kore.Unparser
 import Kore.Variables.Fresh
 import SimpleSMT

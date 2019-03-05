@@ -58,10 +58,10 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 
 {- | Builtin name of the @Bool@ sort.
  -}

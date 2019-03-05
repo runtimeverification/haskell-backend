@@ -12,7 +12,7 @@ import Kore.Predicate.Predicate
        ( Predicate )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.ExpandedPattern
+import Kore.Step.Representation.ExpandedPattern
        ( PredicateSubstitution )
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, Simplifier, StepPatternSimplifier )

@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.MultiAnd
+Module      : Kore.Step.Representation.MultiAnd
 Description : Data structures and functions for manipulating
               And with any number of children.
 Copyright   : (c) Runtime Verification, 2019
@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.MultiAnd
+module Kore.Step.Representation.MultiAnd
     ( MultiAnd
     , extractPatterns
     , make
@@ -87,7 +87,7 @@ extractPatterns = getMultiAnd
 {- | Simplify the conjunction.
 
 The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
-idempotency property of conunction (@\\and(φ,φ)=φ@) is applied to remove
+idempotency property of conjunction (@\\and(φ,φ)=φ@) is applied to remove
 duplicated items from the result.
 
 See also: 'filterUnique'

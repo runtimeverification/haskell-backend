@@ -49,11 +49,11 @@ import           Kore.Step.Axiom.Data
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
-import           Kore.Step.ExpandedPattern
-                 ( Predicated (..) )
-import           Kore.Step.OrOfExpandedPattern
-                 ( MultiOr (..) )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (..) )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( MultiOr (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
