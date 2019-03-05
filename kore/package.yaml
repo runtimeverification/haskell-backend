@@ -5,7 +5,7 @@ license:             NCSA
 license-file:        LICENSE
 author:              "Virgil Serbanuta"
 maintainer:          "virgil.serbanuta@runtimeverification.com"
-copyright:           "2018 Runtime Verification Inc"
+copyright:           "2018-2019 Runtime Verification Inc"
 category:            Language
 
 extra-source-files:
