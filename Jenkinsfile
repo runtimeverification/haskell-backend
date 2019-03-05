@@ -33,15 +33,6 @@ pipeline {
     }
     stage('Integration Tests') {
       parallel {
-        stage('Maven') {
-          steps {
-            ansiColor('xterm') {
-              sh '''
-                mvn clean verify
-              '''
-            }
-          }
-        }
         stage('K Test') {
           steps {
             ansiColor('xterm') {
