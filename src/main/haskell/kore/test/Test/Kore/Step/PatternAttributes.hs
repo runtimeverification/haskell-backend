@@ -21,8 +21,6 @@ import           Kore.Step.PatternAttributesError
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
-import           Test.Kore
-                 ( testId )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -48,13 +46,12 @@ test_patternAttributes =
                     (FunctionalVariable (LevelInt 10))
                 )
             let
-                dv = DomainValue
-                    { domainValueSort = testSort
-                    , domainValueChild =
-                        Domain.BuiltinPattern
-                        $ eraseAnnotations
-                        $ mkStringLiteral "10"
-                    }
+                dv =
+                    Domain.BuiltinExternal Domain.External
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild =
+                            eraseAnnotations $ mkStringLiteral "10"
+                        }
             assertEqualWithExplanation "FunctionalDomainValue"
                 (FunctionalDomainValue dv)
                 (mapFunctionalProofVariables
@@ -302,10 +299,11 @@ test_patternAttributes =
             let
                 dv :: CommonStepPattern Object
                 dv = mkDomainValue
-                        Mock.testSort
-                        (Domain.BuiltinPattern
-                            $ eraseAnnotations
-                            $ mkStringLiteral "a"
+                        (Domain.BuiltinExternal Domain.External
+                            { domainValueSort = Mock.testSort
+                            , domainValueChild =
+                                eraseAnnotations $ mkStringLiteral "a"
+                            }
                         )
             assertEqualWithExplanation "domain values are constructor-like"
                 (Right [ConstructorLikeProof])
@@ -400,10 +398,11 @@ test_patternAttributes =
             let
                 dv :: CommonStepPattern Object
                 dv = mkDomainValue
-                        Mock.testSort
-                        (Domain.BuiltinPattern
-                            $ eraseAnnotations
-                            $ mkStringLiteral "a"
+                        (Domain.BuiltinExternal Domain.External
+                            { domainValueSort = Mock.testSort
+                            , domainValueChild =
+                                eraseAnnotations $ mkStringLiteral "a"
+                            }
                         )
             assertEqualWithExplanation
                 "domain values are constructor-modulo-like"
@@ -446,10 +445,3 @@ test_patternAttributes =
 
     mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
     mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
-
-testSort :: Sort Object
-testSort =
-    SortActualSort SortActual
-        { sortActualName  = testId "testSort"
-        , sortActualSorts = []
-        }

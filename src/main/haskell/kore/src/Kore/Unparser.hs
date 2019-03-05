@@ -19,6 +19,7 @@ module Kore.Unparser
     , attributes
     , parameters'
     , arguments'
+    , argument'
     , attributes'
     , escapeString
     , escapeStringT
@@ -88,6 +89,10 @@ arguments = arguments' . map unparse
 -- | Print a list of documents as arguments.
 arguments' :: [Doc ann] -> Doc ann
 arguments' = list lparen rparen
+
+-- | Print a document as arguments.
+argument' :: Doc ann -> Doc ann
+argument' = list lparen rparen . (: [])
 
 -- | Print a list of no arguments.
 noArguments :: Doc ann

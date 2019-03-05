@@ -13,6 +13,7 @@ import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
@@ -29,8 +30,7 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
-                 RulePattern (RulePattern) )
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Pattern
@@ -92,7 +92,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
-                    , attributes = def { concrete = Concrete True }
+                    , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
                 (mockSimplifier noSimplification)
@@ -108,7 +108,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 Mock.a
                     , right = Mock.functionalConstr11 Mock.a
                     , requires = makeTruePredicate
-                    , attributes = def { concrete = Concrete True }
+                    , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
                 (mockSimplifier noSimplification)

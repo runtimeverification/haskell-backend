@@ -12,10 +12,13 @@ module Kore.AST.AstWithLocation
     , prettyPrintLocationFromAst
     ) where
 
+import qualified Control.Lens as Lens
+
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.Sentence
+import Kore.Domain.Class
 import Kore.Sort
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
@@ -93,7 +96,7 @@ instance AstWithLocation (Symbol level) where
         s { symbolConstructor = updateAstLocation (symbolConstructor s) loc }
 
 instance
-    AstWithLocation (variable level) =>
+    (Domain domain, AstWithLocation (variable level)) =>
     AstWithLocation (Pattern level domain variable child)
   where
     locationFromAst = applyPatternFunction PatternFunction
@@ -101,7 +104,8 @@ instance
         , patternFunctionMLBinder = locationFromAst . getBinderPatternSort
         , applicationFunction = locationFromAst . applicationSymbolOrAlias
         , variableFunction = locationFromAst
-        , domainValueFunction = locationFromAst . domainValueSort
+        , domainValueFunction =
+            locationFromAst . domainValueSort . Lens.view lensDomainValue
         , stringFunction = const AstLocationUnknown
         , charFunction = const AstLocationUnknown
         }

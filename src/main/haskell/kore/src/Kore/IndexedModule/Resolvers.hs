@@ -34,16 +34,18 @@ import qualified Data.Text as Text
 import           GHC.Stack
                  ( HasCallStack )
 
-import Kore.AST.Error
-       ( koreFailWithLocations )
-import Kore.AST.Kore
-import Kore.AST.Sentence hiding
-       ( Alias (..), Symbol (..) )
-import Kore.ASTHelpers
-       ( ApplicationSorts (..), symbolOrAliasSorts )
-import Kore.Error
-import Kore.IndexedModule.IndexedModule
-       ( IndexedModule (..), getIndexedSentence, indexedModulesInScope )
+import           Kore.AST.Error
+                 ( koreFailWithLocations )
+import           Kore.AST.Kore
+import           Kore.AST.Sentence hiding
+                 ( Alias (..), Symbol (..) )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..), symbolOrAliasSorts )
+import qualified Kore.Attribute.Sort as Attribute
+import           Kore.Error
+import           Kore.IndexedModule.IndexedModule
+                 ( IndexedModule (..), getIndexedSentence,
+                 indexedModulesInScope )
 
 symbolSentencesMap
     :: MetaOrObject level
@@ -71,7 +73,7 @@ sortSentencesMap
     :: MetaOrObject level
     => a level
     -> IndexedModule sortParam patternType declAtts axiomAtts
-    -> Map.Map (Id level) (declAtts, SentenceSort level patternType)
+    -> Map.Map (Id level) (Attribute.Sort, SentenceSort level patternType)
 sortSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSortDescriptions m
@@ -155,7 +157,7 @@ getSortAttributes
     :: (HasCallStack, MetaOrObject level)
     => IndexedModule sortParam patternType declAtts axiomAtts
     -> Sort level
-    -> declAtts
+    -> Attribute.Sort
 getSortAttributes m (SortActualSort (SortActual sortId _)) =
   case resolveSort m sortId of
     Right (atts, _) -> atts
@@ -168,12 +170,12 @@ imported modules.
 -}
 resolveThing
     ::  (  IndexedModule sortParam patternType declAtts axiomAtts
-        -> Map.Map (Id level) (declAtts, result)
+        -> Map.Map (Id level) result
         )
     -- ^ extracts the map into which to look up the id
     -> IndexedModule sortParam patternType declAtts axiomAtts
     -> Id level
-    -> Maybe (declAtts, result)
+    -> Maybe result
 resolveThing
     mapExtractor
     indexedModule
@@ -185,13 +187,13 @@ resolveThing
         )
 
 resolveThingInternal
-    :: (Maybe (declAtts, result), Set.Set ModuleName)
+    :: (Maybe result, Set.Set ModuleName)
     ->  (  IndexedModule sortParam patternType declAtts axiomAtts
-        -> Map.Map (Id level) (declAtts, result)
+        -> Map.Map (Id level) result
         )
     -> IndexedModule sortParam patternType declAtts axiomAtts
     -> Id level
-    -> (Maybe (declAtts, result), Set.Set ModuleName)
+    -> (Maybe result, Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
     | indexedModuleName indexedModule `Set.member` searchedModules = x
@@ -260,7 +262,7 @@ resolveSort
     :: (MetaOrObject level, MonadError (Error e) m)
     => IndexedModule sortParam patternType declAtts axiomAtts
     -> Id level
-    -> m (declAtts, SentenceSort level patternType)
+    -> m (Attribute.Sort, SentenceSort level patternType)
 resolveSort m sortId =
     case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
         Nothing ->

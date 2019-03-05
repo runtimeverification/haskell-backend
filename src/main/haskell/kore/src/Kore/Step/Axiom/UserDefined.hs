@@ -18,6 +18,7 @@ import Control.Monad.Except
 import           Kore.AST.Pure hiding
                  ( isConcrete )
 import qualified Kore.AST.Pure as Pure
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
@@ -33,8 +34,7 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
-                 RulePattern (..) )
+                 ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep
                  ( StepResult (StepResult), UnificationProcedure (..),
@@ -94,8 +94,8 @@ equalityRuleEvaluator
     simplifier
     axiomIdToSimplifier
     patt
-  | Axiom.Concrete.isConcrete (concrete $ attributes rule)
-        && not (Pure.isConcrete patt)
+  | Axiom.Concrete.isConcrete (Attribute.concrete $ attributes rule)
+  , not (Pure.isConcrete patt)
   = notApplicable
   | otherwise = do
     result <- runExceptT stepResult

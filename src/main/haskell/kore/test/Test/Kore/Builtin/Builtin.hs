@@ -1,9 +1,10 @@
 module Test.Kore.Builtin.Builtin where
 
-import Test.Tasty
-       ( TestTree )
-import Test.Tasty.HUnit
-       ( assertEqual )
+import qualified Hedgehog
+import           Test.Tasty
+                 ( TestTree )
+import           Test.Tasty.HUnit
+                 ( assertEqual )
 
 import           Control.Concurrent.MVar
                  ( MVar )
@@ -21,21 +22,25 @@ import           Data.Proxy
 import           GHC.Stack
                  ( HasCallStack )
 
+import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import           Kore.Parser.Parser
+                 ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes, RewriteRule )
+                 ( RewriteRule )
 import           Kore.Step.BaseStep
                  ( StepProof, StepResult (StepResult), stepWithRewriteRule )
 import qualified Kore.Step.BaseStep as StepResult
@@ -50,6 +55,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
+import           Kore.Unparser
+                 ( unparseToString )
 import           SMT
                  ( MonadSMT (..), SMT, Solver )
 import qualified SMT
@@ -108,7 +115,7 @@ verify
     -> Either
         (Kore.Error.Error VerifyError)
         (Map
-            ModuleName (VerifiedModule StepperAttributes AxiomPatternAttributes)
+            ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
         )
 verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
@@ -120,8 +127,8 @@ verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
+    -> VerifiedModule StepperAttributes Attribute.Axiom
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =
@@ -151,11 +158,11 @@ constructorFunctions ixm =
         (attrs, attributes, constructorFunctions importedModule)
 
 verifiedModules
-    :: Map ModuleName (VerifiedModule StepperAttributes AxiomPatternAttributes)
+    :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
+verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 testMetadataTools :: MetadataTools Object StepperAttributes
@@ -286,3 +293,17 @@ runStepResultWith solver configuration axiom =
                     axiom
                 )
     in runReaderT (SMT.getSMT smt) solver
+
+
+-- | Test unparsing internalized patterns.
+hpropUnparse
+    :: Hedgehog.Gen (CommonStepPattern Object)
+    -- ^ Generate patterns with internal representations
+    -> Hedgehog.Property
+hpropUnparse gen = Hedgehog.property $ do
+    builtin <- Hedgehog.forAll gen
+    let syntax = unparseToString builtin
+        expected =
+            (Kore.eraseAnnotations . toKorePattern)
+                (Builtin.externalizePattern builtin)
+    Right expected Hedgehog.=== parseKorePattern "<test>" syntax

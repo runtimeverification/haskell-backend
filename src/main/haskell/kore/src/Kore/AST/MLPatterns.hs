@@ -18,9 +18,12 @@ module Kore.AST.MLPatterns
     , undefinedHeadSort
     ) where
 
+import qualified Control.Lens as Lens
+
 import Kore.AST.Kore
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
+import Kore.Domain.Class
 import Kore.Implicit.ImplicitSorts
 
 {-|'MLPatternClass' offers a common interface to ML patterns
@@ -201,9 +204,7 @@ data PatternLeveledFunction level domain variable child result =
             -> result level)
         , stringLeveledFunction :: StringLiteral -> result Meta
         , charLeveledFunction :: CharLiteral -> result Meta
-        , domainValueLeveledFunction
-            :: DomainValue Object domain child
-            -> result Object
+        , domainValueLeveledFunction :: domain child -> result Object
         , applicationLeveledFunction
           :: !(Application level child -> result level)
         , variableLeveledFunction :: !(variable level -> result level)
@@ -272,9 +273,7 @@ data PatternFunction level domain variable child result = PatternFunction
     , charFunction :: CharLiteral -> result
     , applicationFunction :: !(Application level child -> result)
     , variableFunction :: !(variable level -> result)
-    , domainValueFunction
-        :: DomainValue Object domain child
-        -> result
+    , domainValueFunction :: domain child -> result
     }
 
 newtype ParameterizedProxy result level = ParameterizedProxy
@@ -314,7 +313,7 @@ applyPatternFunction patternFunction =
 -- result sort corresponding to an application head.
 -- TODO(traiansf): add tests.
 getPatternResultSort
-    :: SortedVariable variable
+    :: (Domain domain, SortedVariable variable)
     => (SymbolOrAlias level -> ApplicationSorts level)
     -- ^Function to retrieve the sort of a given pattern Head
     -> Pattern level domain variable child
@@ -325,7 +324,8 @@ getPatternResultSort applicationSorts =
         , patternLeveledFunctionMLBinder = getBinderPatternSort
         , stringLeveledFunction = const stringMetaSort
         , charLeveledFunction = const charMetaSort
-        , domainValueLeveledFunction = domainValueSort
+        , domainValueLeveledFunction =
+            domainValueSort . Lens.view lensDomainValue
         , applicationLeveledFunction =
             applicationSortsResult . applicationSorts . applicationSymbolOrAlias
         , variableLeveledFunction = sortedVariableSort

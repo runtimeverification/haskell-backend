@@ -472,10 +472,13 @@ domainValuePatternParserTests =
         [ success "\\dv{s1}(\"a\")"
             $ Kore.AST.Kore.eraseAnnotations
             $ patternPureToKore
-            $ mkDomainValue (sortVariableSort "s1")
-            $ Domain.BuiltinPattern
-            $ Kore.AST.Pure.eraseAnnotations
-            $ mkStringLiteral "a"
+            $ mkDomainValue
+            $ Domain.BuiltinExternal Domain.External
+                { domainValueSort = sortVariableSort "s1"
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations
+                    $ mkStringLiteral "a"
+                }
         , FailureWithoutMessage
             [ ""
             , "\\dv{s1, s2}(\"a\")"
@@ -982,10 +985,13 @@ sentenceAliasParserTests =
                     , sentenceAliasRightPattern =
                         Kore.AST.Kore.eraseAnnotations
                         $ patternPureToKore
-                        $ mkDomainValue resultSort
-                        $ Domain.BuiltinPattern
-                        $ Kore.AST.Pure.eraseAnnotations
-                        $ mkStringLiteral "f"
+                        $ mkDomainValue
+                        $ Domain.BuiltinExternal Domain.External
+                            { domainValueSort = resultSort
+                            , domainValueChild =
+                                Kore.AST.Pure.eraseAnnotations
+                                $ mkStringLiteral "f"
+                            }
                     , sentenceAliasAttributes = Attributes []
                     }
             )

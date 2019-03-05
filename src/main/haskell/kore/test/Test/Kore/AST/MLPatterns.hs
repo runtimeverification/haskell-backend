@@ -9,7 +9,12 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Control.Lens as Lens
+import           Data.Functor.Const
+                 ( Const )
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Void
+                 ( Void )
 
 import           Kore.AST.AstWithLocation
 import           Kore.AST.Builders
@@ -109,7 +114,9 @@ test_mlPattern =
                 charListMetaSort
                 (getPatternResultSort
                     undefinedHeadSort
-                    (VariablePattern (Variable (testId "x") mempty charListMetaSort))
+                    (VariablePattern (Variable (testId "x") mempty charListMetaSort)
+                        :: Pattern Meta (Const Void) Variable ()
+                    )
                 )
             )
         , let
@@ -328,7 +335,8 @@ metaLeveledFunctionApplier =
             , applicationLeveledFunction =
                 head . symbolOrAliasParams . applicationSymbolOrAlias
             , variableLeveledFunction = variableSort
-            , domainValueLeveledFunction = domainValueSort
+            , domainValueLeveledFunction =
+                domainValueSort . Lens.view Domain.lensDomainValue
             }
 
 data SomeObjectSort = SomeObjectSort

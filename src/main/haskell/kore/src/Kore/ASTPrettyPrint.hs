@@ -354,10 +354,18 @@ instance
 instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where
     prettyPrint flags =
         \case
-            Domain.BuiltinPattern str ->
+            Domain.BuiltinExternal str ->
                 betweenParentheses flags
-                    ("Domain.BuiltinString " <> prettyPrint NeedsParentheses str)
+                $ "Domain.BuiltinExternal " <> prettyPrint NeedsParentheses str
             _ -> Builtin.notImplementedInternal
+
+instance PrettyPrint child => PrettyPrint (Domain.External child) where
+    prettyPrint _ p =
+        writeStructure
+            "Domain.External"
+            [ writeFieldNewLine "domainValueSort"  Domain.domainValueSort  p
+            , writeFieldNewLine "domainValueChild" Domain.domainValueChild p
+            ]
 
 instance
     ( MetaOrObject level

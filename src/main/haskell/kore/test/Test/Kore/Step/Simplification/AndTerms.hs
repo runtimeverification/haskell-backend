@@ -777,17 +777,17 @@ mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
 
 aDomainValue :: CommonStepPattern Object
 aDomainValue =
-    mkDomainValue  Mock.testSort
-        $ Domain.BuiltinPattern
-        $ eraseAnnotations
-        $ mkStringLiteral "a"
+    mkDomainValue $ Domain.BuiltinExternal Domain.External
+        { domainValueSort = Mock.testSort
+        , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+        }
 
 bDomainValue :: CommonStepPattern Object
 bDomainValue =
-    mkDomainValue Mock.testSort
-        $ Domain.BuiltinPattern
-        $ eraseAnnotations
-        $ mkStringLiteral "b"
+    mkDomainValue $ Domain.BuiltinExternal Domain.External
+        { domainValueSort = Mock.testSort
+        , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
+        }
 
 simplifyUnify
     :: MetaOrObject level

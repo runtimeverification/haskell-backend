@@ -47,7 +47,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -433,7 +432,7 @@ mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = mockSymbolAttributes
     , symbolOrAliasType = const HeadType.Symbol
-    , sortAttributes = const Mock.constructorFunctionalAttributes
+    , sortAttributes = const def
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     }

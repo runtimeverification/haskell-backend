@@ -7,6 +7,7 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import qualified Control.Monad.Except as Except
+import qualified Data.Default as Default
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
@@ -215,7 +216,7 @@ mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.functionalAttributes
     , symbolOrAliasType = const HeadType.Symbol
-    , sortAttributes = const Mock.functionalAttributes
+    , sortAttributes = const Default.def
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     }

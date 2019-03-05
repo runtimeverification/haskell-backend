@@ -21,6 +21,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -32,8 +33,6 @@ import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
-import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -135,7 +134,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
   where
     name = takeFileName test
     setUp :: IO
-                ( VerifiedModule StepperAttributes AxiomPatternAttributes
+                ( VerifiedModule StepperAttributes Attribute.Axiom
                 , CommonStepPattern Object)
     setUp = do
         kompile
@@ -179,7 +178,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     (fromKorePattern Object verifiedPattern)
         return (verifiedModule, purePattern)
     execution
-        ::  ( VerifiedModule StepperAttributes AxiomPatternAttributes
+        ::  ( VerifiedModule StepperAttributes Attribute.Axiom
             , CommonStepPattern Object
             )
         -> IO (CommonStepPattern Object)
@@ -212,8 +211,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: IndexedModule sortParam patternType StepperAttributes AxiomPatternAttributes
-    -> IndexedModule sortParam patternType StepperAttributes AxiomPatternAttributes
+    :: IndexedModule sortParam patternType StepperAttributes Attribute.Axiom
+    -> IndexedModule sortParam patternType StepperAttributes Attribute.Axiom
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =

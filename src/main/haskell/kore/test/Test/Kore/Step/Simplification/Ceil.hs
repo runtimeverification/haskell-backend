@@ -380,10 +380,11 @@ test_ceilSimplification =
             Predicated
                 { term =
                     mkDomainValue
-                        testSort
-                        (Domain.BuiltinPattern
-                            $ eraseAnnotations
-                            $ mkStringLiteral "a"
+                        (Domain.BuiltinExternal Domain.External
+                            { domainValueSort = Mock.testSort
+                            , domainValueChild =
+                                eraseAnnotations $ mkStringLiteral "a"
+                            }
                         )
                 , predicate = makeTruePredicate
                 , substitution = mempty

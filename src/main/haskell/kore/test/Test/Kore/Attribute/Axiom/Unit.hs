@@ -1,10 +1,10 @@
-module Test.Kore.Attribute.Unit where
+module Test.Kore.Attribute.Axiom.Unit where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import Kore.AST.Kore
-import Kore.Attribute.Unit
+import Kore.Attribute.Axiom.Unit
 
 import Test.Kore.Attribute.Parser
 

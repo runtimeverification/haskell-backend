@@ -5,6 +5,7 @@ import Test.Tasty.HUnit
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( HeadType, MetadataTools )
@@ -64,13 +65,19 @@ unitPattern = mkApp unitSort unitSymbol []
 
 onePattern :: CommonStepPattern Object
 onePattern =
-    (mkDomainValue intSort . Domain.BuiltinPattern . eraseAnnotations)
-        (mkStringLiteral "1")
+    Builtin.Int.asPattern
+        Domain.InternalInt
+            { builtinIntSort = intSort
+            , builtinIntValue = 1
+            }
 
 zeroPattern :: CommonStepPattern Object
 zeroPattern =
-    (mkDomainValue intSort . Domain.BuiltinPattern . eraseAnnotations)
-        (mkStringLiteral "1")
+    Builtin.Int.asPattern
+        Domain.InternalInt
+            { builtinIntSort = intSort
+            , builtinIntValue = 0
+            }
 
 unitSort :: Sort Object
 unitSort =

@@ -49,7 +49,7 @@ subSymbol =
 test_Overload :: TestTree
 test_Overload =
     testCase "[overload{}(super{}(), sub{}())] :: Overload"
-    $ expectSuccess Overload { overload = Just (superSymbol, subSymbol) }
+    $ expectSuccess Overload { getOverload = Just (superSymbol, subSymbol) }
     $ parseOverload $ Attributes [ overloadAttribute superSymbol subSymbol ]
 
 test_Attributes :: TestTree

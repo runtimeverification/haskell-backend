@@ -11,6 +11,8 @@ module Kore.Step.Simplification.Predicate
     ( simplifyPartial
     ) where
 
+import qualified Data.Text.Prettyprint.Doc as Pretty
+
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
@@ -25,7 +27,6 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (StepPatternSimplifier),
                  StepPatternSimplifier )
 import           Kore.Unparser
-                 ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -76,5 +77,9 @@ simplifyPartial
                     }
                 , SimplificationProof
                 )
-        [patt] -> error ("Expecting a top term! " ++ show patt)
+        [patt] ->
+            (error . show . Pretty.vsep)
+                [ "Expecting a top term!"
+                , unparse patt
+                ]
         _ -> error ("Expecting at most one result " ++ show patternOr)

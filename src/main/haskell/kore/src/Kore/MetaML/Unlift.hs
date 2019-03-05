@@ -266,21 +266,18 @@ unliftDomainValuePattern
 unliftDomainValuePattern [rSort, rChild] =
     do
         domainValueSort <- unliftFromMeta (unliftResultOriginal rSort)
-        domainValueChild <-
+        domain <-
             case Recursive.project (unliftResultOriginal rChild) of
                 _ :< StringLiteralPattern (StringLiteral lit) ->
-                    pure
-                        $ Domain.BuiltinPattern
-                        $ Kore.AST.Pure.eraseAnnotations
-                        $ mkStringLiteral lit
+                    pure $ Domain.BuiltinExternal Domain.External
+                        { domainValueSort
+                        , domainValueChild =
+                            Kore.AST.Pure.eraseAnnotations
+                            $ mkStringLiteral lit
+                        }
                 _ ->
                     Nothing
-        pure
-            (DomainValuePattern DomainValue
-                { domainValueSort
-                , domainValueChild
-                }
-            )
+        pure (DomainValuePattern domain)
 unliftDomainValuePattern _ = Nothing
 
 unliftTopBottomPattern

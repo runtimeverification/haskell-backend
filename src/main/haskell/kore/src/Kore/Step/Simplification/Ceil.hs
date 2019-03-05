@@ -305,7 +305,7 @@ makeEvaluateTerm
             Application { applicationSymbolOrAlias = patternHead } = app
             Application { applicationChildren = children } = app
             headAttributes = MetadataTools.symAttributes tools patternHead
-        DomainValuePattern DomainValue { domainValueChild = child } ->
+        DomainValuePattern child ->
             makeEvaluateBuiltin
                 tools
                 substitutionSimplifier
@@ -372,11 +372,11 @@ makeEvaluateBuiltin
     _substitutionSimplifier
     _simplifier
     _axiomIdToSimplifier
-    (Domain.BuiltinPattern p)
+    (Domain.BuiltinExternal Domain.External { domainValueChild = p })
   =
     case Recursive.project p of
         _ :< StringLiteralPattern _ ->
-            -- This should be the only kind of Domain.BuiltinPattern, and it
+            -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return
                 ( MultiOr.make [ExpandedPattern.topPredicate]
@@ -392,7 +392,7 @@ makeEvaluateBuiltin
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    (Domain.BuiltinMap m)
+    (Domain.BuiltinMap Domain.InternalMap { builtinMapChild = m })
   = do
     children <- mapM
         (makeEvaluateTerm
@@ -455,9 +455,8 @@ makeEvaluateBuiltin
     _substitutionSimplifier
     _simplifier
     _axiomIdToSimplifier
-    (Domain.BuiltinInteger _)
+    (Domain.BuiltinInt _)
   =
-    -- Sets assume that their elements are relatively functional.
     return topPredicateWithProof
 
 topPredicateWithProof

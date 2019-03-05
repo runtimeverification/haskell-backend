@@ -397,17 +397,17 @@ test_equalsSimplification_Patterns =
             mockMetadataTools
             Predicated.topPredicate
             (mkDomainValue
-                testSort
-                (Domain.BuiltinPattern
-                    $ eraseAnnotations
-                    $ mkStringLiteral "a"
+                (Domain.BuiltinExternal Domain.External
+                    { domainValueSort = testSort
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    }
                 )
             )
             (mkDomainValue
-                testSort
-                (Domain.BuiltinPattern
-                    $ eraseAnnotations
-                    $ mkStringLiteral "a"
+                (Domain.BuiltinExternal Domain.External
+                    { domainValueSort = testSort
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    }
                 )
             )
         )
@@ -416,17 +416,17 @@ test_equalsSimplification_Patterns =
             mockMetadataTools
             Predicated.bottomPredicate
             (mkDomainValue
-                testSort
-                (Domain.BuiltinPattern
-                    $ eraseAnnotations
-                    $ mkStringLiteral "a"
+                (Domain.BuiltinExternal Domain.External
+                    { domainValueSort = testSort
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    }
                 )
             )
             (mkDomainValue
-                testSort
-                (Domain.BuiltinPattern
-                    $ eraseAnnotations
-                    $ mkStringLiteral "b"
+                (Domain.BuiltinExternal Domain.External
+                    { domainValueSort = testSort
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
+                    }
                 )
             )
         )
@@ -435,17 +435,17 @@ test_equalsSimplification_Patterns =
             mockMetadataTools
             Predicated.bottomPredicate
             (mkDomainValue
-                testSort
-                (Domain.BuiltinPattern
-                    $ eraseAnnotations
-                    $ mkStringLiteral "a"
+                (Domain.BuiltinExternal Domain.External
+                    { domainValueSort = testSort
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    }
                 )
             )
             (mkDomainValue
-                testSort2
-                (Domain.BuiltinPattern
-                    $ eraseAnnotations
-                    $ mkStringLiteral "a"
+                (Domain.BuiltinExternal Domain.External
+                    { domainValueSort = testSort2
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    }
                 )
             )
         )
