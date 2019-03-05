@@ -29,8 +29,6 @@ module Kore.Step.BaseStep
 import           Control.Monad.Except
 import           Control.Monad.Trans.Except
                  ( throwE )
-import           Data.Either
-                 ( partitionEithers )
 import qualified Data.Hashable as Hashable
 import           Data.List
                  ( foldl' )
@@ -381,7 +379,7 @@ stepWithRule
         proof = renamingProof <> unificationProof'
         attachProof result = (result, proof)
     results <-
-        keepGoodResults $ return $ map
+        traverse
             (applyUnificationToRhs
                 tools
                 substitutionSimplifier
@@ -617,23 +615,6 @@ applyUnificationToRhs
                         initialSubstitution
                 }
         }
-
-keepGoodResults
-    :: ExceptT
-        a
-        Simplifier
-        [ ExceptT a Simplifier b ]
-    -> ExceptT a Simplifier [b]
-keepGoodResults mresultsm = do
-    resultsm <- mresultsm
-    resultsEither <- lift $ mapM runExceptT resultsm
-    let
-        (errors, goodResults) = partitionEithers resultsEither
-    if null goodResults
-        then case errors of
-            [] -> return []
-            (err : _) -> throwE err
-        else return goodResults
 
 stepWithRewriteRule
     ::  ( FreshVariable variable
