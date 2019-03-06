@@ -26,6 +26,8 @@ import           Control.Monad.Trans.Class
                  ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -463,6 +465,7 @@ normalizeSubstitutionAfterMerge
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
+        , HasCallStack
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -511,7 +514,7 @@ normalizeSubstitutionAfterMerge
     case Foldable.toList results of
         [] -> return (ExpandedPattern.bottomPredicate, proof)
         [result] -> return (result, proof)
-        _ -> error "Not implemented"
+        _ -> error "Not implemented: Branching during normalization"
   where
     normalizeSubstitutionDuplication' =
         normalizeSubstitutionDuplication
