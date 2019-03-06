@@ -35,7 +35,7 @@ import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -354,10 +354,18 @@ instance
 instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where
     prettyPrint flags =
         \case
-            Domain.BuiltinPattern str ->
+            Domain.BuiltinExternal str ->
                 betweenParentheses flags
-                    ("Domain.BuiltinString " <> prettyPrint NeedsParentheses str)
+                $ "Domain.BuiltinExternal " <> prettyPrint NeedsParentheses str
             _ -> Builtin.notImplementedInternal
+
+instance PrettyPrint child => PrettyPrint (Domain.External child) where
+    prettyPrint _ p =
+        writeStructure
+            "Domain.External"
+            [ writeFieldNewLine "domainValueSort"  Domain.domainValueSort  p
+            , writeFieldNewLine "domainValueChild" Domain.domainValueChild p
+            ]
 
 instance
     ( MetaOrObject level

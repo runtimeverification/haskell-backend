@@ -19,26 +19,26 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom )
-import           Kore.Step.Function.Data
-import qualified Kore.Step.Function.Data as AttemptedAxiom
+import           Kore.Step.Axiom.Data
+import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Function.EvaluationStrategy
+import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( bottom )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Simplification.Application
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( CommonStepPatternSimplifier, SimplificationProof (..),
+                 ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -66,7 +66,7 @@ test_applicationSimplification =
         -- sigma(a or b, c or d) =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = Mock.sigma Mock.a Mock.c
                         , predicate = makeTruePredicate
@@ -91,7 +91,7 @@ test_applicationSimplification =
         actual <-
             evaluate
                 mockMetadataTools
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
                     testSort
@@ -104,11 +104,11 @@ test_applicationSimplification =
 
     , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
-        let expect = OrOfExpandedPattern.make [ ExpandedPattern.bottom ]
+        let expect = MultiOr.make [ ExpandedPattern.bottom ]
         actual <-
             evaluate
                 mockMetadataTools
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
                     testSort
@@ -121,20 +121,20 @@ test_applicationSimplification =
 
     , testCase "Applies functions" $ do
         -- f(a) evaluated to g(a).
-        let expect = OrOfExpandedPattern.make [ gOfAExpanded ]
+        let expect = MultiOr.make [ gOfAExpanded ]
         actual <-
             evaluate
                 mockMetadataTools
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
                     (simplificationEvaluator
                         [ BuiltinAndAxiomSimplifier
-                            (const $ const $ const $ const $ return
+                            (const $ const $ const $ const $ const $ return
                                 ( AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results =
-                                        OrOfExpandedPattern.make [gOfAExpanded]
-                                    , remainders = OrOfExpandedPattern.make []
+                                        MultiOr.make [gOfAExpanded]
+                                    , remainders = MultiOr.make []
                                     }
                                 , SimplificationProof
                                 )
@@ -156,7 +156,7 @@ test_applicationSimplification =
             --        and (f(a)=f(b) and g(a)=g(b))
             --        and [x=f(a), y=g(a)]
             let expect =
-                    OrOfExpandedPattern.make
+                    MultiOr.make
                         [ Predicated
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
@@ -172,7 +172,7 @@ test_applicationSimplification =
             actual <-
                 evaluate
                     mockMetadataTools
-                    (mockSimplifier [])
+                    (mockSimplifier noSimplification)
                     Map.empty
                     (makeApplication
                         testSort
@@ -204,7 +204,7 @@ test_applicationSimplification =
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
             let z' = Mock.z { variableCounter = Just (Element 1) }
                 expect =
-                    OrOfExpandedPattern.make
+                    MultiOr.make
                         [ Predicated
                             { term = fOfA
                             , predicate =
@@ -243,7 +243,7 @@ test_applicationSimplification =
                             )
                         => AttemptedAxiom Object variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results = OrOfExpandedPattern.make
+                        { results = MultiOr.make
                             [ Predicated
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -251,17 +251,17 @@ test_applicationSimplification =
                                     Substitution.wrap [ (zvar, gOfB) ]
                                 }
                             ]
-                        , remainders = OrOfExpandedPattern.make []
+                        , remainders = MultiOr.make []
                         }
                 in
                     evaluate
                         mockMetadataTools
-                        (mockSimplifier [])
+                        (mockSimplifier noSimplification)
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator
                                 [ BuiltinAndAxiomSimplifier
-                                    (const $ const $ const $ const $
+                                    (const $ const $ const $ const $ const $
                                         return (result, SimplificationProof)
                                     )
                                 ]
@@ -333,6 +333,13 @@ test_applicationSimplification =
             Mock.sortAttributesMapping
             Mock.subsorts
 
+    noSimplification
+        ::  [   ( StepPattern level Variable
+                , ([ExpandedPattern level Variable], SimplificationProof level)
+                )
+            ]
+    noSimplification = []
+
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier Object]
     -> BuiltinAndAxiomSimplifier Object
@@ -352,7 +359,7 @@ makeApplication patternSort symbol patterns =
         valid
         Application
             { applicationSymbolOrAlias = symbol
-            , applicationChildren = map OrOfExpandedPattern.make patterns
+            , applicationChildren = map MultiOr.make patterns
             }
   where
     valid = Valid { patternSort, freeVariables }
@@ -363,7 +370,7 @@ makeApplication patternSort symbol patterns =
 evaluate
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> CommonStepPatternSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators

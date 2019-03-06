@@ -18,14 +18,15 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeImpliesPredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..), substitutionToPredicate )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.OrOfExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, fmapFlattenWithPairs, make )
+import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, fmapFlattenWithPairs, isFalse, isTrue,
-                 make, toExpandedPattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import qualified Kore.Step.Simplification.Not as Not
@@ -95,15 +96,15 @@ simplifyEvaluated first second
   | OrOfExpandedPattern.isTrue first =
     (second, SimplificationProof)
   | OrOfExpandedPattern.isFalse first =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | OrOfExpandedPattern.isTrue second =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
     Not.simplifyEvaluated first
   | otherwise =
     let
         (result, _proofs) =
-            OrOfExpandedPattern.fmapFlattenWithPairs
+            MultiOr.fmapFlattenWithPairs
                 (simplifyEvaluateHalfImplies first)
                 second
     in
@@ -121,16 +122,16 @@ simplifyEvaluateHalfImplies
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 simplifyEvaluateHalfImplies first second
   | OrOfExpandedPattern.isTrue first =
-    (OrOfExpandedPattern.make [second], SimplificationProof)
+    (MultiOr.make [second], SimplificationProof)
   | OrOfExpandedPattern.isFalse first =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isTop second =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isBottom second =
     Not.simplifyEvaluated first
   | otherwise =
     -- TODO: Also merge predicate-only patterns for 'Or'
-    case OrOfExpandedPattern.extractPatterns first of
+    case MultiOr.extractPatterns first of
         [firstP] -> makeEvaluateImplies firstP second
         _ ->
             makeEvaluateImplies
@@ -150,11 +151,11 @@ makeEvaluateImplies
 makeEvaluateImplies
     first second
   | ExpandedPattern.isTop first =
-    (OrOfExpandedPattern.make [second], SimplificationProof)
+    (MultiOr.make [second], SimplificationProof)
   | ExpandedPattern.isBottom first =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isTop second =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isBottom second =
     Not.makeEvaluate first
   | otherwise =
@@ -184,7 +185,7 @@ makeEvaluateImpliesNonBool
   | (Recursive.project -> _ :< TopPattern _) <- firstTerm
   , (Recursive.project -> _ :< TopPattern _) <- secondTerm
   =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [ Predicated
             { term = firstTerm
             , predicate =
@@ -202,7 +203,7 @@ makeEvaluateImpliesNonBool
     , SimplificationProof
     )
   | otherwise =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [ Predicated
             { term =
                 mkImplies

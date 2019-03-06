@@ -11,6 +11,7 @@ This should be imported qualified.
 module Kore.OnePath.Verification
     ( Axiom (..)
     , Claim (..)
+    , isTrusted
     , defaultStrategy
     , verify
     , verifyClaimStep
@@ -40,6 +41,7 @@ import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
                  ( IsMetaOrObject (..), MetaOrObject (..) )
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -49,21 +51,22 @@ import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
 import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes, RewriteRule (RewriteRule),
-                 RulePattern (RulePattern) )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepProof )
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (Predicated) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
-import           Kore.Step.ExpandedPattern as Predicated
-                 ( Predicated (..) )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (Predicated) )
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( fromPurePattern )
+import           Kore.Step.Representation.ExpandedPattern as Predicated
+                 ( Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -80,8 +83,13 @@ import           Kore.Step.Strategy
 -}
 data Claim level = Claim
     { rule :: !(RewriteRule level Variable)
-    , attributes :: !AxiomPatternAttributes
+    , attributes :: !Attribute.Axiom
     }
+
+-- | Is the 'Claim' trusted?
+isTrusted :: Claim level -> Bool
+isTrusted Claim { attributes = Attribute.Axiom { trusted } }=
+    Attribute.isTrusted trusted
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
@@ -99,10 +107,12 @@ If the verification succeeds, it returns ().
 verify
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> StepPatternSimplifier level Variable
+    -> StepPatternSimplifier level
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
     -- ^ Simplifies predicates
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     ->  (  CommonStepPattern level
         -> [Strategy
             (Prim
@@ -124,6 +134,7 @@ verify
     metadataTools
     simplifier
     substitutionSimplifier
+    axiomIdToSimplifier
     strategyBuilder
   =
     mapM_
@@ -131,6 +142,7 @@ verify
             metadataTools
             simplifier
             substitutionSimplifier
+            axiomIdToSimplifier
             strategyBuilder
         )
 
@@ -181,8 +193,10 @@ defaultStrategy
 verifyClaim
     :: forall level . (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> StepPatternSimplifier level Variable
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     ->  (  CommonStepPattern level
         -> [Strategy
             (Prim
@@ -200,6 +214,7 @@ verifyClaim
     metadataTools
     simplifier
     substitutionSimplifier
+    axiomIdToSimplifier
     strategyBuilder
     ((RewriteRule RulePattern {left, right, requires}), stepLimit)
   = do
@@ -237,6 +252,7 @@ verifyClaim
             metadataTools
             substitutionSimplifier
             simplifier
+            axiomIdToSimplifier
 
 -- | TODO: Docs.
 type Configuration level = StrategyPattern (CommonExpandedPattern level)
@@ -247,8 +263,9 @@ verifyClaimStep
     :: forall level
     .  MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> StepPatternSimplifier level Variable
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> Claim level
     -> [Claim level]
     -> [Axiom level]
@@ -259,6 +276,7 @@ verifyClaimStep
     tools
     simplifier
     predicateSimplifier
+    axiomIdToSimplifier
     target
     claims
     axioms
@@ -284,6 +302,7 @@ verifyClaimStep
                     tools
                     predicateSimplifier
                     simplifier
+                    axiomIdToSimplifier
                     prim
 
     strategy' :: Strategy (Prim (CommonExpandedPattern level) (RewriteRule level Variable))

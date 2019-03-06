@@ -19,9 +19,11 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
@@ -52,9 +54,11 @@ mergeWithPredicateSubstitution
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.
     -> ExpandedPattern level variable
@@ -64,6 +68,7 @@ mergeWithPredicateSubstitution
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     Predicated
         { predicate = conditionToMerge
         , substitution = substitutionToMerge
@@ -81,6 +86,8 @@ mergeWithPredicateSubstitution
             mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 [pattPredicate, conditionToMerge]
                 [pattSubstitution, substitutionToMerge]
     (evaluatedCondition, _) <-
@@ -89,6 +96,8 @@ mergeWithPredicateSubstitution
     mergeWithEvaluatedCondition
         tools
         substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
         patt {substitution = mergedSubstitution}
         evaluatedCondition
 
@@ -103,13 +112,19 @@ mergeWithEvaluatedCondition
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedPattern level variable
     -> PredicateSubstitution level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     Predicated
         { term = pattTerm
         , substitution = pattSubstitution
@@ -125,6 +140,8 @@ mergeWithEvaluatedCondition
         ) <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             [predPredicate]
             [pattSubstitution, predSubstitution]
     return

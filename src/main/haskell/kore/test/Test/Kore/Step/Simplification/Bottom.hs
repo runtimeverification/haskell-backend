@@ -10,12 +10,12 @@ import Test.Tasty.HUnit
 import           Kore.AST.Common
                  ( Bottom (..) )
 import           Kore.AST.MetaOrObject
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom )
-import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Simplification.Bottom
                  ( simplify )
 
@@ -27,7 +27,7 @@ test_bottomSimplification :: [TestTree]
 test_bottomSimplification =
     [ testCase "Bottom evaluates to bottom"
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ ExpandedPattern.bottom ]
             )
             (evaluate

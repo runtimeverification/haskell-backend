@@ -13,6 +13,7 @@ import           Control.Monad.Except
                  ( runExceptT )
 import           Data.Default
                  ( def )
+import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import           Data.Sup
@@ -30,15 +31,17 @@ import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
 import           Kore.Step.Error
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( bottom )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
@@ -1043,7 +1046,7 @@ test_baseStepMultipleRemainder =
         let
             expected =
                 OrStepResult
-                    { rewrittenPattern = OrOfExpandedPattern.make
+                    { rewrittenPattern = MultiOr.make
                         [ Predicated
                             { term = Mock.cg
                             , predicate = makeCeilPredicate Mock.cg
@@ -1051,7 +1054,7 @@ test_baseStepMultipleRemainder =
                                 Substitution.wrap [(Mock.x, Mock.a)]
                             }
                         ]
-                    , remainder = OrOfExpandedPattern.make
+                    , remainder = MultiOr.make
                         [ Predicated
                             { term =
                                 Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -1110,7 +1113,7 @@ test_baseStepMultipleRemainder =
                     (makeCeilPredicate Mock.cg)
             expected =
                 OrStepResult
-                    { rewrittenPattern = OrOfExpandedPattern.make
+                    { rewrittenPattern = MultiOr.make
                         [ Predicated
                             { term = Mock.cf
                             , predicate = unificationNotBottom
@@ -1131,7 +1134,7 @@ test_baseStepMultipleRemainder =
                                 Substitution.wrap [(Mock.x, Mock.b)]
                             }
                         ]
-                    , remainder = OrOfExpandedPattern.make
+                    , remainder = MultiOr.make
                         [ Predicated
                             { term =
                                 Mock.functionalConstr30
@@ -1312,6 +1315,8 @@ runStepWithRemainders metadataTools configuration axioms =
             $ stepWithRemainders
                 metadataTools
                 (Mock.substitutionSimplifier metadataTools)
+                (Simplifier.create metadataTools Map.empty)
+                Map.empty
                 configuration
                 axioms
             )
@@ -1335,5 +1340,7 @@ runSingleStepWithRemainder metadataTools configuration axiom =
     $ stepWithRewriteRule
         metadataTools
         (Mock.substitutionSimplifier metadataTools)
+        (Simplifier.create metadataTools Map.empty)
+        Map.empty
         configuration
         axiom

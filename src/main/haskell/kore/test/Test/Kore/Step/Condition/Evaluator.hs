@@ -14,8 +14,8 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
 import qualified Kore.Step.Condition.Evaluator as Evaluator
-import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           SMT
                  ( SMT )
@@ -68,8 +68,15 @@ evaluate predicate =
     $ evalSimplifier emptyLogger
     $ Evaluator.evaluate
         testSubstitutionSimplifier
-        (mockSimplifier [])
+        (mockSimplifier noSimplification)
         predicate
+
+noSimplification
+    ::  [   ( StepPattern level Variable
+            , ([ExpandedPattern level Variable], SimplificationProof level)
+            )
+        ]
+noSimplification = []
 
 -- ----------------------------------------------------------------
 -- Refute Int predicates
@@ -101,7 +108,7 @@ div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 assertRefuted :: CommonPredicate Object -> Assertion
 assertRefuted prop = give testMetadataTools $ do
     let expect = Just False
-    actual <- SMT.runSMT SMT.defaultConfig $ Evaluator.refutePredicate prop
+    actual <- SMT.runSMT SMT.defaultConfig $ Evaluator.decidePredicate prop
     assertEqual "" expect actual
 
 unit_1 :: Assertion

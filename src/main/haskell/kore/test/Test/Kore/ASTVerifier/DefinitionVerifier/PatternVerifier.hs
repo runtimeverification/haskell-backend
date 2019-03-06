@@ -514,13 +514,13 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValuePattern DomainValue
-            { domainValueSort = intSort
-            , domainValueChild =
-                Domain.BuiltinPattern
-                    $ Kore.AST.Pure.eraseAnnotations
+        (DomainValuePattern $ Domain.BuiltinExternal
+            Domain.External
+                { domainValueSort = intSort
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations
                     $ mkStringLiteral "abcd"  -- Not a decimal integer
-            }
+                }
         )
         (NamePrefix "dummy")
         (TestedPatternSort (updateAstLocation intSort AstLocationTest))
@@ -529,13 +529,13 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Negative"
-        (DomainValuePattern DomainValue
-            { domainValueSort = intSort
-            , domainValueChild =
-                Domain.BuiltinPattern
-                $ Kore.AST.Pure.eraseAnnotations
-                $ mkStringLiteral "-256"
-            }
+        (DomainValuePattern $ Domain.BuiltinExternal
+            Domain.External
+                { domainValueSort = intSort
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations
+                    $ mkStringLiteral "-256"
+                }
         )
         (NamePrefix "dummy")
         (TestedPatternSort intSort)
@@ -544,13 +544,13 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (unsigned)"
-        (DomainValuePattern DomainValue
-            { domainValueSort = intSort
-            , domainValueChild =
-                Domain.BuiltinPattern
-                $ Kore.AST.Pure.eraseAnnotations
-                $ mkStringLiteral "1024"
-            }
+        (DomainValuePattern $ Domain.BuiltinExternal
+            Domain.External
+                { domainValueSort = intSort
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations
+                    $ mkStringLiteral "1024"
+                }
         )
         (NamePrefix "dummy")
         (TestedPatternSort intSort)
@@ -559,13 +559,13 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (signed)"
-        (DomainValuePattern DomainValue
-            { domainValueSort = intSort
-            , domainValueChild =
-                Domain.BuiltinPattern
-                $ Kore.AST.Pure.eraseAnnotations
-                $ mkStringLiteral "+128"
-            }
+        (DomainValuePattern $ Domain.BuiltinExternal
+            Domain.External
+                { domainValueSort = intSort
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations
+                    $ mkStringLiteral "+128"
+                }
         )
         (NamePrefix "dummy")
         (TestedPatternSort intSort)
@@ -587,13 +587,13 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValuePattern DomainValue
-            { domainValueSort = boolSort
-            , domainValueChild =
-                Domain.BuiltinPattern
-                    $ Kore.AST.Pure.eraseAnnotations
+        (DomainValuePattern $ Domain.BuiltinExternal
+            Domain.External
+                { domainValueSort = boolSort
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations
                     $ mkStringLiteral "untrue"  -- Not a BOOL.Bool
-            }
+                }
         )
         (NamePrefix "dummy")
         (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
@@ -602,13 +602,13 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - true"
-        (DomainValuePattern DomainValue
-            { domainValueSort = boolSort
-            , domainValueChild =
-                Domain.BuiltinPattern
-                    $ Kore.AST.Pure.eraseAnnotations
+        (DomainValuePattern $ Domain.BuiltinExternal
+            Domain.External
+                { domainValueSort = boolSort
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations
                     $ mkStringLiteral "true"
-            }
+                }
         )
         (NamePrefix "dummy")
         (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
@@ -617,13 +617,13 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - false"
-        (DomainValuePattern DomainValue
-            { domainValueSort = boolSort
-            , domainValueChild =
-                Domain.BuiltinPattern
-                    $ Kore.AST.Pure.eraseAnnotations
+        (DomainValuePattern $ Domain.BuiltinExternal
+            Domain.External
+                { domainValueSort = boolSort
+                , domainValueChild =
+                    Kore.AST.Pure.eraseAnnotations
                     $ mkStringLiteral "false"
-            }
+                }
         )
         (NamePrefix "dummy")
         (TestedPatternSort (updateAstLocation boolSort AstLocationTest))

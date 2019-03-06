@@ -150,7 +150,7 @@ executables:
 
 tests:
   kore-test:
-    main: Driver.hs
+    main: Test.hs
     source-dirs:
       - test
     ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"

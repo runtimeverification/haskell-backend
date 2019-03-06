@@ -15,17 +15,17 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( CommonPredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.Function.Data
-import           Kore.Step.Function.EvaluationStrategy
+import           Kore.Step.Axiom.Data
+import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonPredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (SimplificationProof), Simplifier,
@@ -300,6 +300,7 @@ runSimplifier patternSimplifierMap predicateSubstitution =
         PSSimplifier.create
             mockMetadataTools
             (Simplifier.create mockMetadataTools patternSimplifierMap)
+            patternSimplifierMap
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier Object]
@@ -318,7 +319,7 @@ makeEvaluator
     -> BuiltinAndAxiomSimplifier Object
 makeEvaluator mapping =
     BuiltinAndAxiomSimplifier
-        $ const $ const $ const $ simpleEvaluator mapping
+        $ const $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
     ::  ( FreshVariable variable
@@ -337,8 +338,8 @@ simpleEvaluator ((from, to) : ps) patt
   | from == patt =
     return
         ( Applied AttemptedAxiomResults
-            { results = OrOfExpandedPattern.make [Predicated.fromPurePattern to]
-            , remainders = OrOfExpandedPattern.make []
+            { results = MultiOr.make [Predicated.fromPurePattern to]
+            , remainders = MultiOr.make []
             }
         , SimplificationProof
         )

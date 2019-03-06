@@ -19,19 +19,19 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( Predicated (..) )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( fullCrossProduct, traverseFlattenWithPairsGeneric )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
@@ -73,8 +73,8 @@ simplify
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -96,9 +96,9 @@ simplify
     let
         -- The "Propagation Or" inference rule together with
         -- "Propagation Bottom" for the case when a child or is empty.
-        orDistributedChildren = OrOfExpandedPattern.fullCrossProduct children
+        orDistributedChildren = MultiOr.fullCrossProduct children
     (unflattenedOr, _proofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairsGeneric
+        MultiOr.traverseFlattenWithPairsGeneric
             (makeAndEvaluateApplications
                 tools
                 substitutionSimplifier
@@ -130,8 +130,8 @@ makeAndEvaluateApplications
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -172,8 +172,8 @@ makeAndEvaluateSymbolApplications
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -195,6 +195,8 @@ makeAndEvaluateSymbolApplications
         makeExpandedApplication
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
             valid
             symbol
             children
@@ -218,8 +220,8 @@ evaluateApplicationFunction
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -254,13 +256,24 @@ makeExpandedApplication
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
     -> [ExpandedPattern level variable]
     -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
-makeExpandedApplication tools substitutionSimplifier valid symbol children
+makeExpandedApplication
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToEvaluator
+    valid
+    symbol
+    children
   = do
     (   Predicated
             { predicate = mergedPredicate
@@ -270,6 +283,8 @@ makeExpandedApplication tools substitutionSimplifier valid symbol children
             mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
                 (map ExpandedPattern.predicate children)
                 (map ExpandedPattern.substitution children)
     return

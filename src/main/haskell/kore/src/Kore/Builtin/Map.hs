@@ -21,13 +21,11 @@ module Kore.Builtin.Map
     , builtinFunctions
     , Builtin
     , asPattern
+    , asInternal
     , asExpandedPattern
       -- * Symbols
-    , lookupSymbolUnit
     , lookupSymbolUpdate
     , lookupSymbolLookup
-    , lookupSymbolElement
-    , lookupSymbolConcat
     , lookupSymbolInKeys
     , lookupSymbolKeys
     , isSymbolConcat
@@ -57,6 +55,9 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( Given )
+import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
 import           Data.String
                  ( IsString )
@@ -65,6 +66,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure as Kore
+import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -79,12 +81,12 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -116,7 +118,24 @@ assertSort findSort = Builtin.verifySort findSort sort
 
  -}
 sortDeclVerifiers :: Builtin.SortDeclVerifiers
-sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
+sortDeclVerifiers =
+    HashMap.fromList [ (sort, verifySortDecl) ]
+  where
+    verifySortDecl indexedModule sentenceSort attrs = do
+        Builtin.verifySortDecl indexedModule sentenceSort attrs
+        unitId <- Builtin.getUnitId attrs
+        Builtin.assertSymbolHook indexedModule unitId unitKey
+        Builtin.assertSymbolResultSort indexedModule unitId expectedSort
+        elementId <- Builtin.getElementId attrs
+        Builtin.assertSymbolHook indexedModule elementId elementKey
+        Builtin.assertSymbolResultSort indexedModule elementId expectedSort
+        concatId <- Builtin.getConcatId attrs
+        Builtin.assertSymbolHook indexedModule concatId concatKey
+        Builtin.assertSymbolResultSort indexedModule concatId expectedSort
+        return ()
+      where
+        SentenceSort { sentenceSortName } = sentenceSort
+        expectedSort = mkSort sentenceSortName
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -169,22 +188,24 @@ expectBuiltinMap ctx _map =
         case _map of
             DV_ _ domain ->
                 case domain of
-                    Domain.BuiltinMap map' -> return map'
+                    Domain.BuiltinMap Domain.InternalMap { builtinMapChild } ->
+                        return builtinMapChild
                     _ ->
                         Builtin.verifierBug
-                            (Text.unpack ctx ++ ": Domain value is not a map")
+                        $ Text.unpack ctx ++ ": Domain value is not a map"
             _ ->
                 empty
 
 returnMap
     :: (Monad m, Ord (variable Object))
-    => Sort Object
+    => MetadataTools Object attrs
+    -> Sort Object
     -> Builtin variable
     -> m (AttemptedAxiom Object variable)
-returnMap resultSort map' =
+returnMap tools resultSort map' =
     Builtin.appliedFunction
-        $ ExpandedPattern.fromPurePattern
-        $ asBuiltinDomainValue resultSort map'
+    $ ExpandedPattern.fromPurePattern
+    $ asInternal tools resultSort map'
 
 evalLookup :: Builtin.Function
 evalLookup =
@@ -224,7 +245,7 @@ evalElement =
                         [_key, _value] -> (_key, _value)
                         _ -> Builtin.wrongArity elementKey
             _key <- Builtin.expectNormalConcreteTerm tools _key
-            returnMap resultSort (Map.singleton _key _value)
+            returnMap tools resultSort (Map.singleton _key _value)
         )
 
 -- | evaluates the map concat builtin.
@@ -232,7 +253,7 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 _ _ resultSort = \arguments ->
+    evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_map1, _map2) =
@@ -270,7 +291,7 @@ evalConcat =
                             -- between the keys of the operands.
                             Builtin.appliedFunction ExpandedPattern.bottom
                         else
-                            returnMap resultSort (Map.union _map1 _map2)
+                            returnMap tools resultSort (Map.union _map1 _map2)
             leftIdentity <|> rightIdentity <|> bothConcrete
         )
 
@@ -278,9 +299,9 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 _ _ resultSort =
+    evalUnit0 tools _ resultSort =
         \case
-            [] -> returnMap resultSort Map.empty
+            [] -> returnMap tools resultSort Map.empty
             _ -> Builtin.wrongArity unitKey
 
 evalUpdate :: Builtin.Function
@@ -296,7 +317,7 @@ evalUpdate =
                         _ -> Builtin.wrongArity updateKey
             _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinMap updateKey _map
-            returnMap resultSort (Map.insert _key value _map)
+            returnMap tools resultSort (Map.insert _key value _map)
         )
 
 evalInKeys :: Builtin.Function
@@ -321,7 +342,7 @@ evalKeys :: Builtin.Function
 evalKeys =
     Builtin.functionEvaluator evalKeys0
   where
-    evalKeys0 _ _ resultSort = \arguments ->
+    evalKeys0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let _map =
@@ -329,7 +350,7 @@ evalKeys =
                         [_map] -> _map
                         _ -> Builtin.wrongArity lookupKey
             _map <- expectBuiltinMap lookupKey _map
-            Builtin.Set.returnSet resultSort (Map.keysSet _map)
+            Builtin.Set.returnSet tools resultSort (Map.keysSet _map)
         )
 
 {- | Implement builtin function evaluation.
@@ -346,38 +367,59 @@ builtinFunctions =
         , (keysKey, evalKeys)
         ]
 
+{- | Render a 'Map' as an internal pattern of the given sort.
+
+The result sort must be hooked to the builtin @Map@ sort.
+
+See also: 'sort'
+
+ -}
+asInternal
+    :: Ord (variable Object)
+    => MetadataTools Object attrs
+    -> Sort Object
+    -> Builtin variable
+    -> StepPattern Object variable
+asInternal tools builtinMapSort builtinMapChild =
+    (mkDomainValue . Domain.BuiltinMap)
+        Domain.InternalMap
+            { builtinMapSort
+            , builtinMapUnit =
+                Builtin.lookupSymbolUnit builtinMapSort attrs
+            , builtinMapElement =
+                Builtin.lookupSymbolElement builtinMapSort attrs
+            , builtinMapConcat =
+                Builtin.lookupSymbolConcat builtinMapSort attrs
+            , builtinMapChild
+            }
+  where
+    attrs = sortAttributes tools builtinMapSort
+
 {- | Render a 'Map' as a domain value pattern of the given sort.
 
-    The result sort should be hooked to the builtin @Map@ sort, but this is not
-    checked.
+The result sort must be hooked to the builtin @Map@ sort.
 
-    The constructed pattern will be valid in the contexed of the given indexed
-    module. It is an error if the indexed module does not define symbols hooked
-    to @MAP.unit@, @MAP.element@, and @MAP.concat@.
-
-    See also: 'sort'
+See also: 'sort'
 
  -}
 asPattern
     :: Ord (variable Object)
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ indexed module where pattern would appear
-    -> Sort Object
-    -> Either
-        (Kore.Error e)
-        (Builtin variable -> StepPattern Object variable)
-asPattern indexedModule dvSort
-  = do
-    symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = mkApp dvSort symbolUnit []
-    symbolElement <- lookupSymbolElement dvSort indexedModule
-    let applyElement (key, value) =
-            mkApp dvSort symbolElement [fromConcreteStepPattern key, value]
-    symbolConcat <- lookupSymbolConcat dvSort indexedModule
-    let applyConcat map1 map2 = mkApp dvSort symbolConcat [map1, map2]
-        asPattern0 result =
-            foldr applyConcat applyUnit (applyElement <$> Map.toAscList result)
-    return asPattern0
+    => Domain.InternalMap (StepPattern Object variable)
+    -> StepPattern Object variable
+asPattern builtin =
+    foldr concat' unit (element <$> Map.toAscList map')
+  where
+    Domain.InternalMap { builtinMapSort = builtinSort } = builtin
+    Domain.InternalMap { builtinMapChild = map' } = builtin
+    Domain.InternalMap { builtinMapUnit = unitSymbol } = builtin
+    Domain.InternalMap { builtinMapElement = elementSymbol } = builtin
+    Domain.InternalMap { builtinMapConcat = concatSymbol } = builtin
+
+    apply = mkApp builtinSort
+    unit = apply unitSymbol []
+    element (key, value) =
+        apply elementSymbol [fromConcreteStepPattern key, value]
+    concat' map1 map2 = apply concatSymbol [map1, map2]
 
 {- | Render a 'Map' as an extended domain value pattern.
 
@@ -385,18 +427,17 @@ asPattern indexedModule dvSort
 
  -}
 asExpandedPattern
-    :: Ord (variable Object)
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ dictionary of Map constructor symbols
-    -> Kore.Sort Object
-    -> Either
-        (Kore.Error e)
-        (Builtin variable -> ExpandedPattern Object variable)
-asExpandedPattern symbols resultSort =
-    asExpandedPattern0 <$> asPattern symbols resultSort
+    ::  ( Ord (variable Object)
+        , Given (MetadataTools Object StepperAttributes)
+        )
+    => Kore.Sort Object
+    -> Builtin variable
+    -> ExpandedPattern Object variable
+asExpandedPattern resultSort =
+    ExpandedPattern.fromPurePattern . asInternal tools resultSort
   where
-    asExpandedPattern0 = \asPattern0 builtin ->
-        ExpandedPattern.fromPurePattern $ asPattern0 builtin
+    tools :: MetadataTools Object StepperAttributes
+    tools = Reflection.given
 
 concatKey :: IsString s => s
 concatKey = "MAP.concat"
@@ -419,24 +460,6 @@ in_keysKey = "MAP.in_keys"
 keysKey :: IsString s => s
 keysKey = "MAP.keys"
 
-{- | Embed a 'Map' in a builtin domain value pattern.
- -}
-asBuiltinDomainValue
-    :: Ord (variable Object)
-    => Sort Object
-    -> Builtin variable
-    -> StepPattern Object variable
-asBuiltinDomainValue resultSort map' =
-    mkDomainValue resultSort (Domain.BuiltinMap map')
-
-{- | Find the symbol hooked to @MAP.unit@ in an indexed module.
- -}
-lookupSymbolUnit
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol unitKey
-
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
 lookupSymbolUpdate
@@ -452,22 +475,6 @@ lookupSymbolLookup
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolLookup = Builtin.lookupSymbol lookupKey
-
-{- | Find the symbol hooked to @MAP.element@ in an indexed module.
- -}
-lookupSymbolElement
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol elementKey
-
-{- | Find the symbol hooked to @MAP.concat@ in an indexed module.
- -}
-lookupSymbolConcat
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol concatKey
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}
@@ -542,10 +549,9 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
-    :: forall level variable m err p expanded proof .
+    :: forall level variable err p expanded proof .
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
-        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , Show (variable level)
@@ -557,13 +563,19 @@ unifyEquals
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> (err m) (expanded, proof))
-    -> (p -> p -> MaybeT (err m) (expanded, proof))
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
+    -> (p -> p -> (err Simplifier) (expanded, proof))
+    -> (p -> p -> MaybeT (err Simplifier) (expanded, proof))
 unifyEquals
     simplificationType
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     unifyEqualsChildren
   =
     unifyEquals0
@@ -586,15 +598,14 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT (err m) (expanded, proof)
+        -> MaybeT (err Simplifier) (expanded, proof)
 
-    unifyEquals0 dv1@(DV_ resultSort (Domain.BuiltinMap map1)) =
+    unifyEquals0 dv1@(DV_ _ (Domain.BuiltinMap builtin1)) =
         \case
-            dv2@(DV_ _ builtin2) ->
-                case builtin2 of
-                    Domain.BuiltinMap map2 ->
-                        Monad.Trans.lift
-                        $ unifyEqualsConcrete resultSort map1 map2
+            dv2@(DV_ _ internal2) ->
+                case internal2 of
+                    Domain.BuiltinMap builtin2 ->
+                        Monad.Trans.lift $ unifyEqualsConcrete builtin1 builtin2
                     _ ->
                         (error . unlines)
                             [ "Cannot unify a builtin Map domain value:"
@@ -607,10 +618,10 @@ unifyEquals
                 | isSymbolConcat hookTools symbol2 ->
                     -- Accept the arguments of MAP.concat in either order.
                     Monad.Trans.lift $ case args2 of
-                        [ DV_ _ (Domain.BuiltinMap map2), x@(Var_ _) ] ->
-                            unifyEqualsFramed1 resultSort dv1 map2 x
-                        [ x@(Var_ _), DV_ _ (Domain.BuiltinMap map2) ] ->
-                            unifyEqualsFramed1 resultSort dv1 map2 x
+                        [ DV_ _ (Domain.BuiltinMap builtin2), x@(Var_ _) ] ->
+                            unifyEqualsFramed1 builtin1 builtin2 x
+                        [ x@(Var_ _), DV_ _ (Domain.BuiltinMap builtin2) ] ->
+                            unifyEqualsFramed1 builtin1 builtin2 x
                         [ _, _ ] ->
                             Builtin.unifyEqualsUnsolved
                                 simplificationType
@@ -624,8 +635,7 @@ unifyEquals
                             -- The key is not concrete yet, or MAP.element would
                             -- have evaluated to a domain value.
                             unifyEqualsElement
-                                resultSort
-                                map1
+                                builtin1
                                 symbol2
                                 key2
                                 value2
@@ -643,13 +653,11 @@ unifyEquals
 
     -- | Unify two concrete maps.
     unifyEqualsConcrete
-        ::  forall k.
-            (level ~ Object, k ~ ConcreteStepPattern Object)
-        => Sort level  -- ^ result sort
-        -> Map k (StepPattern level variable)
-        -> Map k (StepPattern level variable)
-        -> (err m) (expanded, proof)
-    unifyEqualsConcrete resultSort map1 map2 = do
+        :: level ~ Object
+        => Domain.InternalMap (StepPattern level variable)
+        -> Domain.InternalMap (StepPattern level variable)
+        -> (err Simplifier) (expanded, proof)
+    unifyEqualsConcrete builtin1 builtin2 = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
         let
@@ -663,7 +671,8 @@ unifyEquals
                 -- remainder of map2.
                 ExpandedPattern.bottom
               | otherwise =
-                asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
+                Reflection.give tools asExpandedPattern builtinMapSort
+                    =<< (propagatePredicates . discardProofs) intersect
               where
                 -- Elements of map1 missing from map2
                 remainder1 = Map.difference map1 map2
@@ -672,22 +681,18 @@ unifyEquals
 
         return (result, SimplificationProof)
       where
-        asBuiltinMap = asBuiltinDomainValue resultSort
+        Domain.InternalMap { builtinMapSort } = builtin1
+        Domain.InternalMap { builtinMapChild = map1 } = builtin1
+        Domain.InternalMap { builtinMapChild = map2 } = builtin2
 
     -- | Unify one concrete map with one framed concrete map.
     unifyEqualsFramed1
-        :: forall k . (level ~ Object, k ~ ConcreteStepPattern Object)
-        => Sort level  -- ^ Sort of result
-        -> p  -- ^ concrete map
-        -> Map k p  -- ^ framed concrete map
-        -> p  -- ^ framing variable
-        -> (err m) (expanded, proof)
-    unifyEqualsFramed1
-        resultSort
-        dv1@(DV_ _ (Domain.BuiltinMap map1))
-        map2
-        x
-      = do
+        :: level ~ Object
+        => Domain.InternalMap (StepPattern Object variable)  -- ^ concrete map
+        -> Domain.InternalMap (StepPattern Object variable)  -- ^ framed map
+        -> StepPattern Object variable  -- ^ framing variable
+        -> (err Simplifier) (expanded, proof)
+    unifyEqualsFramed1 builtin1 builtin2 x = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
         -- The framing variable unifies with the remainder of map1.
@@ -705,7 +710,7 @@ unifyEquals
                 -- There is nothing with which to unify the remainder of map2.
                 ExpandedPattern.bottom
               | otherwise =
-                    pure dv1 -- (DV_ resultSort (BuiltinDomainMap map1))
+                    Reflection.give tools asExpandedPattern builtinMapSort map1
                     <* concrete
                     <* frame
               where
@@ -713,32 +718,40 @@ unifyEquals
                 remainder2 = Map.difference map2 map1
 
         normalized <- Monad.Trans.lift $
-            normalize tools substitutionSimplifier result
+            normalize
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                result
         return (normalized, SimplificationProof)
       where
-        asBuiltinMap = asBuiltinDomainValue resultSort
-
-    unifyEqualsFramed1 _ _ _ _ = error "The impossible happened"
+        Domain.InternalMap { builtinMapSort } = builtin1
+        Domain.InternalMap { builtinMapChild = map1 } = builtin1
+        Domain.InternalMap { builtinMapChild = map2 } = builtin2
+        asBuiltinMap = asInternal tools builtinMapSort
 
 
     unifyEqualsElement
-        :: forall k . (level ~ Object, k ~ ConcreteStepPattern Object)
-        => Sort level
-        -> Map k p  -- ^ concrete map
+        :: level ~ Object
+        => Domain.InternalMap (StepPattern Object variable)  -- ^ concrete map
         -> SymbolOrAlias level  -- ^ 'element' symbol
-        -> p  -- ^ key
-        -> p  -- ^ value
-        -> (err m) (expanded, proof)
-    unifyEqualsElement resultSort map1 element' key2 value2 =
+        -> StepPattern Object variable  -- ^ key
+        -> StepPattern Object variable  -- ^ value
+        -> (err Simplifier) (expanded, proof)
+    unifyEqualsElement builtin1 element' key2 value2 =
         case Map.toList map1 of
             [(fromConcreteStepPattern -> key1, value1)] ->
                 do
                     (key, _) <- unifyEqualsChildren key1 key2
                     (value, _) <- unifyEqualsChildren value1 value2
                     let result =
-                            mkApp resultSort element'
-                                <$> propagatePredicates [key, value]
+                            mkApp builtinMapSort element'
+                            <$> propagatePredicates [key, value]
                     return (result, SimplificationProof)
             _ ->
                 -- Cannot unify a non-element Map with an element Map.
                 return (ExpandedPattern.bottom, SimplificationProof)
+      where
+        Domain.InternalMap { builtinMapSort } = builtin1
+        Domain.InternalMap { builtinMapChild = map1 } = builtin1

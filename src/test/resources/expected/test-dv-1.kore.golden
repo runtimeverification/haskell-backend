@@ -12,18 +12,18 @@ Definition
                         KorePattern
                             { getKorePattern = CofreeT
                                 { runCofreeT = Identity
-                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern DomainValue
+                                    { runIdentity = UnifiedObject Null :< UnifiedObjectPattern (DomainValuePattern (Domain.BuiltinExternal Domain.External
                                         { domainValueSort =
                                             SortVariableSort (SortVariable ((Id "s" AstLocationNone) :: Id Object))
                                         , domainValueChild =
-                                            Domain.BuiltinString PurePattern
+                                            PurePattern
                                                 { getPurePattern = CofreeT
                                                     { runCofreeT = Identity
                                                         { runIdentity = Null :< StringLiteralPattern (StringLiteral "0")
                                                         }
                                                     }
                                                 }
-                                        })
+                                        }))
                                     }
                                 }
                             }

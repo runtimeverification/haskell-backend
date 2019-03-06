@@ -1,19 +1,21 @@
 module Test.Kore.Step.MockSimplifiers where
 
+import qualified Data.Map as Map
+
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( wrapPredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (Predicated) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (SimplificationProof), Simplifier,
+                 SimplificationProof (SimplificationProof),
                  StepPatternSimplifier (StepPatternSimplifier) )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
                  ( create )
@@ -22,14 +24,14 @@ import           Kore.Step.StepperAttributes
 
 substitutionSimplifier
     :: MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
 substitutionSimplifier tools =
     PredicateSubstitution.create
         tools
         (StepPatternSimplifier
             (\_ p ->
                 return
-                    ( OrOfExpandedPattern.make
+                    ( MultiOr.make
                         [ Predicated
                             { term = mkTop_
                             , predicate = Predicate.wrapPredicate p
@@ -40,3 +42,4 @@ substitutionSimplifier tools =
                     )
             )
         )
+        Map.empty

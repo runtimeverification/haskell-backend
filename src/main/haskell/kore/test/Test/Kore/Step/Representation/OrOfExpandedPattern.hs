@@ -1,11 +1,11 @@
-module Test.Kore.Step.OrOfExpandedPattern where
+module Test.Kore.Step.Representation.OrOfExpandedPattern where
 
 import           Hedgehog
                  ( Property, (===) )
 import qualified Hedgehog
 
-import Kore.AST.MetaOrObject
-import Kore.Step.OrOfExpandedPattern
+import           Kore.AST.MetaOrObject
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 
 import Test.Kore
 
@@ -13,15 +13,15 @@ import Test.Kore
 hprop_mergeIdemOr :: Property
 hprop_mergeIdemOr = Hedgehog.property $ do
     ors <- Hedgehog.forAll (standaloneGen $ orOfExpandedPatternGen @Object)
-    merge ors ors === ors
+    MultiOr.merge ors ors === ors
 
 hprop_makeIdemOr :: Property
 hprop_makeIdemOr = Hedgehog.property $ do
     pat <- Hedgehog.forAll (standaloneGen $ expandedPatternGen @Object)
-    make [pat, pat] === make [pat]
+    MultiOr.make [pat, pat] === MultiOr.make [pat]
 
 hprop_flattenIdemOr :: Property
 hprop_flattenIdemOr = Hedgehog.property $ do
     ors <- Hedgehog.forAll (standaloneGen $ orOfExpandedPatternGen @Object)
-    let nested = MultiOr [ors, ors]
-    flatten nested === ors
+    let nested = MultiOr.make [ors, ors]
+    MultiOr.flatten nested === ors

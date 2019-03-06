@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.Function.Identifier
+Module      : Kore.Step.Axiom.Identifier
 Description : Data structures and manipulation helpers used for axiom
               evaluation identifiers.
 
@@ -14,14 +14,12 @@ Portability : portable
 
 This module is intended to be imported qualified:
 @
-import Kore.Step.Function.Identifier ( AxiomIdentifier )
-import Kore.Step.Function.Identifier as AxiomIdentifier
+import Kore.Step.Axiom.Identifier ( AxiomIdentifier )
+import Kore.Step.Axiom.Identifier as AxiomIdentifier
 @
-
-TODO(virgil): Move from Kore.Step.Function to Kore.Step.Axiom
 -}
 
-module Kore.Step.Function.Identifier
+module Kore.Step.Axiom.Identifier
     ( AxiomIdentifier (..)
     , extract
     ) where

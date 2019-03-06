@@ -1,44 +1,45 @@
-module Test.Kore.Step.Function.UserDefined (test_userDefinedFunction) where
+module Test.Kore.Step.Axiom.UserDefined (test_userDefinedFunction) where
 
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Default
-       ( def )
-import Data.List
-       ( sort )
+import           Data.Default
+                 ( def )
+import           Data.List
+                 ( sort )
+import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
-import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
-                 RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), bottom )
-import           Kore.Step.Function.Data as AttemptedAxiom
+import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
                  CommonAttemptedAxiom )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.UserDefined
-                 ( ruleFunctionEvaluator )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
+import           Kore.Step.Axiom.UserDefined
+                 ( equalityRuleEvaluator )
+import           Kore.Step.AxiomPatterns
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import           Kore.Step.AxiomPatterns as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern, Predicated (..), bottom )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Simplification.Data
-                 ( CommonStepPatternSimplifier, SimplificationProof (..),
+                 ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
 import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
@@ -59,14 +60,14 @@ test_userDefinedFunction =
     [ testCase "Applies one step" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrOfExpandedPattern.make
+                    { results = MultiOr.make
                         [ Predicated
                             { term = Mock.functionalConstr11 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
                         ]
-                    , remainders = OrOfExpandedPattern.make []
+                    , remainders = MultiOr.make []
                     }
         actual <-
             evaluateWithAxiom
@@ -78,7 +79,7 @@ test_userDefinedFunction =
                     , attributes = def
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply concrete rule to symbolic pattern" $ do
@@ -91,10 +92,10 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
-                    , attributes = def { concrete = Concrete True }
+                    , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Can apply concrete rule to concrete pattern" $ do
@@ -107,17 +108,17 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 Mock.a
                     , right = Mock.functionalConstr11 Mock.a
                     , requires = makeTruePredicate
-                    , attributes = def { concrete = Concrete True }
+                    , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrOfExpandedPattern.make []
-                    , remainders = OrOfExpandedPattern.make
+                    { results = MultiOr.make []
+                    , remainders = MultiOr.make
                         [ Predicated
                             { term = Mock.functionalConstr10 (mkVar Mock.x)
                             , predicate = makeTruePredicate
@@ -135,7 +136,7 @@ test_userDefinedFunction =
                     , attributes = def
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
 
@@ -143,8 +144,8 @@ test_userDefinedFunction =
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results =
-                        OrOfExpandedPattern.make [ ExpandedPattern.bottom ]
-                    , remainders = OrOfExpandedPattern.make []
+                        MultiOr.make [ ExpandedPattern.bottom ]
+                    , remainders = MultiOr.make []
                     }
         actual <-
             evaluateWithAxiom
@@ -158,7 +159,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier
                     -- Evaluate Top to Bottom.
-                    [ (mkTop_, ([], SimplificationProof)) ]
+                    (asSimplification [ (mkTop_, ([], SimplificationProof)) ])
                 )
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "" expect actual
@@ -166,7 +167,7 @@ test_userDefinedFunction =
     , testCase "Preserves step substitution" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrOfExpandedPattern.make
+                    { results = MultiOr.make
                         [ Predicated
                             { term = Mock.g (mkVar Mock.z)
                             , predicate = makeTruePredicate
@@ -174,7 +175,7 @@ test_userDefinedFunction =
                                 [(Mock.y, mkVar Mock.z)]
                             }
                         ]
-                    , remainders = OrOfExpandedPattern.make
+                    , remainders = MultiOr.make
                         [ Predicated
                             { term = Mock.functionalConstr20
                                 (mkVar Mock.y)
@@ -201,7 +202,7 @@ test_userDefinedFunction =
                     , attributes = def
                     }
                 )
-                (mockSimplifier [])
+                (mockSimplifier noSimplification)
                 (Mock.functionalConstr20
                     (mkVar Mock.y)
                     (mkVar Mock.z)
@@ -213,6 +214,25 @@ test_userDefinedFunction =
     -- TODO: Add a test for StepWithAxiom returning a condition.
     -- TODO: Add a test for the stepper giving up
     ]
+
+noSimplification
+    ::  [   ( StepPattern level Variable
+            , ([ExpandedPattern level Variable], SimplificationProof level)
+            )
+        ]
+noSimplification = []
+
+
+asSimplification
+    ::  [   ( StepPattern level Variable
+            , ([ExpandedPattern level Variable], SimplificationProof level)
+            )
+        ]
+    ->  [   ( StepPattern level Variable
+            , ([ExpandedPattern level Variable], SimplificationProof level)
+            )
+        ]
+asSimplification = id
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
@@ -226,7 +246,7 @@ evaluateWithAxiom
     :: forall level . MetaOrObject level
     => MetadataTools level StepperAttributes
     -> EqualityRule level Variable
-    -> CommonStepPatternSimplifier level
+    -> StepPatternSimplifier level
     -> CommonStepPattern level
     -> IO (CommonAttemptedAxiom level)
 evaluateWithAxiom
@@ -261,9 +281,10 @@ evaluateWithAxiom
         (<$>) fst
         $ SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
-        $ ruleFunctionEvaluator
+        $ equalityRuleEvaluator
             axiom
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
+            Map.empty
             patt

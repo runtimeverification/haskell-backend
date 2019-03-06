@@ -35,13 +35,16 @@ import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeMultipleAndPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..),
                  substitutionToPredicate )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..) )
+                 ( PredicateSubstitutionSimplifier (..), Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
                  ( UnificationProof (EmptyUnificationProof) )
@@ -66,9 +69,8 @@ newtype PredicateSubstitutionMerger level variable m =
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
-    :: forall level variable m .
+    :: forall level variable .
         ( level ~ Object
-        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , SortedVariable variable
@@ -77,18 +79,24 @@ normalize
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> ExpandedPattern level variable
-    -> m ( ExpandedPattern level variable )
+    -> Simplifier ( ExpandedPattern level variable )
 normalize
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     Predicated { term, predicate, substitution }
   = do
     x <- runExceptT $
         normalizeSubstitutionAfterMerge
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             Predicated { term = (), predicate, substitution }
     return $ case x of
       Right (Predicated { predicate = p, substitution = s }, _) ->
@@ -113,20 +121,23 @@ normalizeSubstitutionAfterMerge
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitution level variable
     -> ExceptT
           ( UnificationOrSubstitutionError level variable )
-          m
+          Simplifier
           ( PredicateSubstitution level variable
           , UnificationProof level variable
           )
 normalizeSubstitutionAfterMerge
     tools
     wrappedSimplifier@(PredicateSubstitutionSimplifier substitutionSimplifier)
+    simplifier
+    axiomIdToSimplifier
     Predicated { predicate, substitution }
   = do
     (Predicated
@@ -161,7 +172,11 @@ normalizeSubstitutionAfterMerge
         )
   where
     normalizeSubstitutionDuplication' =
-        normalizeSubstitutionDuplication tools wrappedSimplifier
+        normalizeSubstitutionDuplication
+            tools
+            wrappedSimplifier
+            simplifier
+            axiomIdToSimplifier
     normalizeSubstitution' =
         withExceptT substitutionToUnifyOrSubError
             . normalizeSubstitution tools
@@ -184,22 +199,33 @@ mergePredicatesAndSubstitutions
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , FreshVariable variable
-       , Monad m
        )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> [Predicate level variable]
     -> [Substitution level variable]
-    -> m
+    -> Simplifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
 mergePredicatesAndSubstitutions
-    tools substitutionSimplifier predicates substitutions
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    predicates
+    substitutions
   = do
     result <- runExceptT $
         mergePredicatesAndSubstitutionsExcept
-            tools substitutionSimplifier predicates substitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            predicates
+            substitutions
     case result of
         Left _ ->
             let
@@ -228,26 +254,36 @@ mergePredicatesAndSubstitutionsExcept
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , FreshVariable variable
-       , Monad m
        )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> [Predicate level variable]
     -> [Substitution level variable]
     -> ExceptT
-          ( UnificationOrSubstitutionError level variable )
-          m
-          ( PredicateSubstitution level variable
-          , UnificationProof level variable
-          )
+        ( UnificationOrSubstitutionError level variable )
+        Simplifier
+        ( PredicateSubstitution level variable
+        , UnificationProof level variable
+        )
 mergePredicatesAndSubstitutionsExcept
-    tools substitutionSimplifier predicates substitutions
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    predicates
+    substitutions
   = do
     let
         mergedSubstitution = fold substitutions
         mergedPredicate = makeMultipleAndPredicate predicates
     (Predicated {predicate, substitution}, _proof) <-
-        normalizeSubstitutionAfterMerge tools substitutionSimplifier
+        normalizeSubstitutionAfterMerge
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             Predicated
                 { term = ()
                 , predicate = mergedPredicate
@@ -271,23 +307,29 @@ normalizePredicatedSubstitution
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> Predicated level variable a
-    -> m ( Predicated level variable a
-         , UnificationProof level variable
-         )
+    -> Simplifier
+        ( Predicated level variable a
+        , UnificationProof level variable
+        )
 normalizePredicatedSubstitution
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     Predicated { term, predicate, substitution }
   = do
     x <- runExceptT $
             normalizeSubstitutionAfterMerge
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 Predicated { term = (), predicate, substitution }
     return $ case x of
         Left _ ->
@@ -308,7 +350,7 @@ normalizePredicatedSubstitution
 can't handle.
 -}
 createPredicatesAndSubstitutionsMergerExcept
-    :: forall level variable m err .
+    :: forall level variable err .
         ( Show (variable level)
         , Unparse (variable level)
         , SortedVariable variable
@@ -317,29 +359,37 @@ createPredicatesAndSubstitutionsMergerExcept
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Monad m
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> PredicateSubstitutionMerger level variable (err m)
-createPredicatesAndSubstitutionsMergerExcept tools substitutionSimplifier =
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSubstitutionMerger level variable (err Simplifier)
+createPredicatesAndSubstitutionsMergerExcept
+    tools substitutionSimplifier simplifier axiomIdToSimplifier
+  =
     PredicateSubstitutionMerger worker
   where
     worker
         :: [Predicate level variable]
         -> [Substitution level variable]
-        -> (err m) (PredicateSubstitution level variable)
+        -> (err Simplifier) (PredicateSubstitution level variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutionsExcept
-            tools substitutionSimplifier predicates substitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            predicates
+            substitutions
         return merged
 
 {-| Creates a 'PredicateSubstitutionMerger' that creates predicates for
 unifications it can't handle.
 -}
 createPredicatesAndSubstitutionsMerger
-    :: forall level variable m .
+    :: forall level variable .
         ( Show (variable level)
         , Unparse (variable level)
         , SortedVariable variable
@@ -348,21 +398,29 @@ createPredicatesAndSubstitutionsMerger
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> PredicateSubstitutionMerger level variable m
-createPredicatesAndSubstitutionsMerger tools substitutionSimplifier =
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSubstitutionMerger level variable Simplifier
+createPredicatesAndSubstitutionsMerger
+    tools substitutionSimplifier simplifier axiomIdToSimplifier
+  =
     PredicateSubstitutionMerger worker
   where
     worker
         :: [Predicate level variable]
         -> [Substitution level variable]
-        -> m (PredicateSubstitution level variable)
+        -> Simplifier (PredicateSubstitution level variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutions
-            tools substitutionSimplifier predicates substitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            predicates
+            substitutions
         return merged
 
 {-| Creates a 'PredicateSubstitutionMerger' that creates predicates for
@@ -370,7 +428,7 @@ unifications it can't handle and whose result is in any monad transformer
 over the base monad.
 -}
 createLiftedPredicatesAndSubstitutionsMerger
-    :: forall level variable m t .
+    :: forall level variable t .
         ( Show (variable level)
         , Unparse (variable level)
         , SortedVariable variable
@@ -379,20 +437,28 @@ createLiftedPredicatesAndSubstitutionsMerger
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , Monad m
         , MonadTrans t
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> PredicateSubstitutionMerger level variable (t m)
-createLiftedPredicatesAndSubstitutionsMerger tools substitutionSimplifier =
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSubstitutionMerger level variable (t Simplifier)
+createLiftedPredicatesAndSubstitutionsMerger
+    tools substitutionSimplifier simplifier axiomIdToSimplifier
+  =
     PredicateSubstitutionMerger worker
   where
     worker
         :: [Predicate level variable]
         -> [Substitution level variable]
-        -> (t m) (PredicateSubstitution level variable)
+        -> (t Simplifier) (PredicateSubstitution level variable)
     worker predicates substitutions = Monad.Trans.lift $ do
         (merged, _proof) <- mergePredicatesAndSubstitutions
-            tools substitutionSimplifier predicates substitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            predicates
+            substitutions
         return merged

@@ -15,7 +15,7 @@ module Kore.Step.Simplification.Simplifier
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier (..) )
@@ -23,23 +23,13 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 create
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , FreshVariable variable
-        )
+    ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPatternSimplifier level variable
+    -> StepPatternSimplifier level
 create
     tools
     axiomIdToEvaluator

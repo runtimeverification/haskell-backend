@@ -1,7 +1,6 @@
 module Test.Kore.Builtin.Bool where
 
-import           Hedgehog hiding
-                 ( property )
+import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -13,10 +12,9 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Domain.Builtin ()
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.StepperAttributes
 
 import Test.Kore.Builtin.Builtin
@@ -115,8 +113,8 @@ test_simplification =
             ]
         ]
       where
-        _True  = Bool.asInternal boolSort True
-        _False = Bool.asInternal boolSort False
+        _True  = asInternal True
+        _False = asInternal False
 
         becomes :: HasCallStack
                 => CommonStepPattern Object
@@ -125,3 +123,6 @@ test_simplification =
         becomes makerInput =
             wrapped_maker_expected withSolver
                 (\solver -> evaluateWith solver makerInput)
+
+hprop_unparse :: Property
+hprop_unparse = hpropUnparse (asInternal <$> Gen.bool)

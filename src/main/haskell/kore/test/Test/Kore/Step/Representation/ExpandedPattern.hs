@@ -1,4 +1,6 @@
-module Test.Kore.Step.ExpandedPattern (test_expandedPattern) where
+module Test.Kore.Step.Representation.ExpandedPattern
+    ( test_expandedPattern
+    ) where
 
 import Test.Tasty
        ( TestTree )
@@ -15,9 +17,9 @@ import           Kore.AST.Valid hiding
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), allVariables, mapVariables, toMLPattern )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( Predicated (..), allVariables, mapVariables, toMLPattern )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 

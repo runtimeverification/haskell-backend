@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.Function.UserDefined
+Module      : Kore.Step.Axiom.UserDefined
 Description : Evaluates user-defined functions in a pattern.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,9 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Function.UserDefined
+module Kore.Step.Axiom.UserDefined
     ( StepPatternSimplifier
-    , ruleFunctionEvaluator
+    , equalityRuleEvaluator
     ) where
 
 import Control.Monad.Except
@@ -18,35 +18,36 @@ import Control.Monad.Except
 import           Kore.AST.Pure hiding
                  ( isConcrete )
 import qualified Kore.AST.Pure as Pure
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse )
+import           Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Axiom.Matcher
+                 ( matchAsUnification )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes (..), EqualityRule (EqualityRule),
-                 RulePattern (..) )
+                 ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep
                  ( StepResult (StepResult), UnificationProcedure (..),
                  stepWithRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepProof, StepResult (..) )
-import           Kore.Step.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
-import           Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults) )
-import           Kore.Step.Function.Matcher
-                 ( matchAsUnification )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( fromPurePattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
@@ -57,12 +58,11 @@ import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
 
-{-| 'ruleFunctionEvaluator' evaluates a user-defined function. After
-evaluating the function, it tries to re-evaluate all functions on the result.
-
-The function is assumed to be defined through an axiom.
+{-| Evaluates a pattern using user-defined axioms. After
+evaluating the pattern, it tries to re-apply all axioms on the result.
 -}
-ruleFunctionEvaluator
+-- TODO: Rename to equalityRuleEvaluator
+equalityRuleEvaluator
     ::  forall level variable.
         ( FreshVariable variable
         , SortedVariable variable
@@ -78,21 +78,24 @@ ruleFunctionEvaluator
     -> MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
-ruleFunctionEvaluator
+equalityRuleEvaluator
     (EqualityRule rule)
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     patt
-  | Axiom.Concrete.isConcrete (concrete $ attributes rule)
-        && not (Pure.isConcrete patt)
+  | Axiom.Concrete.isConcrete (Attribute.concrete $ attributes rule)
+  , not (Pure.isConcrete patt)
   = notApplicable
   | otherwise = do
     result <- runExceptT stepResult
@@ -117,6 +120,8 @@ ruleFunctionEvaluator
             tools
             (UnificationProcedure matchAsUnification)
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             (ExpandedPattern.fromPurePattern patt)
             (RulePattern.mapVariables fromVariable rule)
 
@@ -134,20 +139,28 @@ ruleFunctionEvaluator
             , _
             ) <-
                 ExpandedPattern.simplifyPredicate
-                    tools substitutionSimplifier simplifier stepPattern
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    stepPattern
         (   rewrittenRemainder@Predicated { predicate = remainderCondition }
             , _
             ) <-
                 ExpandedPattern.simplifyPredicate
-                    tools substitutionSimplifier simplifier remainderPattern
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    remainderPattern
         return
             ( AttemptedAxiomResults
-                { results = OrOfExpandedPattern.make
+                { results = MultiOr.make
                     (case rewritingCondition of
                         PredicateFalse -> []
                         _ -> [rewrittenPattern]
                     )
-                , remainders = OrOfExpandedPattern.make
+                , remainders = MultiOr.make
                     (case remainderCondition of
                         PredicateFalse -> []
                         _ -> [rewrittenRemainder]

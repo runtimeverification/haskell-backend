@@ -14,16 +14,25 @@ module Kore.Step.Simplification.AndPredicates
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.OrOfExpandedPattern
-                 ( MultiOr, OrOfPredicateSubstitution )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Representation.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Step.Representation.MultiAnd as MultiAnd
+                 ( extractPatterns )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..) )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -32,9 +41,8 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 simplifyEvaluatedMultiPredicateSubstitution
-    :: forall level variable m .
+    :: forall level variable .
         ( MetaOrObject level
-        , Monad m
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level)
@@ -44,17 +52,24 @@ simplifyEvaluatedMultiPredicateSubstitution
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> [OrOfPredicateSubstitution level variable]
-    -> m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> MultiAnd (OrOfPredicateSubstitution level variable)
+    -> Simplifier
         (OrOfPredicateSubstitution level variable, SimplificationProof level)
 simplifyEvaluatedMultiPredicateSubstitution
-    tools substitutionSimplifier predicateSubstitutions
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSubstitution
+    predicateSubstitutions
   = do
     let
         crossProduct :: MultiOr [PredicateSubstitution level variable]
         crossProduct =
-            OrOfExpandedPattern.fullCrossProduct predicateSubstitutions
+            MultiOr.fullCrossProduct
+                (MultiAnd.extractPatterns predicateSubstitutions)
     result <- traverse andPredicateSubstitutions crossProduct
     return
         ( result
@@ -63,11 +78,13 @@ simplifyEvaluatedMultiPredicateSubstitution
   where
     andPredicateSubstitutions
         :: [PredicateSubstitution level variable]
-        -> m (PredicateSubstitution level variable)
+        -> Simplifier (PredicateSubstitution level variable)
     andPredicateSubstitutions predicateSubstitutions0 = do
         (result, _proof) <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSubstitution
             (map ExpandedPattern.predicate predicateSubstitutions0)
             (map ExpandedPattern.substitution predicateSubstitutions0)
         return result

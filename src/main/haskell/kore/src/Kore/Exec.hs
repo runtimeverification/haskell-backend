@@ -27,8 +27,9 @@ import           Data.Limit
                  ( Limit (..) )
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-                 ( Meta, Object (..) )
+                 ( Object (..) )
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
@@ -42,31 +43,30 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  unwrapPredicate )
 import qualified Kore.Repl as Repl
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( builtinEvaluation, simplifierWithFallback )
+import           Kore.Step.Axiom.Identifier
+                 ( AxiomIdentifier )
+import           Kore.Step.Axiom.Registry
+                 ( axiomPatternsToEvaluators, extractEqualityAxioms )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes (trusted),
-                 EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), Trusted (..), extractRewriteAxioms,
+                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern), extractRewriteAxioms,
                  extractRewriteClaims )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepProof )
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..), toMLPattern )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.Function.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Function.EvaluationStrategy
-                 ( builtinEvaluation, simplifierWithFallback )
-import           Kore.Step.Function.Identifier
-                 ( AxiomIdentifier )
-import           Kore.Step.Function.Registry
-                 ( axiomPatternsToEvaluators, extractFunctionAxioms )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..), toMLPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
@@ -83,10 +83,6 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Strategy
                  ( ExecutionGraph )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-                 ( Unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 -- | Configuration used in symbolic execution.
 type Config = CommonExpandedPattern Object
@@ -104,24 +100,24 @@ type Equality = EqualityRule Object Variable
 data Initialized =
     Initialized
         { rewriteRules :: ![Rewrite]
-        , simplifier :: !(StepPatternSimplifier Object Variable)
-        , substitutionSimplifier
-            :: !(PredicateSubstitutionSimplifier Object Simplifier)
+        , simplifier :: !(StepPatternSimplifier Object)
+        , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
+        , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         }
 
 -- | The products of execution: an execution graph, and assorted simplifiers.
 data Execution =
     Execution
         { metadataTools :: !(MetadataTools Object StepperAttributes)
-        , simplifier :: !(StepPatternSimplifier Object Variable)
-        , substitutionSimplifier
-            :: !(PredicateSubstitutionSimplifier Object Simplifier)
+        , simplifier :: !(StepPatternSimplifier Object)
+        , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
+        , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         , executionGraph :: !(ExecutionGraph (Config, Proof))
         }
 
 -- | Symbolic execution
 exec
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -139,7 +135,7 @@ exec indexedModule strategy purePattern = do
 
 -- | Symbolic search
 search
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -155,19 +151,21 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
     let
         Execution { metadataTools } = execution
         Execution { simplifier, substitutionSimplifier } = execution
+        Execution { axiomIdToSimplifier } = execution
         Execution { executionGraph } = execution
         match target (config, _proof) =
             Search.matchWith
                 metadataTools
                 substitutionSimplifier
                 simplifier
+                axiomIdToSimplifier
                 target
                 config
     solutionsLists <-
         searchGraph searchConfig (match searchPattern) executionGraph
     let
         solutions =
-            concatMap OrOfExpandedPattern.extractPatterns solutionsLists
+            concatMap MultiOr.extractPatterns solutionsLists
         orPredicate =
             makeMultipleOrPredicate
                 (Predicated.toPredicate <$> solutions)
@@ -179,16 +177,21 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
 -- | Proving a spec given as a module containing rules to be proven
 prove
     :: Limit Natural
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> Simplifier (Either (CommonStepPattern Object) ())
 prove limit definitionModule specModule = do
     let
         tools = extractMetadataTools definitionModule
-    Initialized { rewriteRules, simplifier, substitutionSimplifier } <-
-        initialize definitionModule tools
+    Initialized
+        { rewriteRules
+        , simplifier
+        , substitutionSimplifier
+        , axiomIdToSimplifier
+        } <-
+            initialize definitionModule tools
     specAxioms <-
         mapM (simplifyRuleOnSecond tools)
             (extractRewriteClaims Object specModule)
@@ -201,6 +204,7 @@ prove limit definitionModule specModule = do
             tools
             simplifier
             substitutionSimplifier
+            axiomIdToSimplifier
             (defaultStrategy claims axioms)
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
 
@@ -210,27 +214,30 @@ prove limit definitionModule specModule = do
     makeClaim (attributes, rule) = Claim { rule , attributes }
     simplifyRuleOnSecond
         :: MetadataTools Object StepperAttributes
-        -> (AxiomPatternAttributes, Rewrite)
-        -> Simplifier (AxiomPatternAttributes, Rewrite)
+        -> (Attribute.Axiom, Rewrite)
+        -> Simplifier (Attribute.Axiom, Rewrite)
     simplifyRuleOnSecond tools (atts, rule) = do
         rule' <- simplifyRewriteRule tools rule
         return (atts, rule')
     extractUntrustedClaims :: [Claim Object] -> [Rewrite]
-    extractUntrustedClaims =
-        map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)
+    extractUntrustedClaims = map Claim.rule . filter (not . Claim.isTrusted)
 
 -- | TODO: Docs
 proveWithRepl
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> Simplifier ()
 proveWithRepl definitionModule specModule = do
     let
         tools = extractMetadataTools definitionModule
-    Initialized { rewriteRules, simplifier, substitutionSimplifier } <-
-        initialize definitionModule tools
+    Initialized
+        { rewriteRules
+        , simplifier
+        , substitutionSimplifier
+        , axiomIdToSimplifier
+        } <- initialize definitionModule tools
     specAxioms <-
         mapM (simplifyRuleOnSecond tools)
             (extractRewriteClaims Object specModule)
@@ -242,6 +249,7 @@ proveWithRepl definitionModule specModule = do
         tools
         simplifier
         substitutionSimplifier
+        axiomIdToSimplifier
         axioms
         claims
 
@@ -249,18 +257,18 @@ proveWithRepl definitionModule specModule = do
     makeClaim (attributes, rule) = Claim { rule , attributes }
     simplifyRuleOnSecond
         :: MetadataTools Object StepperAttributes
-        -> (AxiomPatternAttributes, Rewrite)
-        -> Simplifier (AxiomPatternAttributes, Rewrite)
+        -> (Attribute.Axiom, Rewrite)
+        -> Simplifier (Attribute.Axiom, Rewrite)
     simplifyRuleOnSecond tools (atts, rule) = do
         rule' <- simplifyRewriteRule tools rule
         return (atts, rule')
     extractUntrustedClaims :: [Claim Object] -> [Rewrite]
     extractUntrustedClaims =
-        map Claim.rule . filter (not . isTrusted . trusted . Claim.attributes)
+        fmap Claim.rule . filter (not . Claim.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.
 execute
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -275,22 +283,29 @@ execute verifiedModule strategy inputPattern
         Initialized { rewriteRules } = initialized
         Initialized { simplifier } = initialized
         Initialized { substitutionSimplifier } = initialized
+        Initialized { axiomIdToSimplifier } = initialized
     (simplifiedPatterns, _) <-
         ExpandedPattern.simplify
             metadataTools
             substitutionSimplifier
             simplifier
+            axiomIdToSimplifier
             (ExpandedPattern.fromPurePattern inputPattern)
     let
         initialPattern =
-            case OrOfExpandedPattern.extractPatterns simplifiedPatterns of
+            case MultiOr.extractPatterns simplifiedPatterns of
                 [] -> ExpandedPattern.bottomOf patternSort
                 (config : _) -> config
           where
             Valid { patternSort } = extract inputPattern
         runStrategy' pat =
             runStrategy
-                (transitionRule metadataTools substitutionSimplifier simplifier)
+                (transitionRule
+                    metadataTools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                )
                 (strategy rewriteRules)
                 (pat, mempty)
     executionGraph <- runStrategy' initialPattern
@@ -298,19 +313,20 @@ execute verifiedModule strategy inputPattern
         { metadataTools
         , simplifier
         , substitutionSimplifier
+        , axiomIdToSimplifier
         , executionGraph
         }
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -> MetadataTools Object StepperAttributes
     -> Simplifier Initialized
 initialize verifiedModule tools =
     do
         functionAxioms <-
             simplifyFunctionAxioms tools
-                (extractFunctionAxioms Object verifiedModule)
+                (extractEqualityAxioms Object verifiedModule)
         rewriteRules <-
             mapM (simplifyRewriteRule tools)
                 (extractRewriteAxioms Object verifiedModule)
@@ -318,8 +334,8 @@ initialize verifiedModule tools =
             functionEvaluators :: BuiltinAndAxiomSimplifierMap Object
             functionEvaluators =
                 axiomPatternsToEvaluators functionAxioms
-            functionRegistry :: BuiltinAndAxiomSimplifierMap Object
-            functionRegistry =
+            axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap Object
+            axiomIdToSimplifier =
                 Map.unionWith
                     simplifierWithFallback
                     -- builtin functions
@@ -328,22 +344,19 @@ initialize verifiedModule tools =
                     )
                     -- user-defined functions
                     functionEvaluators
-            simplifier
-                ::  ( SortedVariable variable
-                    , Ord (variable Meta)
-                    , Ord (variable Object)
-                    , Show (variable Meta)
-                    , Show (variable Object)
-                    , Unparse (variable Object)
-                    , FreshVariable variable
-                    )
-                => StepPatternSimplifier Object variable
-            simplifier = Simplifier.create tools functionRegistry
+            simplifier :: StepPatternSimplifier Object
+            simplifier = Simplifier.create tools axiomIdToSimplifier
             substitutionSimplifier
-                :: PredicateSubstitutionSimplifier Object Simplifier
+                :: PredicateSubstitutionSimplifier Object
             substitutionSimplifier =
-                PredicateSubstitution.create tools simplifier
-        return Initialized { rewriteRules, simplifier, substitutionSimplifier }
+                PredicateSubstitution.create
+                    tools simplifier axiomIdToSimplifier
+        return Initialized
+            { rewriteRules
+            , simplifier
+            , substitutionSimplifier
+            , axiomIdToSimplifier
+            }
 
 {- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
 
@@ -384,7 +397,7 @@ simplifyRulePattern
 simplifyRulePattern tools rulePattern = do
     let RulePattern { left } = rulePattern
     (simplifiedLeft, _proof) <- simplifyPattern tools left
-    case OrOfExpandedPattern.extractPatterns simplifiedLeft of
+    case MultiOr.extractPatterns simplifiedLeft of
         [ Predicated { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
             let subst = Substitution.toMap substitution
@@ -419,18 +432,10 @@ simplifyPattern tools =
         tools
         emptySubstitutionSimplifier
         emptySimplifier
+        Map.empty
     . ExpandedPattern.fromPurePattern
   where
-    emptySimplifier
-        ::  ( SortedVariable variable
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , Show (variable Meta)
-            , Show (variable Object)
-            , Unparse (variable Object)
-            , FreshVariable variable
-            )
-        => StepPatternSimplifier Object variable
+    emptySimplifier :: StepPatternSimplifier Object
     emptySimplifier = Simplifier.create tools Map.empty
     emptySubstitutionSimplifier =
-        PredicateSubstitution.create tools emptySimplifier
+        PredicateSubstitution.create tools emptySimplifier Map.empty

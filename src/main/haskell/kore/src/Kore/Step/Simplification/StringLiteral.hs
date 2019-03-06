@@ -15,12 +15,12 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -34,7 +34,7 @@ simplify
        , SimplificationProof Meta
        )
 simplify (StringLiteral str) =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [Predicated
             { term = mkStringLiteral str
             , predicate = makeTruePredicate

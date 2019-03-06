@@ -1,9 +1,10 @@
 module Test.Kore.Builtin.Builtin where
 
-import Test.Tasty
-       ( TestTree )
-import Test.Tasty.HUnit
-       ( assertEqual )
+import qualified Hedgehog
+import           Test.Tasty
+                 ( TestTree )
+import           Test.Tasty.HUnit
+                 ( assertEqual )
 
 import           Control.Concurrent.MVar
                  ( MVar )
@@ -21,35 +22,41 @@ import           Data.Proxy
 import           GHC.Stack
                  ( HasCallStack )
 
+import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import           Kore.Parser.Parser
+                 ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Axiom.Data
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes, RewriteRule )
+                 ( RewriteRule )
 import           Kore.Step.BaseStep
                  ( StepProof, StepResult (StepResult), stepWithRewriteRule )
 import qualified Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import           Kore.Step.Error
                  ( StepError )
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import           Kore.Step.Function.Data
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
+import           Kore.Unparser
+                 ( unparseToString )
 import           SMT
                  ( MonadSMT (..), SMT, Solver )
 import qualified SMT
@@ -69,25 +76,10 @@ mkPair lSort rSort l r =
     mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
 substitutionSimplifier
-    :: MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    :: MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
 substitutionSimplifier tools =
-    PredicateSubstitution.create
-        tools
-        (StepPatternSimplifier
-            (\_ p ->
-                return
-                    ( OrOfExpandedPattern.make
-                        [ Predicated
-                            { term = mkTop_
-                            , predicate = Predicate.wrapPredicate p
-                            , substitution = mempty
-                            }
-                        ]
-                    , SimplificationProof
-                    )
-            )
-        )
+    PredicateSubstitution.create tools stepSimplifier evaluators
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
@@ -123,7 +115,7 @@ verify
     -> Either
         (Kore.Error.Error VerifyError)
         (Map
-            ModuleName (VerifiedModule StepperAttributes AxiomPatternAttributes)
+            ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
         )
 verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
@@ -135,8 +127,8 @@ verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
+    -> VerifiedModule StepperAttributes Attribute.Axiom
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =
@@ -166,21 +158,37 @@ constructorFunctions ixm =
         (attrs, attributes, constructorFunctions importedModule)
 
 verifiedModules
-    :: Map ModuleName (VerifiedModule StepperAttributes AxiomPatternAttributes)
+    :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
+verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
 
-testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object Simplifier
+testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
 evaluators :: BuiltinAndAxiomSimplifierMap Object
 evaluators = Builtin.koreEvaluators verifiedModule
+
+stepSimplifier :: StepPatternSimplifier level
+stepSimplifier =
+    StepPatternSimplifier
+        (\_ p ->
+            return
+                ( MultiOr.make
+                    [ Predicated
+                        { term = mkTop_
+                        , predicate = Predicate.wrapPredicate p
+                        , substitution = mempty
+                        }
+                    ]
+                , SimplificationProof
+                )
+        )
 
 evaluate
     :: MonadSMT m
@@ -234,6 +242,8 @@ runStepResult configuration axiom =
         (stepWithRewriteRule
             testMetadataTools
             testSubstitutionSimplifier
+            stepSimplifier
+            evaluators
             configuration
             axiom
         )
@@ -277,7 +287,23 @@ runStepResultWith solver configuration axiom =
                 (stepWithRewriteRule
                     testMetadataTools
                     testSubstitutionSimplifier
+                    stepSimplifier
+                    evaluators
                     configuration
                     axiom
                 )
     in runReaderT (SMT.getSMT smt) solver
+
+
+-- | Test unparsing internalized patterns.
+hpropUnparse
+    :: Hedgehog.Gen (CommonStepPattern Object)
+    -- ^ Generate patterns with internal representations
+    -> Hedgehog.Property
+hpropUnparse gen = Hedgehog.property $ do
+    builtin <- Hedgehog.forAll gen
+    let syntax = unparseToString builtin
+        expected =
+            (Kore.eraseAnnotations . toKorePattern)
+                (Builtin.externalizePattern builtin)
+    Right expected Hedgehog.=== parseKorePattern "<test>" syntax

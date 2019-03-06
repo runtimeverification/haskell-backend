@@ -26,6 +26,7 @@ import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import qualified Kore.Builtin as Builtin
@@ -35,9 +36,9 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
@@ -188,7 +189,7 @@ extractSearchResults =
 
 verifiedMyModule
     :: VerifiedKoreModule
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
 verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules

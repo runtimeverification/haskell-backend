@@ -710,13 +710,17 @@ mlConstructorRemainderParser childParser x patternType =
         DomainValuePatternType ->
             case isMetaOrObject (toProxy x) of
                 IsMeta -> unsupportedPatternType Meta DomainValuePatternType
-                IsObject ->
-                    DomainValuePattern <$>
-                    (   DomainValue
-                    <$> inCurlyBracesRemainderParser (sortParser Object)
-                    <*> inParenthesesParser
-                        (Domain.BuiltinPattern <$> metaPatternParser)
-                    )
+                IsObject -> do
+                    domainValueSort <-
+                        inCurlyBracesRemainderParser (sortParser Object)
+                    domainValueChild <- inParenthesesParser metaPatternParser
+                    let external =
+                            Domain.External
+                                { domainValueSort
+                                , domainValueChild
+                                }
+                    (return . DomainValuePattern)
+                        (Domain.BuiltinExternal external)
         NextPatternType ->
             case isMetaOrObject (toProxy x) of
                 IsMeta -> unsupportedPatternType Meta NextPatternType

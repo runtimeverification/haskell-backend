@@ -43,17 +43,21 @@ import           Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..), applicationAxiomSimplifier,
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiom (..),
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (..) )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
-import           Kore.Step.Simplification.Equals
-                 ( makeEvaluate )
+import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unparser
@@ -129,8 +133,11 @@ evalKEq
         )
     => Bool
     -> MetadataTools.MetadataTools Object StepperAttributes
-    -> PredicateSubstitutionSimplifier Object Simplifier
-    -> StepPatternSimplifier Object variable
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
@@ -139,7 +146,7 @@ evalKEq
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
-evalKEq true tools substitutionSimplifier _ (valid :< app) =
+evalKEq true _ _ _ _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
@@ -148,16 +155,28 @@ evalKEq true tools substitutionSimplifier _ (valid :< app) =
     Valid { patternSort } = valid
     Application { applicationChildren } = app
     evalEq t1 t2 = do
-        (result, _proof) <- makeEvaluate tools substitutionSimplifier ep1 ep2
-        case () of
-            _ | OrOfExpandedPattern.isTrue result ->
-                purePatternAxiomEvaluator (Bool.asInternal patternSort true)
-              | OrOfExpandedPattern.isFalse result ->
-                purePatternAxiomEvaluator (Bool.asInternal patternSort false)
-              | otherwise -> notApplicableAxiomEvaluator
-      where
-        ep1 = ExpandedPattern.fromPurePattern t1
-        ep2 = ExpandedPattern.fromPurePattern t2
+        let (expr, _proof) = Or.simplifyEvaluated
+                (MultiOr.make
+                    [ Predicated
+                        (Bool.asInternal patternSort true)
+                        (Predicate.makeEqualsPredicate t1 t2)
+                        mempty
+                    ]
+                )
+                (MultiOr.make
+                    [ Predicated
+                        (Bool.asInternal patternSort false)
+                        ( Predicate.makeNotPredicate $
+                            Predicate.makeEqualsPredicate t1 t2
+                        )
+                        mempty
+                    ]
+                )
+        pure
+            ( Applied $ AttemptedAxiomResults expr (MultiOr.make [])
+            , SimplificationProof
+            )
+
 
 evalKIte
     ::  forall variable
@@ -167,8 +186,10 @@ evalKIte
         , ShowMetaOrObject variable
         )
     => MetadataTools.MetadataTools Object StepperAttributes
-    -> PredicateSubstitutionSimplifier Object Simplifier
-    -> StepPatternSimplifier Object variable
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
@@ -177,7 +198,7 @@ evalKIte
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
         )
-evalKIte _ _ _ (_ :< app) =
+evalKIte _ _ _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2

@@ -1,13 +1,13 @@
 {-|
-Module      : Kore.Step.Function.Data
-Description : Data structures used for function evaluation.
+Module      : Kore.Step.Axiom.Data
+Description : Data structures used for axiom-based evaluation.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Function.Data
+module Kore.Step.Axiom.Data
     ( BuiltinAndAxiomSimplifier (..)
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
@@ -36,14 +36,14 @@ import           Kore.AST.Valid
                  ( Valid )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.Function.Identifier
+import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, merge )
 import           Kore.Step.Pattern
                  ( StepPattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make, merge )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -54,8 +54,8 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-| 'BuiltinAndAxiomSimplifier' simplifies 'Application' patterns using either
-an axiom or builtin code.
+{-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
+or builtin code.
 
 Arguments:
 
@@ -65,12 +65,16 @@ patterns such as their sorts, whether they are constructors or hooked.
 * 'StepPatternSimplifier' is a Function for simplifying patterns, used for
 the post-processing of the function application results.
 
-* 'Application' is the pattern to be evaluated.
+* BuiltinAndAxiomSimplifierMap is a map from pattern identifiers to the
+'BuiltinAndAxiomSimplifier's that handle those patterns.
+
+* 'StepPattern' is the pattern to be evaluated.
 
 Return value:
 
-It returns the result of appling the function, together with a proof certifying
-that the function was applied correctly (which is only a placeholder right now).
+It returns the result of simplifying the pattern with builtins and
+axioms, together with a proof certifying that it was simplified correctly
+(which is only a placeholder right now).
 -}
 newtype BuiltinAndAxiomSimplifier level =
     BuiltinAndAxiomSimplifier
@@ -86,8 +90,9 @@ newtype BuiltinAndAxiomSimplifier level =
             , ShowMetaOrObject variable
             )
         => MetadataTools level StepperAttributes
-        -> PredicateSubstitutionSimplifier level Simplifier
-        -> StepPatternSimplifier level variable
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier level
+        -> BuiltinAndAxiomSimplifierMap level
         -> StepPattern level variable
         -> Simplifier
             ( AttemptedAxiom level variable
@@ -129,9 +134,9 @@ instance (Ord level, Ord (variable level))
             }
       =
         AttemptedAxiomResults
-            { results = OrOfExpandedPattern.merge firstResults secondResults
+            { results = MultiOr.merge firstResults secondResults
             , remainders =
-                    OrOfExpandedPattern.merge firstRemainders secondRemainders
+                    MultiOr.merge firstRemainders secondRemainders
             }
 
 instance (Ord level, Ord (variable level))
@@ -139,8 +144,8 @@ instance (Ord level, Ord (variable level))
   where
     mempty =
         AttemptedAxiomResults
-            { results = OrOfExpandedPattern.make []
-            , remainders = OrOfExpandedPattern.make []
+            { results = MultiOr.make []
+            , remainders = MultiOr.make []
             }
 
 {-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
@@ -175,7 +180,7 @@ purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
             { results = makeFromSinglePurePattern p
-            , remainders = OrOfExpandedPattern.make []
+            , remainders = MultiOr.make []
             }
         , SimplificationProof
         )
@@ -197,8 +202,9 @@ applicationAxiomSimplifier
             , ShowMetaOrObject variable
             )
         => MetadataTools level StepperAttributes
-        -> PredicateSubstitutionSimplifier level Simplifier
-        -> StepPatternSimplifier level variable
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier level
+        -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
             (Application level)
             (Valid (variable level) level)
@@ -225,8 +231,9 @@ applicationAxiomSimplifier applicationSimplifier =
                 , ShowMetaOrObject variable
                 )
             => MetadataTools level StepperAttributes
-            -> PredicateSubstitutionSimplifier level Simplifier
-            -> StepPatternSimplifier level variable
+            -> PredicateSubstitutionSimplifier level
+            -> StepPatternSimplifier level
+            -> BuiltinAndAxiomSimplifierMap level
             -> StepPattern level variable
             -> Simplifier
                 ( AttemptedAxiom level variable
@@ -237,12 +244,17 @@ applicationAxiomSimplifier applicationSimplifier =
         tools
         substitutionSimplifier
         simplifier
+        axiomIdToSimplifier
         patt
       =
         case fromPurePattern patt of
             (valid :< ApplicationPattern p) ->
                 applicationSimplifier
-                    tools substitutionSimplifier simplifier (valid :< p)
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    (valid :< p)
             _ -> error
                 ("Expected an application pattern, but got: " ++ show patt)
 

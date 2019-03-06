@@ -1,27 +1,28 @@
 module Test.Kore.Builtin.List where
 
-import           Hedgehog hiding
-                 ( property )
+import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
+import qualified Data.Foldable as Foldable
+import qualified Data.Reflection as Reflection
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
 
+import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Builtin.List as List
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.ExpandedPattern
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -44,11 +45,7 @@ genSeqInteger = Gen.seq (Range.linear 0 16) genInteger
 
 test_getUnit :: TestTree
 test_getUnit =
-    testPropertyWithSolver
-        "get{}(unit{}(), _) === \\bottom{}()"
-        property
-  where
-    property = do
+    testPropertyWithSolver "get{}(unit{}(), _) === \\bottom{}()" $ do
         k <- forAll genInteger
         let patGet =
                 mkApp intSort getListSymbol
@@ -63,9 +60,9 @@ test_getFirstElement :: TestTree
 test_getFirstElement =
     testPropertyWithSolver
         "get{}(concat{}(element{}(e), _), 0) === e"
-        property
+        prop
   where
-    property = do
+    prop = do
         values <- forAll genSeqInteger
         let patGet =
                 mkApp intSort getListSymbol [ patList , Test.Int.asInternal 0 ]
@@ -84,9 +81,9 @@ test_getLastElement :: TestTree
 test_getLastElement =
     testPropertyWithSolver
         "get{}(concat{}(_, element{}(e)), -1) === e"
-        property
+        prop
   where
-    property = do
+    prop = do
         values <- forAll genSeqInteger
         let patGet = mkApp intSort getListSymbol [ patList , Test.Int.asInternal (-1) ]
             patList = asPattern (Test.Int.asInternal <$> values)
@@ -104,9 +101,9 @@ test_concatUnit :: TestTree
 test_concatUnit =
     testPropertyWithSolver
         "concat{}(unit{}(), xs) === concat{}(xs, unit{}()) === xs"
-        property
+        prop
   where
-    property = do
+    prop = do
         values <- forAll genSeqInteger
         let patUnit = mkApp listSort unitListSymbol []
             patValues = asPattern (Test.Int.asInternal <$> values)
@@ -124,9 +121,9 @@ test_concatAssociates :: TestTree
 test_concatAssociates =
     testPropertyWithSolver
         "concat{}(concat{}(as, bs), cs) === concat{}(as, concat{}(bs, cs))"
-        property
+        prop
   where
-    property = do
+    prop = do
         values1 <- forAll genSeqInteger
         values2 <- forAll genSeqInteger
         values3 <- forAll genSeqInteger
@@ -148,11 +145,7 @@ test_concatAssociates =
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
 test_simplify =
-    testPropertyWithSolver
-        "simplify elements"
-        property
-  where
-    property = do
+    testPropertyWithSolver "simplify elements" $ do
         let
             x =
                 mkVar Variable
@@ -160,13 +153,8 @@ test_simplify =
                     , variableCounter = mempty
                     , variableSort = intSort
                     }
-            original =
-                mkDomainValue listSort
-                $ Domain.BuiltinList (Seq.fromList [mkAnd x mkTop_])
-            expected =
-                ExpandedPattern.fromPurePattern
-                $ mkDomainValue listSort
-                $ Domain.BuiltinList (Seq.fromList [x])
+            original = asInternal [mkAnd x mkTop_]
+            expected = asExpandedPattern [x]
         (===) expected =<< evaluate original
 
 test_isBuiltin :: [TestTree]
@@ -206,9 +194,35 @@ mockHookTools :: MetadataTools Object Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
-asPattern :: List.Builtin Variable -> CommonStepPattern Object
-Right asPattern = List.asPattern verifiedModule listSort
+asPattern
+    :: Foldable f
+    => f (CommonStepPattern Object)
+    -> CommonStepPattern Object
+asPattern =
+    Reflection.give testMetadataTools List.asPattern
+    . builtinList
+    . Foldable.toList
 
--- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
-asExpandedPattern :: List.Builtin Variable -> CommonExpandedPattern Object
-Right asExpandedPattern = List.asExpandedPattern verifiedModule listSort
+-- | Specialize 'List.asInternal' to the builtin sort 'listSort'.
+asInternal
+    :: Foldable f
+    => f (CommonStepPattern Object)
+    -> CommonStepPattern Object
+asInternal =
+    List.asInternal testMetadataTools listSort
+    . Seq.fromList
+    . Foldable.toList
+
+-- | Specialize 'List.asExpandedPattern' to the builtin sort 'listSort'.
+asExpandedPattern
+    :: Foldable f
+    => f (CommonStepPattern Object)
+    -> CommonExpandedPattern Object
+asExpandedPattern =
+    Reflection.give testMetadataTools List.asExpandedPattern listSort
+    . Seq.fromList
+    . Foldable.toList
+
+hprop_unparse :: Property
+hprop_unparse =
+    hpropUnparse (asInternal . (<$>) Test.Int.asInternal <$> genSeqInteger)

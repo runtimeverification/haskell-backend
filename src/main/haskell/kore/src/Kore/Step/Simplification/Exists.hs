@@ -24,18 +24,22 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( Predicate, makeExistsPredicate, makeTruePredicate,
                  unwrapPredicate )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( toMLPattern )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, make, traverseFlattenWithPairs )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( toMLPattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make, traverseFlattenWithPairs )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( isFalse, isTrue )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..) )
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -47,6 +51,7 @@ import           Kore.Unparser
 import           Kore.Variables.Free
                  ( freePureVariables )
 import           Kore.Variables.Fresh
+
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -79,9 +84,11 @@ simplify
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Simplifies patterns.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> Exists level variable (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -91,9 +98,16 @@ simplify
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     Exists { existsVariable = variable, existsChild = child }
   =
-    simplifyEvaluated tools substitutionSimplifier simplifier variable child
+    simplifyEvaluated
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        variable
+        child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -119,22 +133,36 @@ simplifyEvaluated
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Simplifies patterns.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> variable level
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated tools substitutionSimplifier simplifier variable simplified
+simplifyEvaluated
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    variable
+    simplified
   | OrOfExpandedPattern.isTrue simplified =
     return (simplified, SimplificationProof)
   | OrOfExpandedPattern.isFalse simplified =
     return (simplified, SimplificationProof)
   | otherwise = do
     (evaluated, _proofs) <-
-        OrOfExpandedPattern.traverseFlattenWithPairs
-            (makeEvaluate tools substitutionSimplifier simplifier variable)
+        MultiOr.traverseFlattenWithPairs
+            (makeEvaluate
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                variable
+            )
             simplified
     return ( evaluated, SimplificationProof )
 
@@ -153,9 +181,11 @@ makeEvaluate
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Simplifies patterns.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> variable level
     -> ExpandedPattern level variable
     -> Simplifier
@@ -164,6 +194,7 @@ makeEvaluate
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     variable
     patt@Predicated { term, predicate, substitution }
   =
@@ -179,7 +210,11 @@ makeEvaluate
                     (Substitution.wrap globalSubstitution)
             (result, _proof) <-
                 ExpandedPattern.simplify
-                    tools substitutionSimplifier simplifier substitutedPat
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    substitutedPat
             return (result , SimplificationProof)
   where
     (Local localSubstitution, Global globalSubstitution) =
@@ -203,7 +238,7 @@ makeEvaluateNoFreeVarInSubstitution
     variable
     patt@Predicated { term, predicate, substitution }
   =
-    (OrOfExpandedPattern.make [simplifiedPattern], SimplificationProof)
+    (MultiOr.make [simplifiedPattern], SimplificationProof)
   where
     termHasVariable =
         Set.member variable (freePureVariables term)

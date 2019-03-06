@@ -31,6 +31,11 @@ module Kore.Builtin.Builtin
     , makeNonEncodedDomainValueVerifier
       -- * Declaring builtin verifiers
     , verifySortDecl
+    , getUnitId
+    , getElementId
+    , getConcatId
+    , assertSymbolHook
+    , assertSymbolResultSort
     , verifySort
     , acceptAnySort
     , verifySymbol
@@ -51,6 +56,9 @@ module Kore.Builtin.Builtin
     , runParser
     , appliedFunction
     , lookupSymbol
+    , lookupSymbolUnit
+    , lookupSymbolElement
+    , lookupSymbolConcat
     , isSymbol
     , expectNormalConcreteTerm
     , getAttemptedAxiom
@@ -61,8 +69,10 @@ module Kore.Builtin.Builtin
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( MaybeT (..), fromMaybe )
+import qualified Control.Lens as Lens
 import           Control.Monad
                  ( zipWithM_ )
+import qualified Control.Monad as Monad
 import qualified Data.Functor.Foldable as Recursive
 import           Data.HashMap.Strict
                  ( HashMap )
@@ -78,6 +88,7 @@ import           Text.Megaparsec
                  ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
+import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
                  ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
@@ -88,32 +99,38 @@ import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
+import qualified Kore.Attribute.Sort.Element as Attribute.Sort
+import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Builtin.Error
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Domain.Class
 import           Kore.Error
                  ( Error )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( SortDescription, VerifiedModule )
+                 ( KoreIndexedModule, SortDescription, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( top )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 applicationAxiomSimplifier )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
+                 BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  SimplificationType, Simplifier, StepPatternSimplifier )
@@ -131,9 +148,13 @@ type HookedSortDescription = SortDescription Object Domain.Builtin
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
-       KoreSentenceSort Object
+        KoreIndexedModule Attribute.Null Attribute.Null
+    -- ^ Indexed module, to look up symbol declarations
+    ->  KoreSentenceSort Object
     -- ^ Sort declaration to verify
-    -> Either (Error VerifyError) ()
+    ->  Attribute.Sort
+    -- ^ Declared sort attributes
+    ->  Either (Error VerifyError) ()
 
 type SortVerifier =
         (Id Object -> Either (Error VerifyError) HookedSortDescription)
@@ -162,8 +183,7 @@ type SymbolVerifiers = HashMap Text SymbolVerifier
 
 -}
 type DomainValueVerifier child =
-       DomainValue Object Domain.Builtin child
-    -> Either (Error VerifyError) (DomainValue Object Domain.Builtin child)
+       Domain.Builtin child -> Either (Error VerifyError) (Domain.Builtin child)
 
 -- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each builtin
 type DomainValueVerifiers child = (HashMap Text (DomainValueVerifier child))
@@ -197,7 +217,7 @@ sortDeclVerifier Verifiers { sortDeclVerifiers } hook =
                 -- 1. the sort is not hooked, or
                 -- 2. there is no SortVerifier registered to the hooked name.
                 -- In either case, there is nothing more to do.
-                \_ -> pure ()
+                \_ _ _ -> pure ()
             Just verifier ->
                 -- Invoke the verifier that is registered to this builtin sort.
                 verifier
@@ -231,7 +251,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure (NotApplicable, SimplificationProof)
+    notImplemented0 _ _ _ _ _ = pure (NotApplicable, SimplificationProof)
 
 {- | Verify a builtin sort declaration.
 
@@ -239,13 +259,119 @@ notImplemented =
 
  -}
 verifySortDecl :: SortDeclVerifier
-verifySortDecl SentenceSort { sentenceSortParameters } =
-    case sentenceSortParameters of
-        [] -> pure ()
-        _ ->
+verifySortDecl _ SentenceSort { sentenceSortParameters } _ =
+    getZeroParams sentenceSortParameters
+
+{- | Throw a 'VerifyError' if there are any sort parameters.
+ -}
+getZeroParams :: [SortVariable level] -> Either (Error VerifyError) ()
+getZeroParams =
+    \case
+        [] -> return ()
+        params ->
             Kore.Error.koreFail
-                ("Expected 0 sort parameters, found "
-                    ++ show (length sentenceSortParameters))
+                ("Expected 0 sort parameters, found " ++ show (length params))
+
+{- | Get the identifier of the @unit@ sort attribute.
+
+Fail if the attribute is missing.
+
+ -}
+getUnitId
+    :: Attribute.Sort
+    -- ^ Sort attributes
+    -> Either (Error VerifyError) (Id Object)
+getUnitId Attribute.Sort { unit = Attribute.Sort.Unit sortUnit } =
+    case sortUnit of
+        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+            return symbolOrAliasConstructor
+        Nothing -> Kore.Error.koreFail "Missing 'unit' attribute."
+
+{- | Get the identifier of the @element@ sort attribute.
+
+Fail if the attribute is missing.
+
+ -}
+getElementId
+    :: Attribute.Sort
+    -- ^ Sort attributes
+    -> Either (Error VerifyError) (Id Object)
+getElementId Attribute.Sort { element = Attribute.Sort.Element sortElement } =
+    case sortElement of
+        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+            return symbolOrAliasConstructor
+        Nothing -> Kore.Error.koreFail "Missing 'element' attribute."
+
+{- | Get the identifier of the @concat@ sort attribute.
+
+Fail if the attribute is missing.
+
+ -}
+getConcatId
+    :: Attribute.Sort
+    -- ^ Sort attributes
+    -> Either (Error VerifyError) (Id Object)
+getConcatId Attribute.Sort { concat = Attribute.Sort.Concat sortConcat } =
+    case sortConcat of
+        Just SymbolOrAlias { symbolOrAliasConstructor } ->
+            return symbolOrAliasConstructor
+        Nothing -> Kore.Error.koreFail "Missing 'concat' attribute."
+
+{- | Check that the symbol's @hook@ attribute matches the expected value.
+
+Fail if the symbol is not defined or the attribute is missing.
+
+ -}
+assertSymbolHook
+    :: KoreIndexedModule declAttrs axiomAttrs
+    -> Id Object
+    -- ^ Symbol identifier
+    -> Text
+    -- ^ Expected hook
+    -> Either (Error VerifyError) ()
+assertSymbolHook indexedModule symbolId expected = do
+    (_, decl) <- IndexedModule.resolveSymbol indexedModule symbolId
+    let
+        SentenceSymbol { sentenceSymbolAttributes = attrs } = decl
+        SentenceSymbol { sentenceSymbolSymbol = symbol } = decl
+    Hook { getHook } <- Verifier.Attributes.parseAttributes attrs
+    case getHook of
+        Just hook
+          | hook == expected -> return ()
+          | otherwise ->
+            Kore.Error.koreFailWithLocations
+                [symbol]
+                ("Symbol is not hooked to builtin symbol '"
+                    ++ expectedForError ++ "'")
+          where
+            expectedForError = Text.unpack expected
+        Nothing ->
+            Kore.Error.koreFailWithLocations
+                [symbol]
+                "Missing 'hook' attribute"
+
+{- | Check that the symbol's result sort matches the expected value.
+
+Fail if the symbol is not defined.
+
+ -}
+assertSymbolResultSort
+    :: KoreIndexedModule declAttrs axiomAttrs
+    -> Id Object
+    -- ^ Symbol identifier
+    -> Sort Object
+    -- ^ Expected result sort
+    -> Either (Error VerifyError) ()
+assertSymbolResultSort indexedModule symbolId expectedSort = do
+    (_, decl) <- IndexedModule.resolveSymbol indexedModule symbolId
+    let
+        SentenceSymbol { sentenceSymbolResultSort = actualSort } = decl
+        SentenceSymbol { sentenceSymbolSymbol = symbol } = decl
+    Monad.unless (actualSort == expectedSort)
+        $ Kore.Error.koreFailWithLocations
+            [symbol]
+            ("Symbol does not return sort '"
+                ++ unparseToString expectedSort ++ "'")
 
 {- | Verify the occurrence of a builtin sort.
 
@@ -343,31 +469,32 @@ verifySymbolArguments
 verifyDomainValue
     :: DomainValueVerifiers child
     -> (Id Object -> Either (Error VerifyError) HookedSortDescription)
-    -> DomainValue Object Domain.Builtin child
-    -> Either (Error VerifyError) (DomainValue Object Domain.Builtin child)
+    -> Domain.Builtin child
+    -> Either (Error VerifyError) (Domain.Builtin child)
 verifyDomainValue
     verifiers
     findSort
-    dv@DomainValue { domainValueSort = (SortActualSort _) }
-  = do
-    mHookSort <- lookupHookSort findSort $ domainValueSort dv
-    case mHookSort of
-        Nothing -> defaultDomainValueVerifier dv
-        Just hookSort -> verifyHookedSortDomainValue verifiers hookSort dv
-verifyDomainValue
-    _verifiers
-    _findSort
-    dv@DomainValue { domainValueSort = (SortVariableSort _) }
+    domain
   =
-    defaultDomainValueVerifier dv
+    case domainValueSort of
+        SortActualSort _ -> do
+            mHookSort <- lookupHookSort findSort domainValueSort
+            case mHookSort of
+                Nothing -> defaultDomainValueVerifier domain
+                Just hookSort ->
+                    verifyHookedSortDomainValue verifiers hookSort domain
+        SortVariableSort _ -> do
+            defaultDomainValueVerifier domain
+  where
+    DomainValue { domainValueSort } = Lens.view lensDomainValue domain
 
 {- | In the case of a hooked sort, lookup the specific verifier for the hook
   sort and attempt to encode the domain value. -}
 verifyHookedSortDomainValue
     :: DomainValueVerifiers child
     -> Text
-    -> DomainValue Object Domain.Builtin child
-    -> Either (Error VerifyError) (DomainValue Object Domain.Builtin child)
+    -> Domain.Builtin child
+    -> Either (Error VerifyError) (Domain.Builtin child)
 verifyHookedSortDomainValue verifiers hookSort dv = do
     verifier <- case HashMap.lookup hookSort verifiers of
         Nothing -> return defaultDomainValueVerifier
@@ -384,7 +511,8 @@ verifyHookedSortDomainValue verifiers hookSort dv = do
 defaultDomainValueVerifier
     :: DomainValueVerifier child
 defaultDomainValueVerifier
-    dv@(DomainValue _ (Domain.BuiltinPattern (StringLiteral_ _)))
+    dv@(Domain.BuiltinExternal ext)
+  | Domain.External { domainValueChild = StringLiteral_ _ } <- ext
   =
     return dv
 defaultDomainValueVerifier _ =
@@ -394,22 +522,23 @@ defaultDomainValueVerifier _ =
 makeEncodedDomainValueVerifier
     :: Text
     -- ^ Builtin sort identifier
-    -> ( DomainValue Object Domain.Builtin child
-        -> Either (Error VerifyError) (Domain.Builtin child) )
+    ->  (   Domain.Builtin child
+        ->  Either (Error VerifyError) (Domain.Builtin child)
+        )
     -- ^ encoding function for the builtin sort
     -> DomainValueVerifier child
-makeEncodedDomainValueVerifier _builtinSort encodeSort domainVal = do
-    dvChild' <- encodeSort domainVal
-    return $ domainVal {domainValueChild = dvChild'}
+makeEncodedDomainValueVerifier _builtinSort encodeSort domain =
+    Kore.Error.withContext "While parsing domain value"
+        (encodeSort domain)
 
 -- | Construct a 'DomainValueVerifier' for a sort with no builtin encoding
 makeNonEncodedDomainValueVerifier
     :: Text
-    -> ( DomainValue Object Domain.Builtin child
-        -> Either (Error VerifyError) () )
+    -> (Domain.Builtin child -> Either (Error VerifyError) ())
     -> DomainValueVerifier child
 makeNonEncodedDomainValueVerifier _builtinName verifyNoEncode domainValue =
-    verifyNoEncode domainValue >> return domainValue
+    Kore.Error.withContext "While parsing domain value"
+        (verifyNoEncode domainValue >> return domainValue)
 
 
 {- | Run a parser in a domain value pattern and construct the builtin
@@ -428,10 +557,13 @@ parseEncodeDomainValue
 parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
     Kore.Error.withContext "While parsing domain value"
         $ case domainValueChild of
-            Domain.BuiltinPattern (StringLiteral_ lit) -> do
-                val <- (parseString parser lit)
+            Domain.BuiltinExternal builtin -> do
+                val <- parseString parser lit
                 return $ ctor val
-            Domain.BuiltinInteger _ -> return domainValueChild
+              where
+                Domain.External { domainValueChild = StringLiteral_ lit } =
+                    builtin
+            Domain.BuiltinInt _ -> return domainValueChild
             Domain.BuiltinBool _ -> return domainValueChild
             _ -> Kore.Error.koreFail
                     "Expected literal string or internal value"
@@ -444,16 +576,19 @@ parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
  -}
 parseDomainValue
     :: Parser a
-    -> DomainValue Object Domain.Builtin child
+    -> Domain.Builtin child
     -> Either (Error VerifyError) a
 parseDomainValue
     parser
-    DomainValue { domainValueChild }
+    domainValueChild
   =
     Kore.Error.withContext "While parsing domain value"
         $ case domainValueChild of
-            Domain.BuiltinPattern (StringLiteral_ lit) ->
+            Domain.BuiltinExternal ext
+              | StringLiteral_ lit <- child ->
                 parseString parser lit
+              where
+                Domain.External { domainValueChild = child } = ext
             _ -> Kore.Error.koreFail
                     "Domain value argument must be a literal string."
 
@@ -483,8 +618,8 @@ appliedFunction
     -> m (AttemptedAxiom level variable)
 appliedFunction epat =
     return $ Applied AttemptedAxiomResults
-        { results = OrOfExpandedPattern.make [epat]
-        , remainders = OrOfExpandedPattern.make []
+        { results = MultiOr.make [epat]
+        , remainders = MultiOr.make []
         }
 
 {- | Construct a builtin unary operator.
@@ -500,7 +635,7 @@ unaryOperator
     :: forall a b
     .   (   forall variable
         .   Text
-        ->  DomainValue Object Domain.Builtin (StepPattern Object variable)
+        ->  Domain.Builtin (StepPattern Object variable)
         ->  a
         )
     -- ^ Parse operand
@@ -522,12 +657,12 @@ unaryOperator
   =
     functionEvaluator unaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (StepPattern Object variable) -> a
     get = extractVal ctx
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> StepPatternSimplifier level variable
+        -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -554,7 +689,7 @@ binaryOperator
     :: forall a b
     .   (  forall variable
         .  Text
-        -> DomainValue Object Domain.Builtin (StepPattern Object variable)
+        -> Domain.Builtin (StepPattern Object variable)
         -> a
         )
     -- ^ Extract domain value
@@ -575,12 +710,12 @@ binaryOperator
   =
     functionEvaluator binaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (StepPattern Object variable) -> a
     get = extractVal ctx
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> StepPatternSimplifier level variable
+        -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -607,7 +742,7 @@ ternaryOperator
     :: forall a b
     .   (  forall variable
         .  Text
-        -> DomainValue Object Domain.Builtin (StepPattern Object variable)
+        -> Domain.Builtin (StepPattern Object variable)
         -> a
         )
     -- ^ Extract domain value
@@ -628,12 +763,12 @@ ternaryOperator
   =
     functionEvaluator ternaryOperator0
   where
-    get :: DomainValue Object Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (StepPattern Object variable) -> a
     get = extractVal ctx
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)
         => MetadataTools level StepperAttributes
-        -> StepPatternSimplifier level variable
+        -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -650,7 +785,7 @@ type FunctionImplementation
     = forall variable
         .  Ord (variable Object)
         => MetadataTools Object StepperAttributes
-        -> StepPatternSimplifier Object variable
+        -> StepPatternSimplifier Object
         -> Sort Object
         -> [StepPattern Object variable]
         -> Simplifier (AttemptedAxiom Object variable)
@@ -662,8 +797,9 @@ functionEvaluator impl =
     evaluator
         :: (Ord (variable Object), Show (variable Object))
         => MetadataTools Object StepperAttributes
-        -> PredicateSubstitutionSimplifier level Simplifier
-        -> StepPatternSimplifier Object variable
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier Object
+        -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
             (Application Object)
             (Valid (variable Object) Object)
@@ -672,7 +808,7 @@ functionEvaluator impl =
             ( AttemptedAxiom Object variable
             , SimplificationProof Object
             )
-    evaluator tools _ simplifier (valid :< app) = do
+    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) = do
         attempt <- impl tools simplifier resultSort applicationChildren
         return (attempt, SimplificationProof)
       where
@@ -708,6 +844,66 @@ lookupSymbol builtinName builtinSort indexedModule
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []
         }
+
+{- | Find the symbol hooked to @unit@.
+
+It is an error if the sort does not provide a @unit@ attribute; this is checked
+during verification.
+
+ -}
+lookupSymbolUnit
+    :: Sort Object
+    -> Attribute.Sort
+    -> SymbolOrAlias Object
+lookupSymbolUnit theSort attrs =
+    case getUnit of
+        Just symbol -> symbol
+        Nothing ->
+            verifierBug
+            $ "missing 'unit' attribute of sort '"
+            ++ unparseToString theSort ++ "'"
+  where
+    Attribute.Sort { unit = Attribute.Sort.Unit { getUnit } } = attrs
+
+{- | Find the symbol hooked to @element@.
+
+It is an error if the sort does not provide a @element@ attribute; this is
+checked during verification.
+
+ -}
+lookupSymbolElement
+    :: Sort Object
+    -> Attribute.Sort
+    -> SymbolOrAlias Object
+lookupSymbolElement theSort attrs =
+    case getElement of
+        Just symbol -> symbol
+        Nothing ->
+            verifierBug
+            $ "missing 'element' attribute of sort '"
+            ++ unparseToString theSort ++ "'"
+  where
+    Attribute.Sort { element = Attribute.Sort.Element { getElement } } = attrs
+
+{- | Find the symbol hooked to @concat@.
+
+It is an error if the sort does not provide a @concat@ attribute; this is
+checked during verification.
+
+ -}
+lookupSymbolConcat
+    :: Sort Object
+    -> Attribute.Sort
+    -> SymbolOrAlias Object
+lookupSymbolConcat theSort attrs =
+    case getConcat of
+        Just symbol -> symbol
+        Nothing ->
+            verifierBug
+            $ "missing 'concat' attribute of sort '"
+            ++ unparseToString theSort ++ "'"
+  where
+    Attribute.Sort { concat = Attribute.Sort.Concat { getConcat } } = attrs
 
 {- | Is the given symbol hooked to the named builtin?
  -}

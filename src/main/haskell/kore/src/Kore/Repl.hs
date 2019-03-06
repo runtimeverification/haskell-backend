@@ -33,7 +33,7 @@ import           Text.Megaparsec
                  ( Parsec, many, parseMaybe, (<|>) )
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer
-                 ( decimal )
+                 ( decimal, signed )
 
 import           Control.Error
                  ( atZ )
@@ -68,16 +68,16 @@ import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim (..) )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (..) )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.AxiomPatterns
                  ( RulePattern (..) )
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern )
-import           Kore.Step.ExpandedPattern
-                 ( Predicated (..) )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import           Kore.Step.Simplification.Data
@@ -114,12 +114,13 @@ runRepl
     :: forall level
     .  MetaOrObject level
     => MetadataTools level StepperAttributes
-    -> StepPatternSimplifier level Kore.Variable
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> StepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> [Axiom level]
     -> [Claim level]
     -> Simplifier ()
-runRepl tools simplifier predicateSimplifier axioms claims
+runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms claims
   = do
     replGreeting
     command <- maybe ShowUsage id . parseMaybe commandParser <$> prompt
@@ -138,7 +139,7 @@ runRepl tools simplifier predicateSimplifier axioms claims
             Nothing
             Nothing
             Nothing
-            (verifyClaimStep tools simplifier predicateSimplifier)
+            (verifyClaimStep tools simplifier predicateSimplifier axiomToIdSimplifier)
 
     unAxiom :: Axiom level -> RewriteRule level Kore.Variable
     unAxiom (Axiom rule) = rule
@@ -201,7 +202,7 @@ commandParser =
     proveStep0 = string "step" $> ProveStep
 
     selectNode0 :: Parser ReplCommand
-    selectNode0 = fmap SelectNode $ string "select" *> space *> decimal
+    selectNode0 = fmap SelectNode $ string "select" *> space *> signed space decimal
 
     showArrayItem0 :: Parser ReplCommand
     showArrayItem0 =

@@ -23,6 +23,7 @@ module Kore.ASTVerifier.PatternVerifier
     ) where
 
 import           Control.Comonad
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
@@ -689,21 +690,20 @@ verifyVariable variable@Variable { variableName, variableSort } = do
     return (Valid { patternSort, freeVariables } :< verified)
 
 verifyDomainValue
-    ::  ( base ~ DomainValue Object Domain.Builtin
-        , valid ~ Valid (Unified Variable) Object
-        )
-    => base (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF base valid VerifiedKorePattern)
-verifyDomainValue dv@DomainValue { domainValueSort, domainValueChild = _ } = do
-    let patternSort = domainValueSort
+    :: valid ~ Valid (Unified Variable) Object
+    => Domain.Builtin (PatternVerifier VerifiedKorePattern)
+    -> PatternVerifier (CofreeF Domain.Builtin valid VerifiedKorePattern)
+verifyDomainValue domain = do
+    let DomainValue { domainValueSort = patternSort } =
+            Lens.view Domain.lensDomainValue domain
     Context { builtinDomainValueVerifiers, indexedModule } <- Reader.ask
     verifyPatternSort patternSort
     let lookupSortDeclaration' sortId = do
             (_, sortDecl) <- resolveSort indexedModule sortId
             return sortDecl
-    dv' <- sequence dv
+    domain' <- sequence domain
     verified <- PatternVerifier $ Reader.lift $ Builtin.verifyDomainValue
-                    builtinDomainValueVerifiers lookupSortDeclaration' dv'
+                    builtinDomainValueVerifiers lookupSortDeclaration' domain'
     let freeVariables =
             Foldable.foldl'
                 Set.union

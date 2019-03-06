@@ -93,6 +93,7 @@ module Kore.AST.Valid
 
 import           Control.Applicative
 import           Control.Comonad
+import qualified Control.Lens as Lens
 import           Data.Align
 import           Data.Foldable
 import qualified Data.Functor.Foldable as Recursive
@@ -107,6 +108,7 @@ import           Kore.Annotation.Valid as Valid
 import           Kore.AST.Lens
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
+import           Kore.Domain.Class
 import           Kore.Implicit.ImplicitSorts
 import           Kore.Unparser
                  ( Unparse, renderDefault, unparseToString )
@@ -553,22 +555,21 @@ mkCeil_ = mkCeil predicateSort
  -}
 mkDomainValue
     ::  ( Foldable domain
-        , Functor domain
+        , Domain domain
         , Ord (variable Object)
         , valid ~ Valid (variable Object) Object
         , pattern' ~ PurePattern Object domain variable valid
         )
-    => Sort Object
-    -> domain pattern'
+    => domain pattern'
     -> pattern'
-mkDomainValue domainValueSort domainValueChild =
-    asPurePattern (valid :< DomainValuePattern domainValue)
+mkDomainValue domain =
+    asPurePattern (valid :< DomainValuePattern domain)
   where
     freeVariables =
         (Set.unions . toList)
-            (Valid.freeVariables . extract <$> domainValueChild)
+            (Valid.freeVariables . extract <$> domain)
     valid = Valid { patternSort = domainValueSort, freeVariables }
-    domainValue = DomainValue { domainValueSort, domainValueChild }
+    DomainValue { domainValueSort } = Lens.view lensDomainValue domain
 
 {- | Construct an 'Equals' pattern in the given sort.
 
@@ -1144,8 +1145,8 @@ pattern Ceil_
     -> PurePattern level dom var annotation
 
 pattern DV_
-  :: Functor dom => (level ~ Object) =>
-     Sort level
+  :: Domain dom => (level ~ Object)
+  => Sort level
   -> dom (PurePattern level dom var annotation)
   -> PurePattern level dom var annotation
 
@@ -1271,7 +1272,9 @@ pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
 
 pattern DV_ domainValueSort domainValueChild <-
     (Recursive.project -> _ :< DomainValuePattern
-        DomainValue { domainValueSort, domainValueChild }
+        (Lens.view lensDomainValue ->
+            DomainValue { domainValueSort, domainValueChild }
+        )
     )
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-

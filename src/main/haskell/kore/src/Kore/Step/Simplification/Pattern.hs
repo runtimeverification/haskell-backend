@@ -16,15 +16,15 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( toExpandedPattern )
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -90,7 +90,7 @@ simplify
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
@@ -122,7 +122,7 @@ simplifyToOr
     => MetadataTools level StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
     -> StepPattern level variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -150,8 +150,8 @@ simplifyInternal
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Base (StepPattern level variable) (StepPattern level variable)
@@ -169,7 +169,9 @@ simplifyInternal
     halfSimplified <- traverse (unwrappedSimplifier substitutionSimplifier) patt
     -- TODO: Remove fst
     case fmap fst halfSimplified of
-        AndPattern p -> And.simplify tools substitutionSimplifier p
+        AndPattern p ->
+            And.simplify
+                tools substitutionSimplifier simplifier axiomIdToEvaluator p
         ApplicationPattern p ->
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
@@ -180,16 +182,23 @@ simplifyInternal
                 axiomIdToEvaluator
                 (valid :< p)
         BottomPattern p -> return $ Bottom.simplify p
-        CeilPattern p -> Ceil.simplify tools substitutionSimplifier p
+        CeilPattern p ->
+            Ceil.simplify
+                tools substitutionSimplifier simplifier axiomIdToEvaluator p
         DomainValuePattern p -> return $ DomainValue.simplify tools p
-        EqualsPattern p -> Equals.simplify tools substitutionSimplifier p
+        EqualsPattern p ->
+            Equals.simplify
+                tools substitutionSimplifier simplifier axiomIdToEvaluator p
         ExistsPattern p ->
-            Exists.simplify tools substitutionSimplifier simplifier p
+            Exists.simplify
+                tools substitutionSimplifier simplifier axiomIdToEvaluator p
         FloorPattern p -> return $ Floor.simplify p
         ForallPattern p -> return $ Forall.simplify p
         IffPattern p -> return $ Iff.simplify p
         ImpliesPattern p -> return $ Implies.simplify p
-        InPattern p -> In.simplify tools substitutionSimplifier p
+        InPattern p ->
+            In.simplify
+                tools substitutionSimplifier simplifier axiomIdToEvaluator p
         -- TODO(virgil): Move next up through patterns.
         NextPattern p -> return $ Next.simplify p
         NotPattern p -> return $ Not.simplify p

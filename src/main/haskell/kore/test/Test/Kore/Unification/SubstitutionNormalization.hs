@@ -7,6 +7,7 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import qualified Control.Monad.Except as Except
+import qualified Data.Default as Default
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
@@ -16,9 +17,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import qualified Kore.Step.ExpandedPattern as Predicated
 import           Kore.Step.Pattern
                  ( StepPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
@@ -215,7 +216,7 @@ mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.functionalAttributes
     , symbolOrAliasType = const HeadType.Symbol
-    , sortAttributes = const Mock.functionalAttributes
+    , sortAttributes = const Default.def
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     }

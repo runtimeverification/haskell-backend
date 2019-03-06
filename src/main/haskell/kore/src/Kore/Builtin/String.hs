@@ -72,10 +72,10 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 
 {- | Builtin name of the @String@ sort.
  -}
@@ -152,10 +152,10 @@ patternVerifier =
 -- | get the value from a (possibly encoded) domain value
 extractStringDomainValue
     :: Text -- ^ error message Context
-    -> DomainValue Object Domain.Builtin child
+    -> Domain.Builtin child
     -> Text
-extractStringDomainValue ctx dv =
-    Builtin.runParser ctx $ Builtin.parseDomainValue parse dv
+extractStringDomainValue ctx =
+    Builtin.runParser ctx . Builtin.parseDomainValue parse
 
 {- | Parse a string literal.
  -}
@@ -178,12 +178,15 @@ expectBuiltinString ctx =
     \case
         DV_ _ domain ->
             case domain of
-                Domain.BuiltinPattern (StringLiteral_ lit) ->
+                Domain.BuiltinExternal external
+                  | StringLiteral_ lit <- domainValueChild ->
                     (return . Builtin.runParser ctx)
                         (Builtin.parseString parse lit)
+                  where
+                    Domain.External { domainValueChild } = external
                 _ ->
                     Builtin.verifierBug
-                        (Text.unpack ctx ++ ": Domain value argument is not a string")
+                    $ Text.unpack ctx ++ ": Domain value is not a string"
         _ ->
             empty
 
@@ -215,11 +218,13 @@ asConcretePattern
     :: Sort Object  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> ConcreteStepPattern Object
-asConcretePattern domainValueSort =
-    mkDomainValue domainValueSort
-        . Domain.BuiltinPattern
-        . eraseAnnotations
-        . asMetaPattern
+asConcretePattern domainValueSort builtinStringChild =
+    (mkDomainValue . Domain.BuiltinExternal)
+        Domain.External
+            { domainValueSort
+            , domainValueChild =
+                eraseAnnotations $ asMetaPattern builtinStringChild
+            }
 
 asMetaPattern
     :: Functor domain

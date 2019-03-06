@@ -22,13 +22,10 @@ module Kore.Builtin.Set
     , builtinFunctions
     , Builtin
     , returnSet
-    , builtinSet
+    , asInternal
     , asPattern
     , asExpandedPattern
       -- * Symbols
-    , lookupSymbolUnit
-    , lookupSymbolElement
-    , lookupSymbolConcat
     , lookupSymbolIn
     , lookupSymbolDifference
     , isSymbolConcat
@@ -56,6 +53,9 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Reflection
+                 ( Given )
+import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
@@ -67,6 +67,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure as Kore
+import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -81,16 +82,17 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiom (..) )
+                 ( MetadataTools, sortAttributes )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), SimplificationType )
+                 SimplificationProof (..), SimplificationType, Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -122,7 +124,24 @@ assertSort findSort = Builtin.verifySort findSort sort
 
  -}
 sortDeclVerifiers :: Builtin.SortDeclVerifiers
-sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
+sortDeclVerifiers =
+    HashMap.fromList [ (sort, verifySortDecl) ]
+  where
+    verifySortDecl indexedModule sentenceSort attrs = do
+        Builtin.verifySortDecl indexedModule sentenceSort attrs
+        unitId <- Builtin.getUnitId attrs
+        Builtin.assertSymbolHook indexedModule unitId unitKey
+        Builtin.assertSymbolResultSort indexedModule unitId expectedSort
+        elementId <- Builtin.getElementId attrs
+        Builtin.assertSymbolHook indexedModule elementId elementKey
+        Builtin.assertSymbolResultSort indexedModule elementId expectedSort
+        concatId <- Builtin.getConcatId attrs
+        Builtin.assertSymbolHook indexedModule concatId concatKey
+        Builtin.assertSymbolResultSort indexedModule concatId expectedSort
+        return ()
+      where
+        SentenceSort { sentenceSortName } = sentenceSort
+        expectedSort = mkSort sentenceSortName
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -176,22 +195,24 @@ expectBuiltinSet ctx tools _set =
         case _set of
             DV_ _ domain ->
                 case domain of
-                    Domain.BuiltinSet set -> return set
+                    Domain.BuiltinSet Domain.InternalSet { builtinSetChild } ->
+                        return builtinSetChild
                     _ ->
                         Builtin.verifierBug
-                            (Text.unpack ctx ++ ": Domain value is not a set")
+                        $ Text.unpack ctx ++ ": Domain value is not a set"
             _ ->
                 empty
 
 returnSet
     :: (Monad m, Ord (variable Object))
-    => Sort Object
+    => MetadataTools Object attrs
+    -> Sort Object
     -> Builtin
     -> m (AttemptedAxiom Object variable)
-returnSet resultSort set =
+returnSet tools resultSort set =
     Builtin.appliedFunction
     $ ExpandedPattern.fromPurePattern
-    $ builtinSet resultSort set
+    $ asInternal tools resultSort set
 
 evalElement :: Builtin.Function
 evalElement =
@@ -202,7 +223,7 @@ evalElement =
         (case arguments of
             [_elem] -> do
                 _elem <- Builtin.expectNormalConcreteTerm tools _elem
-                returnSet resultSort (Set.singleton _elem)
+                returnSet tools resultSort (Set.singleton _elem)
             _ -> Builtin.wrongArity elementKey
         )
 
@@ -230,9 +251,9 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 _ _ resultSort =
+    evalUnit0 tools _ resultSort =
         \case
-            [] -> returnSet resultSort Set.empty
+            [] -> returnSet tools resultSort Set.empty
             _ -> Builtin.wrongArity unitKey
 
 evalConcat :: Builtin.Function
@@ -265,7 +286,7 @@ evalConcat =
                 bothConcrete = do
                     _set1 <- expectBuiltinSet ctx tools _set1
                     _set2 <- expectBuiltinSet ctx tools _set2
-                    returnSet resultSort (_set1 <> _set2)
+                    returnSet tools resultSort (_set1 <> _set2)
             leftIdentity <|> rightIdentity <|> bothConcrete
         )
 
@@ -292,7 +313,7 @@ evalDifference =
                 bothConcrete = do
                     _set1 <- expectBuiltinSet ctx tools _set1
                     _set2 <- expectBuiltinSet ctx tools _set2
-                    returnSet resultSort (Set.difference _set1 _set2)
+                    returnSet tools resultSort (Set.difference _set1 _set2)
             rightIdentity <|> bothConcrete
         )
 
@@ -307,7 +328,7 @@ evalToList = Builtin.functionEvaluator evalToList0
                             [_set] -> _set
                             _      -> Builtin.wrongArity toListKey
             _set <- expectBuiltinSet toListKey tools _set
-            List.returnList resultSort
+            List.returnList tools resultSort
                 . fmap fromConcreteStepPattern
                 . Seq.fromList
                 . Set.toList
@@ -346,53 +367,57 @@ builtinFunctions =
 
 {- | Render a 'Set' as an internal domain value pattern of the given sort.
 
-The result sort should be hooked to the builtin @Set@ sort, but this is not
-checked.
-
-The pattern will use the internal representation of concrete 'Set' domain
-values; it will not use a valid external representation. Use 'asPattern' to
-construct an externally-valid pattern.
+The result sort must be hooked to the builtin @Set@ sort. The pattern will use
+the internal representation of concrete 'Set' domain values; it will not use a
+valid external representation. Use 'asPattern' to construct an externally-valid
+pattern.
 
  -}
-builtinSet
+asInternal
     :: Ord (variable Object)
-    => Sort Object
+    => MetadataTools Object attrs
+    -> Sort Object
     -> Builtin
     -> StepPattern Object variable
-builtinSet resultSort = mkDomainValue resultSort . Domain.BuiltinSet
+asInternal tools builtinSetSort builtinSetChild =
+    (mkDomainValue . Domain.BuiltinSet)
+        Domain.InternalSet
+            { builtinSetSort
+            , builtinSetUnit =
+                Builtin.lookupSymbolUnit builtinSetSort attrs
+            , builtinSetElement =
+                Builtin.lookupSymbolElement builtinSetSort attrs
+            , builtinSetConcat =
+                Builtin.lookupSymbolConcat builtinSetSort attrs
+            , builtinSetChild
+            }
+  where
+    attrs = sortAttributes tools builtinSetSort
 
 {- | Render a 'Set' as a domain value pattern of the given sort.
 
-The result sort should be hooked to the builtin @Set@ sort, but this is not
-checked.
-
-The constructed pattern will be valid in the contexed of the given indexed
-module. It is an error if the indexed module does not define symbols hooked
-to @SET.unit@, @SET.element@, and @SET.concat@.
+The result sort must be hooked to the builtin @Set@ sort.
 
 See also: 'sort'
 
  -}
 asPattern
     :: Ord (variable Object)
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ indexed module where pattern would appear
-    -> Sort Object
-    -> Either
-        (Kore.Error e)
-        (Builtin -> StepPattern Object variable)
-asPattern indexedModule dvSort = do
-    symbolUnit <- lookupSymbolUnit dvSort indexedModule
-    let applyUnit = mkApp dvSort symbolUnit []
-    symbolElement <- lookupSymbolElement dvSort indexedModule
-    let applyElement elem' =
-            mkApp dvSort symbolElement [fromConcreteStepPattern elem']
-    symbolConcat <- lookupSymbolConcat dvSort indexedModule
-    let
-        applyConcat set1 set2 = mkApp dvSort symbolConcat [set1, set2]
-        asPattern0 set =
-            foldr applyConcat applyUnit (applyElement <$> Foldable.toList set)
-    return asPattern0
+    => Domain.InternalSet
+    -> StepPattern Object variable
+asPattern builtin =
+    foldr concat' unit (element <$> Foldable.toList set)
+  where
+    Domain.InternalSet { builtinSetSort = builtinSort } = builtin
+    Domain.InternalSet { builtinSetChild = set } = builtin
+    Domain.InternalSet { builtinSetUnit = unitSymbol } = builtin
+    Domain.InternalSet { builtinSetElement = elementSymbol } = builtin
+    Domain.InternalSet { builtinSetConcat = concatSymbol } = builtin
+
+    apply = mkApp builtinSort
+    unit = apply unitSymbol []
+    element elem' = apply elementSymbol [fromConcreteStepPattern elem']
+    concat' set1 set2 = apply concatSymbol [set1, set2]
 
 {- | Render a 'Seq' as an extended domain value pattern.
 
@@ -400,18 +425,17 @@ asPattern indexedModule dvSort = do
 
  -}
 asExpandedPattern
-    :: Ord (variable Object)
-    => VerifiedModule declAttrs axiomAttrs
-    -- ^ dictionary of Map constructor symbols
-    -> Sort Object
-    -> Either
-        (Kore.Error e)
-        (Builtin -> ExpandedPattern Object variable)
-asExpandedPattern symbols resultSort =
-    asExpandedPattern0 <$> asPattern symbols resultSort
+    ::  ( Ord (variable Object)
+        , Given (MetadataTools Object StepperAttributes)
+        )
+    => Sort Object
+    -> Builtin
+    -> ExpandedPattern Object variable
+asExpandedPattern resultSort =
+    ExpandedPattern.fromPurePattern . asInternal tools resultSort
   where
-    asExpandedPattern0 = \asPattern0 builtin ->
-        ExpandedPattern.fromPurePattern $ asPattern0 builtin
+    tools :: MetadataTools Object StepperAttributes
+    tools = Reflection.given
 
 concatKey :: IsString s => s
 concatKey = "SET.concat"
@@ -433,30 +457,6 @@ toListKey = "SET.set2list"
 
 sizeKey :: IsString s => s
 sizeKey = "SET.size"
-
-{- | Find the symbol hooked to @SET.unit@ in an indexed module.
- -}
-lookupSymbolUnit
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolUnit = Builtin.lookupSymbol unitKey
-
-{- | Find the symbol hooked to @SET.element@ in an indexed module.
- -}
-lookupSymbolElement
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolElement = Builtin.lookupSymbol elementKey
-
-{- | Find the symbol hooked to @SET.concat@ in an indexed module.
- -}
-lookupSymbolConcat
-    :: Sort Object
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
-lookupSymbolConcat = Builtin.lookupSymbol concatKey
 
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
@@ -508,11 +508,10 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable m err p expanded proof.
+    :: forall level variable err p expanded proof.
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
         , Unparse (variable level)
-        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , p ~ StepPattern level variable
@@ -522,13 +521,19 @@ unifyEquals
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> (p -> p -> (err m) (expanded, proof))
-    -> (p -> p -> MaybeT (err m) (expanded, proof))
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
+    -> (p -> p -> (err Simplifier) (expanded, proof))
+    -> (p -> p -> MaybeT (err Simplifier) (expanded, proof))
 unifyEquals
     simplificationType
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     unifyEqualsChildren
   =
     unifyEquals0
@@ -547,23 +552,23 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT (err m) (expanded, proof)
+        -> MaybeT (err Simplifier) (expanded, proof)
     unifyEquals0
-        (DV_ resultSort (Domain.BuiltinSet set1))
-        (DV_ _    (Domain.BuiltinSet set2))
+        (DV_ _ (Domain.BuiltinSet builtin1))
+        (DV_ _ (Domain.BuiltinSet builtin2))
       =
-        Monad.Trans.lift (unifyEqualsConcrete resultSort set1 set2)
+        Monad.Trans.lift (unifyEqualsConcrete builtin1 builtin2)
 
     unifyEquals0
-        dv1@(DV_ resultSort (Domain.BuiltinSet set1))
+        dv1@(DV_ _ (Domain.BuiltinSet builtin1))
         app2@(App_ symbol2 args2)
       | isSymbolConcat hookTools symbol2 =
         Monad.Trans.lift
            (case args2 of
-                [DV_ _ (Domain.BuiltinSet set2), x@(Var_ _)] ->
-                    unifyEqualsFramed resultSort set1 set2 x
-                [x@(Var_ _), DV_ _ (Domain.BuiltinSet set2)] ->
-                    unifyEqualsFramed resultSort set1 set2 x
+                [DV_ _ (Domain.BuiltinSet builtin2), x@(Var_ _)] ->
+                    unifyEqualsFramed builtin1 builtin2 x
+                [x@(Var_ _), DV_ _ (Domain.BuiltinSet builtin2)] ->
+                    unifyEqualsFramed builtin1 builtin2 x
                 _ ->
                     Builtin.unifyEqualsUnsolved
                         simplificationType
@@ -576,7 +581,7 @@ unifyEquals
                 [ key2 ] ->
                     -- The key is not concrete yet, or SET.element would
                     -- have evaluated to a domain value.
-                    unifyEqualsElement resultSort set1 symbol2 key2
+                    unifyEqualsElement builtin1 symbol2 key2
                 _ ->
                     Builtin.wrongArity "SET.element"
             )
@@ -595,64 +600,75 @@ unifyEquals
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
-        :: (level ~ Object, k ~ ConcreteStepPattern Object)
-        => Sort level -- ^ Sort of result
-        -> Set.Set k
-        -> Set.Set k
-        -> (err m) (expanded, proof)
-    unifyEqualsConcrete resultSort set1 set2
+        :: level ~ Object
+        => Domain.InternalSet
+        -> Domain.InternalSet
+        -> (err Simplifier) (expanded, proof)
+    unifyEqualsConcrete builtin1 builtin2
       | set1 == set2 =
         return (unified, SimplificationProof)
       | otherwise =
         return (ExpandedPattern.bottom, SimplificationProof)
       where
+        Domain.InternalSet { builtinSetSort } = builtin1
+        Domain.InternalSet { builtinSetChild = set1 } = builtin1
+        Domain.InternalSet { builtinSetChild = set2 } = builtin2
         unified =
-            (pure . mkDomainValue resultSort . Domain.BuiltinSet)
-                set1
+            Reflection.give tools
+            $ asExpandedPattern builtinSetSort set1
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
         :: (level ~ Object, k ~ ConcreteStepPattern Object)
-        => Sort level  -- ^ Sort of result
-        -> Set.Set k  -- ^ concrete set
-        -> Set.Set k -- ^ framed concrete set
+        => Domain.InternalSet  -- ^ concrete set
+        -> Domain.InternalSet -- ^ framed concrete set
         -> StepPattern level variable  -- ^ framing variable
-        -> (err m) (expanded, proof)
-    unifyEqualsFramed resultSort set1 set2 var
-      | Set.isSubsetOf set2 set1 = do
-        (remainder, _) <-
-            unifyEqualsChildren var
-            $ asBuiltinDomainSet
-            $ Set.difference set1 set2
-        let result =
-                -- Return the concrete set, but capture any predicates and
-                -- substitutions from unifying the framing variable.
-                asBuiltinDomainSet set1 <$ remainder
-        normalized <- Monad.Trans.lift $
-            normalize tools substitutionSimplifier result
-        return (normalized, SimplificationProof)
+        -> (err Simplifier) (expanded, proof)
+    unifyEqualsFramed builtin1 builtin2 var
+      | Set.isSubsetOf set2 set1 =
+        Reflection.give tools $ do
+            (remainder, _) <-
+                unifyEqualsChildren var
+                $ asInternal tools builtinSetSort
+                $ Set.difference set1 set2
+            let result =
+                    -- Return the concrete set, but capture any predicates and
+                    -- substitutions from unifying the framing variable.
+                    asExpandedPattern builtinSetSort set1 <* remainder
+            normalized <- Monad.Trans.lift $
+                normalize
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    result
+            return (normalized, SimplificationProof)
 
       | otherwise =
         return (ExpandedPattern.bottom, SimplificationProof)
       where
-        asBuiltinDomainSet = mkDomainValue resultSort . Domain.BuiltinSet
+        Domain.InternalSet { builtinSetSort } = builtin1
+        Domain.InternalSet { builtinSetChild = set1 } = builtin1
+        Domain.InternalSet { builtinSetChild = set2 } = builtin2
 
     unifyEqualsElement
-        :: forall k . (level ~ Object, k ~ ConcreteStepPattern Object)
-        => Sort level
-        -> Set k  -- ^ concrete set
+        :: level ~ Object
+        => Domain.InternalSet  -- ^ concrete set
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
-        -> (err m) (expanded, proof)
-    unifyEqualsElement resultSort set1 element' key2 =
+        -> (err Simplifier) (expanded, proof)
+    unifyEqualsElement builtin1 element' key2 =
         case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->
                 do
                     (key, _) <- unifyEqualsChildren key1 key2
                     let result =
-                            mkApp resultSort element'
+                            mkApp builtinSetSort element'
                                 <$> propagatePredicates [key]
                     return (result, SimplificationProof)
             _ ->
                 -- Cannot unify a non-element Set with an element Set.
                 return (ExpandedPattern.bottom, SimplificationProof)
+      where
+        Domain.InternalSet { builtinSetSort } = builtin1
+        Domain.InternalSet { builtinSetChild = set1 } = builtin1

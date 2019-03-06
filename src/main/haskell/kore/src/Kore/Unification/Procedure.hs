@@ -21,22 +21,25 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as Predicated
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -63,43 +66,56 @@ unificationProcedure
         , ShowMetaOrObject variable
         , MetaOrObject level
         , FreshVariable variable
-        , Monad m
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> StepPattern level variable
     -- ^left-hand-side of unification
     -> StepPattern level variable
     -> ExceptT
         (UnificationOrSubstitutionError level variable)
-        m
+        Simplifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
-unificationProcedure tools substitutionSimplifier p1 p2
+unificationProcedure
+    tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
   | p1Sort /= p2Sort =
-    return (OrOfExpandedPattern.make [], EmptyUnificationProof)
+    return (MultiOr.make [], EmptyUnificationProof)
   | otherwise = do
     let
         getUnifiedTerm =
             termUnification
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 p1
                 p2
     (pat@Predicated { term, predicate, substitution }, _) <- getUnifiedTerm
     if Predicated.isBottom pat
         then return
-            (OrOfExpandedPattern.make [], EmptyUnificationProof)
+            (MultiOr.make [], EmptyUnificationProof)
         else Monad.Trans.lift $ do
             (orCeil, _proof) <-
-                Ceil.makeEvaluateTerm tools substitutionSimplifier term
+                Ceil.makeEvaluateTerm
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    term
             (result, _proof) <-
                 OrOfExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
                     (createPredicatesAndSubstitutionsMerger
                         tools
                         substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
                     )
                     Predicated
                         { term = ()

@@ -40,13 +40,13 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution,
                  Predicated (Predicated) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), bottom )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-import           Kore.Step.Pattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -125,15 +125,15 @@ ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, va
 
 dv1, dv2 :: CommonStepPattern Object
 dv1 =
-    mkDomainValue s1
-    $ Domain.BuiltinPattern
-    $ eraseAnnotations
-    $ mkStringLiteral "dv1"
+    mkDomainValue $ Domain.BuiltinExternal Domain.External
+        { domainValueSort = s1
+        , domainValueChild = eraseAnnotations $ mkStringLiteral "dv1"
+        }
 dv2 =
-    mkDomainValue s1
-    $ Domain.BuiltinPattern
-    $ eraseAnnotations
-    $ mkStringLiteral "dv2"
+    mkDomainValue $ Domain.BuiltinExternal Domain.External
+        { domainValueSort = s1
+        , domainValueChild = eraseAnnotations $ mkStringLiteral "dv."
+        }
 
 aA :: CommonStepPattern Object
 aA = applySymbol_ a []
@@ -271,6 +271,8 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools Map.empty)
+            Map.empty
             [unificationProblem term1 term2]
     let
         subst'' =
@@ -298,6 +300,8 @@ andSimplifyFailure term1 term2 err = do
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools Map.empty)
+            Map.empty
             [unificationProblem term1 term2]
     assertEqualWithPrinter show "" expect actual
 
@@ -321,6 +325,8 @@ andSimplifyException message term1 term2 exceptionMessage =
                 $ simplifyAnds
                     tools
                     (Mock.substitutionSimplifier tools)
+                    (Simplifier.create tools Map.empty)
+                    Map.empty
                     [unificationProblem term1 term2]
             _ <- evaluate var
             assertFailure "This evaluation should fail"
@@ -352,6 +358,8 @@ unificationProcedureSuccess
             $ unificationProcedure
                 tools
                 (Mock.substitutionSimplifier tools)
+                (Simplifier.create tools Map.empty)
+                Map.empty
                 term1
                 term2
         let
@@ -366,7 +374,7 @@ unificationProcedureSuccess
                 )
         assertEqualWithExplanation ""
             expect
-            ( map normalize (OrOfExpandedPattern.extractPatterns results)
+            ( map normalize (MultiOr.extractPatterns results)
             , proof'
             )
   where
@@ -742,9 +750,10 @@ simplifyPattern (UnificationTerm term) = do
                 tools
                 (Mock.substitutionSimplifier tools)
                 (Simplifier.create tools functionRegistry)
+                functionRegistry
                 expandedPattern
         case
-            OrOfExpandedPattern.extractPatterns
+            MultiOr.extractPatterns
                 (fst simplifiedPatterns) of
             [] -> return ExpandedPattern.bottom
             (config : _) -> return config

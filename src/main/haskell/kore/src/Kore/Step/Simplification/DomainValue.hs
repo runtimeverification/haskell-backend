@@ -16,12 +16,14 @@ import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Step.ExpandedPattern
-                 ( Predicated (..) )
-import           Kore.Step.OrOfExpandedPattern
-                 ( MultiOr, OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (..) )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -36,15 +38,15 @@ simplify
        , SortedVariable variable
        )
     => MetadataTools Object attrs
-    -> DomainValue Object Domain.Builtin (OrOfExpandedPattern Object variable)
+    -> Domain.Builtin (OrOfExpandedPattern Object variable)
     -> ( OrOfExpandedPattern Object variable
        , SimplificationProof Object
        )
-simplify _ DomainValue { domainValueSort, domainValueChild } =
-    ( OrOfExpandedPattern.filterOr
+simplify _ builtin =
+    ( MultiOr.filterOr
         (do
-            child <- simplifyBuiltin domainValueChild
-            return (mkDomainValue domainValueSort <$> child)
+            child <- simplifyBuiltin builtin
+            return (mkDomainValue <$> child)
         )
     , SimplificationProof
     )
@@ -61,7 +63,9 @@ simplifyBuiltin
             (Domain.Builtin (StepPattern Object variable)))
 simplifyBuiltin =
     \case
-        Domain.BuiltinPattern pat -> (return . pure) (Domain.BuiltinPattern pat)
+        Domain.BuiltinExternal _ext -> do
+            _ext <- sequence _ext
+            return (Domain.BuiltinExternal <$> sequenceA _ext)
         Domain.BuiltinMap _map -> do
             _map <- sequence _map
             -- MultiOr propagates \bottom children upward.
@@ -71,5 +75,5 @@ simplifyBuiltin =
             -- MultiOr propagates \bottom children upward.
             return (Domain.BuiltinList <$> sequenceA _list)
         Domain.BuiltinSet set -> (return . pure) (Domain.BuiltinSet set)
-        Domain.BuiltinInteger int -> (return . pure) (Domain.BuiltinInteger int)
+        Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
         Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)

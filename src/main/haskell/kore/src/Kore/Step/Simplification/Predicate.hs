@@ -11,18 +11,24 @@ module Kore.Step.Simplification.Predicate
     ( simplifyPartial
     ) where
 
+import qualified Data.Text.Prettyprint.Doc as Pretty
+
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate, unwrapPredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as Predicated
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (StepPatternSimplifier) )
+                 Simplifier, StepPatternSimplifier (StepPatternSimplifier),
+                 StepPatternSimplifier )
+import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {-| Simplifies a predicate, producing another predicate and a substitution,
 without trying to reapply the substitution on the predicate.
@@ -30,11 +36,17 @@ without trying to reapply the substitution on the predicate.
 TODO(virgil): Make this fully simplify.
 -}
 simplifyPartial
-    ::  ( MetaOrObject level
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
         , Show (variable level)
+        , ShowMetaOrObject variable
+        , Unparse (variable level)
+        , SortedVariable variable
         )
-    => PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    => PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -> Predicate level variable
     -> Simplifier
         ( PredicateSubstitution level variable
@@ -47,7 +59,7 @@ simplifyPartial
   = do
     (patternOr, _proof) <-
         simplifier substitutionSimplifier (unwrapPredicate predicate)
-    case OrOfExpandedPattern.extractPatterns patternOr of
+    case MultiOr.extractPatterns patternOr of
         [] -> return
             ( Predicated.bottomPredicate
             , SimplificationProof
@@ -65,5 +77,9 @@ simplifyPartial
                     }
                 , SimplificationProof
                 )
-        [patt] -> error ("Expecting a top term! " ++ show patt)
+        [patt] ->
+            (error . show . Pretty.vsep)
+                [ "Expecting a top term!"
+                , unparse patt
+                ]
         _ -> error ("Expecting at most one result " ++ show patternOr)

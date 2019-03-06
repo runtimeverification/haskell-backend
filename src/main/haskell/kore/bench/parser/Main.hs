@@ -9,11 +9,10 @@ import System.FilePath
 
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( defaultAttributesVerification, verifyDefinition )
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Parser.Parser
                  ( parseKoreDefinition )
-import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 
@@ -111,4 +110,4 @@ verify filename =
         attributesVerification =
             defaultAttributesVerification
             (Proxy @StepperAttributes)
-            (Proxy @AxiomPatternAttributes)
+            (Proxy @Attribute.Axiom)

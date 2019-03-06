@@ -1,7 +1,10 @@
 module Test.Kore.Builtin.Definition where
 
-import Data.Text
-       ( Text )
+import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
@@ -11,7 +14,11 @@ import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Injective
 import           Kore.Attribute.Smtlib
+import qualified Kore.Attribute.Sort.Concat as Sort
+import qualified Kore.Attribute.Sort.Element as Sort
+import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
+import           Kore.Domain.Builtin
 import           Kore.Step.Pattern
 
 import Test.Kore
@@ -163,11 +170,20 @@ injSymbol lSort rSort =
 unitListSymbol :: SymbolOrAlias Object
 unitListSymbol = builtinSymbol "unitList"
 
+unitList2Symbol :: SymbolOrAlias Object
+unitList2Symbol = builtinSymbol "unitList2"
+
 elementListSymbol :: SymbolOrAlias Object
 elementListSymbol = builtinSymbol "elementList"
 
+elementList2Symbol :: SymbolOrAlias Object
+elementList2Symbol = builtinSymbol "elementList2"
+
 concatListSymbol :: SymbolOrAlias Object
 concatListSymbol = builtinSymbol "concatList"
+
+concatList2Symbol :: SymbolOrAlias Object
+concatList2Symbol = builtinSymbol "concatList2"
 
 getListSymbol :: SymbolOrAlias Object
 getListSymbol = builtinSymbol "getList"
@@ -252,25 +268,25 @@ pairSymbol lSort rSort =
 -- ** Set
 
 unitSetSymbol :: SymbolOrAlias Object
-unitSetSymbol = builtinSymbol Set.unitKey
+unitSetSymbol = builtinSymbol "unitSet"
 
 elementSetSymbol :: SymbolOrAlias Object
-elementSetSymbol = builtinSymbol Set.elementKey
+elementSetSymbol = builtinSymbol "elementSet"
 
 concatSetSymbol :: SymbolOrAlias Object
-concatSetSymbol = builtinSymbol Set.concatKey
+concatSetSymbol = builtinSymbol "concatSet"
 
 inSetSymbol :: SymbolOrAlias Object
-inSetSymbol = builtinSymbol Set.inKey
+inSetSymbol = builtinSymbol "inSet"
 
 differenceSetSymbol :: SymbolOrAlias Object
-differenceSetSymbol = builtinSymbol Set.differenceKey
+differenceSetSymbol = builtinSymbol "differenceSet"
 
 toListSetSymbol :: SymbolOrAlias Object
-toListSetSymbol = builtinSymbol Set.toListKey
+toListSetSymbol = builtinSymbol "toListSet"
 
 sizeSetSymbol :: SymbolOrAlias Object
-sizeSetSymbol = builtinSymbol Set.sizeKey
+sizeSetSymbol = builtinSymbol "sizeSet"
 
 -- ** String
 
@@ -326,8 +342,13 @@ sortDecl sort =
             }
 
 -- | Declare a hooked sort.
-hookedSortDecl :: Sort Object -> Text -> KoreSentence
-hookedSortDecl sort hook =
+hookedSortDecl
+    :: Sort Object
+    -- ^ declared sort
+    -> [CommonKorePattern]
+    -- ^ declaration attributes
+    -> KoreSentence
+hookedSortDecl sort attrs =
     (asSentence . SentenceHookedSort) sentence
   where
     sentence :: KoreSentenceSort Object
@@ -337,7 +358,7 @@ hookedSortDecl sort hook =
                 let SortActualSort SortActual { sortActualName } = sort
                 in sortActualName
             , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes [ hookAttribute hook ]
+            , sentenceSortAttributes = Attributes attrs
             }
 
 -- ** Bool
@@ -352,7 +373,14 @@ boolSort =
 
 -- | Declare 'boolSort' in a Kore module.
 boolSortDecl :: KoreSentence
-boolSortDecl = hookedSortDecl boolSort "BOOL.Bool"
+boolSortDecl = hookedSortDecl boolSort [ hookAttribute "BOOL.Bool" ]
+
+builtinBool :: Bool -> InternalBool
+builtinBool builtinBoolValue =
+    InternalBool
+        { builtinBoolSort = boolSort
+        , builtinBoolValue
+        }
 
 -- ** Int
 
@@ -366,7 +394,14 @@ intSort =
 
 -- | Declare 'intSort' in a Kore module.
 intSortDecl :: KoreSentence
-intSortDecl = hookedSortDecl intSort "INT.Int"
+intSortDecl = hookedSortDecl intSort [ hookAttribute "INT.Int" ]
+
+builtinInt :: Integer -> InternalInt
+builtinInt builtinIntValue =
+    InternalInt
+        { builtinIntSort = intSort
+        , builtinIntValue
+        }
 
 -- ** KEQUAL
 
@@ -404,7 +439,26 @@ listSort =
 
 -- | Declare 'listSort' in a Kore module.
 listSortDecl :: KoreSentence
-listSortDecl = hookedSortDecl listSort "LIST.List"
+listSortDecl =
+    hookedSortDecl
+        listSort
+        [ hookAttribute "LIST.List"
+        , Sort.unitAttribute unitListSymbol
+        , Sort.elementAttribute elementListSymbol
+        , Sort.concatAttribute concatListSymbol
+        ]
+
+builtinList
+    :: [CommonStepPattern Object]
+    -> InternalList (CommonStepPattern Object)
+builtinList children =
+    InternalList
+        { builtinListSort = listSort
+        , builtinListUnit = unitListSymbol
+        , builtinListElement = elementListSymbol
+        , builtinListConcat = concatListSymbol
+        , builtinListChild = Seq.fromList children
+        }
 
 -- | Another sort with the same hook
 listSort2 :: Sort Object
@@ -416,7 +470,14 @@ listSort2 =
 
 -- | Declare 'listSort' in a Kore module.
 listSortDecl2 :: KoreSentence
-listSortDecl2 = hookedSortDecl listSort2 "LIST.List"
+listSortDecl2 =
+    hookedSortDecl
+        listSort2
+        [ hookAttribute "LIST.List"
+        , Sort.unitAttribute unitList2Symbol
+        , Sort.elementAttribute elementList2Symbol
+        , Sort.concatAttribute concatList2Symbol
+        ]
 
 -- ** Map
 
@@ -430,7 +491,26 @@ mapSort =
 
 -- | Declare 'mapSort' in a Kore module.
 mapSortDecl :: KoreSentence
-mapSortDecl = hookedSortDecl mapSort "MAP.Map"
+mapSortDecl =
+    hookedSortDecl
+        mapSort
+        [ hookAttribute "MAP.Map"
+        , Sort.unitAttribute unitMapSymbol
+        , Sort.elementAttribute elementMapSymbol
+        , Sort.concatAttribute concatMapSymbol
+        ]
+
+builtinMap
+    :: [(ConcreteStepPattern Object, CommonStepPattern Object)]
+    -> InternalMap (CommonStepPattern Object)
+builtinMap children =
+    InternalMap
+        { builtinMapSort = mapSort
+        , builtinMapUnit = unitMapSymbol
+        , builtinMapElement = elementMapSymbol
+        , builtinMapConcat = concatMapSymbol
+        , builtinMapChild = Map.fromList children
+        }
 
 -- ** Pair
 
@@ -473,7 +553,26 @@ setSort =
 
 -- | Declare 'setSort' in a Kore module.
 setSortDecl :: KoreSentence
-setSortDecl = hookedSortDecl setSort "SET.Set"
+setSortDecl =
+    hookedSortDecl
+        setSort
+        [ hookAttribute "SET.Set"
+        , Sort.unitAttribute unitSetSymbol
+        , Sort.elementAttribute elementSetSymbol
+        , Sort.concatAttribute concatSetSymbol
+        ]
+
+builtinSet
+    :: [ConcreteStepPattern Object]
+    -> InternalSet
+builtinSet children =
+    InternalSet
+        { builtinSetSort = setSort
+        , builtinSetUnit = unitSetSymbol
+        , builtinSetElement = elementSetSymbol
+        , builtinSetConcat = concatSetSymbol
+        , builtinSetChild = Set.fromList children
+        }
 
 -- ** String
 
@@ -487,7 +586,10 @@ stringSort =
 
 -- | Declare 'stringSort' in a Kore module.
 stringSortDecl :: KoreSentence
-stringSortDecl = hookedSortDecl stringSort "STRING.String"
+stringSortDecl =
+    hookedSortDecl
+        stringSort
+        [ hookAttribute "STRING.String" ]
 
 -- -------------------------------------------------------------
 -- * Modules
@@ -828,6 +930,25 @@ listModule =
                 [hookAttribute "LIST.get"]
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
+            , hookedSymbolDecl
+                unitList2Symbol
+                listSort2
+                []
+                [hookAttribute "LIST.unit"]
+            , hookedSymbolDecl
+                elementList2Symbol
+                listSort2
+                [intSort]
+                [ hookAttribute "LIST.element"
+                , functionalAttribute
+                ]
+            , hookedSymbolDecl
+                concatList2Symbol
+                listSort2
+                [listSort2, listSort2]
+                [ hookAttribute "LIST.concat"
+                , functionalAttribute
+                ]
             ]
         }
 

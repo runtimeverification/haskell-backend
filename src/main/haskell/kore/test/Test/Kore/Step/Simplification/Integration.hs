@@ -13,34 +13,32 @@ import Test.Tasty.HUnit
 import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
-import qualified Data.Sequence as Seq
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Map as Map
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( builtinEvaluation, simplifierWithFallback )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
+import           Kore.Step.Axiom.Registry
+                 ( axiomPatternsToEvaluators )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-import           Kore.Step.Function.EvaluationStrategy
-                 ( builtinEvaluation, simplifierWithFallback )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Function.Registry
-                 ( axiomPatternsToEvaluators )
-import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -51,9 +49,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 import qualified SMT
 
 import           Test.Kore
@@ -66,7 +61,7 @@ import           Test.Tasty.HUnit.Extensions
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration =
     [ testCase "owise condition - main case" $ do
-        let expect = OrOfExpandedPattern.make []
+        let expect = MultiOr.make []
         actual <-
             evaluate
                 mockMetadataTools
@@ -104,7 +99,7 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
 
     , testCase "owise condition - owise case" $ do
-        let expect = OrOfExpandedPattern.make [ExpandedPattern.top]
+        let expect = MultiOr.make [ExpandedPattern.top]
         actual <-
             evaluate
                 mockMetadataTools
@@ -143,7 +138,7 @@ test_simplificationIntegration =
 
      , testCase "map-like simplification" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ Predicated
                         { term = mkTop_
                         , predicate = makeCeilPredicate
@@ -176,7 +171,7 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     , testCase "map function, non-matching" $ do
         let
-            expect = OrOfExpandedPattern.make
+            expect = MultiOr.make
                 [ Predicated
                     { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
@@ -218,7 +213,7 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     , testCase "map function, matching" $ do
         let
-            expect = OrOfExpandedPattern.make
+            expect = MultiOr.make
                 [ Predicated
                     { term = Mock.c
                     , predicate = makeTruePredicate
@@ -266,7 +261,7 @@ test_substitute :: [TestTree]
 test_substitute =
     [ testCase "Substitution under unary functional constructor" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ ExpandedPattern.Predicated
                         { term =
                             Mock.functionalConstr20
@@ -298,7 +293,7 @@ test_substitute =
 
     , testCase "Substitution" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ ExpandedPattern.Predicated
                         { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                         , predicate = makeTruePredicate
@@ -327,7 +322,7 @@ test_substituteMap :: [TestTree]
 test_substituteMap =
     [ testCase "Substitution applied to Map elements" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ ExpandedPattern.Predicated
                         { term =
                             Mock.functionalConstr20
@@ -358,14 +353,13 @@ test_substituteMap =
             actual
     ]
   where
-    mkDomainBuiltinMap =
-        mkDomainValue Mock.testSort . Domain.BuiltinMap . Map.fromList
+    mkDomainBuiltinMap = Mock.builtinMap
 
 test_substituteList :: [TestTree]
 test_substituteList =
     [ testCase "Substitution applied to List elements" $ do
         let expect =
-                OrOfExpandedPattern.make
+                MultiOr.make
                     [ ExpandedPattern.Predicated
                         { term =
                             Mock.functionalConstr20
@@ -396,8 +390,7 @@ test_substituteList =
             actual
     ]
   where
-    mkDomainBuiltinList =
-        mkDomainValue Mock.testSort . Domain.BuiltinList . Seq.fromList
+    mkDomainBuiltinList = Mock.builtinList
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
@@ -425,28 +418,19 @@ evaluateWithAxioms tools axioms patt =
         $ evalSimplifier emptyLogger
         $ ExpandedPattern.simplify
             tools
-            (PredicateSubstitution.create tools simplifier)
+            (PredicateSubstitution.create tools simplifier axiomIdToSimplifier)
             simplifier
+            axiomIdToSimplifier
             patt
   where
-    simplifier
-        ::  ( FreshVariable variable
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , Show (variable Meta)
-            , Show (variable Object)
-            , Unparse (variable Object)
-            , SortedVariable variable
-            )
-        => StepPatternSimplifier Object variable
-    simplifier =
-        Simplifier.create
-            tools
-            (Map.unionWith
-                simplifierWithFallback
-                builtinAxioms
-                axioms
-            )
+    simplifier :: StepPatternSimplifier Object
+    simplifier = Simplifier.create tools axiomIdToSimplifier
+    axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap Object
+    axiomIdToSimplifier =
+        Map.unionWith
+            simplifierWithFallback
+            builtinAxioms
+            axioms
     builtinAxioms :: BuiltinAndAxiomSimplifierMap Object
     builtinAxioms =
         Map.fromList

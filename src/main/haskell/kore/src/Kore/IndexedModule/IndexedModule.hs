@@ -65,6 +65,7 @@ import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Parser
                  ( ParseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Subsort
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
@@ -88,6 +89,8 @@ All 'IndexedModule' instances should either be returned by
 'indexedModuleWithMetaSorts' or they should start from an instance created by
 'indexedModuleWithDefaultImports'.
 -}
+-- TODO (thomas.tuegel): Consider splitting IndexedModule into separate sort,
+-- symbol, and axiom indices.
 data IndexedModule param pat declAtts axiomAtts =
     IndexedModule
     { indexedModuleName          :: !ModuleName
@@ -100,9 +103,9 @@ data IndexedModule param pat declAtts axiomAtts =
     , indexedModuleObjectSymbolSentences
         :: !(Map.Map (Id Object) (declAtts, SentenceSymbol Object pat))
     , indexedModuleObjectSortDescriptions
-        :: !(Map.Map (Id Object) (declAtts, SentenceSort Object pat))
+        :: !(Map.Map (Id Object) (Attribute.Sort, SentenceSort Object pat))
     , indexedModuleMetaSortDescriptions
-        :: !(Map.Map (Id Meta) (declAtts, SentenceSort Meta pat))
+        :: !(Map.Map (Id Meta)   (Attribute.Sort, SentenceSort Meta pat  ))
     , indexedModuleAxioms
         :: ![(axiomAtts, SentenceAxiom param pat)]
     , indexedModuleClaims
@@ -155,8 +158,8 @@ makeIndexedModuleAttributesNull
     , indexedModuleObjectAliasSentences = Map.map (first aNull) objectAliases
     , indexedModuleMetaSymbolSentences = Map.map (first aNull) metaSymbols
     , indexedModuleObjectSymbolSentences = Map.map (first aNull) objectSymbols
-    , indexedModuleMetaSortDescriptions = Map.map (first aNull) metaSorts
-    , indexedModuleObjectSortDescriptions = Map.map (first aNull) objectSorts
+    , indexedModuleMetaSortDescriptions = metaSorts
+    , indexedModuleObjectSortDescriptions = objectSorts
     , indexedModuleAxioms = map (first aNull) axioms
     , indexedModuleClaims = map (first aNull) claims
     , indexedModuleAttributes = first aNull attributes

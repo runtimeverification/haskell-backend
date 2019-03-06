@@ -18,19 +18,22 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..) )
+                 Simplifier, StepPatternSimplifier (..),
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -51,9 +54,11 @@ simplify
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedPattern level variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -63,16 +68,18 @@ simplify
     tools
     substitutionSimplifier
     wrappedSimplifier@(StepPatternSimplifier simplifier)
+    axiomIdToSimplifier
     Predicated {term, predicate, substitution}
   = do
     (simplifiedTerm, _)
         <- simplifier substitutionSimplifier term
     (simplifiedPatt, _) <-
-        OrOfExpandedPattern.traverseWithPairs
+        MultiOr.traverseWithPairs
             (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
                 tools
                 substitutionSimplifier
                 wrappedSimplifier
+                axiomIdToSimplifier
                 Predicated
                     { term = ()
                     , predicate
@@ -97,9 +104,11 @@ simplifyPredicate
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedPattern level variable
     -- ^ The condition to be evaluated.
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
@@ -107,6 +116,7 @@ simplifyPredicate
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     Predicated {term, predicate, substitution}
   = do
     (evaluated, _proof) <-
@@ -121,6 +131,8 @@ simplifyPredicate
         mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             [evaluatedPredicate]
             [substitution, evaluatedSubstitution]
     let Predicated { predicate = mergedPredicate } = merged

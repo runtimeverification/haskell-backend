@@ -19,15 +19,17 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( toMLPattern, top )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, isFalse, isTrue, make, toExpandedPattern )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( toMLPattern, top )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -85,11 +87,11 @@ simplifyEvaluated
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 simplifyEvaluated simplified
   | OrOfExpandedPattern.isFalse simplified =
-    (OrOfExpandedPattern.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | OrOfExpandedPattern.isTrue simplified =
-    (OrOfExpandedPattern.make [], SimplificationProof)
+    (MultiOr.make [], SimplificationProof)
   | otherwise =
-    case OrOfExpandedPattern.extractPatterns simplified of
+    case MultiOr.extractPatterns simplified of
         [patt] -> makeEvaluate patt
         _ ->
             ( makeFromSinglePurePattern
@@ -118,7 +120,7 @@ makeEvaluate
 makeEvaluate
     Predicated {term, predicate, substitution}
   =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [ Predicated
             { term = makeTermNot term
             , predicate = makeTruePredicate

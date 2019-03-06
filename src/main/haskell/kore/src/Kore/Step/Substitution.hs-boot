@@ -10,10 +10,12 @@ import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Predicate.Predicate
        ( Predicate )
-import Kore.Step.ExpandedPattern
+import Kore.Step.Axiom.Data
+       ( BuiltinAndAxiomSimplifierMap )
+import Kore.Step.Representation.ExpandedPattern
        ( PredicateSubstitution )
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier )
+       ( PredicateSubstitutionSimplifier, Simplifier, StepPatternSimplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Unification.Data
@@ -35,15 +37,16 @@ mergePredicatesAndSubstitutionsExcept
        , OrdMetaOrObject variable
        , ShowMetaOrObject variable
        , FreshVariable variable
-       , Monad m
        )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> [Predicate level variable]
     -> [Substitution level variable]
     -> ExceptT
-          ( UnificationOrSubstitutionError level variable )
-          m
-          ( PredicateSubstitution level variable
-          , UnificationProof level variable
-          )
+        ( UnificationOrSubstitutionError level variable )
+        Simplifier
+        ( PredicateSubstitution level variable
+        , UnificationProof level variable
+        )

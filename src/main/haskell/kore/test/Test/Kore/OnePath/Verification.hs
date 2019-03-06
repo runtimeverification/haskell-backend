@@ -19,26 +19,25 @@ import           Data.Limit
                  ( Limit (..) )
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
-                 ( Claim (..) )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes (..), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), Trusted (..) )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.ExpandedPattern
-                 ( Predicated (Predicated) )
-import           Kore.Step.ExpandedPattern as Predicated
-                 ( Predicated (..) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, fromPurePattern )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (Predicated) )
+import           Kore.Step.Representation.ExpandedPattern as Predicated
+                 ( Predicated (..) )
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( CommonExpandedPattern, fromPurePattern )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -367,7 +366,9 @@ simpleTrustedClaim
     -> CommonStepPattern level
     -> OnePath.Claim level
 simpleTrustedClaim left right =
-    OnePath.Claim (simpleRewrite left right) def { trusted = Trusted True }
+    OnePath.Claim
+        (simpleRewrite left right)
+        def { Attribute.trusted = Attribute.Trusted True }
 
 simpleRewrite
     :: MetaOrObject level
@@ -403,9 +404,10 @@ runVerification
         metadataTools
         simplifier
         (Mock.substitutionSimplifier metadataTools)
+        Map.empty
         (OnePath.defaultStrategy claims axioms)
         ( map (\c -> (Claim.rule c, stepLimit))
-        . filter (not . isTrusted . trusted . Claim.attributes)
+        . filter (not . Claim.isTrusted)
         $ claims)
   where
     simplifier = Simplifier.create metadataTools Map.empty

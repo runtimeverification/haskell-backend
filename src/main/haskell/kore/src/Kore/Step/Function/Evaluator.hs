@@ -26,29 +26,30 @@ import           Kore.AST.Valid
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
-import           Kore.Step.Function.Data
+import           Kore.Step.Axiom.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Function.Data as AttemptedAxiom
+import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.Identifier
+import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( flatten, make, merge, traverseWithPairs )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( flatten, make, merge, traverseWithPairs )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..) )
+                 Simplifier, StepPatternSimplifier (..),
+                 StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( Hook (..), StepperAttributes (..), isSortInjection_ )
@@ -71,8 +72,8 @@ evaluateApplication
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -130,7 +131,7 @@ evaluateApplication
       where
         Predicated { term = (), predicate, substitution } =
             childrenPredicateSubstitution
-    unchangedOr = OrOfExpandedPattern.make [unchangedPatt]
+    unchangedOr = MultiOr.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
 
     getAppHookString =
@@ -139,7 +140,7 @@ evaluateApplication
 {-| Evaluates axioms on patterns.
 -}
 evaluatePattern
-    ::  forall level variable.
+    ::  forall level variable .
         ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -152,8 +153,8 @@ evaluatePattern
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -191,7 +192,7 @@ evaluatePattern
 Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
-    ::  forall level variable.
+    ::  forall level variable .
         ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -204,8 +205,8 @@ maybeEvaluatePattern
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -241,6 +242,7 @@ maybeEvaluatePattern
                         tools
                         substitutionSimplifier
                         simplifier
+                        axiomIdToEvaluator
                         patt
                 flattened <- case result of
                     AttemptedAxiom.NotApplicable ->
@@ -253,7 +255,7 @@ maybeEvaluatePattern
                             return
                                 (AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results =
-                                        OrOfExpandedPattern.flatten simplified
+                                        MultiOr.flatten simplified
                                     , remainders = orRemainders
                                     }
                                 )
@@ -261,6 +263,7 @@ maybeEvaluatePattern
                     tools
                     substitutionSimplifier
                     simplifier
+                    axiomIdToEvaluator
                     childrenPredicateSubstitution
                     (flattened, proof)
                 case merged of
@@ -269,7 +272,7 @@ maybeEvaluatePattern
                     AttemptedAxiom.Applied AttemptedAxiomResults
                         { results, remainders } ->
                             return
-                                ( OrOfExpandedPattern.merge results remainders
+                                ( MultiOr.merge results remainders
                                 , SimplificationProof
                                 )
   where
@@ -296,12 +299,13 @@ maybeEvaluatePattern
         -> Simplifier (OrOfExpandedPattern level variable)
     simplifyIfNeeded toSimplify =
         if toSimplify == unchangedPatt
-            then return (OrOfExpandedPattern.make [unchangedPatt])
+            then return (MultiOr.make [unchangedPatt])
             else
                 reevaluateFunctions
                     tools
                     substitutionSimplifier
                     simplifier
+                    axiomIdToEvaluator
                     toSimplify
 
 evaluateSortInjection
@@ -358,9 +362,11 @@ reevaluateFunctions
     => MetadataTools level StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedPattern level variable
     -- ^ Function evaluation result.
     -> Simplifier (OrOfExpandedPattern level variable)
@@ -368,6 +374,7 @@ reevaluateFunctions
     tools
     substitutionSimplifier
     wrappedSimplifier@(StepPatternSimplifier simplifier)
+    axiomIdToEvaluator
     Predicated
         { term   = rewrittenPattern
         , predicate = rewritingCondition
@@ -381,6 +388,7 @@ reevaluateFunctions
             tools
             substitutionSimplifier
             wrappedSimplifier
+            axiomIdToEvaluator
             Predicated
                 { term = ()
                 , predicate = rewritingCondition
@@ -388,9 +396,12 @@ reevaluateFunctions
                 }
             pattOr
     (evaluatedPatt, _) <-
-        OrOfExpandedPattern.traverseWithPairs
+        MultiOr.traverseWithPairs
             (ExpandedPattern.simplifyPredicate
-                tools substitutionSimplifier wrappedSimplifier
+                tools
+                substitutionSimplifier
+                wrappedSimplifier
+                axiomIdToEvaluator
             )
             mergedPatt
     return evaluatedPatt
@@ -408,22 +419,25 @@ mergeWithConditionAndSubstitution
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.
     -> (AttemptedAxiom level variable, SimplificationProof level)
     -- ^ AttemptedAxiom to which the condition should be added.
     -> Simplifier (AttemptedAxiom level variable, SimplificationProof level)
 mergeWithConditionAndSubstitution
-    _ _ _ _ (AttemptedAxiom.NotApplicable, _proof)
+    _ _ _ _ _ (AttemptedAxiom.NotApplicable, _proof)
   =
     return (AttemptedAxiom.NotApplicable, SimplificationProof)
 mergeWithConditionAndSubstitution
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToEvaluator
     toMerge
     ( AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders }
     , _proof
@@ -434,6 +448,7 @@ mergeWithConditionAndSubstitution
             tools
             substitutionSimplifier
             simplifier
+            axiomIdToEvaluator
             toMerge
             results
     (evaluatedRemainders, _proof) <-
@@ -441,6 +456,7 @@ mergeWithConditionAndSubstitution
             tools
             substitutionSimplifier
             simplifier
+            axiomIdToEvaluator
             toMerge
             remainders
     return

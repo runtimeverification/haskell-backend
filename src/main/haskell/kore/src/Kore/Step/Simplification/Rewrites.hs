@@ -15,14 +15,16 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( toMLPattern )
-import           Kore.Step.OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( make )
+import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( make, toExpandedPattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -92,7 +94,7 @@ makeEvaluateRewrites
     -> ExpandedPattern Object variable
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
-    ( OrOfExpandedPattern.make
+    ( MultiOr.make
         [ Predicated
             { term = mkRewrites
                 (ExpandedPattern.toMLPattern first)

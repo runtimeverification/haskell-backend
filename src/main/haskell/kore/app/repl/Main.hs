@@ -27,6 +27,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification,
                  verifyAndIndexDefinitionWithBase )
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -38,8 +39,6 @@ import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
-import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.StepperAttributes
@@ -186,10 +185,9 @@ mainWithOptions
     smtPrelude = prelude smtOptions
 
 
-
 constructorFunctions
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
+    -> VerifiedModule StepperAttributes Attribute.Axiom
 constructorFunctions ixm =
     ixm
         { indexedModuleObjectSymbolSentences =
@@ -222,8 +220,8 @@ mainModule
     :: ModuleName
     -> Map.Map
         ModuleName
-        (VerifiedModule StepperAttributes AxiomPatternAttributes)
-    -> IO (VerifiedModule StepperAttributes AxiomPatternAttributes)
+        (VerifiedModule StepperAttributes Attribute.Axiom)
+    -> IO (VerifiedModule StepperAttributes Attribute.Axiom)
 mainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -238,7 +236,7 @@ verifyDefinitionWithBase
     :: Maybe
         ( Map.Map
             ModuleName
-            (VerifiedModule StepperAttributes AxiomPatternAttributes)
+            (VerifiedModule StepperAttributes Attribute.Axiom)
         , Map.Map Text AstLocation
         )
     -- ^ base definition to use for verification
@@ -247,7 +245,7 @@ verifyDefinitionWithBase
     -> IO
         ( Map.Map
             ModuleName
-            (VerifiedModule StepperAttributes AxiomPatternAttributes)
+            (VerifiedModule StepperAttributes Attribute.Axiom)
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase maybeBaseModule willChkAttr definition =

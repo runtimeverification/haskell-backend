@@ -11,44 +11,46 @@ Portability : portable
 -}
 module Test.Kore.Comparators where
 
-import Control.Applicative
-       ( Alternative (..) )
-import Control.Comonad.Trans.Cofree
-       ( CofreeF (..), CofreeT (..) )
-import Data.Functor.Classes
-import Data.Functor.Identity
-       ( Identity (..) )
-import Numeric.Natural
-       ( Natural )
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Comonad.Trans.Cofree
+                 ( Cofree, CofreeF (..), CofreeT (..) )
+import qualified Data.Function as Function
+import           Data.Functor.Classes
+import           Data.Functor.Identity
+                 ( Identity (..) )
+import           Numeric.Natural
+                 ( Natural )
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Kore
 import           Kore.AST.Pure
+import           Kore.Domain.Builtin
 import           Kore.OnePath.Step
                  ( StrategyPattern )
 import           Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
+import           Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import           Kore.Step.Axiom.Identifier
+                 ( AxiomIdentifier )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.BaseStep
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
 import           Kore.Step.BaseStep as OrStepResult
                  ( OrStepResult (..) )
 import           Kore.Step.Error
-import           Kore.Step.ExpandedPattern
-                 ( Predicated (..) )
-import           Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Function.Identifier
-                 ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-import           Kore.Step.OrOfExpandedPattern
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (..) )
+import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
 import           Kore.Unification.Error
@@ -77,6 +79,7 @@ instance
     , Eq1 domain
     , Show1 domain
     , EqualWithExplanation (variable level)
+    , EqualWithExplanation (domain child)
     , Eq (variable level)
     , Show (variable level)
     )
@@ -207,6 +210,7 @@ instance
     , Eq child, Eq level, Eq (variable level)
     , Show child
     , EqualWithExplanation (variable level)
+    , EqualWithExplanation (domain child)
     , Show (variable level)
     , Show1 domain
     , Eq1 domain
@@ -226,6 +230,7 @@ instance
     , Eq annotation
     , Eq level
     , EqualWithExplanation annotation
+    , EqualWithExplanation (domain (Cofree (Pattern level domain variable) annotation))
     ) =>
     EqualWithExplanation (PurePattern level domain variable annotation)
   where
@@ -243,6 +248,7 @@ instance
     , Eq annotation
     , Eq level
     , EqualWithExplanation annotation
+    , EqualWithExplanation (domain (Cofree (Pattern level domain variable) annotation))
     ) =>
     WrapperEqualWithExplanation (PurePattern level domain variable annotation)
   where
@@ -262,6 +268,7 @@ instance
     , EqualWithExplanation annotation
     , EqualWithExplanation (variable Meta)
     , EqualWithExplanation (variable Object)
+    , EqualWithExplanation (domain (Cofree (UnifiedPattern domain variable) annotation))
     , OrdMetaOrObject variable
     , ShowMetaOrObject variable
     ) =>
@@ -277,6 +284,7 @@ instance
     , EqualWithExplanation annotation
     , EqualWithExplanation (variable Meta)
     , EqualWithExplanation (variable Object)
+    , EqualWithExplanation (domain (Cofree (UnifiedPattern domain variable) annotation))
     , OrdMetaOrObject variable, ShowMetaOrObject variable
     ) =>
     WrapperEqualWithExplanation (KorePattern domain variable annotation)
@@ -765,11 +773,13 @@ instance StructEqualWithExplanation (Variable level)
         ]
     structConstructorName _ = "Variable"
 
-instance EqualWithExplanation (Variable level)
-  where
+instance EqualWithExplanation (Variable level) where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
+instance EqualWithExplanation (Concrete level) where
+    compareWithExplanation = \case {}
+    printWithExplanation = \case {}
 
 instance StructEqualWithExplanation (Id level)
     where
@@ -1013,6 +1023,133 @@ instance
     printWithExplanation = show
 
 instance
+    (EqualWithExplanation child, Show child) =>
+    EqualWithExplanation (Builtin child)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (External child) where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation (External child) where
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "domainValueSort = ")
+            Kore.Domain.Builtin.domainValueSort
+            expect
+            actual
+        , Function.on (EqWrap "domainValueChild = ")
+            Kore.Domain.Builtin.domainValueChild
+            expect
+            actual
+        ]
+    structConstructorName _ = "External"
+
+instance EqualWithExplanation InternalInt where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation InternalInt where
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "builtinIntSort = ") builtinIntSort expect actual
+        , Function.on (EqWrap "builtinIntValue = ") builtinIntValue expect actual
+        ]
+    structConstructorName _ = "InternalInt"
+
+instance EqualWithExplanation InternalBool where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation InternalBool where
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "builtinBoolSort = ") builtinBoolSort expect actual
+        , Function.on (EqWrap "builtinBoolValue = ") builtinBoolValue expect actual
+        ]
+    structConstructorName _ = "InternalBool"
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    EqualWithExplanation (InternalMap child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    StructEqualWithExplanation (InternalMap child)
+  where
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "builtinMapSort = ") builtinMapSort expect actual
+        , Function.on (EqWrap "builtinMapUnit = ") builtinMapUnit expect actual
+        , Function.on (EqWrap "builtinMapElement = ") builtinMapElement expect actual
+        , Function.on (EqWrap "builtinMapConcat = ") builtinMapConcat expect actual
+        , Function.on (EqWrap "builtinMapChild = ") builtinMapChild expect actual
+        ]
+    structConstructorName _ = "InternalMap"
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    EqualWithExplanation (InternalList child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    StructEqualWithExplanation (InternalList child)
+  where
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "builtinListSort = ") builtinListSort expect actual
+        , Function.on (EqWrap "builtinListUnit = ") builtinListUnit expect actual
+        , Function.on (EqWrap "builtinListElement = ") builtinListElement expect actual
+        , Function.on (EqWrap "builtinListConcat = ") builtinListConcat expect actual
+        , Function.on (EqWrap "builtinListChild = ") builtinListChild expect actual
+        ]
+    structConstructorName _ = "InternalList"
+
+instance EqualWithExplanation InternalSet where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation InternalSet where
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "builtinSetSort = ") builtinSetSort expect actual
+        , Function.on (EqWrap "builtinSetUnit = ") builtinSetUnit expect actual
+        , Function.on (EqWrap "builtinSetElement = ") builtinSetElement expect actual
+        , Function.on (EqWrap "builtinSetConcat = ") builtinSetConcat expect actual
+        , Function.on (EqWrap "builtinSetChild = ") builtinSetChild expect actual
+        ]
+    structConstructorName _ = "InternalSet"
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    SumEqualWithExplanation (Builtin child)
+  where
+    sumConstructorPair (BuiltinExternal ext1) (BuiltinExternal ext2) =
+        SumConstructorSameWithArguments
+            (EqWrap "BuiltinExternal" ext1 ext2)
+    sumConstructorPair (BuiltinInt int1) (BuiltinInt int2) =
+        SumConstructorSameWithArguments
+            (EqWrap "BuiltinInt" int1 int2)
+    sumConstructorPair (BuiltinBool bool1) (BuiltinBool bool2) =
+        SumConstructorSameWithArguments
+            (EqWrap "BuiltinBool" bool1 bool2)
+    sumConstructorPair (BuiltinMap map1) (BuiltinMap map2) =
+        SumConstructorSameWithArguments
+            (EqWrap "BuiltinMap" map1 map2)
+    sumConstructorPair (BuiltinList list1) (BuiltinList list2) =
+        SumConstructorSameWithArguments
+            (EqWrap "BuiltinList" list1 list2)
+    sumConstructorPair (BuiltinSet set1) (BuiltinSet set2) =
+        SumConstructorSameWithArguments
+            (EqWrap "BuiltinSet" set1 set2)
+    sumConstructorPair a b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+instance
     ( EqualWithExplanation (variable level)
     , Show level, Show (variable level)
     , Eq level, Eq (variable level)
@@ -1218,6 +1355,7 @@ instance
     , Eq (variable Meta), Eq (variable Object), Eq child
     , EqualWithExplanation (variable Meta)
     , EqualWithExplanation (variable Object)
+    , EqualWithExplanation (domain child)
     , EqualWithExplanation child
     , Show1 domain
     , Eq1 domain
@@ -1232,6 +1370,7 @@ instance
     , Eq (variable Meta), Eq (variable Object), Eq child
     , EqualWithExplanation (variable Object)
     , EqualWithExplanation (variable Meta)
+    , EqualWithExplanation (domain child)
     , EqualWithExplanation child
     , Show1 domain
     , Eq1 domain

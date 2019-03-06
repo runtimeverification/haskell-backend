@@ -35,10 +35,10 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
-import           Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..), fromPurePattern )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..), fromPurePattern )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -441,6 +441,7 @@ runSteps metadataTools graphFilter picker configuration strategy =
             metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
+            Map.empty
         )
         strategy
         (RewritePattern configuration, mempty)

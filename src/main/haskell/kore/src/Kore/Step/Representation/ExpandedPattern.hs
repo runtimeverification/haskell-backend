@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.ExpandedPattern
+Module      : Kore.Step.Respresentation.ExpandedPattern
 Description : Data structures and functions for manipulating
               ExpandedPatterns, i.e. a representation of patterns
               optimized for the stepper.
@@ -9,19 +9,19 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.ExpandedPattern
+module Kore.Step.Representation.ExpandedPattern
     ( Predicated (..)
     , ExpandedPattern
     , CommonExpandedPattern
     , PredicateSubstitution
     , CommonPredicateSubstitution
-    , Kore.Step.ExpandedPattern.allVariables
+    , Kore.Step.Representation.ExpandedPattern.allVariables
     , erasePredicatedTerm
     , bottom
     , bottomOf
     , isBottom
     , isTop
-    , Kore.Step.ExpandedPattern.mapVariables
+    , Kore.Step.Representation.ExpandedPattern.mapVariables
     , predicateSubstitutionToExpandedPattern
     , substitutionToPredicate
     , toMLPattern
@@ -29,14 +29,15 @@ module Kore.Step.ExpandedPattern
     , topOf
     , topPredicate
     , bottomPredicate
-    , Kore.Step.ExpandedPattern.fromPurePattern
+    , Kore.Step.Representation.ExpandedPattern.fromPurePattern
     , toPredicate
-    , Kore.Step.ExpandedPattern.freeVariables
+    , Kore.Step.Representation.ExpandedPattern.freeVariables
     , freeEpVariables
     ) where
 
 import           Control.DeepSeq
                  ( NFData )
+import qualified Control.Monad as Monad
 import           Data.Functor
                  ( ($>) )
 import qualified Data.Functor.Foldable as Recursive
@@ -101,15 +102,30 @@ instance
     Applicative (Predicated level variable)
   where
     pure a = Predicated a makeTruePredicate mempty
-    a <*> b =
+    (<*>) = Monad.ap
+
+instance
+    ( MetaOrObject level
+    , SortedVariable variable
+    , Ord (variable level)
+    , Show (variable level)
+    , Unparse (variable level)
+    ) =>
+    Monad (Predicated level variable)
+  where
+    return = pure
+    {-# INLINE return #-}
+
+    (>>=) predicated1 binding =
         Predicated
-            { term = f x
+            { term = term2
             , predicate = predicate1 `makeAndPredicate` predicate2
             , substitution = substitution1 <> substitution2
             }
       where
-        Predicated f predicate1 substitution1 = a
-        Predicated x predicate2 substitution2 = b
+        Predicated term1 predicate1 substitution1 = predicated1
+        Predicated term2 predicate2 substitution2 = binding term1
+    {-# INLINE (>>=) #-}
 
 instance TopBottom term
     => TopBottom (Predicated level variable term)

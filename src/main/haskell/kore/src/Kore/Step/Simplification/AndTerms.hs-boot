@@ -9,12 +9,15 @@ import Kore.AST.MetaOrObject
        ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
-import Kore.Step.ExpandedPattern
-       ( ExpandedPattern )
+import Kore.Step.Axiom.Data
+       ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Pattern
        ( StepPattern )
+import Kore.Step.Representation.ExpandedPattern
+       ( ExpandedPattern )
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, SimplificationProof )
+       ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
+       StepPatternSimplifier )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Unification.Error
@@ -24,24 +27,7 @@ import Kore.Variables.Fresh
        ( FreshVariable )
 
 termAnd
-    ::  ( MetaOrObject level
-        , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , SortedVariable variable
-        , Monad m
-        )
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
-    -> StepPattern level variable
-    -> StepPattern level variable
-    -> m (ExpandedPattern level variable, SimplificationProof level)
-
-termUnification
-    :: forall level variable m err .
+    :: forall level variable .
         ( MetaOrObject level
         , FreshVariable variable
         , Ord (variable level)
@@ -50,12 +36,32 @@ termUnification
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , Monad m
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> StepPattern level variable
+    -> StepPattern level variable
+    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+
+termUnification
+    :: forall level variable err .
+        ( MetaOrObject level
+        , FreshVariable variable
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , SortedVariable variable
         , err ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level m
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> StepPattern level variable
     -> StepPattern level variable
-    -> err m
+    -> err Simplifier
         (ExpandedPattern level variable, SimplificationProof level)

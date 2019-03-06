@@ -20,20 +20,24 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( bottom, isBottom, isTop )
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( crossProductGenericF, filterOr, isFalse, isTrue, make )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( bottom, isBottom, isTop )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( crossProductGenericF, filterOr, make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( isFalse, isTrue )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier )
+                 Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -88,7 +92,11 @@ simplify
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> And level (OrOfExpandedPattern level variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
@@ -97,12 +105,20 @@ simplify
 simplify
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     And
         { andFirst = first
         , andSecond = second
         }
   =
-    simplifyEvaluated tools substitutionSimplifier first second
+    simplifyEvaluated
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        first
+        second
 
 {-| simplifies an And given its two 'OrOfExpandedPattern' children.
 
@@ -131,16 +147,26 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> OrOfExpandedPattern level variable
     -> OrOfExpandedPattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated tools substitutionSimplifier first second
+simplifyEvaluated
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    first
+    second
   | OrOfExpandedPattern.isFalse first =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
-    return (OrOfExpandedPattern.make [], SimplificationProof)
+    return (MultiOr.make [], SimplificationProof)
 
   | OrOfExpandedPattern.isTrue first =
     return (second, SimplificationProof)
@@ -149,12 +175,19 @@ simplifyEvaluated tools substitutionSimplifier first second
 
   | otherwise = do
     orWithProof <-
-        OrOfExpandedPattern.crossProductGenericF
-            (makeEvaluate tools substitutionSimplifier) first second
+        MultiOr.crossProductGenericF
+            (makeEvaluate
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+            )
+            first
+            second
     return
         -- TODO: It's not obvious at all when filtering occurs and when it
         -- doesn't.
-        ( OrOfExpandedPattern.filterOr
+        ( MultiOr.filterOr
             -- TODO: Remove fst.
             (fst <$> orWithProof)
         , SimplificationProof
@@ -175,12 +208,16 @@ makeEvaluate
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
-    tools substitutionSimplifier first second
+    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
     return (ExpandedPattern.bottom, SimplificationProof)
   | ExpandedPattern.isTop first =
@@ -188,7 +225,13 @@ makeEvaluate
   | ExpandedPattern.isTop second =
     return (first, SimplificationProof)
   | otherwise =
-    makeEvaluateNonBool tools substitutionSimplifier first second
+    makeEvaluateNonBool
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        first
+        second
 
 makeEvaluateNonBool
     ::  ( MetaOrObject level
@@ -201,13 +244,19 @@ makeEvaluateNonBool
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBool
     tools
     substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     Predicated
         { term = firstTerm
         , predicate = firstPredicate
@@ -225,7 +274,13 @@ makeEvaluateNonBool
             , substitution = termSubstitution
             }
         , _proof
-        ) <- makeTermAnd tools substitutionSimplifier firstTerm secondTerm
+        ) <- makeTermAnd
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            firstTerm
+            secondTerm
     (   Predicated
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
@@ -234,6 +289,8 @@ makeEvaluateNonBool
         ) <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             [firstPredicate, secondPredicate, termPredicate]
             [firstSubstitution, secondSubstitution, termSubstitution]
     return
@@ -271,7 +328,11 @@ makeTermAnd
         , SortedVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> StepPattern level variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)

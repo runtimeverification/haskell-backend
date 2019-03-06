@@ -34,15 +34,17 @@ import           Kore.AST.MetaOrObject
                  ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
-import qualified Kore.Step.ExpandedPattern as Predicated
-import           Kore.Step.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -132,14 +134,24 @@ matchWith
         , Unparse (variable level)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
     -> MaybeT Simplifier (OrOfPredicateSubstitution level variable)
-matchWith tools substitutionSimplifier simplifier e1 e2 = do
+matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-
-        hushT $ unificationProcedure tools substitutionSimplifier t1 t2
+        hushT $
+            unificationProcedure
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                t1
+                t2
     let
         mergeAndEvaluate
             :: PredicateSubstitution level variable
@@ -152,6 +164,8 @@ matchWith tools substitutionSimplifier simplifier e1 e2 = do
                 mergePredicatesAndSubstitutions
                     tools
                     substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
                     [ Predicated.predicate predSubst
                     , Predicated.predicate e1
                     , Predicated.predicate e2
@@ -164,13 +178,15 @@ matchWith tools substitutionSimplifier simplifier e1 e2 = do
             mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 [ Predicated.predicate evaluated
                 ]
                 [ Predicated.substitution merged
                 , Predicated.substitution evaluated
                 ]
     (result, _proof) <-
-        lift $ OrOfExpandedPattern.traverseWithPairs mergeAndEvaluate unifier
+        lift $ MultiOr.traverseWithPairs mergeAndEvaluate unifier
     if isBottom result
         then nothing
         else return result

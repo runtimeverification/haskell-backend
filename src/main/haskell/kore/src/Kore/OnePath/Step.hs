@@ -32,6 +32,8 @@ import           Kore.AST.Valid
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
@@ -40,16 +42,15 @@ import           Kore.Step.BaseStep
 import           Kore.Step.BaseStep as OrStepResult
                  ( OrStepResult (..) )
 import qualified Kore.Step.BaseStep as StepProof
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
-import qualified Kore.Step.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.ExpandedPattern as Predicated
                  ( Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( CommonStepPatternSimplifier,
-                 PredicateSubstitutionSimplifier, Simplifier )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
@@ -180,9 +181,11 @@ and n destinations.
 transitionRule
     :: forall level . (MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> CommonStepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> Prim (CommonExpandedPattern level) (RewriteRule level Variable)
     -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
@@ -195,6 +198,7 @@ transitionRule
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     strategy
     expandedPattern
   =
@@ -217,13 +221,16 @@ transitionRule
         do
             (configs, proof') <-
                 ExpandedPattern.simplify
-                    tools substitutionSimplifier simplifier config
-
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    config
             let
                 proof'' = proof <> simplificationProof proof'
                 prove config' = (config', proof'')
                 -- Filter out ⊥ patterns
-                nonEmptyConfigs = ExpandedPattern.filterOr configs
+                nonEmptyConfigs = MultiOr.filterOr configs
             if null nonEmptyConfigs
                 then return [(Bottom, proof'')]
                 else return (prove <$> map wrapper (toList nonEmptyConfigs))
@@ -259,7 +266,13 @@ transitionRule
         | ExpandedPattern.isBottom config = return []
     transitionMultiApplyWithRemainders rules (config, proof) = do
         (OrStepResult { rewrittenPattern, remainder }, proof') <-
-            stepWithRemainders tools substitutionSimplifier config rules
+            stepWithRemainders
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                config
+                rules
         let
             combinedProof :: StepProof level Variable
             combinedProof = proof <> proof'
@@ -272,7 +285,7 @@ transitionRule
             rewriteResults =
                 map
                     (\ p -> (RewritePattern p, combinedProof))
-                    (OrOfExpandedPattern.extractPatterns rewrittenPattern)
+                    (MultiOr.extractPatterns rewrittenPattern)
 
             remainderResults
                 ::  [   ( StrategyPattern (CommonExpandedPattern level)
@@ -282,7 +295,7 @@ transitionRule
             remainderResults =
                 map
                     (\ p -> (Stuck p, combinedProof))
-                    (OrOfExpandedPattern.extractPatterns remainder)
+                    (MultiOr.extractPatterns remainder)
 
         if null rewriteResults
             then return ((Bottom, combinedProof) : remainderResults)
@@ -322,7 +335,11 @@ transitionRule
             result = Predicated {term = resultTerm, predicate, substitution}
         (orResult, proof) <-
             ExpandedPattern.simplify
-                tools substitutionSimplifier simplifier result
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                result
         let
             finalProof = proof1 <> StepProof.simplificationProof proof
             patternsWithProofs =
@@ -332,7 +349,7 @@ transitionRule
                         , finalProof
                         )
                     )
-                    (ExpandedPattern.extractPatterns orResult)
+                    (MultiOr.extractPatterns orResult)
         if null patternsWithProofs
             then return [(Bottom, finalProof)]
             else return patternsWithProofs

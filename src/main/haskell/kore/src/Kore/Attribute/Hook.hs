@@ -12,47 +12,15 @@ module Kore.Attribute.Hook
     , getHookAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import qualified Control.Monad as Monad
-import           Data.Default
-                 ( Default (..) )
-import           Data.Hashable
-                 ( Hashable )
-import qualified Data.Maybe as Maybe
-import           Data.Text
-                 ( Text )
-import           GHC.Generics
-                 ( Generic )
+import Data.Text
+       ( Text )
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
                  ( Attributes )
-import           Kore.Attribute.Parser
-                 ( ParseAttributes )
+import           Kore.Attribute.Hook.Hook
 import qualified Kore.Attribute.Parser as Parser
 import           Kore.Error
-
-newtype Hook = Hook { getHook :: Maybe Text }
-  deriving (Eq, Generic, Ord, Read, Show)
-
-{- | The missing @hook@ attribute.
-
- -}
-emptyHook :: Hook
-emptyHook = Hook Nothing
-
-instance Default Hook where
-    def = emptyHook
-
-instance Hashable Hook
-
-instance NFData Hook
-
-{- | Kore identifier representing a @hook@ attribute symbol.
- -}
-hookId :: Id Object
-hookId = "hook"
 
 {- | Kore symbol representing the head of a @hook@ attribute.
 
@@ -83,26 +51,6 @@ hookAttribute builtin =
             }
   where
     lit = (asCommonKorePattern . StringLiteralPattern) (StringLiteral builtin)
-
-{- | Parse the @hook@ Kore attribute, if present.
-
-  It is a parse error if the @hook@ attribute is not given exactly one literal
-  string argument.
-
-  See also: 'hookAttribute'
-
- -}
-instance ParseAttributes Hook where
-    parseAttribute =
-        withApplication $ \params args (Hook hook) -> do
-            Parser.getZeroParams params
-            arg <- Parser.getOneArgument args
-            StringLiteral name <- Parser.getStringLiteral arg
-            Monad.unless (Maybe.isNothing hook) failDuplicate
-            return Hook { getHook = Just name }
-      where
-        withApplication = Parser.withApplication hookId
-        failDuplicate = Parser.failDuplicate hookId
 
 {- | Look up a required @hook{}()@ attribute from the given attributes.
 

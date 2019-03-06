@@ -24,7 +24,6 @@ module Kore.Builtin
     , koreVerifiers
     , koreEvaluators
     , evaluators
-    , asPattern
     , externalizePattern
     , asMetaPattern
     ) where
@@ -41,7 +40,7 @@ import           Data.Text
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Builtin.Bool as Bool
@@ -56,15 +55,12 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as String
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes )
-import           Kore.Step.Function.Identifier
+import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.StepperAttributes
@@ -115,7 +111,7 @@ koreVerifiers =
 
  -}
 koreEvaluators
-    :: VerifiedModule StepperAttributes AxiomPatternAttributes
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
     -> Map (AxiomIdentifier Object) Builtin.Function
 koreEvaluators = evaluators builtins
@@ -144,7 +140,7 @@ koreEvaluators = evaluators builtins
 evaluators
     :: Map Text Builtin.Function
     -- ^ Builtin functions indexed by name
-    -> VerifiedModule StepperAttributes AxiomPatternAttributes
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
     -> Map (AxiomIdentifier Object) Builtin.Function
 evaluators builtins indexedModule =
@@ -156,7 +152,7 @@ evaluators builtins indexedModule =
         )
   where
     hookedSymbolAttributes
-        :: VerifiedModule StepperAttributes AxiomPatternAttributes
+        :: VerifiedModule StepperAttributes Attribute.Axiom
         -> Map (Id Object) StepperAttributes
     hookedSymbolAttributes im =
         Map.union
@@ -168,7 +164,7 @@ evaluators builtins indexedModule =
         justAttributes (attrs, _) = attrs
 
     importHookedSymbolAttributes
-        :: (a, b, VerifiedModule StepperAttributes AxiomPatternAttributes)
+        :: (a, b, VerifiedModule StepperAttributes Attribute.Axiom)
         -> Map (Id Object) StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
@@ -179,60 +175,40 @@ evaluators builtins indexedModule =
             impl <- Map.lookup name builtins
             pure impl
 
-{- | Represent a 'Builtin' domain value as an object-level pattern.
-
-    Any builtins with an internal representation are externalized to their
-    concrete Kore syntax. The given indexed module must define the appropriate
-    hooks.
-
- -}
-asPattern
-    :: VerifiedModule declAttrs axiomAttrs
-    -- ^ indexed module defining hooks for builtin domains
-    -> Builtin
-    -- ^ domain value
-    -> Either (Error e) (CommonStepPattern Object)
-asPattern
-    indexedModule
-    DomainValue { domainValueSort, domainValueChild }
-  =
-    case domainValueChild of
-        Domain.BuiltinPattern _ ->
-            return (mkDomainValue domainValueSort domainValueChild)
-        Domain.BuiltinMap map' ->
-            Map.asPattern indexedModule domainValueSort <*> pure map'
-        Domain.BuiltinList list ->
-            List.asPattern indexedModule domainValueSort <*> pure list
-        Domain.BuiltinSet set ->
-            Set.asPattern indexedModule domainValueSort <*> pure set
-        Domain.BuiltinInteger int ->
-            return $ Int.asPattern domainValueSort int
-        Domain.BuiltinBool bool ->
-            return $ Bool.asPattern domainValueSort bool
-
-
 {- | Externalize all builtin domain values in the given pattern.
 
-    All builtins will be rendered using their concrete Kore syntax. The given
-    indexed module must define the appropriate hooks.
+All builtins will be rendered using their concrete Kore syntax.
 
-    See also: 'asPattern'
+See also: 'asPattern'
 
  -}
--- TODO (thomas.tuegel): Transform from Domain.Builtin to Domain.External.
+-- TODO (thomas.tuegel): Transform from Domain.Internal to Domain.External.
 externalizePattern
-    :: VerifiedModule declAttrs axiomAttrs
-    -- ^ indexed module defining hooks for builtin domains
-    -> CommonStepPattern Object
-    -> Either (Error e) (CommonStepPattern Object)
-externalizePattern indexedModule =
-    Recursive.fold externalizePatternWorker
+    ::  forall variable. Ord (variable Object)
+    =>  StepPattern Object variable
+    ->  StepPattern Object variable
+externalizePattern =
+    Recursive.unfold externalizePatternWorker
   where
-    externalizePatternWorker (ann :< pat) =
+    externalizePatternWorker
+        ::  StepPattern Object variable
+        ->  Base (StepPattern Object variable) (StepPattern Object variable)
+    externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
         case pat of
-            DomainValuePattern dv ->
-                asPattern indexedModule =<< sequence dv
-            _ -> Recursive.embed . (ann :<) <$> sequence pat
+            DomainValuePattern domain ->
+                case domain of
+                    Domain.BuiltinExternal _ -> original
+                    Domain.BuiltinMap  builtin ->
+                        Recursive.project (Map.asPattern builtin)
+                    Domain.BuiltinList builtin ->
+                        Recursive.project (List.asPattern builtin)
+                    Domain.BuiltinSet  builtin ->
+                        Recursive.project (Set.asPattern builtin)
+                    Domain.BuiltinInt  builtin ->
+                        Recursive.project (Int.asPattern builtin)
+                    Domain.BuiltinBool builtin ->
+                        Recursive.project (Bool.asPattern builtin)
+            _ -> original
 
 {- | Extract the meta-level pattern argument of a domain value.
 
@@ -246,9 +222,12 @@ asMetaPattern
     -> PurePattern Meta domain Variable (Annotation.Null Meta)
 asMetaPattern =
     \case
-        Domain.BuiltinPattern pat -> castVoidDomainValues pat
+        Domain.BuiltinExternal ext ->
+            castVoidDomainValues domainValueChild
+          where
+            Domain.External { domainValueChild } = ext
         Domain.BuiltinMap _ -> notImplementedInternal
         Domain.BuiltinList _ -> notImplementedInternal
         Domain.BuiltinSet _ -> notImplementedInternal
-        Domain.BuiltinInteger _ -> notImplementedInternal
+        Domain.BuiltinInt _ -> notImplementedInternal
         Domain.BuiltinBool _ -> notImplementedInternal

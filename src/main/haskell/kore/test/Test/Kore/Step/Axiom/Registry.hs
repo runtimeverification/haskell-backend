@@ -1,4 +1,4 @@
-module Test.Kore.Step.Function.Registry (test_functionRegistry) where
+module Test.Kore.Step.Axiom.Registry (test_functionRegistry) where
 
 import Test.Tasty
        ( TestTree )
@@ -18,6 +18,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( simplificationSymbol )
 import qualified Kore.Builtin as Builtin
@@ -29,17 +30,17 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.AxiomPatterns
-                 ( AxiomPatternAttributes, extractRewriteAxioms )
-import           Kore.Step.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Function.Data
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
+import           Kore.Step.Axiom.Data
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Function.Registry
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Axiom.Registry
+import           Kore.Step.AxiomPatterns
+                 ( extractRewriteAxioms )
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( CommonExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
@@ -268,7 +269,7 @@ testDef =
                 }
         ]
 
-testIndexedModule :: VerifiedModule StepperAttributes AxiomPatternAttributes
+testIndexedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 testIndexedModule =
     let
         attributesVerification = defaultAttributesVerification Proxy Proxy
@@ -295,7 +296,7 @@ testEvaluators
     :: BuiltinAndAxiomSimplifierMap Object
 testEvaluators =
     axiomPatternsToEvaluators
-    $ extractFunctionAxioms Object testIndexedModule
+    $ extractEqualityAxioms Object testIndexedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools testIndexedModule
@@ -347,10 +348,11 @@ test_functionRegistry =
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)
                 (Simplifier.create testMetadataTools testEvaluators)
+                testEvaluators
                 (makeExpandedPattern (mkApp sortS gHead []))
         let actual =
                 ExpandedPattern.term $ head
-                $ OrOfExpandedPattern.extractPatterns simplified
+                $ MultiOr.extractPatterns simplified
         assertEqual "" expect actual
     ]
   where

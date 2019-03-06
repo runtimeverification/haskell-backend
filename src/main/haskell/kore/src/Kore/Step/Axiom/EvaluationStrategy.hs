@@ -1,13 +1,13 @@
 {-|
-Module      : Kore.Step.Function.EvaluationStrategy
-Description : Various strategies for evaluating functions.
+Module      : Kore.Step.Axiom.EvaluationStrategy
+Description : Various strategies for axiom/builtin-based simplification.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Function.EvaluationStrategy
+module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
     , firstFullEvaluation
@@ -31,6 +31,16 @@ import           Kore.AST.Valid
                  ( pattern App_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Step.Axiom.Data
+                 ( AttemptedAxiom,
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import qualified Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.Matcher
+                 ( unificationWithAppMatchOnTop )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
@@ -40,24 +50,16 @@ import           Kore.Step.BaseStep
                  stepWithRemaindersForUnifier )
 import qualified Kore.Step.BaseStep as OrStepResult
                  ( OrStepResult (..) )
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
-import           Kore.Step.Function.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..) )
-import qualified Kore.Step.Function.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.Matcher
-                 ( unificationWithAppMatchOnTop )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( extractPatterns, isFalse, make )
 import           Kore.Step.Pattern
-                 ( StepPattern )
+                 ( StepPattern, asConcreteStepPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( fromPurePattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( extractPatterns, make )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( isFalse )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
@@ -68,6 +70,8 @@ import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+
+import qualified Kore.Proof.Value as Value
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -138,8 +142,10 @@ evaluateBuiltin
         )
     => BuiltinAndAxiomSimplifier level
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
@@ -148,6 +154,7 @@ evaluateBuiltin
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     patt
   = do
     (result, _proof) <-
@@ -155,14 +162,17 @@ evaluateBuiltin
             tools
             substitutionSimplifier
             simplifier
+            axiomIdToSimplifier
             patt
     case result of
         AttemptedAxiom.NotApplicable
           | isPattConcrete
-          , Just hook <- getAppHookString ->
+          , App_ appHead children <- patt
+          , Just hook <- getAppHookString appHead
+          , all isValue children ->
             error
                 (   "Expecting hook " ++ hook
-                ++  " to reduce concrete pattern\n\t"
+               ++  " to reduce concrete pattern\n\t"
                 ++ show patt
                 )
           | otherwise ->
@@ -170,13 +180,10 @@ evaluateBuiltin
         AttemptedAxiom.Applied _ -> return (result, SimplificationProof)
   where
     isPattConcrete = isJust (asConcretePurePattern patt)
-    appHead = case patt of
-        App_ head0 _children -> head0
-        _ -> error
-            ("Expected an application pattern, but got " ++ show patt ++ ".")
-    -- TODO(virgil): Send this from outside after replacing `These` as a
-    -- representation for application evaluators.
-    getAppHookString =
+    isValue pat = isJust $
+        Value.fromConcreteStepPattern tools =<< asConcreteStepPattern pat
+    -- TODO(virgil): Send this from outside.
+    getAppHookString appHead =
         Text.unpack <$> (getHook . hook . symAttributes tools) appHead
 
 applyFirstSimplifierThatWorks
@@ -194,12 +201,14 @@ applyFirstSimplifierThatWorks
     => [BuiltinAndAxiomSimplifier level]
     -> AcceptsMultipleResults
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
     return
         ( AttemptedAxiom.NotApplicable
         , SimplificationProof
@@ -210,10 +219,12 @@ applyFirstSimplifierThatWorks
     tools
     substitutionSimplifier
     simplifier
+    axiomIdToSimplifier
     patt
   = do
     (applicationResult, _proof) <-
-        evaluator tools substitutionSimplifier simplifier patt
+        evaluator
+            tools substitutionSimplifier simplifier axiomIdToSimplifier patt
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -221,7 +232,7 @@ applyFirstSimplifierThatWorks
             , remainders = orRemainders
             } -> do
                 when
-                    (length (OrOfExpandedPattern.extractPatterns orResults) > 1
+                    (length (MultiOr.extractPatterns orResults) > 1
                     && not (acceptsMultipleResults multipleResults)
                     )
                     -- We should only allow multiple simplification results
@@ -258,6 +269,7 @@ applyFirstSimplifierThatWorks
                 tools
                 substitutionSimplifier
                 simplifier
+                axiomIdToSimplifier
                 patt
 
 evaluateWithDefinitionAxioms
@@ -274,13 +286,20 @@ evaluateWithDefinitionAxioms
         )
     => [EqualityRule level Variable]
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 evaluateWithDefinitionAxioms
-    definitionRules tools substitutionSimplifier simplifier patt
+    definitionRules
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    patt
   = do
     let
         expanded :: ExpandedPattern level variable
@@ -294,18 +313,20 @@ evaluateWithDefinitionAxioms
             tools
             (UnificationProcedure unificationWithAppMatchOnTop)
             substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             (map unwrapEqualityRule definitionRules)
             expanded
 
     let OrStepResult { rewrittenPattern, remainder } = case resultOrError of
             Right (result, _proof) -> result
             Left _ -> OrStepResult
-                { rewrittenPattern = OrOfExpandedPattern.make []
-                , remainder = OrOfExpandedPattern.make [expanded]
+                { rewrittenPattern = MultiOr.make []
+                , remainder = MultiOr.make [expanded]
                 }
     let
         remainderResults :: [ExpandedPattern level variable]
-        remainderResults = OrOfExpandedPattern.extractPatterns remainder
+        remainderResults = MultiOr.extractPatterns remainder
 
         simplifyPredicate
             :: ExpandedPattern level variable
@@ -316,6 +337,7 @@ evaluateWithDefinitionAxioms
                 tools
                 substitutionSimplifier
                 simplifier
+                axiomIdToSimplifier
 
     simplifiedRemainderList <- mapM simplifyPredicate remainderResults
     let
@@ -325,7 +347,7 @@ evaluateWithDefinitionAxioms
     return
         ( AttemptedAxiom.Applied AttemptedAxiomResults
             { results = rewrittenPattern
-            , remainders = OrOfExpandedPattern.make simplifiedRemainderResults
+            , remainders = MultiOr.make simplifiedRemainderResults
             }
         , SimplificationProof
         )

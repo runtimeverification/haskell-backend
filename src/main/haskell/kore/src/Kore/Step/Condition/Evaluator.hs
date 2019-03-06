@@ -9,7 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Condition.Evaluator
     ( evaluate
-    , refutePredicate
+    , decidePredicate
     ) where
 
 import           Control.Applicative
@@ -26,10 +26,10 @@ import qualified Data.Text as Text
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
@@ -38,6 +38,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
 import           Kore.Step.TranslateSMT
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 import           SMT
                  ( MonadSMT, Result (..), SExpr (..), SMT )
 import qualified SMT
@@ -50,15 +52,18 @@ If the predicate is non-trivial (not @\\top{_}()@ or @\\bottom{_}()@),
  -}
 evaluate
     ::  forall level variable .
-        ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        ( FreshVariable variable
         , Given (MetadataTools level StepperAttributes)
+        , MetaOrObject level
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , Show (variable level)
+        , ShowMetaOrObject variable
+        , SortedVariable variable
+        , Unparse (variable level)
         )
-    => PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    => PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
     -> Predicate level variable
     -- ^ The condition to be evaluated.
@@ -77,10 +82,11 @@ evaluate
         case () of
             _ | OrOfExpandedPattern.isTrue simplified -> return (Just True)
               | OrOfExpandedPattern.isFalse simplified -> return (Just False)
-              | otherwise -> refutePredicate predicate
+              | otherwise -> decidePredicate predicate
     let simplified' =
             case refute of
                 Just False -> ExpandedPattern.bottom
+                Just True -> ExpandedPattern.top
                 _ -> OrOfExpandedPattern.toExpandedPattern simplified
         (subst, _proof) = asPredicateSubstitution simplified'
     return (subst, SimplificationProof)
@@ -113,7 +119,7 @@ asPredicateSubstitution
 The predicate is always sent to the external solver, even if it is trivial.
 
  -}
-refutePredicate
+decidePredicate
     :: forall level variable m.
        ( Given (MetadataTools level StepperAttributes)
        , MetaOrObject level
@@ -125,14 +131,22 @@ refutePredicate
        )
     => Predicate level variable
     -> m (Maybe Bool)
-refutePredicate korePredicate =
+decidePredicate korePredicate =
     case isMetaOrObject (Proxy :: Proxy level) of
         IsMeta   -> return Nothing
-        IsObject ->
-            SMT.inNewScope $ runMaybeT $ do
-                smtPredicate <- goTranslatePredicate korePredicate
-                SMT.assert smtPredicate
-                result <- SMT.check
+        IsObject -> SMT.inNewScope $ runMaybeT $ do
+                smtPredicate <-
+                    goTranslatePredicate korePredicate
+                -- smtPredicate' <-
+                --     goTranslatePredicate (makeNotPredicate korePredicate)
+                result <- SMT.inNewScope
+                    (SMT.assert smtPredicate >> SMT.check)
+                -- result' <- SMT.inNewScope
+                --     (SMT.assert smtPredicate' >> SMT.check)
+                -- case (result, result') of
+                --     (Unsat, _) -> return False
+                --     (_, Unsat) -> return True
+                --     _ -> empty
                 case result of
                     Unsat -> return False
                     _ -> empty

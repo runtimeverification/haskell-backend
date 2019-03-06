@@ -18,28 +18,28 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+import           Kore.Step.Axiom.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Axiom.EvaluationStrategy
+                 ( builtinEvaluation, definitionEvaluation,
+                 firstFullEvaluation, simplifierWithFallback )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
+import           Kore.Step.Axiom.UserDefined
+                 ( equalityRuleEvaluator )
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern,
                  Predicated (Predicated) )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), mapVariables )
-import           Kore.Step.Function.Data
-import           Kore.Step.Function.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Function.EvaluationStrategy
-                 ( builtinEvaluation, definitionEvaluation,
-                 firstFullEvaluation, simplifierWithFallback )
-import qualified Kore.Step.Function.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Function.UserDefined
-                 ( ruleFunctionEvaluator )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier, StepPatternSimplifier,
@@ -52,7 +52,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified SMT
 
@@ -147,7 +146,7 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
+                            (\_ _ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -614,7 +613,7 @@ axiomEvaluator
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
-        (ruleFunctionEvaluator (axiom left right makeTruePredicate))
+        (equalityRuleEvaluator (axiom left right makeTruePredicate))
 
 axiom
     :: CommonStepPattern Object
@@ -635,9 +634,9 @@ appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
     $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = OrOfExpandedPattern.make
+        { results = MultiOr.make
             [Test.Kore.Step.Function.Integration.mapVariables result]
-        , remainders = OrOfExpandedPattern.make []
+        , remainders = MultiOr.make []
         }
 
 mapVariables
@@ -655,12 +654,13 @@ mapVariables =
 mockEvaluator
     :: AttemptedAxiom level variable
     -> MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> StepPatternSimplifier level variable
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
     -> StepPattern level variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
-mockEvaluator evaluation _ _ _ _ =
+mockEvaluator evaluation _ _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 evaluate
@@ -676,22 +676,13 @@ evaluate metadataTools functionIdToEvaluator patt =
     $ Pattern.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
-    substitutionSimplifier :: PredicateSubstitutionSimplifier level Simplifier
+    substitutionSimplifier :: PredicateSubstitutionSimplifier level
     substitutionSimplifier =
-        PredicateSubstitution.create metadataTools patternSimplifier
+        PredicateSubstitution.create
+            metadataTools patternSimplifier functionIdToEvaluator
     patternSimplifier
-        ::  ( MetaOrObject level
-            , SortedVariable variable
-            , Ord (variable level)
-            , Show (variable level)
-            , Ord (variable Meta)
-            , Ord (variable Object)
-            , Show (variable Meta)
-            , Show (variable Object)
-            , Unparse (variable level)
-            , FreshVariable variable
-            )
-        => StepPatternSimplifier level variable
+        ::  ( MetaOrObject level )
+        => StepPatternSimplifier level
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
 mockMetadataTools :: MetadataTools Object StepperAttributes

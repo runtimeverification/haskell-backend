@@ -14,12 +14,13 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
-import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), isBottom, isTop )
-import           Kore.Step.OrOfExpandedPattern
-                 ( MultiOr (..), OrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, Predicated (..), isBottom, isTop )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Unification.Substitution
@@ -55,7 +56,7 @@ test_topTermAnnihilates =
             expectation
               | p1 == p2 && s1 == s2 = simplifiesTo
               | otherwise            = \initial _ -> doesNotSimplify initial
-        -- These cases are handled by OrOfExpandedPattern.filterOr, so they are
+        -- These cases are handled by MultiOr.filterOr, so they are
         -- not tested here.
         , any not [isTop t1, isTop p1, isTop s1]
         , any not [isTop t2, isTop p2, isTop s2]
@@ -240,9 +241,9 @@ becomes
   => (TestConfig, TestConfig)
   -> [ExpandedPattern Object Variable]
   -> TestTree
-becomes (orChild -> or1, orChild -> or2) (MultiOr . List.sort -> expected) =
+becomes (orChild -> or1, orChild -> or2) (MultiOr.make . List.sort -> expected) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr [or1]) (MultiOr [or2]))
+        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
         (expected, SimplificationProof)
         "or becomes"
         (stateIntention
@@ -259,8 +260,8 @@ simplifiesTo
     -> TestTree
 simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr [or1]) (MultiOr [or2]))
-        (MultiOr [simplified], SimplificationProof)
+        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
+        (MultiOr.make [simplified], SimplificationProof)
         "or does simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -275,8 +276,8 @@ doesNotSimplify
     -> TestTree
 doesNotSimplify (orChild -> or1, orChild -> or2) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr [or1]) (MultiOr [or2]))
-        (MultiOr $ List.sort [or1, or2], SimplificationProof)
+        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
+        (MultiOr.make $ List.sort [or1, or2], SimplificationProof)
         "or does not simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -312,4 +313,4 @@ orChild (term, predicate, substitution) =
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
     -> OrOfExpandedPattern Object Variable
-wrapInOrPattern tuple = MultiOr [orChild tuple]
+wrapInOrPattern tuple = MultiOr.make [orChild tuple]

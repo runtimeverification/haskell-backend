@@ -26,18 +26,19 @@ module Kore.Step.Step
     , runStrategy
     ) where
 
-import Control.Monad.Except
-       ( runExceptT )
-import Data.Foldable
-       ( toList )
-import Data.Maybe
-       ( mapMaybe )
-import Data.Semigroup
-       ( (<>) )
-import GHC.Stack
-       ( HasCallStack )
-import Numeric.Natural
-       ( Natural )
+import           Control.Monad.Except
+                 ( runExceptT )
+import           Data.Foldable
+                 ( toList )
+import           Data.Maybe
+                 ( mapMaybe )
+import           Data.Semigroup
+                 ( (<>) )
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import           GHC.Stack
+                 ( HasCallStack )
+import           Numeric.Natural
+                 ( Natural )
 
 import           Kore.AST.Common
                  ( Variable )
@@ -46,6 +47,8 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Logger as Log
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
@@ -54,19 +57,20 @@ import           Kore.Step.BaseStep
                  simplificationProof, stepWithRewriteRule )
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
-import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.OrOfExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( CommonStepPatternSimplifier,
-                 PredicateSubstitutionSimplifier, Simplifier )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -98,14 +102,16 @@ rewriteStep a =
 transitionRule
     :: (HasCallStack, MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level Simplifier
-    -> CommonStepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
     -> Prim (RewriteRule level Variable)
     -> (CommonExpandedPattern level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier [(CommonExpandedPattern level, StepProof level Variable)]
-transitionRule tools substitutionSimplifier simplifier =
+transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
@@ -114,18 +120,36 @@ transitionRule tools substitutionSimplifier simplifier =
         do
             (configs, proof') <-
                 ExpandedPattern.simplify
-                    tools substitutionSimplifier simplifier config
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    config
             let
                 proof'' = proof <> simplificationProof proof'
                 prove config' = (config', proof'')
                 -- Filter out ⊥ patterns
-                nonEmptyConfigs = ExpandedPattern.filterOr configs
+                nonEmptyConfigs = MultiOr.filterOr configs
             return (prove <$> toList nonEmptyConfigs)
-    transitionRewrite a (config, proof) = do
-        result <- runExceptT
-            $ stepWithRewriteRule tools substitutionSimplifier config a
+    transitionRewrite rule (config, proof) = do
+        result <-
+            runExceptT
+            $ stepWithRewriteRule
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                config
+                rule
         case result of
-            Left _ -> pure []
+            Left _ ->
+                (error . show . Pretty.vsep)
+                    [ "Could not apply the axiom:"
+                    , unparse rule
+                    , "to the configuration:"
+                    , unparse config
+                    , "Un-implemented unification case; aborting execution."
+                    ]
             Right results ->
                 Log.withLogScope "transitionRule" $
                     return $ mapMaybe (patternFromResult proof) results

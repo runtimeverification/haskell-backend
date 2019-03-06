@@ -11,12 +11,12 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.ExpandedPattern
+import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
-import           Kore.Step.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
-import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Simplification.Next
                  ( simplify )
 
@@ -28,7 +28,7 @@ test_nextSimplification :: [TestTree]
 test_nextSimplification =
     [ testCase "Next evaluates to Next"
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ Predicated
                     { term = mkNext Mock.a
                     , predicate = makeTruePredicate
@@ -49,7 +49,7 @@ test_nextSimplification =
         )
     , testCase "Next collapses or"
         (assertEqualWithExplanation ""
-            (OrOfExpandedPattern.make
+            (MultiOr.make
                 [ Predicated
                     { term =
                         mkNext
@@ -97,5 +97,5 @@ makeNext
 makeNext child =
     Next
         { nextSort = findSort child
-        , nextChild = OrOfExpandedPattern.make child
+        , nextChild = MultiOr.make child
         }

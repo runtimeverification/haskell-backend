@@ -40,6 +40,7 @@ module Kore.Attribute.Parser
     , Kore.Attribute.Parser.getStringLiteral
     ) where
 
+import qualified Control.Monad as Monad
 import           Control.Monad.Except
                  ( MonadError )
 import qualified Control.Monad.Except as Monad.Except
@@ -49,14 +50,26 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
+import qualified Data.Maybe as Maybe
+import           Data.Text
+                 ( Text )
 
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Kore
+import           Kore.AST.Kore hiding
+                 ( getStringLiteral )
 import           Kore.AST.Sentence
                  ( Attributes (Attributes) )
+import qualified Kore.Attribute.Hook.Hook as Attribute
+import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
+import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
+import qualified Kore.Attribute.Sort.Element as Attribute.Sort
+import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Error
                  ( Error, castError )
 import qualified Kore.Error
+import           SimpleSMT
+                 ( SExpr, readSExprs )
 
 data ParseError
 
@@ -217,8 +230,108 @@ getSymbolOrAlias kore =
 
 {- | Accept a string literal.
  -}
-getStringLiteral :: CommonKorePattern -> Parser (StringLiteral)
+getStringLiteral :: CommonKorePattern -> Parser StringLiteral
 getStringLiteral kore =
     case Recursive.project kore of
         _ :< UnifiedMetaPattern (StringLiteralPattern lit) -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
+
+instance ParseAttributes Attribute.Sort where
+    parseAttribute attr =
+        Attribute.lensHook (parseAttribute attr)
+        Monad.>=> Attribute.lensSmtlib (parseAttribute attr)
+        Monad.>=> Attribute.lensUnit (parseAttribute attr)
+        Monad.>=> Attribute.lensElement (parseAttribute attr)
+        Monad.>=> Attribute.lensConcat (parseAttribute attr)
+
+{- | Parse the @hook@ Kore attribute, if present.
+
+  It is a parse error if the @hook@ attribute is not given exactly one literal
+  string argument.
+
+  See also: 'hookAttribute'
+
+ -}
+instance ParseAttributes Attribute.Hook where
+    parseAttribute =
+        withApplication' $ \params args (Attribute.Hook hook) -> do
+            getZeroParams params
+            arg <- getOneArgument args
+            StringLiteral name <- getStringLiteral arg
+            Monad.unless (Maybe.isNothing hook) failDuplicate'
+            return Attribute.Hook { getHook = Just name }
+      where
+        withApplication' = withApplication Attribute.hookId
+        failDuplicate' = failDuplicate Attribute.hookId
+
+{- | Parse an 'SExpr' for the @smtlib@ attribute.
+
+An error is signalled in 'Parser' if we cannot parse the 'SExpr', or if the
+entire argument is not consumed by the parser.
+
+ -}
+parseSExpr
+    :: Text  -- ^ text representing an 'SExpr'
+    -> Parser SExpr
+parseSExpr syntax =
+    case readSExprs syntax of
+        [] -> noParse
+        sExpr : rest ->
+            case rest of
+                [] -> return sExpr
+                _ -> incompleteParse
+  where
+    noParse = Kore.Error.koreFail "failed to parse S-expression"
+    incompleteParse = Kore.Error.koreFail "failed to parse entire argument"
+
+instance ParseAttributes Attribute.Smtlib where
+    parseAttribute =
+        withApplication' $ \params args Attribute.Smtlib { getSmtlib } -> do
+            getZeroParams params
+            arg <- getOneArgument args
+            StringLiteral syntax <- getStringLiteral arg
+            sExpr <- parseSExpr syntax
+            Monad.unless (Maybe.isNothing getSmtlib) failDuplicate'
+            return Attribute.Smtlib { getSmtlib = Just sExpr }
+      where
+        withApplication' = withApplication Attribute.smtlibId
+        failDuplicate' = failDuplicate Attribute.smtlibId
+
+instance ParseAttributes Attribute.Sort.Unit where
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Attribute.Sort.Unit { getUnit }
+          | Just _ <- getUnit = failDuplicate'
+          | otherwise = do
+            getZeroParams params
+            arg <- getOneArgument args
+            symbol <- getSymbolOrAlias arg
+            return Attribute.Sort.Unit { getUnit = Just symbol }
+        withApplication' = withApplication Attribute.Sort.unitId
+        failDuplicate' = failDuplicate Attribute.Sort.unitId
+
+instance ParseAttributes Attribute.Sort.Element where
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Attribute.Sort.Element { getElement }
+          | Just _ <- getElement = failDuplicate'
+          | otherwise = do
+            getZeroParams params
+            arg <- getOneArgument args
+            symbol <- getSymbolOrAlias arg
+            return Attribute.Sort.Element { getElement = Just symbol }
+        withApplication' = withApplication Attribute.Sort.elementId
+        failDuplicate' = failDuplicate Attribute.Sort.elementId
+
+instance ParseAttributes Attribute.Sort.Concat where
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Attribute.Sort.Concat { getConcat }
+          | Just _ <- getConcat = failDuplicate'
+          | otherwise = do
+            getZeroParams params
+            arg <- getOneArgument args
+            symbol <- getSymbolOrAlias arg
+            return Attribute.Sort.Concat { getConcat = Just symbol }
+        withApplication' = withApplication Attribute.Sort.concatId
+        failDuplicate' = failDuplicate Attribute.Sort.concatId
