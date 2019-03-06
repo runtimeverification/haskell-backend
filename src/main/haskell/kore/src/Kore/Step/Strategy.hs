@@ -38,6 +38,8 @@ module Kore.Step.Strategy
     , pickStar
     , pickPlus
     , assert
+    , executionHistoryStep
+    , emptyExecutionGraph
     ) where
 
 import           Data.Foldable
@@ -283,30 +285,32 @@ constructExecutionHistory transit instrs0 config0 =
 
 -- | TODO: Docs. Does not do state merging at all yet.
 executionHistoryStep
-    :: forall m config
+    :: forall m config prim
     .  Monad m
     => Hashable config
     => Show config
-    => (config -> m [config])
+    => (prim -> config -> m [config])
     -- ^ state stepper
+    -> Strategy prim
+    -- ^ Primitive strategy
     -> ExecutionGraph config
     -- ^ execution graph so far
     -> Graph.Node
     -- ^ current "selected" node
     -> m (ExecutionGraph config)
     -- ^ graph with one more step executed for the selected node
-executionHistoryStep transit eg@ExecutionGraph { root, graph, history } node
+executionHistoryStep transit prim eg@ExecutionGraph { root, graph, history } node
     | nodeIsNotLeaf = error "Node has already been evaluated"
     | otherwise = case configNode0 of
         Nothing -> error "ExecutionGraph not setup properly; node does not exist"
         Just configNode@ConfigNode { config } -> do
-            configs <- transit config
+            configs <- transitionRule transit prim config
             let
                 nodes   = mkConfigNodes configNode <$> configs
             pure . toGraph $ history ++ [nodes]
   where
     nodeIsNotLeaf :: Bool
-    nodeIsNotLeaf = length (Graph.out graph node) == 0
+    nodeIsNotLeaf = Graph.outdeg graph node > 0
 
     configNode0 :: Maybe (ConfigNode config)
     configNode0 = asum $ find ((== node) . nodeId) <$> history

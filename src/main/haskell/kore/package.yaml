@@ -51,6 +51,7 @@ dependencies:
   - parser-combinators
   - prettyprinter
   - process
+  - profunctors
   - recursion-schemes
   - reflection
   - template-haskell

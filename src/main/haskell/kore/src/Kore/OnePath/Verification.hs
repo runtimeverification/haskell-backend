@@ -13,6 +13,7 @@ module Kore.OnePath.Verification
     , Claim (..)
     , defaultStrategy
     , verify
+    , verifyClaimStep
     ) where
 
 import Control.Monad.IO.Class
@@ -27,9 +28,14 @@ import Numeric.Natural
        ( Natural )
 
 import qualified Control.Monad.Trans as Monad.Trans
+import           Data.Coerce
+                 ( coerce )
+import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
+import           Data.Profunctor
+                 ( dimap )
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
@@ -64,7 +70,11 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
+                 ( executionHistoryStep )
+import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
+import           Kore.Step.Strategy
+                 ( ExecutionGraph (..) )
 
 {- | Wrapper for a rewrite rule that should be used as a claim.
 -}
@@ -218,9 +228,6 @@ verifyClaim
         StrategyPattern.Stuck p : _ -> throwE p
         StrategyPattern.Bottom : _ -> error "Unexpected bottom pattern."
   where
-    liftIO' :: IO () -> ExceptT (CommonExpandedPattern level) Simplifier ()
-    liftIO' = liftIO
-
     transitionRule'
         :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
         -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
@@ -230,3 +237,76 @@ verifyClaim
             metadataTools
             substitutionSimplifier
             simplifier
+
+-- | TODO: Docs.
+type Configuration level = StrategyPattern (CommonExpandedPattern level)
+
+
+-- | TODO: Docs.
+verifyClaimStep
+    :: forall level
+    .  MetaOrObject level
+    => MetadataTools level StepperAttributes
+    -> StepPatternSimplifier level Variable
+    -> PredicateSubstitutionSimplifier level Simplifier
+    -> Claim level
+    -> [Claim level]
+    -> [Axiom level]
+    -> ExecutionGraph (Configuration level)
+    -> Graph.Node
+    -> Simplifier (ExecutionGraph (Configuration level))
+verifyClaimStep
+    tools
+    simplifier
+    predicateSimplifier
+    target
+    claims
+    axioms
+    eg@ExecutionGraph { root, graph }
+    node
+  = executionHistoryStep
+        transitionRule'
+        strategy'
+        eg
+        node
+
+  where
+    transitionRule'
+        :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+        -> StrategyPattern (CommonExpandedPattern level)
+        -> Simplifier [StrategyPattern (CommonExpandedPattern level)]
+    transitionRule' =
+        \prim ->
+            dimap
+                constProof
+                ((fmap . fmap) fst)
+                $ OnePath.transitionRule
+                    tools
+                    predicateSimplifier
+                    simplifier
+                    prim
+
+    strategy' :: Strategy (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
+    strategy'
+        | isRoot = onePathFirstStep targetPattern rewrites
+        | otherwise = onePathFollowupStep targetPattern (unwrapClaim <$> claims) rewrites
+
+    rewrites :: [RewriteRule level Variable]
+    rewrites = coerce <$> axioms
+
+    unwrapClaim :: Claim level -> RewriteRule level Variable
+    unwrapClaim (Claim { rule }) = rule
+
+    targetPattern :: CommonExpandedPattern level
+    targetPattern =
+        ExpandedPattern.fromPurePattern
+            . right
+            . coerce
+            . unwrapClaim
+            $ target
+
+    isRoot :: Bool
+    isRoot = node == root
+
+    constProof :: forall a. a -> (a, StepProof level Variable)
+    constProof a = (a, mempty)
