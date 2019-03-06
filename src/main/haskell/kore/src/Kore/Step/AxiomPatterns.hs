@@ -20,7 +20,7 @@ module Kore.Step.AxiomPatterns
     , extractRewriteAxioms
     , extractRewriteClaims
     , mkRewriteAxiom
-    , mkFunctionAxiom
+    , mkEqualityAxiom
     , refreshRulePattern
     , freeVariables
     , Kore.Step.AxiomPatterns.mapVariables
@@ -277,14 +277,12 @@ mkRewriteAxiom lhs rhs requires =
 The requires clause must be a predicate, i.e. it can occur in any sort.
 
  -}
--- TODO(virgil): Rename the above since it applies to all sorts of axioms,
--- not only to function-related ones.
-mkFunctionAxiom
+mkEqualityAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
-mkFunctionAxiom lhs rhs requires =
+mkEqualityAxiom lhs rhs requires =
     (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom [sortVariableR])
         (case requires of
             Just requires' ->
