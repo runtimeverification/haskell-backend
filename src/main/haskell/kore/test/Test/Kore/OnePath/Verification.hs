@@ -37,7 +37,10 @@ import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Representation.ExpandedPattern as Predicated
                  ( Predicated (..) )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, fromPurePattern )
+                 ( fromPurePattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -63,7 +66,7 @@ test_onePathVerification =
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
         assertEqualWithExplanation ""
-            (Left $ ExpandedPattern.fromPurePattern Mock.a)
+            (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.a])
             actual
     , testCase "Runs one step" $ do
         -- Axiom: a => b
@@ -80,7 +83,7 @@ test_onePathVerification =
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
         assertEqualWithExplanation ""
-            (Left $ ExpandedPattern.fromPurePattern Mock.b)
+            (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.b])
             actual
     , testCase "Verifies one claim" $ do
         -- Axiom: a => b
@@ -105,7 +108,7 @@ test_onePathVerification =
             , simpleClaim Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            (Left $ ExpandedPattern.fromPurePattern Mock.a)
+            (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.a])
             actual
     , testCase "Verifies one claim multiple steps" $ do
         -- Axiom: a => b
@@ -171,12 +174,15 @@ test_onePathVerification =
             ]
             [simpleClaim (Mock.functionalConstr10 (mkVar Mock.x)) Mock.b]
         assertEqualWithExplanation ""
-            (Left Predicated
-                { term = Mock.functionalConstr11 (mkVar Mock.x)
-                , predicate =
-                    makeNotPredicate (makeEqualsPredicate (mkVar Mock.x) Mock.a)
-                , substitution = mempty
-                }
+            (Left $ MultiOr.make
+                [ Predicated
+                    { term = Mock.functionalConstr11 (mkVar Mock.x)
+                    , predicate =
+                        makeNotPredicate
+                            (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                    , substitution = mempty
+                    }
+                ]
             )
             actual
     , testCase "Verifies two claims" $ do
@@ -217,7 +223,7 @@ test_onePathVerification =
             , simpleClaim Mock.d Mock.e
             ]
         assertEqualWithExplanation ""
-            (Left $ ExpandedPattern.fromPurePattern Mock.c)
+            (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.c])
             actual
     , testCase "fails second of two claims" $ do
         -- Axiom: a => b
@@ -237,7 +243,7 @@ test_onePathVerification =
             , simpleClaim Mock.d Mock.c
             ]
         assertEqualWithExplanation ""
-            (Left $ ExpandedPattern.fromPurePattern Mock.e)
+            (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.e])
             actual
     , testCase "second proves first but fails" $ do
         -- Axiom: a => b
@@ -255,7 +261,7 @@ test_onePathVerification =
             , simpleClaim Mock.b Mock.c
             ]
         assertEqualWithExplanation ""
-            (Left $ ExpandedPattern.fromPurePattern Mock.b)
+            (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.b])
             actual
     , testCase "first proves second but fails" $ do
         -- Axiom: a => b
@@ -273,7 +279,7 @@ test_onePathVerification =
             , simpleClaim Mock.a Mock.d
             ]
         assertEqualWithExplanation ""
-            (Left $ ExpandedPattern.fromPurePattern Mock.b)
+            (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.b])
             actual
     , testCase "trusted second proves first" $ do
         -- Axiom: a => b
@@ -332,7 +338,7 @@ test_onePathVerification =
             , simpleClaim Mock.b Mock.e
             ]
         assertEqualWithExplanation ""
-            (Left $ ExpandedPattern.fromPurePattern Mock.e)
+            (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.e])
             actual
     ]
   where
@@ -390,7 +396,7 @@ runVerification
     -> Limit Natural
     -> [OnePath.Axiom level]
     -> [OnePath.Claim level]
-    -> IO (Either (CommonExpandedPattern level) ())
+    -> IO (Either (CommonOrOfExpandedPattern level) ())
 runVerification
     metadataTools
     stepLimit
