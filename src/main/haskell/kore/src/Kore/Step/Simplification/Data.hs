@@ -74,7 +74,31 @@ data SimplificationProof level = SimplificationProof
 
 -- * Branching
 
--- | 'BranchT' extends any 'Monad' with disjoint branches.
+{- | 'BranchT' extends any 'Monad' with disjoint branches.
+
+Broadly, one goal of simplification is to promote 'Or' (disjunction) to the top
+level. Many @Simplifier@s return a 'MultiOr' for this reason; we can think of
+this as external branching. @Simplifier@ also allows internal branching through
+'Alternative'. Branches are created with '<|>':
+@
+let
+    simplifier1 :: BranchT Simplifier a
+    simplifier2 :: BranchT Simplifier a
+in
+    simplifier1 <|> simplifier2  -- A 'Simplifier' with two internal branches.
+@
+
+Branches are pruned with 'empty':
+@
+simplify :: BranchT Simplifier a
+simplify = do
+    unless condition empty
+    continue  -- This simplifier would not be reached if "condition" is 'False'.
+@
+
+Use 'scatter' and 'gather' to translate between internal and external branches.
+
+-}
 newtype BranchT m a =
     -- Pay no attention to the ListT behind the curtain!
     BranchT { runBranchT :: ListT m a }
@@ -98,6 +122,60 @@ deriving instance MonadState s m => MonadState s (BranchT m)
 getBranches :: Applicative m => BranchT m a -> m [a]
 getBranches (BranchT as) = toListM as
 
+{- | Collect results from many simplification branches into one result.
+
+@gather@ collects and merges the results of the internal branches on top and the
+results of the integrated branches below and returns all the results together in
+one branch.
+
+Examples:
+
+@
+gather (pure a <|> pure b) === pure ('OrOfExpandedPattern.make' [a, b])
+@
+
+@
+gather empty === pure ('OrOfExpandedPattern.make' [])
+@
+
+See also: 'scatter'
+
+ -}
+gather :: Applicative m => BranchT m a -> m (MultiOr a)
+gather simpl = OrOfExpandedPattern.MultiOr <$> getBranches simpl
+
+{- | Collect results from many simplification branches into one result.
+
+@gatherAll@ collects and merges the results of the internal branches on top and
+the results of the integrated branches below and returns all the results
+together in one branch.
+
+See also: 'scatter', 'gather'
+
+ -}
+gatherAll :: Applicative m => BranchT m (MultiOr a) -> m (MultiOr a)
+gatherAll simpl = Monad.join <$> gather simpl
+
+{- | Disperse results into many simplification branches.
+
+Examples:
+
+@
+scatter ('OrOfExpandedPattern.make' [a, b]) === (pure a <|> pure b)
+@
+
+@
+scatter ('OrOfExpandedPattern.make' []) === empty
+@
+
+See also: 'gather'
+
+ -}
+scatter
+    :: MultiOr a
+    -> BranchT m a
+scatter ors = Foldable.asum (pure <$> ors)
+
 -- * Simplifier
 
 data Environment = Environment
@@ -107,27 +185,6 @@ data Environment = Environment
     }
 
 {- | @Simplifier@ represents a simplification action.
-
-Broadly, the goal of simplification is to promote 'Or' (disjunction) to the top
-level. Many @Simplifier@s return a 'MultiOr' for this reason; we can think of
-this as external branching. @Simplifier@ also allows internal branching through
-'Alternative'. Branches are created with '<|>':
-@
-let
-    simplifier1 :: Simplifier a
-    simplifier2 :: Simplifier a
-in
-    simplifier1 <|> simplifier2  -- A 'Simplifier' with two internal branches.
-@
-
-Branches are pruned with 'empty':
-@
-do
-    unless condition empty
-    continue  -- This simplifier would not be reached if "condition" is 'False'.
-@
-
-Use 'scatter' and 'gather' to translate between internal and external branches.
 
 A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 
@@ -232,60 +289,6 @@ evalSimplifier
 evalSimplifier logger repl (Simplifier simpl) =
     withSolver' $ \solver ->
         runReaderT simpl (Environment solver logger repl)
-
-{- | Collect results from many simplification branches into one result.
-
-@gather@ collects and merges the results of the internal branches on top and the
-results of the integrated branches below and returns all the results together in
-one branch.
-
-Examples:
-
-@
-gather (pure a <|> pure b) === pure ('OrOfExpandedPattern.make' [a, b])
-@
-
-@
-gather empty === pure ('OrOfExpandedPattern.make' [])
-@
-
-See also: 'scatter'
-
- -}
-gather :: BranchT Simplifier a -> Simplifier (MultiOr a)
-gather simpl = OrOfExpandedPattern.MultiOr <$> getBranches simpl
-
-{- | Collect results from many simplification branches into one result.
-
-@gatherAll@ collects and merges the results of the internal branches on top and
-the results of the integrated branches below and returns all the results
-together in one branch.
-
-See also: 'scatter', 'gather'
-
- -}
-gatherAll :: BranchT Simplifier (MultiOr a) -> Simplifier (MultiOr a)
-gatherAll simpl = Monad.join <$> gather simpl
-
-{- | Disperse results into many simplification branches.
-
-Examples:
-
-@
-scatter ('OrOfExpandedPattern.make' [a, b]) === (pure a <|> pure b)
-@
-
-@
-scatter ('OrOfExpandedPattern.make' []) === empty
-@
-
-See also: 'gather'
-
- -}
-scatter
-    :: MultiOr a
-    -> BranchT Simplifier a
-scatter ors = Foldable.asum (pure <$> ors)
 
 -- * Implementation
 
