@@ -30,6 +30,29 @@ Note that none of its basic instances—e.g. 'Functor', 'Applicative',
 'Alternative', 'Monad'—rely on the transformed type @m@ because @ListT@ takes
 those behaviors from the instances for lists.
 
+'empty' is related to the empty list:
+@
+toListM empty === return []
+@
+
+'pure' (or 'return') constructs singleton lists:
+@
+toListM (pure a) === return [a]
+@
+
+'<|>' fills the role of '<>' or '++':
+@
+toListM (pure a <|> pure b) === return [a, b]
+@
+
+If we think of '<|>' an addition, then '<*>' is multiplication, and distributes
+as such:
+@
+toListM ((pure f <|> pure g) <*> (pure a <|> pure b))
+===
+return [f a, f b, g a, g b]
+@
+
  -}
 newtype ListT m a =
     ListT { getListT :: forall r. (a -> m r -> m r) -> m r -> m r }
