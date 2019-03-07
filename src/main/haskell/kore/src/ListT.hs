@@ -5,7 +5,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 
-This module implements the codensity formulation of the list monad transformer.
+This module implements the list monad transformer.
 
 -}
 
@@ -24,7 +24,7 @@ import Control.Monad.Trans.Class
 import Data.Foldable
 import Data.Typeable
 
-{- | The codensity formulation of the list monad transformer.
+{- | The list monad transformer written as a right-associative fold.
 
 Note that none of its basic instances—e.g. 'Functor', 'Applicative',
 'Alternative', 'Monad'—rely on the transformed type @m@ because @ListT@ takes
