@@ -18,13 +18,13 @@ module Kore.Step.Substitution
     , normalize
     ) where
 
-import qualified Control.Comonad as Comonad
 import           Control.Monad.Except
                  ( ExceptT, lift, runExceptT, withExceptT )
 import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Trans.Class
                  ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
+import qualified Control.Monad.Trans.Except as Except
 import qualified Data.Foldable as Foldable
 import           GHC.Stack
                  ( HasCallStack )
@@ -32,7 +32,6 @@ import           GHC.Stack
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -99,13 +98,7 @@ normalize
             axiomIdToSimplifier
             Predicated { term = (), predicate, substitution }
     case result of
-        Right normal
-          | ExpandedPattern.isBottom normal ->
-            return (ExpandedPattern.bottomOf patternSort)
-          | otherwise ->
-            return normal { term }
-          where
-            Valid { patternSort } = Comonad.extract term
+        Right normal -> return normal { term }
         Left _ ->
             return Predicated
                 { term
@@ -480,48 +473,24 @@ normalizeSubstitutionAfterMerge
           )
 normalizeSubstitutionAfterMerge
     tools
-    wrappedSimplifier@(PredicateSubstitutionSimplifier substitutionSimplifier)
+    substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    Predicated { predicate, substitution }
+    predicateSubstitution
   = do
-    (Predicated
-            { predicate = duplicationPredicate
-            , substitution = duplicationSubstitution
-            }
-        , proof
-        ) <-
-            normalizeSubstitutionDuplication' substitution
-
-    Predicated
-        { predicate = normalizePredicate
-        , substitution = normalizedSubstitution
-        } <- normalizeSubstitution' duplicationSubstitution
-
-    let
-        mergedPredicate =
-            makeMultipleAndPredicate
-                [predicate, duplicationPredicate, normalizePredicate]
-
     results <-
-        lift $ gather $ substitutionSimplifier
-            Predicated
-                { term = ()
-                , predicate = mergedPredicate
-                , substitution = normalizedSubstitution
-                }
-
-    case Foldable.toList results of
-        [] -> return (ExpandedPattern.bottomPredicate, proof)
-        [result] -> return (result, proof)
-        _ -> error "Not implemented: Branching during normalization"
-  where
-    normalizeSubstitutionDuplication' =
-        normalizeSubstitutionDuplication
+        lift $ getBranches $ runExceptT
+        $ normalizeWorker
             tools
-            wrappedSimplifier
+            substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-    normalizeSubstitution' =
-        withExceptT substitutionToUnifyOrSubError
-            . normalizeSubstitution tools
+            predicateSubstitution
+    case results of
+        [] -> return
+            ( ExpandedPattern.bottomPredicate
+            , EmptyUnificationProof
+            )
+        [Right normal] -> return (normal, EmptyUnificationProof)
+        [Left e] -> Except.throwE e
+        _ -> error "Not implemented: branching during normalization"
