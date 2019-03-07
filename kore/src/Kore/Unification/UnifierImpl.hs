@@ -10,18 +10,18 @@ Portability : portable
 -}
 module Kore.Unification.UnifierImpl where
 
-import           Control.Arrow
-                 ( (&&&) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad
                  ( foldM )
 import           Control.Monad.Except
-                 ( ExceptT (..), throwError )
+                 ( ExceptT (..) )
 import           Data.Function
                  ( on )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.List
                  ( foldl', groupBy, partition, sortBy )
+import           Data.List.NonEmpty
+                 ( NonEmpty (..) )
 
 import           Kore.AST.Pure
 import           Kore.IndexedModule.MetadataTools
@@ -107,10 +107,9 @@ simplifyAnds
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> [StepPattern level variable]
+    -> NonEmpty (StepPattern level variable)
     -> unifier Simplifier
         (ExpandedPattern level variable, UnificationProof level variable)
-simplifyAnds _ _ _ _ [] = throwError (UnificationError UnsupportedPatterns)
 simplifyAnds
     tools
     substitutionSimplifier
@@ -118,10 +117,7 @@ simplifyAnds
     axiomIdToSimplifier
     patterns
   = do
-    result <- foldM
-        simplifyAnds'
-        ExpandedPattern.top
-        patterns
+    result <- foldM simplifyAnds' ExpandedPattern.top patterns
     if Predicate.isFalse . ExpandedPattern.predicate $ result
         then return ( ExpandedPattern.bottom, EmptyUnificationProof )
         else return ( result, EmptyUnificationProof )
@@ -158,10 +154,11 @@ simplifyAnds
                         [ ExpandedPattern.substitution result
                         , ExpandedPattern.substitution intermediate
                         ]
-                return $ ExpandedPattern.Predicated
-                    ( ExpandedPattern.term result )
-                    ( Predicated.predicate predSubst )
-                    ( Predicated.substitution predSubst )
+                return ExpandedPattern.Predicated
+                    { term = ExpandedPattern.term result
+                    , predicate = Predicated.predicate predSubst
+                    , substitution = Predicated.substitution predSubst
+                    }
 
 
 groupSubstitutionByVariable
@@ -195,15 +192,13 @@ solveGroupedSubstitution
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> variable level
-    -> [StepPattern level variable]
+    -> NonEmpty (StepPattern level variable)
     -> ExceptT
         ( UnificationOrSubstitutionError level variable )
         Simplifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
-solveGroupedSubstitution _ _ _ _ _ [] =
-    throwError (UnificationError UnsupportedPatterns)
 solveGroupedSubstitution
     tools
     substitutionSimplifier
@@ -318,8 +313,12 @@ normalizeSubstitutionDuplication
         :: [[(variable level, StepPattern level variable)]]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-    varAndSubstList :: [(variable level, [StepPattern level variable])]
-    varAndSubstList = fmap (fst . head &&& fmap snd) nonSingletonSubstitutions
+    varAndSubstList :: [(variable level, NonEmpty (StepPattern level variable))]
+    varAndSubstList =
+        nonSingletonSubstitutions >>= \case
+            [] -> []
+            ((x, y) : ys) -> [(x, y :| (snd <$> ys))]
+
 
 mergePredicateSubstitutionList
     :: ( MetaOrObject level
