@@ -70,7 +70,8 @@ At the opposite end of the spectrum, `⊥` is always a unifier, but we usually
 want something better, since we do want to apply the axiom if possible.
 
 So we search for a unifier which lies somewhere between `⊥` and the most
-general unifier. For this, we match the structure of the two terms as much as possible, identifying identical node types (e.g. both nodes are `application`s
+general unifier. For this, we match the structure of the two terms as much as
+possible, identifying identical node types (e.g. both nodes are `application`s
 of the same head, both nodes are `and` and so on), and we have a few special
 cases for handling different node types (e.g. a variable vs a functional term
 becomes a substitution).
@@ -79,12 +80,30 @@ This unifier consists of a predicate `Q(X, Z)` and a substitution `S(X,Z)`.
 But, since a substitution is a predicate, we can say that we end up with a
 predicate `P(X, Z)=Q(X, Z) ∧ S(X, Z)`.
 
+As an example, if we try to apply the axiom
+`if (true, z1, Z2)` to `if(x<2, 10, 20)`, we will get
+`S(x, z1, z2) = [z1=10, z2=20]` and `Q(X, Y) = (true == x<2)`.
+
 Now, when we generalize this to random formulas, `φ(X)` and `α(Z)`, we still
 get a predicate `P(X, Z)` as a unifier, with `⊥ ⊆ P(X, Z) ⊆ ⌈φ(X) ∧ α(Z)⌉`.
 If, say, we have terms `t(X)` and `s(Z)` with predicates `Q(X)` and `R(Z)`
 such that `φ(X) = t(X) ∧ Q(X)` and `α(Z) = s(Z) ∧ R(Z)`, and `P'(X, Z)` is
 a unifier for `t(X)` and `s(Z)`, then we can take `P(X, Z)` to be
 `Q(X) ∧ P'(X, Z) ∧ R(Z)`.
+
+As an example, if we try to apply `sgn(z) = -1 if z < 0`
+(so `α(z) = sgn(z) ∧ z<0`) to `φ(x) = sgn(x+1) ∧ x>-5`, we would have:
+```
+t(x) = sgn(x+1)
+s(z) = sgn(z)
+Q(x) = x>-5
+R(z) = z<0
+```
+And we would compute:
+```
+P'(x, z) = S(x, z) = [z=x+1]
+P(x, z) = x>-5 ∧ z<0 ∧ [z=x+1]
+```
 
 ### Removing exists
 
@@ -104,6 +123,34 @@ variables in `Z`, then, for all formulas `ψ(Z)`, there is another formula
   -- ∃ Z . Z = a is always top if a is functional, and we assume that
   -- patterns used in substitutions are relatively functional.
   = P'(X) ∧ ψ'(X)
+```
+
+Continuing the `sgn(x+1)` example above, if
+```
+P(x, z) = x>-5 ∧ z<0 ∧ [z=x+1]
+```
+then we would have
+```
+P'(x) = x>-5 ∧ z<0
+ψ'(x) = ψ(x+1)
+```
+So we can do this:
+```
+∃ z . P(x, z) ∧ ψ(z)
+
+  -- term expansion
+  = ∃ z . x>-5 ∧ z<0 ∧ [z=x+1] ∧ ψ(z)
+
+  -- apply substitution
+  = ∃ z . x>-5 ∧ x+1<0 ∧ [z=x+1] ∧ ψ(x+1)
+
+  -- ∃ Z . a ∧ b = a ∧ ∃ Z . b if Z does not occur free in a
+  = x>-5 ∧ x+1<0 ∧ ψ(x+1) ∧ (∃ z . [z=x+1])
+
+  -- (∃ z . [z=x+1]) is top
+  = x>-5 ∧ x+1<0 ∧ ψ(x+1)
+
+  = P'(x) ∧ ψ'(x)
 ```
 
 Problem
