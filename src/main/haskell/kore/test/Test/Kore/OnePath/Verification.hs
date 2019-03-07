@@ -85,6 +85,20 @@ test_onePathVerification =
         assertEqualWithExplanation ""
             (Left $ MultiOr.make [ExpandedPattern.fromPurePattern Mock.b])
             actual
+    , testCase "Returns multiple results" $ do
+        -- Axiom: a => b or c
+        -- Claim: a => d
+        -- Expected: error [b, c]
+        actual <- runVerification
+            metadataTools
+            (Limit 1)
+            [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+            [simpleClaim Mock.a Mock.d]
+        assertEqualWithExplanation ""
+            (Left . MultiOr.make $
+                ExpandedPattern.fromPurePattern <$> [Mock.b, Mock.c]
+            )
+            actual
     , testCase "Verifies one claim" $ do
         -- Axiom: a => b
         -- Claim: a => b
