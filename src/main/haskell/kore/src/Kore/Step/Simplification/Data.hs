@@ -78,14 +78,14 @@ data SimplificationProof level = SimplificationProof
 
 Broadly, one goal of simplification is to promote 'Or' (disjunction) to the top
 level. Many @Simplifier@s return a 'MultiOr' for this reason; we can think of
-this as external branching. @Simplifier@ also allows internal branching through
+this as external branching. @BranchT Simplifier@ also allows branching through
 'Alternative'. Branches are created with '<|>':
 @
 let
     simplifier1 :: BranchT Simplifier a
     simplifier2 :: BranchT Simplifier a
 in
-    simplifier1 <|> simplifier2  -- A 'Simplifier' with two internal branches.
+    simplifier1 <|> simplifier2  -- A 'BranchT Simplifier' with two branches.
 @
 
 Branches are pruned with 'empty':
@@ -96,7 +96,7 @@ simplify = do
     continue  -- This simplifier would not be reached if "condition" is 'False'.
 @
 
-Use 'scatter' and 'gather' to translate between internal and external branches.
+Use 'scatter' and 'gather' to translate between the two forms of branches.
 
 -}
 newtype BranchT m a =
