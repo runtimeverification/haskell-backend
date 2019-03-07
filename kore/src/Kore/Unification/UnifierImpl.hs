@@ -35,8 +35,8 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..), Simplifier,
-                 StepPatternSimplifier, emptyPredicateSubstitutionSimplifier )
+                 ( Simplifier, StepPatternSimplifier,
+                 emptyPredicateSubstitutionSimplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
@@ -104,7 +104,6 @@ simplifyAnds
         , unifier ~ ExceptT (UnificationOrSubstitutionError level variable)
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> NonEmpty (StepPattern level variable)
@@ -112,7 +111,6 @@ simplifyAnds
         (ExpandedPattern level variable, UnificationProof level variable)
 simplifyAnds
     tools
-    _
     simplifier
     axiomIdToSimplifier
     patterns
@@ -188,7 +186,6 @@ solveGroupedSubstitution
        , FreshVariable variable
        )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> variable level
@@ -201,7 +198,6 @@ solveGroupedSubstitution
         )
 solveGroupedSubstitution
     tools
-    substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     var
@@ -210,7 +206,6 @@ solveGroupedSubstitution
     (predSubst, proof) <-
         simplifyAnds
             tools
-            substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             patterns
@@ -246,7 +241,6 @@ normalizeSubstitutionDuplication
         , FreshVariable variable
         )
     => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> Substitution level variable
@@ -258,7 +252,6 @@ normalizeSubstitutionDuplication
         )
 normalizeSubstitutionDuplication
     tools
-    substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     subst
@@ -275,7 +268,6 @@ normalizeSubstitutionDuplication
                     (uncurry
                         $ solveGroupedSubstitution
                             tools
-                            substitutionSimplifier
                             simplifier
                             axiomIdToSimplifier
                     )
@@ -283,7 +275,6 @@ normalizeSubstitutionDuplication
             (finalSubst, proof) <-
                 normalizeSubstitutionDuplication
                     tools
-                    substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
                     (  Substitution.wrap (concat singletonSubstitutions)
