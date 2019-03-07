@@ -55,12 +55,10 @@ simplifyPartial
         $ simplifier substitutionSimplifier (unwrapPredicate predicate)
     scatter (eraseTerm <$> patternOr)
   where
-    eraseTerm predicated
-      | Top_ _ <- simplifiedTerm = predicated { term = () }
+    eraseTerm predicated@Predicated { term }
+      | Top_ _ <- term = predicated { term = () }
       | otherwise =
         (error . show . Pretty.vsep)
             [ "Expecting a \\top term, but found:"
             , unparse predicated
             ]
-      where
-        Predicated { term = simplifiedTerm } = predicated
