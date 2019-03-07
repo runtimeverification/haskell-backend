@@ -90,7 +90,7 @@ simplify
         then return initialValue
         else do
             simplified <-
-                Predicate.simplify
+                Predicate.simplifyPartial
                     substitutionSimplifier
                     simplifier
                     substitutedPredicate

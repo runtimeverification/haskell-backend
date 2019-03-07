@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Predicate
-    ( simplify
+    ( simplifyPartial
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans
@@ -25,13 +25,13 @@ import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
 
-{- | Simplify the 'Predicate' once.
+{- | Simplify the 'Predicate' once; return but do not apply the substitution.
 
-@simplifyPartialBranch@ does not attempt to apply the resulting substitution and
+@simplifyPartial@ does not attempt to apply the resulting substitution and
 re-simplify the result; see "Kore.Step.Simplification.PredicateSubstitution".
 
 -}
-simplify
+simplifyPartial
     ::  ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -45,7 +45,7 @@ simplify
     -> StepPatternSimplifier level
     -> Predicate level variable
     -> BranchT Simplifier (PredicateSubstitution level variable)
-simplify
+simplifyPartial
     substitutionSimplifier
     (StepPatternSimplifier simplifier)
     predicate
