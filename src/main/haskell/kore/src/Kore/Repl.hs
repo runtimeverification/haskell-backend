@@ -143,7 +143,6 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     firstClaim :: Claim level
     firstClaim = maybe (error "No claims found") id . listToMaybe $ claims'
 
-
     firstClaimExecutionGraph :: ExecutionGraph level
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
@@ -259,7 +258,7 @@ commandParser =
         fmap SelectNode $ string "select" *> space *> signed space decimal
 
     showConfig0 :: Parser ReplCommand
-    showConfig0 = ShowConfig <$ string "show config"
+    showConfig0 = ShowConfig <$ string "config"
 
     exit0 :: Parser ReplCommand
     exit0 = Exit <$ string "exit"
@@ -335,13 +334,17 @@ replInterpreter =
                     context = Graph.context graph node
                 case Graph.suc' context of
                     [] -> putStrLn' "No child nodes were found."
-                    neighbors@(first' : _) -> do
-                        lensNode .= first'
+                    [configNo] -> do
+                        lensNode .= configNo
+                        putStrLn'
+                            $ "Found one child node ("
+                            <> show configNo
+                            <> ") and selected it."
+                    neighbors -> do
                         putStrLn'
                             $ "Found "
                             <> show (length neighbors)
-                            <> " sub-state(s). Selecting state #"
-                            <> show first'
+                            <> " sub-state(s)."
             else putStrLn' "Node already evaluated."
 
     selectNode0 :: Int -> StateT (ReplState level) Simplifier ()
