@@ -11,9 +11,16 @@ evaluating them.
 These axioms are interpreted in a directional way, i.e. if we find `α(Z)`,
 we can transform it into `β(Z)`.
 
-In order to apply this axiom to a pattern `φ(X)`, we find a unifier in
-the form of a predicate `P(X, Z)` (see the "Details" section), which can be `⊥`,
-such that
+In order to apply this axiom to a pattern `φ(X)`, let us first take an example:
+if the axiom is `sgn(z) = -1 if z < 0`, which means that `α(z) = sgn(z) ∧ z<0`
+and `β(Z) = -1`, and if `φ(x)=sgn(x+1)`, then we will try to find an unifier
+for `α(z)` and `φ(x)`. It's easy to identify a substitution `S(x,z) = [z = x+1]`
+which must be part5 of this unifier, but `z<0` must also be part of it, so our
+unifier will be a predicate `P(x, z) = [z = x+1] ∧ z<0` (check the "Details"
+section to see why).
+
+In general, the unifier will be in the form of a predicate `P(X, Z)`, which can
+be `⊥`, such that
 ```
 P(X, Z) ∧ φ(X) = P(X, Z) ∧ α(Z)
 ```
@@ -52,7 +59,7 @@ use the most general unifier. As an example, let's say that we want to define
 f(z) = sin(z) if z < 0
 f(z) = cos(z) if z >= 0
 ```
-and let's say that we want to apply the first of these equations to `sgn(x)`.
+and let's say that we want to apply the first of these equations to `f(x)`.
 The most general unifier is
 ```
 ⌈f(x) ∧ f(z) ∧ z < 0⌉
@@ -169,7 +176,7 @@ think we should apply together (e.g. they form a function definition).
 
 We identify `Pi(X, Zi)` such that
 ```
-(∃ Zi . Pi(X, Zi) ∧ φ(X)) = (∃ Z . Pi(X, Zi) ∧ αi(Zi)).
+(∃ Zi . Pi(X, Zi) ∧ φ(X)) = (∃ Zi . Pi(X, Zi) ∧ αi(Zi)).
 ```
 Let
 ```
