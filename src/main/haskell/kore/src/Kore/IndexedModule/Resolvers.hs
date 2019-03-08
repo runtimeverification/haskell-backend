@@ -89,19 +89,26 @@ getHeadApplicationSorts
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
+    applyToSentence sentenceSorts m patternHead
+
+applyToSentence :: (MetaOrObject level)
+                   => (forall ssoa .  SentenceSymbolOrAlias ssoa => [Sort level] -> ssoa level pat -> ApplicationSorts level)
+                   -> IndexedModule param pat declAtts axiomAtts
+                   -> SymbolOrAlias level
+                   -> ApplicationSorts level
+applyToSentence f m patternHead =
     case resolveSymbol m headName of
         Right (_, sentence) ->
-            sentenceSorts headParams sentence
+            f headParams sentence
         Left _ ->
             case resolveAlias m headName of
                 Right (_, sentence) ->
-                    sentenceSorts headParams sentence
+                    f headParams sentence
                 Left _ ->
                     error ("Head " ++ show patternHead ++ " not defined.")
   where
     headName = symbolOrAliasConstructor patternHead
     headParams = symbolOrAliasParams patternHead
-
 
 
 sentenceSorts :: SentenceSymbolOrAlias ssoa =>
