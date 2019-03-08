@@ -14,7 +14,7 @@ parseExit = parseAttributes
 test_exit :: TestTree
 test_exit =
     testCase "[exit{}()] :: Exit"
-        $ expectSuccess Exit { isDeclaredExit = True }
+        $ expectSuccess Exit { isExit = True }
         $ parseExit $ Attributes [ exitAttribute ]
 
 test_Attributes :: TestTree

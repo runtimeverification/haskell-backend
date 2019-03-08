@@ -1,7 +1,7 @@
 {-|
 Module      : Kore.Attribute.Exit
 Description : Exit symbol attribute
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 
@@ -63,10 +63,10 @@ instance ParseAttributes Exit where
     parseAttribute =
         withApplication parseApplication
       where
-        parseApplication params args Exit { isDeclaredExit } = do
+        parseApplication params args Exit { isExit } = do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isDeclaredExit failDuplicate
-            return Exit { isDeclaredExit = True }
+            Monad.when isExit failDuplicate
+            return Exit { isExit = True }
         withApplication = Parser.withApplication exitId
         failDuplicate = Parser.failDuplicate exitId
