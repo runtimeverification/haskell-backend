@@ -24,7 +24,7 @@ import           Kore.Attribute.Parser
 import qualified Kore.Attribute.Parser as Parser
 
 -- | @Exit@ represents the @exit@ attribute for symbols.
-newtype Exit = Exit { isDeclaredExit :: Bool }
+newtype Exit = Exit { isExit :: Bool }
     deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Exit where
