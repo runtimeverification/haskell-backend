@@ -210,19 +210,8 @@ prove limit definitionModule specModule = do
 
     return $ Bifunctor.first toMLPattern result
 
-  where
-    makeClaim (attributes, rule) = Claim { rule , attributes }
-    simplifyRuleOnSecond
-        :: MetadataTools Object StepperAttributes
-        -> (Attribute.Axiom, Rewrite)
-        -> Simplifier (Attribute.Axiom, Rewrite)
-    simplifyRuleOnSecond tools (atts, rule) = do
-        rule' <- simplifyRewriteRule tools rule
-        return (atts, rule')
-    extractUntrustedClaims :: [Claim Object] -> [Rewrite]
-    extractUntrustedClaims = map Claim.rule . filter (not . Claim.isTrusted)
-
--- | TODO: Docs
+-- | Initialize and run the repl with the main and spec modules. This will loop
+-- the repl until the user exits.
 proveWithRepl
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
@@ -253,18 +242,19 @@ proveWithRepl definitionModule specModule = do
         axioms
         claims
 
-  where
-    makeClaim (attributes, rule) = Claim { rule , attributes }
-    simplifyRuleOnSecond
-        :: MetadataTools Object StepperAttributes
-        -> (Attribute.Axiom, Rewrite)
-        -> Simplifier (Attribute.Axiom, Rewrite)
-    simplifyRuleOnSecond tools (atts, rule) = do
-        rule' <- simplifyRewriteRule tools rule
-        return (atts, rule')
-    extractUntrustedClaims :: [Claim Object] -> [Rewrite]
-    extractUntrustedClaims =
-        fmap Claim.rule . filter (not . Claim.isTrusted)
+makeClaim :: (Attribute.Axiom, Rewrite) -> Claim Object
+makeClaim (attributes, rule) = Claim { rule , attributes }
+
+simplifyRuleOnSecond
+    :: MetadataTools Object StepperAttributes
+    -> (Attribute.Axiom, Rewrite)
+    -> Simplifier (Attribute.Axiom, Rewrite)
+simplifyRuleOnSecond tools (atts, rule) = do
+    rule' <- simplifyRewriteRule tools rule
+    return (atts, rule')
+
+extractUntrustedClaims :: [Claim Object] -> [Rewrite]
+extractUntrustedClaims = map Claim.rule . filter (not . Claim.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.
 execute

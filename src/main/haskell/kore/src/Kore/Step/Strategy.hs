@@ -46,8 +46,6 @@ import           Data.Foldable
                  ( asum )
 import           Data.Function
                  ( on )
-import           Data.Functor.Foldable
-                 ( Base )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
@@ -283,7 +281,10 @@ constructExecutionHistory transit instrs0 config0 =
     mergeDuplicates0 _ = error "The impossible happened"
 
 
--- | TODO: Docs. Does not do state merging at all yet.
+-- | Perform a single step in the execution starting from the selected node in
+-- the graph and returning the resulting graph. Note that this does *NOT* do
+-- state merging, not even at the same level. The node ID's are also not
+-- hashes but just regular integer ID's.
 executionHistoryStep
     :: forall m config prim
     .  Monad m
@@ -299,7 +300,7 @@ executionHistoryStep
     -- ^ current "selected" node
     -> m (ExecutionGraph config)
     -- ^ graph with one more step executed for the selected node
-executionHistoryStep transit prim eg@ExecutionGraph { root, graph, history } node
+executionHistoryStep transit prim ExecutionGraph { graph, history } node
     | nodeIsNotLeaf = error "Node has already been evaluated"
     | otherwise = case configNode0 of
         Nothing -> error "ExecutionGraph not setup properly; node does not exist"
@@ -320,10 +321,11 @@ executionHistoryStep transit prim eg@ExecutionGraph { root, graph, history } nod
         ConfigNode
             config
             (timestep + 1)
-            (hash (config, timestep+1))
+            (timestep + 1)
             [nodeId]
 
--- TODO: Docs.
+-- | Create a default/empty execution graph for the provided configuration. Note
+-- that the ID of the root node is NOT a hash but rather just '0'.
 emptyExecutionGraph
     :: forall config
     .  Hashable config
@@ -332,7 +334,7 @@ emptyExecutionGraph
 emptyExecutionGraph config = toGraph [[configNode]]
   where
     configNode :: ConfigNode config
-    configNode = ConfigNode config 0 (hash (config, 0 :: Int)) []
+    configNode = ConfigNode config 0 (0 :: Int) []
 
 {- | Execute a 'Strategy'.
 

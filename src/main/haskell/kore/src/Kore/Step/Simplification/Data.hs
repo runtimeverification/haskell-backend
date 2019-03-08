@@ -31,8 +31,6 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Logger
        ( LogMessage )
-import Kore.Step.AxiomPatterns
-       ( RewriteRule )
 import Kore.Step.Pattern
 import Kore.Step.Representation.ExpandedPattern
        ( PredicateSubstitution )

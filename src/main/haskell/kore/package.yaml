@@ -38,6 +38,7 @@ dependencies:
   - fgl
   - free
   - gitrev
+  - graphviz
   - groom
   - hashable
   - haskeline

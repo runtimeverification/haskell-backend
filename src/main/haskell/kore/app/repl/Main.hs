@@ -1,50 +1,29 @@
+{-# OPTIONS_GHC -Wno-unused-top-binds    #-}
+-- Added for outputFileName
+
 module Main (main) where
 
-import           Control.Applicative
-                 ( optional )
-import qualified Control.Lens as Lens
-import           Data.Function
-                 ( (&) )
-import qualified Data.Map as Map
-import           Data.Proxy
-                 ( Proxy (..) )
-import           Data.Semigroup
-                 ( (<>) )
-import           Data.Text
-                 ( Text )
-import           Options.Applicative
-                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
-                 long, metavar, option, progDesc, readerError, str, strOption,
-                 value )
+import Control.Applicative
+       ( optional )
+import Data.Semigroup
+       ( (<>) )
+import Options.Applicative
+       ( InfoMod, Parser, argument, auto, fullDesc, header, help, long,
+       metavar, option, progDesc, readerError, str, strOption, value )
 
-import           Data.Limit
-                 ( Limit (..) )
-import           Kore.AST.Pure
-                 ( AstLocation, getId )
-import           Kore.AST.Sentence
-                 ( KoreDefinition, ModuleName (..), getModuleNameForError )
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (DoNotVerifyAttributes),
-                 defaultAttributesVerification,
-                 verifyAndIndexDefinitionWithBase )
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Builtin as Builtin
-import           Kore.Error
-                 ( printError )
-import           Kore.Exec
-                 ( proveWithRepl )
-import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), VerifiedModule )
-import           Kore.Logger.Output
-                 ( emptyLogger )
-import           Kore.Parser.Parser
-                 ( parseKoreDefinition, parseKorePattern )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import           Kore.Step.StepperAttributes
-import qualified SMT
+import Data.Limit
+       ( Limit (..) )
+import Kore.AST.Sentence
+       ( ModuleName (..) )
+import Kore.Exec
+       ( proveWithRepl )
+import Kore.Logger.Output
+       ( emptyLogger )
+import Kore.Step.Simplification.Data
+       ( evalSimplifier )
 
-import GlobalMain
+import           GlobalMain
+import qualified SMT as SMT
 
 -- | Represents a file name along with its module name passed.
 data KoreModule = KoreModule
@@ -63,29 +42,52 @@ data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
     , specModule       :: !KoreModule
     , smtOptions       :: !SmtOptions
+    , outputFileName   :: !(Maybe FilePath)
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
 parseKoreReplOptions =
     KoreReplOptions
-    <$> parseModule
-        "main"
-        "Kore definition file to verify and use for execution"
-    <*> parseModule
-        "claim"
-        "Kore source file representing spec to be proven"
+    <$> parseMainModule
+    <*> parseSpecModule
     <*> parseSmtOptions
+    <*> optional
+            (strOption
+                (  metavar "PATTERN_OUTPUT_FILE"
+                <> long "output"
+                <> help "Output file to contain final Kore pattern."
+                )
+            )
 
   where
 
-    parseModule :: String -> String -> Parser KoreModule
-    parseModule name helpMessage =
+    parseMainModule :: Parser KoreModule
+    parseMainModule  =
         KoreModule
         <$> argument str
-            (  metavar (name <> "_DEFINITION_FILE")
+            (  metavar ("MAIN_DEFINITION_FILE")
+            <> help "Kore definition file to verify and use for execution"
+            )
+        <*> parseModuleName "MAIN" "Kore main module name." "module"
+
+    parseSpecModule :: Parser KoreModule
+    parseSpecModule =
+        KoreModule
+        <$> strOption
+            (  metavar ("SPEC_DEFINITION_FILE")
+            <> long "prove"
+            <> help "Spec definition file"
+            )
+        <*> parseModuleName "SPEC" "Spec module name" "spec-module"
+
+    parseModuleName :: String -> String -> String -> Parser ModuleName
+    parseModuleName name helpMessage longName =
+        ModuleName
+        <$> strOption
+            (  metavar (name <> "_MODULE")
+            <> long longName
             <> help helpMessage
             )
-        <*> parseModuleName name helpMessage
 
     parseSmtOptions :: Parser SmtOptions
     parseSmtOptions =
@@ -102,14 +104,6 @@ parseKoreReplOptions =
                 <> long "smt-prelude"
                 <> help "Path to the SMT prelude file"
                 )
-            )
-
-    parseModuleName :: String -> String -> Parser ModuleName
-    parseModuleName name helpMessage =
-        ModuleName
-        <$> argument str
-            (  metavar (name <> "_MODULE")
-            <> help helpMessage
             )
 
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
@@ -183,101 +177,3 @@ mainWithOptions
 
     smtPrelude :: Maybe FilePath
     smtPrelude = prelude smtOptions
-
-
-constructorFunctions
-    :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> VerifiedModule StepperAttributes Attribute.Axiom
-constructorFunctions ixm =
-    ixm
-        { indexedModuleObjectSymbolSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleObjectSymbolSentences ixm)
-        , indexedModuleObjectAliasSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleObjectAliasSentences ixm)
-        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
-        }
-  where
-    constructorFunctions1 ident (atts, defn) =
-        ( atts
-            & lensConstructor Lens.<>~ Constructor isCons
-            & lensFunctional Lens.<>~ Functional (isCons || isInj)
-            & lensInjective Lens.<>~ Injective (isCons || isInj)
-            & lensSortInjection Lens.<>~ SortInjection isInj
-        , defn
-        )
-      where
-        isInj = getId ident == "inj"
-        isCons = elem (getId ident) ["kseq", "dotk"]
-
-    recurseIntoImports (attrs, attributes, importedModule) =
-        (attrs, attributes, constructorFunctions importedModule)
-
-mainModule
-    :: ModuleName
-    -> Map.Map
-        ModuleName
-        (VerifiedModule StepperAttributes Attribute.Axiom)
-    -> IO (VerifiedModule StepperAttributes Attribute.Axiom)
-mainModule name modules =
-    case Map.lookup name modules of
-        Nothing ->
-            error
-                (  "The main module, '"
-                ++ getModuleNameForError name
-                ++ "', was not found. Check the --module flag."
-                )
-        Just m -> return m
-
-verifyDefinitionWithBase
-    :: Maybe
-        ( Map.Map
-            ModuleName
-            (VerifiedModule StepperAttributes Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-    -- ^ base definition to use for verification
-    -> Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> KoreDefinition -- ^ Parsed definition to check well-formedness
-    -> IO
-        ( Map.Map
-            ModuleName
-            (VerifiedModule StepperAttributes Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
-    let attributesVerification =
-            if willChkAttr
-            then defaultAttributesVerification Proxy Proxy
-            else DoNotVerifyAttributes
-    in do
-      verifyResult <-
-        clockSomething "Verifying the definition"
-            (verifyAndIndexDefinitionWithBase
-                maybeBaseModule
-                attributesVerification
-                Builtin.koreVerifiers
-                definition
-            )
-      case verifyResult of
-        Left err1               -> error (printError err1)
-        Right indexedDefinition -> return indexedDefinition
-
-parseDefinition :: FilePath -> IO KoreDefinition
-parseDefinition = mainParse parseKoreDefinition
-
-mainParse
-    :: (FilePath -> String -> Either String a)
-    -> String
-    -> IO a
-mainParse parser fileName = do
-    contents <-
-        clockSomethingIO "Reading the input file" (readFile fileName)
-    parseResult <-
-        clockSomething "Parsing the file" (parser fileName contents)
-    case parseResult of
-        Left err         -> error err
-        Right definition -> return definition

@@ -12,6 +12,9 @@ $(DEFINITION): imp.k
 %.kprove: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
+%.krepl: %.k $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m VERIFICATION $<
+
 %.output: %.imp $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 

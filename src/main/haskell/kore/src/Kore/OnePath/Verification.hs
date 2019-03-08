@@ -17,14 +17,8 @@ module Kore.OnePath.Verification
     , verifyClaimStep
     ) where
 
-import Control.Monad.IO.Class
-       ( liftIO )
-import Control.Monad.Reader
-       ( ask )
 import Control.Monad.Trans.Except
        ( ExceptT, throwE )
-import Data.Proxy
-       ( Proxy (..) )
 import Numeric.Natural
        ( Natural )
 
@@ -40,7 +34,7 @@ import           Data.Profunctor
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
-                 ( IsMetaOrObject (..), MetaOrObject (..) )
+                 ( MetaOrObject (..) )
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -258,7 +252,9 @@ verifyClaim
 type Configuration level = StrategyPattern (CommonExpandedPattern level)
 
 
--- | TODO: Docs.
+-- | Attempts to perform a single proof step, starting at the configuration
+-- in the execution graph designated by the provided node. Re-constructs the
+-- execution graph by inserting this step.
 verifyClaimStep
     :: forall level
     .  MetaOrObject level
@@ -267,10 +263,15 @@ verifyClaimStep
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> Claim level
+    -- ^ claim that is being proven
     -> [Claim level]
+    -- ^ list of claims in the spec module
     -> [Axiom level]
+    -- ^ list of axioms in the main module
     -> ExecutionGraph (Configuration level)
+    -- ^ current execution graph
     -> Graph.Node
+    -- ^ selected node in the graph
     -> Simplifier (ExecutionGraph (Configuration level))
 verifyClaimStep
     tools
@@ -280,7 +281,7 @@ verifyClaimStep
     target
     claims
     axioms
-    eg@ExecutionGraph { root, graph }
+    eg@ExecutionGraph { root }
     node
   = executionHistoryStep
         transitionRule'
@@ -308,20 +309,17 @@ verifyClaimStep
     strategy' :: Strategy (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
     strategy'
         | isRoot = onePathFirstStep targetPattern rewrites
-        | otherwise = onePathFollowupStep targetPattern (unwrapClaim <$> claims) rewrites
+        | otherwise = onePathFollowupStep targetPattern (rule <$> claims) rewrites
 
     rewrites :: [RewriteRule level Variable]
     rewrites = coerce <$> axioms
-
-    unwrapClaim :: Claim level -> RewriteRule level Variable
-    unwrapClaim (Claim { rule }) = rule
 
     targetPattern :: CommonExpandedPattern level
     targetPattern =
         ExpandedPattern.fromPurePattern
             . right
             . coerce
-            . unwrapClaim
+            . rule
             $ target
 
     isRoot :: Bool

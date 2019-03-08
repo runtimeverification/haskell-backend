@@ -6,56 +6,44 @@ License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds    #-}
+-- Added because stepper is only used via 'lensStepper' which is not detected
 
 module Kore.Repl
     ( runRepl
     ) where
 
+import           Control.Lens
+                 ( (.=) )
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
+import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad.Extra
-                 ( loopM )
+                 ( whileM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( StateT )
 import           Control.Monad.State.Strict
                  ( evalStateT, get )
+import           Control.Monad.State.Strict
+                 ( lift )
 import           Data.Functor
                  ( ($>) )
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.Map
-                 ( Map )
-import qualified Data.Map as Map
-import           Data.Text
-                 ( Text )
+import qualified Data.GraphViz as Graph
+import           Data.Maybe
+                 ( listToMaybe )
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( Parsec, many, parseMaybe, (<|>) )
+                 ( Parsec, parseMaybe, (<|>) )
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer
                  ( decimal, signed )
 
-import           Control.Error
-                 ( atZ )
-import           Control.Lens
-                 ( (.=) )
-import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
-import qualified Control.Lens.TH.Rules as Lens
-import           Control.Monad.State.Strict
-                 ( modify )
-import           Control.Monad.State.Strict
-                 ( lift )
-import           Data.Bifunctor
-                 ( first, second )
-import           Data.List
-                 ( intersperse )
 import qualified Kore.AST.Common as Kore
                  ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.IndexedModule.MetadataTools
@@ -73,8 +61,6 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (..) )
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule )
-import           Kore.Step.AxiomPatterns
                  ( RulePattern (..) )
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
@@ -89,135 +75,194 @@ import           Kore.Step.StepperAttributes
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unparser
                  ( unparseToString )
-import           Kore.Unparser
-                 ( Unparse )
 
-data Variable
-    = forall a. Unparse a => Variable a
-    | forall a. Unparse a => List [a]
+-- Type synonym for the actual type of the execution graph.
+type ExecutionGraph level
+    = Strategy.ExecutionGraph
+        (StrategyPattern (CommonExpandedPattern level))
 
-type ExecutionGraph level = Strategy.ExecutionGraph (StrategyPattern (CommonExpandedPattern level))
-
+-- | State for the rep.
 data ReplState level = ReplState
-    { variables :: Map String Variable
-    , axioms    :: [Axiom level]
+    { axioms    :: [Axiom level]
+    -- ^ List of available axioms
     , claims    :: [Claim level]
-    , proving   :: Maybe (Claim level)
-    , graph     :: Maybe (ExecutionGraph level)
-    , node      :: Maybe (Graph.Node)
-    , stepper   :: Claim level -> [Claim level] -> [Axiom level] -> ExecutionGraph level -> Graph.Node -> Simplifier (ExecutionGraph level)
+    -- ^ List of claims to be proven
+    , claim     :: Claim level
+    -- ^ Currently focused claim in the repl
+    , graph     :: ExecutionGraph level
+    -- ^ Execution graph for the current proof; initialized with root = claim
+    , node      :: Graph.Node
+    -- ^ Currently selected node in the graph; initialized with node = root
+    , stepper   :: StateT (ReplState level) Simplifier Bool
+    -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     }
 
 Lens.makeLenses ''ReplState
 
+-- | Runs the repl for proof mode. It requires all the tooling and simplifiers
+-- that would otherwise be required in the proof and allows for step-by-step
+-- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
     :: forall level
     .  MetaOrObject level
     => MetadataTools level StepperAttributes
+    -- ^ tools required for the proof
     -> StepPatternSimplifier level
+    -- ^ pattern simplifier
     -> PredicateSubstitutionSimplifier level
+    -- ^ predicate simplifier
     -> BuiltinAndAxiomSimplifierMap level
+    -- ^ builtin simplifier
     -> [Axiom level]
+    -- ^ list of axioms to used in the proof
     -> [Claim level]
+    -- ^ list of claims to be proven
     -> Simplifier ()
-runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms claims
+runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
   = do
     replGreeting
-    command <- maybe ShowUsage id . parseMaybe commandParser <$> prompt
-    evalStateT (loopM repl0 command) state
+    evalStateT (whileM repl0) state
+
   where
+
+    repl0 :: StateT (ReplState level) Simplifier Bool
+    repl0 = do
+        command <- maybe ShowUsage id . parseMaybe commandParser <$> prompt
+        replInterpreter command
+
     state :: ReplState level
     state =
         ReplState
-            ( Map.fromList
-                [ ("axioms", List $ unAxiom <$> axioms)
-                , ("claims", List $ unClaim <$> claims)
-                ]
-            )
-            axioms
-            claims
-            Nothing
-            Nothing
-            Nothing
-            (verifyClaimStep tools simplifier predicateSimplifier axiomToIdSimplifier)
+            axioms'
+            claims'
+            firstClaim
+            firstClaimExecutionGraph
+            (Strategy.root firstClaimExecutionGraph)
+            stepper
 
-    unAxiom :: Axiom level -> RewriteRule level Kore.Variable
-    unAxiom (Axiom rule) = rule
+    firstClaim :: Claim level
+    firstClaim = maybe (error "No claims found") id . listToMaybe $ claims'
 
-    repl0
-        :: ReplCommand
-        -> StateT (ReplState level) Simplifier (Either ReplCommand ())
-    repl0 cmd = do
-        continue <- replInterpreter cmd
-        if continue
-            then
-                maybe
-                    (Left ShowUsage)
-                    Left
-                    . parseMaybe commandParser <$> prompt
-            else pure . pure $ ()
 
+    firstClaimExecutionGraph :: ExecutionGraph level
+    firstClaimExecutionGraph = emptyExecutionGraph firstClaim
+
+    stepper :: StateT (ReplState level) Simplifier Bool
+    stepper = do
+        ReplState
+            { claims
+            , axioms
+            , graph
+            , claim
+            , node
+            } <- get
+        if Graph.outdeg (Strategy.graph graph) node == 0
+            then do
+                graph' <- lift
+                    $ verifyClaimStep
+                        tools
+                        simplifier
+                        predicateSimplifier
+                        axiomToIdSimplifier
+                        claim
+                        claims
+                        axioms
+                        graph
+                        node
+                lensGraph .= graph'
+                pure True
+            else pure False
+
+    replGreeting :: MonadIO m => m ()
+    replGreeting =
+        liftIO $ putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
+
+    prompt :: MonadIO m => m String
+    prompt = liftIO $ do
+        putStr "Kore> "
+        hFlush stdout
+        getLine
+
+-- | List of available commands for the Repl. Note that we are always in a proof
+-- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
     = ShowUsage
+    -- ^ This is the default action in case parsing all others fail.
     | Help
-    | ShowVariables
-    | ShowVariable !String
-    | ShowArrayItem !String !Int
+    -- ^ Shows the help message.
+    | ShowClaim !Int
+    -- ^ Show the nth claim.
+    | ShowAxiom !Int
+    -- ^ Show the nth axiom.
     | Prove !Int
+    -- ^ Drop the current proof state and re-initialize for the nth claim.
     | ShowGraph
+    -- ^ Show the current execution graph.
     | ProveStep
+    -- ^ Do one step proof from curent node, select the next state if unique.
     | SelectNode !Int
+    -- ^ Select a different node in the graph.
     | ShowConfig
+    -- ^ Show the configuration from the current node.
     | Exit
+    -- ^ Exit the repl.
+
+-- | Please remember to update this text whenever you update the ADT above.
+helpText :: String
+helpText =
+    "Available commands in the Kore REPL: \n\
+    \help                    shows this help message\n\
+    \claim <n>               shows the nth claim\n\
+    \axiom <n>               shows the nth axiom\n\
+    \prove <n>               initializez proof mode for the nth claim\n\
+    \graph                   shows the current proof graph\n\
+    \step                    attempts to run a proof step at the current node \n\
+    \select <n>              select node id 'n' from the graph\n\
+    \config                  shows the config for the selected node\n\
+    \exit                    exits the repl"
 
 type Parser = Parsec String String
 
 commandParser :: Parser ReplCommand
 commandParser =
     help0
-    <|> showVariables0
-    <|> showVariable0
-    <|> showArrayItem0
+    <|> showClaim0
+    <|> showAxiom0
     <|> prove0
     <|> showGraph0
     <|> proveStep0
     <|> selectNode0
     <|> showConfig0
     <|> exit0
+    <|> pure ShowUsage
   where
     help0 :: Parser ReplCommand
     help0 = string "help" $> Help
 
-    showVariable0 :: Parser ReplCommand
-    showVariable0 =
-        fmap ShowVariable $ string "show var" *> space *> many letterChar
+    showClaim0 :: Parser ReplCommand
+    showClaim0 = fmap ShowClaim $ string "claim" *> space *> decimal
 
-    showVariables0 :: Parser ReplCommand
-    showVariables0 = string "show vars" $> ShowVariables
-
-    showGraph0 :: Parser ReplCommand
-    showGraph0 = string "show graph" $> ShowGraph
-
-    proveStep0 :: Parser ReplCommand
-    proveStep0 = string "step" $> ProveStep
-
-    selectNode0 :: Parser ReplCommand
-    selectNode0 = fmap SelectNode $ string "select" *> space *> signed space decimal
-
-    showArrayItem0 :: Parser ReplCommand
-    showArrayItem0 =
-        ShowArrayItem
-        <$> (string "show array" *> space *> many letterChar)
-        <*> (space1 *> decimal)
+    showAxiom0 :: Parser ReplCommand
+    showAxiom0 = fmap ShowAxiom $ string "axiom" *> space *> decimal
 
     prove0 :: Parser ReplCommand
     prove0 = fmap Prove $ string "prove" *> space *> decimal
 
+    showGraph0 :: Parser ReplCommand
+    showGraph0 = ShowGraph <$ string "graph"
+
+    proveStep0 :: Parser ReplCommand
+    proveStep0 = ProveStep <$ string "step"
+
+    selectNode0 :: Parser ReplCommand
+    selectNode0 =
+        fmap SelectNode $ string "select" *> space *> signed space decimal
+
     showConfig0 :: Parser ReplCommand
-    showConfig0 = string "show config" $> ShowConfig
+    showConfig0 = ShowConfig <$ string "show config"
 
     exit0 :: Parser ReplCommand
-    exit0 = string "exit" $> Exit
+    exit0 = Exit <$ string "exit"
 
 replInterpreter
     :: forall level
@@ -228,9 +273,8 @@ replInterpreter =
     \case
         ShowUsage -> showUsage0 $> True
         Help -> help0 $> True
-        ShowVariables -> showVariables0 $> True
-        ShowVariable var -> showVariable0 var $> True
-        ShowArrayItem k i -> showArrayItem0 k i $> True
+        ShowClaim c -> showClaim0 c $> True
+        ShowAxiom a -> showAxiom0 a $> True
         Prove i -> prove0 i $> True
         ShowGraph -> showGraph0 $> True
         ProveStep -> proveStep0 $> True
@@ -239,134 +283,109 @@ replInterpreter =
         Exit -> pure False
   where
     showUsage0 :: StateT st Simplifier ()
-    showUsage0 = liftIO $ do
-        putStrLn "usage!"
+    showUsage0 =
+        putStrLn' "Could not parse command, try using 'help'."
 
     help0 :: StateT st Simplifier ()
-    help0 = liftIO $ do
-        putStrLn "help!"
+    help0 =
+        putStrLn' helpText
 
-    showVariables0 :: StateT (ReplState level) Simplifier ()
-    showVariables0 = do
-        vars <- Map.keys . variables <$> get
-        liftIO . putStrLn . concat . intersperse " " $ vars
+    showClaim0 :: Int -> StateT (ReplState level) Simplifier ()
+    showClaim0 index = do
+        claim <- Lens.preuse $ lensClaims . Lens.element index
+        putStrLn' $ maybe indexNotFound (unparseToString . unClaim) claim
 
-    showVariable0 :: String -> StateT (ReplState level) Simplifier ()
-    showVariable0 key = do
-        var <- Map.lookup key . variables <$> get
-        liftIO . putStrLn $ maybe "Not found" unparse' var
-
-
-    showArrayItem0 :: String -> Int -> StateT (ReplState level) Simplifier ()
-    showArrayItem0 key index = do
-        var <- Map.lookup key . variables <$> get
-        liftIO . putStrLn . maybe "Not found" unparse'
-            $ var >>= toVariable index
+    showAxiom0 :: Int -> StateT (ReplState level) Simplifier ()
+    showAxiom0 index = do
+        axiom <- Lens.preuse $ lensAxioms . Lens.element index
+        putStrLn' $ maybe indexNotFound (unparseToString . unAxiom) axiom
 
     prove0 :: Int -> StateT (ReplState level) Simplifier ()
     prove0 index = do
-        ReplState { claims } <- get
-        case atZ claims index of
-            Nothing -> liftIO $ putStrLn "Claim not found at index."
+        claim' <- Lens.preuse $ lensClaims . Lens.element index
+        case claim' of
+            Nothing -> putStrLn' indexNotFound
             Just claim -> do
                 let
-                    graph@Strategy.ExecutionGraph { root } = emptyExecutionGraph claim
-                lensProving .= Just claim
-                lensGraph .= Just graph
-                lensNode .= Just root
-                liftIO $ putStrLn "Execution Graph initiated"
+                    graph@Strategy.ExecutionGraph { root }
+                        = emptyExecutionGraph claim
+                lensGraph .= graph
+                lensClaim .= claim
+                lensNode  .= root
+                putStrLn' "Execution Graph initiated"
 
     showGraph0 :: StateT (ReplState level) Simplifier ()
     showGraph0 = do
-        ReplState { graph } <- get
-        case graph of
-            Nothing -> liftIO $ putStrLn "No proof in progress."
-            Just Strategy.ExecutionGraph { graph } ->
-                liftIO . Graph.prettyPrint . first (const ()) $ graph
+        Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+
+        liftIO
+            . (flip Graph.runGraphvizCanvas') Graph.Xlib
+            . Graph.graphToDot Graph.nonClusteredParams
+            $ graph
 
     proveStep0 :: StateT (ReplState level) Simplifier ()
     proveStep0 = do
-        ReplState { proving, claims, axioms, graph, node, stepper } <- get
-        let
-            graph0 = maybe (error "graph") id graph
-            claim0 = maybe (error "claim") id proving
-            node0  = maybe (error "node")  id node
-
-        graph' <- lift
-            $ stepper claim0 claims axioms graph0 node0
-        lensGraph .= Just graph'
-        liftIO $ putStrLn "Done!"
+        f <- Lens.use lensStepper
+        res <- f
+        if res
+            then do
+                Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+                node <- Lens.use lensNode
+                let
+                    context = Graph.context graph node
+                case Graph.suc' context of
+                    [] -> putStrLn' "No child nodes were found."
+                    neighbors@(first' : _) -> do
+                        lensNode .= first'
+                        putStrLn'
+                            $ "Found "
+                            <> show (length neighbors)
+                            <> " sub-state(s). Selecting state #"
+                            <> show first'
+            else putStrLn' "Node already evaluated."
 
     selectNode0 :: Int -> StateT (ReplState level) Simplifier ()
     selectNode0 i = do
-        ReplState { graph = graph' } <- get
-        let
-            Strategy.ExecutionGraph { graph } = maybe (error "graph") id graph'
-
-        if i `elem` Graph.nodes graph && Graph.outdeg graph i == 0
-            then lensNode .= Just i
-            else liftIO $ putStrLn "Invalid node!"
+        Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+        if i `elem` Graph.nodes graph
+            then lensNode .= i
+            else putStrLn' "Invalid node!"
 
     showConfig0 :: StateT (ReplState level) Simplifier ()
     showConfig0 = do
-        ReplState { graph = graph' , node = node' } <- get
-        let
-            Strategy.ExecutionGraph { graph } = maybe (error "graph") id graph'
-            node = maybe (error "node") id node'
-            config = Graph.lab' $ Graph.context graph node
-
-        liftIO . putStrLn . unparseStrategy $ config
+        ReplState { graph, node } <- get
+        putStrLn'
+            . unparseStrategy
+            . Graph.lab'
+            . Graph.context (Strategy.graph graph)
+            $ node
 
     unparseStrategy :: StrategyPattern (CommonExpandedPattern level) -> String
     unparseStrategy =
         \case
-            Bottom -> "#Bottom"
+            Bottom -> "Reached goal!"
             Stuck pat -> "Stuck: \n" <> unparseToString pat
             RewritePattern pat -> unparseToString pat
 
+    indexNotFound :: String
+    indexNotFound = "Variable or index not found"
 
-    emptyExecutionGraph
-        :: Claim level
-        -> Strategy.ExecutionGraph (StrategyPattern (CommonExpandedPattern level))
-    emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
-
-    extractConfig
-        :: RewriteRule level Kore.Variable
-        -> StrategyPattern (CommonExpandedPattern level)
-    extractConfig (RewriteRule RulePattern { left, right, requires }) =
-        RewritePattern $ Predicated left requires mempty
-
-    claimsNotAvailable :: forall a. a
-    claimsNotAvailable = error "Claims not available in state variables."
-
-    toVariable :: Int -> Variable -> Maybe Variable
-    toVariable index (List l) = Variable  <$> atZ l index
-    toVariable _ _ = Nothing
-
-    unparse' :: Variable -> String
-    unparse' (Variable v) = unparseToString v
-    unparse' (List l) = "length: " <> show (length l)
-
-replGreeting :: MonadIO m => m ()
-replGreeting =
-    liftIO $ putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
+    putStrLn' :: MonadIO m => String -> m ()
+    putStrLn' = liftIO . putStrLn
 
 unClaim :: forall level. Claim level -> RewriteRule level Kore.Variable
 unClaim Claim { rule } = rule
 
-prompt :: MonadIO m => m String
-prompt = liftIO $ do
-    putStr "Kore> "
-    hFlush stdout
-    getLine
+unAxiom :: Axiom level -> RewriteRule level Kore.Variable
+unAxiom (Axiom rule) = rule
 
-showHelp :: IO ()
-showHelp =
-    putStrLn
-        "Commands available from the prompt: \n\
-        \help                shows this help message\n\
-        \proof               shows the current proof\n\
-        \go                  starts the automated prover"
+emptyExecutionGraph
+    :: Claim level
+    -> Strategy.ExecutionGraph (StrategyPattern (CommonExpandedPattern level))
+emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
 
-showError :: IO ()
-showError = putStrLn "\nUnknown command. Try 'help'."
+extractConfig
+    :: RewriteRule level Kore.Variable
+    -> StrategyPattern (CommonExpandedPattern level)
+extractConfig (RewriteRule RulePattern { left, requires }) =
+    RewritePattern $ Predicated left requires mempty

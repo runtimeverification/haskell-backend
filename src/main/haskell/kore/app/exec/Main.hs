@@ -1,31 +1,22 @@
 module Main (main) where
 
-import           Control.Applicative
-                 ( Alternative (..), optional, (<$) )
-import qualified Control.Lens as Lens
-import           Data.Function
-                 ( (&) )
-import           Data.List
-                 ( intercalate )
-import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
-import           Data.Proxy
-                 ( Proxy (..) )
-import           Data.Semigroup
-                 ( (<>) )
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc.Render.Text
-                 ( hPutDoc, putDoc )
-import           Options.Applicative
-                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
-                 long, metavar, option, progDesc, readerError, str, strOption,
-                 switch, value )
-import           System.Exit
-                 ( ExitCode (..), exitWith )
-import           System.IO
-                 ( IOMode (WriteMode), withFile )
+import Control.Applicative
+       ( Alternative (..), optional, (<$) )
+import Data.List
+       ( intercalate )
+import Data.Maybe
+       ( fromMaybe )
+import Data.Semigroup
+       ( (<>) )
+import Data.Text.Prettyprint.Doc.Render.Text
+       ( hPutDoc, putDoc )
+import Options.Applicative
+       ( InfoMod, Parser, argument, auto, fullDesc, header, help, long,
+       metavar, option, progDesc, readerError, str, strOption, value )
+import System.Exit
+       ( ExitCode (..), exitWith )
+import System.IO
+       ( IOMode (WriteMode), withFile )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -35,21 +26,16 @@ import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (DoNotVerifyAttributes),
-                 defaultAttributesVerification,
-                 verifyAndIndexDefinitionWithBase )
 import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), VerifiedModule )
+                 ( VerifiedModule )
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
 import           Kore.Parser.Parser
-                 ( parseKoreDefinition, parseKorePattern )
+                 ( parseKorePattern )
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step.Pattern
@@ -417,30 +403,6 @@ mainWithOptions
                 withFile outputFile WriteMode (\h -> hPutDoc h unparsed)
         () <$ exitWith exitCode
 
-mainModule
-    :: ModuleName
-    -> Map.Map
-        ModuleName
-        (VerifiedModule StepperAttributes Attribute.Axiom)
-    -> IO (VerifiedModule StepperAttributes Attribute.Axiom)
-mainModule name modules =
-    case Map.lookup name modules of
-        Nothing ->
-            error
-                (  "The main module, '"
-                ++ getModuleNameForError name
-                ++ "', was not found. Check the --module flag."
-                )
-        Just m -> return m
-
-{- | Parse a Kore definition from a filename.
-
-Also prints timing information; see 'mainParse'.
-
- -}
-parseDefinition :: FilePath -> IO KoreDefinition
-parseDefinition = mainParse parseKoreDefinition
-
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
 mainPatternParse :: String -> IO CommonKorePattern
@@ -473,60 +435,6 @@ mainParseSearchPattern indexedModule patternFileName = do
                 }
         _ -> error "Unexpected non-conjunctive pattern"
 
--- | IO action that parses a kore AST entity from a filename and prints timing
--- information.
-mainParse
-    :: (FilePath -> String -> Either String a)
-    -> String
-    -> IO a
-mainParse parser fileName = do
-    contents <-
-        clockSomethingIO "Reading the input file" (readFile fileName)
-    parseResult <-
-        clockSomething "Parsing the file" (parser fileName contents)
-    case parseResult of
-        Left err         -> error err
-        Right definition -> return definition
-
-{- | Verify the well-formedness of a Kore definition.
-
-Also prints timing information; see 'mainParse'.
-
- -}
-verifyDefinitionWithBase
-    :: Maybe
-        ( Map.Map
-            ModuleName
-            (VerifiedModule StepperAttributes Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-    -- ^ base definition to use for verification
-    -> Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> KoreDefinition -- ^ Parsed definition to check well-formedness
-    -> IO
-        ( Map.Map
-            ModuleName
-            (VerifiedModule StepperAttributes Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
-    let attributesVerification =
-            if willChkAttr
-            then defaultAttributesVerification Proxy Proxy
-            else DoNotVerifyAttributes
-    in do
-      verifyResult <-
-        clockSomething "Verifying the definition"
-            (verifyAndIndexDefinitionWithBase
-                maybeBaseModule
-                attributesVerification
-                Builtin.koreVerifiers
-                definition
-            )
-      case verifyResult of
-        Left err1               -> error (printError err1)
-        Right indexedDefinition -> return indexedDefinition
-
 makePurePattern
     :: VerifiedKorePattern
     -> CommonStepPattern Object
@@ -534,39 +442,3 @@ makePurePattern pat =
     case fromKorePattern Object pat of
         Left err -> error (printError err)
         Right objPat -> objPat
-
--- TODO (traiansf): Get rid of this.
--- The function below works around several limitations of
--- the current tool by tricking the tool into believing that
--- functions are constructors (so that function patterns can match)
--- and that @kseq@ and @dotk@ are both functional and constructor.
-constructorFunctions
-    :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> VerifiedModule StepperAttributes Attribute.Axiom
-constructorFunctions ixm =
-    ixm
-        { indexedModuleObjectSymbolSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleObjectSymbolSentences ixm)
-        , indexedModuleObjectAliasSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleObjectAliasSentences ixm)
-        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
-        }
-  where
-    constructorFunctions1 ident (atts, defn) =
-        ( atts
-            & lensConstructor Lens.<>~ Constructor isCons
-            & lensFunctional Lens.<>~ Functional (isCons || isInj)
-            & lensInjective Lens.<>~ Injective (isCons || isInj)
-            & lensSortInjection Lens.<>~ SortInjection isInj
-        , defn
-        )
-      where
-        isInj = getId ident == "inj"
-        isCons = elem (getId ident) ["kseq", "dotk"]
-
-    recurseIntoImports (attrs, attributes, importedModule) =
-        (attrs, attributes, constructorFunctions importedModule)
