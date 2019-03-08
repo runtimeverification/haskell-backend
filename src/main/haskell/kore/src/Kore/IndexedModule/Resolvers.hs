@@ -91,21 +91,25 @@ getHeadApplicationSorts
 getHeadApplicationSorts m patternHead =
     case resolveSymbol m headName of
         Right (_, sentence) ->
-            case symbolOrAliasSorts headParams sentence of
-                Left err     -> error (printError err)
-                Right result -> result
+            sentenceSorts headParams sentence
         Left _ ->
             case resolveAlias m headName of
                 Right (_, sentence) ->
-                    case symbolOrAliasSorts headParams sentence of
-                        Left err     -> error (printError err)
-                        Right result -> result
+                    sentenceSorts headParams sentence
                 Left _ ->
                     error ("Head " ++ show patternHead ++ " not defined.")
   where
     headName = symbolOrAliasConstructor patternHead
     headParams = symbolOrAliasParams patternHead
 
+
+
+sentenceSorts :: SentenceSymbolOrAlias ssoa =>
+       [Sort level] -> ssoa level pat -> ApplicationSorts level
+sentenceSorts sortParameters sentence =
+    case symbolOrAliasSorts sortParameters sentence of
+        Left err     -> error (printError err)
+        Right result -> result
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
 -- 'SentenceAlias', and returns its attributes.
