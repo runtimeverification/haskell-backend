@@ -226,9 +226,7 @@ resolveAlias
 resolveAlias m headId =
     case resolveThing (aliasSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
-            koreFailWithLocations
-                [headId]
-                (noAlias headId)
+            koreFailWithLocations [headId] (noAlias headId)
         Just result ->
             return result
 
