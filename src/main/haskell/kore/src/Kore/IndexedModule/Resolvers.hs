@@ -368,8 +368,8 @@ noHead
     => SymbolOrAlias level
     -> String
 noHead patternHead =
-    unknown "Head" $ show patternHead
+    notDefined "Head" $ show patternHead
 
-unknown :: String -> String -> String
-unknown tag identifier =
+notDefined :: String -> String -> String
+notDefined tag identifier =
     tag ++ identifier ++ " not defined."
