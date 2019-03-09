@@ -209,9 +209,7 @@ resolveSymbol
 resolveSymbol m headId =
     case resolveThing (symbolSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
-            koreFailWithLocations
-                [headId]
-                ("Symbol '" ++ getIdForError headId ++  "' not defined.")
+            koreFailWithLocations [headId] (noSymbol headId)
         Just result ->
             return result
 
@@ -361,6 +359,7 @@ applyToAttributes f m patternHead =
     headName = symbolOrAliasConstructor patternHead
 
 
+
 noSort :: MetaOrObject level => Id level -> String
 noSort sortId =
     notDefined "Sort" $ show sortId
@@ -373,7 +372,11 @@ noAlias :: MetaOrObject level => Id level -> String
 noAlias identifier =
     notDefined "Alias" $ getIdForError identifier
 
+noSymbol :: MetaOrObject level => Id level -> String
+noSymbol identifier =
+    notDefined "Symbol" $ getIdForError identifier
+
 
 notDefined :: String -> String -> String
 notDefined tag identifier =
-    tag ++ " '" ++ identifier ++ "'" ++ " not defined."
+    tag ++ " '" ++ identifier ++ "' not defined."
