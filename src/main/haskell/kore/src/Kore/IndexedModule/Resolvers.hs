@@ -40,7 +40,7 @@ import           Kore.AST.Kore
 import           Kore.AST.Sentence hiding
                  ( Alias (..), Symbol (..) )
 import           Kore.ASTHelpers
-                 ( ApplicationSorts (..), symbolOrAliasSorts )
+                 ( ApplicationSorts (..), sentenceSorts )
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -110,13 +110,6 @@ applyToSentence f m patternHead =
     headName = symbolOrAliasConstructor patternHead
     headParams = symbolOrAliasParams patternHead
 
-
-sentenceSorts :: SentenceSymbolOrAlias ssoa =>
-       [Sort level] -> ssoa level pat -> ApplicationSorts level
-sentenceSorts sortParameters sentence =
-    case symbolOrAliasSorts sortParameters sentence of
-        Left err     -> error (printError err)
-        Right result -> result
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
 -- 'SentenceAlias', and returns its attributes.
