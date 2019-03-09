@@ -127,7 +127,7 @@ getHeadType m patternHead =
             case resolveAlias m headName of
                 Right _ -> Alias
                 Left _ ->
-                    error ("Head " ++ show patternHead ++ " not defined.")
+                    error $ noHead patternHead
   where
     headName = symbolOrAliasConstructor patternHead
 
@@ -320,7 +320,7 @@ findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)
 
 
-
+{- Utilities -}
 
 applyToSentence :: (MetaOrObject level)
                    => (forall ssoa .  SentenceSymbolOrAlias ssoa
@@ -339,7 +339,7 @@ applyToSentence f m patternHead =
                 Right (_, sentence) ->
                     f headParams sentence
                 Left _ ->
-                    error ("Head " ++ show patternHead ++ " not defined.")
+                    error $ noHead patternHead
   where
     headName = symbolOrAliasConstructor patternHead
     headParams = symbolOrAliasParams patternHead
@@ -358,7 +358,18 @@ applyToAttributes f m patternHead =
         Left _ ->
             case resolveAlias m headName of
                 Right (atts, _) -> f atts
-                Left _ ->
-                    error ("Head " ++ show patternHead ++ " not defined.")
+                Left _ -> error $ noHead patternHead
   where
     headName = symbolOrAliasConstructor patternHead
+
+
+noHead
+    :: MetaOrObject level
+    => SymbolOrAlias level
+    -> String
+noHead patternHead =
+    unknown "Head" $ show patternHead
+
+unknown :: String -> String -> String
+unknown tag identifier =
+    tag ++ identifier ++ " not defined."
