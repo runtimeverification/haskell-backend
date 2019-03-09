@@ -139,7 +139,7 @@ getSortAttributes
 getSortAttributes m (SortActualSort (SortActual sortId _)) =
   case resolveSort m sortId of
     Right (atts, _) -> atts
-    Left _ -> error $ "Sort " ++ show sortId ++ " not defined."
+    Left _ -> error $ noSort sortId
 getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
 
 
@@ -228,7 +228,7 @@ resolveAlias m headId =
         Nothing ->
             koreFailWithLocations
                 [headId]
-                ("Alias '" ++ getIdForError headId ++  "' not defined.")
+                (noAlias headId)
         Just result ->
             return result
 
@@ -363,13 +363,19 @@ applyToAttributes f m patternHead =
     headName = symbolOrAliasConstructor patternHead
 
 
-noHead
-    :: MetaOrObject level
-    => SymbolOrAlias level
-    -> String
+noSort :: MetaOrObject level => Id level -> String
+noSort sortId =
+    notDefined "Sort" $ show sortId
+
+noHead :: MetaOrObject level => SymbolOrAlias level -> String
 noHead patternHead =
     notDefined "Head" $ show patternHead
 
+noAlias :: MetaOrObject level => Id level -> String
+noAlias identifier =
+    notDefined "Alias" $ getIdForError identifier
+
+
 notDefined :: String -> String -> String
 notDefined tag identifier =
-    tag ++ identifier ++ " not defined."
+    tag ++ " '" ++ identifier ++ "'" ++ " not defined."
