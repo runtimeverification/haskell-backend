@@ -130,4 +130,4 @@ withCurrentDirectory dir go =
 
 test_regression :: IO [TestTree]
 test_regression =
-    regressionTests <$> regressionTestsInputFiles "../../../test/resources/"
+    regressionTests <$> regressionTestsInputFiles "../src/test/resources/"
