@@ -39,8 +39,9 @@ import           Kore.AST.Error
 import           Kore.AST.Kore
 import           Kore.AST.Sentence hiding
                  ( Alias (..), Symbol (..) )
+import           Kore.ASTHelpers as AST
 import           Kore.ASTHelpers
-                 ( ApplicationSorts (..), sentenceSorts )
+                 ( ApplicationSorts (..) )
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -89,26 +90,7 @@ getHeadApplicationSorts
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
-    applyToSentence sentenceSorts m patternHead
-
-applyToSentence :: (MetaOrObject level)
-                   => (forall ssoa .  SentenceSymbolOrAlias ssoa => [Sort level] -> ssoa level pat -> ApplicationSorts level)
-                   -> IndexedModule param pat declAtts axiomAtts
-                   -> SymbolOrAlias level
-                   -> ApplicationSorts level
-applyToSentence f m patternHead =
-    case resolveSymbol m headName of
-        Right (_, sentence) ->
-            f headParams sentence
-        Left _ ->
-            case resolveAlias m headName of
-                Right (_, sentence) ->
-                    f headParams sentence
-                Left _ ->
-                    error ("Head " ++ show patternHead ++ " not defined.")
-  where
-    headName = symbolOrAliasConstructor patternHead
-    headParams = symbolOrAliasParams patternHead
+    applyToSentence AST.sentenceSorts m patternHead
 
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
@@ -124,15 +106,7 @@ getHeadAttributes
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> declAtts
 getHeadAttributes m patternHead =
-    case resolveSymbol m headName of
-        Right (atts, _) -> atts
-        Left _ ->
-            case resolveAlias m headName of
-                Right (atts, _) -> atts
-                Left _ ->
-                    error ("Head " ++ show patternHead ++ " not defined.")
-  where
-    headName = symbolOrAliasConstructor patternHead
+    applyToAttributes id m patternHead
 
 -- |The type of a 'SymbolOrAlias'.
 data HeadType
@@ -344,3 +318,47 @@ findIndexedSort
     -> Either (Error e) (SentenceSort level patternType)
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)
+
+
+
+
+applyToSentence :: (MetaOrObject level)
+                   => (forall ssoa .  SentenceSymbolOrAlias ssoa
+                       => [Sort level]
+                       -> ssoa level pat
+                       -> result)
+                   -> IndexedModule param pat declAtts axiomAtts
+                   -> SymbolOrAlias level
+                   -> result
+applyToSentence f m patternHead =
+    case resolveSymbol m headName of
+        Right (_, sentence) ->
+            f headParams sentence
+        Left _ ->
+            case resolveAlias m headName of
+                Right (_, sentence) ->
+                    f headParams sentence
+                Left _ ->
+                    error ("Head " ++ show patternHead ++ " not defined.")
+  where
+    headName = symbolOrAliasConstructor patternHead
+    headParams = symbolOrAliasParams patternHead
+
+
+applyToAttributes
+    :: MetaOrObject level
+    => (declAtts -> result)
+    -> IndexedModule sortParam patternType declAtts axiomAtts
+    -- ^ module representing an indexed definition
+    -> SymbolOrAlias level     -- ^the head we want to find sorts for
+    -> result
+applyToAttributes f m patternHead =
+    case resolveSymbol m headName of
+        Right (atts, _) -> f atts
+        Left _ ->
+            case resolveAlias m headName of
+                Right (atts, _) -> f atts
+                Left _ ->
+                    error ("Head " ++ show patternHead ++ " not defined.")
+  where
+    headName = symbolOrAliasConstructor patternHead
