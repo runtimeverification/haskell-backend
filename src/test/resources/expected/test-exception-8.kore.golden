@@ -1,4 +1,4 @@
-Parse error: ../../../test/resources//test-exception-8.kore:6:9:
+Parse error: ../src/test/resources//test-exception-8.kore:6:9:
   |
 6 |     X:S{#S} []
   |         ^

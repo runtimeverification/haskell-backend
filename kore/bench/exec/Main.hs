@@ -85,7 +85,7 @@ each Definition's tests.
 definitions :: [Definition]
 definitions =
     [ Definition
-        { root = Paths.dataFileName "../../k/working/function-evaluation-demo"
+        { root = Paths.dataFileName "../src/main/k/working/function-evaluation-demo"
         , kFile = "demo.k"
         , definitionFile = "demo-kompiled/definition.kore"
         , mainModuleName = ModuleName "DEMO"
@@ -95,9 +95,9 @@ definitions =
             , "tests/Truth.demo"
             ]
         }
-    , impDefinition "../../k/working/imp-monosorted"
-    , impDefinition "../../k/working/imp-concrete-state"
-    , impDefinition "../../k/working/imp-concrete-heat-cool"
+    , impDefinition "../src/main/k/working/imp-monosorted"
+    , impDefinition "../src/main/k/working/imp-concrete-state"
+    , impDefinition "../src/main/k/working/imp-concrete-heat-cool"
     ]
   where
     impDefinition root = Definition
@@ -114,7 +114,7 @@ definitions =
 
 {- | Path to the directory containing kompile, kast, and krun -}
 kBin :: FilePath
-kBin = "../../../../.build/k/k-distribution/target/release/k/bin"
+kBin = "../.build/k/k-distribution/target/release/k/bin"
 
 {- | Declare an execution benchmark
 

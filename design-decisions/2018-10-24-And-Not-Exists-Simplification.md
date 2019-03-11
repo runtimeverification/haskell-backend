@@ -13,7 +13,7 @@ are solved naturally by applying the substitution resulting from matching and
 simplifying.
 
 The configuration left-overs, described in
-?TODO: add reference after Traian merges his PR.?, are not handled currently.
+`docs/2018-11-08-One-Path-Reachability-Proofs.md`, are not handled currently.
 Their format looks something like
 ```
 Φ(X) ∧ (¬ ∃ Z. α(Z))
@@ -52,7 +52,7 @@ Decision: Implement what's needed for configuration left-overs
 --------------------------------------------------------------
 
 We will implement particular handling for now, as described in
-`2018-10-24-Configuration-Splitting-Simplification.md`.
+`docs/2018-11-08-Configuration-Splitting-Simplification.md`.
 
 Reasoning
 ---------

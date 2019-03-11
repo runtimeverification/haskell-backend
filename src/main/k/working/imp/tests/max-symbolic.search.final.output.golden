@@ -1,3 +1,4 @@
+    {
       Result
     #Equals
       <T>
@@ -11,15 +12,21 @@
           z |-> varvarVar'Ques'I2
         </state>
       </T>
+    }
   #And
+    {
       false
     #Equals
       varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
+    }
   #And
+    {
       false
     #Equals
       varvarVar'Ques'I0 <=Int varvarVar'Ques'I2
+    }
 #Or
+    {
       Result
     #Equals
       <T>
@@ -33,15 +40,21 @@
           z |-> varvarVar'Ques'I2
         </state>
       </T>
+    }
   #And
+    {
       false
     #Equals
       varvarVar'Ques'I1 <=Int varvarVar'Ques'I2
+    }
   #And
+    {
       true
     #Equals
       varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
+    }
 #Or
+    {
       Result
     #Equals
       <T>
@@ -55,15 +68,21 @@
           z |-> varvarVar'Ques'I2
         </state>
       </T>
+    }
   #And
+    {
       false
     #Equals
       varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
+    }
   #And
+    {
       true
     #Equals
       varvarVar'Ques'I0 <=Int varvarVar'Ques'I2
+    }
 #Or
+    {
       Result
     #Equals
       <T>
@@ -77,11 +96,16 @@
           z |-> varvarVar'Ques'I2
         </state>
       </T>
+    }
   #And
+    {
       true
     #Equals
       varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
+    }
   #And
+    {
       true
     #Equals
       varvarVar'Ques'I1 <=Int varvarVar'Ques'I2
+    }

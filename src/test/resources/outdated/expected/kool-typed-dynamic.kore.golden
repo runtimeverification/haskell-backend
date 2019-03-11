@@ -1,4 +1,4 @@
-Parse error: ../../../test/resources//outdated/kool-typed-dynamic.kore:1:13:
+Parse error: ../src/test/resources//outdated/kool-typed-dynamic.kore:1:13:
   |
 1 | [#MainModule(S("SEMANTICS")),#EntryModules(S("K-BOTTOM-SORT"),S("K-REFLECTION"),S("ID"),S("RULE-PARSER"),S("AUTO-CASTS"),S("KSEQ"),S("K-TERM"),S("INT-SYNTAX"),S("KOOL-TYPED-DYNAMIC"),S("RULE-LISTS"),S("DEFAULT-CONFIGURATION"),S("KSEQ-SYMBOLIC"),S("DOMAINS-SYNTAX"),S("RULE-CELLS"),S("K-IO"),S("SET"),S("FLOAT-SYNTAX"),S("BOOL-SYNTAX"),S("AUTO-FOLLOW"),S("K-SORT-LATTICE"),S("KCELLS"),S("STRING-SYNTAX"),S("BASIC-K"),S("K-EQUAL"),S("STDOUT-STREAM"),S("STRING"),S("STDIN-STREAM"),S("K-TOP-SORT"),S("DOMAINS"),S("INT"),S("REQUIRES-ENSURES"),S("LIST"),S("PROGRAM-LISTS"),S("LANGUAGE-PARSING"),S("SEMANTICS"),S("SORT-K"),S("ID-PROGRAM-PARSING"),S("BOOL"),S("KSTRING"),S("K"),S("KOOL-TYPED-DYNAMIC-SYNTAX"),S("CONFIG-CELLS"),S("MAP"),S("KAST")),syntaxModule(KString@KSTRING("KOOL-TYPED-DYNAMIC-SYNTAX"))]
   |             ^
