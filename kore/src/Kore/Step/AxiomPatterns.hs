@@ -20,7 +20,7 @@ module Kore.Step.AxiomPatterns
     , extractRewriteAxioms
     , extractRewriteClaims
     , mkRewriteAxiom
-    , mkFunctionAxiom
+    , mkEqualityAxiom
     , refreshRulePattern
     , freeVariables
     , Kore.Step.AxiomPatterns.mapVariables
@@ -253,37 +253,46 @@ patternToAxiomPattern attributes pat =
         Forall_ _ _ child -> patternToAxiomPattern attributes child
         _ -> koreFail "Unsupported pattern type in axiom"
 
-{- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteAxiomPattern'.
+{- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
+
+The requires clause must be a predicate, i.e. it can occur in any sort.
+
  -}
 mkRewriteAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
-    -> Maybe (CommonStepPattern Object)  -- ^ requires clause
+    -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
 mkRewriteAxiom lhs rhs requires =
     (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
         (mkRewrites
-            (mkAnd (fromMaybe mkTop_ requires) lhs)
-            (mkAnd mkTop_ rhs)
+            (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
+            (mkAnd (mkTop patternSort) rhs)
         )
+  where
+    Valid { patternSort } = extract lhs
 
-{- | Construct a 'VerifiedKoreSentence' corresponding to 'FunctionAxiomPattern'.
+{- | Construct a 'VerifiedKoreSentence' corresponding to 'EqualityRule'.
+
+The requires clause must be a predicate, i.e. it can occur in any sort.
+
  -}
--- TODO(virgil): Rename the above since it applies to all sorts of axioms,
--- not only to function-related ones.
-mkFunctionAxiom
+mkEqualityAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
-    -> Maybe (CommonStepPattern Object)  -- ^ requires clause
+    -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
-mkFunctionAxiom lhs rhs requires =
-    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
+mkEqualityAxiom lhs rhs requires =
+    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom [sortVariableR])
         (case requires of
-            Just requires' -> mkImplies requires' (mkAnd function mkTop_)
+            Just requires' ->
+                mkImplies (requires' sortR) (mkAnd function mkTop_)
             Nothing -> function
         )
   where
-    function = mkEquals_ lhs rhs
+    sortVariableR = SortVariable "R"
+    sortR = SortVariableSort sortVariableR
+    function = mkEquals sortR lhs rhs
 
 {- | Refresh the variables of a 'RulePattern'.
 
