@@ -1,6 +1,6 @@
 package = kore
 
-stack_yaml = STACK_YAML="../../../stack.yaml"
+stack_yaml = STACK_YAML="../stack.yaml"
 stack = $(stack_yaml) stack
 pattern = ""
 
