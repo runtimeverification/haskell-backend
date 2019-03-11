@@ -124,9 +124,9 @@ getBranches (BranchT as) = toListM as
 
 {- | Collect results from many simplification branches into one result.
 
-@gather@ collects and merges the results of the internal branches on top and the
-results of the integrated branches below and returns all the results together in
-one branch.
+@gather@ returns all the results of a @'BranchT' m a@ in a single disjunction
+('MultiOr'). @gather@ strips away the @BranchT@ transformer so that it always
+returns one result.
 
 Examples:
 
@@ -146,9 +146,9 @@ gather simpl = OrOfExpandedPattern.MultiOr <$> getBranches simpl
 
 {- | Collect results from many simplification branches into one result.
 
-@gatherAll@ collects and merges the results of the internal branches on top and
-the results of the integrated branches below and returns all the results
-together in one branch.
+@gather@ returns all the results of a @'BranchT' m a@ in a single disjunction
+('MultiOr'). @gather@ strips away the @BranchT@ transformer so that it always
+returns one result.
 
 See also: 'scatter', 'gather'
 
