@@ -360,10 +360,8 @@ test_execGetExitCode =
             { sentenceSymbolAttributes = Attributes [functionalAttribute] }
 
     mockGetExitCodeAxiom =
-        mkFunctionAxiom
-            (mkApp myIntSort getExitCodeSym [mkVar v])
-            (mkVar v)
-            $ Just $ mkTop myIntSort
+        mkEqualityAxiom
+            (mkApp myIntSort getExitCodeSym [mkVar v]) (mkVar v) Nothing
       where
         v = Variable
             { variableName = testId "V"
