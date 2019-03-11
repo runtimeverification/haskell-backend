@@ -136,18 +136,19 @@ normalizeWorker
     Predicated { predicate, substitution }
   = do
     duplication <- normalizeSubstitutionDuplication' substitution
-    let Predicated { substitution = duplicationSubstitution } = duplication
-    normalized <- normalizeSubstitution' duplicationSubstitution
-
     let
+        Predicated { substitution = duplicationSubstitution } = duplication
+        Predicated { predicate = duplicationPredicate } = duplication
+
+    normalized <- normalizeSubstitution' duplicationSubstitution
+    let
+        Predicated { substitution = normalizedSubstitution } = normalized
+        Predicated { predicate = normalizedPredicate } = normalized
+
         mergedPredicate =
             makeMultipleAndPredicate
                 [predicate, duplicationPredicate, normalizedPredicate]
-          where
-            Predicated { predicate = duplicationPredicate } = duplication
-            Predicated { predicate = normalizedPredicate } = normalized
 
-    let Predicated { substitution = normalizedSubstitution } = normalized
     lift $ substitutionSimplifier
         Predicated
             { term = ()
