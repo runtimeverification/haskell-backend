@@ -308,7 +308,7 @@ test_execGetExitCode =
 
     actual testModule exitCode =
         SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger noRepl
+            $ evalSimplifier emptyLogger
             $ execGetExitCode
                 (verifiedMyModule testModule)
                 (Limit.replicate unlimited . anyRewrite)
