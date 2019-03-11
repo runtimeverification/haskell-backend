@@ -33,15 +33,6 @@ pipeline {
     }
     stage('Integration Tests') {
       parallel {
-        stage('Maven') {
-          steps {
-            ansiColor('xterm') {
-              sh '''
-                mvn clean verify
-              '''
-            }
-          }
-        }
         stage('K Test') {
           steps {
             ansiColor('xterm') {
@@ -65,7 +56,7 @@ pipeline {
   }
   post {
     always {
-      junit 'src/main/haskell/kore/test-results.xml'
+      junit 'kore/test-results.xml'
     }
   }
 }

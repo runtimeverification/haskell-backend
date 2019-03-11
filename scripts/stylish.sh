@@ -4,7 +4,7 @@ set -exuo pipefail
 
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 
-HS_TOP="$TOP/src/main/haskell/kore"
+HS_TOP="$TOP/kore"
 HS_SOURCE_DIRS="$HS_TOP/src $HS_TOP/app $HS_TOP/test $HS_TOP/bench"
 
 # Install stylish-haskell in the local .stack-work

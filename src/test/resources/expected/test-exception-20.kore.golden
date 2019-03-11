@@ -1,4 +1,4 @@
-Parse error: ../../../test/resources//test-exception-20.kore:6:12:
+Parse error: ../src/test/resources//test-exception-20.kore:6:12:
   |
 6 |     \in{#S,S}(X:S,X:S) []
   |            ^
