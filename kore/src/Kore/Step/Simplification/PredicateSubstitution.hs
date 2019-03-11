@@ -117,7 +117,7 @@ simplify
                             axiomIdToSimplifier
                             [simplifiedPredicate]
                             [substitution, simplifiedSubstitution]
-                    return mergedPredicateSubstitution
+                    returnPruned mergedPredicateSubstitution
   where
     substitutionSimplifier =
         PredicateSubstitutionSimplifier

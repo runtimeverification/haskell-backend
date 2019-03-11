@@ -135,7 +135,7 @@ normalizeWorker
     axiomIdToSimplifier
     Predicated { predicate, substitution }
   = do
-    (duplication, _) <- normalizeSubstitutionDuplication' substitution
+    duplication <- normalizeSubstitutionDuplication' substitution
     let Predicated { substitution = duplicationSubstitution } = duplication
     normalized <- normalizeSubstitution' duplicationSubstitution
 
@@ -155,17 +155,23 @@ normalizeWorker
             , substitution = normalizedSubstitution
             }
   where
-    normalizeSubstitutionDuplication' =
-        Monad.Morph.hoist lift
-        . normalizeSubstitutionDuplication
-            tools
-            wrappedSimplifier
-            simplifier
-            axiomIdToSimplifier
-    normalizeSubstitution' =
-        Monad.Morph.hoist lift
-        . withExceptT substitutionToUnifyOrSubError
-        . normalizeSubstitution tools
+    normalizeSubstitutionDuplication' substitution' = do
+        (duplication, _) <-
+            Monad.Morph.hoist lift
+            $ normalizeSubstitutionDuplication
+                tools
+                wrappedSimplifier
+                simplifier
+                axiomIdToSimplifier
+                substitution'
+        Monad.Trans.lift (returnPruned duplication)
+
+    normalizeSubstitution' substitution' = do
+        normalized <-
+            Monad.Morph.hoist lift
+            $ withExceptT substitutionToUnifyOrSubError
+            $ normalizeSubstitution tools substitution'
+        Monad.Trans.lift (returnPruned normalized)
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list

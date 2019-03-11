@@ -53,6 +53,8 @@ simplifyPartial
     (patternOr, _proof) <-
         Monad.Trans.lift
         $ simplifier substitutionSimplifier (unwrapPredicate predicate)
+    -- Despite using Monad.Trans.lift above, we do not need to explicitly check
+    -- for \bottom because patternOr is an OrOfExpandedPattern.
     scatter (eraseTerm <$> patternOr)
   where
     eraseTerm predicated@Predicated { term }
