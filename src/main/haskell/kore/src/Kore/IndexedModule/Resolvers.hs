@@ -326,20 +326,8 @@ applyToSentence :: (MetaOrObject level)
                    -> IndexedModule param pat declAtts axiomAtts
                    -> SymbolOrAlias level
                    -> result
-applyToSentence f m patternHead =
-    case resolveSymbol m headName of
-        Right (_, sentence) ->
-            f headParams sentence
-        Left _ ->
-            case resolveAlias m headName of
-                Right (_, sentence) ->
-                    f headParams sentence
-                Left _ ->
-                    error $ noHead patternHead
-  where
-    headName = symbolOrAliasConstructor patternHead
-    headParams = symbolOrAliasParams patternHead
-
+applyToSentence f =
+     applyToResolution (\ params (_, sentence) -> f params sentence)
 
 applyToAttributes
     :: MetaOrObject level
@@ -348,15 +336,31 @@ applyToAttributes
     -- ^ module representing an indexed definition
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> result
-applyToAttributes f m patternHead =
+applyToAttributes f =
+    applyToResolution (\ _ (attrs, _) -> f attrs)
+
+
+applyToResolution :: (MetaOrObject level)
+                   => (forall ssoa .  SentenceSymbolOrAlias ssoa
+                       => [Sort level]
+                       -> (declAtts, ssoa level pat)
+                       -> result)
+                   -> IndexedModule param pat declAtts axiomAtts
+                   -> SymbolOrAlias level
+                   -> result
+applyToResolution f m patternHead =
     case resolveSymbol m headName of
-        Right (atts, _) -> f atts
+        Right tuple ->
+            f headParams tuple
         Left _ ->
             case resolveAlias m headName of
-                Right (atts, _) -> f atts
-                Left _ -> error $ noHead patternHead
+                Right tuple ->
+                    f headParams tuple
+                Left _ ->
+                    error $ noHead patternHead
   where
     headName = symbolOrAliasConstructor patternHead
+    headParams = symbolOrAliasParams patternHead
 
 
 
