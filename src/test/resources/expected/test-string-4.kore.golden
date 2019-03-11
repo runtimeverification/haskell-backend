@@ -1,4 +1,4 @@
-Parse error: ../../../test/resources//test-string-4.kore:1:11:
+Parse error: ../src/test/resources//test-string-4.kore:1:11:
   |
 1 | [key{}("\07777")]
   |           ^
