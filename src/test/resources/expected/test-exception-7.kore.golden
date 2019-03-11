@@ -1,4 +1,4 @@
-Parse error: ../../../test/resources//test-exception-7.kore:6:7:
+Parse error: ../src/test/resources//test-exception-7.kore:6:7:
   |
 6 |     #`2:#S []
   |       ^

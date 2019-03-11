@@ -44,7 +44,7 @@ which will indent the text and may simplify it, e.g.
 
 ```
 cd src/main/k/working/tests/collections/set-unify-framing-variable
-make test-k 2>&1 | python ../../../../../python/debugFilter.py > debug.txt
+make test-k 2>&1 | python ../src/main/python/debugFilter.py > debug.txt
 ```
 
 It also works for test error messages:

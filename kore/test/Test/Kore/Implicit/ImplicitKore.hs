@@ -44,5 +44,5 @@ test_implicitKore :: TestTree
 test_implicitKore =
     implicitKoreRegressionTests
         implicitKoreDefinition
-        (InputFileName "../../kore/kore.kore")
-        (GoldenFileName "../../../test/expected/kore.kore.golden")
+        (InputFileName "../src/main/kore/kore.kore")
+        (GoldenFileName "../src/test/expected/kore.kore.golden")

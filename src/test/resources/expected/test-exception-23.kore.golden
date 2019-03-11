@@ -1,4 +1,4 @@
-Parse error: ../../../test/resources//test-exception-23.kore:5:12:
+Parse error: ../src/test/resources//test-exception-23.kore:5:12:
   |
 5 |   symbol a{#b}() : n []
   |            ^

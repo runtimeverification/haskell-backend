@@ -5,7 +5,7 @@ license:             NCSA
 license-file:        LICENSE
 author:              "Virgil Serbanuta"
 maintainer:          "virgil.serbanuta@runtimeverification.com"
-copyright:           "2018 Runtime Verification Inc"
+copyright:           "2018-2019 Runtime Verification Inc"
 category:            Language
 
 extra-source-files:
@@ -19,7 +19,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/kore/README.md>
+description: Please see the [README](README.md) file.
 
 dependencies:
   - base >= 4.7
