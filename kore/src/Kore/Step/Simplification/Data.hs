@@ -123,6 +123,10 @@ deriving instance MonadReader r m => MonadReader r (BranchT m)
 
 deriving instance MonadState s m => MonadState s (BranchT m)
 
+instance MonadSMT m => MonadSMT (BranchT m) where
+    liftSMT = lift . liftSMT
+    {-# INLINE liftSMT #-}
+
 {- | Collect the values produced along the disjoint branches.
  -}
 getBranches :: Applicative m => BranchT m a -> m [a]
