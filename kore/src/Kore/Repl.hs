@@ -86,17 +86,17 @@ type ExecutionGraph level
 
 -- | State for the rep.
 data ReplState level = ReplState
-    { axioms    :: [Axiom level]
+    { axioms  :: [Axiom level]
     -- ^ List of available axioms
-    , claims    :: [Claim level]
+    , claims  :: [Claim level]
     -- ^ List of claims to be proven
-    , claim     :: Claim level
+    , claim   :: Claim level
     -- ^ Currently focused claim in the repl
-    , graph     :: ExecutionGraph level
+    , graph   :: ExecutionGraph level
     -- ^ Execution graph for the current proof; initialized with root = claim
-    , node      :: Graph.Node
+    , node    :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root
-    , stepper   :: StateT (ReplState level) Simplifier Bool
+    , stepper :: StateT (ReplState level) Simplifier Bool
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     }
 
@@ -127,7 +127,6 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     evalStateT (whileM repl0) state
 
   where
-
     repl0 :: StateT (ReplState level) Simplifier Bool
     repl0 = do
         command <- maybe ShowUsage id . parseMaybe commandParser <$> prompt
@@ -203,7 +202,7 @@ data ReplCommand
     | ShowGraph
     -- ^ Show the current execution graph.
     | ProveSteps !Int
-    -- ^ Do n proof steps from curent node, select the next state if unique.
+    -- ^ Do n proof steps from curent node.
     | SelectNode !Int
     -- ^ Select a different node in the graph.
     | ShowConfig
@@ -353,6 +352,7 @@ replInterpreter =
     showConfig0 :: StateT (ReplState level) Simplifier ()
     showConfig0 = do
         ReplState { graph, node } <- get
+        putStrLn' $ "Config at node " <> show node <> " is:"
         putStrLn'
             . unparseStrategy
             . Graph.lab'

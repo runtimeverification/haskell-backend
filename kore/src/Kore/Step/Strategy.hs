@@ -285,6 +285,9 @@ constructExecutionHistory transit instrs0 config0 =
 -- the graph and returning the resulting graph. Note that this does *NOT* do
 -- state merging, not even at the same level. The node ID's are also not
 -- hashes but just regular integer ID's.
+--
+-- Using simple ID's for nodes will likely be changed in the future in order to
+-- allow merging of states, loop detection, etc.
 executionHistoryStep
     :: forall m config prim
     .  Monad m
@@ -330,6 +333,9 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
 
 -- | Create a default/empty execution graph for the provided configuration. Note
 -- that the ID of the root node is NOT a hash but rather just '0'.
+--
+-- Using simple ID's for nodes will likely be changed in the future in order to
+-- allow merging of states, loop detection, etc.
 emptyExecutionGraph
     :: forall config
     .  Hashable config

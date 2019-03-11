@@ -302,10 +302,14 @@ verifyClaimStep
                 simplifier
                 axiomIdToSimplifier
 
-    strategy' :: Strategy (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
     strategy'
-        | isRoot = onePathFirstStep targetPattern rewrites
-        | otherwise = onePathFollowupStep targetPattern (rule <$> claims) rewrites
+        :: Strategy
+            (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
+    strategy'
+        | isRoot =
+              onePathFirstStep targetPattern rewrites
+        | otherwise =
+              onePathFollowupStep targetPattern (rule <$> claims) rewrites
 
     rewrites :: [RewriteRule level Variable]
     rewrites = coerce <$> axioms
@@ -321,6 +325,8 @@ verifyClaimStep
     isRoot :: Bool
     isRoot = node == root
 
+    -- Given a default proof, pass it as a default to the transitionRule and
+    -- discard the proof part of its result.
     stripProof
         :: forall prim strategy f g proof
         .  (Functor f, Functor g)
