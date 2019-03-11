@@ -21,6 +21,8 @@ module Kore.IndexedModule.Resolvers
     , findIndexedSort
     ) where
 
+import           Data.Functor
+                 ( ($>) )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import           Data.Proxy
@@ -121,15 +123,14 @@ getHeadType
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> HeadType
 getHeadType m patternHead =
-    case resolveSymbol m headName of
-        Right _ -> Symbol
-        Left _ ->
-            case resolveAlias m headName of
-                Right _ -> Alias
-                Left _ ->
-                    error $ noHead patternHead
+    case symbol <> alias of
+        Right result -> result
+        Left _ -> error $ noHead patternHead
   where
     headName = symbolOrAliasConstructor patternHead
+    symbol = resolveSymbol m headName $> Symbol
+    alias = resolveAlias m headName $> Alias
+
 
 getSortAttributes
     :: (HasCallStack, MetaOrObject level)
@@ -349,19 +350,14 @@ applyToResolution :: (MetaOrObject level)
                    -> SymbolOrAlias level
                    -> result
 applyToResolution f m patternHead =
-    case resolveSymbol m headName of
-        Right tuple ->
-            f headParams tuple
-        Left _ ->
-            case resolveAlias m headName of
-                Right tuple ->
-                    f headParams tuple
-                Left _ ->
-                    error $ noHead patternHead
+    case symbolResult <> aliasResult of
+        Right result -> result
+        Left _ -> error $ noHead patternHead
   where
     headName = symbolOrAliasConstructor patternHead
     headParams = symbolOrAliasParams patternHead
-
+    symbolResult = f headParams <$> resolveSymbol m headName
+    aliasResult = f headParams <$> resolveAlias m headName
 
 
 noSort :: MetaOrObject level => Id level -> String
