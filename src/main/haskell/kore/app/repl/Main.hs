@@ -58,9 +58,7 @@ parseKoreReplOptions =
                 <> help "Output file to contain final Kore pattern."
                 )
             )
-
   where
-
     parseMainModule :: Parser KoreModule
     parseMainModule  =
         KoreModule

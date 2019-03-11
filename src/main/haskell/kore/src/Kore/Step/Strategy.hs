@@ -307,7 +307,8 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
         Just configNode@ConfigNode { config } -> do
             configs <- transitionRule transit prim config
             let
-                nodes   = mkConfigNodes configNode <$> configs
+                max     = succ . snd . Graph.nodeRange $ graph
+                nodes   = mkConfigNodes configNode <$> zip [max ..] configs
             pure . toGraph $ history ++ [nodes]
   where
     nodeIsNotLeaf :: Bool
@@ -316,12 +317,15 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
     configNode0 :: Maybe (ConfigNode config)
     configNode0 = asum $ find ((== node) . nodeId) <$> history
 
-    mkConfigNodes :: ConfigNode config -> config -> ConfigNode config
-    mkConfigNodes ConfigNode { timestep, nodeId } config =
+    mkConfigNodes
+        :: ConfigNode config
+        -> (Graph.Node, config)
+        -> ConfigNode config
+    mkConfigNodes ConfigNode { timestep, nodeId } (node, config) =
         ConfigNode
             config
             (timestep + 1)
-            (timestep + 1)
+            node
             [nodeId]
 
 -- | Create a default/empty execution graph for the provided configuration. Note

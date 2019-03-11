@@ -5,6 +5,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
+
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds    #-}
 -- Added because stepper is only used via 'lensStepper' which is not detected
@@ -37,11 +38,13 @@ import           Data.Maybe
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( Parsec, parseMaybe, (<|>) )
+                 ( Parsec, option, parseMaybe, (<|>) )
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer
                  ( decimal, signed )
 
+import           Control.Monad.Extra
+                 ( loopM )
 import qualified Kore.AST.Common as Kore
                  ( Variable )
 import           Kore.AST.MetaOrObject
@@ -133,12 +136,13 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     state :: ReplState level
     state =
         ReplState
-            axioms'
-            claims'
-            firstClaim
-            firstClaimExecutionGraph
-            (Strategy.root firstClaimExecutionGraph)
-            stepper
+            { axioms  = axioms'
+            , claims  = claims'
+            , claim   = firstClaim
+            , graph   = firstClaimExecutionGraph
+            , node    = (Strategy.root firstClaimExecutionGraph)
+            , stepper = stepper0
+            }
 
     firstClaim :: Claim level
     firstClaim = maybe (error "No claims found") id . listToMaybe $ claims'
@@ -146,8 +150,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     firstClaimExecutionGraph :: ExecutionGraph level
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
-    stepper :: StateT (ReplState level) Simplifier Bool
-    stepper = do
+    stepper0 :: StateT (ReplState level) Simplifier Bool
+    stepper0 = do
         ReplState
             { claims
             , axioms
@@ -174,7 +178,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
 
     replGreeting :: MonadIO m => m ()
     replGreeting =
-        liftIO $ putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
+        liftIO $
+            putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
     prompt :: MonadIO m => m String
     prompt = liftIO $ do
@@ -197,8 +202,8 @@ data ReplCommand
     -- ^ Drop the current proof state and re-initialize for the nth claim.
     | ShowGraph
     -- ^ Show the current execution graph.
-    | ProveStep
-    -- ^ Do one step proof from curent node, select the next state if unique.
+    | ProveSteps !Int
+    -- ^ Do n proof steps from curent node, select the next state if unique.
     | SelectNode !Int
     -- ^ Select a different node in the graph.
     | ShowConfig
@@ -213,11 +218,14 @@ helpText =
     \help                    shows this help message\n\
     \claim <n>               shows the nth claim\n\
     \axiom <n>               shows the nth axiom\n\
-    \prove <n>               initializez proof mode for the nth claim\n\
+    \prove <n>               initializez proof mode for the nth \
+                             \claim\n\
     \graph                   shows the current proof graph\n\
-    \step                    attempts to run a proof step at the current node \n\
+    \step [n]                attempts to run 'n' proof steps at\
+                             \the current node (n=1 by default)\n\
     \select <n>              select node id 'n' from the graph\n\
-    \config                  shows the config for the selected node\n\
+    \config                  shows the config for the selected \
+                             \node\n\
     \exit                    exits the repl"
 
 type Parser = Parsec String String
@@ -229,7 +237,7 @@ commandParser =
     <|> showAxiom0
     <|> prove0
     <|> showGraph0
-    <|> proveStep0
+    <|> proveSteps0
     <|> selectNode0
     <|> showConfig0
     <|> exit0
@@ -250,8 +258,8 @@ commandParser =
     showGraph0 :: Parser ReplCommand
     showGraph0 = ShowGraph <$ string "graph"
 
-    proveStep0 :: Parser ReplCommand
-    proveStep0 = ProveStep <$ string "step"
+    proveSteps0 :: Parser ReplCommand
+    proveSteps0 = fmap ProveSteps $ string "step" *> space *> option 1 decimal
 
     selectNode0 :: Parser ReplCommand
     selectNode0 =
@@ -276,7 +284,7 @@ replInterpreter =
         ShowAxiom a -> showAxiom0 a $> True
         Prove i -> prove0 i $> True
         ShowGraph -> showGraph0 $> True
-        ProveStep -> proveStep0 $> True
+        ProveSteps n -> proveSteps0 n $> True
         SelectNode i -> selectNode0 i $> True
         ShowConfig -> showConfig0 $> True
         Exit -> pure False
@@ -322,30 +330,18 @@ replInterpreter =
             . Graph.graphToDot Graph.nonClusteredParams
             $ graph
 
-    proveStep0 :: StateT (ReplState level) Simplifier ()
-    proveStep0 = do
-        f <- Lens.use lensStepper
-        res <- f
-        if res
-            then do
-                Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-                node <- Lens.use lensNode
-                let
-                    context = Graph.context graph node
-                case Graph.suc' context of
-                    [] -> putStrLn' "No child nodes were found."
-                    [configNo] -> do
-                        lensNode .= configNo
-                        putStrLn'
-                            $ "Found one child node ("
-                            <> show configNo
-                            <> ") and selected it."
-                    neighbors -> do
-                        putStrLn'
-                            $ "Found "
-                            <> show (length neighbors)
-                            <> " sub-state(s)."
-            else putStrLn' "Node already evaluated."
+    proveSteps0 :: Int -> StateT (ReplState level) Simplifier ()
+    proveSteps0 n = do
+        result <- loopM performStepNoBranching (n, Success, 0)
+        case result of
+            (0, Success, node) ->
+                putStrLn' $ "Done. Current node: " <> show node
+            (done, res, _) ->
+                putStrLn'
+                    $ "Stopped after "
+                    <> show (n - done - 1)
+                    <> " step(s) due to "
+                    <> show res
 
     selectNode0 :: Int -> StateT (ReplState level) Simplifier ()
     selectNode0 i = do
@@ -363,6 +359,42 @@ replInterpreter =
             . Graph.context (Strategy.graph graph)
             $ node
 
+    performSingleStep
+        :: StateT (ReplState level) Simplifier (StepResult, Graph.Node)
+    performSingleStep = do
+        f <- Lens.use lensStepper
+        node <- Lens.use lensNode
+        res <- f
+        if res
+            then do
+                Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+                let
+                    context = Graph.context graph node
+                case Graph.suc' context of
+                    [] -> pure (NoChildNodes, node)
+                    [configNo] -> do
+                        lensNode .= configNo
+                        pure (Success, node)
+                    neighbors -> pure (Branch neighbors, node)
+            else pure (NodeAlreadyEvaluated, node)
+
+    performStepNoBranching
+        :: (Int, StepResult, Graph.Node)
+        -> StateT
+            (ReplState level)
+            Simplifier
+                (Either
+                     (Int, StepResult, Graph.Node)
+                     (Int, StepResult, Graph.Node)
+                )
+    performStepNoBranching (0, res, node) =
+        pure $ Right (0, res, node)
+    performStepNoBranching (n, Success, _) = do
+        (res, node) <- performSingleStep
+        pure $ Left (n-1, res, node)
+    performStepNoBranching (n, res, node) =
+        pure $ Right (n, res, node)
+
     unparseStrategy :: StrategyPattern (CommonExpandedPattern level) -> String
     unparseStrategy =
         \case
@@ -375,6 +407,13 @@ replInterpreter =
 
     putStrLn' :: MonadIO m => String -> m ()
     putStrLn' = liftIO . putStrLn
+
+data StepResult
+    = NodeAlreadyEvaluated
+    | NoChildNodes
+    | Branch [Graph.Node]
+    | Success
+    deriving Show
 
 unClaim :: forall level. Claim level -> RewriteRule level Kore.Variable
 unClaim Claim { rule } = rule

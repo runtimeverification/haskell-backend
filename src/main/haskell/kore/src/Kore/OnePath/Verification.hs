@@ -288,23 +288,19 @@ verifyClaimStep
         strategy'
         eg
         node
-
   where
     transitionRule'
         :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
         -> StrategyPattern (CommonExpandedPattern level)
         -> Simplifier [StrategyPattern (CommonExpandedPattern level)]
     transitionRule' =
-        \prim ->
-            dimap
-                constProof
-                ((fmap . fmap) fst)
-                $ OnePath.transitionRule
-                    tools
-                    predicateSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    prim
+        stripProof
+            mempty
+            $ OnePath.transitionRule
+                tools
+                predicateSimplifier
+                simplifier
+                axiomIdToSimplifier
 
     strategy' :: Strategy (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
     strategy'
@@ -325,5 +321,14 @@ verifyClaimStep
     isRoot :: Bool
     isRoot = node == root
 
-    constProof :: forall a. a -> (a, StepProof level Variable)
-    constProof a = (a, mempty)
+    stripProof
+        :: forall prim strategy f g proof
+        .  (Functor f, Functor g)
+        => proof
+        -> (prim -> (strategy, proof) -> f (g (strategy, proof)))
+        -> prim -> strategy -> f (g strategy)
+    stripProof defaultProof fn prim =
+        dimap
+            (\a -> (a, defaultProof))
+            ((fmap . fmap) fst)
+            $ fn prim
