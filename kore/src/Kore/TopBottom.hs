@@ -10,7 +10,12 @@ Portability : portable
 
 module Kore.TopBottom
     ( TopBottom (..)
+    , guardAgainstBottom
     ) where
+
+import           Control.Applicative
+                 ( Alternative (..) )
+import qualified Control.Monad as Monad
 
 {-| Class for types whose values work as top, bottom, or something between.
 
@@ -33,3 +38,11 @@ class TopBottom term where
 instance TopBottom () where
     isTop _ = True
     isBottom _ = False
+
+{- | Fail using 'empty' when @term@ is bottom.
+
+See also: 'empty', 'isBottom', 'Monad.guard'
+
+ -}
+guardAgainstBottom :: (Alternative f, TopBottom term) => term -> f ()
+guardAgainstBottom = Monad.guard . not . isBottom
