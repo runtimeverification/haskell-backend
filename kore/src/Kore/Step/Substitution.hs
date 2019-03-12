@@ -90,16 +90,20 @@ normalize
     axiomIdToSimplifier
     Predicated { term, predicate, substitution }
   = do
-    result <-
-        runExceptT
+    -- We collect all the results here because we should promote the
+    -- substitution to the predicate when there is an error on *any* branch.
+    results <-
+        Monad.Trans.lift
+        $ gather
+        $ runExceptT
         $ normalizeWorker
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             Predicated { term = (), predicate, substitution }
-    case result of
-        Right normal -> return normal { term }
+    case sequence results of
+        Right normal -> scatter (applyTerm <$> normal)
         Left _ ->
             return Predicated
                 { term
@@ -109,6 +113,8 @@ normalize
                         (substitutionToPredicate substitution)
                 , substitution = mempty
                 }
+  where
+    applyTerm predicated = predicated { term }
 
 normalizeWorker
     ::  ( MetaOrObject level
@@ -125,10 +131,9 @@ normalizeWorker
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitution level variable
-    -> ExceptT
-          (UnificationOrSubstitutionError level variable)
-          (BranchT Simplifier)
-          (PredicateSubstitution level variable)
+    -> ExceptT (UnificationOrSubstitutionError level variable)
+        (BranchT Simplifier)
+        (PredicateSubstitution level variable)
 normalizeWorker
     tools
     wrappedSimplifier@(PredicateSubstitutionSimplifier substitutionSimplifier)
@@ -136,6 +141,8 @@ normalizeWorker
     axiomIdToSimplifier
     Predicated { predicate, substitution }
   = do
+    -- The intermediate steps do not need to be checked for \bottom because we
+    -- use guardAgainstBottom at the end.
     (duplication, _) <- normalizeSubstitutionDuplication' substitution
     let
         Predicated { substitution = duplicationSubstitution } = duplication
@@ -159,7 +166,7 @@ normalizeWorker
             }
   where
     normalizeSubstitutionDuplication' =
-        Monad.Morph.hoist lift
+        Monad.Morph.hoist Monad.Trans.lift
         . normalizeSubstitutionDuplication
             tools
             wrappedSimplifier
@@ -167,7 +174,7 @@ normalizeWorker
             axiomIdToSimplifier
 
     normalizeSubstitution' =
-        Monad.Morph.hoist lift
+        Monad.Morph.hoist Monad.Trans.lift
         . withExceptT substitutionToUnifyOrSubError
         . normalizeSubstitution tools
 
