@@ -44,6 +44,7 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
+import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof (EmptyUnificationProof) )
 import           Kore.Unification.Error
@@ -135,7 +136,7 @@ normalizeWorker
     axiomIdToSimplifier
     Predicated { predicate, substitution }
   = do
-    duplication <- normalizeSubstitutionDuplication' substitution
+    (duplication, _) <- normalizeSubstitutionDuplication' substitution
     let
         Predicated { substitution = duplicationSubstitution } = duplication
         Predicated { predicate = duplicationPredicate } = duplication
@@ -149,30 +150,26 @@ normalizeWorker
             makeMultipleAndPredicate
                 [predicate, duplicationPredicate, normalizedPredicate]
 
-    lift $ substitutionSimplifier
-        Predicated
+    lift $ do
+        TopBottom.guardAgainstBottom mergedPredicate
+        substitutionSimplifier Predicated
             { term = ()
             , predicate = mergedPredicate
             , substitution = normalizedSubstitution
             }
   where
-    normalizeSubstitutionDuplication' substitution' = do
-        (duplication, _) <-
-            Monad.Morph.hoist lift
-            $ normalizeSubstitutionDuplication
-                tools
-                wrappedSimplifier
-                simplifier
-                axiomIdToSimplifier
-                substitution'
-        Monad.Trans.lift (returnPruned duplication)
+    normalizeSubstitutionDuplication' =
+        Monad.Morph.hoist lift
+        . normalizeSubstitutionDuplication
+            tools
+            wrappedSimplifier
+            simplifier
+            axiomIdToSimplifier
 
-    normalizeSubstitution' substitution' = do
-        normalized <-
-            Monad.Morph.hoist lift
-            $ withExceptT substitutionToUnifyOrSubError
-            $ normalizeSubstitution tools substitution'
-        Monad.Trans.lift (returnPruned normalized)
+    normalizeSubstitution' =
+        Monad.Morph.hoist lift
+        . withExceptT substitutionToUnifyOrSubError
+        . normalizeSubstitution tools
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list

@@ -13,7 +13,6 @@ module Kore.Step.Simplification.Data
     , evalSimplifier
     , BranchT, runBranchT
     , getBranches
-    , liftPruned, returnPruned
     , evalSimplifierBranch
     , gather
     , gatherAll
@@ -33,7 +32,6 @@ import qualified Control.Monad as Monad
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
-import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT (..), runExceptT )
 import qualified Data.Foldable as Foldable
@@ -54,9 +52,6 @@ import           Kore.Step.Representation.MultiOr
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import           Kore.TopBottom
-                 ( TopBottom )
-import qualified Kore.TopBottom as TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import           ListT
@@ -129,36 +124,6 @@ instance MonadSMT m => MonadSMT (BranchT m) where
  -}
 getBranches :: Applicative m => BranchT m a -> m [a]
 getBranches (BranchT as) = toListM as
-
-{- | Lift a computation into 'BranchT' while pruning 'isBottom' results.
-
-Example:
-
-@
-liftPrune (return 'Kore.Step.ExpandedPattern.bottom') === empty
-@
-
-See also: 'returnPruned'
-
- -}
-liftPruned :: (Monad m, TopBottom t) => m t -> BranchT m t
-liftPruned unlifted = Monad.Trans.lift unlifted >>= returnPruned
-
-{- | Return a 't' unless the value satisfies 'TopBottom.isBottom'.
-
-When the values satisfies 'TopBottom.isBottom', the result is 'empty' instead.
-
-Example:
-
-@
-returnPruned 'Kore.Step.ExpandedPattern.bottom' === empty
-@
-
- -}
-returnPruned :: TopBottom t => t -> BranchT m t
-returnPruned t
-  | TopBottom.isBottom t = empty
-  | otherwise = return t
 
 {- | Collect results from many simplification branches into one result.
 
