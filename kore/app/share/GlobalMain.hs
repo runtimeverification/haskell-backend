@@ -3,6 +3,8 @@
 module GlobalMain
     ( MainOptions(..)
     , GlobalOptions(..)
+    , KoreProveOptions(..)
+    , parseKoreProveOptions
     , mainGlobal
     , defaultMainGlobal
     , enableDisableFlag
@@ -41,8 +43,8 @@ import           Development.GitRev
                  ( gitBranch, gitCommitDate, gitHash )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, disabled, execParser, flag,
-                 flag', help, helper, hidden, info, internal, long, (<**>),
-                 (<|>) )
+                 flag', help, helper, hidden, info, internal, long, metavar,
+                 strOption, (<**>), (<|>) )
 import           System.Clock
                  ( Clock (Monotonic), diffTimeSpec, getTime )
 import           System.IO
@@ -67,6 +69,31 @@ import           Kore.Parser.Parser
 import           Kore.Step.StepperAttributes
 import qualified Paths_kore as MetaData
                  ( version )
+
+data KoreProveOptions =
+    KoreProveOptions
+        { specFileName :: !FilePath
+        -- ^ Name of file containing the spec to be proven
+        , specMainModule :: !ModuleName
+        -- ^ The main module of the spec to be proven
+        }
+
+parseKoreProveOptions :: Parser KoreProveOptions
+parseKoreProveOptions =
+    KoreProveOptions
+    <$> strOption
+        (  metavar "SPEC_FILE"
+        <> long "prove"
+        <> help "Kore source file representing spec to be proven.\
+                \Needs --spec-module."
+        )
+    <*> (ModuleName
+        <$> strOption
+            (  metavar "SPEC_MODULE"
+            <> long "spec-module"
+            <> help "The name of the main module in the spec to be proven."
+            )
+        )
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}

@@ -40,24 +40,17 @@ data SmtOptions = SmtOptions
 -- | Options for the kore repl.
 data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
-    , specModule       :: !KoreModule
+    , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
-    , outputFileName   :: !(Maybe FilePath)
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
 parseKoreReplOptions =
     KoreReplOptions
     <$> parseMainModule
-    <*> parseSpecModule
+    <*> parseKoreProveOptions
     <*> parseSmtOptions
-    <*> optional
-            (strOption
-                (  metavar "PATTERN_OUTPUT_FILE"
-                <> long "output"
-                <> help "Output file to contain final Kore pattern."
-                )
-            )
+    <* parseIgnoredOutput
   where
     parseMainModule :: Parser KoreModule
     parseMainModule  =
@@ -67,16 +60,6 @@ parseKoreReplOptions =
             <> help "Kore definition file to verify and use for execution"
             )
         <*> parseModuleName "MAIN" "Kore main module name." "module"
-
-    parseSpecModule :: Parser KoreModule
-    parseSpecModule =
-        KoreModule
-        <$> strOption
-            (  metavar ("SPEC_DEFINITION_FILE")
-            <> long "prove"
-            <> help "Spec definition file"
-            )
-        <*> parseModuleName "SPEC" "Spec module name" "spec-module"
 
     parseModuleName :: String -> String -> String -> Parser ModuleName
     parseModuleName name helpMessage longName =
@@ -112,6 +95,16 @@ parseKoreReplOptions =
             then readerError "smt-timeout must be a positive integer."
             else return $ SMT.TimeOut $ Limit i
 
+    parseIgnoredOutput :: Parser (Maybe String)
+    parseIgnoredOutput =
+        optional
+            (strOption
+                (  metavar "PATTERN_OUTPUT_FILE"
+                <> long "output"
+                <> help "This parameter is ignored"
+                )
+            )
+
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
     fullDesc
@@ -127,7 +120,7 @@ main = do
 
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions
-    KoreReplOptions { definitionModule, specModule, smtOptions }
+    KoreReplOptions { definitionModule, proveOptions, smtOptions }
   = do
     parsedDefinition <- parseDefinition definitionFileName
     indexedDefinition@(indexedModules, _) <-
@@ -138,14 +131,14 @@ mainWithOptions
     indexedModule <-
         constructorFunctions <$> mainModule mainModuleName indexedModules
 
-    specDef <- parseDefinition specFileName
+    specDef <- parseDefinition specFile
     (specDefIndexedModules, _) <-
         verifyDefinitionWithBase
             (Just indexedDefinition)
             True
             specDef
     specDefIndexedModule <-
-        mainModule specMainModule specDefIndexedModules
+        mainModule specModule specDefIndexedModules
 
     let
         smtConfig =
@@ -164,11 +157,11 @@ mainWithOptions
     definitionFileName :: FilePath
     definitionFileName = fileName definitionModule
 
-    specMainModule :: ModuleName
-    specMainModule = moduleName specModule
+    specModule :: ModuleName
+    specModule = specMainModule proveOptions
 
-    specFileName :: FilePath
-    specFileName = fileName specModule
+    specFile :: FilePath
+    specFile = specFileName proveOptions
 
     smtTimeOut :: SMT.TimeOut
     smtTimeOut = timeOut smtOptions

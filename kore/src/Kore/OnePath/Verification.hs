@@ -39,7 +39,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
-                 ( Prim, StrategyPattern, onePathFirstStep,
+                 ( CommonStrategyPattern, Prim, onePathFirstStep,
                  onePathFollowupStep )
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
@@ -217,7 +217,7 @@ verifyClaim
             Limit.takeWithin
                 stepLimit
                 (strategyBuilder right)
-        startPattern :: StrategyPattern (CommonExpandedPattern level)
+        startPattern :: CommonStrategyPattern level
         startPattern =
             StrategyPattern.RewritePattern
                 Predicated
@@ -239,18 +239,14 @@ verifyClaim
   where
     transitionRule'
         :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
-        -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
-        -> Simplifier [(StrategyPattern (CommonExpandedPattern level), StepProof level Variable)]
+        -> (CommonStrategyPattern level, StepProof level Variable)
+        -> Simplifier [(CommonStrategyPattern level, StepProof level Variable)]
     transitionRule' =
         OnePath.transitionRule
             metadataTools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-
--- | TODO: Docs.
-type Configuration level = StrategyPattern (CommonExpandedPattern level)
-
 
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
@@ -268,11 +264,11 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Axiom level]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph (Configuration level)
+    -> ExecutionGraph (CommonStrategyPattern level)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> Simplifier (ExecutionGraph (Configuration level))
+    -> Simplifier (ExecutionGraph (CommonStrategyPattern level))
 verifyClaimStep
     tools
     simplifier
@@ -291,11 +287,10 @@ verifyClaimStep
   where
     transitionRule'
         :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
-        -> StrategyPattern (CommonExpandedPattern level)
-        -> Simplifier [StrategyPattern (CommonExpandedPattern level)]
+        -> CommonStrategyPattern level
+        -> Simplifier [CommonStrategyPattern level]
     transitionRule' =
         stripProof
-            mempty
             $ OnePath.transitionRule
                 tools
                 predicateSimplifier
@@ -329,12 +324,11 @@ verifyClaimStep
     -- discard the proof part of its result.
     stripProof
         :: forall prim strategy f g proof
-        .  (Functor f, Functor g)
-        => proof
-        -> (prim -> (strategy, proof) -> f (g (strategy, proof)))
+        .  (Functor f, Functor g, Monoid proof)
+        => (prim -> (strategy, proof) -> f (g (strategy, proof)))
         -> prim -> strategy -> f (g strategy)
-    stripProof defaultProof fn prim =
+    stripProof fn prim =
         dimap
-            (\a -> (a, defaultProof))
+            (\a -> (a, mempty))
             ((fmap . fmap) fst)
             $ fn prim

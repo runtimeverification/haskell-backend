@@ -59,31 +59,6 @@ Main module to run kore-exec
 TODO: add command line argument tab-completion
 -}
 
-data KoreProveOptions =
-    KoreProveOptions
-        { specFileName :: !FilePath
-        -- ^ Name of file containing the spec to be proven
-        , specMainModule :: !ModuleName
-        -- ^ The main module of the spec to be proven
-        }
-
-parseKoreProveOptions :: Parser KoreProveOptions
-parseKoreProveOptions =
-    KoreProveOptions
-    <$> strOption
-        (  metavar "SPEC_FILE"
-        <> long "prove"
-        <> help "Kore source file representing spec to be proven.\
-                \Needs --spec-module."
-        )
-    <*> (ModuleName
-        <$> strOption
-            (  metavar "SPEC_MODULE"
-            <> long "spec-module"
-            <> help "The name of the main module in the spec to be proven."
-            )
-        )
-
 
 data KoreSearchOptions =
     KoreSearchOptions

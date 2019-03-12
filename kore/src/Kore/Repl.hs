@@ -7,11 +7,10 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds    #-}
--- Added because stepper is only used via 'lensStepper' which is not detected
 
 module Kore.Repl
     ( runRepl
+    , ReplState (..)
     ) where
 
 import           Control.Lens
@@ -31,6 +30,8 @@ import           Control.Monad.State.Strict
                  ( lift )
 import           Data.Functor
                  ( ($>) )
+import           Data.Graph.Inductive.Graph
+                 ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.Maybe
@@ -52,7 +53,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
-                 ( StrategyPattern (..) )
+                 ( CommonStrategyPattern, StrategyPattern (..) )
 import           Kore.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.OnePath.Verification
@@ -66,7 +67,7 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns
                  ( RulePattern (..) )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import           Kore.Step.Simplification.Data
@@ -80,9 +81,7 @@ import           Kore.Unparser
                  ( unparseToString )
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph level
-    = Strategy.ExecutionGraph
-        (StrategyPattern (CommonExpandedPattern level))
+type ExecutionGraph level = Strategy.ExecutionGraph (CommonStrategyPattern level)
 
 -- | State for the rep.
 data ReplState level = ReplState
@@ -323,11 +322,8 @@ replInterpreter =
     showGraph0 :: StateT (ReplState level) Simplifier ()
     showGraph0 = do
         Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+        liftIO $ showDotGraph graph
 
-        liftIO
-            . (flip Graph.runGraphvizCanvas') Graph.Xlib
-            . Graph.graphToDot Graph.nonClusteredParams
-            $ graph
 
     proveSteps0 :: Int -> StateT (ReplState level) Simplifier ()
     proveSteps0 n = do
@@ -378,8 +374,14 @@ replInterpreter =
                     neighbors -> pure (Branch neighbors, node)
             else pure (NodeAlreadyEvaluated, node)
 
+    -- | Performs n proof steps, picking the next node unless branching occurs.
+    -- Returns 'Left' while it has to continue looping, and 'Right' when done
+    -- or when execution branches or proof finishes earlier than the counter.
+    --
+    -- See 'loopM' for details.
     performStepNoBranching
         :: (Int, StepResult, Graph.Node)
+        -- ^ (current step, last result, current node)
         -> StateT
             (ReplState level)
             Simplifier
@@ -395,7 +397,7 @@ replInterpreter =
     performStepNoBranching (n, res, node) =
         pure $ Right (n, res, node)
 
-    unparseStrategy :: StrategyPattern (CommonExpandedPattern level) -> String
+    unparseStrategy :: CommonStrategyPattern level -> String
     unparseStrategy =
         \case
             Bottom -> "Reached goal!"
@@ -407,6 +409,11 @@ replInterpreter =
 
     putStrLn' :: MonadIO m => String -> m ()
     putStrLn' = liftIO . putStrLn
+
+    showDotGraph :: Graph gr => gr nl el -> IO ()
+    showDotGraph =
+        (flip Graph.runGraphvizCanvas') Graph.Xlib
+            . Graph.graphToDot Graph.nonClusteredParams
 
 data StepResult
     = NodeAlreadyEvaluated
@@ -423,11 +430,11 @@ unAxiom (Axiom rule) = rule
 
 emptyExecutionGraph
     :: Claim level
-    -> Strategy.ExecutionGraph (StrategyPattern (CommonExpandedPattern level))
+    -> Strategy.ExecutionGraph (CommonStrategyPattern level)
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
 
 extractConfig
     :: RewriteRule level Kore.Variable
-    -> StrategyPattern (CommonExpandedPattern level)
+    -> CommonStrategyPattern level
 extractConfig (RewriteRule RulePattern { left, requires }) =
     RewritePattern $ Predicated left requires mempty
