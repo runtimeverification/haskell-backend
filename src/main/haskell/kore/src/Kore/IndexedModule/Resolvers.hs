@@ -9,7 +9,6 @@ Portability : POSIX
 -}
 module Kore.IndexedModule.Resolvers
     ( HeadType(..)
-    , getHeadApplicationSorts
     , getHeadAttributes
     , getHeadType
     , getSortAttributes
@@ -18,6 +17,12 @@ module Kore.IndexedModule.Resolvers
     , resolveSymbol
     , resolveHook
     , findIndexedSort
+
+    -- TODO: This symbol is used internally - but in an untested function.
+    -- It itself is tested, so it indirectly provides a little testing for
+    -- the otherwise untested function. 
+    , getHeadApplicationSorts
+
     ) where
 
 import           Data.Functor
