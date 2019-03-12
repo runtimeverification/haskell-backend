@@ -31,8 +31,6 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Logger
        ( LogMessage )
-import Kore.Step.AxiomPatterns
-       ( RewriteRule )
 import Kore.Step.Pattern
 import Kore.Step.Representation.ExpandedPattern
        ( PredicateSubstitution )
@@ -44,6 +42,7 @@ import SimpleSMT
        ( Solver )
 import SMT
        ( MonadSMT, SMT (..), liftSMT, withSolver' )
+
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
 -}
@@ -58,7 +57,6 @@ data SimplificationProof level = SimplificationProof
 data Environment = Environment
     { solver     :: !(MVar Solver)
     , logger     :: !(LogAction Simplifier LogMessage)
-    , proveClaim :: !(RewriteRule Object Variable -> IO ())
     }
 
 newtype Simplifier a = Simplifier
@@ -121,12 +119,10 @@ runSimplifier
     -- ^ simplifier computation
     -> LogAction Simplifier LogMessage
     -- ^ initial counter for fresh variables
-    -> (RewriteRule Object Variable -> IO ())
-    -- ^ repl handler
     -> SMT a
-runSimplifier (Simplifier s) logger repl =
+runSimplifier (Simplifier s) logger =
     withSolver' $ \solver -> do
-        a <- runReaderT s $ Environment solver logger repl
+        a <- runReaderT s $ Environment solver logger
         pure a
 
 {- | Evaluate a simplifier computation.
@@ -136,11 +132,10 @@ Only the result is returned; the counter is discarded.
   -}
 evalSimplifier
     :: LogAction Simplifier LogMessage
-    -> (RewriteRule Object Variable -> IO ())
     -> Simplifier a
     -> SMT a
-evalSimplifier logger repl simplifier =
-    runSimplifier simplifier logger repl
+evalSimplifier logger simplifier =
+    runSimplifier simplifier logger
 
 {-| Wraps a function that evaluates Kore functions on StepPatterns.
 -}

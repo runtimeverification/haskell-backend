@@ -38,8 +38,12 @@ module Kore.Step.Strategy
     , pickStar
     , pickPlus
     , assert
+    , executionHistoryStep
+    , emptyExecutionGraph
     ) where
 
+import           Data.Foldable
+                 ( asum )
 import           Data.Function
                  ( on )
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -47,7 +51,7 @@ import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
 import           Data.Hashable
 import           Data.List
-                 ( groupBy )
+                 ( find, groupBy )
 import           Data.Maybe
 import           Prelude hiding
                  ( all, and, any, or, replicate, seq, sequence )
@@ -275,6 +279,72 @@ constructExecutionHistory transit instrs0 config0 =
         (nodeId node)
         (concat $ map parents nodes)
     mergeDuplicates0 _ = error "The impossible happened"
+
+
+-- | Perform a single step in the execution starting from the selected node in
+-- the graph and returning the resulting graph. Note that this does *NOT* do
+-- state merging, not even at the same level. The node ID's are also not
+-- hashes but just regular integer ID's.
+--
+-- Using simple ID's for nodes will likely be changed in the future in order to
+-- allow merging of states, loop detection, etc.
+executionHistoryStep
+    :: forall m config prim
+    .  Monad m
+    => Hashable config
+    => Show config
+    => (prim -> config -> m [config])
+    -- ^ state stepper
+    -> Strategy prim
+    -- ^ Primitive strategy
+    -> ExecutionGraph config
+    -- ^ execution graph so far
+    -> Graph.Node
+    -- ^ current "selected" node
+    -> m (ExecutionGraph config)
+    -- ^ graph with one more step executed for the selected node
+executionHistoryStep transit prim ExecutionGraph { graph, history } node
+  | nodeIsNotLeaf = error "Node has already been evaluated"
+  | otherwise = case configNode0 of
+        Nothing -> error "ExecutionGraph not setup properly; node does not exist"
+        Just configNode@ConfigNode { config } -> do
+            configs <- transitionRule transit prim config
+            let
+                max     = succ . snd . Graph.nodeRange $ graph
+                nodes   = mkConfigNodes configNode <$> zip [max ..] configs
+            pure . toGraph $ history ++ [nodes]
+  where
+    nodeIsNotLeaf :: Bool
+    nodeIsNotLeaf = Graph.outdeg graph node > 0
+
+    configNode0 :: Maybe (ConfigNode config)
+    configNode0 = asum $ find ((== node) . nodeId) <$> history
+
+    mkConfigNodes
+        :: ConfigNode config
+        -> (Graph.Node, config)
+        -> ConfigNode config
+    mkConfigNodes ConfigNode { timestep, nodeId } (node, config) =
+        ConfigNode
+            config
+            (timestep + 1)
+            node
+            [nodeId]
+
+-- | Create a default/empty execution graph for the provided configuration. Note
+-- that the ID of the root node is NOT a hash but rather just '0'.
+--
+-- Using simple ID's for nodes will likely be changed in the future in order to
+-- allow merging of states, loop detection, etc.
+emptyExecutionGraph
+    :: forall config
+    .  Hashable config
+    => config
+    -> ExecutionGraph config
+emptyExecutionGraph config = toGraph [[configNode]]
+  where
+    configNode :: ConfigNode config
+    configNode = ConfigNode config 0 (0 :: Int) []
 
 {- | Execute a 'Strategy'.
 

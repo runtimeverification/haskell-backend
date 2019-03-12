@@ -127,22 +127,6 @@ main = do
             when willPrintPattern $
                 putStrLn (prettyPrintToString parsedPattern)
 
-mainModule
-    :: ModuleName
-    -> Map.Map
-        ModuleName
-        (VerifiedModule StepperAttributes Attribute.Axiom)
-    -> IO (VerifiedModule StepperAttributes Attribute.Axiom)
-mainModule name modules =
-    case Map.lookup name modules of
-        Nothing ->
-            error
-                (  "The main module, '"
-                ++ getModuleNameForError name
-                ++ "', was not found. Check the --module flag."
-                )
-        Just m -> return m
-
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
 mainDefinitionParse :: String -> IO KoreDefinition
@@ -152,21 +136,6 @@ mainDefinitionParse = mainParse parseKoreDefinition
 -- information.
 mainPatternParse :: String -> IO CommonKorePattern
 mainPatternParse = mainParse parseKorePattern
-
--- | IO action that parses a kore AST entity from a filename and prints timing
--- information.
-mainParse
-    :: (FilePath -> String -> Either String a)
-    -> String
-    -> IO a
-mainParse parser fileName = do
-    contents <-
-        clockSomethingIO "Reading the input file" (readFile fileName)
-    parseResult <-
-        clockSomething "Parsing the file" (parser fileName contents)
-    case parseResult of
-        Left err         -> error err
-        Right definition -> return definition
 
 -- | IO action verifies well-formedness of Kore definition and prints
 -- timing information.

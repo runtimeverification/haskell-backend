@@ -11,6 +11,7 @@ module Kore.OnePath.Step
     ( -- * Primitive strategies
       Prim (..)
     , StrategyPattern (..)
+    , CommonStrategyPattern
     , simplify
     , transitionRule
     , onePathFirstStep
@@ -128,6 +129,9 @@ data StrategyPattern patt
     -- differentiate between them and stuck results.
   deriving (Show, Eq, Ord, Generic)
 
+-- | A 'StrategyPattern' instantiated to 'CommonExpandedPattern' for convenience.
+type CommonStrategyPattern level = StrategyPattern (CommonExpandedPattern level)
+
 instance Hashable patt => Hashable (StrategyPattern patt)
 
 -- | Apply the rewrites in order. The first one is applied on the start pattern,
@@ -187,10 +191,10 @@ transitionRule
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> Prim (CommonExpandedPattern level) (RewriteRule level Variable)
-    -> (StrategyPattern (CommonExpandedPattern level), StepProof level Variable)
+    -> (CommonStrategyPattern  level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> Simplifier
-        [   ( StrategyPattern (CommonExpandedPattern level)
+        [   ( CommonStrategyPattern level
             , StepProof level Variable
             )
         ]
@@ -237,11 +241,11 @@ transitionRule
 
     transitionApplyWithRemainders
         :: [RewriteRule level Variable]
-        ->  ( StrategyPattern (CommonExpandedPattern level)
+        ->  ( CommonStrategyPattern level
             , StepProof level Variable
             )
         -> Simplifier
-            [   ( StrategyPattern (CommonExpandedPattern level)
+            [   ( CommonStrategyPattern level
                 , StepProof level Variable
                 )
             ]
@@ -258,7 +262,7 @@ transitionRule
             , StepProof level Variable
             )
         -> Simplifier
-            [   ( StrategyPattern (CommonExpandedPattern level)
+            [   ( CommonStrategyPattern level
                 , StepProof level Variable
                 )
             ]
@@ -278,7 +282,7 @@ transitionRule
             combinedProof = proof <> proof'
 
             rewriteResults
-                ::  [   ( StrategyPattern (CommonExpandedPattern level)
+                ::  [   ( CommonStrategyPattern level
                         , StepProof level Variable
                         )
                     ]
@@ -288,7 +292,7 @@ transitionRule
                     (MultiOr.extractPatterns rewrittenPattern)
 
             remainderResults
-                ::  [   ( StrategyPattern (CommonExpandedPattern level)
+                ::  [   ( CommonStrategyPattern level
                         , StepProof level Variable
                         )
                     ]
@@ -303,11 +307,11 @@ transitionRule
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
-        ->  ( StrategyPattern (CommonExpandedPattern level)
+        ->  ( CommonStrategyPattern level
             , StepProof level Variable
             )
         -> Simplifier
-            [   ( StrategyPattern (CommonExpandedPattern level)
+            [   ( CommonStrategyPattern level
                 , StepProof level Variable
                 )
             ]

@@ -55,8 +55,6 @@ import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
 
-import           Test.Kore
-                 ( noRepl )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
@@ -529,7 +527,7 @@ evaluate
 evaluate tools ceil =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ Ceil.simplify
         tools
         (Mock.substitutionSimplifier tools)
@@ -555,7 +553,7 @@ makeEvaluateWithAxioms
 makeEvaluateWithAxioms tools axiomIdToSimplifier child =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ Ceil.makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)

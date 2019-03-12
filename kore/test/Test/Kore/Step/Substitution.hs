@@ -312,7 +312,7 @@ test_mergeAndNormalizeSubstitutions =
             )
     normalize s1 s2 = runExceptT $ do
         (result, _) <-
-            Morph.hoist (runSMT . evalSimplifier emptyLogger noRepl)
+            Morph.hoist (runSMT . evalSimplifier emptyLogger)
             . mergePredicatesAndSubstitutionsExcept
                 mockMetadataTools
                 (Mock.substitutionSimplifier mockMetadataTools)
@@ -328,7 +328,7 @@ test_mergeAndNormalizeSubstitutions =
     normalizeWithPredicate Predicated {predicate, substitution} =
         (<$>) fst
         $ runSMT
-        $ evalSimplifier emptyLogger noRepl
+        $ evalSimplifier emptyLogger
         $ normalizePredicatedSubstitution
             mockMetadataTools
             (Mock.substitutionSimplifier mockMetadataTools)

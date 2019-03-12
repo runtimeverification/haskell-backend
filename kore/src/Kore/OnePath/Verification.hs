@@ -14,19 +14,22 @@ module Kore.OnePath.Verification
     , isTrusted
     , defaultStrategy
     , verify
+    , verifyClaimStep
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT, throwE )
-import           Data.Maybe
-import           Numeric.Natural
-                 ( Natural )
-
-import qualified Control.Monad.Trans as Monad.Trans
+import           Data.Coerce
+                 ( coerce )
+import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
+import           Data.Maybe
+import           Data.Profunctor
+                 ( dimap )
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
@@ -35,16 +38,20 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
-                 ( Prim, StrategyPattern, onePathFirstStep,
-                 onePathFollowupStep, transitionRule )
+                 ( CommonStrategyPattern, Prim, onePathFirstStep,
+                 onePathFollowupStep )
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..) )
+import qualified Kore.OnePath.Step as OnePath
+                 ( transitionRule )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
+import           Kore.Step.BaseStep
+                 ( StepProof )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
 import           Kore.Step.Representation.ExpandedPattern
@@ -62,8 +69,14 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
+                 ( executionHistoryStep )
+import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
+import           Kore.Step.Strategy
+                 ( ExecutionGraph (..) )
 import qualified Kore.TopBottom as TopBottom
+import           Numeric.Natural
+                 ( Natural )
 
 {- | Wrapper for a rewrite rule that should be used as a claim.
 -}
@@ -209,15 +222,13 @@ verifyClaim
             Limit.takeWithin
                 stepLimit
                 (strategyBuilder right)
-        startPattern :: StrategyPattern (CommonExpandedPattern level)
+        startPattern :: CommonStrategyPattern level
         startPattern =
             StrategyPattern.RewritePattern
                 Predicated
                     {term = left, predicate = requires, substitution = mempty}
     executionGraph <- Monad.Trans.lift $ runStrategy
-        (transitionRule
-            metadataTools substitutionSimplifier simplifier axiomIdToSimplifier
-        )
+        transitionRule'
         strategy
         ( startPattern, mempty )
     let
@@ -229,3 +240,99 @@ verifyClaim
             getRemainingNode (StrategyPattern.Stuck          p) = Just p
             getRemainingNode StrategyPattern.Bottom             = Nothing
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
+  where
+    transitionRule'
+        :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+        -> (CommonStrategyPattern level, StepProof level Variable)
+        -> Simplifier [(CommonStrategyPattern level, StepProof level Variable)]
+    transitionRule' =
+        OnePath.transitionRule
+            metadataTools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+
+-- | Attempts to perform a single proof step, starting at the configuration
+-- in the execution graph designated by the provided node. Re-constructs the
+-- execution graph by inserting this step.
+verifyClaimStep
+    :: forall level
+    .  MetaOrObject level
+    => MetadataTools level StepperAttributes
+    -> StepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> Claim level
+    -- ^ claim that is being proven
+    -> [Claim level]
+    -- ^ list of claims in the spec module
+    -> [Axiom level]
+    -- ^ list of axioms in the main module
+    -> ExecutionGraph (CommonStrategyPattern level)
+    -- ^ current execution graph
+    -> Graph.Node
+    -- ^ selected node in the graph
+    -> Simplifier (ExecutionGraph (CommonStrategyPattern level))
+verifyClaimStep
+    tools
+    simplifier
+    predicateSimplifier
+    axiomIdToSimplifier
+    target
+    claims
+    axioms
+    eg@ExecutionGraph { root }
+    node
+  = executionHistoryStep
+        transitionRule'
+        strategy'
+        eg
+        node
+  where
+    transitionRule'
+        :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+        -> CommonStrategyPattern level
+        -> Simplifier [CommonStrategyPattern level]
+    transitionRule' =
+        stripProof
+            $ OnePath.transitionRule
+                tools
+                predicateSimplifier
+                simplifier
+                axiomIdToSimplifier
+
+    strategy'
+        :: Strategy
+            (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
+    strategy'
+        | isRoot =
+              onePathFirstStep targetPattern rewrites
+        | otherwise =
+              onePathFollowupStep targetPattern (rule <$> claims) rewrites
+
+    rewrites :: [RewriteRule level Variable]
+    rewrites = coerce <$> axioms
+
+    targetPattern :: CommonExpandedPattern level
+    targetPattern =
+        ExpandedPattern.fromPurePattern
+            . right
+            . coerce
+            . rule
+            $ target
+
+    isRoot :: Bool
+    isRoot = node == root
+
+    -- Given a default proof, pass it as a default to the transitionRule and
+    -- discard the proof part of its result.
+    stripProof
+        :: forall prim strategy f g proof
+        .  (Functor f, Functor g, Monoid proof)
+        => (prim -> (strategy, proof) -> f (g (strategy, proof)))
+        -> prim -> strategy -> f (g strategy)
+    stripProof fn prim =
+        dimap
+            (\a -> (a, mempty))
+            ((fmap . fmap) fst)
+            $ fn prim
