@@ -17,7 +17,6 @@ module Kore.IndexedModule.Resolvers
     , resolveAlias
     , resolveSymbol
     , resolveHook
-    , resolveHooks
     , findIndexedSort
     ) where
 
@@ -97,10 +96,6 @@ getHeadApplicationSorts m patternHead =
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
 -- 'SentenceAlias', and returns its attributes.
--- FIXME: duplicated code as in getHeadApplicationSorts, i.e. use (<|>)
--- The problem is resolveSymbol and resolveAlias return different types
--- you could work around this with some rearrangement
--- but rather just change the types
 getHeadAttributes
     :: MetaOrObject level
     => IndexedModule sortParam patternType declAtts axiomAtts
