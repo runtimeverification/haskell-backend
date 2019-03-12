@@ -17,18 +17,17 @@ module Kore.OnePath.Verification
     , verifyClaimStep
     ) where
 
-import Control.Monad.Trans.Except
-       ( ExceptT, throwE )
-import Numeric.Natural
-       ( Natural )
-
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
+import           Control.Monad.Trans.Except
+                 ( ExceptT, throwE )
 import           Data.Coerce
                  ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
+import           Data.Maybe
 import           Data.Profunctor
                  ( dimap )
 import           Kore.AST.Common
@@ -61,6 +60,9 @@ import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import           Kore.Step.Representation.ExpandedPattern as Predicated
                  ( Predicated (..) )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -72,6 +74,9 @@ import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..) )
+import qualified Kore.TopBottom as TopBottom
+import           Numeric.Natural
+                 ( Natural )
 
 {- | Wrapper for a rewrite rule that should be used as a claim.
 -}
@@ -121,7 +126,7 @@ verify
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT
-        (CommonExpandedPattern level)
+        (CommonOrOfExpandedPattern level)
         Simplifier
         ()
 verify
@@ -201,7 +206,7 @@ verifyClaim
         )
     -> (RewriteRule level Variable, Limit Natural)
     -> ExceptT
-        (CommonExpandedPattern level)
+        (CommonOrOfExpandedPattern level)
         Simplifier
         ()
 verifyClaim
@@ -228,14 +233,13 @@ verifyClaim
         ( startPattern, mempty )
     let
         finalNodes = pickFinal executionGraph
-        nonBottomNodes = filter notBottom (map fst finalNodes)
-        notBottom StrategyPattern.Bottom = False
-        notBottom _ = True
-    case nonBottomNodes of
-        [] -> return ()
-        StrategyPattern.RewritePattern p : _ -> throwE p
-        StrategyPattern.Stuck p : _ -> throwE p
-        StrategyPattern.Bottom : _ -> error "Unexpected bottom pattern."
+        remainingNodes =
+            MultiOr.make $ mapMaybe getRemainingNode (fst <$> finalNodes)
+          where
+            getRemainingNode (StrategyPattern.RewritePattern p) = Just p
+            getRemainingNode (StrategyPattern.Stuck          p) = Just p
+            getRemainingNode StrategyPattern.Bottom             = Nothing
+    Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
         :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)

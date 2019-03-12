@@ -61,12 +61,13 @@ import           Kore.Step.BaseStep
                  ( StepProof )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..), toMLPattern )
+                 ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
+import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
@@ -199,7 +200,8 @@ prove limit definitionModule specModule = do
         axioms = fmap Axiom rewriteRules
         claims = fmap makeClaim specAxioms
 
-    result <- runExceptT
+    result <-
+        runExceptT
         $ verify
             tools
             simplifier
@@ -207,8 +209,7 @@ prove limit definitionModule specModule = do
             axiomIdToSimplifier
             (defaultStrategy claims axioms)
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-
-    return $ Bifunctor.first toMLPattern result
+    return $ Bifunctor.first OrOfExpandedPattern.toStepPattern result
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.

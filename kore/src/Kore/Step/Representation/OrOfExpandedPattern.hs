@@ -18,6 +18,7 @@ module Kore.Step.Representation.OrOfExpandedPattern
     , isTrue
     , makeFromSinglePurePattern
     , toExpandedPattern
+    , toStepPattern
     , toPredicate
     ) where
 
@@ -121,6 +122,26 @@ toExpandedPattern multiOr
             , predicate = makeTruePredicate
             , substitution = mempty
             }
+
+{-| Transforms an 'OrOfExpandedPattern' into a 'StepPattern'.
+-}
+toStepPattern
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        )
+    => OrOfExpandedPattern level variable -> StepPattern level variable
+toStepPattern multiOr =
+    case MultiOr.extractPatterns multiOr of
+        [] -> mkBottom_
+        [patt] -> ExpandedPattern.toMLPattern patt
+        patt : patts ->
+            foldl'
+                (\x y -> mkOr x (ExpandedPattern.toMLPattern y))
+                (ExpandedPattern.toMLPattern patt)
+                patts
 
 {-| Transforms an 'OrOfPredicate' into a 'Predicate'. -}
 toPredicate
