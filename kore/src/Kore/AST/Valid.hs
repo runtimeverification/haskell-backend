@@ -422,7 +422,7 @@ applySymbol
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => SentenceSymbol level pattern'
+    => SentenceSymbol level pattern''
     -- ^ 'Symbol' declaration
     -> [Sort level]
     -- ^ 'Symbol' sort parameters
@@ -477,7 +477,7 @@ applySymbol_
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => SentenceSymbol level pattern'
+    => SentenceSymbol level pattern''
     -> [pattern']
     -> pattern'
 applySymbol_ sentence = applySymbol sentence []
