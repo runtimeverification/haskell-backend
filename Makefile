@@ -11,8 +11,7 @@ kore-exec: $(KORE_EXEC)
 k-frontend:
 	mkdir -p $(BUILD_DIR)
 	rm -rf $(K_DIST_DEFAULT) $(K_NIGHTLY)
-	curl --location --output $(K_NIGHTLY) \
-	    $$(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[${K_NIGHTLY_OFFSET}].assets[].browser_download_url | match(".*nightly.tar.gz").string')
+	curl --location --output $(K_NIGHTLY) $(K_NIGHTLY_URL)
 	mkdir -p $(K_DIST_DEFAULT)
 	tar --extract --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIST_DEFAULT)
 	$(KRUN) --version
