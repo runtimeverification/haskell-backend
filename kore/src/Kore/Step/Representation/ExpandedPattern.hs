@@ -48,6 +48,8 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
@@ -259,6 +261,7 @@ toMLPattern
         , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
+        , HasCallStack
         )
     => ExpandedPattern level variable -> StepPattern level variable
 toMLPattern

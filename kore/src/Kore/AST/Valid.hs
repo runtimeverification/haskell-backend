@@ -103,6 +103,8 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import           Data.These
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.Annotation.Valid as Valid
 import           Kore.AST.Lens
@@ -125,6 +127,7 @@ getSort (extract -> Valid { patternSort }) = patternSort
 forceSort
     ::  ( Traversable domain
         , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
@@ -226,9 +229,10 @@ same sort.
  -}
 makeSortsAgree
     ::  ( Traversable domain
+        , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
-        , Unparse pattern'
         )
     => (pattern' -> pattern' -> Sort level -> a)
     -> pattern'
@@ -262,9 +266,10 @@ getRigidSort pattern' =
 mkAnd
     ::  ( Ord (variable level)
         , Traversable domain
+        , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
-        , Unparse pattern'
         )
     => pattern'
     -> pattern'
@@ -345,6 +350,7 @@ applyAlias
     ::  ( Traversable domain
         , Ord (variable level)
         , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
@@ -713,9 +719,10 @@ mkForall forallVariable forallChild =
 mkIff
     ::  ( Ord (variable level)
         , Traversable domain
+        , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
-        , Unparse pattern'
         )
     => pattern'
     -> pattern'
@@ -738,9 +745,10 @@ mkIff = makeSortsAgree mkIffWorker
 mkImplies
     ::  ( Ord (variable level)
         , Traversable domain
+        , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
-        , Unparse pattern'
         )
     => pattern'
     -> pattern'
@@ -766,9 +774,10 @@ See also: 'mkIn_'
 mkIn
     ::  ( Ord (variable level)
         , Traversable domain
+        , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
-        , Unparse pattern'
         )
     => Sort level
     -> pattern'
@@ -850,9 +859,10 @@ mkNot notChild =
 mkOr
     ::  ( Ord (variable level)
         , Traversable domain
+        , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
-        , Unparse pattern'
         )
     => pattern'
     -> pattern'
@@ -875,9 +885,10 @@ mkOr = makeSortsAgree mkOrWorker
 mkRewrites
     ::  ( Ord (variable Object)
         , Traversable domain
+        , Unparse pattern'
+        , HasCallStack
         , valid ~ Valid (variable Object) Object
         , pattern' ~ PurePattern Object domain variable valid
-        , Unparse pattern'
         )
     => pattern'
     -> pattern'
