@@ -672,7 +672,7 @@ evaluate
 evaluate metadataTools functionIdToEvaluator patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ Pattern.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where

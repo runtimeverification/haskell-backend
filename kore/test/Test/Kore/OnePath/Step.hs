@@ -416,7 +416,7 @@ runSteps
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     ->  (ExecutionGraph
-            ( StrategyPattern (CommonExpandedPattern level)
+            ( CommonStrategyPattern level
             , StepProof level Variable
             )
         -> Maybe (ExecutionGraph (b, StepProof level Variable))
@@ -434,7 +434,7 @@ runSteps
 runSteps metadataTools graphFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
         (transitionRule
@@ -458,7 +458,7 @@ runOnePathSteps
     -> CommonStepPattern level
     -> [RewriteRule level Variable]
     -> [RewriteRule level Variable]
-    -> IO [StrategyPattern (CommonExpandedPattern level)]
+    -> IO [CommonStrategyPattern level]
 runOnePathSteps
     metadataTools
     stepLimit

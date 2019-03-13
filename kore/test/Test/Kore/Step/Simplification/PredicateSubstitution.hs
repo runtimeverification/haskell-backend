@@ -288,7 +288,7 @@ runSimplifier
     -> IO [CommonPredicateSubstitution Object]
 runSimplifier patternSimplifierMap predicateSubstitution =
     SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ getBranches
     $ simplifier predicateSubstitution
   where

@@ -520,7 +520,7 @@ runStep
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ runStrategy
         (transitionRule
             metadataTools
@@ -545,7 +545,7 @@ runSteps
 runSteps metadataTools stepLimit configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ runStrategy
         (transitionRule
             metadataTools

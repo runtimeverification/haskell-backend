@@ -559,7 +559,7 @@ evaluate
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger noRepl
+    $ evalSimplifier emptyLogger
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where

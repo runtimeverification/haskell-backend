@@ -50,7 +50,7 @@ import           Kore.Step.StepperAttributes
 import qualified SMT
 
 import           Test.Kore
-                 ( emptyLogger, noRepl )
+                 ( emptyLogger )
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -343,7 +343,7 @@ test_functionRegistry =
         let expect = mkApp sortS sHead []
         (simplified, _) <-
             SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger noRepl
+            $ evalSimplifier emptyLogger
             $ ExpandedPattern.simplify
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)

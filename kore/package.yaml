@@ -38,6 +38,7 @@ dependencies:
   - fgl
   - free
   - gitrev
+  - graphviz
   - groom
   - hashable
   - haskeline
@@ -51,6 +52,7 @@ dependencies:
   - parser-combinators
   - prettyprinter
   - process
+  - profunctors
   - recursion-schemes
   - reflection
   - template-haskell
@@ -124,6 +126,15 @@ executables:
     main: Main.hs
     source-dirs:
       - app/format
+      - app/share
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    dependencies:
+      - kore
+
+  kore-repl:
+    main: Main.hs
+    source-dirs:
+      - app/repl
       - app/share
     ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:

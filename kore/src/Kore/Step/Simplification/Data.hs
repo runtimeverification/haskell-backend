@@ -46,8 +46,6 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
                  ( LogMessage )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution )
@@ -221,7 +219,6 @@ scatter ors = Foldable.asum (pure <$> ors)
 data Environment = Environment
     { solver     :: !(MVar Solver)
     , logger     :: !(LogAction Simplifier LogMessage)
-    , proveClaim :: !(RewriteRule Object Variable -> IO ())
     }
 
 {- | @Simplifier@ represents a simplification action.
@@ -286,13 +283,11 @@ instance HasLog Environment LogMessage (ExceptT e Simplifier) where
 evalSimplifierBranch
     :: LogAction Simplifier LogMessage
     -- ^ initial counter for fresh variables
-    -> (RewriteRule Object Variable -> IO ())
-    -- ^ repl handler
     -> BranchT Simplifier a
     -- ^ simplifier computation
     -> SMT [a]
-evalSimplifierBranch logger repl =
-    evalSimplifier logger repl . getBranches
+evalSimplifierBranch logger =
+    evalSimplifier logger . getBranches
 
 {- | Run a simplification, returning the result of only one branch.
 
@@ -307,11 +302,9 @@ runSimplifier
     -- ^ simplifier computation
     -> LogAction Simplifier LogMessage
     -- ^ initial counter for fresh variables
-    -> (RewriteRule Object Variable -> IO ())
-    -- ^ repl handler
     -> SMT a
-runSimplifier simpl logger repl =
-    evalSimplifier logger repl simpl
+runSimplifier simpl logger =
+    evalSimplifier logger simpl
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -323,12 +316,11 @@ that may branch.
 evalSimplifier
     :: HasCallStack
     => LogAction Simplifier LogMessage
-    -> (RewriteRule Object Variable -> IO ())
     -> Simplifier a
     -> SMT a
-evalSimplifier logger repl (Simplifier simpl) =
+evalSimplifier logger (Simplifier simpl) =
     withSolver' $ \solver ->
-        runReaderT simpl (Environment solver logger repl)
+        runReaderT simpl (Environment solver logger)
 
 -- * Implementation
 
