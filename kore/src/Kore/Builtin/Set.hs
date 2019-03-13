@@ -96,8 +96,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
-import           Kore.Step.Substitution
-                 ( normalize )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError (..) )
 import           Kore.Unparser
@@ -531,9 +529,9 @@ unifyEquals
 unifyEquals
     simplificationType
     tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _
+    _
+    _
     unifyEqualsChildren
   =
     unifyEquals0
@@ -635,14 +633,7 @@ unifyEquals
                     -- Return the concrete set, but capture any predicates and
                     -- substitutions from unifying the framing variable.
                     asExpandedPattern builtinSetSort set1 <* remainder
-            normalized <- Monad.Trans.lift $
-                normalize
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    result
-            return (normalized, SimplificationProof)
+            return (result, SimplificationProof)
 
       | otherwise =
         return (ExpandedPattern.bottom, SimplificationProof)

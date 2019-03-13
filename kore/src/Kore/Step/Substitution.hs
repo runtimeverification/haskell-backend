@@ -20,11 +20,14 @@ module Kore.Step.Substitution
 
 import           Control.Monad.Except
                  ( ExceptT, lift, runExceptT, withExceptT )
+import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Trans.Class
                  ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Data.Foldable
-                 ( fold )
+import qualified Control.Monad.Trans.Except as Except
+import qualified Data.Foldable as Foldable
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -33,18 +36,13 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeMultipleAndPredicate )
-import qualified Kore.Predicate.Predicate as Predicate
-                 ( isFalse )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..),
                  substitutionToPredicate )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..), Simplifier,
-                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
                  ( UnificationProof (EmptyUnificationProof) )
@@ -83,7 +81,7 @@ normalize
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> ExpandedPattern level variable
-    -> Simplifier ( ExpandedPattern level variable )
+    -> BranchT Simplifier (ExpandedPattern level variable)
 normalize
     tools
     substitutionSimplifier
@@ -91,28 +89,27 @@ normalize
     axiomIdToSimplifier
     Predicated { term, predicate, substitution }
   = do
-    x <- runExceptT $
-        normalizeSubstitutionAfterMerge
+    result <-
+        runExceptT
+        $ normalizeWorker
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             Predicated { term = (), predicate, substitution }
-    return $ case x of
-      Right (Predicated { predicate = p, substitution = s }, _) ->
-          if Predicate.isFalse p
-              then ExpandedPattern.bottom
-              else Predicated term p s
-      Left _ ->
-          Predicated
-              { term
-              , predicate =
-                    makeAndPredicate predicate
-                    $ substitutionToPredicate substitution
-              , substitution = mempty
-              }
+    case result of
+        Right normal -> return normal { term }
+        Left _ ->
+            return Predicated
+                { term
+                , predicate =
+                    makeAndPredicate
+                        predicate
+                        (substitutionToPredicate substitution)
+                , substitution = mempty
+                }
 
-normalizeSubstitutionAfterMerge
+normalizeWorker
     ::  ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -128,58 +125,54 @@ normalizeSubstitutionAfterMerge
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitution level variable
     -> ExceptT
-          ( UnificationOrSubstitutionError level variable )
-          Simplifier
-          ( PredicateSubstitution level variable
-          , UnificationProof level variable
-          )
-normalizeSubstitutionAfterMerge
+          (UnificationOrSubstitutionError level variable)
+          (BranchT Simplifier)
+          (PredicateSubstitution level variable)
+normalizeWorker
     tools
     wrappedSimplifier@(PredicateSubstitutionSimplifier substitutionSimplifier)
     simplifier
     axiomIdToSimplifier
     Predicated { predicate, substitution }
   = do
-    (Predicated
-            { predicate = duplicationPredicate
-            , substitution = duplicationSubstitution
-            }
-        , proof
-        ) <-
-            normalizeSubstitutionDuplication' substitution
-
-    Predicated
-        { predicate = normalizePredicate
-        , substitution = normalizedSubstitution
-        } <- normalizeSubstitution' duplicationSubstitution
-
+    duplication <- normalizeSubstitutionDuplication' substitution
     let
+        Predicated { substitution = duplicationSubstitution } = duplication
+        Predicated { predicate = duplicationPredicate } = duplication
+
+    normalized <- normalizeSubstitution' duplicationSubstitution
+    let
+        Predicated { substitution = normalizedSubstitution } = normalized
+        Predicated { predicate = normalizedPredicate } = normalized
+
         mergedPredicate =
             makeMultipleAndPredicate
-                [predicate, duplicationPredicate, normalizePredicate]
+                [predicate, duplicationPredicate, normalizedPredicate]
 
-    (resultPredicateSubstitution, _proof) <-
-        lift $ substitutionSimplifier
-            Predicated
-                { term = ()
-                , predicate = mergedPredicate
-                , substitution = normalizedSubstitution
-                }
-
-    return
-        ( resultPredicateSubstitution
-        , proof
-        )
+    lift $ substitutionSimplifier
+        Predicated
+            { term = ()
+            , predicate = mergedPredicate
+            , substitution = normalizedSubstitution
+            }
   where
-    normalizeSubstitutionDuplication' =
-        normalizeSubstitutionDuplication
-            tools
-            wrappedSimplifier
-            simplifier
-            axiomIdToSimplifier
-    normalizeSubstitution' =
-        withExceptT substitutionToUnifyOrSubError
-            . normalizeSubstitution tools
+    normalizeSubstitutionDuplication' substitution' = do
+        (duplication, _) <-
+            Monad.Morph.hoist lift
+            $ normalizeSubstitutionDuplication
+                tools
+                wrappedSimplifier
+                simplifier
+                axiomIdToSimplifier
+                substitution'
+        Monad.Trans.lift (returnPruned duplication)
+
+    normalizeSubstitution' substitution' = do
+        normalized <-
+            Monad.Morph.hoist lift
+            $ withExceptT substitutionToUnifyOrSubError
+            $ normalizeSubstitution tools substitution'
+        Monad.Trans.lift (returnPruned normalized)
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
@@ -276,7 +269,7 @@ mergePredicatesAndSubstitutionsExcept
     substitutions
   = do
     let
-        mergedSubstitution = fold substitutions
+        mergedSubstitution = Foldable.fold substitutions
         mergedPredicate = makeMultipleAndPredicate predicates
     (Predicated {predicate, substitution}, _proof) <-
         normalizeSubstitutionAfterMerge
@@ -462,3 +455,49 @@ createLiftedPredicatesAndSubstitutionsMerger
             predicates
             substitutions
         return merged
+
+normalizeSubstitutionAfterMerge
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , SortedVariable variable
+        , FreshVariable variable
+        , HasCallStack
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSubstitution level variable
+    -> ExceptT
+          ( UnificationOrSubstitutionError level variable )
+          Simplifier
+          ( PredicateSubstitution level variable
+          , UnificationProof level variable
+          )
+normalizeSubstitutionAfterMerge
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    predicateSubstitution
+  = do
+    results <-
+        lift $ getBranches $ runExceptT
+        $ normalizeWorker
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            predicateSubstitution
+    case results of
+        [] -> return
+            ( ExpandedPattern.bottomPredicate
+            , EmptyUnificationProof
+            )
+        [Right normal] -> return (normal, EmptyUnificationProof)
+        [Left e] -> Except.throwE e
+        _ -> error "Not implemented: branching during normalization"
