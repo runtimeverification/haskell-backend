@@ -243,8 +243,9 @@ freeEpVariables
        )
     => ExpandedPattern level variable
     -> Set.Set (variable level)
-freeEpVariables =
-    freePureVariables . toMLPattern
+freeEpVariables ep@Predicated { term } =
+    freePureVariables term
+    <> Kore.Step.Representation.ExpandedPattern.freeVariables ep { term = () }
 
 -- | Erase the @Predicated@ 'term' to yield a 'PredicateSubstitution'.
 erasePredicatedTerm
