@@ -12,8 +12,9 @@ module Kore.Step.Simplification.PredicateSubstitution
     , simplify
     ) where
 
-import Data.List
-       ( group )
+import qualified Control.Monad.Trans as Monad.Trans
+import           Data.List
+                 ( group )
 
 import           Kore.AST.Common
                  ( SortedVariable )
@@ -26,10 +27,7 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
-                 ( simplifyPartial )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -50,11 +48,13 @@ create
     -> PredicateSubstitutionSimplifier level
 create tools simplifier axiomIdToSimplifier =
     PredicateSubstitutionSimplifier
-        (\p -> simplify tools simplifier axiomIdToSimplifier p 0)
+        (simplify tools simplifier axiomIdToSimplifier 0)
 
-{-| Simplifies a predicate-substitution by applying the substitution to the
-predicate, simplifying the result and repeating with the new
-substitution-predicate.
+{- | Simplify a 'PredicateSubstitution'.
+
+@simplify@ applies the substitution to the predicate and simplifies the
+result. The result is re-simplified once.
+
 -}
 simplify
     ::  ( MetaOrObject level
@@ -70,18 +70,15 @@ simplify
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
     -> Int
-    -> Simplifier
-        ( PredicateSubstitution level variable
-        , SimplificationProof level
-        )
+    -> PredicateSubstitution level variable
+    -> BranchT Simplifier (PredicateSubstitution level variable)
 simplify
     tools
     simplifier
     axiomIdToSimplifier
-    initialValue@Predicated { predicate, substitution }
     times
+    initialValue@Predicated { predicate, substitution }
   = do
     let substitution' = Substitution.toMap substitution
         substitutedPredicate = Predicate.substitute substitution' predicate
@@ -90,28 +87,20 @@ simplify
     -- This was needed because, when we need to simplify 'requires' clauses,
     -- this needs to run more than once.
     if substitutedPredicate == predicate && times > 1
-        then return (initialValue, SimplificationProof)
+        then return initialValue
         else do
-            (   Predicated
-                    { predicate = simplifiedPredicate
-                    , substitution = simplifiedSubstitution
-                    }
-                , _proof
-                ) <-
-                    Predicate.simplifyPartial
-                        substitutionSimplifier
-                        simplifier
-                        substitutedPredicate
+            simplified <-
+                Predicate.simplifyPartial
+                    substitutionSimplifier
+                    simplifier
+                    substitutedPredicate
+
+            let Predicated { predicate = simplifiedPredicate } = simplified
+                Predicated { substitution = simplifiedSubstitution } =
+                    simplified
 
             if Substitution.null simplifiedSubstitution
-                then return
-                    ( Predicated
-                        { term = ()
-                        , predicate = simplifiedPredicate
-                        , substitution
-                        }
-                    , SimplificationProof
-                    )
+                then return simplified { substitution }
                 else do
                     -- TODO(virgil): Optimize. Since both substitution and
                     -- simplifiedSubstitution have distinct variables, it is
@@ -120,26 +109,28 @@ simplify
                     assertDistinctVariables
                         (substitution <> simplifiedSubstitution)
                     (mergedPredicateSubstitution, _proof) <-
-                        mergePredicatesAndSubstitutions
+                        Monad.Trans.lift
+                        $ mergePredicatesAndSubstitutions
                             tools
                             substitutionSimplifier
                             simplifier
                             axiomIdToSimplifier
                             [simplifiedPredicate]
                             [substitution, simplifiedSubstitution]
-                    return (mergedPredicateSubstitution, SimplificationProof)
+                    returnPruned mergedPredicateSubstitution
   where
     substitutionSimplifier =
         PredicateSubstitutionSimplifier
-            (\p -> simplify tools simplifier axiomIdToSimplifier p (times + 1))
+            (simplify tools simplifier axiomIdToSimplifier (times + 1))
 
 assertDistinctVariables
-    :: forall level variable
+    :: forall level variable m
     .   ( Show (variable level)
         , Eq (variable level)
+        , Monad m
         )
     => Substitution level variable
-    -> Simplifier ()
+    -> m ()
 assertDistinctVariables subst =
     case filter moreThanOne (group variables) of
         [] -> return ()

@@ -56,6 +56,8 @@ import qualified Control.Monad.Writer.Strict as Writer.Strict
 import           Data.Limit
 import           Data.Text
                  ( Text )
+
+import           ListT
 import           SimpleSMT
                  ( Result (..), SExpr (..), Solver )
 import qualified SimpleSMT
@@ -147,6 +149,9 @@ instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Lazy.WriterT w m) where
     liftSMT = Trans.lift . liftSMT
 
 instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Strict.WriterT w m) where
+    liftSMT = Trans.lift . liftSMT
+
+instance MonadSMT m => MonadSMT (ListT m) where
     liftSMT = Trans.lift . liftSMT
 
 {- | Initialize a new solver with the given 'Config'.
