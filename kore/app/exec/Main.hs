@@ -351,7 +351,8 @@ mainWithOptions
                         case searchParameters of
                             Nothing -> do
                                 pat <- exec indexedModule strategy' purePattern
-                                return (ExitSuccess, pat)
+                                exitCode <- execGetExitCode indexedModule strategy' pat
+                                return (exitCode, pat)
                             Just (searchPattern, searchConfig) -> do
                                 pat <-
                                     search

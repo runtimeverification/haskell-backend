@@ -10,6 +10,7 @@ Expose concrete execution as a library
 -}
 module Kore.Exec
     ( exec
+    , execGetExitCode
     , search
     , prove
     , proveWithRepl
@@ -22,19 +23,25 @@ import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Map.Strict as Map
+import           System.Exit
+                 ( ExitCode (..) )
 
 import           Data.Limit
                  ( Limit (..) )
 import           Kore.AST.Common
+import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
                  ( Object (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
+import           Kore.IndexedModule.Resolvers
+                 ( resolveSymbol )
 import qualified Kore.Logger as Log
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom), Claim (Claim), defaultStrategy, verify )
@@ -133,6 +140,29 @@ exec indexedModule strategy purePattern = do
     return (forceSort patternSort $ ExpandedPattern.toMLPattern finalConfig)
   where
     Valid { patternSort } = extract purePattern
+
+-- | Project the value of the exit cell, if it is present.
+execGetExitCode
+    :: VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The main module
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
+    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
+    -> CommonStepPattern Object
+    -- ^ The final pattern (top cell) to extract the exit code
+    -> Simplifier ExitCode
+execGetExitCode indexedModule strategy' purePattern =
+    case resolveSymbol indexedModule $ noLocationId "LblgetExitCode" of
+        Left _ -> return ExitSuccess
+        Right (_,  exitCodeSymbol) -> do
+            exitCodePattern <- exec indexedModule strategy'
+                $ applySymbol_ exitCodeSymbol [purePattern]
+            case exitCodePattern of
+                DV_ _ (Domain.BuiltinInt (Domain.InternalInt _ 0)) ->
+                    return ExitSuccess
+                DV_ _ (Domain.BuiltinInt (Domain.InternalInt _ exit)) ->
+                    return $ ExitFailure $ fromInteger exit
+                _ ->
+                    return $ ExitFailure 111
 
 -- | Symbolic search
 search

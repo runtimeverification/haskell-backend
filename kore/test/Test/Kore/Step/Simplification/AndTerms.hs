@@ -583,9 +583,9 @@ test_andTermsSimplification =
                                 , (Mock.bConcrete, fOfB)
                                 ]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
-                            , (Mock.x, fOfA)
+                        , substitution = Substitution.wrap
+                            [ (Mock.x, fOfA)
+                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
             actual <-
@@ -611,9 +611,9 @@ test_andTermsSimplification =
                                 , (Mock.bConcrete, fOfB)
                                 ]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
-                            , (Mock.x, fOfA)
+                        , substitution = Substitution.wrap
+                            [ (Mock.x, fOfA)
+                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
             actual <-
@@ -639,9 +639,9 @@ test_andTermsSimplification =
                                 , (Mock.bConcrete, fOfB)
                                 ]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
-                            , (Mock.x, fOfA)
+                        , substitution = Substitution.wrap
+                            [ (Mock.x, fOfA)
+                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
             actual <-
@@ -667,9 +667,9 @@ test_andTermsSimplification =
                                 , (Mock.bConcrete, fOfB)
                                 ]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
-                            , (Mock.x, fOfA)
+                        , substitution = Substitution.wrap
+                            [ (Mock.x, fOfA)
+                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
             actual <-

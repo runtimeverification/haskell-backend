@@ -11,29 +11,25 @@ module Kore.Step.Simplification.Predicate
     ( simplifyPartial
     ) where
 
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( Predicate, unwrapPredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (StepPatternSimplifier),
-                 StepPatternSimplifier )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Kore.AST.Pure
+import Kore.AST.Valid
+import Kore.Predicate.Predicate
+       ( Predicate, unwrapPredicate )
+import Kore.Step.Representation.ExpandedPattern
+       ( PredicateSubstitution, Predicated (..) )
+import Kore.Step.Simplification.Data
+import Kore.Unparser
+import Kore.Variables.Fresh
+       ( FreshVariable )
 
-{-| Simplifies a predicate, producing another predicate and a substitution,
-without trying to reapply the substitution on the predicate.
+{- | Simplify the 'Predicate' once; return but do not apply the substitution.
 
-TODO(virgil): Make this fully simplify.
+@simplifyPartial@ does not attempt to apply the resulting substitution and
+re-simplify the result; see "Kore.Step.Simplification.PredicateSubstitution".
+
 -}
 simplifyPartial
     ::  ( FreshVariable variable
@@ -48,38 +44,23 @@ simplifyPartial
     => PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> Predicate level variable
-    -> Simplifier
-        ( PredicateSubstitution level variable
-        , SimplificationProof level
-        )
+    -> BranchT Simplifier (PredicateSubstitution level variable)
 simplifyPartial
     substitutionSimplifier
     (StepPatternSimplifier simplifier)
     predicate
   = do
     (patternOr, _proof) <-
-        simplifier substitutionSimplifier (unwrapPredicate predicate)
-    case MultiOr.extractPatterns patternOr of
-        [] -> return
-            ( Predicated.bottomPredicate
-            , SimplificationProof
-            )
-        [ Predicated
-                { term = Top_ _
-                , predicate = simplifiedPredicate
-                , substitution = simplifiedSubstitution
-                }
-            ] -> return
-                ( Predicated
-                    { term = ()
-                    , predicate = simplifiedPredicate
-                    , substitution = simplifiedSubstitution
-                    }
-                , SimplificationProof
-                )
-        [patt] ->
-            (error . show . Pretty.vsep)
-                [ "Expecting a top term!"
-                , unparse patt
-                ]
-        _ -> error ("Expecting at most one result " ++ show patternOr)
+        Monad.Trans.lift
+        $ simplifier substitutionSimplifier (unwrapPredicate predicate)
+    -- Despite using Monad.Trans.lift above, we do not need to explicitly check
+    -- for \bottom because patternOr is an OrOfExpandedPattern.
+    scatter (eraseTerm <$> patternOr)
+  where
+    eraseTerm predicated@Predicated { term }
+      | Top_ _ <- term = predicated { term = () }
+      | otherwise =
+        (error . show . Pretty.vsep)
+            [ "Expecting a \\top term, but found:"
+            , unparse predicated
+            ]

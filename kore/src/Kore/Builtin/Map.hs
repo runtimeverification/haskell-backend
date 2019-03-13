@@ -91,8 +91,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
-import           Kore.Step.Substitution
-                 ( normalize )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError (..) )
 import           Kore.Unparser
@@ -573,9 +571,9 @@ unifyEquals
 unifyEquals
     simplificationType
     tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _
+    _
+    _
     unifyEqualsChildren
   =
     unifyEquals0
@@ -717,14 +715,7 @@ unifyEquals
                 -- Elements of map2 missing from map1
                 remainder2 = Map.difference map2 map1
 
-        normalized <- Monad.Trans.lift $
-            normalize
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                result
-        return (normalized, SimplificationProof)
+        return (result, SimplificationProof)
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
