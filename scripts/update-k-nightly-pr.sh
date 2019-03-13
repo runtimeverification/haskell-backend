@@ -3,7 +3,8 @@
 set -exuo pipefail
 
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
-UPSTREAM_BRANCH=${UPSTREAM_BRANCH:-origin/master}
+UPSTREAM_REMOTE=${UPSTREAM_REMOTE:-origin}
+UPSTREAM_BRANCH=master
 BRANCH_NAME=update-k-nightly
 
 $TOP/scripts/git-assert-clean.sh
@@ -20,7 +21,7 @@ if $TOP/scripts/git-assert-clean.sh; then
     exit 0
 fi
 
-git checkout -B "$BRANCH_NAME" "$UPSTREAM_BRANCH"
+git checkout -B "$BRANCH_NAME" "$UPSTREAM_REMOTE/$UPSTREAM_BRANCH"
 
 git add $TOP/include.mk
 
