@@ -30,6 +30,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Kore
+import qualified Kore.AST.Pure as AST.Pure
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
@@ -122,7 +123,7 @@ verifyAndIndexDefinitionWithBase
     (implicitModules, implicitDefaultModule, defaultNames) <-
         withContext "Indexing unverified implicit Kore modules"
         $ indexImplicitModule
-        $ modulePureToKore
+        $ modulePureToKore $ castModuleDomainValues
         $ eraseSentenceAnnotations <$> uncheckedKoreModule
     let
         (baseIndexedModules, baseNames) =
@@ -195,6 +196,7 @@ verifyAndIndexDefinitionWithBase
     return (reindexedModules, names)
   where
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
+    castModuleDomainValues = (fmap . fmap) AST.Pure.castVoidDomainValues
 
 defaultAttributesVerification
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)

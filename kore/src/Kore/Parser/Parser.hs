@@ -40,6 +40,7 @@ module Kore.Parser.Parser
     ) where
 
 import           Kore.AST.Kore
+import qualified Kore.AST.Pure as AST.Pure
 import           Kore.AST.Sentence
 import           Kore.MetaML.AST
                  ( CommonMetaPattern )
@@ -94,7 +95,8 @@ parseKorePattern = parseOnly korePatternParser
 -- Matching Logic Kore Parsers --
 -- | parses formulae for ML proofs
 metaPatternParser :: Parser CommonMetaPattern
-metaPatternParser = KoreParser.metaPatternParser
+metaPatternParser =
+    AST.Pure.castVoidDomainValues <$> KoreParser.metaPatternParser
 
 -- | parses meta variables in ML proofs
 metaVariableParser :: Parser (Variable Meta)

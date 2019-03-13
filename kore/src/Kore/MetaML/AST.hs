@@ -19,14 +19,17 @@ module Kore.MetaML.AST where
 
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
+import           Data.Functor.Const
+                 ( Const )
 import           Data.Set
                  ( Set )
 import qualified Data.Text as Text
+import           Data.Void
+                 ( Void )
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Variables.Free
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
@@ -34,40 +37,40 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 
 'var' is the type of variables.
 -}
-type MetaMLPattern variable = PurePattern Meta Domain.Builtin variable
+type MetaMLPattern variable = PurePattern Meta (Const Void) variable
 
 -- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
-type MetaSentenceAxiom = PureSentenceAxiom Meta Domain.Builtin
+type MetaSentenceAxiom = PureSentenceAxiom Meta (Const Void)
 -- |'MetaSentenceAlias' is the 'Meta'-only version of 'SentenceAlias'
-type MetaSentenceAlias = PureSentenceAlias Meta Domain.Builtin
+type MetaSentenceAlias = PureSentenceAlias Meta (Const Void)
 -- |'MetaSentenceSymbol' is the 'Meta'-only version of 'SentenceSymbol'
-type MetaSentenceSymbol = PureSentenceSymbol Meta Domain.Builtin
+type MetaSentenceSymbol = PureSentenceSymbol Meta (Const Void)
 -- |'MetaSentenceImport' is the 'Meta'-only version of 'SentenceImport'
-type MetaSentenceImport = PureSentenceImport Meta Domain.Builtin
+type MetaSentenceImport = PureSentenceImport Meta (Const Void)
 
 -- |'MetaSentence' is the 'Meta'-only version of 'Sentence'
-type MetaSentence = PureSentence Meta Domain.Builtin
+type MetaSentence = PureSentence Meta (Const Void)
 
 -- |'MetaModule' is the 'Meta'-only version of 'Module'.
-type MetaModule = PureModule Meta Domain.Builtin
+type MetaModule = PureModule Meta (Const Void)
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
-type MetaDefinition = PureDefinition Meta Domain.Builtin
+type MetaDefinition = PureDefinition Meta (Const Void)
 
 -- |'CommonMetaPattern' is the instantiation of 'MetaPattern' with common
 -- 'Variable's.
 type CommonMetaPattern = MetaMLPattern Variable (Annotation.Null Meta)
 
 asCommonMetaPattern
-    :: Pattern Meta Domain.Builtin Variable CommonMetaPattern
+    :: Pattern Meta (Const Void) Variable CommonMetaPattern
     -> CommonMetaPattern
 asCommonMetaPattern = asPurePattern . (mempty :<)
 
 type PatternMetaType =
-    Pattern Meta Domain.Builtin Variable CommonMetaPattern
+    Pattern Meta (Const Void) Variable CommonMetaPattern
 
 type MetaPatternStub =
-    PatternStub Meta Domain.Builtin Variable CommonMetaPattern
+    PatternStub Meta (Const Void) Variable CommonMetaPattern
 
 -- |'metaFreeVariables' collects the free variables of a 'CommonMetaPattern'.
 metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)

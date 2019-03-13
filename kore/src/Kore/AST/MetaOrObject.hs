@@ -10,7 +10,8 @@ Portability : portable
 
 -}
 module Kore.AST.MetaOrObject
-    ( Meta (..)
+    ( pattern Meta
+    , Meta
     , Object (..)
     , MetaOrObject (..)
     , Unified (..)
@@ -38,8 +39,10 @@ import Kore.Unparser
 toProxy :: a -> Proxy a
 toProxy _ = Proxy
 
-data Meta = Meta
-    deriving (Eq, Ord, Show)
+type Meta = Object
+
+pattern Meta :: Meta
+pattern Meta = Object
 
 data Object = Object
     deriving (Eq, Ord, Show)
@@ -59,20 +62,17 @@ instance Show (IsMetaOrObject s) where
 * @ isObject Object && not (isMeta Object) @
 * @ not (isObject Meta) && isMeta Meta @
 -}
-class (Show level, Ord level, Eq level)
-    => MetaOrObject level
-  where
+class (level ~ Object) => MetaOrObject level where
     isMetaOrObject :: proxy level -> IsMetaOrObject level
+    isMetaOrObject _ = IsObject
+
     isObject :: level -> Bool
     isObject l = case isMetaOrObject (toProxy l) of IsObject -> True; _ -> False
+
     isMeta :: level -> Bool
     isMeta l = case isMetaOrObject (toProxy l) of IsMeta -> True; _ -> False
-    {-# MINIMAL isMetaOrObject #-}
 
-instance MetaOrObject Meta where
-    isMetaOrObject _ = IsMeta
-instance MetaOrObject Object where
-    isMetaOrObject _ = IsObject
+instance (level ~ Object) => MetaOrObject level
 
 {-|'Unified' provides a means to group together objects which are either
 'Meta' or 'Object'.

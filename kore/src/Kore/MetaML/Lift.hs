@@ -142,7 +142,7 @@ liftReducer
     -> CommonMetaPattern
 liftReducer =
     \case
-        UnifiedMetaPattern metaP -> asCommonMetaPattern metaP
+        UnifiedMetaPattern metaP -> liftObjectReducer metaP
         UnifiedObjectPattern objectP -> liftObjectReducer objectP
 
 liftObjectReducer
@@ -220,6 +220,8 @@ liftObjectReducer p = case p of
         [liftToMeta (topSort bp)]
     VariablePattern vp ->
         App_ variableAsPatternHead [liftToMeta vp]
+    StringLiteralPattern str -> asCommonMetaPattern (StringLiteralPattern str)
+    CharLiteralPattern char -> asCommonMetaPattern (CharLiteralPattern char)
   where
     applyMetaMLPatternHead patternType =
         App_
@@ -390,41 +392,7 @@ liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom)
 encoding it.
 -}
 liftSentence :: KoreSentence -> [MetaSentence]
-liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
-
-liftMetaSentence
-    :: Sentence Meta UnifiedSortVariable CommonKorePattern
-    -> [MetaSentence]
-liftMetaSentence (SentenceAliasSentence msa) =
-    [ SentenceAliasSentence msa
-        { sentenceAliasAttributes = sentenceAliasAttributes msa
-        , sentenceAliasLeftPattern = sentenceAliasLeftPattern msa
-        , sentenceAliasRightPattern = liftToMeta (sentenceAliasRightPattern msa)
-        }
-    ]
-liftMetaSentence (SentenceSymbolSentence mss) =
-    [ SentenceSymbolSentence mss
-        { sentenceSymbolAttributes =
-            sentenceSymbolAttributes mss
-        }
-    ]
-liftMetaSentence (SentenceSortSentence mss) =
-    [ SentenceSortSentence mss
-        { sentenceSortName = sentenceSortName mss
-        , sentenceSortParameters = sentenceSortParameters mss
-        , sentenceSortAttributes = sentenceSortAttributes mss
-        }
-    ]
-liftMetaSentence (SentenceAxiomSentence as) =
-    liftMetaSentenceClaimOrAxiom SentenceAxiomSentence as
-liftMetaSentence (SentenceClaimSentence as) =
-    liftMetaSentenceClaimOrAxiom SentenceClaimSentence as
-liftMetaSentence (SentenceImportSentence is) =
-    [ SentenceImportSentence is
-        { sentenceImportAttributes =
-            sentenceImportAttributes is
-        }
-    ]
+liftSentence = applyUnifiedSentence liftObjectSentence liftObjectSentence
 
 liftMetaSentenceClaimOrAxiom
     ::  (  forall param pat
@@ -495,6 +463,16 @@ liftObjectSentence (SentenceHookSentence (SentenceHookedSort hss)) =
     liftObjectSentence (SentenceSortSentence hss)
 liftObjectSentence (SentenceHookSentence (SentenceHookedSymbol hss)) =
     liftObjectSentence (SentenceSymbolSentence hss)
+liftObjectSentence (SentenceAxiomSentence as) =
+    liftMetaSentenceClaimOrAxiom SentenceAxiomSentence as
+liftObjectSentence (SentenceClaimSentence as) =
+    liftMetaSentenceClaimOrAxiom SentenceClaimSentence as
+liftObjectSentence (SentenceImportSentence is) =
+    [ SentenceImportSentence is
+        { sentenceImportAttributes =
+            sentenceImportAttributes is
+        }
+    ]
 
 
 -- |'liftModule' transforms a 'KoreModule' into a 'MetaModule'

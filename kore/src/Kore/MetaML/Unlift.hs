@@ -166,9 +166,12 @@ unliftPattern = Recursive.fold reducer
         { unliftResultOriginal =
             asCommonMetaPattern $ unliftResultOriginal <$> p
         , unliftResultFinal =
-            case unliftPatternReducer (Head.castMetaDomainValues p) of
+            case unliftPatternReducer (Head.castVoidDomainValues p) of
                 Just pat -> asCommonKorePattern pat
-                _ -> asCommonKorePattern (unliftResultFinal <$> p)
+                _ ->
+                    asCommonKorePattern
+                    $ Head.castVoidDomainValues
+                    $ unliftResultFinal <$> p
         }
 
 unliftPatternReducer

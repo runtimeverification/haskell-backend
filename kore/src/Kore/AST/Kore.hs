@@ -68,8 +68,8 @@ import           GHC.Generics
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Common hiding
-                 ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
-                 mapVariables, traverseVariables )
+                 ( castVoidDomainValues, mapDomainValues, mapVariables,
+                 traverseVariables )
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain

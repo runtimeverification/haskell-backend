@@ -74,20 +74,8 @@ verifyUniqueId existing (UnparameterizedId name location) =
 definedNamesForSentence :: UnifiedSentence param pat -> [UnparameterizedId]
 definedNamesForSentence =
     applyUnifiedSentence
-        definedNamesForMetaSentence
         definedNamesForObjectSentence
-
-definedNamesForMetaSentence
-    :: Sentence Meta param pat -> [UnparameterizedId]
-definedNamesForMetaSentence (SentenceAliasSentence sentenceAlias) =
-    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
-    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForMetaSentence (SentenceImportSentence _) = []
-definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
-definedNamesForMetaSentence (SentenceClaimSentence _)  = []
-definedNamesForMetaSentence (SentenceSortSentence sentenceSort) =
-    [ toUnparameterizedId (sentenceSortName sentenceSort) ]
+        definedNamesForObjectSentence
 
 definedNamesForObjectSentence
     :: Sentence Object param pat -> [UnparameterizedId]
@@ -95,6 +83,9 @@ definedNamesForObjectSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForObjectSentence (SentenceSymbolSentence sentenceSymbol) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
+definedNamesForObjectSentence (SentenceImportSentence _) = []
+definedNamesForObjectSentence (SentenceAxiomSentence _)  = []
+definedNamesForObjectSentence (SentenceClaimSentence _)  = []
 definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
     [ sentenceName
     , UnparameterizedId
@@ -105,11 +96,9 @@ definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
         }
     ]
   where sentenceName = toUnparameterizedId (sentenceSortName sentenceSort)
-definedNamesForObjectSentence
-    (SentenceHookSentence (SentenceHookedSort sentence))
+definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSort sentence))
   = definedNamesForObjectSentence (SentenceSortSentence sentence)
-definedNamesForObjectSentence
-    (SentenceHookSentence (SentenceHookedSymbol sentence))
+definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSymbol sentence))
   = definedNamesForObjectSentence (SentenceSymbolSentence sentence)
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
@@ -138,32 +127,36 @@ verifySentence
     -> Either (Error VerifyError) VerifiedKoreSentence
 verifySentence builtinVerifiers indexedModule attributesVerification =
     applyUnifiedSentence
-        (verifyMetaSentence builtinVerifiers indexedModule attributesVerification)
+        (verifyObjectSentence
+            builtinVerifiers
+            indexedModule
+            attributesVerification
+        )
         (verifyObjectSentence
             builtinVerifiers
             indexedModule
             attributesVerification
         )
 
-verifyMetaSentence
+verifyObjectSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
-    -> Sentence Meta UnifiedSortVariable CommonKorePattern
+    -> Sentence Object UnifiedSortVariable CommonKorePattern
     -> Either (Error VerifyError) VerifiedKoreSentence
-verifyMetaSentence
+verifyObjectSentence
     builtinVerifiers
     indexedModule
     attributesVerification
     sentence
   =
-    withSentenceContext sentence (UnifiedMetaSentence <$> verifyMetaSentence0)
+    withSentenceContext sentence (UnifiedMetaSentence <$> verifyObjectSentence0)
   where
-    verifyMetaSentence0
+    verifyObjectSentence0
         :: Either
             (Error VerifyError)
             (Sentence Meta UnifiedSortVariable VerifiedKorePattern)
-    verifyMetaSentence0 = do
+    verifyObjectSentence0 = do
         verified <-
             case sentence of
                 SentenceSymbolSentence symbolSentence ->
@@ -197,17 +190,6 @@ verifyMetaSentence
                             builtinVerifiers
                             indexedModule
                         )
-                SentenceSortSentence sortSentence -> do
-                    koreFailWhen
-                        (sortParams /= [])
-                        ("Malformed meta sort '" ++ getIdForError sortId
-                            ++ "' with non-empty Parameter sorts.")
-                    (<$>)
-                        SentenceSortSentence
-                        (traverse verifyNoPatterns sortSentence)
-                  where
-                    sortId     = sentenceSortName sortSentence
-                    sortParams = sentenceSortParameters sortSentence
                 SentenceImportSentence importSentence ->
                     -- Since we have an IndexedModule, we assume that imports
                     -- were already resolved, so there is nothing left to verify
@@ -215,49 +197,6 @@ verifyMetaSentence
                     (<$>)
                         SentenceImportSentence
                         (traverse verifyNoPatterns importSentence)
-        verifySentenceAttributes
-            attributesVerification
-            sentence
-        return verified
-
-verifyObjectSentence
-    :: Builtin.Verifiers
-    -> KoreIndexedModule declAtts axiomAtts
-    -> AttributesVerification declAtts axiomAtts
-    -> Sentence Object UnifiedSortVariable CommonKorePattern
-    -> Either (Error VerifyError) VerifiedKoreSentence
-verifyObjectSentence
-    builtinVerifiers
-    indexedModule
-    attributesVerification
-    sentence
-  =
-    withSentenceContext
-        sentence
-        (UnifiedObjectSentence <$> verifyObjectSentence1)
-  where
-    verifyObjectSentence1
-        :: Either
-            (Error VerifyError)
-            (Sentence Object UnifiedSortVariable VerifiedKorePattern)
-    verifyObjectSentence1 = do
-        verified <-
-            case sentence of
-                SentenceAliasSentence aliasSentence ->
-                    (<$>)
-                        SentenceAliasSentence
-                        (verifyAliasSentence
-                            builtinVerifiers
-                            indexedModule
-                            aliasSentence
-                        )
-                SentenceSymbolSentence symbolSentence ->
-                    (<$>)
-                        SentenceSymbolSentence
-                        (verifySymbolSentence
-                            indexedModule
-                            symbolSentence
-                        )
                 SentenceSortSentence sortSentence ->
                     (<$>)
                         SentenceSortSentence

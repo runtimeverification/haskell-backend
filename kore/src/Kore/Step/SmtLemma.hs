@@ -62,8 +62,8 @@ declareSMTLemmas
             Attribute.Axiom
     -> m ()
 declareSMTLemmas m = SMT.liftSMT $ do
-    mapM_ declareSort (indexedModuleObjectSortDescriptions m)
-    mapM_ declareSymbol (indexedModuleObjectSymbolSentences m)
+    mapM_ declareSort (indexedModuleSortDescriptions m)
+    mapM_ declareSymbol (indexedModuleSymbolSentences m)
     mapM_ declareRule (indexedModuleAxioms m)
   where
     declareSort
