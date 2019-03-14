@@ -39,7 +39,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..),
+                 ( PredicateSubstitution, Predicated (..),
                  substitutionToPredicate )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
@@ -68,8 +68,8 @@ newtype PredicateSubstitutionMerger level variable m =
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
-    :: forall level variable .
-        ( level ~ Object
+    :: forall level variable term
+    .   ( level ~ Object
         , MetaOrObject level
         , FreshVariable variable
         , SortedVariable variable
@@ -81,8 +81,8 @@ normalize
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> ExpandedPattern level variable
-    -> BranchT Simplifier (ExpandedPattern level variable)
+    -> Predicated level variable term
+    -> BranchT Simplifier (Predicated level variable term)
 normalize
     tools
     substitutionSimplifier
