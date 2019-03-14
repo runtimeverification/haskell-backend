@@ -48,6 +48,8 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
@@ -241,8 +243,9 @@ freeEpVariables
        )
     => ExpandedPattern level variable
     -> Set.Set (variable level)
-freeEpVariables =
-    freePureVariables . toMLPattern
+freeEpVariables ep@Predicated { term } =
+    freePureVariables term
+    <> Kore.Step.Representation.ExpandedPattern.freeVariables ep { term = () }
 
 -- | Erase the @Predicated@ 'term' to yield a 'PredicateSubstitution'.
 erasePredicatedTerm
@@ -259,6 +262,7 @@ toMLPattern
         , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
+        , HasCallStack
         )
     => ExpandedPattern level variable -> StepPattern level variable
 toMLPattern
