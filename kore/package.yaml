@@ -140,15 +140,6 @@ executables:
     dependencies:
       - kore
 
-  prover:
-    main: Main.hs
-    source-dirs:
-      - app/prover
-      - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
-    dependencies:
-      - kore
-
 tests:
   kore-test:
     main: Test.hs
