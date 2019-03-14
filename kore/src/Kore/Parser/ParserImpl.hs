@@ -85,10 +85,7 @@ sortVariableParser x = SortVariable <$> idParser x
 {-|'unifiedSortVariableParser' parses a sort variable.-}
 unifiedSortVariableParser :: Parser UnifiedSortVariable
 unifiedSortVariableParser = do
-    c <- ParserUtils.peekChar'
-    if c == '#'
-        then UnifiedMeta <$> sortVariableParser Meta
-        else UnifiedObject <$> sortVariableParser Object
+    UnifiedObject <$> sortVariableParser Object
 
 {-|'sortParser' parses either an @object-sort@, or a @meta-sort@.
 
@@ -122,7 +119,7 @@ sortParser x = do
             }
     stringNameNormalizer :: Id level -> Id level
     stringNameNormalizer identifier@Id {getId = i} =
-        if isMeta x && (Text.unpack i == show StringSort)
+        if Text.unpack i == show StringSort
             then identifier
                 { getId = (Text.pack . show) (MetaListSortType CharSort) }
             else identifier
@@ -467,10 +464,7 @@ BNF definitions:
 -}
 unifiedVariableParser :: Parser (Unified Variable)
 unifiedVariableParser = do
-    c <- ParserUtils.peekChar'
-    if c == '#'
-        then UnifiedMeta <$> variableParser Meta
-        else UnifiedObject <$> variableParser Object
+    UnifiedObject <$> variableParser Object
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
 application pattern), using an open recursion scheme for its children.
@@ -724,20 +718,11 @@ mlConstructorRemainderParser childParser domainValueParser x patternType =
         DomainValuePatternType ->
             DomainValuePattern <$> domainValueParser childParser
         NextPatternType ->
-            case isMetaOrObject (toProxy x) of
-                IsMeta -> unsupportedPatternType Meta NextPatternType
-                IsObject ->
-                    NextPattern <$>
-                    unaryOperatorRemainderParser childParser Object Next
+            NextPattern
+            <$> unaryOperatorRemainderParser childParser Object Next
         RewritesPatternType ->
-            case isMetaOrObject (toProxy x) of
-                IsMeta -> unsupportedPatternType Meta RewritesPatternType
-                IsObject ->
-                    RewritesPattern <$>
-                    binaryOperatorRemainderParser
-                        childParser
-                        Object
-                        Rewrites
+            RewritesPattern
+            <$> binaryOperatorRemainderParser childParser Object Rewrites
 
 builtinDomainParser :: Parser child -> Parser (Domain.Builtin child)
 builtinDomainParser _ = do
@@ -1067,7 +1052,7 @@ axiomSentenceRemainderParser
         )
     -> Parser KoreSentence
 axiomSentenceRemainderParser ctor =
-  (UnifiedMetaSentence . ctor)
+  (UnifiedObjectSentence . ctor)
   <$> ( SentenceAxiom
         <$> inCurlyBracesListParser unifiedSortVariableParser
         <*> korePatternParser
@@ -1127,12 +1112,9 @@ leveledPatternParser patternParser domainValueParser level = do
     c <- ParserUtils.peekChar'
     case c of
         '\\' -> leveledMLConstructorParser patternParser domainValueParser level
-        _ -> case isMetaOrObject (toProxy level) of
-            IsMeta -> case c of
-                '"'  -> StringLiteralPattern <$> stringLiteralParser
-                '\'' -> CharLiteralPattern <$> charLiteralParser
-                _    -> variableOrTermPatternParser patternParser Meta
-            IsObject -> variableOrTermPatternParser patternParser Object
+        '"'  -> StringLiteralPattern <$> stringLiteralParser
+        '\'' -> CharLiteralPattern <$> charLiteralParser
+        _ -> variableOrTermPatternParser patternParser Object
 
 purePatternParser
     :: MetaOrObject level

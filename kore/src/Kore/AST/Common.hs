@@ -1378,16 +1378,7 @@ withSort
 'UnsortedPatternStub' to a pattern that can be displayed.
 -}
 dummySort :: MetaOrObject level => proxy level -> Sort level
-dummySort proxy =
-    SortVariableSort
-        (SortVariable
-            (noLocationId
-                (case isMetaOrObject proxy of
-                    IsMeta   -> "#dummy"
-                    IsObject -> "dummy"
-                )
-            )
-        )
+dummySort _ = SortVariableSort (SortVariable (noLocationId "dummy"))
 
 {-|'getMetaOrObjectPatternType' is a helper function useful to determine
 whether a 'Pattern' is 'Object' or 'Meta'.
@@ -1418,10 +1409,7 @@ class UnifiedPatternInterface pat where
         :: MetaOrObject level
         => Pattern level domain variable child
         -> pat domain variable child
-    unifyPattern p =
-        case getMetaOrObjectPatternType p of
-            IsMeta   -> unifyMetaPattern p
-            IsObject -> unifyObjectPattern p
+    unifyPattern p = unifyObjectPattern p
 
     -- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
     -- apply it on an object of the parameter @pat@ of the class.
@@ -1435,14 +1423,8 @@ instance
     forall level . MetaOrObject level =>
     UnifiedPatternInterface (Pattern level)
   where
-    unifyMetaPattern p =
-        case isMetaOrObject (Proxy :: Proxy level) of
-            IsMeta   -> p
-            IsObject -> error "Expecting Meta pattern"
-    unifyObjectPattern p =
-        case isMetaOrObject (Proxy :: Proxy level) of
-            IsObject -> p
-            IsMeta   -> error "Expecting Object pattern"
+    unifyMetaPattern _ = error "Expecting Meta pattern"
+    unifyObjectPattern p = p
     unifiedPatternApply = id
 
 {- | Use the provided mapping to replace all variables in a 'Pattern' head.

@@ -109,10 +109,11 @@ runParser inputFileName verifyRequest = do
                 VerifyRequestNo          -> return unverifiedDefn
             case verifyRequest of
                 VerifyRequestWithLifting ->
-                    void $ verify
-                        (definitionPureToKore
-                            (liftDefinition verifiedDefinition)
-                        )
+                    void
+                    $ verify
+                    $ definitionPureToKore
+                    $ castDefinitionDomainValues
+                    $ liftDefinition verifiedDefinition
                 VerifyRequestYes -> return ()
                 VerifyRequestNo  -> return ()
             return verifiedDefinition

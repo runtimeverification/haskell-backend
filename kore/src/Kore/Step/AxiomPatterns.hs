@@ -176,7 +176,6 @@ verifiedKoreSentenceToAxiomPattern
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 verifiedKoreSentenceToAxiomPattern level =
     \case
-        UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
         UnifiedObjectSentence object -> sentenceToAxiomPattern level object
 
 -- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
@@ -188,7 +187,6 @@ koreSentenceToAxiomPattern
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
 koreSentenceToAxiomPattern level =
     \case
-        UnifiedMetaSentence meta -> sentenceToAxiomPattern level meta
         UnifiedObjectSentence object -> sentenceToAxiomPattern level object
 
 sentenceToAxiomPattern

@@ -44,13 +44,18 @@ verifyUniqueNames
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
 verifyUniqueNames sentences existingNames =
-    foldM verifyUniqueId existingNames
-        (concatMap definedNamesForSentence sentences)
+    foldM verifyUniqueId existingNames definedNames
+  where
+    definedNames =
+        concatMap definedNamesForSentence sentences
 
 data UnparameterizedId = UnparameterizedId
     { unparameterizedIdName     :: String
     , unparameterizedIdLocation :: AstLocation
     }
+    deriving (Show)
+
+
 toUnparameterizedId :: Id level -> UnparameterizedId
 toUnparameterizedId Id {getId = name, idLocation = location} =
     UnparameterizedId
@@ -88,12 +93,12 @@ definedNamesForObjectSentence (SentenceAxiomSentence _)  = []
 definedNamesForObjectSentence (SentenceClaimSentence _)  = []
 definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
     [ sentenceName
-    , UnparameterizedId
-        { unparameterizedIdName =
-            metaNameForObjectSort (unparameterizedIdName sentenceName)
-        , unparameterizedIdLocation =
-            AstLocationLifted (unparameterizedIdLocation sentenceName)
-        }
+    -- , UnparameterizedId
+    --     { unparameterizedIdName =
+    --         metaNameForObjectSort (unparameterizedIdName sentenceName)
+    --     , unparameterizedIdLocation =
+    --         AstLocationLifted (unparameterizedIdLocation sentenceName)
+    --     }
     ]
   where sentenceName = toUnparameterizedId (sentenceSortName sentenceSort)
 definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSort sentence))
@@ -150,7 +155,7 @@ verifyObjectSentence
     attributesVerification
     sentence
   =
-    withSentenceContext sentence (UnifiedMetaSentence <$> verifyObjectSentence0)
+    withSentenceContext sentence (UnifiedObjectSentence <$> verifyObjectSentence0)
   where
     verifyObjectSentence0
         :: Either
@@ -390,6 +395,4 @@ buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
     return (Set.insert unifiedVariable variables)
   where
     extractVariableName (UnifiedObject variable) =
-        getIdForError (getSortVariable variable)
-    extractVariableName (UnifiedMeta variable) =
         getIdForError (getSortVariable variable)

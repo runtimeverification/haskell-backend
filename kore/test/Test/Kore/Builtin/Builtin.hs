@@ -131,14 +131,14 @@ constructorFunctions
     -> VerifiedModule StepperAttributes Attribute.Axiom
 constructorFunctions ixm =
     ixm
-        { indexedModuleObjectSymbolSentences =
+        { indexedModuleSymbolSentences =
             Map.mapWithKey
                 constructorFunctions1
-                (indexedModuleObjectSymbolSentences ixm)
-        , indexedModuleObjectAliasSentences =
+                (indexedModuleSymbolSentences ixm)
+        , indexedModuleAliasSentences =
             Map.mapWithKey
                 constructorFunctions1
-                (indexedModuleObjectAliasSentences ixm)
+                (indexedModuleAliasSentences ixm)
         , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
         }
   where

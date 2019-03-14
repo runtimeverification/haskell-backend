@@ -46,6 +46,7 @@ import           Kore.Implicit.ImplicitKore
 import           Kore.Implicit.ImplicitSorts
                  ( predicateSortActual )
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Unparser
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
@@ -214,9 +215,8 @@ defaultNullAttributesVerification =
     proxy :: Proxy Attribute.Null
     proxy = Proxy
 
-
 indexImplicitModule
-    :: (ParseAttributes declAtts, ParseAttributes axAtts)
+    :: (Unparse sortParam, Unparse patternType, ParseAttributes declAtts, ParseAttributes axAtts)
     => Module (UnifiedSentence sortParam patternType)
     -> Either
         (Error VerifyError)

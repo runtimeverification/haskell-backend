@@ -48,11 +48,9 @@ data Object = Object
     deriving (Eq, Ord, Show)
 
 data IsMetaOrObject s where
-    IsMeta :: IsMetaOrObject Meta
     IsObject :: IsMetaOrObject Object
 
 instance Show (IsMetaOrObject s) where
-    show IsMeta   = "Meta"
     show IsObject = "Object"
 
 
@@ -67,20 +65,18 @@ class (level ~ Object) => MetaOrObject level where
     isMetaOrObject _ = IsObject
 
     isObject :: level -> Bool
-    isObject l = case isMetaOrObject (toProxy l) of IsObject -> True; _ -> False
+    isObject _ = True
 
     isMeta :: level -> Bool
-    isMeta l = case isMetaOrObject (toProxy l) of IsMeta -> True; _ -> False
+    isMeta _ = False
 
 instance (level ~ Object) => MetaOrObject level
 
 {-|'Unified' provides a means to group together objects which are either
 'Meta' or 'Object'.
 -}
-data Unified thing
-    = UnifiedObject !(thing Object)
-    | UnifiedMeta !(thing Meta)
-  deriving (Generic)
+newtype Unified thing = UnifiedObject (thing Object)
+    deriving (Generic)
 
 type ShowMetaOrObject thing = (Show (thing Meta), Show (thing Object))
 type EqMetaOrObject thing = (Eq (thing Meta), Eq (thing Object))
@@ -98,7 +94,6 @@ instance
   where
     unparse =
         \case
-            UnifiedMeta meta -> unparse meta
             UnifiedObject object -> unparse object
 
 {-|Given a function transforming objects of 'Meta' type and another transforming
@@ -109,7 +104,6 @@ applyUnified
     :: (thing Meta -> b)
     -> (thing Object -> b)
     -> (Unified thing -> b)
-applyUnified metaT _ (UnifiedMeta x)     = metaT x
 applyUnified _ objectT (UnifiedObject x) = objectT x
 
 {-|Given a function transforming objects of any 'level', 'transformUnified'
@@ -130,7 +124,6 @@ mapUnified
     :: (forall level . MetaOrObject level => thing1 level -> thing2 level)
     -> (Unified thing1 -> Unified thing2)
 mapUnified f (UnifiedObject o) = UnifiedObject (f o)
-mapUnified f (UnifiedMeta o)   = UnifiedMeta (f o)
 
 {-|Given a function transforming @thing1 level@ objects into an action
 producing @thing2 level@ objects,
@@ -144,13 +137,10 @@ sequenceUnified
     => (forall level . MetaOrObject level => thing1 level -> a (thing2 level))
     -> (Unified thing1 -> a (Unified thing2))
 sequenceUnified f (UnifiedObject o) = UnifiedObject <$> f o
-sequenceUnified f (UnifiedMeta o)   = UnifiedMeta <$> f o
 
 {-|'asUnified' takes an arbitrary 'Meta' or 'Object' @thing@ and transforms it
 into the corresponding 'Unified' @thing@.
 -}
 asUnified
     :: MetaOrObject level => thing level -> Unified thing
-asUnified x = case isMetaOrObject x of
-    IsObject -> UnifiedObject x
-    IsMeta   -> UnifiedMeta x
+asUnified x = UnifiedObject x

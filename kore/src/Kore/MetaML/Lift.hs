@@ -26,7 +26,6 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Kore
-import           Kore.AST.MLPatterns
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTUtils.SmartPatterns
@@ -142,7 +141,6 @@ liftReducer
     -> CommonMetaPattern
 liftReducer =
     \case
-        UnifiedMetaPattern metaP -> liftObjectReducer metaP
         UnifiedObjectPattern objectP -> liftObjectReducer objectP
 
 liftObjectReducer
@@ -421,19 +419,16 @@ liftMetaSentenceClaimOrAxiom ctor as =
         }
     ]
   where
-    metaParameters =
-        [sv | UnifiedMeta sv <- sentenceAxiomParameters as]
+    metaParameters = []
     originalPattern = sentenceAxiomPattern as
     axiomSort =
         case Cofree.tailF (Recursive.project originalPattern) of
             UnifiedObjectPattern _ -> patternMetaSort
-            UnifiedMetaPattern p   -> getPatternResultSort undefinedHeadSort p
     objectParameters =
         [sv | UnifiedObject sv <- sentenceAxiomParameters as]
     liftedPattern = liftToMeta originalPattern
     provableLiftedPattern =
         case Cofree.tailF (Recursive.project originalPattern) of
-            UnifiedMetaPattern _   -> liftedPattern
             UnifiedObjectPattern _ ->
                 App_ (provableHead axiomSort) [liftedPattern]
 

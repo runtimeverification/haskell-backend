@@ -14,7 +14,6 @@ module Kore.Implicit.Verified
     )
     where
 
-import qualified Kore.AST.Pure as AST.Pure
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -38,8 +37,6 @@ checkedMetaDefinition = do
             $ definitionPureToKore
             $ castDefinitionDomainValues uncheckedMetaDefinition
     return uncheckedMetaDefinition
-  where
-    castDefinitionDomainValues = (fmap . fmap) AST.Pure.castVoidDomainValues
 
 {-| 'implicitMetaDefinition' is a definition with everything Meta
 that is implicitly defined and visible everywhere. This definition passes
