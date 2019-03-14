@@ -1,8 +1,0 @@
-[]
-
-module TEST-EXCEPTION-8
-
-  axiom{}
-    X:S{#S} []
-
-endmodule []

@@ -1,7 +1,0 @@
-[]
-
-module TEST-EXCEPTION-24
-
-  symbol a{}(m) : #n []
-
-endmodule []

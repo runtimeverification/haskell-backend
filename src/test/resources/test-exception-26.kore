@@ -1,7 +1,0 @@
-[]
-
-module TEST-EXCEPTION-26
-
-  symbol #a{#b}(#m) : n []
-
-endmodule []
