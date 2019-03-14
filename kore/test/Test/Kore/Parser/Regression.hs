@@ -15,8 +15,6 @@ import Test.Tasty.Golden
 
 import           Control.Exception
                  ( bracket )
-import           Control.Monad
-                 ( void )
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.ByteString.Lazy.Char8 as LazyChar8
 import           System.Directory
@@ -24,15 +22,11 @@ import           System.Directory
 import           System.FilePath
                  ( addExtension, splitFileName, (</>) )
 
-import           Kore.AST.PureToKore
-                 ( definitionPureToKore )
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.MetaML.Lift
-                 ( liftDefinition )
 import           Kore.Parser.Parser
 
 import qualified Paths
@@ -40,10 +34,7 @@ import qualified Paths
 newtype InputFileName = InputFileName FilePath
 newtype GoldenFileName = GoldenFileName FilePath
 
-data VerifyRequest
-    = VerifyRequestWithLifting
-    | VerifyRequestYes
-    | VerifyRequestNo
+data VerifyRequest = VerifyRequestYes | VerifyRequestNo
 
 regressionTests :: [InputFileName] -> [TestTree]
 regressionTests = map regressionTestFromInputFile
@@ -60,7 +51,7 @@ regressionTestFromInputFile inputFileName =
     regressionTest
         inputFileName
         (goldenFromInputFileName inputFileName)
-        VerifyRequestWithLifting
+        VerifyRequestYes
 
 regressionTest :: InputFileName -> GoldenFileName -> VerifyRequest -> TestTree
 regressionTest
@@ -104,16 +95,9 @@ runParser inputFileName verifyRequest = do
         definition = do
             unverifiedDefn <- parseKoreDefinition inputFileName fileContent
             verifiedDefinition <- case verifyRequest of
-                VerifyRequestWithLifting -> verify unverifiedDefn
                 VerifyRequestYes         -> verify unverifiedDefn
                 VerifyRequestNo          -> return unverifiedDefn
             case verifyRequest of
-                VerifyRequestWithLifting ->
-                    void
-                    $ verify
-                    $ definitionPureToKore
-                    $ castDefinitionDomainValues
-                    $ liftDefinition verifiedDefinition
                 VerifyRequestYes -> return ()
                 VerifyRequestNo  -> return ()
             return verifiedDefinition

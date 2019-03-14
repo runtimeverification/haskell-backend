@@ -92,15 +92,7 @@ definedNamesForObjectSentence (SentenceImportSentence _) = []
 definedNamesForObjectSentence (SentenceAxiomSentence _)  = []
 definedNamesForObjectSentence (SentenceClaimSentence _)  = []
 definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
-    [ sentenceName
-    -- , UnparameterizedId
-    --     { unparameterizedIdName =
-    --         metaNameForObjectSort (unparameterizedIdName sentenceName)
-    --     , unparameterizedIdLocation =
-    --         AstLocationLifted (unparameterizedIdLocation sentenceName)
-    --     }
-    ]
-  where sentenceName = toUnparameterizedId (sentenceSortName sentenceSort)
+    [ toUnparameterizedId (sentenceSortName sentenceSort) ]
 definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSort sentence))
   = definedNamesForObjectSentence (SentenceSortSentence sentence)
 definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSymbol sentence))
