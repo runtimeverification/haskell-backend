@@ -16,7 +16,6 @@ import qualified Control.Lens as Lens
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-import Kore.AST.MLPatterns
 import Kore.AST.Sentence
 import Kore.Domain.Class
 import Kore.Sort
@@ -99,14 +98,37 @@ instance
     (Domain domain, AstWithLocation (variable level)) =>
     AstWithLocation (Pattern level domain variable child)
   where
-    locationFromAst = applyPatternFunction PatternFunction
-        { patternFunctionML = locationFromAst . getMLPatternResultSort
-        , patternFunctionMLBinder = locationFromAst . getBinderPatternSort
-        , applicationFunction = locationFromAst . applicationSymbolOrAlias
-        , variableFunction = locationFromAst
-        , domainValueFunction =
-            locationFromAst . domainValueSort . Lens.view lensDomainValue
-        , stringFunction = const AstLocationUnknown
-        , charFunction = const AstLocationUnknown
-        }
+    locationFromAst =
+        \case
+            AndPattern And { andSort } -> locationFromAst andSort
+            ApplicationPattern Application { applicationSymbolOrAlias } ->
+                locationFromAst applicationSymbolOrAlias
+            BottomPattern Bottom { bottomSort } -> locationFromAst bottomSort
+            CeilPattern Ceil { ceilResultSort } ->
+                locationFromAst ceilResultSort
+            DomainValuePattern domain ->
+                locationFromAst
+                $ domainValueSort
+                $ Lens.view lensDomainValue domain
+            EqualsPattern Equals { equalsResultSort } ->
+                locationFromAst equalsResultSort
+            ExistsPattern Exists { existsSort } -> locationFromAst existsSort
+            FloorPattern Floor { floorResultSort } ->
+                locationFromAst floorResultSort
+            ForallPattern Forall { forallSort } -> locationFromAst forallSort
+            IffPattern Iff { iffSort } -> locationFromAst iffSort
+            ImpliesPattern Implies { impliesSort } ->
+                locationFromAst impliesSort
+            InPattern In { inResultSort } ->
+                locationFromAst inResultSort
+            NextPattern Next { nextSort } -> locationFromAst nextSort
+            NotPattern Not { notSort } -> locationFromAst notSort
+            OrPattern Or { orSort } -> locationFromAst orSort
+            RewritesPattern Rewrites { rewritesSort } ->
+                locationFromAst rewritesSort
+            StringLiteralPattern _ -> AstLocationUnknown
+            CharLiteralPattern _ -> AstLocationUnknown
+            TopPattern Top { topSort } -> locationFromAst topSort
+            VariablePattern variable -> locationFromAst variable
+
     updateAstLocation = undefined
