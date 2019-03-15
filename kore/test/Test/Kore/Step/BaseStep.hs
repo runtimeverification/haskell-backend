@@ -1449,6 +1449,27 @@ test_instantiateRule =
         actual <- instantiateRule axiom unifier
         assertEqual "" expect actual
 
+    , testCase "conflicted unification" $ do
+        let axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            unifier =
+                Predicated
+                    { term = ()
+                    , predicate =
+                        Predicate.makeNotPredicate
+                        (Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                    , substitution =
+                        Substitution.wrap [(Mock.x, Mock.a)]
+                    }
+            expect = Right []
+        actual <- instantiateRule axiom unifier
+        assertEqual "" expect actual
+
     , testCase "normalization failure" $ do
         let axiom =
                 RulePattern
@@ -1467,5 +1488,20 @@ test_instantiateRule =
                     }
         actual <- instantiateRule axiom unifier
         assertBool "" (Either.isLeft actual)
+
+    , testCase "normalize substitution" $ do
+        let axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            unifier =
+                ExpandedPattern.topPredicate
+                    { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
+        Right [ instantiated ] <- instantiateRule axiom unifier
+        let Predicated { substitution = actual } = instantiated
+        assertBool "" (Substitution.isNormalized actual)
 
     ]
