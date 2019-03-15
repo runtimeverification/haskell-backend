@@ -927,7 +927,7 @@ instantiateRule
     axiom@RulePattern { left, right, requires }
     unifier
   = do
-    let merged = fromPredicate requires *> unifier
+    let merged = ExpandedPattern.fromPredicate requires *> unifier
     normalized <- normalize merged
     let Predicated { substitution } = normalized
         substitution' = Substitution.toMap substitution
@@ -941,8 +941,6 @@ instantiateRule
   where
     fromUnification =
         withExceptT unificationOrSubstitutionToStepError
-    fromPredicate predicate =
-        Predicated { term = (), predicate, substitution = mempty }
     normalize =
         Monad.Morph.hoist fromUnification
         . Substitution.normalizeExcept

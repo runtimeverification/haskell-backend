@@ -31,6 +31,7 @@ module Kore.Step.Representation.ExpandedPattern
     , bottomPredicate
     , Kore.Step.Representation.ExpandedPattern.fromPurePattern
     , toPredicate
+    , Kore.Step.Representation.ExpandedPattern.fromPredicate
     , Kore.Step.Representation.ExpandedPattern.freeVariables
     , freeEpVariables
     ) where
@@ -284,9 +285,9 @@ toMLPattern
             predicate' ->
                 case projected of
                     TopPattern _ ->
-                        fromPredicate patternSort predicate'
+                        Predicate.fromPredicate patternSort predicate'
                     BottomPattern _ -> pattern'
-                    _ -> mkAnd pattern' (fromPredicate patternSort predicate')
+                    _ -> mkAnd pattern' (Predicate.fromPredicate patternSort predicate')
       where
         Valid { patternSort } = valid
 
@@ -389,6 +390,17 @@ toPredicate Predicated { predicate, substitution } =
     makeAndPredicate
         predicate
         (substitutionToPredicate substitution)
+
+{- | Construct a 'PredicateSubstitution' from the given 'Predicate'.
+
+The result has an empty 'Substitution'.
+
+ -}
+fromPredicate
+    :: Predicate level variable
+    -> PredicateSubstitution level variable
+fromPredicate predicate =
+    Predicated { term = (), predicate, substitution = mempty }
 
 {- | Extract the set of free variables from a predicate and substitution.
 
