@@ -16,6 +16,7 @@ module Kore.Step.Substitution
     , mergePredicatesAndSubstitutionsExcept
     , normalizePredicatedSubstitution
     , normalize
+    , normalizeExcept
     ) where
 
 import           Control.Monad.Except
@@ -95,7 +96,7 @@ normalize
         Monad.Trans.lift
         $ runExceptT
         $ gather
-        $ normalizeWorker
+        $ normalizeExcept
             tools
             substitutionSimplifier
             simplifier
@@ -115,7 +116,7 @@ normalize
   where
     applyTerm predicated = predicated { term }
 
-normalizeWorker
+normalizeExcept
     ::  ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -133,7 +134,7 @@ normalizeWorker
     -> BranchT
         (ExceptT (UnificationOrSubstitutionError level variable) Simplifier)
         (PredicateSubstitution level variable)
-normalizeWorker
+normalizeExcept
     tools
     predicateSimplifier@(PredicateSubstitutionSimplifier simplifySubstitution)
     simplifier
@@ -490,7 +491,7 @@ normalizeSubstitutionAfterMerge
   = do
     results <-
         gather
-        $ normalizeWorker
+        $ normalizeExcept
             tools
             substitutionSimplifier
             simplifier
