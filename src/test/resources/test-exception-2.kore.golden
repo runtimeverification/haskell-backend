@@ -1,4 +1,4 @@
-Parse error: ../src/test/resources//test-exception-2.kore:6:9:
+../src/test/resources//test-exception-2.kore:6:9:
   |
 6 |     sort:S []
   |         ^
