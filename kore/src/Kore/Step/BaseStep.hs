@@ -73,8 +73,6 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), Simplifier, StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
@@ -887,3 +885,16 @@ unwrapPredicateVariables
     => Predicate level (StepperVariable variable)
     -> m (Predicate level variable)
 unwrapPredicateVariables = traverse unwrapPatternVariables
+
+instantiateRule
+    :: MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -> BuiltinAndAxiomSimplifierMap level
+
+    -> ExpandedPattern level variable
+    -> RulePattern level variable
+    -> PredicateSubstitution level variable
+    -> BranchT
+        (ExceptT (StepError level variable) Simplifier)
+        (Predicated level variable (RulePattern level variable))
