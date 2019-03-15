@@ -44,6 +44,12 @@ import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer
                  ( decimal, signed )
 
+import           Control.Exception.Lens
+                 ( _UserInterrupt )
+import           Control.Exception.Lens
+                 ( handler_ )
+import           Control.Monad.Catch
+                 ( catches )
 import           Control.Monad.Extra
                  ( loopM )
 import qualified Kore.AST.Common as Kore
@@ -159,7 +165,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             } <- get
         if Graph.outdeg (Strategy.graph graph) node == 0
             then do
-                graph' <- lift
+                graph' <- lift . catchInterruptWithDefault graph
                     $ verifyClaimStep
                         tools
                         simplifier
@@ -173,6 +179,13 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                 lensGraph .= graph'
                 pure True
             else pure False
+
+    catchInterruptWithDefault :: a -> Simplifier a -> Simplifier a
+    catchInterruptWithDefault def sa =
+        catches sa [ handler_ _UserInterrupt $ do
+                           liftIO $ putStrLn "Step evaluation interrupted."
+                           pure def
+                   ]
 
     replGreeting :: MonadIO m => m ()
     replGreeting =

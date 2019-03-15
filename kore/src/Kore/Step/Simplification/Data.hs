@@ -41,6 +41,8 @@ import           Data.Typeable
 import           GHC.Stack
                  ( HasCallStack )
 
+import           Control.Monad.Catch
+                 ( Exception, MonadCatch, MonadThrow, catch, throwM )
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
@@ -240,6 +242,14 @@ instance MonadSMT Simplifier where
 instance MonadIO Simplifier where
     liftIO :: IO a -> Simplifier a
     liftIO ma = Simplifier . ReaderT $ const ma
+
+instance MonadThrow Simplifier where
+    throwM :: Exception e => e -> Simplifier a
+    throwM = Simplifier . throwM
+
+instance MonadCatch Simplifier where
+    catch :: Exception e => Simplifier a -> (e -> Simplifier a) -> Simplifier a
+    catch (Simplifier ra) f = Simplifier $ catch ra (getSimplifier . f)
 
 instance MonadReader Environment Simplifier where
     ask :: Simplifier Environment
