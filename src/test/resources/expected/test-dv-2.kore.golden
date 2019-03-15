@@ -1,1 +1,1 @@
-Parse error: Error in module 'DV-2' -> axiom declaration -> \dv (../../../test/resources//test-dv-2.kore 3:19): Domain value argument must be a literal string.
+Parse error: Error in module 'DV-2' -> axiom declaration -> \dv (../src/test/resources//test-dv-2.kore 3:19): Domain value argument must be a literal string.

@@ -11,8 +11,7 @@ kore-exec: $(KORE_EXEC)
 k-frontend:
 	mkdir -p $(BUILD_DIR)
 	rm -rf $(K_DIST_DEFAULT) $(K_NIGHTLY)
-	curl --location --output $(K_NIGHTLY) \
-	    $$(curl 'https://api.github.com/repos/kframework/k/releases' | jq --raw-output '.[0].assets[].browser_download_url | match(".*nightly.tar.gz").string')
+	curl --location --output $(K_NIGHTLY) $(K_NIGHTLY_URL)
 	mkdir -p $(K_DIST_DEFAULT)
 	tar --extract --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIST_DEFAULT)
 	$(KRUN) --version
@@ -57,7 +56,7 @@ clean:
 	$(STACK_HADDOCK) clean --full
 	$(STACK_TEST) clean --full
 	find . -name '*.tix' -exec rm -f '{}' \;
-	rm -f src/main/haskell/kore/test-results.xml
+	rm -f kore/test-results.xml
 	rm -rf haskell_documentation
 	rm -rf coverage_report
 	rm -rf $(BUILD_DIR)
