@@ -979,4 +979,4 @@ applyRule
     axiom
   = do
     TopBottom.guardAgainstBottom initial
-    return (right <$> axiom <* initial)
+    return (initial *> (right <$> axiom))
