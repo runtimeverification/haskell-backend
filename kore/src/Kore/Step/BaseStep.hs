@@ -886,6 +886,12 @@ unwrapPredicateVariables
     -> m (Predicate level variable)
 unwrapPredicateVariables = traverse unwrapPatternVariables
 
+{- | Instantiate the applied rule by applying the unification solution.
+
+The initial configuration is used to return the final condition. The entire
+instantiated rule is returned to allow constructing the remainder patterns.
+
+ -}
 instantiateRule
     :: MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -893,8 +899,11 @@ instantiateRule
     -> BuiltinAndAxiomSimplifierMap level
 
     -> ExpandedPattern level variable
+    -- ^ Initial configuration
     -> RulePattern level variable
+    -- ^ Applied rule
     -> PredicateSubstitution level variable
+    -- ^ Unification solution
     -> BranchT
         (ExceptT (StepError level variable) Simplifier)
         (Predicated level variable (RulePattern level variable))
