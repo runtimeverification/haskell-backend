@@ -912,7 +912,7 @@ instantiateRule
     -> BuiltinAndAxiomSimplifierMap Object
 
     -> RulePattern Object variable
-    -- ^ Applied rule
+    -- ^ Unified rule
     -> PredicateSubstitution Object variable
     -- ^ Unification solution
     -> BranchT
