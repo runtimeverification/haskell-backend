@@ -5,6 +5,7 @@ module Test.Kore.Step.BaseStep
     , test_baseStepRemainder
     , test_baseStepMultipleRemainder
     , test_instantiateRule
+    , test_applyRule
     ) where
 
 import Test.Tasty
@@ -32,13 +33,13 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep hiding
-                 ( instantiateRule )
+                 ( applyRule, instantiateRule )
 import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, PredicateSubstitution,
-                 Predicated (..) )
+                 ( CommonExpandedPattern, ExpandedPattern,
+                 PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
@@ -1543,5 +1544,77 @@ test_instantiateRule =
     --     Right [ actual1, actual2 ] <- instantiateRule axiom unifier
     --     assertEqual "" expect1 (predicate actual1)
     --     assertEqual "" expect2 (predicate actual2)
+
+    ]
+
+applyRule
+    :: PredicateSubstitution Object Variable
+    -> Predicated Object Variable (RulePattern Object Variable)
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (MultiOr (ExpandedPattern Object Variable))
+        )
+applyRule initial instantiated =
+    evalUnifier
+    $ BaseStep.applyRule
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        initial
+        instantiated
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+
+test_applyRule :: [TestTree]
+test_applyRule =
+    [ testCase "\\bottom initial condition" $ do
+        let instantiated =
+                Predicated
+                    { term = axiom
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            initial = ExpandedPattern.bottomPredicate
+            expect = Right []
+        actual <- applyRule initial instantiated
+        assertEqual "" expect actual
+
+    , testCase "returns axiom right-hand side" $ do
+        let instantiated =
+                Predicated
+                    { term = axiom
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            initial = ExpandedPattern.topPredicate
+            expect = Right [ right axiom <$ initial ]
+        actual <- applyRule initial instantiated
+        assertEqual "" expect actual
 
     ]
