@@ -67,7 +67,7 @@ regressionTest
 goldenFromInputFileName :: InputFileName -> GoldenFileName
 goldenFromInputFileName (InputFileName inputFile) =
     GoldenFileName
-        (directory </> "expected" </> addExtension inputFileName ".golden")
+        (directory </> addExtension inputFileName ".golden")
   where (directory, inputFileName) = splitFileName inputFile
 
 toByteString :: Either String KoreDefinition -> ByteString
