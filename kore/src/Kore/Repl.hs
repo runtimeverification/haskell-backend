@@ -13,11 +13,15 @@ module Kore.Repl
     , ReplState (..)
     ) where
 
+import           Control.Exception
+                 ( AsyncException (UserInterrupt) )
 import           Control.Lens
                  ( (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
+import           Control.Monad.Catch
+                 ( catch )
 import           Control.Monad.Extra
                  ( whileM )
 import           Control.Monad.IO.Class
@@ -159,7 +163,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             } <- get
         if Graph.outdeg (Strategy.graph graph) node == 0
             then do
-                graph' <- lift
+                graph' <- lift . catchInterruptWithDefault graph
                     $ verifyClaimStep
                         tools
                         simplifier
@@ -173,6 +177,12 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                 lensGraph .= graph'
                 pure True
             else pure False
+
+    catchInterruptWithDefault :: a -> Simplifier a -> Simplifier a
+    catchInterruptWithDefault def sa =
+        catch sa $ \UserInterrupt -> do
+            liftIO $ putStrLn "Step evaluation interrupted."
+            pure def
 
     replGreeting :: MonadIO m => m ()
     replGreeting =

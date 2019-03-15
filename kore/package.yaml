@@ -34,6 +34,7 @@ dependencies:
   - deepseq
   - deriving-compat
   - errors
+  - exceptions
   - extra
   - fgl
   - free
@@ -135,15 +136,6 @@ executables:
     main: Main.hs
     source-dirs:
       - app/repl
-      - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
-    dependencies:
-      - kore
-
-  prover:
-    main: Main.hs
-    source-dirs:
-      - app/prover
       - app/share
     ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
