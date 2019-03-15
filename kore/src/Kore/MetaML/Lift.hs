@@ -19,6 +19,7 @@ module Kore.MetaML.Lift
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Lens as Lens
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Text
                  ( Text )
@@ -149,7 +150,7 @@ liftObjectReducer
     -> CommonMetaPattern
 liftObjectReducer p = case p of
     AndPattern ap -> applyMetaMLPatternHead AndPatternType
-        (liftToMeta (andSort ap) : getPatternChildren ap)
+        (liftToMeta (andSort ap) : Foldable.toList ap)
     ApplicationPattern ap ->
         let
             sa = applicationSymbolOrAlias ap
@@ -198,9 +199,9 @@ liftObjectReducer p = case p of
         , forallChild ep
         ]
     IffPattern ap -> applyMetaMLPatternHead IffPatternType
-        (liftToMeta (iffSort ap) : getPatternChildren ap)
+        (liftToMeta (iffSort ap) : Foldable.toList ap)
     ImpliesPattern ap -> applyMetaMLPatternHead ImpliesPatternType
-        (liftToMeta (impliesSort ap) : getPatternChildren ap)
+        (liftToMeta (impliesSort ap) : Foldable.toList ap)
     InPattern ap -> applyMetaMLPatternHead InPatternType
         [ liftToMeta (inOperandSort ap)
         , liftToMeta (inResultSort ap)
@@ -212,9 +213,9 @@ liftObjectReducer p = case p of
     NotPattern ap -> applyMetaMLPatternHead NotPatternType
         [liftToMeta (notSort ap), notChild ap]
     OrPattern ap -> applyMetaMLPatternHead OrPatternType
-        (liftToMeta (orSort ap) : getPatternChildren ap)
+        (liftToMeta (orSort ap) : Foldable.toList ap)
     RewritesPattern ap -> applyMetaMLPatternHead RewritesPatternType
-        (liftToMeta (rewritesSort ap) : getPatternChildren ap)
+        (liftToMeta (rewritesSort ap) : Foldable.toList ap)
     TopPattern bp -> applyMetaMLPatternHead TopPatternType
         [liftToMeta (topSort bp)]
     VariablePattern vp ->
