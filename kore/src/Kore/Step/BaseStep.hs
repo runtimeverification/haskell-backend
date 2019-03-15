@@ -894,7 +894,9 @@ unwrapPredicateVariables = traverse unwrapPatternVariables
 {- | Instantiate the rule by applying the unification solution.
 
 The unification solution is normalized with the 'requires' clause from the
-unified rule. @instantiateRule@ fails if normalization fails.
+unified rule. @instantiateRule@ fails if normalization fails. @instantiateRule@
+branches when the 'PredicateSubstitutionSimplifier' causes normalization to
+branch.
 
  -}
 instantiateRule

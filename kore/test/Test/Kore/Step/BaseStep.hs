@@ -1528,4 +1528,20 @@ test_instantiateRule =
         let Predicated { substitution = actual } = instantiated
         assertBool "" (Substitution.isNormalized actual)
 
+    -- Uncomment below when PredicateSubstitution simplifier branches.
+    -- , testCase "branch on requirement" $ do
+    --     let axiom =
+    --             RulePattern
+    --                 { left = Mock.a
+    --                 , right = Mock.b
+    --                 , requires = Predicate.makeOrPredicate expect1 expect2
+    --                 , attributes = Default.def
+    --                 }
+    --         unifier = ExpandedPattern.topPredicate
+    --         expect1 = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+    --         expect2 = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
+    --     Right [ actual1, actual2 ] <- instantiateRule axiom unifier
+    --     assertEqual "" expect1 (predicate actual1)
+    --     assertEqual "" expect2 (predicate actual2)
+
     ]
