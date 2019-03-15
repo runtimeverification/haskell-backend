@@ -26,6 +26,7 @@ module Kore.Step.BaseStep
     , stepWithRule
     --
     , instantiateRule
+    , applyRule
     ) where
 
 import           Control.Monad.Except
@@ -965,3 +966,13 @@ applyRule
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
         (ExpandedPattern Object variable)
+applyRule
+    _metadataTools
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
+
+    initial
+    _axiom
+  =
+    return initial
