@@ -1,6 +1,0 @@
-Parse error: ../src/test/resources//test-exception-18.kore:6:14:
-  |
-6 |     \ceil{#S,S}(X:S) []
-  |              ^
-unexpected 'S'
-expecting '#'

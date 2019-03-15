@@ -7,11 +7,7 @@ import Test.Tasty.HUnit
 
 import           Kore.AST.Kore
 import           Kore.ASTPrettyPrint
-import           Kore.ASTUtils.SmartPatterns
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Implicit.ImplicitSorts
-                 ( charMetaSort )
-import           Kore.MetaML.AST
 
 import Test.Kore
 
@@ -21,25 +17,6 @@ test_astPrettyPrint =
         (assertEqual ""
             "CharLiteralPattern (CharLiteral 'a')"
             (prettyPrintPattern (CharLiteralPattern (CharLiteral 'a')))
-        )
-    , testCase "Meta unified variable"
-        (assertEqual ""
-            (  "UnifiedMeta Variable\n"
-            ++ "    { variableName = (Id \"#v\" AstLocationNone) :: Id Meta\n"
-            ++ "    , variableCounter = Nothing\n"
-            ++ "    , variableSort =\n"
-            ++ "        SortVariableSort (SortVariable ((Id \"#sv\" AstLocationNone) :: Id Meta))\n"
-            ++ "    }"
-            )
-            (prettyPrintToString
-                (UnifiedMeta Variable
-                    { variableName = testId "#v"
-                    , variableCounter = mempty
-                    , variableSort =
-                        SortVariableSort (SortVariable (testId "#sv"))
-                    }
-                )
-            )
         )
     , testCase "Object unified variable"
         (assertEqual ""
@@ -71,20 +48,6 @@ test_astPrettyPrint =
         (assertEqual ""
             "Nothing"
             (prettyPrintToString (Nothing :: Maybe (Id Object)))
-        )
-    , testCase "MetaMLPattern - Top"
-        (assertEqual ""
-            "PurePattern\n\
-            \    { getPurePattern = CofreeT\n\
-            \        { runCofreeT = Identity\n\
-            \            { runIdentity = Null :< TopPattern (Top (SortActualSort SortActual\n\
-            \                { sortActualName = (Id \"#Char\" AstLocationNone) :: Id Meta\n\
-            \                , sortActualSorts = []\n\
-            \                }))\n\
-            \            }\n\
-            \        }\n\
-            \    }"
-            (prettyPrintToString (Top_ charMetaSort :: CommonMetaPattern))
         )
     ]
 

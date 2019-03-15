@@ -63,9 +63,7 @@ extractMetadataTools m =
     , symbolOrAliasType = getHeadType m
     , sortAttributes = getSortAttributes m
     , isSubsortOf = checkSubsort
-    , subsorts = case isMetaOrObject @level [] of
-            IsMeta   -> Set.singleton
-            IsObject -> Set.fromList . fmap getSortFromId . getSubsorts
+    , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
     }
   where
     subsortTable :: Map (Sort Object) [Sort Object]
@@ -86,13 +84,11 @@ extractMetadataTools m =
 
     getSubsorts :: Sort level -> [Vertex]
     getSubsorts = case isMetaOrObject @level [] of
-        IsMeta -> const []
         IsObject ->
             maybe [] (reachable sortGraph) . sortToVertex
 
     checkSubsort :: Sort level -> Sort level -> Bool
     checkSubsort = case isMetaOrObject @level [] of
-        IsMeta -> (==)
         IsObject ->
             let
                 realCheckSubsort subsort supersort

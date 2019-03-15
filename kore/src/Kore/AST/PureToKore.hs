@@ -63,26 +63,12 @@ extractPurePattern
         (KorePattern domain variable (Unified annotation))
         (Either (Error e) result)
     -> Either (Error e) result
-extractPurePattern IsMeta = \(ann :< pat) ->
-    case pat of
-        UnifiedMetaPattern mpat ->
-            case ann of
-                UnifiedMeta mann ->
-                    Recursive.embed . (mann :<) <$> sequence mpat
-                UnifiedObject _ ->
-                    koreFail "Unexpected object-level annotation"
-        UnifiedObjectPattern _ ->
-            koreFail "Unexpected object-level pattern"
 extractPurePattern IsObject = \(ann :< pat) ->
     case pat of
         UnifiedObjectPattern opat ->
             case ann of
                 UnifiedObject oann ->
                     Recursive.embed . (oann :<) <$> sequence opat
-                UnifiedMeta _ ->
-                    koreFail "Unexpected meta-level annotation"
-        UnifiedMetaPattern _ ->
-            koreFail "Unexpected meta-level pattern"
 
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure

@@ -14,12 +14,13 @@ module Kore.Implicit.Definitions
     , uncheckedMetaDefinition
     ) where
 
-import Kore.AST.PureToKore
-       ( modulePureToKore )
-import Kore.AST.Sentence
-import Kore.Implicit.ImplicitKore
-       ( uncheckedKoreModule )
-import Kore.MetaML.AST
+import qualified Kore.AST.Pure as AST.Pure
+import           Kore.AST.PureToKore
+                 ( modulePureToKore )
+import           Kore.AST.Sentence
+import           Kore.Implicit.ImplicitKore
+                 ( uncheckedKoreModule )
+import           Kore.MetaML.AST
 
 metaModules :: [MetaModule]
 metaModules = [uncheckedKoreModule]
@@ -39,7 +40,9 @@ uncheckedMetaDefinition =
 -}
 uncheckedKoreModules :: [KoreModule]
 uncheckedKoreModules =
-    map modulePureToKore metaModules
+    map modulePureToKore (castModuleDomainValues <$> metaModules)
+  where
+    castModuleDomainValues = (fmap . fmap) AST.Pure.castVoidDomainValues
 
 {-| 'uncheckedKoreDefinition' contains all the implicit modules as 'KoreModule'.
 Does not do any validation for these modules.

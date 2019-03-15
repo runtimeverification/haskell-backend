@@ -116,11 +116,6 @@ test_prettyPrintAstLocation =
                     )
                 )
             )
-        , testCase "prints AstLocationLifted"
-            (assertEqual ""
-                "<lifted(<implicitly defined entity>)>"
-                (prettyPrintAstLocation (AstLocationLifted AstLocationImplicit))
-            )
         ]
 
 test_id :: TestTree

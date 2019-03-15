@@ -37,11 +37,8 @@ instance
     => AstWithLocation (Unified thing)
   where
     locationFromAst (UnifiedObject t) = locationFromAst t
-    locationFromAst (UnifiedMeta t)   = locationFromAst t
     updateAstLocation (UnifiedObject t) loc =
         UnifiedObject (updateAstLocation t loc)
-    updateAstLocation (UnifiedMeta t) loc =
-        UnifiedMeta (updateAstLocation t loc)
 
 instance AstWithLocation AstLocation where
     locationFromAst = id

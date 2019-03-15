@@ -130,7 +130,6 @@ metaSortConverterTests =
         , success "#User{}" (sort_ $ MetaBasicSortType $ UserSort "User")
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
-            , "sort1{sort2, sort3}", "sort1{sort2{sort3}}"
             ]
         ]
 
@@ -170,21 +169,21 @@ metaSortListParserTests =
             , SortVariableSort (SortVariable (testId "#var"))
             ]
         , FailureWithoutMessage
-            [ "{#var1 #var2}", "{#var1, var2}" ]
+            [ "{#var1 #var2}" ]
         ]
 
 objectSortVariableParserTests :: [TestTree]
 objectSortVariableParserTests =
     parseTree (sortVariableParser Object)
         [ success "var" (SortVariable (testId "var"))
-        , FailureWithoutMessage ["", "#", "#var"]
+        , FailureWithoutMessage ["", "#"]
         ]
 
 metaSortVariableParserTests :: [TestTree]
 metaSortVariableParserTests =
     parseTree (sortVariableParser Meta)
         [ success "#var" (SortVariable (testId "#var"))
-        , FailureWithoutMessage ["", "#", "var"]
+        , FailureWithoutMessage ["", "#"]
         ]
 
 objectInCurlyBracesSortVariableListParserTest :: [TestTree]
@@ -198,7 +197,7 @@ objectInCurlyBracesSortVariableListParserTest =
             , SortVariable (testId "var2")
             ]
         , FailureWithoutMessage
-            [ "{var1 var2}", "{#var1, var2}", "{var, Int{}}" ]
+            [ "{var1 var2}", "{var, Int{}}" ]
         ]
 
 metaInCurlyBracesSortVariableListParserTest :: [TestTree]
@@ -212,7 +211,7 @@ metaInCurlyBracesSortVariableListParserTest =
             , SortVariable (testId "#var2")
             ]
         , FailureWithoutMessage
-            [ "{#var1 #var2}", "{#var1, var2}", "{#var, #Char{}}" ]
+            [ "{#var1 #var2}", "{#var, #Char{}}" ]
         ]
 
 sortVariableParserTests :: [TestTree]
@@ -223,7 +222,7 @@ sortVariableParserTests =
                 (SortVariable (testId "var"))
             )
         , success "#var"
-            ( UnifiedMeta
+            ( UnifiedObject
                 (SortVariable (testId "#var"))
             )
         , FailureWithoutMessage ["", "#"]
@@ -701,15 +700,6 @@ nextPatternParserTests =
                         asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )
-        , Failure FailureTest
-            { failureInput = "\\next{#s}(\"a\")"
-            , failureExpected =
-                "<test-string>:1:7:\n\
-                \  |\n\
-                \1 | \\next{#s}(\"a\")\n\
-                \  |       ^\n\
-                \Cannot have a \\next Meta pattern.\n"
-            }
         , FailureWithoutMessage
             [ ""
             , "\\next{s,s}(\"a\")"
@@ -752,15 +742,6 @@ rewritesPatternParserTests =
                         asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
-        , Failure FailureTest
-            { failureInput = "\\rewrites{#s}(\"a\", \"b\")"
-            , failureExpected =
-                "<test-string>:1:11:\n\
-                \  |\n\
-                \1 | \\rewrites{#s}(\"a\", \"b\")\n\
-                \  |           ^\n\
-                \Cannot have a \\rewrites Meta pattern.\n"
-            }
         , FailureWithoutMessage
             [ ""
             , "\\rewrites{s,s}(\"a\", \"b\")"

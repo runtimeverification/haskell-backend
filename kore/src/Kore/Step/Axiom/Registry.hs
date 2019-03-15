@@ -146,6 +146,9 @@ axiomPatternsToEvaluators =
         simplification :: [BuiltinAndAxiomSimplifier level]
         simplification = mkSimplifier <$> simplifications
           where
+            mkSimplifier
+                :: EqualityRule level Variable
+                -> BuiltinAndAxiomSimplifier level
             mkSimplifier simpl =
                 BuiltinAndAxiomSimplifier $ equalityRuleEvaluator simpl
         simplificationEvaluator =

@@ -19,7 +19,6 @@ module Kore.AST.Pure
     , asConcretePurePattern
     , isConcrete
     , fromConcretePurePattern
-    , castMetaDomainValues
     , castVoidDomainValues
     -- * Pure pattern heads
     , groundHead
@@ -68,8 +67,8 @@ import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
                  ( Valid (..) )
 import           Kore.AST.Common hiding
-                 ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
-                 mapVariables, traverseVariables )
+                 ( castVoidDomainValues, mapDomainValues, mapVariables,
+                 traverseVariables )
 import qualified Kore.AST.Common as Head
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
@@ -449,22 +448,6 @@ castVoidDomainValues
     => PurePattern level (Const Void) variable annotation
     -> PurePattern level domain variable annotation
 castVoidDomainValues = mapDomainValues (\case {})
-
-{- | Cast a 'Meta'-pure-pattern into any domain.
-
-The pattern can be cast trivially because it meta-patterns contain no
-domain values.
-
- -}
-castMetaDomainValues
-    :: (Functor domain1, Functor domain2)
-    => PurePattern Meta domain1 variable annotation
-    -> PurePattern Meta domain2 variable annotation
-castMetaDomainValues =
-    Recursive.ana (castMetaDomainValuesWorker . Recursive.project)
-  where
-    castMetaDomainValuesWorker (a :< pat) =
-        a :< Head.castMetaDomainValues pat
 
 -- |Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.

@@ -1,7 +1,0 @@
-[]
-
-module TEST-EXCEPTION-13
-
-  symbol f{#S}() : #S []
-
-endmodule []

@@ -233,7 +233,7 @@ getSymbolOrAlias kore =
 getStringLiteral :: CommonKorePattern -> Parser StringLiteral
 getStringLiteral kore =
     case Recursive.project kore of
-        _ :< UnifiedMetaPattern (StringLiteralPattern lit) -> return lit
+        _ :< UnifiedObjectPattern (StringLiteralPattern lit) -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
 
 instance ParseAttributes Attribute.Sort where

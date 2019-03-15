@@ -1,6 +1,0 @@
-Parse error: ../src/test/resources//test-exception-21.kore:5:11:
-  |
-5 |   sort #C ["d"]
-  |           ^
-unexpected '['
-expecting '{'

@@ -89,8 +89,6 @@ addVariable
     -> Context
 addVariable var =
     case isMetaOrObject var of
-        IsMeta -> \ctx@Context { metaVariables } ->
-            ctx { metaVariables = var : metaVariables }
         IsObject -> \ctx@Context { objectVariables } ->
             ctx { objectVariables = var : objectVariables }
 
@@ -109,8 +107,6 @@ addSortVariable
     -> Context
 addSortVariable var =
     case isMetaOrObject var of
-        IsMeta -> \ctx@Context { metaSortVariables } ->
-            ctx { metaSortVariables = var : metaSortVariables }
         IsObject -> \ctx@Context { objectSortVariables } ->
             ctx { objectSortVariables = var : objectSortVariables }
 
@@ -128,7 +124,6 @@ addUnifiedSortVariable
     -> Context
 addUnifiedSortVariable =
     \case
-        UnifiedMeta var -> addSortVariable var
         UnifiedObject var -> addSortVariable var
 
 addUnifiedSortVariables
@@ -158,7 +153,6 @@ idGen :: MonadGen m => IsMetaOrObject level -> m (Id level)
 idGen =
     \case
         IsObject -> testId <$> objectIdGen
-        IsMeta -> testId . (Text.cons '#') <$> objectIdGen
 
 objectIdGen :: MonadGen m => m Text
 objectIdGen =
@@ -222,12 +216,6 @@ sortActualGen =
             SortActual
                 <$> Gen.small (idGen IsObject)
                 <*> couple (Gen.small sortGen)
-        IsMeta ->
-            SortActual
-                <$> Gen.element metaSortIds
-                <*> pure []
-  where
-    metaSortIds = testId . Text.pack . show <$> metaSortsList
 
 sortGen :: forall level. MetaOrObject level => Gen (Sort level)
 sortGen =
@@ -235,9 +223,6 @@ sortGen =
         IsObject -> do
             Context { objectSortVariables } <- Reader.ask
             sortGenWorker objectSortVariables
-        IsMeta -> do
-            Context { metaSortVariables } <- Reader.ask
-            sortGenWorker metaSortVariables
   where
     level = isMetaOrObject (Proxy @level)
     sortGenWorker :: [SortVariable level] -> Gen (Sort level)
@@ -256,14 +241,12 @@ unifiedSortGen :: Gen (Unified Sort)
 unifiedSortGen =
     Gen.choice
         [ UnifiedObject <$> sortGen
-        , UnifiedMeta <$> sortGen
         ]
 
 unifiedSortVariableGen :: Gen UnifiedSortVariable
 unifiedSortVariableGen =
     Gen.choice
         [ UnifiedObject <$> sortVariableGen
-        , UnifiedMeta <$> sortVariableGen
         ]
 
 moduleNameGen :: MonadGen m => m ModuleName
@@ -276,9 +259,6 @@ variableGen
     -> Gen (Variable level)
 variableGen patternSort =
     case level of
-        IsMeta -> do
-            Context { metaVariables } <- Reader.ask
-            variableGenWorker metaVariables
         IsObject -> do
             Context { objectVariables } <- Reader.ask
             variableGenWorker objectVariables
@@ -533,15 +513,16 @@ stepPatternChildGen patternSort =
     stepPatternChildGenWorker n
       | n <= 1 =
         case isMetaOrObject patternSort of
-            IsMeta
+            IsObject
               | patternSort == stringMetaSort ->
                 mkStringLiteral . getStringLiteral <$> stringLiteralGen
               | patternSort == charMetaSort ->
                 mkCharLiteral . getCharLiteral <$> charLiteralGen
               | otherwise ->
-                mkVar <$> variableGen patternSort
-            IsObject ->
-                mkDomainValue <$> genBuiltin patternSort
+                Gen.choice
+                    [ mkVar <$> variableGen patternSort
+                    , mkDomainValue <$> genBuiltin patternSort
+                    ]
       | otherwise =
         (Gen.small . Gen.frequency)
             [ (1, stepPatternAndGen)
@@ -632,19 +613,15 @@ korePatternChildGen patternSort' =
     korePatternChildGenWorker n
       | n <= 1 =
         case isMetaOrObject patternSort' of
-            IsMeta
+            IsObject
               | patternSort' == stringMetaSort ->
                 korePatternGenStringLiteral
               | patternSort' == charMetaSort ->
                 korePatternGenCharLiteral
               | otherwise ->
-                korePatternGenVariable
-            IsObject ->
-                korePatternGenDomainValue
+                Gen.choice [korePatternGenVariable, korePatternGenDomainValue]
       | otherwise =
         case isMetaOrObject patternSort' of
-            IsMeta ->
-                korePatternGenLevel
             IsObject ->
                 Gen.frequency
                     [ (15, korePatternGenLevel)

@@ -36,7 +36,7 @@ metaVariable = Variable
     }
 
 unifiedMetaVariable :: Unified Variable
-unifiedMetaVariable = UnifiedMeta metaVariable
+unifiedMetaVariable = UnifiedObject metaVariable
 
 metaVariablePattern :: Pattern Meta Domain.Builtin Variable CommonKorePattern
 metaVariablePattern = VariablePattern metaVariable
