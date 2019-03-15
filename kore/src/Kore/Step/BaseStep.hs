@@ -938,7 +938,7 @@ instantiateRule
                 , right    = Pattern.substitute   substitution' right
                 , requires = Predicate.substitute substitution' requires
                 }
-    return (pure axiom')
+    return (normalized { term = axiom' })
   where
     fromUnification =
         withExceptT unificationOrSubstitutionToStepError
