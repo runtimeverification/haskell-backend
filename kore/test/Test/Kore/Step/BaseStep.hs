@@ -1385,7 +1385,7 @@ evalUnifier =
 
 test_instantiateRule :: [TestTree]
 test_instantiateRule =
-    [ testCase "Applies substitution to left-hand side" $ do
+    [ testCase "substitute left-hand side" $ do
         let initial = ExpandedPattern.top
             axiom =
                 RulePattern
@@ -1401,7 +1401,7 @@ test_instantiateRule =
         actual <- instantiateRule initial axiom unifier
         assertEqual "" expect actual
 
-    , testCase "Applies substitution to right-hand side" $ do
+    , testCase "substitute right-hand side" $ do
         let initial = ExpandedPattern.top
             axiom =
                 RulePattern
@@ -1417,7 +1417,7 @@ test_instantiateRule =
         actual <- instantiateRule initial axiom unifier
         assertEqual "" expect actual
 
-    , testCase "Applies substitution to requires clause" $ do
+    , testCase "substitute requires clause" $ do
         let initial = ExpandedPattern.top
             axiom =
                 RulePattern
@@ -1437,6 +1437,34 @@ test_instantiateRule =
                             Predicate.makeEqualsPredicate Mock.a Mock.b
                         }
                     ]
+        actual <- instantiateRule initial axiom unifier
+        assertEqual "" expect actual
+
+    , testCase "\\bottom unification condition" $ do
+        let initial = ExpandedPattern.top
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            unifier = ExpandedPattern.bottomPredicate
+            expect = Right []
+        actual <- instantiateRule initial axiom unifier
+        assertEqual "" expect actual
+
+    , testCase "\\bottom requirement" $ do
+        let initial = ExpandedPattern.top
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeFalsePredicate
+                    , attributes = Default.def
+                    }
+            unifier = ExpandedPattern.topPredicate
+            expect = Right []
         actual <- instantiateRule initial axiom unifier
         assertEqual "" expect actual
 
