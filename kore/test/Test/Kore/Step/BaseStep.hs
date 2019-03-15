@@ -1,17 +1,18 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Test.Kore.Step.BaseStep
     ( test_baseStep
     , test_baseStepRemainder
     , test_baseStepMultipleRemainder
+    , test_instantiateRule
     ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
 
 import           Control.Monad.Except
-                 ( runExceptT )
-import           Data.Default
+                 ( ExceptT, runExceptT )
+import           Data.Default as Default
                  ( def )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -24,22 +25,25 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import           Kore.Predicate.Predicate
+import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.BaseStep
+import           Kore.Step.BaseStep hiding
+                 ( instantiateRule )
+import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, ExpandedPattern,
+                 PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
@@ -1344,3 +1348,96 @@ runSingleStepWithRemainder metadataTools configuration axiom =
         Map.empty
         configuration
         axiom
+
+instantiateRule
+    :: ExpandedPattern Object Variable
+    -> RulePattern Object Variable
+    -> PredicateSubstitution Object Variable
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (MultiOr (Predicated Object Variable (RulePattern Object Variable)))
+        )
+instantiateRule initial axiom unifier =
+    evalUnifier
+    $ BaseStep.instantiateRule
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        initial
+        axiom
+        unifier
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier = Mock.substitutionSimplifier metadataTools
+    patternSimplifier = Simplifier.create metadataTools Map.empty
+    axiomSimplifiers = Map.empty
+
+evalUnifier
+    :: BranchT (ExceptT e Simplifier) a
+    -> IO (Either e (MultiOr a))
+evalUnifier =
+    SMT.runSMT SMT.defaultConfig
+    . evalSimplifier emptyLogger
+    . runExceptT
+    . gather
+
+test_instantiateRule :: [TestTree]
+test_instantiateRule =
+    [ testCase "Applies substitution to left-hand side" $ do
+        let initial = ExpandedPattern.top
+            axiom =
+                RulePattern
+                    { left = mkVar Mock.x
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            unifier =
+                ExpandedPattern.topPredicate
+                    { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
+            expect = Right [ pure axiom { left = Mock.a } ]
+        actual <- instantiateRule initial axiom unifier
+        assertEqual "" expect actual
+
+    , testCase "Applies substitution to right-hand side" $ do
+        let initial = ExpandedPattern.top
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = mkVar Mock.y
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            unifier =
+                ExpandedPattern.topPredicate
+                    { substitution = Substitution.wrap [(Mock.y, Mock.b)] }
+            expect = Right [ pure axiom { right = Mock.b } ]
+        actual <- instantiateRule initial axiom unifier
+        assertEqual "" expect actual
+
+    , testCase "Applies substitution to requires clause" $ do
+        let initial = ExpandedPattern.top
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires =
+                        Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
+                    , attributes = Default.def
+                    }
+            unifier =
+                ExpandedPattern.topPredicate
+                    { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
+            expect =
+                Right
+                    [ pure axiom
+                        { requires =
+                            Predicate.makeEqualsPredicate Mock.a Mock.b
+                        }
+                    ]
+        actual <- instantiateRule initial axiom unifier
+        assertEqual "" expect actual
+
+    ]
