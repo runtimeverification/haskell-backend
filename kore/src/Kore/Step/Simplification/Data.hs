@@ -30,6 +30,8 @@ import           Control.Applicative
 import           Control.Concurrent.MVar
                  ( MVar )
 import qualified Control.Monad as Monad
+import           Control.Monad.Morph
+                 ( MFunctor, MMonad )
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
@@ -111,6 +113,8 @@ newtype BranchT m a =
         ( Alternative
         , Applicative
         , Functor
+        , MFunctor
+        , MMonad
         , Monad
         , MonadIO
         , MonadPlus
