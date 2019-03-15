@@ -33,6 +33,8 @@ import           Control.DeepSeq
 import           Data.List
                  ( foldl' )
 import qualified Data.Set as Set
+import           GHC.Exts
+                 ( IsList )
 import           GHC.Generics
                  ( Generic )
 
@@ -53,8 +55,18 @@ patterns.
 
 -}
 newtype MultiOr child = MultiOr { getMultiOr :: [child] }
-  deriving
-    (Applicative, Eq, Foldable, Functor, Generic, Monad, Ord, Show, Traversable)
+    deriving
+        ( Applicative
+        , Eq
+        , Foldable
+        , Functor
+        , Generic
+        , IsList
+        , Monad
+        , Ord
+        , Show
+        , Traversable
+        )
 
 instance NFData child => NFData (MultiOr child)
 
