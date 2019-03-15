@@ -13,11 +13,15 @@ module Kore.Repl
     , ReplState (..)
     ) where
 
+import           Control.Exception
+                 ( AsyncException (UserInterrupt) )
 import           Control.Lens
                  ( (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
+import           Control.Monad.Catch
+                 ( catch )
 import           Control.Monad.Extra
                  ( whileM )
 import           Control.Monad.IO.Class
@@ -44,12 +48,6 @@ import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer
                  ( decimal, signed )
 
-import           Control.Exception.Lens
-                 ( _UserInterrupt )
-import           Control.Exception.Lens
-                 ( handler_ )
-import           Control.Monad.Catch
-                 ( catches )
 import           Control.Monad.Extra
                  ( loopM )
 import qualified Kore.AST.Common as Kore
@@ -182,10 +180,9 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
 
     catchInterruptWithDefault :: a -> Simplifier a -> Simplifier a
     catchInterruptWithDefault def sa =
-        catches sa [ handler_ _UserInterrupt $ do
-                           liftIO $ putStrLn "Step evaluation interrupted."
-                           pure def
-                   ]
+        catch sa $ \UserInterrupt -> do
+            liftIO $ putStrLn "Step evaluation interrupted."
+            pure def
 
     replGreeting :: MonadIO m => m ()
     replGreeting =
