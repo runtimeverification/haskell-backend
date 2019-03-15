@@ -24,6 +24,8 @@ module Kore.Step.BaseStep
     , stepWithRemaindersForUnifier
     , stepWithRewriteRule
     , stepWithRule
+    --
+    , instantiateRule
     ) where
 
 import           Control.Monad.Except
@@ -893,17 +895,33 @@ instantiated rule is returned to allow constructing the remainder patterns.
 
  -}
 instantiateRule
-    :: MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern level variable
+    -> ExpandedPattern Object variable
     -- ^ Initial configuration
-    -> RulePattern level variable
+    -> RulePattern Object variable
     -- ^ Applied rule
-    -> PredicateSubstitution level variable
+    -> PredicateSubstitution Object variable
     -- ^ Unification solution
     -> BranchT
-        (ExceptT (StepError level variable) Simplifier)
-        (Predicated level variable (RulePattern level variable))
+        (ExceptT (StepError Object variable) Simplifier)
+        (Predicated Object variable (RulePattern Object variable))
+instantiateRule
+    _metadataTools
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
+
+    _initial
+    axiom
+    _unifier
+  =
+    return (pure axiom)
