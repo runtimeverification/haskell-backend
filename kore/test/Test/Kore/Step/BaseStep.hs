@@ -1432,13 +1432,13 @@ test_instantiateRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires =
-                        Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
+                        Predicate.makeCeilPredicate (Mock.f (mkVar Mock.x))
                     , attributes = Default.def
                     }
             unifier =
                 ExpandedPattern.topPredicate
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
-            expect = Predicate.makeEqualsPredicate Mock.a Mock.b
+            expect = Predicate.makeCeilPredicate (Mock.f Mock.a)
         Right [ instantiated ] <- instantiateRule axiom unifier
         let Predicated { term = axiom' } = instantiated
             RulePattern { requires = actual } = axiom'
