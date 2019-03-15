@@ -1397,7 +1397,13 @@ test_instantiateRule =
             unifier =
                 ExpandedPattern.topPredicate
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
-            expect = Right [ pure axiom { left = Mock.a } ]
+            normalized =
+                unifier
+                    { substitution =
+                        (Substitution.unsafeWrap . Substitution.unwrap)
+                        (substitution unifier)
+                    }
+            expect = Right [ normalized { term = axiom { left = Mock.a } } ]
         actual <- instantiateRule initial axiom unifier
         assertEqual "" expect actual
 
@@ -1413,7 +1419,13 @@ test_instantiateRule =
             unifier =
                 ExpandedPattern.topPredicate
                     { substitution = Substitution.wrap [(Mock.y, Mock.b)] }
-            expect = Right [ pure axiom { right = Mock.b } ]
+            normalized =
+                unifier
+                    { substitution =
+                        (Substitution.unsafeWrap . Substitution.unwrap)
+                        (substitution unifier)
+                    }
+            expect = Right [ normalized { term = axiom { right = Mock.b } } ]
         actual <- instantiateRule initial axiom unifier
         assertEqual "" expect actual
 
@@ -1430,11 +1442,20 @@ test_instantiateRule =
             unifier =
                 ExpandedPattern.topPredicate
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
+            normalized =
+                unifier
+                    { substitution =
+                        (Substitution.unsafeWrap . Substitution.unwrap)
+                        (substitution unifier)
+                    }
             expect =
                 Right
-                    [ pure axiom
-                        { requires =
-                            Predicate.makeEqualsPredicate Mock.a Mock.b
+                    [ normalized
+                        { term =
+                            axiom
+                                { requires =
+                                    Predicate.makeEqualsPredicate Mock.a Mock.b
+                                }
                         }
                     ]
         actual <- instantiateRule initial axiom unifier
