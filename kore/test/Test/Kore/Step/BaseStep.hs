@@ -1471,9 +1471,25 @@ test_instantiateRule =
                     , predicate =
                         Predicate.makeNotPredicate
                         (Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a)
-                    , substitution =
-                        Substitution.wrap [(Mock.x, Mock.a)]
+                    , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                     }
+            expect = Right []
+        actual <- instantiateRule axiom unifier
+        assertEqual "" expect actual
+
+    , testCase "unification conflicts with requirement" $ do
+        let axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires =
+                        Predicate.makeNotPredicate
+                        (Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                    , attributes = Default.def
+                    }
+            unifier =
+                ExpandedPattern.topPredicate
+                    { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
             expect = Right []
         actual <- instantiateRule axiom unifier
         assertEqual "" expect actual
