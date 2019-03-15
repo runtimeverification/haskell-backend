@@ -945,3 +945,23 @@ instantiateRule
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+
+applyRule
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Initial configuration
+    -> Predicated Object variable (RulePattern Object variable)
+    -- ^ Instantiated rule
+    -> BranchT
+        (ExceptT (StepError Object variable) Simplifier)
+        (ExpandedPattern Object variable)
