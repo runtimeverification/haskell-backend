@@ -890,13 +890,10 @@ unwrapPredicateVariables
     -> m (Predicate level variable)
 unwrapPredicateVariables = traverse unwrapPatternVariables
 
-{- | Instantiate the applied rule by applying the unification solution.
+{- | Instantiate the rule by applying the unification solution.
 
-The initial configuration is used to return the final condition. The entire
-instantiated rule is returned to allow constructing the remainder patterns.
-
-The unification solution is normalized; @instantiateRule@ fails if unification
-fails.
+The unification solution is normalized with the 'requires' clause from the
+unified rule. @instantiateRule@ fails if normalization fails.
 
  -}
 instantiateRule
