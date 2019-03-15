@@ -54,6 +54,8 @@ import           Data.Set
                  ( Set )
 import           GHC.Generics
                  ( Generic )
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -141,7 +143,9 @@ the resulting pattern into a particular sort.
 
  -}
 fromPredicate
-    :: Unparse (variable level)
+    :: ( Unparse (variable level)
+       , HasCallStack
+       )
     => Sort level  -- ^ Sort of resulting pattern
     -> Predicate level variable
     -> StepPattern level variable
