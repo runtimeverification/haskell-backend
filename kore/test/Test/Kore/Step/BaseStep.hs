@@ -1617,4 +1617,26 @@ test_applyRule =
         actual <- applyRule initial instantiated
         assertEqual "" expect actual
 
+    , testCase "combine initial and rule conditions" $ do
+        let instantiated =
+                Predicated
+                    { term = axiom
+                    , predicate = expect2
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            initial = ExpandedPattern.fromPredicate expect1
+            expect1 = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+            expect2 = Predicate.makeEqualsPredicate (mkVar Mock.y) Mock.b
+            expect = Predicate.makeAndPredicate expect1 expect2
+        Right [ applied ] <- applyRule initial instantiated
+        let Predicated { predicate = actual } = applied
+        assertEqual "" expect actual
+
     ]
