@@ -81,7 +81,6 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
-import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import qualified Kore.Unification.Data as Unification.Proof
@@ -909,8 +908,6 @@ instantiateRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern Object variable
-    -- ^ Initial configuration
     -> RulePattern Object variable
     -- ^ Applied rule
     -> PredicateSubstitution Object variable
@@ -924,11 +921,9 @@ instantiateRule
     patternSimplifier
     axiomSimplifiers
 
-    _initial
     axiom@RulePattern { left, right, requires }
     unifier
   = do
-    TopBottom.guardAgainstBottom requires
     normalized <- normalize unifier
     let Predicated { substitution } = normalized
         substitution' = Substitution.toMap substitution

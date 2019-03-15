@@ -36,8 +36,8 @@ import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern,
-                 PredicateSubstitution, Predicated (..) )
+                 ( CommonExpandedPattern, PredicateSubstitution,
+                 Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
@@ -1350,22 +1350,20 @@ runSingleStepWithRemainder metadataTools configuration axiom =
         axiom
 
 instantiateRule
-    :: ExpandedPattern Object Variable
-    -> RulePattern Object Variable
+    :: RulePattern Object Variable
     -> PredicateSubstitution Object Variable
     -> IO
         (Either
             (StepError Object Variable)
             (MultiOr (Predicated Object Variable (RulePattern Object Variable)))
         )
-instantiateRule initial axiom unifier =
+instantiateRule axiom unifier =
     evalUnifier
     $ BaseStep.instantiateRule
         metadataTools
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
-        initial
         axiom
         unifier
   where
@@ -1386,8 +1384,7 @@ evalUnifier =
 test_instantiateRule :: [TestTree]
 test_instantiateRule =
     [ testCase "substitute left-hand side" $ do
-        let initial = ExpandedPattern.top
-            axiom =
+        let axiom =
                 RulePattern
                     { left = mkVar Mock.x
                     , right = Mock.b
@@ -1397,19 +1394,14 @@ test_instantiateRule =
             unifier =
                 ExpandedPattern.topPredicate
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
-            normalized =
-                unifier
-                    { substitution =
-                        (Substitution.unsafeWrap . Substitution.unwrap)
-                        (substitution unifier)
-                    }
-            expect = Right [ normalized { term = axiom { left = Mock.a } } ]
-        actual <- instantiateRule initial axiom unifier
+            expect = Mock.a
+        Right [ instantiated ] <- instantiateRule axiom unifier
+        let Predicated { term = axiom' } = instantiated
+            RulePattern { left = actual } = axiom'
         assertEqual "" expect actual
 
     , testCase "substitute right-hand side" $ do
-        let initial = ExpandedPattern.top
-            axiom =
+        let axiom =
                 RulePattern
                     { left = Mock.a
                     , right = mkVar Mock.y
@@ -1419,19 +1411,14 @@ test_instantiateRule =
             unifier =
                 ExpandedPattern.topPredicate
                     { substitution = Substitution.wrap [(Mock.y, Mock.b)] }
-            normalized =
-                unifier
-                    { substitution =
-                        (Substitution.unsafeWrap . Substitution.unwrap)
-                        (substitution unifier)
-                    }
-            expect = Right [ normalized { term = axiom { right = Mock.b } } ]
-        actual <- instantiateRule initial axiom unifier
+            expect = Mock.b
+        Right [ instantiated ] <- instantiateRule axiom unifier
+        let Predicated { term = axiom' } = instantiated
+            RulePattern { right = actual } = axiom'
         assertEqual "" expect actual
 
     , testCase "substitute requires clause" $ do
-        let initial = ExpandedPattern.top
-            axiom =
+        let axiom =
                 RulePattern
                     { left = Mock.a
                     , right = Mock.b
@@ -1442,28 +1429,14 @@ test_instantiateRule =
             unifier =
                 ExpandedPattern.topPredicate
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
-            normalized =
-                unifier
-                    { substitution =
-                        (Substitution.unsafeWrap . Substitution.unwrap)
-                        (substitution unifier)
-                    }
-            expect =
-                Right
-                    [ normalized
-                        { term =
-                            axiom
-                                { requires =
-                                    Predicate.makeEqualsPredicate Mock.a Mock.b
-                                }
-                        }
-                    ]
-        actual <- instantiateRule initial axiom unifier
+            expect = Predicate.makeEqualsPredicate Mock.a Mock.b
+        Right [ instantiated ] <- instantiateRule axiom unifier
+        let Predicated { term = axiom' } = instantiated
+            RulePattern { requires = actual } = axiom'
         assertEqual "" expect actual
 
     , testCase "\\bottom unification condition" $ do
-        let initial = ExpandedPattern.top
-            axiom =
+        let axiom =
                 RulePattern
                     { left = Mock.a
                     , right = Mock.b
@@ -1472,21 +1445,7 @@ test_instantiateRule =
                     }
             unifier = ExpandedPattern.bottomPredicate
             expect = Right []
-        actual <- instantiateRule initial axiom unifier
-        assertEqual "" expect actual
-
-    , testCase "\\bottom requirement" $ do
-        let initial = ExpandedPattern.top
-            axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = Mock.b
-                    , requires = Predicate.makeFalsePredicate
-                    , attributes = Default.def
-                    }
-            unifier = ExpandedPattern.topPredicate
-            expect = Right []
-        actual <- instantiateRule initial axiom unifier
+        actual <- instantiateRule axiom unifier
         assertEqual "" expect actual
 
     ]
