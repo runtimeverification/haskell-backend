@@ -24,7 +24,6 @@ import           System.FilePath
                  ( addExtension, splitFileName, (</>) )
 
 import           Kore.AST.Sentence
-import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -72,10 +71,8 @@ goldenFromInputFileName (InputFileName inputFile) =
   where (directory, inputFileName) = splitFileName inputFile
 
 toByteString :: Either String KoreDefinition -> ByteString
-toByteString (Left err) =
-    ByteString.Lazy.Char8.pack ("Parse error: " ++ err)
-toByteString (Right definition) =
-    ByteString.Lazy.Char8.pack (prettyPrintToString definition)
+toByteString (Left err) = ByteString.Lazy.Char8.pack err
+toByteString (Right _) = ByteString.Lazy.Char8.empty
 
 verify :: KoreDefinition -> Either String KoreDefinition
 verify definition =
