@@ -29,6 +29,7 @@ module Kore.Step.BaseStep
     ) where
 
 import           Control.Monad.Except
+import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Trans.Except
                  ( throwE )
 import qualified Data.Hashable as Hashable
@@ -61,7 +62,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+                 ( RewriteRule (RewriteRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Pattern
@@ -79,6 +80,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
+import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import qualified Kore.Unification.Data as Unification.Proof
@@ -898,6 +900,7 @@ instantiateRule
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
+        , FreshVariable  variable
         , SortedVariable variable
         )
     => MetadataTools Object StepperAttributes
@@ -915,13 +918,32 @@ instantiateRule
         (ExceptT (StepError Object variable) Simplifier)
         (Predicated Object variable (RulePattern Object variable))
 instantiateRule
-    _metadataTools
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
 
     _initial
-    axiom
-    _unifier
-  =
-    return (pure axiom)
+    axiom@RulePattern { left, right, requires }
+    unifier
+  = do
+    normalized <- normalize unifier
+    let Predicated { substitution } = normalized
+        substitution' = Substitution.toMap substitution
+        axiom' =
+            axiom
+                { left     = Pattern.substitute   substitution' left
+                , right    = Pattern.substitute   substitution' right
+                , requires = Predicate.substitute substitution' requires
+                }
+    return (pure axiom')
+  where
+    fromUnification =
+        withExceptT unificationOrSubstitutionToStepError
+    normalize =
+        Monad.Morph.hoist fromUnification
+        . Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
