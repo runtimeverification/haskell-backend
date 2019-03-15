@@ -82,6 +82,7 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
+import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import qualified Kore.Unification.Data as Unification.Proof
@@ -961,8 +962,8 @@ applyRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern Object variable
-    -- ^ Initial configuration
+    -> PredicateSubstitution Object variable
+    -- ^ Initial conditions
     -> Predicated Object variable (RulePattern Object variable)
     -- ^ Instantiated rule
     -> BranchT
@@ -975,6 +976,7 @@ applyRule
     _axiomSimplifiers
 
     initial
-    _axiom
-  =
-    return initial
+    axiom
+  = do
+    TopBottom.guardAgainstBottom initial
+    return (right <$> axiom <* initial)
