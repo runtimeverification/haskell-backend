@@ -895,6 +895,9 @@ unwrapPredicateVariables = traverse unwrapPatternVariables
 The initial configuration is used to return the final condition. The entire
 instantiated rule is returned to allow constructing the remainder patterns.
 
+The unification solution is normalized; @instantiateRule@ fails if unification
+fails.
+
  -}
 instantiateRule
     ::  ( Ord     (variable Object)

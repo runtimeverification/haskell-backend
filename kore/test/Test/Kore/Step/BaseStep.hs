@@ -14,6 +14,7 @@ import           Control.Monad.Except
                  ( ExceptT, runExceptT )
 import           Data.Default as Default
                  ( def )
+import qualified Data.Either as Either
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -1447,5 +1448,24 @@ test_instantiateRule =
             expect = Right []
         actual <- instantiateRule axiom unifier
         assertEqual "" expect actual
+
+    , testCase "normalization failure" $ do
+        let axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            unifier =
+                ExpandedPattern.topPredicate
+                    { substitution =
+                        Substitution.wrap
+                            [ (Mock.x, Mock.f (mkVar Mock.y))
+                            , (Mock.y, mkVar Mock.x)
+                            ]
+                    }
+        actual <- instantiateRule axiom unifier
+        assertBool "" (Either.isLeft actual)
 
     ]
