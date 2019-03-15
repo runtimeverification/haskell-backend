@@ -45,6 +45,7 @@ import           Kore.Step.Representation.MultiOr
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.StepperAttributes
@@ -1369,8 +1370,15 @@ instantiateRule axiom unifier =
         unifier
   where
     metadataTools = mockMetadataTools
-    predicateSimplifier = Mock.substitutionSimplifier metadataTools
-    patternSimplifier = Simplifier.create metadataTools Map.empty
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
     axiomSimplifiers = Map.empty
 
 evalUnifier
