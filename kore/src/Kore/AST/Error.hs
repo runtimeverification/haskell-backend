@@ -20,13 +20,22 @@ module Kore.AST.Error
     , withSentenceSortContext
     , withSentenceSymbolContext
     , withSentenceContext
+
+    , noSort
+    , noHead
+    , noAlias
+    , noSymbol
     ) where
 
 import Data.List
        ( intercalate )
 
 import Kore.AST.AstWithLocation
+import Kore.AST.Common
+       ( SymbolOrAlias )
 import Kore.AST.Kore
+import Kore.AST.MetaOrObject
+       ( MetaOrObject )
 import Kore.AST.Sentence
 import Kore.Error
 
@@ -172,3 +181,25 @@ withSentenceContext =
         SentenceImportSentence s -> withSentenceImportContext s
         SentenceSortSentence s -> withSentenceSortContext s
         SentenceSymbolSentence s -> withSentenceSymbolContext s
+
+{- Support for warning of undefined values -}
+
+-- | A message declaring that a Sort is undefined
+noSort :: MetaOrObject level => Id level -> String
+noSort sortId =
+    notDefined "Sort" $ show sortId
+
+-- | A message declaring that a Head is undefined
+noHead :: MetaOrObject level => SymbolOrAlias level -> String
+noHead patternHead =
+    notDefined "Head" $ show patternHead
+
+-- | A message declaring that a Alias is undefined
+noAlias :: MetaOrObject level => Id level -> String
+noAlias identifier =
+    notDefined "Alias" $ getIdForError identifier
+
+-- | A message declaring that a Symbol is undefined
+noSymbol :: MetaOrObject level => Id level -> String
+noSymbol identifier =
+    notDefined "Symbol" $ getIdForError identifier

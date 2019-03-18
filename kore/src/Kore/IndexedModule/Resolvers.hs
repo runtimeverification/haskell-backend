@@ -41,7 +41,12 @@ import           GHC.Stack
                  ( HasCallStack )
 
 import           Kore.AST.Error
-                 ( koreFailWithLocations )
+                 ( koreFailWithLocations
+                 , noSort
+                 , noHead
+                 , noAlias
+                 , noSymbol
+                 )
 import           Kore.AST.Kore
 import           Kore.AST.Sentence hiding
                  ( Alias (..), Symbol (..) )
@@ -324,17 +329,24 @@ findIndexedSort indexedModule sort =
 
 {- Utilities -}
 
-applyToSentence :: (MetaOrObject level)
-                   => (forall ssoa .  SentenceSymbolOrAlias ssoa
-                       => [Sort level]
-                       -> ssoa level pat
-                       -> result)
-                   -> IndexedModule param pat declAtts axiomAtts
-                   -> SymbolOrAlias level
-                   -> result
+-- It would make sense to put this in a `where` clause; however,
+-- the fully type annotation is required even there, and that makes
+-- for too much clutter.
+applyToSentence
+    :: (MetaOrObject level)
+    => (forall ssoa .  SentenceSymbolOrAlias ssoa
+       => [Sort level]
+       -> ssoa level pat
+       -> result)
+    -> IndexedModule param pat declAtts axiomAtts
+    -> SymbolOrAlias level
+    -> result
 applyToSentence f =
      applyToResolution (\ params (_, sentence) -> f params sentence)
 
+-- It would make sense to put this in a `where` clause; however,
+-- the fully type annotation is required even there, and that makes
+-- for too much clutter.
 applyToAttributes
     :: MetaOrObject level
     => (declAtts -> result)
@@ -363,25 +375,3 @@ applyToResolution f m patternHead =
     headParams = symbolOrAliasParams patternHead
     symbolResult = f headParams <$> resolveSymbol m headName
     aliasResult = f headParams <$> resolveAlias m headName
-
--- |
-noSort :: MetaOrObject level => Id level -> String
-noSort sortId =
-    notDefined "Sort" $ show sortId
-
-noHead :: MetaOrObject level => SymbolOrAlias level -> String
-noHead patternHead =
-    notDefined "Head" $ show patternHead
-
-noAlias :: MetaOrObject level => Id level -> String
-noAlias identifier =
-    notDefined "Alias" $ getIdForError identifier
-
-noSymbol :: MetaOrObject level => Id level -> String
-noSymbol identifier =
-    notDefined "Symbol" $ getIdForError identifier
-
-
-notDefined :: String -> String -> String
-notDefined tag identifier =
-    tag ++ " '" ++ identifier ++ "' not defined."
