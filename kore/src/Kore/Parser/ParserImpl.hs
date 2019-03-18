@@ -41,9 +41,13 @@ import           Control.Arrow
                  ( (&&&) )
 import           Control.Monad
                  ( unless, void )
+import           Data.Functor.Const
+                 ( Const )
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
+import           Data.Void
+                 ( Void )
 import           Text.Megaparsec
                  ( some )
 import qualified Text.Megaparsec.Char as Parser
@@ -81,10 +85,7 @@ sortVariableParser x = SortVariable <$> idParser x
 {-|'unifiedSortVariableParser' parses a sort variable.-}
 unifiedSortVariableParser :: Parser UnifiedSortVariable
 unifiedSortVariableParser = do
-    c <- ParserUtils.peekChar'
-    if c == '#'
-        then UnifiedMeta <$> sortVariableParser Meta
-        else UnifiedObject <$> sortVariableParser Object
+    UnifiedObject <$> sortVariableParser Object
 
 {-|'sortParser' parses either an @object-sort@, or a @meta-sort@.
 
@@ -118,7 +119,7 @@ sortParser x = do
             }
     stringNameNormalizer :: Id level -> Id level
     stringNameNormalizer identifier@Id {getId = i} =
-        if isMeta x && (Text.unpack i == show StringSort)
+        if Text.unpack i == show StringSort
             then identifier
                 { getId = (Text.pack . show) (MetaListSortType CharSort) }
             else identifier
@@ -391,7 +392,7 @@ symbolOrAliasPatternRemainderParser
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Id level  -- ^ The already parsed prefix.
-    -> Parser (Pattern level Domain.Builtin Variable child)
+    -> Parser (Pattern level domain Variable child)
 symbolOrAliasPatternRemainderParser childParser x identifier =
     ApplicationPattern
     <$> (   Application
@@ -463,10 +464,7 @@ BNF definitions:
 -}
 unifiedVariableParser :: Parser (Unified Variable)
 unifiedVariableParser = do
-    c <- ParserUtils.peekChar'
-    if c == '#'
-        then UnifiedMeta <$> variableParser Meta
-        else UnifiedObject <$> variableParser Object
+    UnifiedObject <$> variableParser Object
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
 application pattern), using an open recursion scheme for its children.
@@ -495,7 +493,7 @@ variableOrTermPatternParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Pattern level Domain.Builtin Variable child)
+    -> Parser (Pattern level domain Variable child)
 variableOrTermPatternParser childParser x = do
     identifier <- idParser x
     c <- ParserUtils.peekChar'
@@ -607,9 +605,16 @@ koreMLConstructorParser = do
         c <- ParserUtils.peekChar'
         if c == '#'
             then asCommonKorePattern <$>
-                mlConstructorRemainderParser korePatternParser Meta patternType
+                mlConstructorRemainderParser
+                    korePatternParser
+                    builtinDomainParser
+                    Meta
+                    patternType
             else asCommonKorePattern <$>
-                mlConstructorRemainderParser korePatternParser Object
+                mlConstructorRemainderParser
+                    korePatternParser
+                    builtinDomainParser
+                    Object
                     patternType
 
 {-|'leveledMLConstructorParser' is similar to 'koreMLConstructorParser'
@@ -637,11 +642,12 @@ BNF definitions (here cat ranges over meta and object):
 @
 -}
 leveledMLConstructorParser
-    :: MetaOrObject level
+    :: (MetaOrObject level, Functor domain)
     => Parser child
+    -> (Parser child -> Parser (domain child))
     -> level
-    -> Parser (Pattern level Domain.Builtin Variable child)
-leveledMLConstructorParser childParser level = do
+    -> Parser (Pattern level domain Variable child)
+leveledMLConstructorParser childParser domainValueParser level = do
     void (Parser.char '\\')
     keywordBasedParsers
         (map
@@ -653,6 +659,7 @@ leveledMLConstructorParser childParser level = do
         openCurlyBraceParser
         mlConstructorRemainderParser
             childParser
+            domainValueParser
             level
             patternType
 
@@ -674,12 +681,13 @@ required to be able to peek at the first character of the sort identifier, in
 order to determine whether we are parsing a 'Meta' or an 'Object' 'Pattern'.
 -}
 mlConstructorRemainderParser
-    :: MetaOrObject level
+    :: (MetaOrObject level, Functor domain)
     => Parser child
+    -> (Parser child -> Parser (domain child))
     -> level
     -> MLPatternType
-    -> Parser (Pattern level Domain.Builtin Variable child)
-mlConstructorRemainderParser childParser x patternType =
+    -> Parser (Pattern level domain Variable child)
+mlConstructorRemainderParser childParser domainValueParser x patternType =
     case patternType of
         AndPatternType -> AndPattern <$>
             binaryOperatorRemainderParser childParser x And
@@ -708,34 +716,27 @@ mlConstructorRemainderParser childParser x patternType =
         TopPatternType -> TopPattern <$>
             topBottomRemainderParser x Top
         DomainValuePatternType ->
-            case isMetaOrObject (toProxy x) of
-                IsMeta -> unsupportedPatternType Meta DomainValuePatternType
-                IsObject -> do
-                    domainValueSort <-
-                        inCurlyBracesRemainderParser (sortParser Object)
-                    domainValueChild <- inParenthesesParser metaPatternParser
-                    let external =
-                            Domain.External
-                                { domainValueSort
-                                , domainValueChild
-                                }
-                    (return . DomainValuePattern)
-                        (Domain.BuiltinExternal external)
+            DomainValuePattern <$> domainValueParser childParser
         NextPatternType ->
-            case isMetaOrObject (toProxy x) of
-                IsMeta -> unsupportedPatternType Meta NextPatternType
-                IsObject ->
-                    NextPattern <$>
-                    unaryOperatorRemainderParser childParser Object Next
+            NextPattern
+            <$> unaryOperatorRemainderParser childParser Object Next
         RewritesPatternType ->
-            case isMetaOrObject (toProxy x) of
-                IsMeta -> unsupportedPatternType Meta RewritesPatternType
-                IsObject ->
-                    RewritesPattern <$>
-                    binaryOperatorRemainderParser
-                        childParser
-                        Object
-                        Rewrites
+            RewritesPattern
+            <$> binaryOperatorRemainderParser childParser Object Rewrites
+
+builtinDomainParser :: Parser child -> Parser (Domain.Builtin child)
+builtinDomainParser _ = do
+    domainValueSort <- inCurlyBracesRemainderParser (sortParser Object)
+    domainValueChild <- inParenthesesParser metaPatternParser
+    let external =
+            Domain.External
+                { domainValueSort
+                , domainValueChild
+                }
+    return (Domain.BuiltinExternal external)
+
+noDomainParser :: Parser child -> Parser (Const Void child)
+noDomainParser _ = unsupportedPatternType Meta DomainValuePatternType
 
 {-|'korePatternParser' parses an unifiedPattern
 
@@ -1051,7 +1052,7 @@ axiomSentenceRemainderParser
         )
     -> Parser KoreSentence
 axiomSentenceRemainderParser ctor =
-  (UnifiedMetaSentence . ctor)
+  (UnifiedObjectSentence . ctor)
   <$> ( SentenceAxiom
         <$> inCurlyBracesListParser unifiedSortVariableParser
         <*> korePatternParser
@@ -1102,28 +1103,35 @@ hookedSortSentenceRemainderParser =
     asSentence . SentenceHookedSort <$> sortSentenceRemainderParser Object
 
 leveledPatternParser
-    :: MetaOrObject level
+    :: (MetaOrObject level, Functor domain)
     => Parser child
+    -> (Parser child -> Parser (domain child))
     -> level
-    -> Parser (Pattern level Domain.Builtin Variable child)
-leveledPatternParser patternParser level = do
+    -> Parser (Pattern level domain Variable child)
+leveledPatternParser patternParser domainValueParser level = do
     c <- ParserUtils.peekChar'
     case c of
-        '\\' -> leveledMLConstructorParser patternParser level
-        _ -> case isMetaOrObject (toProxy level) of
-            IsMeta -> case c of
-                '"'  -> StringLiteralPattern <$> stringLiteralParser
-                '\'' -> CharLiteralPattern <$> charLiteralParser
-                _    -> variableOrTermPatternParser patternParser Meta
-            IsObject -> variableOrTermPatternParser patternParser Object
+        '\\' -> leveledMLConstructorParser patternParser domainValueParser level
+        '"'  -> StringLiteralPattern <$> stringLiteralParser
+        '\'' -> CharLiteralPattern <$> charLiteralParser
+        _ -> variableOrTermPatternParser patternParser Object
 
 purePatternParser
     :: MetaOrObject level
     => level
     -> Parser (ParsedPurePattern level Domain.Builtin)
-purePatternParser level = do
-    patternHead <- leveledPatternParser (purePatternParser level) level
-    return $ asPurePattern (mempty :< patternHead)
+purePatternParser level = purePatternParserAux builtinDomainParser level
 
-metaPatternParser :: Functor domain => Parser (ParsedPurePattern Meta domain)
-metaPatternParser = castMetaDomainValues <$> purePatternParser Meta
+purePatternParserAux
+    :: (MetaOrObject level, Functor domain)
+    => (forall child. Parser child -> Parser (domain child))
+    -> level
+    -> Parser (ParsedPurePattern level domain)
+purePatternParserAux domainValueParser level = do
+    patternHead <- leveledPatternParser childParser domainValueParser level
+    return $ asPurePattern (mempty :< patternHead)
+  where
+    childParser = purePatternParserAux domainValueParser level
+
+metaPatternParser :: Parser (ParsedPurePattern Meta (Const Void))
+metaPatternParser = purePatternParserAux noDomainParser Meta

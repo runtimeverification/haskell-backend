@@ -195,21 +195,6 @@ extractStepPattern
         (KorePattern Domain.Builtin variable (Unified annotation))
         (Either (Error e) result)
     -> Either (Error e) result
-extractStepPattern IsMeta = \(ann :< pat) ->
-    case pat of
-        UnifiedMetaPattern mpat ->
-            case ann of
-                UnifiedMeta mann ->
-                  do
-                    mpat' <- sequence mpat
-                    mann' <- Valid.traverseVariables extractMetaVariable mann
-                    (return . Recursive.embed) (mann' :< mpat')
-                  where
-                    extractMetaVariable = extractVariable IsMeta
-                UnifiedObject _ ->
-                    koreFail "Unexpected object-level annotation"
-        UnifiedObjectPattern _ ->
-            koreFail "Unexpected object-level pattern"
 extractStepPattern IsObject = \(ann :< pat) ->
     case pat of
         UnifiedObjectPattern opat ->
@@ -221,10 +206,6 @@ extractStepPattern IsObject = \(ann :< pat) ->
                     (return . Recursive.embed) (oann' :< opat')
                   where
                     extractObjectVariable = extractVariable IsObject
-                UnifiedMeta _ ->
-                    koreFail "Unexpected meta-level annotation"
-        UnifiedMetaPattern _ ->
-            koreFail "Unexpected meta-level pattern"
 
 extractVariable
     :: IsMetaOrObject level
@@ -232,14 +213,9 @@ extractVariable
     -> Either (Error e) (variable level)
 extractVariable =
     \case
-        IsMeta ->
-            \case
-                UnifiedObject _ -> koreFail "Expected meta-variable"
-                UnifiedMeta mvar -> return mvar
         IsObject ->
             \case
                 UnifiedObject ovar -> return ovar
-                UnifiedMeta _ -> koreFail "Expected object-variable"
 
 {- | Convert a 'Sentence' over 'StepPattern' to a 'KorePattern' sentence.
  -}

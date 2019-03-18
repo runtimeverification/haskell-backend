@@ -35,6 +35,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject (..) )
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -215,8 +216,8 @@ verifyClaim
     substitutionSimplifier
     axiomIdToSimplifier
     strategyBuilder
-    ((RewriteRule RulePattern {left, right, requires}), stepLimit)
-  = do
+    (rule@(RewriteRule RulePattern {left, right, requires}), stepLimit)
+  = traceExceptT D_OnePath_verifyClaim [debugArg "rule" rule] $ do
     let
         strategy =
             Limit.takeWithin

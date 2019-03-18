@@ -133,7 +133,6 @@ decidePredicate
     -> m (Maybe Bool)
 decidePredicate korePredicate =
     case isMetaOrObject (Proxy :: Proxy level) of
-        IsMeta   -> return Nothing
         IsObject -> SMT.inNewScope $ runMaybeT $ do
                 smtPredicate <-
                     goTranslatePredicate korePredicate

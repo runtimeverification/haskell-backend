@@ -1377,14 +1377,8 @@ instance
     )
     => SumEqualWithExplanation (UnifiedPattern domain variable child)
   where
-    sumConstructorPair (UnifiedMetaPattern p1) (UnifiedMetaPattern p2) =
-        SumConstructorSameWithArguments (EqWrap "UnifiedMetaPattern" p1 p2)
     sumConstructorPair (UnifiedObjectPattern p1) (UnifiedObjectPattern p2) =
         SumConstructorSameWithArguments (EqWrap "UnifiedObjectPattern" p1 p2)
-    sumConstructorPair p1 p2 =
-        SumConstructorDifferent
-            (printWithExplanation p1)
-            (printWithExplanation p2)
 
 instance
     ( EqualWithExplanation (a Meta)
@@ -1393,14 +1387,8 @@ instance
     ) =>
     SumEqualWithExplanation (Unified a)
   where
-    sumConstructorPair (UnifiedMeta a1) (UnifiedMeta a2) =
-        SumConstructorSameWithArguments (EqWrap "UnifiedMeta" a1 a2)
     sumConstructorPair (UnifiedObject a1) (UnifiedObject a2) =
         SumConstructorSameWithArguments (EqWrap "UnifiedObject" a1 a2)
-    sumConstructorPair u1 u2 =
-        SumConstructorDifferent
-            (printWithExplanation u1)
-            (printWithExplanation u2)
 
 instance
     ( EqualWithExplanation (a Meta)

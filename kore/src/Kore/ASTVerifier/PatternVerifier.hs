@@ -130,11 +130,6 @@ lookupDeclaredVariable
 lookupDeclaredVariable varId = do
     Context { declaredVariables } <- Reader.ask
     case isMetaOrObject varId of
-        IsMeta ->
-            maybe errorUnquantified return
-                $ Map.lookup varId metaDeclaredVariables
-          where
-            DeclaredVariables { metaDeclaredVariables } = declaredVariables
         IsObject ->
             maybe errorUnquantified return
                 $ Map.lookup varId objectDeclaredVariables
@@ -153,12 +148,6 @@ addDeclaredVariable
     -> DeclaredVariables
 addDeclaredVariable variable@Variable { variableName } =
     case isMetaOrObject variable of
-        IsMeta ->
-            \declared@DeclaredVariables { metaDeclaredVariables } ->
-                declared
-                    { metaDeclaredVariables =
-                        Map.insert variableName variable metaDeclaredVariables
-                    }
         IsObject ->
             \declared@DeclaredVariables { objectDeclaredVariables } ->
                 declared
@@ -177,19 +166,6 @@ newDeclaredVariable
     -> PatternVerifier DeclaredVariables
 newDeclaredVariable declared =
     \case
-        UnifiedMeta variable@Variable { variableName } -> do
-            let DeclaredVariables { metaDeclaredVariables } = declared
-            case Map.lookup variableName metaDeclaredVariables of
-                Just variable' ->
-                    alreadyDeclared variable variable'
-                Nothing ->
-                    return declared
-                        { metaDeclaredVariables =
-                            Map.insert
-                                variableName
-                                variable
-                                metaDeclaredVariables
-                        }
         UnifiedObject variable@Variable { variableName } -> do
             let DeclaredVariables { objectDeclaredVariables } = declared
             case Map.lookup variableName objectDeclaredVariables of
@@ -328,26 +304,10 @@ verifyUnifiedPattern
     -> PatternVerifier VerifiedKorePattern
 verifyUnifiedPattern (_ :< pat) =
     case pat of
-        UnifiedMetaPattern mpat -> do
-            valid :< vpat <- verifyMetaPattern mpat
-            (return . Recursive.embed)
-                (UnifiedMeta valid :< UnifiedMetaPattern vpat)
         UnifiedObjectPattern opat -> do
             valid :< vpat <- verifyObjectPattern opat
             (return . Recursive.embed)
                 (UnifiedObject valid :< UnifiedObjectPattern vpat)
-
-verifyMetaPattern
-    ::  ( base ~ Pattern Meta Domain.Builtin Variable
-        , valid ~ Valid (Unified Variable) Meta
-        )
-    => base (PatternVerifier VerifiedKorePattern)
-    -> PatternVerifier (CofreeF base valid VerifiedKorePattern)
-verifyMetaPattern pat =
-    withLocationAndContext pat patternName $ do
-        verifyPatternHead pat
-  where
-    patternName = patternNameForContext pat
 
 verifyObjectPattern
     ::  ( base ~ Pattern Object Domain.Builtin Variable
@@ -798,39 +758,6 @@ assertSameSort (UnifiedObject expectedSort) (UnifiedObject actualSort) = do
           <+> Pretty.squotes (unparse actualSort)
           <> Pretty.dot)
         )
-assertSameSort (UnifiedMeta expectedSort) (UnifiedMeta actualSort) = do
-    koreFailWithLocationsWhen
-        (expectedSort /= actualSort)
-        [expectedSort, actualSort]
-        ((renderString . Pretty.layoutCompact)
-         ("Expecting sort"
-          <+> Pretty.squotes (unparse expectedSort)
-          <+> "but got"
-          <+> Pretty.squotes (unparse actualSort)
-          <> Pretty.dot)
-        )
-assertSameSort (UnifiedMeta expectedSort) (UnifiedObject actualSort) = do
-    koreFailWithLocationsWhen
-        (expectedSort /= patternMetaSort)
-        [asUnified expectedSort, asUnified actualSort]
-        ((renderString . Pretty.layoutCompact)
-         ("Expecting meta sort"
-          <+> Pretty.squotes (unparse expectedSort)
-          <+> "but got object sort"
-          <+> Pretty.squotes (unparse actualSort)
-          <> Pretty.dot)
-        )
-assertSameSort (UnifiedObject expectedSort) (UnifiedMeta actualSort) = do
-    koreFailWithLocationsWhen
-        (actualSort /= patternMetaSort)
-        [asUnified expectedSort, asUnified actualSort]
-        ((renderString . Pretty.layoutCompact)
-         ("Expecting object sort"
-          <+> Pretty.squotes (unparse expectedSort)
-          <+> "but got meta sort"
-          <+> Pretty.squotes (unparse actualSort)
-          <> Pretty.dot)
-        )
 
 assertExpectedSort
     :: Maybe (Unified Sort)
@@ -839,8 +766,6 @@ assertExpectedSort
 assertExpectedSort Nothing _ = return ()
 assertExpectedSort (Just expected) verified =
     case verified of
-        UnifiedMeta Valid { patternSort } ->
-            assertSameSort expected (UnifiedMeta patternSort)
         UnifiedObject Valid { patternSort } ->
             assertSameSort expected (UnifiedObject patternSort)
 
@@ -857,13 +782,6 @@ addFreeVariable
     :: DeclaredVariables
     -> Unified Variable
     -> PatternVerifier DeclaredVariables
-addFreeVariable
-    vars@DeclaredVariables { metaDeclaredVariables = metaVars }
-    (UnifiedMeta v)
-  = do
-    checkVariable v metaVars
-    return vars
-        { metaDeclaredVariables = Map.insert (variableName v) v metaVars }
 addFreeVariable
     vars@DeclaredVariables { objectDeclaredVariables = objectVars }
     (UnifiedObject v)

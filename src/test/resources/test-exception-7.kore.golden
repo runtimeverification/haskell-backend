@@ -1,0 +1,5 @@
+../src/test/resources//test-exception-7.kore:6:7:
+  |
+6 |     #`2:#S []
+  |       ^
+genericIdRawParser: Invalid first character '2'.

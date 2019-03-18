@@ -202,6 +202,27 @@ unificationWithAppMatchOnTop
                 (  "Expecting application patterns, but second = "
                 ++ show second ++ "."
                 )
+    (Ceil_ firstOperandSort (SortVariableSort _) firstChild) ->
+        case second of
+            (Ceil_ secondOperandSort _resultSort secondChild)
+                | firstOperandSort == secondOperandSort
+                    -> unificationWithAppMatchOnTop
+                        tools
+                        substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
+                        firstChild
+                        secondChild
+                | otherwise
+                    -> error
+                        (  "Unexpected unequal child sorts: "
+                        ++ show firstOperandSort ++ " and "
+                        ++ show secondOperandSort ++ "."
+                        )
+            _ -> error
+                (  "Expecting ceil patterns, but second = "
+                ++ show second ++ "."
+                )
     _ -> error
         (  "Expecting application patterns, but second = "
         ++ show second ++ "."

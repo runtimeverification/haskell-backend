@@ -30,6 +30,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Kore
+import qualified Kore.AST.Pure as AST.Pure
 import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
@@ -45,6 +46,7 @@ import           Kore.Implicit.ImplicitKore
 import           Kore.Implicit.ImplicitSorts
                  ( predicateSortActual )
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Unparser
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
@@ -122,7 +124,7 @@ verifyAndIndexDefinitionWithBase
     (implicitModules, implicitDefaultModule, defaultNames) <-
         withContext "Indexing unverified implicit Kore modules"
         $ indexImplicitModule
-        $ modulePureToKore
+        $ modulePureToKore $ castModuleDomainValues
         $ eraseSentenceAnnotations <$> uncheckedKoreModule
     let
         (baseIndexedModules, baseNames) =
@@ -195,6 +197,7 @@ verifyAndIndexDefinitionWithBase
     return (reindexedModules, names)
   where
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
+    castModuleDomainValues = (fmap . fmap) AST.Pure.castVoidDomainValues
 
 defaultAttributesVerification
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
@@ -212,9 +215,8 @@ defaultNullAttributesVerification =
     proxy :: Proxy Attribute.Null
     proxy = Proxy
 
-
 indexImplicitModule
-    :: (ParseAttributes declAtts, ParseAttributes axAtts)
+    :: (Unparse sortParam, Unparse patternType, ParseAttributes declAtts, ParseAttributes axAtts)
     => Module (UnifiedSentence sortParam patternType)
     -> Either
         (Error VerifyError)

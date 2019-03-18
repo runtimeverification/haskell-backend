@@ -45,4 +45,4 @@ test_implicitKore =
     implicitKoreRegressionTests
         implicitKoreDefinition
         (InputFileName "../src/main/kore/kore.kore")
-        (GoldenFileName "../src/test/expected/kore.kore.golden")
+        (GoldenFileName "../src/test/kore.kore.golden")
