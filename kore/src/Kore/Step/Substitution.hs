@@ -490,14 +490,14 @@ normalizeSubstitutionAfterMerge
     predicateSubstitution
   = do
     results <-
-        lift $ getBranches $ runExceptT
+        lift $ gather $ runExceptT
         $ normalizeWorker
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             predicateSubstitution
-    case results of
+    case Foldable.toList results of
         [] -> return
             ( ExpandedPattern.bottomPredicate
             , EmptyUnificationProof

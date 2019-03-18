@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Test.Kore.Step.Simplification.PredicateSubstitution
     ( test_predicateSubstitutionSimplification
     ) where
@@ -24,6 +26,8 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonPredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data hiding
@@ -285,11 +289,11 @@ mockMetadataTools =
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap Object
     -> CommonPredicateSubstitution Object
-    -> IO [CommonPredicateSubstitution Object]
+    -> IO (MultiOr (CommonPredicateSubstitution Object))
 runSimplifier patternSimplifierMap predicateSubstitution =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ getBranches
+    $ gather
     $ simplifier predicateSubstitution
   where
     PredicateSubstitutionSimplifier simplifier =

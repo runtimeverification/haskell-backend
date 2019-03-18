@@ -37,6 +37,8 @@ import           Control.DeepSeq
 import           Data.List
                  ( foldl' )
 import qualified Data.Set as Set
+import           GHC.Exts
+                 ( IsList )
 import           GHC.Generics
                  ( Generic )
 
@@ -64,6 +66,7 @@ newtype MultiOr child = MultiOr { getMultiOr :: [child] }
         , Foldable
         , Functor
         , Generic
+        , IsList
         , Monad
         , Monoid
         , Ord
