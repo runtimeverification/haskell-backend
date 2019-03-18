@@ -1632,8 +1632,14 @@ test_applyRule =
                     , attributes = Default.def
                     }
             initial = ExpandedPattern.fromPredicate expect1
-            expect1 = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
-            expect2 = Predicate.makeEqualsPredicate (mkVar Mock.y) Mock.b
+            expect1 =
+                Predicate.makeEqualsPredicate
+                    (Mock.f $ mkVar Mock.x)
+                    Mock.a
+            expect2 =
+                Predicate.makeEqualsPredicate
+                    (Mock.f $ mkVar Mock.y)
+                    Mock.b
             expect = Predicate.makeAndPredicate expect1 expect2
         Right [ applied ] <- applyRule initial instantiated
         let Predicated { predicate = actual } = applied
