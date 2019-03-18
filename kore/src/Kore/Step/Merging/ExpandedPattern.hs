@@ -97,7 +97,7 @@ mergeWithPredicateSubstitution
         $ Predicate.evaluate
             substitutionSimplifier simplifier mergedCondition
     traceNonErrorMonad D_ExpandedPattern_mergeWithPredicateSubstitution [debugArg "where" "mergeWithEvaluatedCondition"]
-    $ mergeWithEvaluatedCondition
+     $ mergeWithEvaluatedCondition
         tools
         substitutionSimplifier
         simplifier

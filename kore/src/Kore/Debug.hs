@@ -144,7 +144,7 @@ onePathWithFunctionNames =
     $ Map.insert D_OnePath_verifyClaim DebugNoResult
     $ Map.insert D_OnePath_Step_transitionRule DebugResult
     $ Map.insert D_SMT_refutePredicate DebugResult
-    $ Map.insert D_ExpandedPattern_mergeWithPredicateSubstitution
+    $ Map.insert D_ExpandedPattern_mergeWithPredicateSubstitution DebugResult
     $ Map.singleton D_BaseStep_stepWithRule DebugResult
 
 executionWithFunctionNames :: Map DebugPlace DebugResult
