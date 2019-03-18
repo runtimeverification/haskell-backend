@@ -37,7 +37,8 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns hiding
                  ( freeVariables )
 import qualified Kore.Step.AxiomPatterns as AxiomPatterns
-import           Kore.Step.Pattern
+import           Kore.Step.Pattern hiding
+                 ( freeVariables )
 
 import           Test.Kore
                  ( testId )

@@ -49,7 +49,9 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern as Pattern
+import           Kore.Step.Pattern
+                 ( CommonStepPattern, StepPattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
@@ -205,7 +207,7 @@ sentenceToAxiomPattern
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
             sentenceAxiomAttributes
-    stepPattern <- fromKorePattern level sentenceAxiomPattern
+    stepPattern <- Pattern.fromKorePattern level sentenceAxiomPattern
     patternToAxiomPattern attributes stepPattern
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
@@ -262,7 +264,7 @@ mkRewriteAxiom
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
 mkRewriteAxiom lhs rhs requires =
-    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
+    (asKoreAxiomSentence . Pattern.toKoreSentenceAxiom . mkAxiom_)
         (mkRewrites
             (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
             (mkAnd (mkTop patternSort) rhs)
@@ -281,12 +283,13 @@ mkEqualityAxiom
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
 mkEqualityAxiom lhs rhs requires =
-    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom [sortVariableR])
-        (case requires of
-            Just requires' ->
-                mkImplies (requires' sortR) (mkAnd function mkTop_)
-            Nothing -> function
-        )
+    asKoreAxiomSentence
+    $ Pattern.toKoreSentenceAxiom
+    $ mkAxiom [sortVariableR]
+    $ case requires of
+        Just requires' ->
+            mkImplies (requires' sortR) (mkAnd function mkTop_)
+        Nothing -> function
   where
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR

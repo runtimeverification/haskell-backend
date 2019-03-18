@@ -21,7 +21,8 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.MetaML.AST
-import           Kore.Step.Pattern
+import           Kore.Step.Pattern hiding
+                 ( freeVariables )
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
