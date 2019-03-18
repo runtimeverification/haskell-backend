@@ -85,7 +85,6 @@ import           Kore.Step.StepperAttributes
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
-import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import qualified Kore.Unification.Data as Unification.Proof
@@ -1066,7 +1065,6 @@ applyRule
     initial
     instantiated@Predicated { term = axiom }
   = do
-    TopBottom.guardAgainstBottom initial
     let merged = initial *> instantiated { term = () }
     normalized <- normalize merged
     return normalized { term = right axiom }
