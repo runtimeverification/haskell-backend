@@ -25,6 +25,7 @@ module Kore.Step.BaseStep
     , stepWithRewriteRule
     , stepWithRule
     --
+    , unifyRule
     , instantiateRule
     , applyRule
     ) where
@@ -921,6 +922,16 @@ unifyRule
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
         (Predicated Object variable (RulePattern Object variable))
+unifyRule
+    _metadataTools
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
+
+    _initial
+    rule
+  =
+    return (pure rule)
 
 {- | Instantiate the rule by applying the unification solution.
 
