@@ -394,6 +394,7 @@ simpleRewrite left right =
         { left = left
         , right = right
         , requires = makeTruePredicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
 
@@ -408,6 +409,7 @@ rewriteWithPredicate left right predicate =
         { left = left
         , right = right
         , requires = predicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
 

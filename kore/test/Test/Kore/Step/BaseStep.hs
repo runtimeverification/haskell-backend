@@ -274,6 +274,7 @@ test_baseStep =
                             (mkVar $ x1 patternMetaSort)
                             (mkVar $ y1 patternMetaSort)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -314,6 +315,7 @@ test_baseStep =
                             (a1 patternMetaSort)
                             (mkVar $ x1 patternMetaSort)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -375,6 +377,7 @@ test_baseStep =
                             (mkVar $ x1 patternMetaSort)
                             (mkVar $ y1 patternMetaSort)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -551,6 +554,7 @@ test_baseStep =
                             (mkVar $ x1 patternMetaSort)
                             (mkVar $ y1 patternMetaSort)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -606,6 +610,7 @@ test_baseStep =
                             (mkVar $ x1 patternMetaSort)
                             (mkVar $ y1 patternMetaSort)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -629,6 +634,7 @@ test_baseStep =
                     { left = mkStringLiteral "sl1"
                     , right = mkVar $ x1 patternMetaSort
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -723,6 +729,7 @@ test_baseStep =
                             (mkVar $ x1 patternMetaSort)
                             (mkVar $ y1 patternMetaSort)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -817,6 +824,7 @@ test_baseStep =
                             (mkVar $ x1 patternMetaSort)
                     , right = mkVar $ x1 patternMetaSort
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -827,6 +835,7 @@ test_baseStep =
             { left = mkVar $ x1 patternMetaSort
             , right = mkVar $ x1 patternMetaSort
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
     axiomId = RewriteRule ruleId
@@ -840,6 +849,7 @@ test_baseStep =
             , right =
                 mkVar $ x1 patternMetaSort
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
 
@@ -899,6 +909,7 @@ test_baseStepRemainder =
                     Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                 , right = mkVar Mock.y
                 , requires = makeTruePredicate
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             )
@@ -963,6 +974,7 @@ test_baseStepRemainder =
                     Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                 , right = mkVar Mock.y
                 , requires = makeTruePredicate
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             )
@@ -1022,6 +1034,7 @@ test_baseStepRemainder =
                 , right = Mock.a
                 , requires =
                     makeEqualsPredicate (Mock.f (mkVar Mock.y)) Mock.b
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             )
@@ -1080,6 +1093,7 @@ test_baseStepMultipleRemainder =
                     Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                 , right = mkVar Mock.y
                 , requires = makeTruePredicate
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             ]
@@ -1176,6 +1190,7 @@ test_baseStepMultipleRemainder =
                     Mock.a (mkVar Mock.y) (mkVar Mock.z)
                 , right = mkVar Mock.y
                 , requires = makeTruePredicate
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             , RewriteRule RulePattern
@@ -1183,6 +1198,7 @@ test_baseStepMultipleRemainder =
                     Mock.b (mkVar Mock.y) (mkVar Mock.z)
                 , right = mkVar Mock.z
                 , requires = makeTruePredicate
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             ]
