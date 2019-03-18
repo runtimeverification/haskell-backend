@@ -52,6 +52,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
+import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationError (..), UnificationProof (..) )
@@ -1681,6 +1682,7 @@ unifyRule initial rule =
     evalUnifier
     $ BaseStep.unifyRule
         metadataTools
+        unificationProcedure
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
@@ -1688,6 +1690,7 @@ unifyRule initial rule =
         rule
   where
     metadataTools = mockMetadataTools
+    unificationProcedure = UnificationProcedure Unification.unificationProcedure
     predicateSimplifier =
         PredicateSubstitution.create
             metadataTools

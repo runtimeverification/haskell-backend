@@ -32,6 +32,7 @@ module Kore.Step.BaseStep
 
 import           Control.Monad.Except
 import qualified Control.Monad.Morph as Monad.Morph
+import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( throwE )
 import qualified Data.Hashable as Hashable
@@ -89,8 +90,7 @@ import           Kore.Unification.Data
 import qualified Kore.Unification.Data as Unification.Proof
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError )
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
+import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -646,7 +646,7 @@ stepWithRewriteRule
     Log.withLogScope "stepWithRewriteRule" $
         stepWithRule
                 tools
-                (UnificationProcedure unificationProcedure)
+                (UnificationProcedure Unification.unificationProcedure)
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -848,7 +848,7 @@ stepWithRemainders
     resultOrError <- runExceptT
         $ stepWithRemaindersForUnifier
             tools
-            (UnificationProcedure unificationProcedure)
+            (UnificationProcedure Unification.unificationProcedure)
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -893,15 +893,20 @@ unwrapPredicateVariables
     -> m (Predicate level variable)
 unwrapPredicateVariables = traverse unwrapPatternVariables
 
+wrapUnificationOrSubstitutionError
+    :: Functor m
+    => ExceptT (UnificationOrSubstitutionError level variable) m a
+    -> ExceptT (StepError                      level variable) m a
+wrapUnificationOrSubstitutionError =
+    withExceptT unificationOrSubstitutionToStepError
+
 {- | Lift an action from the unifier into the stepper.
  -}
 fromUnification
-    :: BranchT
-        (ExceptT (UnificationOrSubstitutionError level variable) Simplifier)
-        a
-    -> BranchT (ExceptT (StepError level variable) Simplifier) a
-fromUnification =
-    Monad.Morph.hoist (withExceptT unificationOrSubstitutionToStepError)
+    :: Monad m
+    => BranchT (ExceptT (UnificationOrSubstitutionError level variable) m) a
+    -> BranchT (ExceptT (StepError level variable                     ) m) a
+fromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
 
 unifyRule
     ::  ( Ord     (variable Object)
@@ -911,6 +916,7 @@ unifyRule
         , SortedVariable variable
         )
     => MetadataTools Object StepperAttributes
+    -> UnificationProcedure Object
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
@@ -923,10 +929,11 @@ unifyRule
         (ExceptT (StepError Object variable) Simplifier)
         (Predicated Object variable (RulePattern Object variable))
 unifyRule
-    _metadataTools
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
+    metadataTools
+    (UnificationProcedure unificationProcedure)
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
 
     initial
     rule
@@ -936,9 +943,28 @@ unifyRule
 
         -- Wrap rule and configuration so that unification prefers to substitute
         -- axiom variables.
-        -- rule' = RulePattern.mapVariables AxiomVariable renamed
-        -- initial' = ExpandedPattern.mapVariables ConfigurationVariable initial
-    return (pure renamed)
+        rule' = RulePattern.mapVariables AxiomVariable renamed
+        initial' = ExpandedPattern.mapVariables ConfigurationVariable initial
+        RulePattern { left = ruleLeft } = rule'
+        Predicated { term = initialTerm } = initial'
+    unifier <- unifyPatterns ruleLeft initialTerm
+    let unifier' =
+            PredicateSubstitution.mapVariables unwrapStepperVariable unifier
+    return (unifier' $> renamed)
+  where
+    unifyPatterns pat1 pat2 = do
+        (unifiers, _) <-
+            Monad.Morph.hoist unwrapStepErrorVariables
+            $ fromUnification
+            $ Monad.Trans.lift
+            $ unificationProcedure
+                metadataTools
+                predicateSimplifier
+                patternSimplifier
+                axiomSimplifiers
+                pat1
+                pat2
+        scatter unifiers
 
 {- | Instantiate the rule by applying the unification solution.
 
