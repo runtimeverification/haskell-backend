@@ -31,9 +31,12 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+                 ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Representation.Predicated as Predicated
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..), Simplifier,
                  StepPatternSimplifier )
@@ -332,7 +335,7 @@ mergePredicateSubstitutionList
     => [(PredicateSubstitution level variable, UnificationProof level variable)]
     -> (PredicateSubstitution level variable, UnificationProof level variable)
 mergePredicateSubstitutionList [] =
-    ( Predicated.topPredicate
+    ( PredicateSubstitution.top
     , EmptyUnificationProof
     )
 mergePredicateSubstitutionList (p:ps) =

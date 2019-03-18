@@ -35,13 +35,13 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeMultipleAndPredicate )
+                 ( Predicate, makeAndPredicate, makeMultipleAndPredicate,
+                 substitutionToPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..),
-                 substitutionToPredicate )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
 import qualified Kore.TopBottom as TopBottom
@@ -499,7 +499,7 @@ normalizeSubstitutionAfterMerge
             predicateSubstitution
     case Foldable.toList results of
         [] -> return
-            ( ExpandedPattern.bottomPredicate
+            ( PredicateSubstitution.bottom
             , EmptyUnificationProof
             )
         [normal] -> return (normal, EmptyUnificationProof)

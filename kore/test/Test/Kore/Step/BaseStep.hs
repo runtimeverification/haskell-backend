@@ -45,6 +45,7 @@ import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -1403,7 +1404,7 @@ test_instantiateRule =
                     , attributes = Default.def
                     }
             unifier =
-                ExpandedPattern.topPredicate
+                PredicateSubstitution.top
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
             expect = Mock.a
         Right [ instantiated ] <- instantiateRule axiom unifier
@@ -1420,7 +1421,7 @@ test_instantiateRule =
                     , attributes = Default.def
                     }
             unifier =
-                ExpandedPattern.topPredicate
+                PredicateSubstitution.top
                     { substitution = Substitution.wrap [(Mock.y, Mock.b)] }
             expect = Mock.b
         Right [ instantiated ] <- instantiateRule axiom unifier
@@ -1438,7 +1439,7 @@ test_instantiateRule =
                     , attributes = Default.def
                     }
             unifier =
-                ExpandedPattern.topPredicate
+                PredicateSubstitution.top
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
             expect = Predicate.makeCeilPredicate (Mock.f Mock.a)
         Right [ instantiated ] <- instantiateRule axiom unifier
@@ -1454,7 +1455,7 @@ test_instantiateRule =
                     , requires = Predicate.makeTruePredicate
                     , attributes = Default.def
                     }
-            unifier = ExpandedPattern.bottomPredicate
+            unifier = PredicateSubstitution.bottom
             expect = Right []
         actual <- instantiateRule axiom unifier
         assertEqual "" expect actual
@@ -1490,7 +1491,7 @@ test_instantiateRule =
                     , attributes = Default.def
                     }
             unifier =
-                ExpandedPattern.topPredicate
+                PredicateSubstitution.top
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
             expect = Right []
         actual <- instantiateRule axiom unifier
@@ -1505,7 +1506,7 @@ test_instantiateRule =
                     , attributes = Default.def
                     }
             unifier =
-                ExpandedPattern.topPredicate
+                PredicateSubstitution.top
                     { substitution =
                         Substitution.wrap
                             [ (Mock.x, Mock.f (mkVar Mock.y))
@@ -1524,7 +1525,7 @@ test_instantiateRule =
                     , attributes = Default.def
                     }
             unifier =
-                ExpandedPattern.topPredicate
+                PredicateSubstitution.top
                     { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
         Right [ instantiated ] <- instantiateRule axiom unifier
         let Predicated { substitution = actual } = instantiated
@@ -1594,7 +1595,7 @@ test_applyRule =
                     , requires = Predicate.makeTruePredicate
                     , attributes = Default.def
                     }
-            initial = ExpandedPattern.bottomPredicate
+            initial = PredicateSubstitution.bottom
             expect = Right []
         actual <- applyRule initial instantiated
         assertEqual "" expect actual
@@ -1613,7 +1614,7 @@ test_applyRule =
                     , requires = Predicate.makeTruePredicate
                     , attributes = Default.def
                     }
-            initial = ExpandedPattern.topPredicate
+            initial = PredicateSubstitution.top
             expect = Right [ right axiom <$ initial ]
         actual <- applyRule initial instantiated
         assertEqual "" expect actual
@@ -1632,7 +1633,7 @@ test_applyRule =
                     , requires = Predicate.makeTruePredicate
                     , attributes = Default.def
                     }
-            initial = ExpandedPattern.fromPredicate expect1
+            initial = PredicateSubstitution.fromPredicate expect1
             expect1 =
                 Predicate.makeEqualsPredicate
                     (Mock.f $ mkVar Mock.x)
@@ -1662,7 +1663,7 @@ test_applyRule =
                     , attributes = Default.def
                     }
             initial =
-                ExpandedPattern.fromPredicate
+                PredicateSubstitution.fromPredicate
                 $ Predicate.makeNotPredicate predicate
             expect = Right []
         actual <- applyRule initial instantiated

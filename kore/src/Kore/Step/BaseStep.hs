@@ -70,14 +70,15 @@ import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+                 ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.ExpandedPattern as PredicateSubstitution
-                 ( toPredicate )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge, mergeAll )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -320,7 +321,7 @@ stepWithRule
         <> Text.pack (show axiom)
         <> "\n for \n"
         <> Text.pack (show config)
-    let configVariables = ExpandedPattern.freeEpVariables config
+    let configVariables = ExpandedPattern.freeVariables config
         (renaming, axiom') =
             RulePattern.refreshRulePattern configVariables axiom
 
@@ -938,7 +939,7 @@ unifyRule
     initial
     rule
   = do
-    let configVariables = ExpandedPattern.freeEpVariables initial
+    let configVariables = ExpandedPattern.freeVariables initial
         (_, renamed) = RulePattern.refreshRulePattern configVariables rule
 
         -- Wrap rule and configuration so that unification prefers to substitute
@@ -1002,7 +1003,7 @@ instantiateRule
     axiom@RulePattern { left, right, requires }
     unifier
   = do
-    let merged = ExpandedPattern.fromPredicate requires *> unifier
+    let merged = PredicateSubstitution.fromPredicate requires *> unifier
     normalized <- normalize merged
     let Predicated { substitution } = normalized
         substitution' = Substitution.toMap substitution

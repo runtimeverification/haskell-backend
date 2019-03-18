@@ -41,15 +41,15 @@ import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
+import           Kore.Step.Representation.PredicateSubstitution as Predicated
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )
@@ -555,7 +555,7 @@ matchEqualHeadPatterns
             )
             (OrOfPredicateSubstitution level variable)
     justTop = just
-        (MultiOr.make [Predicated.topPredicate])
+        (MultiOr.make [PredicateSubstitution.top])
 
 matchJoin
     :: forall level variable .
@@ -797,4 +797,4 @@ checkVariableEscape vars predSubst
         "quantified variables in substitution or predicate escaping context"
   | otherwise = predSubst
   where
-    freeVars = Predicated.freeVariables predSubst
+    freeVars = PredicateSubstitution.freeVariables predSubst

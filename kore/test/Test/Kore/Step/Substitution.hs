@@ -20,12 +20,12 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Pattern
                  ( StepPattern )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.StepperAttributes
@@ -51,7 +51,7 @@ test_normalize :: [TestTree]
 test_normalize =
     [ testCase "predicate = \\bottom" $ do
         let expect = mempty
-        actual <- normalize ExpandedPattern.bottomPredicate
+        actual <- normalize PredicateSubstitution.bottomPredicate
         assertEqual "Expected empty result" expect actual
     ]
 

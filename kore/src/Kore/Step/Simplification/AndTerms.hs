@@ -54,16 +54,15 @@ import           Kore.Step.PatternAttributes
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), bottom, bottomPredicate, fromPurePattern,
-                 isBottom, toPredicate, top, topPredicate )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( toPredicate )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  SimplificationType, Simplifier, StepPatternSimplifier )
@@ -139,7 +138,8 @@ termEquals
             axiomIdToSimplifier
             first
             second
-    return (MultiOr.make [erasePredicatedTerm result], proof)
+    return
+        (MultiOr.make [PredicateSubstitution.erasePredicatedTerm result], proof)
 
 termEqualsAnd
     :: forall level variable err .
@@ -838,7 +838,7 @@ bottomTermEquals
                 , predicate =
                     makeNotPredicate
                         (OrOfExpandedPattern.toPredicate
-                            (fmap ExpandedPattern.toPredicate secondCeil)
+                            (fmap PredicateSubstitution.toPredicate secondCeil)
                         )
                 , substitution = mempty
                 }
@@ -944,7 +944,7 @@ variableFunctionAndEquals
                 -- Ceil predicate not needed since 'second' being bottom
                 -- will make the entire term bottom. However, one must
                 -- be careful to not just drop the term.
-                return ExpandedPattern.topPredicate
+                return PredicateSubstitution.top
             SimplificationType.Equals -> do
                 (resultOr, _proof) <-
                     Ceil.makeEvaluateTerm
@@ -954,7 +954,7 @@ variableFunctionAndEquals
                         axiomIdToSimplifier
                         second
                 case MultiOr.extractPatterns resultOr of
-                    [] -> return ExpandedPattern.bottomPredicate
+                    [] -> return PredicateSubstitution.bottom
                     [resultPredicateSubstitution] ->
                         return resultPredicateSubstitution
                     _ -> error

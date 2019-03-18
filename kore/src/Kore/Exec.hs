@@ -70,11 +70,11 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
@@ -199,7 +199,7 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
             concatMap MultiOr.extractPatterns solutionsLists
         orPredicate =
             makeMultipleOrPredicate
-                (Predicated.toPredicate <$> solutions)
+                (PredicateSubstitution.toPredicate <$> solutions)
     return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
     Valid { patternSort } = extract purePattern
