@@ -1720,24 +1720,25 @@ test_unifyRule =
         assertBool "" (Set.notMember Mock.x $ RulePattern.freeVariables actual)
 
     , testCase "performs unification with initial term" $ do
-        let initial = pure (Mock.f Mock.a)
+        let initial = pure (Mock.functionalConstr10 Mock.a)
             axiom =
                 RulePattern
-                    { left = Mock.f (mkVar Mock.x)
+                    { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate
                     , attributes = Default.def
                     }
-        Right [unified] <- unifyRule initial axiom
-        let Predicated { substitution = actual } = unified
-            expect = Substitution.wrap [(Mock.x, Mock.a)]
+            expect = Right [(pure axiom) { substitution }]
+              where
+                substitution = Substitution.wrap [(Mock.x, Mock.a)]
+        actual <- unifyRule initial axiom
         assertEqual "" expect actual
 
     , testCase "returns unification failures" $ do
-        let initial = pure (Mock.f Mock.a)
+        let initial = pure (Mock.functionalConstr10 Mock.a)
             axiom =
                 RulePattern
-                    { left = Mock.h (mkVar Mock.x)
+                    { left = Mock.functionalConstr11 (mkVar Mock.x)
                     , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate
                     , attributes = Default.def
