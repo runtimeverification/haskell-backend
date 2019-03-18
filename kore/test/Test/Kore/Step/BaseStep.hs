@@ -1645,4 +1645,26 @@ test_applyRule =
         let Predicated { predicate = actual } = applied
         assertEqual "" expect actual
 
+    , testCase "conflicting initial and rule conditions" $ do
+        let predicate = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+            instantiated =
+                Predicated
+                    { term = axiom
+                    , predicate
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            initial =
+                ExpandedPattern.fromPredicate
+                $ Predicate.makeNotPredicate predicate
+            expect = Right []
+        actual <- applyRule initial instantiated
+        assertEqual "" expect actual
+
     ]
