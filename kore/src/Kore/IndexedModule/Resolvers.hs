@@ -122,7 +122,7 @@ data HeadType
 
 -- |Given a KoreIndexedModule and a head, retrieves the head type.
 getHeadType
-    :: MetaOrObject level
+    :: (HasCallStack, MetaOrObject level)
     => IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ Module representing an indexed definition
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
@@ -353,7 +353,7 @@ applyToAttributes f =
     applyToResolution (\ _ (attrs, _) -> f attrs)
 
 
-applyToResolution :: (MetaOrObject level)
+applyToResolution :: (HasCallStack, MetaOrObject level)
                    => (forall ssoa .  SentenceSymbolOrAlias ssoa
                        => [Sort level]
                        -> (declAtts, ssoa level pat)
