@@ -28,6 +28,12 @@ import Data.Typeable
 
 {- | The list monad transformer written as a right-associative fold.
 
+This representation is similar to the
+<https://en.wikipedia.org/wiki/Church_encoding Church encoding> or the
+<https://en.wikipedia.org/wiki/Mogensen%E2%80%93Scott_encoding Scott encoding>.
+It inherits the performance benefits of the 'Control.Monad.Codensity.Codensity'
+of a free monad.
+
 Note that none of its basic instances—e.g. 'Functor', 'Applicative',
 'Alternative', 'Monad'—rely on the transformed type @m@ because @ListT@ takes
 those behaviors from the instances for lists.
@@ -61,8 +67,8 @@ newtype ListT m a =
         { foldListT
             :: forall n r
             .  (forall x y. m x -> (x -> n y) -> n y)
-            -- ^ analog of 'bind' to use an @m@-value within @n@; if @m ~ n@
-            -- this is literally 'bind'
+            -- ^ analog of 'bind' to use an @m@-value within @n@;
+            -- if @m ~ n@ this is literally 'bind'
             -> (a -> n r -> n r)
             -> n r
             -> n r
