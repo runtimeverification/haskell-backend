@@ -15,7 +15,6 @@ module Kore.ASTHelpers
     ( ApplicationSorts (..)
     , symbolOrAliasSorts
     , quantifyFreeVariables
-    , sentenceSorts
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -70,15 +69,6 @@ symbolOrAliasSorts params sentence = do
     paramVariables = getSentenceSymbolOrAliasSortParams sentence
     parametrizedArgumentSorts = getSentenceSymbolOrAliasArgumentSorts sentence
     parametrizedReturnSort = getSentenceSymbolOrAliasResultSort sentence
-
-
-sentenceSorts :: SentenceSymbolOrAlias ssoa =>
-       [Sort level] -> ssoa level pat -> ApplicationSorts level
-sentenceSorts sortParameters sentence =
-    case symbolOrAliasSorts sortParameters sentence of
-        Left err     -> error (printError err)
-        Right result -> result
-
 
 substituteSortVariables
     :: MonadError (Error e) m

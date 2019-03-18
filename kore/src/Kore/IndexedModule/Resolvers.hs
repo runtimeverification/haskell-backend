@@ -20,7 +20,7 @@ module Kore.IndexedModule.Resolvers
 
     -- TODO: This symbol is used internally - but in an untested function.
     -- It itself is tested, so it indirectly provides a little testing for
-    -- the otherwise untested function. 
+    -- the otherwise untested function.
     , getHeadApplicationSorts
 
     ) where
@@ -96,7 +96,12 @@ getHeadApplicationSorts
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
-    applyToSentence AST.sentenceSorts m patternHead
+    applyToSentence sentenceSorts m patternHead
+  where
+    sentenceSorts :: SentenceSymbolOrAlias ssoa
+                  => [Sort level] -> ssoa level pat -> ApplicationSorts level
+    sentenceSorts sortParameters sentence =
+        assertRight $ symbolOrAliasSorts sortParameters sentence
 
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
@@ -359,7 +364,7 @@ applyToResolution f m patternHead =
     symbolResult = f headParams <$> resolveSymbol m headName
     aliasResult = f headParams <$> resolveAlias m headName
 
-
+-- |
 noSort :: MetaOrObject level => Id level -> String
 noSort sortId =
     notDefined "Sort" $ show sortId
