@@ -25,10 +25,14 @@ module Kore.Step.BaseStep
     , stepWithRewriteRule
     , stepWithRule
     --
+    , UnifiedRule
     , unifyRule
     , instantiateRule
     , applyRule
     , stepWithRewriteRuleBranch
+    , toConfigurationVariables
+    , toAxiomVariables
+    , unwrapStepperVariable
     ) where
 
 import           Control.Monad.Except
@@ -935,9 +939,9 @@ unifyRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern Object variable
+    -> ExpandedPattern Object (StepperVariable variable)
     -- ^ Initial configuration
-    -> RulePattern Object variable
+    -> RulePattern Object (StepperVariable variable)
     -- ^ Rule
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
@@ -949,22 +953,18 @@ unifyRule
     patternSimplifier
     axiomSimplifiers
 
-    initial
+    initial@Predicated { term = initialTerm }
     rule
   = do
-    let configVariables = ExpandedPattern.freeVariables initial
-        (_, renamed) = RulePattern.refreshRulePattern configVariables rule
-
-        -- Wrap rule and configuration so that unification prefers to substitute
-        -- axiom variables.
-        rule' = RulePattern.mapVariables AxiomVariable renamed
-        initial' = ExpandedPattern.mapVariables ConfigurationVariable initial
+    let
+        -- Rename free axiom variables to avoid free variables from the initial
+        -- configuration.
+        (_, rule') = RulePattern.refreshRulePattern configVariables rule
+          where
+            configVariables = ExpandedPattern.freeVariables initial
         RulePattern { left = ruleLeft } = rule'
-        Predicated { term = initialTerm } = initial'
     unifier <- unifyPatterns ruleLeft initialTerm
-    let unifier' =
-            PredicateSubstitution.mapVariables unwrapStepperVariable unifier
-    return (unifier' $> renamed)
+    return (unifier $> rule')
   where
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
@@ -1000,11 +1000,11 @@ instantiateRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> Predicated Object variable (RulePattern Object variable)
+    -> UnifiedRule variable
     -- ^ Rule and unification solution
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
-        (Predicated Object variable (RulePattern Object variable))
+        (UnifiedRule variable)
 instantiateRule
     metadataTools
     predicateSimplifier
@@ -1027,7 +1027,8 @@ instantiateRule
     return (normalized { term = axiom' })
   where
     normalize =
-        fromUnification
+        Monad.Morph.hoist unwrapStepErrorVariables
+        . fromUnification
         . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
@@ -1054,13 +1055,13 @@ applyRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> PredicateSubstitution Object variable
+    -> PredicateSubstitution Object (StepperVariable variable)
     -- ^ Initial conditions
-    -> Predicated Object variable (RulePattern Object variable)
+    -> UnifiedRule variable
     -- ^ Instantiated rule
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
-        (ExpandedPattern Object variable)
+        (ExpandedPattern Object (StepperVariable variable))
 applyRule
     metadataTools
     predicateSimplifier
@@ -1075,12 +1076,25 @@ applyRule
     return normalized { term = right axiom }
   where
     normalize =
-        fromUnification
+        Monad.Morph.hoist unwrapStepErrorVariables
+        . fromUnification
         . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+
+toAxiomVariables
+    :: Ord (variable level)
+    => RulePattern level variable
+    -> RulePattern level (StepperVariable variable)
+toAxiomVariables = RulePattern.mapVariables AxiomVariable
+
+toConfigurationVariables
+    :: Ord (variable level)
+    => ExpandedPattern level variable
+    -> ExpandedPattern level (StepperVariable variable)
+toConfigurationVariables = ExpandedPattern.mapVariables ConfigurationVariable
 
 stepWithRewriteRuleBranch
     ::  ( MetaOrObject level
@@ -1113,9 +1127,21 @@ stepWithRewriteRuleBranch
     initial
     (RewriteRule rule)
   = do
-    unifier <- unifyRule' initial rule
+    let
+        -- Wrap rule and configuration so that unification prefers to substitute
+        -- axiom variables.
+        initial' = toConfigurationVariables initial
+        configVariables = ExpandedPattern.freeVariables initial'
+        (_, rule') =
+            RulePattern.refreshRulePattern configVariables
+            $ toAxiomVariables rule
+
+    unifier <- unifyRule' initial' rule'
     instantiated <- instantiateRule' unifier
-    applyRule' (initial { term = () }) instantiated
+    applied <- applyRule' (initial' { term = () }) instantiated
+    -- TODO: Throw error if substitution does not cover the left-hand side of
+    -- the axiom.
+    return (ExpandedPattern.mapVariables unwrapStepperVariable applied)
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
