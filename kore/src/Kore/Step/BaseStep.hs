@@ -28,6 +28,7 @@ module Kore.Step.BaseStep
     , unifyRule
     , instantiateRule
     , applyRule
+    , stepWithRewriteRuleBranch
     ) where
 
 import           Control.Monad.Except
@@ -1076,3 +1077,26 @@ applyRule
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+
+stepWithRewriteRuleBranch
+    ::  ( MetaOrObject level
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
+
+    -> ExpandedPattern level variable
+    -- ^ Configuration being rewritten.
+    -> RewriteRule level variable
+    -- ^ Rewriting axiom
+    -> BranchT
+        (ExceptT (StepError level variable) Simplifier)
+        (ExpandedPattern level variable)
