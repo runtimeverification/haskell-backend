@@ -136,7 +136,7 @@ normalizeWorker
         (PredicateSubstitution level variable)
 normalizeWorker
     tools
-    (PredicateSubstitutionSimplifier simplifySubstitution)
+    wrappedSimplifier@(PredicateSubstitutionSimplifier substitutionSimplifier)
     simplifier
     axiomIdToSimplifier
     Predicated { predicate, substitution }
@@ -159,7 +159,7 @@ normalizeWorker
 
     lift $ do
         TopBottom.guardAgainstBottom mergedPredicate
-        simplifySubstitution Predicated
+        substitutionSimplifier Predicated
             { term = ()
             , predicate = mergedPredicate
             , substitution = normalizedSubstitution
@@ -169,6 +169,7 @@ normalizeWorker
         Monad.Morph.hoist Monad.Trans.lift
         . normalizeSubstitutionDuplication
             tools
+            wrappedSimplifier
             simplifier
             axiomIdToSimplifier
 

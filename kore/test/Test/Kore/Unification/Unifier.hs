@@ -272,6 +272,7 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
         $ runExceptT
         $ simplifyAnds
             tools
+            (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)
             Map.empty
             [unificationProblem term1 term2]
@@ -300,6 +301,7 @@ andSimplifyFailure term1 term2 err = do
         $ runExceptT
         $ simplifyAnds
             tools
+            (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)
             Map.empty
             [unificationProblem term1 term2]
@@ -324,6 +326,7 @@ andSimplifyException message term1 term2 exceptionMessage =
                 $ runExceptT
                 $ simplifyAnds
                     tools
+                    (Mock.substitutionSimplifier tools)
                     (Simplifier.create tools Map.empty)
                     Map.empty
                     [unificationProblem term1 term2]
