@@ -30,14 +30,13 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
+                 ( RewriteRule (RewriteRule), RulePattern (..) )
+import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep hiding
                  ( applyRule, instantiateRule, unifyRule )
 import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
-import           Kore.Step.Pattern
+import           Kore.Step.Pattern as Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern,
                  PredicateSubstitution, Predicated (..) )
@@ -1702,7 +1701,21 @@ unifyRule initial rule =
 
 test_unifyRule :: [TestTree]
 test_unifyRule =
-    [ testCase "performs unification with initial term" $ do
+    [ testCase "renames axiom left variables" $ do
+        let initial = Mock.f (mkVar Mock.x)
+            axiom =
+                RulePattern
+                    { left = Mock.f (mkVar Mock.x)
+                    , right = Mock.g (mkVar Mock.x)
+                    , requires =
+                        Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+                    , attributes = Default.def
+                    }
+        Right [unified] <- unifyRule initial axiom
+        let Predicated { term = actual } = unified
+        assertBool "" (Set.notMember Mock.x $ RulePattern.freeVariables actual)
+
+    , testCase "performs unification with initial term" $ do
         let initial = Mock.f Mock.a
             axiom =
                 RulePattern
