@@ -909,6 +909,10 @@ fromUnification
     -> BranchT (ExceptT (StepError level variable                     ) m) a
 fromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
 
+type UnifiedRule variable =
+    Predicated Object (StepperVariable variable)
+        (RulePattern Object (StepperVariable variable))
+
 {- | Attempt to unify a rule with the initial configuration.
 
 The rule variables are renamed to avoid collision with the
@@ -937,7 +941,7 @@ unifyRule
     -- ^ Rule
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
-        (Predicated Object variable (RulePattern Object variable))
+        (UnifiedRule variable)
 unifyRule
     metadataTools
     (UnificationProcedure unificationProcedure)
