@@ -1670,7 +1670,7 @@ test_applyRule =
     ]
 
 unifyRule
-    :: StepPattern Object Variable
+    :: ExpandedPattern Object Variable
     -> RulePattern Object Variable
     -> IO
         (Either
@@ -1702,7 +1702,7 @@ unifyRule initial rule =
 test_unifyRule :: [TestTree]
 test_unifyRule =
     [ testCase "renames axiom left variables" $ do
-        let initial = Mock.f (mkVar Mock.x)
+        let initial = pure (Mock.f (mkVar Mock.x))
             axiom =
                 RulePattern
                     { left = Mock.f (mkVar Mock.x)
@@ -1716,7 +1716,7 @@ test_unifyRule =
         assertBool "" (Set.notMember Mock.x $ RulePattern.freeVariables actual)
 
     , testCase "performs unification with initial term" $ do
-        let initial = Mock.f Mock.a
+        let initial = pure (Mock.f Mock.a)
             axiom =
                 RulePattern
                     { left = Mock.f (mkVar Mock.x)
@@ -1730,7 +1730,7 @@ test_unifyRule =
         assertEqual "" expect actual
 
     , testCase "returns unification failures" $ do
-        let initial = Mock.f Mock.a
+        let initial = pure (Mock.f Mock.a)
             axiom =
                 RulePattern
                     { left = Mock.h (mkVar Mock.x)

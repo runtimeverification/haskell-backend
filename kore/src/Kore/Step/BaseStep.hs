@@ -915,8 +915,8 @@ unifyRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> StepPattern Object variable
-    -- ^ Initial term
+    -> ExpandedPattern Object variable
+    -- ^ Initial configuration
     -> RulePattern Object variable
     -- ^ Rule
     -> BranchT
@@ -928,10 +928,17 @@ unifyRule
     _patternSimplifier
     _axiomSimplifiers
 
-    _initial
+    initial
     rule
-  =
-    return (pure rule)
+  = do
+    let configVariables = ExpandedPattern.freeEpVariables initial
+        (_, renamed) = RulePattern.refreshRulePattern configVariables rule
+
+        -- Wrap rule and configuration so that unification prefers to substitute
+        -- axiom variables.
+        -- rule' = RulePattern.mapVariables AxiomVariable renamed
+        -- initial' = ExpandedPattern.mapVariables ConfigurationVariable initial
+    return (pure renamed)
 
 {- | Instantiate the rule by applying the unification solution.
 
