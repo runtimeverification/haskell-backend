@@ -909,6 +909,14 @@ fromUnification
     -> BranchT (ExceptT (StepError level variable                     ) m) a
 fromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
 
+{- | Attempt to unify a rule with the initial configuration.
+
+The rule variables are renamed to avoid collision with the
+configuration. @unifyRule@ fails if unification fails. @unifyRule@ returns the
+applied rule wrapped in the unification solution, but the rule is not yet
+instantiated to the solution.
+
+ -}
 unifyRule
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
