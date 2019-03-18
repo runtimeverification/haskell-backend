@@ -1100,3 +1100,13 @@ stepWithRewriteRuleBranch
     -> BranchT
         (ExceptT (StepError level variable) Simplifier)
         (ExpandedPattern level variable)
+stepWithRewriteRuleBranch
+    _metadataTools
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
+
+    initial
+    (RewriteRule _rule)
+  =
+    pure initial
