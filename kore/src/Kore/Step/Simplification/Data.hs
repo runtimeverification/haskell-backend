@@ -18,7 +18,6 @@ module Kore.Step.Simplification.Data
     , gatherAll
     , scatter
     , PredicateSubstitutionSimplifier (..)
-    , emptyPredicateSubstitutionSimplifier
     , StepPatternSimplifier (..)
     , SimplificationProof (..)
     , SimplificationType (..)
@@ -342,17 +341,3 @@ newtype PredicateSubstitutionSimplifier level =
             => PredicateSubstitution level variable
             -> BranchT Simplifier (PredicateSubstitution level variable)
         }
-
-instance Semigroup (PredicateSubstitutionSimplifier level) where
-    (<>)
-        (PredicateSubstitutionSimplifier a)
-        (PredicateSubstitutionSimplifier b)
-      =
-        PredicateSubstitutionSimplifier (a >=> b)
-
-instance Monoid (PredicateSubstitutionSimplifier level) where
-    mempty = emptyPredicateSubstitutionSimplifier
-    mappend = (<>)
-
-emptyPredicateSubstitutionSimplifier :: PredicateSubstitutionSimplifier level
-emptyPredicateSubstitutionSimplifier = PredicateSubstitutionSimplifier return

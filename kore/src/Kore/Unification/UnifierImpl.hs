@@ -36,7 +36,7 @@ import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..), Simplifier,
-                 StepPatternSimplifier, emptyPredicateSubstitutionSimplifier )
+                 StepPatternSimplifier )
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
@@ -112,7 +112,7 @@ simplifyAnds
         (ExpandedPattern level variable, UnificationProof level variable)
 simplifyAnds
     tools
-    _
+    substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     patterns
@@ -137,7 +137,7 @@ simplifyAnds
                 (result, _) <-
                     termUnification
                         tools
-                        emptyPredicateSubstitutionSimplifier
+                        substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
                         (ExpandedPattern.term intermediate)
@@ -145,7 +145,7 @@ simplifyAnds
                 (predSubst, _) <-
                     mergePredicatesAndSubstitutionsExcept
                         tools
-                        emptyPredicateSubstitutionSimplifier
+                        substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
                         [ ExpandedPattern.predicate result
