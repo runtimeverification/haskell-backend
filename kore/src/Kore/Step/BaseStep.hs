@@ -892,6 +892,16 @@ unwrapPredicateVariables
     -> m (Predicate level variable)
 unwrapPredicateVariables = traverse unwrapPatternVariables
 
+{- | Lift an action from the unifier into the stepper.
+ -}
+fromUnification
+    :: BranchT
+        (ExceptT (UnificationOrSubstitutionError level variable) Simplifier)
+        a
+    -> BranchT (ExceptT (StepError level variable) Simplifier) a
+fromUnification =
+    Monad.Morph.hoist (withExceptT unificationOrSubstitutionToStepError)
+
 {- | Instantiate the rule by applying the unification solution.
 
 The unification solution is normalized with the 'requires' clause from the
@@ -940,10 +950,8 @@ instantiateRule
                 }
     return (normalized { term = axiom' })
   where
-    fromUnification =
-        withExceptT unificationOrSubstitutionToStepError
     normalize =
-        Monad.Morph.hoist fromUnification
+        fromUnification
         . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
@@ -991,10 +999,8 @@ applyRule
     normalized <- normalize merged
     return normalized { term = right axiom }
   where
-    fromUnification =
-        withExceptT unificationOrSubstitutionToStepError
     normalize =
-        Monad.Morph.hoist fromUnification
+        fromUnification
         . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
