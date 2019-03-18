@@ -902,6 +902,26 @@ fromUnification
 fromUnification =
     Monad.Morph.hoist (withExceptT unificationOrSubstitutionToStepError)
 
+unifyRule
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> StepPattern Object variable
+    -- ^ Initial term
+    -> RulePattern Object variable
+    -- ^ Rule
+    -> BranchT
+        (ExceptT (StepError Object variable) Simplifier)
+        (Predicated Object variable (RulePattern Object variable))
+
 {- | Instantiate the rule by applying the unification solution.
 
 The unification solution is normalized with the 'requires' clause from the
