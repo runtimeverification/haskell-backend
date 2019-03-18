@@ -7,6 +7,7 @@ module Test.Kore.Step.BaseStep
     , test_instantiateRule
     , test_applyRule
     , test_unifyRule
+    , test_stepWithRewriteRuleBranch
     ) where
 
 import Test.Tasty
@@ -33,7 +34,8 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep hiding
-                 ( applyRule, instantiateRule, unifyRule )
+                 ( applyRule, instantiateRule, stepWithRewriteRuleBranch,
+                 unifyRule )
 import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Step.Pattern
@@ -57,6 +59,8 @@ import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationError (..), UnificationProof (..) )
+import           Kore.Variables.Fresh
+                 ( nextVariable )
 import qualified SMT
 
 import           Test.Kore
@@ -1746,3 +1750,54 @@ test_unifyRule =
         actual <- unifyRule initial axiom
         assertEqual "" expect actual
     ]
+
+stepWithRewriteRuleBranch
+    :: ExpandedPattern Object Variable
+    -> RewriteRule Object Variable
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (MultiOr (ExpandedPattern Object Variable))
+        )
+stepWithRewriteRuleBranch initial rule =
+    evalUnifier
+    $ BaseStep.stepWithRewriteRuleBranch
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        initial
+        rule
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+
+test_stepWithRewriteRuleBranch :: [TestTree]
+test_stepWithRewriteRuleBranch =
+    [ testCase "apply identity axiom" $ do
+        let expect = Right [ initial { substitution } ]
+              where
+                substitution = Substitution.unsafeWrap [(x', mkVar Mock.x)]
+                x' = nextVariable Mock.x
+            initial = pure (mkVar Mock.x)
+        actual <- stepWithRewriteRuleBranch initial axiomId
+        assertEqual "" expect actual
+    ]
+  where
+    ruleId =
+        RulePattern
+            { left = mkVar Mock.x
+            , right = mkVar Mock.x
+            , requires = makeTruePredicate
+            , attributes = def
+            }
+    axiomId = RewriteRule ruleId
