@@ -1101,12 +1101,35 @@ stepWithRewriteRuleBranch
         (ExceptT (StepError level variable) Simplifier)
         (ExpandedPattern level variable)
 stepWithRewriteRuleBranch
-    _metadataTools
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
 
     initial
-    (RewriteRule _rule)
-  =
-    pure initial
+    (RewriteRule rule)
+  = do
+    unifier <- unifyRule' initial rule
+    instantiated <- instantiateRule' unifier
+    applyRule' (initial { term = () }) instantiated
+  where
+    unificationProcedure = UnificationProcedure Unification.unificationProcedure
+    unifyRule' =
+        unifyRule
+            metadataTools
+            unificationProcedure
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+    instantiateRule' =
+        instantiateRule
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+    applyRule' =
+        applyRule
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
