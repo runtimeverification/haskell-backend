@@ -6,6 +6,7 @@ module Test.Kore.Step.BaseStep
     , test_baseStepMultipleRemainder
     , test_instantiateRule
     , test_applyRule
+    , test_unifyRule
     ) where
 
 import Test.Tasty
@@ -33,7 +34,7 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep hiding
-                 ( applyRule, instantiateRule )
+                 ( applyRule, instantiateRule, unifyRule )
 import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
 import           Kore.Step.Pattern
@@ -1667,4 +1668,64 @@ test_applyRule =
         actual <- applyRule initial instantiated
         assertEqual "" expect actual
 
+    ]
+
+unifyRule
+    :: StepPattern Object Variable
+    -> RulePattern Object Variable
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (MultiOr (Predicated Object Variable (RulePattern Object Variable)))
+        )
+unifyRule initial rule =
+    evalUnifier
+    $ BaseStep.unifyRule
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        initial
+        rule
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+
+test_unifyRule :: [TestTree]
+test_unifyRule =
+    [ testCase "performs unification with initial term" $ do
+        let initial = Mock.f Mock.a
+            axiom =
+                RulePattern
+                    { left = Mock.f (mkVar Mock.x)
+                    , right = Mock.g Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+        Right [unified] <- unifyRule initial axiom
+        let Predicated { substitution = actual } = unified
+            expect = Substitution.wrap [(Mock.x, Mock.a)]
+        assertEqual "" expect actual
+
+    , testCase "returns unification failures" $ do
+        let initial = Mock.f Mock.a
+            axiom =
+                RulePattern
+                    { left = Mock.h (mkVar Mock.x)
+                    , right = Mock.g Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , attributes = Default.def
+                    }
+            expect = Right []
+        actual <- unifyRule initial axiom
+        assertEqual "" expect actual
     ]
