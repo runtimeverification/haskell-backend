@@ -15,8 +15,6 @@ module Kore.Error
     , koreFailWhen
     , withContext
     , castError
-    , assertRight
-    , notDefined
     , module Control.Monad.Except
     ) where
 
@@ -86,16 +84,3 @@ castError
         , errorError = err
         }
 castError (Right r) = Right r
-
--- | `error` with a helpful message in case of `Left`.
--- | Otherwise, return what `Right` returns.
-assertRight :: Either (Error err) desired -> desired
-assertRight wrapped =
-    case wrapped of
-        Left err      -> error (printError err)
-        Right desired -> desired
-
--- | A message declaring that some `tag` is undefined.
-notDefined :: String -> String -> String
-notDefined tag identifier =
-    tag ++ " '" ++ identifier ++ "' not defined."
