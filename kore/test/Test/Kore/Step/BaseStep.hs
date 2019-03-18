@@ -1369,8 +1369,7 @@ instantiateRule axiom unifier =
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
-        axiom
-        unifier
+        unifier { term = axiom }
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =

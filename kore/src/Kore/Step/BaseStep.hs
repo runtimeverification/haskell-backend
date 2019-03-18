@@ -914,7 +914,8 @@ fromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
 The rule variables are renamed to avoid collision with the
 configuration. @unifyRule@ fails if unification fails. @unifyRule@ returns the
 applied rule wrapped in the unification solution, but the rule is not yet
-instantiated to the solution.
+instantiated to the solution (see 'instantiateRule'). The initial conditions are
+not applied to the rule (see 'applyRule').
 
  -}
 unifyRule
@@ -995,10 +996,8 @@ instantiateRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> RulePattern Object variable
-    -- ^ Unified rule
-    -> PredicateSubstitution Object variable
-    -- ^ Unification solution
+    -> Predicated Object variable (RulePattern Object variable)
+    -- ^ Rule and unification solution
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
         (Predicated Object variable (RulePattern Object variable))
@@ -1008,10 +1007,10 @@ instantiateRule
     patternSimplifier
     axiomSimplifiers
 
-    axiom@RulePattern { left, right, requires }
-    unifier
+    unified@Predicated { term = axiom@RulePattern { left, right, requires } }
   = do
-    let merged = PredicateSubstitution.fromPredicate requires *> unifier
+    let unifier = unified { term = () }
+        merged = PredicateSubstitution.fromPredicate requires *> unifier
     normalized <- normalize merged
     let Predicated { substitution } = normalized
         substitution' = Substitution.toMap substitution
