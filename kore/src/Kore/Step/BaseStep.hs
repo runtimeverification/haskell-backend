@@ -970,13 +970,25 @@ applyRule
         (ExceptT (StepError Object variable) Simplifier)
         (ExpandedPattern Object variable)
 applyRule
-    _metadataTools
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
 
     initial
-    axiom
+    instantiated@Predicated { term = axiom }
   = do
     TopBottom.guardAgainstBottom initial
-    return (initial *> (right <$> axiom))
+    let merged = initial *> instantiated { term = () }
+    normalized <- normalize merged
+    return normalized { term = right axiom }
+  where
+    fromUnification =
+        withExceptT unificationOrSubstitutionToStepError
+    normalize =
+        Monad.Morph.hoist fromUnification
+        . Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
