@@ -17,6 +17,7 @@ import Data.Reflection
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
@@ -83,7 +84,8 @@ mergeWithPredicateSubstitution
             , substitution = mergedSubstitution
             }
         , _proof ) <-
-            mergePredicatesAndSubstitutions
+            traceNonErrorMonad D_ExpandedPattern_mergeWithPredicateSubstitution [debugArg "where" "mergePredicatesAndSubstitutions"]
+            $ mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
                 simplifier
@@ -91,9 +93,11 @@ mergeWithPredicateSubstitution
                 [pattPredicate, conditionToMerge]
                 [pattSubstitution, substitutionToMerge]
     (evaluatedCondition, _) <-
-        Predicate.evaluate
+        traceNonErrorMonad D_ExpandedPattern_mergeWithPredicateSubstitution [debugArg "where" "Predicate.evaluate"]
+        $ Predicate.evaluate
             substitutionSimplifier simplifier mergedCondition
-    mergeWithEvaluatedCondition
+    traceNonErrorMonad D_ExpandedPattern_mergeWithPredicateSubstitution [debugArg "where" "mergeWithEvaluatedCondition"]
+    $ mergeWithEvaluatedCondition
         tools
         substitutionSimplifier
         simplifier

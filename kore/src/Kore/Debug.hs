@@ -87,6 +87,14 @@ data DebugPlace
     | D_Step
     | D_BaseStep_stepWithRule
     | D_Function_evaluatePattern
+    | D_Function_simplifyIfNeeded
+    | D_Function_reevaluateFunctions
+    | D_Axiom_equalityRuleEvaluator
+    | D_Axiom_processResult
+    | D_Axiom_evaluateWithDefinitionAxioms
+    | D_Axiom_applyFirstSimplifierThatWorks
+    | D_Axiom_evaluateBuiltin
+    | D_ExpandedPattern_mergeWithPredicateSubstitution
     | D_SMT_refutePredicate
   deriving (Eq, Ord, Show)
 
@@ -121,14 +129,22 @@ enabledPlaces = onePathWithFunctionNames
 
 -}
 enabledPlaces :: Map DebugPlace DebugResult
-enabledPlaces = Map.empty
+enabledPlaces = onePathWithFunctionNames --Map.empty
 
 onePathWithFunctionNames :: Map DebugPlace DebugResult
 onePathWithFunctionNames =
-    Map.insert D_Function_evaluatePattern DebugNoResult
+    Map.insert D_Axiom_equalityRuleEvaluator DebugResult
+    $ Map.insert D_Axiom_processResult DebugResult
+    $ Map.insert D_Axiom_evaluateWithDefinitionAxioms DebugResult
+    $ Map.insert D_Axiom_applyFirstSimplifierThatWorks DebugResult
+    $ Map.insert D_Axiom_evaluateBuiltin DebugNoResult
+    $ Map.insert D_Function_simplifyIfNeeded DebugResult
+    $ Map.insert D_Function_reevaluateFunctions DebugResult
+    $ Map.insert D_Function_evaluatePattern DebugResult
     $ Map.insert D_OnePath_verifyClaim DebugNoResult
     $ Map.insert D_OnePath_Step_transitionRule DebugResult
     $ Map.insert D_SMT_refutePredicate DebugResult
+    $ Map.insert D_ExpandedPattern_mergeWithPredicateSubstitution
     $ Map.singleton D_BaseStep_stepWithRule DebugResult
 
 executionWithFunctionNames :: Map DebugPlace DebugResult

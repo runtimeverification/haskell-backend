@@ -235,7 +235,9 @@ maybeEvaluatePattern
             Just
             $ traceNonErrorMonad
                 D_Function_evaluatePattern
-                [ debugArg "axiomIdentifier" identifier ]
+                [ debugArg "axiomIdentifier" identifier
+                , debugArg "patt" patt
+                ]
             $ do
                 (result, proof) <-
                     evaluator
@@ -298,7 +300,10 @@ maybeEvaluatePattern
         :: ExpandedPattern level variable
         -> Simplifier (OrOfExpandedPattern level variable)
     simplifyIfNeeded toSimplify =
-        if toSimplify == unchangedPatt
+        traceNonErrorMonad
+            D_Function_simplifyIfNeeded
+            [ debugArg "toSimplify" identifier ]
+        $ if toSimplify == unchangedPatt
             then return (MultiOr.make [unchangedPatt])
             else
                 reevaluateFunctions
@@ -380,11 +385,18 @@ reevaluateFunctions
         , predicate = rewritingCondition
         , substitution = rewrittenSubstitution
         }
-  = do
+  = traceNonErrorMonad D_Function_reevaluateFunctions [] $ do
     (pattOr , _proof) <-
-        simplifier substitutionSimplifier rewrittenPattern
+        traceNonErrorMonad D_Function_reevaluateFunctions [debugArg "where" "simplifier"]
+        $ simplifier substitutionSimplifier rewrittenPattern
     (mergedPatt, _proof) <-
-        OrOfExpandedPattern.mergeWithPredicateSubstitution
+        traceNonErrorMonad D_Function_reevaluateFunctions
+            [ debugArg "where" "mergeWithPredicateSubstitution"
+            , debugArg "rewritingCondition" rewritingCondition
+            , debugArg "rewrittenSubstitution" rewrittenSubstitution
+            , debugArg "pattOr" pattOr
+            ]
+        $ OrOfExpandedPattern.mergeWithPredicateSubstitution
             tools
             substitutionSimplifier
             wrappedSimplifier
@@ -396,7 +408,8 @@ reevaluateFunctions
                 }
             pattOr
     (evaluatedPatt, _) <-
-        MultiOr.traverseWithPairs
+        traceNonErrorMonad D_Function_reevaluateFunctions [debugArg "where" "simplifyPredicate"]
+        $ MultiOr.traverseWithPairs
             (ExpandedPattern.simplifyPredicate
                 tools
                 substitutionSimplifier

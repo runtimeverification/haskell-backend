@@ -29,6 +29,7 @@ import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.AST.Valid
                  ( pattern App_ )
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.Axiom.Data
@@ -156,7 +157,7 @@ evaluateBuiltin
     simplifier
     axiomIdToSimplifier
     patt
-  = do
+  = traceNonErrorMonad D_Axiom_evaluateBuiltin [] $ do
     (result, _proof) <-
         builtinEvaluator
             tools
@@ -221,7 +222,7 @@ applyFirstSimplifierThatWorks
     simplifier
     axiomIdToSimplifier
     patt
-  = do
+  = traceNonErrorMonad D_Axiom_applyFirstSimplifierThatWorks [] $ do
     (applicationResult, _proof) <-
         evaluator
             tools substitutionSimplifier simplifier axiomIdToSimplifier patt
@@ -300,7 +301,7 @@ evaluateWithDefinitionAxioms
     simplifier
     axiomIdToSimplifier
     patt
-  = do
+  = traceNonErrorMonad D_Axiom_evaluateWithDefinitionAxioms [] $ do
     let
         expanded :: ExpandedPattern level variable
         expanded = ExpandedPattern.fromPurePattern patt

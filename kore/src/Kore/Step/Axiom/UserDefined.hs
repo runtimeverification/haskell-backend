@@ -20,6 +20,7 @@ import           Kore.AST.Pure hiding
 import qualified Kore.AST.Pure as Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -97,18 +98,20 @@ equalityRuleEvaluator
   | Axiom.Concrete.isConcrete (Attribute.concrete $ attributes rule)
   , not (Pure.isConcrete patt)
   = notApplicable
-  | otherwise = do
-    result <- runExceptT stepResult
-    case result of
-        Left _ ->
-            notApplicable
-        Right results -> do
-            processedResults <- mapM processResult results
-            return
-                ( AttemptedAxiom.Applied
-                    (mconcat (map dropProof processedResults))
-                , SimplificationProof
-                )
+  | otherwise =
+    traceNonErrorMonad D_Axiom_equalityRuleEvaluator []
+    $ do
+        result <- runExceptT stepResult
+        case result of
+            Left _ ->
+                notApplicable
+            Right results -> do
+                processedResults <- mapM processResult results
+                return
+                    ( AttemptedAxiom.Applied
+                        (mconcat (map dropProof processedResults))
+                    , SimplificationProof
+                    )
   where
     notApplicable =
         return (AttemptedAxiom.NotApplicable, SimplificationProof)
@@ -134,7 +137,8 @@ equalityRuleEvaluator
             { rewrittenPattern = stepPattern, remainder = remainderPattern }
         , _proof
         )
-      = do
+      = traceNonErrorMonad D_Axiom_processResult []
+      $ do
         (   rewrittenPattern@Predicated { predicate = rewritingCondition }
             , _
             ) <-
