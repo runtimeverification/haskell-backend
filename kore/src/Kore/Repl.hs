@@ -193,7 +193,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     prompt = do 
         node <- Lens.use lensNode
         liftIO $ do
-            putStr $ "Kore ("<> show node <> ")> "
+            putStr $ "Kore (" <> show node <> ")> "
             hFlush stdout
             getLine
 
