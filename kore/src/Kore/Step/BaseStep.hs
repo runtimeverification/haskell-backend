@@ -82,10 +82,12 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Step.Representation.MultiAnd as MultiAnd
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make, merge, mergeAll )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import           Kore.Step.Representation.PredicateSubstitution
@@ -1090,6 +1092,54 @@ applyRule
             patternSimplifier
             axiomSimplifiers
 
+{- | Apply a rule to produce final configurations given some initial conditions.
+
+The rule should be instantiated with 'instantiateRule'. The initial conditions
+are merged with any conditions from the rule instantiation and
+normalized. @applyRule@ fails if normalization fails. @applyRule@ branches when
+the 'PredicateSubstitutionSimplifier' causes normalization to branch.
+
+ -}
+applyRemainder
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Initial configuration
+    -> Predicate Object variable
+    -- ^ Remainder
+    -> BranchT
+        (ExceptT (StepError Object variable) Simplifier)
+        (ExpandedPattern Object variable)
+applyRemainder
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    initial@Predicated { term }
+    remainder
+  = do
+    let merged = initial *> PredicateSubstitution.fromPredicate remainder
+    normalized <- normalize merged
+    return normalized { term }
+  where
+    normalize =
+        fromUnification
+        . Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+
 toAxiomVariables
     :: Ord (variable level)
     => RulePattern level variable
@@ -1137,19 +1187,24 @@ applyRewriteRule
 
     initial
     (RewriteRule rule)
-  = unwrapStepErrorVariables $ gather
-    $ do
-        let
-            -- Wrap the rule and configuration so that unification prefers to
-            -- substitute axiom variables.
-            initial' = toConfigurationVariables initial
-            rule' = toAxiomVariables rule
-
+  = unwrapStepErrorVariables $ do
+    let
+        -- Wrap the rule and configuration so that unification prefers to
+        -- substitute axiom variables.
+        initial' = toConfigurationVariables initial
+        rule' = toAxiomVariables rule
+    results <- gather $ do
         unifier <- unifyRule' initial' rule'
         instantiated <- instantiateRule' unifier
         applied <- applyRule' (initial' { term = () }) instantiated
-        checkSubstitutionCoverage initial' unifier applied
-        -- TODO: Return remainders
+        result <- checkSubstitutionCoverage initial' unifier applied
+        let coverage = unificationCoverage (instantiated { term = () })
+        return (result, coverage)
+    let coverage = snd <$> results
+    remainders <- gather $ do
+        remainder <- scatter (negateCoverage coverage)
+        applyRemainder' initial' remainder
+    return (fst <$> results)
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
@@ -1167,6 +1222,12 @@ applyRewriteRule
             axiomSimplifiers
     applyRule' =
         applyRule
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+    applyRemainder' =
+        applyRemainder
             metadataTools
             predicateSimplifier
             patternSimplifier
@@ -1244,58 +1305,68 @@ unwrapVariables config@Predicated { substitution } =
   where
     substitution' = Substitution.filter isConfigurationVariable substitution
 
-remaindersOf
+mkNotMultiAnd
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => MultiAnd (Predicate Object variable)
+    -> MultiOr (Predicate Object variable)
+mkNotMultiAnd = MultiOr.make . map Predicate.makeNotPredicate . Foldable.toList
+
+negateCoverage
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => MultiOr (MultiAnd (Predicate Object variable))
+    -> MultiOr (Predicate Object variable)
+negateCoverage = negateCoverageWorker . Foldable.toList
+  where
+    negateCoverageWorker [] = MultiOr.singleton Predicate.makeTruePredicate
+    negateCoverageWorker (x : xs) =
+        Predicate.makeAndPredicate
+            <$> mkNotMultiAnd x
+            <*> negateCoverageWorker xs
+
+unificationCoverage
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , SortedVariable variable
         )
     => PredicateSubstitution Object (StepperVariable variable)
-    -> MultiOr (Predicate Object (StepperVariable variable))
-remaindersOf unification@Predicated { substitution } =
-    negateUnification
-        unification
-            { substitution =
-                Substitution.filter
-                    (not . isConfigurationVariable)
-                    substitution
-            }
+    -> MultiAnd (Predicate Object (StepperVariable variable))
+unificationCoverage Predicated { predicate, substitution } =
+    predicateCoverage predicate <|> substitutionCoverage substitution'
+  where
+    substitution' =
+        Substitution.filter
+            (not . isConfigurationVariable)
+            substitution
 
-negateUnification
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => PredicateSubstitution Object variable
-    -> MultiOr (Predicate Object variable)
-negateUnification Predicated { predicate, substitution } =
-    negateUnificationPredicate predicate
-    <|> negateUnificationSubstitution substitution
-
-negateUnificationPredicate
+predicateCoverage
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , SortedVariable variable
         )
     => Predicate Object variable
-    -> MultiOr (Predicate Object variable)
-negateUnificationPredicate = pure . Predicate.makeNotPredicate
+    -> MultiAnd (Predicate Object variable)
+predicateCoverage = pure
 
-negateUnificationSubstitution
+substitutionCoverage
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , SortedVariable variable
         )
     => Substitution Object variable
-    -> MultiOr (Predicate Object variable)
-negateUnificationSubstitution subst =
-    Foldable.asum
-    $ negateUnificationSubstitutionWorker <$> Substitution.unwrap subst
+    -> MultiAnd (Predicate Object variable)
+substitutionCoverage subst =
+    MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
-    negateUnificationSubstitutionWorker (x, t) =
-        pure
-        $ Predicate.makeNotPredicate
-        $ Predicate.makeEqualsPredicate (mkVar x) t
+    substitutionCoverageWorker (x, t) =
+        Predicate.makeEqualsPredicate (mkVar x) t
