@@ -1187,25 +1187,27 @@ applyRewriteRule
 
     initial
     (RewriteRule rule)
-  = unwrapStepErrorVariables $ do
-    let
-        -- Wrap the rule and configuration so that unification prefers to
-        -- substitute axiom variables.
-        initial' = toConfigurationVariables initial
-        rule' = toAxiomVariables rule
-    results <- gather $ do
-        unifier <- unifyRule' initial' rule'
-        instantiated <- instantiateRule' unifier
-        applied <- applyRule' (initial' { term = () }) instantiated
-        result <- checkSubstitutionCoverage initial' unifier applied
-        let coverage = unificationCoverage (instantiated { term = () })
-        return (result, coverage)
-    let coverage = snd <$> results
-    remainder <- gather $ do
-        remainder <- scatter (negateCoverage coverage)
-        unwrapVariables <$> applyRemainder' initial' remainder
-    let rewrittenPattern = fst <$> results
-    return (OrStepResult { rewrittenPattern, remainder })
+  = Log.withLogScope "applyRewriteRule"
+    $ unwrapStepErrorVariables
+    $ do
+        let
+            -- Wrap the rule and configuration so that unification prefers to
+            -- substitute axiom variables.
+            initial' = toConfigurationVariables initial
+            rule' = toAxiomVariables rule
+        results <- gather $ do
+            unifier <- unifyRule' initial' rule'
+            instantiated <- instantiateRule' unifier
+            applied <- applyRule' (initial' { term = () }) instantiated
+            result <- checkSubstitutionCoverage initial' unifier applied
+            let coverage = unificationCoverage (instantiated { term = () })
+            return (result, coverage)
+        let coverage = snd <$> results
+        remainder <- gather $ do
+            remainder <- scatter (negateCoverage coverage)
+            unwrapVariables <$> applyRemainder' initial' remainder
+        let rewrittenPattern = fst <$> results
+        return (OrStepResult { rewrittenPattern, remainder })
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
