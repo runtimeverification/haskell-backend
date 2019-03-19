@@ -1914,60 +1914,27 @@ test_stepWithRewriteRuleBranch =
         actual <- stepWithRewriteRuleBranch initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
-    -- -- sigma(x, x) -> x
-    -- -- vs
-    -- -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
-    -- , testCase "Unification is applied repeatedly" $ do
-    --     let expect = Right
-    --             [ Predicated
-    --                 { term =
-    --                     metaSigma
-    --                         (metaSigma
-    --                             (mkVar $ c1 patternMetaSort)
-    --                             (mkVar $ c1 patternMetaSort)
-    --                         )
-    --                         (metaSigma
-    --                             (mkVar $ c1 patternMetaSort)
-    --                             (mkVar $ c1 patternMetaSort)
-    --                         )
-    --                 , predicate = makeTruePredicate
-    --                 , substitution = Substitution.wrap
-    --                     [   ( a1 patternMetaSort
-    --                         , metaSigma
-    --                             (mkVar $ c1 patternMetaSort)
-    --                             (mkVar $ c1 patternMetaSort)
-    --                         )
-    --                     ,   ( b1 patternMetaSort
-    --                         , mkVar $ c1 patternMetaSort
-    --                         )
-    --                     ]
-    --                 }
-    --             ]
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term =
-    --                     metaSigma
-    --                         (metaSigma
-    --                             (mkVar $ a1 patternMetaSort)
-    --                             (mkVar $ a1 patternMetaSort)
-    --                         )
-    --                         (metaSigma
-    --                             (metaSigma
-    --                                 (mkVar $ b1 patternMetaSort)
-    --                                 (mkVar $ c1 patternMetaSort)
-    --                             )
-    --                             (metaSigma
-    --                                 (mkVar $ b1 patternMetaSort)
-    --                                 (mkVar $ b1 patternMetaSort)
-    --                             )
-    --                         )
-    --                 , predicate = makeTruePredicate
-    --                 , substitution = mempty
-    --                 }
-    --             axiomMetaSigmaId
-    --     assertEqualWithExplanation "" expect (fmap (map fst) actual)
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
+    , testCase "unify all children" $ do
+        let expect = Right
+                [ Predicated
+                    { term = Mock.sigma zz zz
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap
+                        [ (Mock.x, zz)
+                        , (Mock.y, mkVar Mock.z)
+                        ]
+                    }
+                ]
+            xx = Mock.sigma (mkVar Mock.x) (mkVar Mock.x)
+            yy = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
+            zz = Mock.sigma (mkVar Mock.z) (mkVar Mock.z)
+            yz = Mock.sigma (mkVar Mock.y) (mkVar Mock.z)
+            initial = pure $ Mock.sigma xx (Mock.sigma yz yy)
+        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
 
     -- -- sigma(sigma(x, x), y) => sigma(x, y)
     -- -- vs
