@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Test.Kore.Builtin.Set where
 
 import           Hedgehog hiding
@@ -28,14 +30,12 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.BaseStep
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
-import           Kore.Unification.Data
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
@@ -396,18 +396,7 @@ test_concretizeKeysAxiom =
             , requires = Predicate.makeTruePredicate
             , attributes = Default.def
             }
-    expected = Right
-        [   ( Predicated
-                { term = symbolicKey
-                , predicate = Predicate.makeTruePredicate
-                , substitution = mempty
-                }
-            , mconcat
-                [ stepProof (StepProofVariableRenamings [])
-                , stepProof (StepProofUnification EmptyUnificationProof)
-                ]
-            )
-        ]
+    expected = Right [ pure symbolicKey ]
 
 test_isBuiltin :: [TestTree]
 test_isBuiltin =
