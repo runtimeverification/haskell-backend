@@ -1904,24 +1904,15 @@ test_stepWithRewriteRuleBranch =
         actual <- stepWithRewriteRuleBranch initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
-    -- -- sigma(x, x) -> x
-    -- -- vs
-    -- -- sigma(a, i(b)) with substitution b=a
-    -- , testCase "Substitution error (non-function)" $ do
-    --     let expect = Left $ StepErrorUnification UnsupportedPatterns
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term =
-    --                     metaSigma
-    --                         (mkVar $ a1 patternMetaSort)
-    --                         (metaI (mkVar $ b1 patternMetaSort))
-    --                 , predicate = makeTruePredicate
-    --                 , substitution = mempty
-    --                 }
-    --             axiomMetaSigmaId
-    --     assertEqualWithExplanation "" expect actual
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(a, i(b)) with substitution b=a
+    , testCase "non-function substitution error" $ do
+        let expect = Left $ StepErrorUnification UnsupportedPatterns
+            initial =
+                pure $ Mock.sigma (mkVar Mock.x) (Mock.plain10 (mkVar Mock.y))
+        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
 
     -- -- sigma(x, x) -> x
     -- -- vs
