@@ -2055,40 +2055,21 @@ test_stepWithRewriteRuleBranch =
         actual <- stepWithRewriteRuleBranch initial axiomSigmaXXY
         assertEqualWithExplanation "" expect actual
 
-    -- -- x => x requires g(x)=f(x)
-    -- -- vs
-    -- -- a
-    -- -- Expected: y1 and g(a)=f(a)
-    -- , testCase "Conjoins axiom pre-condition" $ do
-    --     let
-    --         preCondition var =
-    --             makeEqualsPredicate
-    --                 (metaG (mkVar $ var patternMetaSort))
-    --                 (metaF (mkVar $ var patternMetaSort))
-    --         expect = Right
-    --             [   ( Predicated
-    --                     { term = mkVar $ a1 patternMetaSort
-    --                     , predicate = preCondition a1
-    --                     , substitution = mempty
-    --                     }
-    --                 , mconcat
-    --                     (map stepProof
-    --                         [ StepProofVariableRenamings []
-    --                         , StepProofUnification EmptyUnificationProof
-    --                         ]
-    --                     )
-    --                 )
-    --             ]
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term = mkVar $ a1 patternMetaSort
-    --                 , predicate = makeTruePredicate
-    --                 , substitution = mempty
-    --                 }
-    --             (RewriteRule ruleId { requires = preCondition x1 })
-    --     assertEqualWithExplanation "" expect actual
+    -- x => x requires g(x)=f(x)
+    -- vs
+    -- a
+    -- Expected: y1 and g(a)=f(a)
+    , testCase "conjoin rule requirement" $ do
+        let
+            requires =
+                makeEqualsPredicate
+                    (Mock.functional11 (mkVar Mock.x))
+                    (Mock.functional10 (mkVar Mock.x))
+            expect = Right [ initial { predicate = requires } ]
+            initial = pure (mkVar Mock.x)
+            axiom = RewriteRule ruleId { requires }
+        actual <- stepWithRewriteRuleBranch initial axiom
+        assertEqualWithExplanation "" expect actual
     ]
   where
     ruleId =
