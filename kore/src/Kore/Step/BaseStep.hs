@@ -1343,10 +1343,7 @@ unificationCoverage
 unificationCoverage Predicated { predicate, substitution } =
     predicateCoverage predicate <|> substitutionCoverage substitution'
   where
-    substitution' =
-        Substitution.filter
-            (not . isConfigurationVariable)
-            substitution
+    substitution' = Substitution.filter isConfigurationVariable substitution
 
 predicateCoverage
     ::  ( Ord     (variable Object)
