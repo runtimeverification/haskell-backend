@@ -18,8 +18,10 @@ module Kore.Attribute.Axiom
     , lensUnit, Unit (..)
     , lensIdem, Idem (..)
     , lensTrusted, Trusted (..)
+    , lensConcrete, Concrete (..)
     , lensSimplification, Simplification (..)
     , lensOverload, Overload (..)
+    , lensSmtLemma, SmtLemma (..)
     , lensLabel, Label (..)
     ) where
 
