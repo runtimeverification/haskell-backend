@@ -1254,7 +1254,7 @@ test_applyRewriteRule =
         --   rewritten: cg, with ⌈cg⌉ and [x=a]
         --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
         let
-            expected =
+            expect =
                 Right OrStepResult
                     { rewrittenPattern =
                         [ Predicated
@@ -1284,71 +1284,66 @@ test_applyRewriteRule =
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial = pure initialTerm
         actual <- applyRewriteRule initial axiomIfThen
-        assertEqualWithExplanation "" expected actual
-    -- , testCase "If-then with existing predicate" $ do
-    --     -- This uses `functionalConstr20(x, y)` instead of `if x then y`
-    --     -- and `a` instead of `true`.
-    --     --
-    --     -- Intended:
-    --     --   term: if x then cg
-    --     --   axiom: if true y => y
-    --     -- Actual:
-    --     --   term: constr20(x, cg), with a ⌈cf⌉ predicate
-    --     --   axiom: constr20(a, y) => y
-    --     -- Expected:
-    --     --   rewritten: cg, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
-    --     --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
-    --     let
-    --         expected = Right
-    --             [   ( StepResult
-    --                     { rewrittenPattern = Predicated
-    --                         { term = Mock.cg
-    --                         , predicate = makeAndPredicate
-    --                             (makeCeilPredicate Mock.cf)
-    --                             (makeCeilPredicate Mock.cg)
-    --                         , substitution = Substitution.wrap
-    --                             [(Mock.x, Mock.a)]
-    --                         }
-    --                     , remainder = Predicated
-    --                         { term =
-    --                             Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
-    --                         , predicate = makeAndPredicate
-    --                             (makeCeilPredicate Mock.cf)
-    --                             (makeNotPredicate
-    --                                 (makeAndPredicate
-    --                                     (makeCeilPredicate Mock.cg)
-    --                                     (makeEqualsPredicate
-    --                                         (mkVar Mock.x) Mock.a
-    --                                     )
-    --                                 )
-    --                             )
-    --                         , substitution = mempty
-    --                         }
-    --                     }
-    --                 , mconcat
-    --                     (map stepProof
-    --                         [ StepProofVariableRenamings []
-    --                         , StepProofUnification EmptyUnificationProof
-    --                         ]
-    --                     )
-    --                 )
-    --             ]
-    --     actual <- runSingleStepWithRemainder
-    --         mockMetadataTools
-    --         Predicated
-    --             { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
-    --             , predicate = makeCeilPredicate Mock.cf
-    --             , substitution = mempty
-    --             }
-    --         (RewriteRule RulePattern
-    --             { left =
-    --                 Mock.functionalConstr20 Mock.a (mkVar Mock.y)
-    --             , right = mkVar Mock.y
-    --             , requires = makeTruePredicate
-    --             , attributes = def
-    --             }
-    --         )
-    --     assertEqualWithExplanation "" expected actual
+        assertEqualWithExplanation "" expect actual
+    , testCase "if _ then _ with initial condition" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: constr20(x, cg), with a ⌈cf⌉ predicate
+        --   axiom: constr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
+        --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
+        let
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        [ Predicated
+                            { term = Mock.cg
+                            , predicate =
+                                makeAndPredicate
+                                    (makeCeilPredicate Mock.cf)
+                                    (makeCeilPredicate Mock.cg)
+                            , substitution =
+                                Substitution.wrap
+                                    [(Mock.x, Mock.a)]
+                            }
+                        ]
+                    , remainder =
+                        [ Predicated
+                            { term =
+                                Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                            , predicate =
+                                makeAndPredicate (makeCeilPredicate Mock.cf)
+                                $ makeNotPredicate
+                                $ makeCeilPredicate Mock.cg
+                            , substitution = mempty
+                            }
+                        , Predicated
+                            { term =
+                                Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+                            , predicate =
+                                makeAndPredicate (makeCeilPredicate Mock.cf)
+                                $ makeNotPredicate
+                                $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            , substitution = mempty
+                            }
+                        ]
+                    }
+            initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+            initial =
+                Predicated
+                    { term = initialTerm
+                    , predicate = makeCeilPredicate Mock.cf
+                    , substitution = mempty
+                    }
+        actual <- applyRewriteRule initial axiomIfThen
+        assertEqualWithExplanation "" expect actual
+
     -- , testCase "signum - side condition" $ do
     --     -- This uses `functionalConstr20(x, y)` instead of `if x then y`
     --     -- and `a` instead of `true`.
