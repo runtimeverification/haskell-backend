@@ -48,7 +48,7 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
 import           Kore.Step.BaseStep
-                 ( StepProof (..), applyRewriteRule )
+                 ( OrStepResult (..), StepProof (..), applyRewriteRule )
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -140,9 +140,11 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , unparse config
                     , "Un-implemented unification case; aborting execution."
                     ]
-            Right results ->
+            Right OrStepResult { rewrittenPattern = results } ->
                 Log.withLogScope "transitionRule" $
-                    return $ flip (,) proof <$> Foldable.toList results
+                    return $ withProof <$> Foldable.toList results
+              where
+                withProof result' = (result', proof)
 
 
 {- | A strategy that applies all the rewrites in parallel.

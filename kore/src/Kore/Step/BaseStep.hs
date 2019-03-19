@@ -1178,7 +1178,7 @@ applyRewriteRule
     -> RewriteRule level variable
     -- ^ Rewriting axiom
     -> ExceptT (StepError level variable) Simplifier
-        (MultiOr (ExpandedPattern level variable))
+        (OrStepResult level variable)
 applyRewriteRule
     metadataTools
     predicateSimplifier
@@ -1201,10 +1201,11 @@ applyRewriteRule
         let coverage = unificationCoverage (instantiated { term = () })
         return (result, coverage)
     let coverage = snd <$> results
-    remainders <- gather $ do
+    remainder <- gather $ do
         remainder <- scatter (negateCoverage coverage)
-        applyRemainder' initial' remainder
-    return (fst <$> results)
+        unwrapVariables <$> applyRemainder' initial' remainder
+    let rewrittenPattern = fst <$> results
+    return (OrStepResult { rewrittenPattern, remainder })
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
