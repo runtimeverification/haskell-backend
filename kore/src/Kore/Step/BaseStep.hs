@@ -1198,7 +1198,7 @@ checkSubstitutionCoverage
     -- ^ Configuration after applying rule
     -> m (ExpandedPattern level variable)
 checkSubstitutionCoverage initial unified final = do
-    (Monad.unless isCoveringSubstitution . error . show . Pretty.vsep)
+    (Monad.unless checkPass . error . show . Pretty.vsep)
         [ "While applying axiom:"
         , Pretty.indent 4 (Pretty.pretty axiom)
         , "from the initial configuration:"
@@ -1213,16 +1213,19 @@ checkSubstitutionCoverage initial unified final = do
         ]
     return (unwrapVariables final)
   where
+    checkPass = isCoveringSubstitution || isInitialSymbolic
     Predicated { term = axiom } = unified
     leftAxiomVariables =
         Pattern.freeVariables leftAxiom
       where
         RulePattern { left = leftAxiom } = axiom
     Predicated { substitution } = final
+    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
-      where
-        substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    isInitialSymbolic =
+        (not . Set.null)
+            (Set.filter isConfigurationVariable substitutionVariables)
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
