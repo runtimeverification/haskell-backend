@@ -35,12 +35,15 @@ module Kore.Step.BaseStep
     , unwrapStepperVariable
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import qualified Control.Monad as Monad
 import           Control.Monad.Except
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( throwE )
+import qualified Data.Foldable as Foldable
 import qualified Data.Hashable as Hashable
 import           Data.List
                  ( foldl' )
@@ -100,6 +103,8 @@ import qualified Kore.Unification.Data as Unification.Proof
 import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
+import           Kore.Unification.Substitution
+                 ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -1238,3 +1243,59 @@ unwrapVariables config@Predicated { substitution } =
         config { substitution = substitution' }
   where
     substitution' = Substitution.filter isConfigurationVariable substitution
+
+remaindersOf
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => PredicateSubstitution Object (StepperVariable variable)
+    -> MultiOr (Predicate Object (StepperVariable variable))
+remaindersOf unification@Predicated { substitution } =
+    negateUnification
+        unification
+            { substitution =
+                Substitution.filter
+                    (not . isConfigurationVariable)
+                    substitution
+            }
+
+negateUnification
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => PredicateSubstitution Object variable
+    -> MultiOr (Predicate Object variable)
+negateUnification Predicated { predicate, substitution } =
+    negateUnificationPredicate predicate
+    <|> negateUnificationSubstitution substitution
+
+negateUnificationPredicate
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => Predicate Object variable
+    -> MultiOr (Predicate Object variable)
+negateUnificationPredicate = pure . Predicate.makeNotPredicate
+
+negateUnificationSubstitution
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => Substitution Object variable
+    -> MultiOr (Predicate Object variable)
+negateUnificationSubstitution subst =
+    Foldable.asum
+    $ negateUnificationSubstitutionWorker <$> Substitution.unwrap subst
+  where
+    negateUnificationSubstitutionWorker (x, t) =
+        pure
+        $ Predicate.makeNotPredicate
+        $ Predicate.makeEqualsPredicate (mkVar x) t
