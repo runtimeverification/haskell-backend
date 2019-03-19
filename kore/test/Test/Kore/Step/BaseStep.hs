@@ -1936,59 +1936,35 @@ test_stepWithRewriteRuleBranch =
         actual <- stepWithRewriteRuleBranch initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
-    -- -- sigma(sigma(x, x), y) => sigma(x, y)
-    -- -- vs
-    -- -- sigma(sigma(a, f(b)), a)
-    -- -- Expected: sigma(f(b), f(b)) and a=f(b)
-    -- , testCase "Substitution normalization." $ do
-    --     let
-    --         fOfB = metaF (mkVar $ b1 patternMetaSort)
-    --         expect = Right
-    --             [   ( Predicated
-    --                     { term = metaSigma fOfB fOfB
-    --                     , predicate = makeTruePredicate
-    --                     , substitution = Substitution.wrap
-    --                         [(a1 patternMetaSort, fOfB)]
-    --                     }
-    --                 , mconcat
-    --                     (map stepProof
-    --                         [ StepProofVariableRenamings []
-    --                         , StepProofUnification EmptyUnificationProof
-    --                         ]
-    --                     )
-    --                 )
-    --             ]
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term =
-    --                     metaSigma
-    --                         (metaSigma
-    --                             (mkVar $ a1 patternMetaSort)
-    --                             fOfB
-    --                         )
-    --                         (mkVar $ a1 patternMetaSort)
-    --                 , predicate = makeTruePredicate
-    --                 , substitution = mempty
-    --                 }
-    --             (RewriteRule RulePattern
-    --                 { left =
-    --                     metaSigma
-    --                         (metaSigma
-    --                             (mkVar $ x1 patternMetaSort)
-    --                             (mkVar $ x1 patternMetaSort)
-    --                         )
-    --                         (mkVar $ y1 patternMetaSort)
-    --                 , right =
-    --                     metaSigma
-    --                         (mkVar $ x1 patternMetaSort)
-    --                         (mkVar $ y1 patternMetaSort)
-    --                 , requires = makeTruePredicate
-    --                 , attributes = def
-    --                 }
-    --             )
-    --     assertEqualWithExplanation "" expect actual
+    -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, f(b)), a)
+    -- Expected: sigma(f(b), f(b)) and a=f(b)
+    , testCase "normalize substitution" $ do
+        let
+            fb = Mock.functionalConstr10 (mkVar Mock.y)
+            expect =
+                Right
+                    [ Predicated
+                        { term = Mock.sigma fb fb
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.wrap [(Mock.x, fb)]
+                        }
+                    ]
+            initial =
+                pure $ Mock.sigma (Mock.sigma (mkVar Mock.x) fb) (mkVar Mock.x)
+            axiom =
+                RewriteRule RulePattern
+                    { left =
+                        Mock.sigma
+                            (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
+                            (mkVar Mock.y)
+                    , right = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
+                    , requires = makeTruePredicate
+                    , attributes = def
+                    }
+        actual <- stepWithRewriteRuleBranch initial axiom
+        assertEqualWithExplanation "" expect actual
 
     -- -- sigma(sigma(x, x), y) => sigma(x, y)
     -- -- vs
