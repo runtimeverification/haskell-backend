@@ -35,6 +35,7 @@ module Kore.Step.BaseStep
     , unwrapStepperVariable
     ) where
 
+import qualified Control.Monad as Monad
 import           Control.Monad.Except
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.Trans as Monad.Trans
@@ -53,6 +54,7 @@ import           Data.Sequence
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
@@ -1132,8 +1134,7 @@ stepWithRewriteRuleBranch
     unifier <- unifyRule' initial' rule'
     instantiated <- instantiateRule' unifier
     applied <- applyRule' (initial' { term = () }) instantiated
-    -- TODO: Throw error if substitution does not cover the left-hand side of
-    -- the axiom.
+    checkSubstitutionCoverage initial' unifier applied
     -- TODO: Remove axiom variable substitutions from the result.
     return (ExpandedPattern.mapVariables unwrapStepperVariable applied)
   where
@@ -1159,11 +1160,42 @@ stepWithRewriteRuleBranch
             axiomSimplifiers
 
 checkSubstitutionCoverage
-    :: Monad m
+    ::  ( MetaOrObject level
+        , Monad m
+        , SortedVariable variable
+        , Ord     (variable level)
+        , Show    (variable level)
+        , Unparse (variable level)
+        )
     => ExpandedPattern level variable
     -- ^ Initial configuration
     -> UnifiedRule variable
     -- ^ Unified rule before instantiation
     -> ExpandedPattern level variable
-    -- ^ Final configuration after applying rule
+    -- ^ Configuration after applying rule
     -> m ()
+checkSubstitutionCoverage initial unified final =
+    (Monad.unless isCoveringSubstitution . error . show . Pretty.vsep)
+        [ "While applying axiom:"
+        , Pretty.indent 4 (Pretty.pretty axiom)
+        , "from the initial configuration:"
+        , Pretty.indent 4 (unparse initial)
+        , "to the final configuration:"
+        , Pretty.indent 4 (unparse final)
+        , "Failed substitution coverage check!"
+        , "Expected substitution to cover all variables:"
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Set.toAscList leftAxiomVariables)
+        , "in the left-hand side of the axiom."
+        ]
+  where
+    Predicated { term = axiom } = unified
+    leftAxiomVariables =
+        Pattern.freeVariables leftAxiom
+      where
+        RulePattern { left = leftAxiom } = axiom
+    Predicated { substitution } = final
+    isCoveringSubstitution =
+        Set.isSubsetOf leftAxiomVariables substitutionVariables
+      where
+        substitutionVariables = Map.keysSet (Substitution.toMap substitution)
