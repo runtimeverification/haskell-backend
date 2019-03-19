@@ -179,6 +179,10 @@ unwrapStepperVariable :: StepperVariable variable level -> variable level
 unwrapStepperVariable (AxiomVariable variable) = variable
 unwrapStepperVariable (ConfigurationVariable variable) = variable
 
+isConfigurationVariable :: StepperVariable variable level -> Bool
+isConfigurationVariable (AxiomVariable _) = False
+isConfigurationVariable (ConfigurationVariable _) = True
+
 instance
     SortedVariable variable
     => SortedVariable (StepperVariable variable)
@@ -520,9 +524,6 @@ applyUnificationToRhs
             makeAndPredicate
                 startCondition  -- from initial configuration
                 negatedRemainder
-        isConfigurationVariable :: StepperVariable variable level -> Bool
-        isConfigurationVariable (AxiomVariable _) = False
-        isConfigurationVariable (ConfigurationVariable _) = True
 
     let substitution = Substitution.toMap normalizedSubstitution
 
@@ -1135,8 +1136,8 @@ stepWithRewriteRuleBranch
     instantiated <- instantiateRule' unifier
     applied <- applyRule' (initial' { term = () }) instantiated
     checkSubstitutionCoverage initial' unifier applied
-    -- TODO: Remove axiom variable substitutions from the result.
-    return (ExpandedPattern.mapVariables unwrapStepperVariable applied)
+    let final = unwrapVariables applied
+    return final
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
@@ -1209,3 +1210,15 @@ checkSubstitutionCoverage initial unified final =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
       where
         substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+
+{- | Remove axiom variables from the substitution and unwrap all variables.
+ -}
+unwrapVariables
+    :: Ord (variable level)
+    => ExpandedPattern level (StepperVariable variable)
+    -> ExpandedPattern level variable
+unwrapVariables config@Predicated { substitution } =
+    ExpandedPattern.mapVariables unwrapStepperVariable
+        config { substitution = substitution' }
+  where
+    substitution' = Substitution.filter isConfigurationVariable substitution
