@@ -339,10 +339,10 @@ replInterpreter =
 
     proveSteps0 :: Int -> StateT (ReplState level) Simplifier ()
     proveSteps0 n = do
-        result <- loopM performStepNoBranching (n, Success, 0)
+        result <- loopM performStepNoBranching (n, Success)
         case result of
-            (0, Success, _) -> pure ()
-            (done, res, _) ->
+            (0, Success) -> pure ()
+            (done, res) ->
                 putStrLn'
                     $ "Stopped after "
                     <> show (n - done - 1)
@@ -367,7 +367,7 @@ replInterpreter =
             $ node
 
     performSingleStep
-        :: StateT (ReplState level) Simplifier (StepResult, Graph.Node)
+        :: StateT (ReplState level) Simplifier StepResult
     performSingleStep = do
         f <- Lens.use lensStepper
         node <- Lens.use lensNode
@@ -378,12 +378,12 @@ replInterpreter =
                 let
                     context = Graph.context graph node
                 case Graph.suc' context of
-                    [] -> pure (NoChildNodes, node)
+                    [] -> pure NoChildNodes
                     [configNo] -> do
                         lensNode .= configNo
-                        pure (Success, node)
-                    neighbors -> pure (Branch neighbors, node)
-            else pure (NodeAlreadyEvaluated, node)
+                        pure Success
+                    neighbors -> pure (Branch neighbors)
+            else pure NodeAlreadyEvaluated
 
     -- | Performs n proof steps, picking the next node unless branching occurs.
     -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -391,22 +391,22 @@ replInterpreter =
     --
     -- See 'loopM' for details.
     performStepNoBranching
-        :: (Int, StepResult, Graph.Node)
-        -- ^ (current step, last result, current node)
+        :: (Int, StepResult)
+        -- ^ (current step, last result)
         -> StateT
             (ReplState level)
             Simplifier
                 (Either
-                     (Int, StepResult, Graph.Node)
-                     (Int, StepResult, Graph.Node)
+                     (Int, StepResult)
+                     (Int, StepResult)
                 )
-    performStepNoBranching (0, res, node) =
-        pure $ Right (0, res, node)
-    performStepNoBranching (n, Success, _) = do
-        (res, node) <- performSingleStep
-        pure $ Left (n-1, res, node)
-    performStepNoBranching (n, res, node) =
-        pure $ Right (n, res, node)
+    performStepNoBranching (0, res) =
+        pure $ Right (0, res)
+    performStepNoBranching (n, Success) = do
+        res <- performSingleStep
+        pure $ Left (n-1, res)
+    performStepNoBranching (n, res) =
+        pure $ Right (n, res)
 
     unparseStrategy :: CommonStrategyPattern level -> String
     unparseStrategy =
