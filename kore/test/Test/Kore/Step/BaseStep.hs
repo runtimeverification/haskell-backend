@@ -7,6 +7,7 @@ module Test.Kore.Step.BaseStep
     , test_applyRule
     , test_unifyRule
     , test_applyRewriteRule_
+    , test_applyRewriteRule
     ) where
 
 import Test.Tasty
@@ -1236,3 +1237,183 @@ applyRewriteRule initial rule =
             metadataTools
             axiomSimplifiers
     axiomSimplifiers = Map.empty
+
+test_applyRewriteRule :: [TestTree]
+test_applyRewriteRule =
+    [ testCase "if _ then _" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: constr20(x, cg)
+        --   axiom: constr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cg⌉ and [x=a]
+        --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
+        let
+            expected =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        [ Predicated
+                            { term = Mock.cg
+                            , predicate = makeCeilPredicate Mock.cg
+                            , substitution =
+                                Substitution.wrap [(Mock.x, Mock.a)]
+                            }
+                        ]
+                    , remainder =
+                        [ Predicated
+                            { term = initialTerm
+                            , predicate =
+                                makeNotPredicate
+                                $ makeCeilPredicate Mock.cg
+                            , substitution = mempty
+                            }
+                        , Predicated
+                            { term = initialTerm
+                            , predicate =
+                                makeNotPredicate
+                                $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            , substitution = mempty
+                            }
+                        ]
+                    }
+            initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+            initial = pure initialTerm
+        actual <- applyRewriteRule initial axiomIfThen
+        assertEqualWithExplanation "" expected actual
+    -- , testCase "If-then with existing predicate" $ do
+    --     -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+    --     -- and `a` instead of `true`.
+    --     --
+    --     -- Intended:
+    --     --   term: if x then cg
+    --     --   axiom: if true y => y
+    --     -- Actual:
+    --     --   term: constr20(x, cg), with a ⌈cf⌉ predicate
+    --     --   axiom: constr20(a, y) => y
+    --     -- Expected:
+    --     --   rewritten: cg, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
+    --     --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
+    --     let
+    --         expected = Right
+    --             [   ( StepResult
+    --                     { rewrittenPattern = Predicated
+    --                         { term = Mock.cg
+    --                         , predicate = makeAndPredicate
+    --                             (makeCeilPredicate Mock.cf)
+    --                             (makeCeilPredicate Mock.cg)
+    --                         , substitution = Substitution.wrap
+    --                             [(Mock.x, Mock.a)]
+    --                         }
+    --                     , remainder = Predicated
+    --                         { term =
+    --                             Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+    --                         , predicate = makeAndPredicate
+    --                             (makeCeilPredicate Mock.cf)
+    --                             (makeNotPredicate
+    --                                 (makeAndPredicate
+    --                                     (makeCeilPredicate Mock.cg)
+    --                                     (makeEqualsPredicate
+    --                                         (mkVar Mock.x) Mock.a
+    --                                     )
+    --                                 )
+    --                             )
+    --                         , substitution = mempty
+    --                         }
+    --                     }
+    --                 , mconcat
+    --                     (map stepProof
+    --                         [ StepProofVariableRenamings []
+    --                         , StepProofUnification EmptyUnificationProof
+    --                         ]
+    --                     )
+    --                 )
+    --             ]
+    --     actual <- runSingleStepWithRemainder
+    --         mockMetadataTools
+    --         Predicated
+    --             { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+    --             , predicate = makeCeilPredicate Mock.cf
+    --             , substitution = mempty
+    --             }
+    --         (RewriteRule RulePattern
+    --             { left =
+    --                 Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+    --             , right = mkVar Mock.y
+    --             , requires = makeTruePredicate
+    --             , attributes = def
+    --             }
+    --         )
+    --     assertEqualWithExplanation "" expected actual
+    -- , testCase "signum - side condition" $ do
+    --     -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+    --     -- and `a` instead of `true`.
+    --     --
+    --     -- Intended:
+    --     --   term: signum(x)
+    --     --   axiom: signum(y) => -1 if (y<0 == true)
+    --     -- Actual:
+    --     --   term: functionalConstr10(x)
+    --     --   axiom: functionalConstr10(y) => a if f(y) == b
+    --     -- Expected:
+    --     --   rewritten: a, with f(x) == b
+    --     --   remainder: functionalConstr10(x), with ¬(f(x) == b)
+    --     let
+    --         expected = Right
+    --             [   ( StepResult
+    --                     { rewrittenPattern = Predicated
+    --                         { term = Mock.a
+    --                         , predicate =
+    --                             makeEqualsPredicate
+    --                                 (Mock.f (mkVar Mock.x)) Mock.b
+    --                         , substitution = mempty
+    --                         }
+    --                     , remainder = Predicated
+    --                         { term = Mock.functionalConstr10 (mkVar Mock.x)
+    --                         , predicate =
+    --                             makeNotPredicate
+    --                                 (makeEqualsPredicate
+    --                                     (Mock.f (mkVar Mock.x))
+    --                                     Mock.b
+    --                                 )
+    --                         , substitution = mempty
+    --                         }
+    --                     }
+    --                 , mconcat
+    --                     (map stepProof
+    --                         [ StepProofVariableRenamings []
+    --                         , StepProofUnification EmptyUnificationProof
+    --                         ]
+    --                     )
+    --                 )
+    --             ]
+    --     actual <- runSingleStepWithRemainder
+    --         mockMetadataTools
+    --         Predicated
+    --             { term = Mock.functionalConstr10 (mkVar Mock.x)
+    --             , predicate = makeTruePredicate
+    --             , substitution = mempty
+    --             }
+    --         (RewriteRule RulePattern
+    --             { left =
+    --                 Mock.functionalConstr10 (mkVar Mock.y)
+    --             , right = Mock.a
+    --             , requires =
+    --                 makeEqualsPredicate (Mock.f (mkVar Mock.y)) Mock.b
+    --             , attributes = def
+    --             }
+    --         )
+    --     assertEqualWithExplanation "" expected actual
+    ]
+  where
+    axiomIfThen =
+        RewriteRule RulePattern
+            { left = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+            , right = mkVar Mock.y
+            , requires = makeTruePredicate
+            , attributes = def
+            }
