@@ -189,11 +189,13 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => m String
-    prompt = liftIO $ do
-        putStr "Kore> "
-        hFlush stdout
-        getLine
+    prompt :: StateT (ReplState level) Simplifier String
+    prompt = do
+        node <- Lens.use lensNode
+        liftIO $ do
+            putStr $ "Kore (" <> show node <> ")> "
+            hFlush stdout
+            getLine
 
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
@@ -337,11 +339,10 @@ replInterpreter =
 
     proveSteps0 :: Int -> StateT (ReplState level) Simplifier ()
     proveSteps0 n = do
-        result <- loopM performStepNoBranching (n, Success, 0)
+        result <- loopM performStepNoBranching (n, Success)
         case result of
-            (0, Success, node) ->
-                putStrLn' $ "Done. Current node: " <> show node
-            (done, res, _) ->
+            (0, Success) -> pure ()
+            (done, res) ->
                 putStrLn'
                     $ "Stopped after "
                     <> show (n - done - 1)
@@ -372,7 +373,7 @@ replInterpreter =
 
 
     performSingleStep
-        :: StateT (ReplState level) Simplifier (StepResult, Graph.Node)
+        :: StateT (ReplState level) Simplifier StepResult
     performSingleStep = do
         f <- Lens.use lensStepper
         node <- Lens.use lensNode
@@ -383,12 +384,12 @@ replInterpreter =
                 let
                     context = Graph.context graph node
                 case Graph.suc' context of
-                    [] -> pure (NoChildNodes, node)
+                    [] -> pure NoChildNodes
                     [configNo] -> do
                         lensNode .= configNo
-                        pure (Success, node)
-                    neighbors -> pure (Branch neighbors, node)
-            else pure (NodeAlreadyEvaluated, node)
+                        pure Success
+                    neighbors -> pure (Branch neighbors)
+            else pure NodeAlreadyEvaluated
 
     -- | Performs n proof steps, picking the next node unless branching occurs.
     -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -396,22 +397,22 @@ replInterpreter =
     --
     -- See 'loopM' for details.
     performStepNoBranching
-        :: (Int, StepResult, Graph.Node)
-        -- ^ (current step, last result, current node)
+        :: (Int, StepResult)
+        -- ^ (current step, last result)
         -> StateT
             (ReplState level)
             Simplifier
                 (Either
-                     (Int, StepResult, Graph.Node)
-                     (Int, StepResult, Graph.Node)
+                     (Int, StepResult)
+                     (Int, StepResult)
                 )
-    performStepNoBranching (0, res, node) =
-        pure $ Right (0, res, node)
-    performStepNoBranching (n, Success, _) = do
-        (res, node) <- performSingleStep
-        pure $ Left (n-1, res, node)
-    performStepNoBranching (n, res, node) =
-        pure $ Right (n, res, node)
+    performStepNoBranching (0, res) =
+        pure $ Right (0, res)
+    performStepNoBranching (n, Success) = do
+        res <- performSingleStep
+        pure $ Left (n-1, res)
+    performStepNoBranching (n, res) =
+        pure $ Right (n, res)
 
     unparseStrategy :: CommonStrategyPattern level -> String
     unparseStrategy =
