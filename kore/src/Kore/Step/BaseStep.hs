@@ -1134,6 +1134,7 @@ stepWithRewriteRuleBranch
     applied <- applyRule' (initial' { term = () }) instantiated
     -- TODO: Throw error if substitution does not cover the left-hand side of
     -- the axiom.
+    -- TODO: Remove axiom variable substitutions from the result.
     return (ExpandedPattern.mapVariables unwrapStepperVariable applied)
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
