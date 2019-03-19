@@ -1942,7 +1942,7 @@ test_stepWithRewriteRuleBranch =
     -- Expected: sigma(f(b), f(b)) and a=f(b)
     , testCase "normalize substitution" $ do
         let
-            fb = Mock.functionalConstr10 (mkVar Mock.y)
+            fb = Mock.functional10 (mkVar Mock.y)
             expect =
                 Right
                     [ Predicated
@@ -2022,63 +2022,38 @@ test_stepWithRewriteRuleBranch =
         actual <- stepWithRewriteRuleBranch initial axiomId
         assertEqualWithExplanation "" expect actual
 
-    -- -- sigma(sigma(x, x), y) => sigma(x, y)
-    -- -- vs
-    -- -- sigma(sigma(a, f(b)), a) and g(a)=f(a)
-    -- -- Expected: sigma(f(b), f(b)) and a=f(b) and and g(f(b))=f(f(b))
-    -- , testCase "Substitution_normalization." $ do
-    --     let
-    --         fOfB = metaF (mkVar $ b1 patternMetaSort)
-    --         expect = Right
-    --             [   ( Predicated
-    --                     { term = metaSigma fOfB fOfB
-    --                     , predicate =
-    --                         makeEqualsPredicate (metaG fOfB) (metaF fOfB)
-    --                     , substitution = Substitution.wrap
-    --                         [(a1 patternMetaSort, fOfB)]
-    --                     }
-    --                 , mconcat
-    --                     (map stepProof
-    --                         [ StepProofVariableRenamings []
-    --                         , StepProofUnification EmptyUnificationProof
-    --                         ]
-    --                     )
-    --                 )
-    --             ]
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term =
-    --                     metaSigma
-    --                         (metaSigma
-    --                             (mkVar $ a1 patternMetaSort)
-    --                             fOfB
-    --                         )
-    --                         (mkVar $ a1 patternMetaSort)
-    --                 , predicate =
-    --                     makeEqualsPredicate
-    --                         (metaG (mkVar $ a1 patternMetaSort))
-    --                         (metaF (mkVar $ a1 patternMetaSort))
-    --                 , substitution = mempty
-    --                 }
-    --             (RewriteRule RulePattern
-    --                 { left =
-    --                     metaSigma
-    --                         (metaSigma
-    --                             (mkVar $ x1 patternMetaSort)
-    --                             (mkVar $ x1 patternMetaSort)
-    --                         )
-    --                         (mkVar $ y1 patternMetaSort)
-    --                 , right =
-    --                     metaSigma
-    --                         (mkVar $ x1 patternMetaSort)
-    --                         (mkVar $ y1 patternMetaSort)
-    --                 , requires = makeTruePredicate
-    --                 , attributes = def
-    --                 }
-    --             )
-    --     assertEqualWithExplanation "" expect actual
+    -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, f(b)), a) and g(a)=f(a)
+    -- Expected: sigma(f(b), f(b)) and a=f(b) and and g(f(b))=f(f(b))
+    , testCase "normalize substitution with initial condition" $ do
+        let
+            fb = Mock.functional10 (mkVar Mock.y)
+            expect =
+                Right
+                    [ Predicated
+                        { term = Mock.sigma fb fb
+                        , predicate =
+                            makeEqualsPredicate
+                                (Mock.functional11 fb)
+                                (Mock.functional10 fb)
+                        , substitution = Substitution.wrap [(Mock.x, fb)]
+                        }
+                    ]
+            initial =
+                Predicated
+                    { term =
+                        Mock.sigma
+                            (Mock.sigma (mkVar Mock.x) fb)
+                            (mkVar Mock.x)
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.functional11 (mkVar Mock.x))
+                            (Mock.functional10 (mkVar Mock.x))
+                    , substitution = mempty
+                    }
+        actual <- stepWithRewriteRuleBranch initial axiomSigmaXXY
+        assertEqualWithExplanation "" expect actual
 
     -- -- x => x requires g(x)=f(x)
     -- -- vs
