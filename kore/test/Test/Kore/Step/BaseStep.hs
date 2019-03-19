@@ -59,6 +59,8 @@ import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationError (..), UnificationProof (..) )
+import           Kore.Variables.Fresh
+                 ( nextVariable )
 import qualified SMT
 
 import           Test.Kore
@@ -1830,43 +1832,19 @@ test_stepWithRewriteRuleBranch =
         actual <- stepWithRewriteRuleBranch initial axiomSigmaSigma
         assertEqualWithExplanation "" expect actual
 
-    -- , testCase "rename quantified right variables" $ do
-    --     let expect = Right
-    --             [   ( Predicated
-    --                     { term =
-    --                         mkExists
-    --                             (var_a1_0 patternMetaSort)
-    --                             (mkVar $ a1 patternMetaSort)
-    --                     , predicate = makeTruePredicate
-    --                     , substitution = mempty
-    --                     }
-    --                 , mconcat
-    --                     (map stepProof
-    --                         [ StepProofVariableRenamings []
-    --                         , StepProofUnification EmptyUnificationProof
-    --                         ]
-    --                     )
-    --                 )
-    --             ]
-    --         initial = pure (mkVar Mock.y)
-    --         axiom =
-    --             RewriteRule RulePattern
-    --                 { left = mkVar Mock.x
-    --                 , right = mkExists Mock.y (mkVar Mock.x)
-    --                 , requires = makeTruePredicate
-    --                 , attributes = def
-    --                 }
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term = mkVar $ a1 patternMetaSort
-    --                 , predicate = makeTruePredicate
-    --                 , substitution = mempty
-    --                 }
-    --             (
-    --             )
-    --     assertEqualWithExplanation "" expect actual
+    , testCase "rename quantified right variables" $ do
+        let expect = Right [ pure final ]
+            final = mkExists (nextVariable Mock.y) (mkVar Mock.y)
+            initial = pure (mkVar Mock.y)
+            axiom =
+                RewriteRule RulePattern
+                    { left = mkVar Mock.x
+                    , right = mkExists Mock.y (mkVar Mock.x)
+                    , requires = makeTruePredicate
+                    , attributes = def
+                    }
+        actual <- stepWithRewriteRuleBranch initial axiom
+        assertEqualWithExplanation "" expect actual
     ]
   where
     ruleId =
