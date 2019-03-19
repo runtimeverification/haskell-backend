@@ -7,7 +7,7 @@ module Test.Kore.Step.BaseStep
     , test_instantiateRule
     , test_applyRule
     , test_unifyRule
-    , test_stepWithRewriteRuleBranch
+    , test_applyRewriteRule
     ) where
 
 import Test.Tasty
@@ -34,8 +34,7 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep hiding
-                 ( applyRule, instantiateRule, stepWithRewriteRuleBranch,
-                 unifyRule )
+                 ( applyRewriteRule, applyRule, instantiateRule, unifyRule )
 import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Step.Pattern
@@ -1751,7 +1750,7 @@ test_unifyRule =
         assertEqualWithExplanation "" expect actual
     ]
 
-stepWithRewriteRuleBranch
+applyRewriteRule
     :: ExpandedPattern Object Variable
     -> RewriteRule Object Variable
     -> IO
@@ -1759,9 +1758,9 @@ stepWithRewriteRuleBranch
             (StepError Object Variable)
             (MultiOr (ExpandedPattern Object Variable))
         )
-stepWithRewriteRuleBranch initial rule =
+applyRewriteRule initial rule =
     evalUnifier
-    $ BaseStep.stepWithRewriteRuleBranch
+    $ BaseStep.applyRewriteRule
         metadataTools
         predicateSimplifier
         patternSimplifier
@@ -1781,24 +1780,24 @@ stepWithRewriteRuleBranch initial rule =
             axiomSimplifiers
     axiomSimplifiers = Map.empty
 
-test_stepWithRewriteRuleBranch :: [TestTree]
-test_stepWithRewriteRuleBranch =
+test_applyRewriteRule :: [TestTree]
+test_applyRewriteRule =
     [ testCase "apply identity axiom" $ do
         let expect = Right [ initial ]
             initial = pure (mkVar Mock.x)
-        actual <- stepWithRewriteRuleBranch initial axiomId
+        actual <- applyRewriteRule initial axiomId
         assertEqualWithExplanation "" expect actual
 
     , testCase "apply identity without renaming" $ do
         let expect = Right [ initial ]
             initial = pure (mkVar Mock.y)
-        actual <- stepWithRewriteRuleBranch initial axiomId
+        actual <- applyRewriteRule initial axiomId
         assertEqualWithExplanation "" expect actual
 
     , testCase "substitute variable with itself" $ do
         let expect = Right [ initial { term = mkVar Mock.x } ]
             initial = pure (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        actual <- applyRewriteRule initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     , testCase "merge configuration patterns" $ do
@@ -1808,7 +1807,7 @@ test_stepWithRewriteRuleBranch =
               where
                 substitution = Substitution.wrap [ (Mock.x, term) ]
             initial = pure (Mock.sigma (mkVar Mock.x) term)
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        actual <- applyRewriteRule initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     , testCase "substitution with symbol matching" $ do
@@ -1818,7 +1817,7 @@ test_stepWithRewriteRuleBranch =
             fy = Mock.functionalConstr10 (mkVar Mock.y)
             fz = Mock.functionalConstr10 (mkVar Mock.z)
             initial = pure (Mock.sigma fy fz)
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        actual <- applyRewriteRule initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     , testCase "merge multiple variables" $ do
@@ -1829,7 +1828,7 @@ test_stepWithRewriteRuleBranch =
             yx = Mock.sigma (mkVar Mock.y) (mkVar Mock.x)
             yy = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
             initial = pure (Mock.sigma xy yx)
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaXXYY
+        actual <- applyRewriteRule initial axiomSigmaXXYY
         assertEqualWithExplanation "" expect actual
 
     , testCase "rename quantified right variables" $ do
@@ -1843,7 +1842,7 @@ test_stepWithRewriteRuleBranch =
                     , requires = makeTruePredicate
                     , attributes = def
                     }
-        actual <- stepWithRewriteRuleBranch initial axiom
+        actual <- applyRewriteRule initial axiom
         assertEqualWithExplanation "" expect actual
 
     , testCase "symbol clash" $ do
@@ -1851,7 +1850,7 @@ test_stepWithRewriteRuleBranch =
             fx = Mock.functionalConstr10 (mkVar Mock.x)
             gy = Mock.functionalConstr11 (mkVar Mock.y)
             initial = pure (Mock.sigma fx gy)
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        actual <- applyRewriteRule initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     , testCase "impossible substitution" $ do
@@ -1862,7 +1861,7 @@ test_stepWithRewriteRuleBranch =
                     (Mock.functionalConstr10 (mkVar Mock.y))
             xy = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
             initial = pure (Mock.sigma xfy xy)
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaXXYY
+        actual <- applyRewriteRule initial axiomSigmaXXYY
         assertEqualWithExplanation "" expect actual
 
     -- sigma(x, x) -> x
@@ -1879,7 +1878,7 @@ test_stepWithRewriteRuleBranch =
                     , predicate = Predicate.makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, mkVar Mock.x)]
                     }
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        actual <- applyRewriteRule initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     -- sigma(x, x) -> x
@@ -1901,7 +1900,7 @@ test_stepWithRewriteRuleBranch =
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, mkVar Mock.x)]
                     }
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        actual <- applyRewriteRule initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     -- sigma(x, x) -> x
@@ -1911,7 +1910,7 @@ test_stepWithRewriteRuleBranch =
         let expect = Left $ StepErrorUnification UnsupportedPatterns
             initial =
                 pure $ Mock.sigma (mkVar Mock.x) (Mock.plain10 (mkVar Mock.y))
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        actual <- applyRewriteRule initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     -- sigma(x, x) -> x
@@ -1933,7 +1932,7 @@ test_stepWithRewriteRuleBranch =
             zz = Mock.sigma (mkVar Mock.z) (mkVar Mock.z)
             yz = Mock.sigma (mkVar Mock.y) (mkVar Mock.z)
             initial = pure $ Mock.sigma xx (Mock.sigma yz yy)
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        actual <- applyRewriteRule initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     -- sigma(sigma(x, x), y) => sigma(x, y)
@@ -1953,7 +1952,7 @@ test_stepWithRewriteRuleBranch =
                     ]
             initial =
                 pure $ Mock.sigma (Mock.sigma (mkVar Mock.x) fb) (mkVar Mock.x)
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaXXY
+        actual <- applyRewriteRule initial axiomSigmaXXY
         assertEqualWithExplanation "" expect actual
 
     -- sigma(sigma(x, x), y) => sigma(x, y)
@@ -1983,7 +1982,7 @@ test_stepWithRewriteRuleBranch =
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.x, fz)]
                     }
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaXXY
+        actual <- applyRewriteRule initial axiomSigmaXXY
         assertEqualWithExplanation "" expect actual
 
     -- "sl1" => x
@@ -2000,7 +1999,7 @@ test_stepWithRewriteRuleBranch =
                     , requires = makeTruePredicate
                     , attributes = def
                     }
-        actual <- stepWithRewriteRuleBranch initial axiom
+        actual <- applyRewriteRule initial axiom
         assertEqualWithExplanation "" expect actual
 
     -- x => x
@@ -2019,7 +2018,7 @@ test_stepWithRewriteRuleBranch =
                     , predicate
                     , substitution = mempty
                     }
-        actual <- stepWithRewriteRuleBranch initial axiomId
+        actual <- applyRewriteRule initial axiomId
         assertEqualWithExplanation "" expect actual
 
     -- sigma(sigma(x, x), y) => sigma(x, y)
@@ -2052,7 +2051,7 @@ test_stepWithRewriteRuleBranch =
                             (Mock.functional10 (mkVar Mock.x))
                     , substitution = mempty
                     }
-        actual <- stepWithRewriteRuleBranch initial axiomSigmaXXY
+        actual <- applyRewriteRule initial axiomSigmaXXY
         assertEqualWithExplanation "" expect actual
 
     -- x => x requires g(x)=f(x)
@@ -2068,7 +2067,7 @@ test_stepWithRewriteRuleBranch =
             expect = Right [ initial { predicate = requires } ]
             initial = pure (mkVar Mock.x)
             axiom = RewriteRule ruleId { requires }
-        actual <- stepWithRewriteRuleBranch initial axiom
+        actual <- applyRewriteRule initial axiom
         assertEqualWithExplanation "" expect actual
     ]
   where

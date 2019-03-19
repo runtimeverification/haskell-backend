@@ -29,7 +29,7 @@ module Kore.Step.BaseStep
     , unifyRule
     , instantiateRule
     , applyRule
-    , stepWithRewriteRuleBranch
+    , applyRewriteRule
     , toConfigurationVariables
     , toAxiomVariables
     , unwrapStepperVariable
@@ -1095,7 +1095,13 @@ toConfigurationVariables
     -> ExpandedPattern level (StepperVariable variable)
 toConfigurationVariables = ExpandedPattern.mapVariables ConfigurationVariable
 
-stepWithRewriteRuleBranch
+{- | Fully apply a single rewrite rule to the initial configuration.
+
+The rewrite rule is applied to the initial configuration to produce zero or more
+final configurations.
+
+ -}
+applyRewriteRule
     ::  ( MetaOrObject level
         , Ord (variable Object)
         , Show (variable Object)
@@ -1117,7 +1123,7 @@ stepWithRewriteRuleBranch
     -> BranchT
         (ExceptT (StepError level variable) Simplifier)
         (ExpandedPattern level variable)
-stepWithRewriteRuleBranch
+applyRewriteRule
     metadataTools
     predicateSimplifier
     patternSimplifier
