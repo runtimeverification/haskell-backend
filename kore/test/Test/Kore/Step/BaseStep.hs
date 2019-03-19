@@ -1759,7 +1759,9 @@ applyRewriteRule
             (MultiOr (ExpandedPattern Object Variable))
         )
 applyRewriteRule initial rule =
-    evalUnifier
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ runExceptT
     $ BaseStep.applyRewriteRule
         metadataTools
         predicateSimplifier

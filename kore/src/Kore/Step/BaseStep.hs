@@ -79,6 +79,8 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge, mergeAll )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -1120,9 +1122,8 @@ applyRewriteRule
     -- ^ Configuration being rewritten.
     -> RewriteRule level variable
     -- ^ Rewriting axiom
-    -> BranchT
-        (ExceptT (StepError level variable) Simplifier)
-        (ExpandedPattern level variable)
+    -> ExceptT (StepError level variable) Simplifier
+        (MultiOr (ExpandedPattern level variable))
 applyRewriteRule
     metadataTools
     predicateSimplifier
@@ -1131,17 +1132,18 @@ applyRewriteRule
 
     initial
     (RewriteRule rule)
-  = Monad.Morph.hoist unwrapStepErrorVariables $ do
-    let
-        -- Wrap rule and configuration so that unification prefers to substitute
-        -- axiom variables.
-        initial' = toConfigurationVariables initial
-        rule' = toAxiomVariables rule
+  = unwrapStepErrorVariables $ gather
+    $ do
+        let
+            -- Wrap the rule and configuration so that unification prefers to
+            -- substitute axiom variables.
+            initial' = toConfigurationVariables initial
+            rule' = toAxiomVariables rule
 
-    unifier <- unifyRule' initial' rule'
-    instantiated <- instantiateRule' unifier
-    applied <- applyRule' (initial' { term = () }) instantiated
-    checkSubstitutionCoverage initial' unifier applied
+        unifier <- unifyRule' initial' rule'
+        instantiated <- instantiateRule' unifier
+        applied <- applyRule' (initial' { term = () }) instantiated
+        checkSubstitutionCoverage initial' unifier applied
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
