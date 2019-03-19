@@ -189,11 +189,13 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => m String
-    prompt = liftIO $ do
-        putStr "Kore> "
-        hFlush stdout
-        getLine
+    prompt :: StateT (ReplState level) Simplifier String
+    prompt = do
+        node <- Lens.use lensNode
+        liftIO $ do
+            putStr $ "Kore (" <> show node <> ")> "
+            hFlush stdout
+            getLine
 
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
@@ -339,8 +341,7 @@ replInterpreter =
     proveSteps0 n = do
         result <- loopM performStepNoBranching (n, Success, 0)
         case result of
-            (0, Success, node) ->
-                putStrLn' $ "Done. Current node: " <> show node
+            (0, Success, _) -> pure ()
             (done, res, _) ->
                 putStrLn'
                     $ "Stopped after "
