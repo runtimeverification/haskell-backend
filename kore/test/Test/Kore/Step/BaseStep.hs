@@ -2003,41 +2003,24 @@ test_stepWithRewriteRuleBranch =
         actual <- stepWithRewriteRuleBranch initial axiom
         assertEqualWithExplanation "" expect actual
 
-    -- -- x => x
-    -- -- vs
-    -- -- a and g(a)=f(a)
-    -- -- Expected: y1 and g(a)=f(a)
-    -- , testCase "Preserving initial condition." $ do
-    --     let expect = Right
-    --             [   ( Predicated
-    --                     { term = mkVar $ a1 patternMetaSort
-    --                     , predicate =
-    --                         makeEqualsPredicate
-    --                             (metaG (mkVar $ a1 patternMetaSort))
-    --                             (metaF (mkVar $ a1 patternMetaSort))
-    --                     , substitution = mempty
-    --                     }
-    --                 , mconcat
-    --                     (map stepProof
-    --                         [ StepProofVariableRenamings []
-    --                         , StepProofUnification EmptyUnificationProof
-    --                         ]
-    --                     )
-    --                 )
-    --             ]
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term = mkVar $ a1 patternMetaSort
-    --                 , predicate =
-    --                     makeEqualsPredicate
-    --                         (metaG (mkVar $ a1 patternMetaSort))
-    --                         (metaF (mkVar $ a1 patternMetaSort))
-    --                 , substitution = mempty
-    --                 }
-    --             axiomId
-    --     assertEqualWithExplanation "" expect actual
+    -- x => x
+    -- vs
+    -- a and g(a)=f(a)
+    -- Expected: a and g(a)=f(a)
+    , testCase "preserve initial condition" $ do
+        let expect = Right [initial]
+            predicate =
+                makeEqualsPredicate
+                    (Mock.functional11 Mock.a)
+                    (Mock.functional10 Mock.a)
+            initial =
+                Predicated
+                    { term = Mock.a
+                    , predicate
+                    , substitution = mempty
+                    }
+        actual <- stepWithRewriteRuleBranch initial axiomId
+        assertEqualWithExplanation "" expect actual
 
     -- -- sigma(sigma(x, x), y) => sigma(x, y)
     -- -- vs
