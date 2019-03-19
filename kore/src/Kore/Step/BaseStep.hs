@@ -1136,8 +1136,6 @@ stepWithRewriteRuleBranch
     instantiated <- instantiateRule' unifier
     applied <- applyRule' (initial' { term = () }) instantiated
     checkSubstitutionCoverage initial' unifier applied
-    let final = unwrapVariables applied
-    return final
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
@@ -1169,6 +1167,11 @@ coverage check indicates a problem with unification, so in that case
 @checkSubstitutionCoverage@ throws an error message with the axiom and the
 initial and final configurations.
 
+@checkSubstitutionCoverage@ calls @unwrapVariables@ to remove the axiom
+variables from the substitution and unwrap all the 'StepperVariable's; this is
+safe because we have already checked that all the universally-quantified axiom
+variables have been instantiated by the substitution.
+
  -}
 checkSubstitutionCoverage
     ::  ( MetaOrObject level
@@ -1178,14 +1181,14 @@ checkSubstitutionCoverage
         , Show    (variable level)
         , Unparse (variable level)
         )
-    => ExpandedPattern level variable
+    => ExpandedPattern level (StepperVariable variable)
     -- ^ Initial configuration
-    -> UnifiedRule variable
+    -> UnifiedRule (StepperVariable variable)
     -- ^ Unified rule before instantiation
-    -> ExpandedPattern level variable
+    -> ExpandedPattern level (StepperVariable variable)
     -- ^ Configuration after applying rule
-    -> m ()
-checkSubstitutionCoverage initial unified final =
+    -> m (ExpandedPattern level variable)
+checkSubstitutionCoverage initial unified final = do
     (Monad.unless isCoveringSubstitution . error . show . Pretty.vsep)
         [ "While applying axiom:"
         , Pretty.indent 4 (Pretty.pretty axiom)
@@ -1199,6 +1202,7 @@ checkSubstitutionCoverage initial unified final =
             (unparse <$> Set.toAscList leftAxiomVariables)
         , "in the left-hand side of the axiom."
         ]
+    return (unwrapVariables final)
   where
     Predicated { term = axiom } = unified
     leftAxiomVariables =
