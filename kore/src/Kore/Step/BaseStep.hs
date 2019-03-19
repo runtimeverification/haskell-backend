@@ -1157,3 +1157,13 @@ stepWithRewriteRuleBranch
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+
+checkSubstitutionCoverage
+    :: Monad m
+    => ExpandedPattern level variable
+    -- ^ Initial configuration
+    -> UnifiedRule variable
+    -- ^ Unified rule before instantiation
+    -> ExpandedPattern level variable
+    -- ^ Final configuration after applying rule
+    -> m ()
