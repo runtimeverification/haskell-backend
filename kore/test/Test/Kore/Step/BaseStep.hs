@@ -1986,28 +1986,22 @@ test_stepWithRewriteRuleBranch =
         actual <- stepWithRewriteRuleBranch initial axiomSigmaXXY
         assertEqualWithExplanation "" expect actual
 
-    -- -- "sl1" => x
-    -- -- vs
-    -- -- "sl2"
-    -- -- Expected: bottom
-    -- , testCase "Matching different string literals is bottom" $ do
-    --     let expect = Right []
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term = mkStringLiteral "sl2"
-    --                 , predicate = makeTruePredicate
-    --                 , substitution = mempty
-    --                 }
-    --             (RewriteRule RulePattern
-    --                 { left = mkStringLiteral "sl1"
-    --                 , right = mkVar $ x1 patternMetaSort
-    --                 , requires = makeTruePredicate
-    --                 , attributes = def
-    --                 }
-    --             )
-    --     assertEqualWithExplanation "" expect (fmap (map fst) actual)
+    -- "sl1" => x
+    -- vs
+    -- "sl2"
+    -- Expected: bottom
+    , testCase "unmatched string literals" $ do
+        let expect = Right []
+            initial = pure (mkStringLiteral "sl2")
+            axiom =
+                RewriteRule RulePattern
+                    { left = mkStringLiteral "sl1"
+                    , right = mkVar Mock.x
+                    , requires = makeTruePredicate
+                    , attributes = def
+                    }
+        actual <- stepWithRewriteRuleBranch initial axiom
+        assertEqualWithExplanation "" expect actual
 
     -- -- x => x
     -- -- vs
