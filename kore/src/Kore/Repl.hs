@@ -190,7 +190,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
     prompt :: StateT (ReplState level) Simplifier String
-    prompt = do 
+    prompt = do
         node <- Lens.use lensNode
         liftIO $ do
             putStr $ "Kore (" <> show node <> ")> "
