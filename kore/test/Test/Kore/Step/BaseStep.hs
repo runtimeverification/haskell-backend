@@ -1733,9 +1733,9 @@ test_unifyRule =
                     }
             expect = Right [(pure axiom) { substitution }]
               where
-                substitution = Substitution.wrap [(Mock.x, Mock.a)]
+                substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
         actual <- unifyRule initial axiom
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "returns unification failures" $ do
         let initial = pure (Mock.functionalConstr10 Mock.a)
@@ -1748,7 +1748,7 @@ test_unifyRule =
                     }
             expect = Right []
         actual <- unifyRule initial axiom
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
     ]
 
 stepWithRewriteRuleBranch
@@ -1786,29 +1786,29 @@ test_stepWithRewriteRuleBranch =
     [ testCase "apply identity axiom" $ do
         let expect = Right [ initial { substitution } ]
               where
-                substitution = Substitution.unsafeWrap [(x', mkVar Mock.x)]
+                substitution = Substitution.wrap [(x', mkVar Mock.x)]
                 x' = nextVariable Mock.x
             initial = pure (mkVar Mock.x)
         actual <- stepWithRewriteRuleBranch initial axiomId
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "apply identity without renaming" $ do
         let expect = Right [ initial { substitution } ]
               where
-                substitution = Substitution.unsafeWrap [(Mock.x, mkVar Mock.y)]
+                substitution = Substitution.wrap [(Mock.x, mkVar Mock.y)]
             initial = pure (mkVar Mock.y)
         actual <- stepWithRewriteRuleBranch initial axiomId
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "substitute variable with itself" $ do
         let expect =
                 Right [ initial { term = mkVar Mock.x, substitution } ]
               where
-                substitution = Substitution.unsafeWrap [(x', mkVar Mock.x)]
+                substitution = Substitution.wrap [(x', mkVar Mock.x)]
                 x' = nextVariable Mock.x
             initial = pure (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
         actual <- stepWithRewriteRuleBranch initial axiomSigmaId
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "merge configuration patterns" $ do
         let term = Mock.functionalConstr10 (mkVar Mock.y)
@@ -1816,9 +1816,9 @@ test_stepWithRewriteRuleBranch =
                 Right [ initial { term, substitution } ]
               where
                 substitution =
-                    Substitution.unsafeWrap
-                        [ (Mock.x, term)
-                        , (x', term)
+                    Substitution.wrap
+                        [ (x', term)
+                        , (Mock.x, term)
                         ]
                 x' = nextVariable Mock.x
             initial = pure (Mock.sigma (mkVar Mock.x) term)
@@ -1830,7 +1830,7 @@ test_stepWithRewriteRuleBranch =
               where
                 term = fz
                 substitution =
-                    Substitution.unsafeWrap
+                    Substitution.wrap
                         [ (Mock.x, fz)
                         , (Mock.y, mkVar Mock.z)
                         ]
@@ -1845,10 +1845,10 @@ test_stepWithRewriteRuleBranch =
               where
                 term = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
                 substitution =
-                    Substitution.unsafeWrap
-                        [ (Mock.x, mkVar Mock.y)
-                        , (nextVariable Mock.x, mkVar Mock.y)
+                    Substitution.wrap
+                        [ (nextVariable Mock.x, mkVar Mock.y)
                         , (nextVariable Mock.y, mkVar Mock.y)
+                        , (Mock.x             , mkVar Mock.y)
                         ]
             initial =
                 pure

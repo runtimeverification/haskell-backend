@@ -1127,10 +1127,7 @@ stepWithRewriteRuleBranch
         -- Wrap rule and configuration so that unification prefers to substitute
         -- axiom variables.
         initial' = toConfigurationVariables initial
-        configVariables = ExpandedPattern.freeVariables initial'
-        (_, rule') =
-            RulePattern.refreshRulePattern configVariables
-            $ toAxiomVariables rule
+        rule' = toAxiomVariables rule
 
     unifier <- unifyRule' initial' rule'
     instantiated <- instantiateRule' unifier
