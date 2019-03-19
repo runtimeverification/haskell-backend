@@ -216,7 +216,7 @@ data ReplCommand
     -- ^ Do n proof steps from curent node.
     | SelectNode !Int
     -- ^ Select a different node in the graph.
-    | ShowConfig
+    | ShowConfig (Maybe Int)
     -- ^ Show the configuration from the current node.
     | Exit
     -- ^ Exit the repl.
@@ -276,7 +276,7 @@ commandParser =
         fmap SelectNode $ string "select" *> space *> signed space decimal
 
     showConfig0 :: Parser ReplCommand
-    showConfig0 = ShowConfig <$ string "config"
+    showConfig0 = fmap ShowConfig $ string "config" *> (fmap Just (space *> decimal) <|> pure Nothing)
 
     exit0 :: Parser ReplCommand
     exit0 = Exit <$ string "exit"
@@ -296,7 +296,7 @@ replInterpreter =
         ShowGraph -> showGraph0 $> True
         ProveSteps n -> proveSteps0 n $> True
         SelectNode i -> selectNode0 i $> True
-        ShowConfig -> showConfig0 $> True
+        ShowConfig mc -> showConfig0 mc $> True
         Exit -> pure False
   where
     showUsage0 :: StateT st Simplifier ()
@@ -356,15 +356,21 @@ replInterpreter =
             then lensNode .= i
             else putStrLn' "Invalid node!"
 
-    showConfig0 :: StateT (ReplState level) Simplifier ()
-    showConfig0 = do
-        ReplState { graph, node } <- get
-        putStrLn' $ "Config at node " <> show node <> " is:"
-        putStrLn'
-            . unparseStrategy
-            . Graph.lab'
-            . Graph.context (Strategy.graph graph)
-            $ node
+    showConfig0 :: Maybe Int -> StateT (ReplState level) Simplifier ()
+    showConfig0 configNode = do
+        Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+        node <- Lens.use lensNode
+        let node' = maybe node id configNode
+        if node' `elem` Graph.nodes graph
+           then do
+               putStrLn' $ "Config at node " <> show node' <> " is:"
+               putStrLn'
+                   . unparseStrategy
+                   . Graph.lab'
+                   . Graph.context graph
+                   $ node'
+           else putStrLn' "Invalid node!"
+
 
     performSingleStep
         :: StateT (ReplState level) Simplifier StepResult
