@@ -45,8 +45,7 @@ import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiom (..),
-                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 ( AttemptedAxiom (..), AttemptedAxiomResults (..),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
 import           Kore.Step.Pattern
@@ -173,7 +172,10 @@ evalKEq true _ _ _ _ (valid :< app) =
                     ]
                 )
         pure
-            ( Applied $ AttemptedAxiomResults expr (MultiOr.make [])
+            ( Applied AttemptedAxiomResults
+                { results = expr
+                , remainders = MultiOr.make []
+                }
             , SimplificationProof
             )
 
