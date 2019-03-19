@@ -1820,16 +1820,13 @@ test_stepWithRewriteRuleBranch =
         assertEqualWithExplanation "" expect actual
 
     , testCase "merge multiple variables" $ do
-        let expect = Right [ initial { term, substitution } ]
+        let expect = Right [ initial { term = yy, substitution } ]
               where
-                term = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
                 substitution = Substitution.wrap [ (Mock.x, mkVar Mock.y) ]
-            initial =
-                pure
-                    (Mock.sigma
-                        (Mock.sigma (mkVar Mock.x) (mkVar Mock.y))
-                        (Mock.sigma (mkVar Mock.y) (mkVar Mock.x))
-                    )
+            xy = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
+            yx = Mock.sigma (mkVar Mock.y) (mkVar Mock.x)
+            yy = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
+            initial = pure (Mock.sigma xy yx)
         actual <- stepWithRewriteRuleBranch initial axiomSigmaSigma
         assertEqualWithExplanation "" expect actual
 
