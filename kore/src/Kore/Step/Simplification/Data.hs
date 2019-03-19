@@ -11,7 +11,7 @@ module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
     , evalSimplifier
-    , BranchT, runBranchT
+    , BranchT
     , evalSimplifierBranch
     , gather
     , gatherAll
@@ -103,7 +103,7 @@ Use 'scatter' and 'gather' to translate between the two forms of branches.
 -}
 newtype BranchT m a =
     -- Pay no attention to the ListT behind the curtain!
-    BranchT { runBranchT :: ListT.ListT m a }
+    BranchT (ListT.ListT m a)
     deriving
         ( Alternative
         , Applicative
