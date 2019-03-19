@@ -1159,6 +1159,16 @@ stepWithRewriteRuleBranch
             patternSimplifier
             axiomSimplifiers
 
+{- | Check that the final substitution covers the applied rule appropriately.
+
+The final substitution should cover all the free variables on the left-hand side
+of the applied rule; otherwise, we would wrongly introduce
+universally-quantified variables into the final configuration. Failure of the
+coverage check indicates a problem with unification, so in that case
+@checkSubstitutionCoverage@ throws an error message with the axiom and the
+initial and final configurations.
+
+ -}
 checkSubstitutionCoverage
     ::  ( MetaOrObject level
         , Monad m
