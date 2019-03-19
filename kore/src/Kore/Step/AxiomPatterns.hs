@@ -35,6 +35,9 @@ import           Data.Maybe
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Kore hiding
                  ( freeVariables )
@@ -73,6 +76,17 @@ data RulePattern level variable = RulePattern
     , attributes :: !Attribute.Axiom
     }
     deriving (Eq, Show)
+
+instance Unparse (variable level) => Pretty (RulePattern level variable) where
+    pretty RulePattern { left, right, requires } =
+        Pretty.vsep
+            [ "left:"
+            , Pretty.indent 4 (unparse left)
+            , "right:"
+            , Pretty.indent 4 (unparse right)
+            , "requires:"
+            , Pretty.indent 4 (unparse requires)
+            ]
 
 {-  | Equality-based rule pattern.
 -}
