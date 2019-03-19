@@ -1845,6 +1845,14 @@ test_stepWithRewriteRuleBranch =
                     }
         actual <- stepWithRewriteRuleBranch initial axiom
         assertEqualWithExplanation "" expect actual
+
+    , testCase "symbol clash" $ do
+        let expect = Right []
+            fx = Mock.functionalConstr10 (mkVar Mock.x)
+            gy = Mock.functionalConstr11 (mkVar Mock.y)
+            initial = pure (Mock.sigma fx gy)
+        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
     ]
   where
     ruleId =
