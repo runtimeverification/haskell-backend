@@ -1885,30 +1885,24 @@ test_stepWithRewriteRuleBranch =
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, h(b)) with substitution b=a
-    -- , testCase "Substitution (non-ctor)." $ do
-    --     let expect =
-    --             -- TODO(virgil): This should probably be a normal result with
-    --             -- b=h(b) in the predicate.
-    --             Left
-    --                 (StepErrorSubstitution
-    --                     (NonCtorCircularVariableDependency
-    --                         [b1 patternMetaSort]
-    --                     )
-    --                 )
-    --     actual <-
-    --         runStep
-    --             mockMetaMetadataTools
-    --             Predicated
-    --                 { term =
-    --                     metaSigma
-    --                         (mkVar $ a1 patternMetaSort)
-    --                         (metaH (mkVar $ b1 patternMetaSort))
-    --                 , predicate = makeTruePredicate
-    --                 , substitution = Substitution.wrap
-    --                     [(b1 patternMetaSort, mkVar $ a1 patternMetaSort)]
-    --                 }
-    --             axiomMetaSigmaId
-    --     assertEqualWithExplanation "" expect actual
+    , testCase "circular dependency error" $ do
+        let expect =
+                -- TODO(virgil): This should probably be a normal result with
+                -- b=h(b) in the predicate.
+                Left
+                $ StepErrorSubstitution
+                $ NonCtorCircularVariableDependency [Mock.y]
+            initial =
+                Predicated
+                    { term =
+                        Mock.sigma
+                            (mkVar Mock.x)
+                            (Mock.functional10 (mkVar Mock.y))
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.y, mkVar Mock.x)]
+                    }
+        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
 
     -- -- sigma(x, x) -> x
     -- -- vs
