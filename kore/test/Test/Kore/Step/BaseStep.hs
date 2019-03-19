@@ -1864,6 +1864,386 @@ test_stepWithRewriteRuleBranch =
             initial = pure (Mock.sigma xfy xy)
         actual <- stepWithRewriteRuleBranch initial axiomSigmaSigma
         assertEqualWithExplanation "" expect actual
+
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(a, f(b)) with substitution b=a
+    , testCase "impossible substitution (ctor)" $ do
+        let expect = Right []
+            initial =
+                Predicated
+                    { term =
+                        Mock.sigma
+                            (mkVar Mock.x)
+                            (Mock.functionalConstr10 (mkVar Mock.y))
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.y, mkVar Mock.x)]
+                    }
+        actual <- stepWithRewriteRuleBranch initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(a, h(b)) with substitution b=a
+    -- , testCase "Substitution (non-ctor)." $ do
+    --     let expect =
+    --             -- TODO(virgil): This should probably be a normal result with
+    --             -- b=h(b) in the predicate.
+    --             Left
+    --                 (StepErrorSubstitution
+    --                     (NonCtorCircularVariableDependency
+    --                         [b1 patternMetaSort]
+    --                     )
+    --                 )
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term =
+    --                     metaSigma
+    --                         (mkVar $ a1 patternMetaSort)
+    --                         (metaH (mkVar $ b1 patternMetaSort))
+    --                 , predicate = makeTruePredicate
+    --                 , substitution = Substitution.wrap
+    --                     [(b1 patternMetaSort, mkVar $ a1 patternMetaSort)]
+    --                 }
+    --             axiomMetaSigmaId
+    --     assertEqualWithExplanation "" expect actual
+
+    -- -- sigma(x, x) -> x
+    -- -- vs
+    -- -- sigma(a, i(b)) with substitution b=a
+    -- , testCase "Substitution error (non-function)" $ do
+    --     let expect = Left $ StepErrorUnification UnsupportedPatterns
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term =
+    --                     metaSigma
+    --                         (mkVar $ a1 patternMetaSort)
+    --                         (metaI (mkVar $ b1 patternMetaSort))
+    --                 , predicate = makeTruePredicate
+    --                 , substitution = mempty
+    --                 }
+    --             axiomMetaSigmaId
+    --     assertEqualWithExplanation "" expect actual
+
+    -- -- sigma(x, x) -> x
+    -- -- vs
+    -- -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
+    -- , testCase "Unification is applied repeatedly" $ do
+    --     let expect = Right
+    --             [ Predicated
+    --                 { term =
+    --                     metaSigma
+    --                         (metaSigma
+    --                             (mkVar $ c1 patternMetaSort)
+    --                             (mkVar $ c1 patternMetaSort)
+    --                         )
+    --                         (metaSigma
+    --                             (mkVar $ c1 patternMetaSort)
+    --                             (mkVar $ c1 patternMetaSort)
+    --                         )
+    --                 , predicate = makeTruePredicate
+    --                 , substitution = Substitution.wrap
+    --                     [   ( a1 patternMetaSort
+    --                         , metaSigma
+    --                             (mkVar $ c1 patternMetaSort)
+    --                             (mkVar $ c1 patternMetaSort)
+    --                         )
+    --                     ,   ( b1 patternMetaSort
+    --                         , mkVar $ c1 patternMetaSort
+    --                         )
+    --                     ]
+    --                 }
+    --             ]
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term =
+    --                     metaSigma
+    --                         (metaSigma
+    --                             (mkVar $ a1 patternMetaSort)
+    --                             (mkVar $ a1 patternMetaSort)
+    --                         )
+    --                         (metaSigma
+    --                             (metaSigma
+    --                                 (mkVar $ b1 patternMetaSort)
+    --                                 (mkVar $ c1 patternMetaSort)
+    --                             )
+    --                             (metaSigma
+    --                                 (mkVar $ b1 patternMetaSort)
+    --                                 (mkVar $ b1 patternMetaSort)
+    --                             )
+    --                         )
+    --                 , predicate = makeTruePredicate
+    --                 , substitution = mempty
+    --                 }
+    --             axiomMetaSigmaId
+    --     assertEqualWithExplanation "" expect (fmap (map fst) actual)
+
+    -- -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- -- vs
+    -- -- sigma(sigma(a, f(b)), a)
+    -- -- Expected: sigma(f(b), f(b)) and a=f(b)
+    -- , testCase "Substitution normalization." $ do
+    --     let
+    --         fOfB = metaF (mkVar $ b1 patternMetaSort)
+    --         expect = Right
+    --             [   ( Predicated
+    --                     { term = metaSigma fOfB fOfB
+    --                     , predicate = makeTruePredicate
+    --                     , substitution = Substitution.wrap
+    --                         [(a1 patternMetaSort, fOfB)]
+    --                     }
+    --                 , mconcat
+    --                     (map stepProof
+    --                         [ StepProofVariableRenamings []
+    --                         , StepProofUnification EmptyUnificationProof
+    --                         ]
+    --                     )
+    --                 )
+    --             ]
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term =
+    --                     metaSigma
+    --                         (metaSigma
+    --                             (mkVar $ a1 patternMetaSort)
+    --                             fOfB
+    --                         )
+    --                         (mkVar $ a1 patternMetaSort)
+    --                 , predicate = makeTruePredicate
+    --                 , substitution = mempty
+    --                 }
+    --             (RewriteRule RulePattern
+    --                 { left =
+    --                     metaSigma
+    --                         (metaSigma
+    --                             (mkVar $ x1 patternMetaSort)
+    --                             (mkVar $ x1 patternMetaSort)
+    --                         )
+    --                         (mkVar $ y1 patternMetaSort)
+    --                 , right =
+    --                     metaSigma
+    --                         (mkVar $ x1 patternMetaSort)
+    --                         (mkVar $ y1 patternMetaSort)
+    --                 , requires = makeTruePredicate
+    --                 , attributes = def
+    --                 }
+    --             )
+    --     assertEqualWithExplanation "" expect actual
+
+    -- -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- -- vs
+    -- -- sigma(sigma(a, f(b)), a) and a=f(c)
+    -- -- Expected: sigma(f(b), f(b)) and a=f(b), b=c
+    -- , testCase "Merging substitution with existing one." $ do
+    --     let
+    --         fOfB = metaF (mkVar $ b1 patternMetaSort)
+    --         fOfC = metaF (mkVar $ c1 patternMetaSort)
+    --         expect = Right
+    --             [   ( Predicated
+    --                     { term = metaSigma fOfC fOfC
+    --                     , predicate = makeTruePredicate
+    --                     , substitution = Substitution.wrap
+    --                         [ (a1 patternMetaSort, fOfC)
+    --                         , (b1 patternMetaSort, mkVar $ c1 patternMetaSort)
+    --                         ]
+    --                     }
+    --                 , mconcat
+    --                     (map stepProof
+    --                         [ StepProofVariableRenamings []
+    --                         , StepProofUnification EmptyUnificationProof
+    --                         ]
+    --                     )
+    --                 )
+    --             ]
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term =
+    --                     metaSigma
+    --                         (metaSigma (mkVar $ a1 patternMetaSort) fOfB)
+    --                         (mkVar $ a1 patternMetaSort)
+    --                 , predicate = makeTruePredicate
+    --                 , substitution = Substitution.wrap
+    --                     [(a1 patternMetaSort, fOfC)]
+    --                 }
+    --             (RewriteRule RulePattern
+    --                 { left =
+    --                     metaSigma
+    --                         (metaSigma
+    --                             (mkVar $ x1 patternMetaSort)
+    --                             (mkVar $ x1 patternMetaSort)
+    --                         )
+    --                         (mkVar $ y1 patternMetaSort)
+    --                 , right =
+    --                     metaSigma
+    --                         (mkVar $ x1 patternMetaSort)
+    --                         (mkVar $ y1 patternMetaSort)
+    --                 , requires = makeTruePredicate
+    --                 , attributes = def
+    --                 }
+    --             )
+    --     assertEqualWithExplanation "" expect actual
+
+    -- -- "sl1" => x
+    -- -- vs
+    -- -- "sl2"
+    -- -- Expected: bottom
+    -- , testCase "Matching different string literals is bottom" $ do
+    --     let expect = Right []
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term = mkStringLiteral "sl2"
+    --                 , predicate = makeTruePredicate
+    --                 , substitution = mempty
+    --                 }
+    --             (RewriteRule RulePattern
+    --                 { left = mkStringLiteral "sl1"
+    --                 , right = mkVar $ x1 patternMetaSort
+    --                 , requires = makeTruePredicate
+    --                 , attributes = def
+    --                 }
+    --             )
+    --     assertEqualWithExplanation "" expect (fmap (map fst) actual)
+
+    -- -- x => x
+    -- -- vs
+    -- -- a and g(a)=f(a)
+    -- -- Expected: y1 and g(a)=f(a)
+    -- , testCase "Preserving initial condition." $ do
+    --     let expect = Right
+    --             [   ( Predicated
+    --                     { term = mkVar $ a1 patternMetaSort
+    --                     , predicate =
+    --                         makeEqualsPredicate
+    --                             (metaG (mkVar $ a1 patternMetaSort))
+    --                             (metaF (mkVar $ a1 patternMetaSort))
+    --                     , substitution = mempty
+    --                     }
+    --                 , mconcat
+    --                     (map stepProof
+    --                         [ StepProofVariableRenamings []
+    --                         , StepProofUnification EmptyUnificationProof
+    --                         ]
+    --                     )
+    --                 )
+    --             ]
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term = mkVar $ a1 patternMetaSort
+    --                 , predicate =
+    --                     makeEqualsPredicate
+    --                         (metaG (mkVar $ a1 patternMetaSort))
+    --                         (metaF (mkVar $ a1 patternMetaSort))
+    --                 , substitution = mempty
+    --                 }
+    --             axiomId
+    --     assertEqualWithExplanation "" expect actual
+
+    -- -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- -- vs
+    -- -- sigma(sigma(a, f(b)), a) and g(a)=f(a)
+    -- -- Expected: sigma(f(b), f(b)) and a=f(b) and and g(f(b))=f(f(b))
+    -- , testCase "Substitution_normalization." $ do
+    --     let
+    --         fOfB = metaF (mkVar $ b1 patternMetaSort)
+    --         expect = Right
+    --             [   ( Predicated
+    --                     { term = metaSigma fOfB fOfB
+    --                     , predicate =
+    --                         makeEqualsPredicate (metaG fOfB) (metaF fOfB)
+    --                     , substitution = Substitution.wrap
+    --                         [(a1 patternMetaSort, fOfB)]
+    --                     }
+    --                 , mconcat
+    --                     (map stepProof
+    --                         [ StepProofVariableRenamings []
+    --                         , StepProofUnification EmptyUnificationProof
+    --                         ]
+    --                     )
+    --                 )
+    --             ]
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term =
+    --                     metaSigma
+    --                         (metaSigma
+    --                             (mkVar $ a1 patternMetaSort)
+    --                             fOfB
+    --                         )
+    --                         (mkVar $ a1 patternMetaSort)
+    --                 , predicate =
+    --                     makeEqualsPredicate
+    --                         (metaG (mkVar $ a1 patternMetaSort))
+    --                         (metaF (mkVar $ a1 patternMetaSort))
+    --                 , substitution = mempty
+    --                 }
+    --             (RewriteRule RulePattern
+    --                 { left =
+    --                     metaSigma
+    --                         (metaSigma
+    --                             (mkVar $ x1 patternMetaSort)
+    --                             (mkVar $ x1 patternMetaSort)
+    --                         )
+    --                         (mkVar $ y1 patternMetaSort)
+    --                 , right =
+    --                     metaSigma
+    --                         (mkVar $ x1 patternMetaSort)
+    --                         (mkVar $ y1 patternMetaSort)
+    --                 , requires = makeTruePredicate
+    --                 , attributes = def
+    --                 }
+    --             )
+    --     assertEqualWithExplanation "" expect actual
+
+    -- -- x => x requires g(x)=f(x)
+    -- -- vs
+    -- -- a
+    -- -- Expected: y1 and g(a)=f(a)
+    -- , testCase "Conjoins axiom pre-condition" $ do
+    --     let
+    --         preCondition var =
+    --             makeEqualsPredicate
+    --                 (metaG (mkVar $ var patternMetaSort))
+    --                 (metaF (mkVar $ var patternMetaSort))
+    --         expect = Right
+    --             [   ( Predicated
+    --                     { term = mkVar $ a1 patternMetaSort
+    --                     , predicate = preCondition a1
+    --                     , substitution = mempty
+    --                     }
+    --                 , mconcat
+    --                     (map stepProof
+    --                         [ StepProofVariableRenamings []
+    --                         , StepProofUnification EmptyUnificationProof
+    --                         ]
+    --                     )
+    --                 )
+    --             ]
+    --     actual <-
+    --         runStep
+    --             mockMetaMetadataTools
+    --             Predicated
+    --                 { term = mkVar $ a1 patternMetaSort
+    --                 , predicate = makeTruePredicate
+    --                 , substitution = mempty
+    --                 }
+    --             (RewriteRule ruleId { requires = preCondition x1 })
+    --     assertEqualWithExplanation "" expect actual
     ]
   where
     ruleId =
