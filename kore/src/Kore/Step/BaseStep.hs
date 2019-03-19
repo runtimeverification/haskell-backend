@@ -1144,6 +1144,7 @@ applyRewriteRule
         instantiated <- instantiateRule' unifier
         applied <- applyRule' (initial' { term = () }) instantiated
         checkSubstitutionCoverage initial' unifier applied
+        -- TODO: Return remainders
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
