@@ -1853,6 +1853,17 @@ test_stepWithRewriteRuleBranch =
             initial = pure (Mock.sigma fx gy)
         actual <- stepWithRewriteRuleBranch initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
+
+    , testCase "impossible substitution" $ do
+        let expect = Right []
+            xfy =
+                Mock.sigma
+                    (mkVar Mock.x)
+                    (Mock.functionalConstr10 (mkVar Mock.y))
+            xy = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
+            initial = pure (Mock.sigma xfy xy)
+        actual <- stepWithRewriteRuleBranch initial axiomSigmaSigma
+        assertEqualWithExplanation "" expect actual
     ]
   where
     ruleId =
