@@ -59,8 +59,6 @@ import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationError (..), UnificationProof (..) )
-import           Kore.Variables.Fresh
-                 ( nextVariable )
 import qualified SMT
 
 import           Test.Kore
@@ -1784,28 +1782,19 @@ stepWithRewriteRuleBranch initial rule =
 test_stepWithRewriteRuleBranch :: [TestTree]
 test_stepWithRewriteRuleBranch =
     [ testCase "apply identity axiom" $ do
-        let expect = Right [ initial { substitution } ]
-              where
-                substitution = Substitution.wrap [(x', mkVar Mock.x)]
-                x' = nextVariable Mock.x
+        let expect = Right [ initial ]
             initial = pure (mkVar Mock.x)
         actual <- stepWithRewriteRuleBranch initial axiomId
         assertEqualWithExplanation "" expect actual
 
     , testCase "apply identity without renaming" $ do
-        let expect = Right [ initial { substitution } ]
-              where
-                substitution = Substitution.wrap [(Mock.x, mkVar Mock.y)]
+        let expect = Right [ initial ]
             initial = pure (mkVar Mock.y)
         actual <- stepWithRewriteRuleBranch initial axiomId
         assertEqualWithExplanation "" expect actual
 
     , testCase "substitute variable with itself" $ do
-        let expect =
-                Right [ initial { term = mkVar Mock.x, substitution } ]
-              where
-                substitution = Substitution.wrap [(x', mkVar Mock.x)]
-                x' = nextVariable Mock.x
+        let expect = Right [ initial { term = mkVar Mock.x } ]
             initial = pure (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
         actual <- stepWithRewriteRuleBranch initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
@@ -1815,25 +1804,15 @@ test_stepWithRewriteRuleBranch =
             expect =
                 Right [ initial { term, substitution } ]
               where
-                substitution =
-                    Substitution.wrap
-                        [ (x', term)
-                        , (Mock.x, term)
-                        ]
-                x' = nextVariable Mock.x
+                substitution = Substitution.wrap [ (Mock.x, term) ]
             initial = pure (Mock.sigma (mkVar Mock.x) term)
         actual <- stepWithRewriteRuleBranch initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     , testCase "substitution with symbol matching" $ do
-        let expect = Right [ initial { term, substitution } ]
+        let expect = Right [ initial { term = fz, substitution } ]
               where
-                term = fz
-                substitution =
-                    Substitution.wrap
-                        [ (Mock.x, fz)
-                        , (Mock.y, mkVar Mock.z)
-                        ]
+                substitution = Substitution.wrap [ (Mock.y, mkVar Mock.z) ]
             fy = Mock.functionalConstr10 (mkVar Mock.y)
             fz = Mock.functionalConstr10 (mkVar Mock.z)
             initial = pure (Mock.sigma fy fz)
@@ -1844,12 +1823,7 @@ test_stepWithRewriteRuleBranch =
         let expect = Right [ initial { term, substitution } ]
               where
                 term = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
-                substitution =
-                    Substitution.wrap
-                        [ (nextVariable Mock.x, mkVar Mock.y)
-                        , (nextVariable Mock.y, mkVar Mock.y)
-                        , (Mock.x             , mkVar Mock.y)
-                        ]
+                substitution = Substitution.wrap [ (Mock.x, mkVar Mock.y) ]
             initial =
                 pure
                     (Mock.sigma
