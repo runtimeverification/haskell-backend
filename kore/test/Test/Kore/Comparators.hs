@@ -26,6 +26,7 @@ import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Kore
 import           Kore.AST.Pure
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Domain.Builtin
 import           Kore.OnePath.Step
                  ( StrategyPattern )
@@ -40,6 +41,8 @@ import           Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import           Kore.Step.AxiomPatterns
+                 ( RulePattern (..) )
 import           Kore.Step.BaseStep
 import           Kore.Step.BaseStep as StepResult
                  ( StepResult (..) )
@@ -1554,3 +1557,149 @@ instance EqualWithExplanation (AxiomIdentifier level)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
+
+instance
+    ( MetaOrObject level
+    , Ord  (variable level)
+    , Show (variable level)
+    , EqualWithExplanation (variable level)
+    ) =>
+    EqualWithExplanation (RulePattern level variable)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( MetaOrObject level
+    , Ord  (variable level)
+    , Show (variable level)
+    , EqualWithExplanation (variable level)
+    ) =>
+    StructEqualWithExplanation (RulePattern level variable)
+  where
+    structConstructorName _ = "RulePattern"
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "left = "      ) left       expect actual
+        , Function.on (EqWrap "right = "     ) right      expect actual
+        , Function.on (EqWrap "requires = "  ) requires   expect actual
+        , Function.on (EqWrap "attributes = ") attributes expect actual
+        ]
+
+instance EqualWithExplanation Attribute.Axiom where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation Attribute.Axiom where
+    structConstructorName _ = "Axiom"
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "heatCool = "       ) Attribute.heatCool       expect actual
+        , Function.on (EqWrap "productionID = "   ) Attribute.productionID   expect actual
+        , Function.on (EqWrap "assoc = "          ) Attribute.assoc          expect actual
+        , Function.on (EqWrap "comm = "           ) Attribute.comm           expect actual
+        , Function.on (EqWrap "unit = "           ) Attribute.unit           expect actual
+        , Function.on (EqWrap "idem = "           ) Attribute.idem           expect actual
+        , Function.on (EqWrap "trusted = "        ) Attribute.trusted        expect actual
+        , Function.on (EqWrap "concrete = "       ) Attribute.concrete       expect actual
+        , Function.on (EqWrap "simplification = " ) Attribute.simplification expect actual
+        , Function.on (EqWrap "overload = "       ) Attribute.overload       expect actual
+        , Function.on (EqWrap "smtLemma = "       ) Attribute.smtLemma       expect actual
+        , Function.on (EqWrap "label = "          ) Attribute.label          expect actual
+        ]
+
+instance EqualWithExplanation Attribute.HeatCool where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance SumEqualWithExplanation Attribute.HeatCool where
+    sumConstructorPair Attribute.Heat   Attribute.Heat   = SumConstructorSameNoArguments
+    sumConstructorPair Attribute.Normal Attribute.Normal = SumConstructorSameNoArguments
+    sumConstructorPair Attribute.Cool   Attribute.Cool   = SumConstructorSameNoArguments
+    sumConstructorPair expect           actual           = SumConstructorDifferent (show expect) (show actual)
+
+instance EqualWithExplanation Attribute.ProductionID where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.ProductionID where
+    wrapperConstructorName _ = "ProductionID"
+    wrapperField = Function.on (EqWrap "getProductionID = ") Attribute.getProductionID
+
+instance EqualWithExplanation Attribute.Assoc where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Assoc where
+    wrapperConstructorName _ = "Assoc"
+    wrapperField = Function.on (EqWrap "isAssoc = ") Attribute.isAssoc
+
+instance EqualWithExplanation Attribute.Comm where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Comm where
+    wrapperConstructorName _ = "Comm"
+    wrapperField = Function.on (EqWrap "isComm = ") Attribute.isComm
+
+instance EqualWithExplanation Attribute.Unit where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Unit where
+    wrapperConstructorName _ = "Unit"
+    wrapperField = Function.on (EqWrap "isUnit = ") Attribute.isUnit
+
+instance EqualWithExplanation Attribute.Idem where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Idem where
+    wrapperConstructorName _ = "Idem"
+    wrapperField = Function.on (EqWrap "isIdem = ") Attribute.isIdem
+
+instance EqualWithExplanation Attribute.Trusted where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Trusted where
+    wrapperConstructorName _ = "Trusted"
+    wrapperField = Function.on (EqWrap "isTrusted = ") Attribute.isTrusted
+
+instance EqualWithExplanation Attribute.Concrete where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Concrete where
+    wrapperConstructorName _ = "Concrete"
+    wrapperField = Function.on (EqWrap "isConcrete = ") Attribute.isConcrete
+
+instance EqualWithExplanation Attribute.Simplification where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Simplification where
+    wrapperConstructorName _ = "Simplification"
+    wrapperField = Function.on (EqWrap "isSimplification = ") Attribute.isSimplification
+
+instance EqualWithExplanation Attribute.Overload where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Overload where
+    wrapperConstructorName _ = "Overload"
+    wrapperField = Function.on (EqWrap "getOverload = ") Attribute.getOverload
+
+instance EqualWithExplanation Attribute.SmtLemma where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.SmtLemma where
+    wrapperConstructorName _ = "SmtLemma"
+    wrapperField = Function.on (EqWrap "isSmtLemma = ") Attribute.isSmtLemma
+
+instance EqualWithExplanation Attribute.Label where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Label where
+    wrapperConstructorName _ = "Label"
+    wrapperField = Function.on (EqWrap "unLabel = ") Attribute.unLabel
