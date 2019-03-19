@@ -914,8 +914,7 @@ fromUnification
 fromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
 
 type UnifiedRule variable =
-    Predicated Object (StepperVariable variable)
-        (RulePattern Object (StepperVariable variable))
+    Predicated Object variable (RulePattern Object variable)
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -939,9 +938,9 @@ unifyRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern Object (StepperVariable variable)
+    -> ExpandedPattern Object variable
     -- ^ Initial configuration
-    -> RulePattern Object (StepperVariable variable)
+    -> RulePattern Object variable
     -- ^ Rule
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
@@ -968,8 +967,7 @@ unifyRule
   where
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
-            Monad.Morph.hoist unwrapStepErrorVariables
-            $ fromUnification
+            fromUnification
             $ Monad.Trans.lift
             $ unificationProcedure
                 metadataTools
@@ -1027,8 +1025,7 @@ instantiateRule
     return (normalized { term = axiom' })
   where
     normalize =
-        Monad.Morph.hoist unwrapStepErrorVariables
-        . fromUnification
+        fromUnification
         . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
@@ -1055,13 +1052,13 @@ applyRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> PredicateSubstitution Object (StepperVariable variable)
+    -> PredicateSubstitution Object variable
     -- ^ Initial conditions
     -> UnifiedRule variable
     -- ^ Instantiated rule
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
-        (ExpandedPattern Object (StepperVariable variable))
+        (ExpandedPattern Object variable)
 applyRule
     metadataTools
     predicateSimplifier
@@ -1076,8 +1073,7 @@ applyRule
     return normalized { term = right axiom }
   where
     normalize =
-        Monad.Morph.hoist unwrapStepErrorVariables
-        . fromUnification
+        fromUnification
         . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
@@ -1126,7 +1122,7 @@ stepWithRewriteRuleBranch
 
     initial
     (RewriteRule rule)
-  = do
+  = Monad.Morph.hoist unwrapStepErrorVariables $ do
     let
         -- Wrap rule and configuration so that unification prefers to substitute
         -- axiom variables.
