@@ -22,7 +22,6 @@ module Kore.Step.BaseStep
     , stepProofSumName
     , stepWithRemainders
     , stepWithRemaindersForUnifier
-    , stepWithRewriteRule
     , stepWithRule
     --
     , UnifiedRule
@@ -65,7 +64,6 @@ import qualified Kore.Annotation.Valid as Valid
 import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Logger as Log
@@ -622,53 +620,6 @@ applyUnificationToRhs
                         initialSubstitution
                 }
         }
-
--- TODO(virgil): this seems to be used only in tests, consider deleting.
-stepWithRewriteRule
-    ::  ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , SortedVariable variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
-        )
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
-    -- ^ Configuration being rewritten.
-    -> RewriteRule level variable
-    -- ^ Rewriting axiom
-    -> ExceptT
-        (StepError level variable)
-        Simplifier
-        [   ( StepResult level variable
-            , StepProof level variable
-            )
-        ]
-stepWithRewriteRule
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    patt
-    (RewriteRule rule)
-  =
-    traceExceptT D_BaseStep_stepWithRule [debugArg "rule" rule] $
-    Log.withLogScope "stepWithRewriteRule" $
-        stepWithRule
-                tools
-                (UnificationProcedure Unification.unificationProcedure)
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                patt
-                rule
 
 {-| Takes a configuration and a set of rules and tries to apply them to the
 configuration in order.
