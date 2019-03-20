@@ -237,6 +237,30 @@ data OrStepResult level variable =
         }
     deriving (Eq, Show)
 
+instance Semigroup (OrStepResult level variable) where
+    (<>)
+        OrStepResult
+            { rewrittenPattern = rewrittenPattern1
+            , remainder = remainder1
+            }
+        OrStepResult
+            { rewrittenPattern = rewrittenPattern2
+            , remainder = remainder2
+            }
+      =
+        OrStepResult
+            { rewrittenPattern = rewrittenPattern1 <> rewrittenPattern2
+            , remainder = remainder1 <> remainder2
+            }
+    {-# INLINE (<>) #-}
+
+instance Monoid (OrStepResult level variable) where
+    mappend = (<>)
+    {-# INLINE mappend #-}
+
+    mempty = OrStepResult { rewrittenPattern = mempty, remainder = mempty }
+    {-# INLINE mempty #-}
+
 {-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
 stepProofSumName :: StepProofAtom variable level -> String
 stepProofSumName (StepProofUnification _)       = "StepProofUnification"
