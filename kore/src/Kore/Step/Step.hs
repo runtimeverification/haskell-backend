@@ -1443,9 +1443,13 @@ sequenceRewriteRules
   =
     sequenceRewriteRulesWorker empty (pure initialConfig)
   where
+    -- The single remainder of the input configuration after rewriting to
+    -- produce the disjunction of results.
     remainingAfter
         :: ExpandedPattern Object variable
+        -- ^ initial configuration
         -> MultiOr (Result variable)
+        -- ^ disjunction of results
         -> ExpandedPattern Object variable
     remainingAfter config results =
         let covered =
@@ -1460,18 +1464,22 @@ sequenceRewriteRules
                 $ mkMultiAndPredicate
                 $ mkNotMultiOr covered
         in config `Predicated.andCondition` notCovered
+
     sequenceRewriteRulesWorker done pending [] =
         return OrStepResult
             { rewrittenPattern = done
             , remainder = pending
             }
+
     sequenceRewriteRulesWorker done pending (rewriteRule : rewriteRules) = do
         results <- traverse applyRewriteRule' pending
-        let finals = fst <$> results
+        let finals = MultiOr.filterOr (fst <$> results)
             done' = done <> Foldable.fold finals
-            pending' = snd <$> results
+            pending' = MultiOr.filterOr (snd <$> results)
         sequenceRewriteRulesWorker done' pending' rewriteRules
       where
+        -- Apply rewriteRule to produce a pair of the rewritten patterns and
+        -- single remainder configuration.
         applyRewriteRule' config = do
             results <-
                 applyRewriteRule
