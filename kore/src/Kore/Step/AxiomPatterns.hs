@@ -96,7 +96,8 @@ newtype EqualityRule level variable = EqualityRule (RulePattern level variable)
 
 {-  | Rewrite-based rule pattern.
 -}
-newtype RewriteRule level variable = RewriteRule (RulePattern level variable)
+newtype RewriteRule level variable =
+    RewriteRule { getRewriteRule :: RulePattern level variable }
     deriving (Eq, Show)
 
 instance (Unparse (variable level), Ord (variable level)) => Unparse (RewriteRule level variable) where

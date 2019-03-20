@@ -2,7 +2,7 @@
 
 module Test.Kore.Step.Step
     ( test_baseStepMultipleRemainder
-    , test_applyRule
+    , test_applyUnifiedRule
     , test_unifyRule
     , test_applyRewriteRule_
     , test_applyRewriteRules
@@ -41,7 +41,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step hiding
                  ( applyRewriteRule, applyRewriteRules, applyRule,
-                 sequenceRewriteRules, unifyRule )
+                 applyUnifiedRule, sequenceRewriteRules, unifyRule )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
@@ -263,7 +263,7 @@ evalUnifier =
     . runExceptT
     . gather
 
-applyRule
+applyUnifiedRule
     :: PredicateSubstitution Object Variable
     -> UnifiedRule Variable
     -> IO
@@ -271,9 +271,9 @@ applyRule
             (StepError Object Variable)
             (MultiOr (ExpandedPattern Object Variable))
         )
-applyRule initial unifiedRule =
+applyUnifiedRule initial unifiedRule =
     evalUnifier
-    $ Step.applyRule
+    $ Step.applyUnifiedRule
         metadataTools
         predicateSimplifier
         patternSimplifier
@@ -293,8 +293,8 @@ applyRule initial unifiedRule =
             axiomSimplifiers
     axiomSimplifiers = Map.empty
 
-test_applyRule :: [TestTree]
-test_applyRule =
+test_applyUnifiedRule :: [TestTree]
+test_applyUnifiedRule =
     [ testCase "\\bottom initial condition" $ do
         let unifiedRule =
                 Predicated
@@ -312,7 +312,7 @@ test_applyRule =
                     }
             initial = PredicateSubstitution.bottom
             expect = Right []
-        actual <- applyRule initial unifiedRule
+        actual <- applyUnifiedRule initial unifiedRule
         assertEqual "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
@@ -332,7 +332,7 @@ test_applyRule =
                     }
             initial = PredicateSubstitution.top
             expect = Right [ right axiom <$ initial ]
-        actual <- applyRule initial unifiedRule
+        actual <- applyUnifiedRule initial unifiedRule
         assertEqual "" expect actual
 
     , testCase "combine initial and rule conditions" $ do
@@ -360,7 +360,7 @@ test_applyRule =
                     (Mock.f $ mkVar Mock.y)
                     Mock.b
             expect = Predicate.makeAndPredicate expect1 expect2
-        Right [ applied ] <- applyRule initial unifiedRule
+        Right [ applied ] <- applyUnifiedRule initial unifiedRule
         let Predicated { predicate = actual } = applied
         assertEqual "" expect actual
 
@@ -384,7 +384,7 @@ test_applyRule =
                 PredicateSubstitution.fromPredicate
                 $ Predicate.makeNotPredicate predicate
             expect = Right []
-        actual <- applyRule initial unifiedRule
+        actual <- applyUnifiedRule initial unifiedRule
         assertEqual "" expect actual
 
     ]

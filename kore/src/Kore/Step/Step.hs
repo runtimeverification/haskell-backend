@@ -25,9 +25,11 @@ module Kore.Step.Step
     --
     , UnifiedRule
     , unifyRule
+    , applyUnifiedRule
     , applyRule
     , applyRewriteRule
     , applyRewriteRules
+    , sequenceRules
     , sequenceRewriteRules
     , toConfigurationVariables
     , toAxiomVariables
@@ -73,7 +75,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+                 ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Pattern
@@ -996,7 +998,7 @@ normalized. @applyRule@ fails if normalization fails. @applyRule@ branches when
 the 'PredicateSubstitutionSimplifier' causes normalization to branch.
 
  -}
-applyRule
+applyUnifiedRule
     ::  forall variable
     .   ( Ord     (variable Object)
         , Show    (variable Object)
@@ -1016,7 +1018,7 @@ applyRule
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
         (ExpandedPattern Object variable)
-applyRule
+applyUnifiedRule
     metadataTools
     predicateSimplifier
     patternSimplifier
@@ -1128,6 +1130,71 @@ data Result variable =
         , result      :: !(ExpandedPattern Object variable)
         }
 
+{- | Fully apply a single rule to the initial configuration.
+
+The rule is applied to the initial configuration to produce zero or more final
+configurations.
+
+ -}
+applyRule
+    ::  ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten.
+    -> RulePattern Object variable
+    -- ^ Rewriting axiom
+    -> ExceptT (StepError Object variable) Simplifier
+        (MultiOr (Result variable))
+applyRule
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
+
+    initial
+    rule
+  = Log.withLogScope "applyRewriteRule"
+    $ unwrapStepErrorVariables
+    $ do
+        let
+            -- Wrap the rule and configuration so that unification prefers to
+            -- substitute axiom variables.
+            initial' = toConfigurationVariables initial
+            rule' = toAxiomVariables rule
+        gather $ do
+            unifiedRule <- unifyRule' initial' rule'
+            let initialCondition = Predicated.withoutTerm initial'
+            final <- applyUnifiedRule' initialCondition unifiedRule
+            result <- checkSubstitutionCoverage initial' unifiedRule final
+            return Result { unifiedRule, result }
+  where
+    unifyRule' =
+        unifyRule
+            metadataTools
+            unificationProcedure
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+    applyUnifiedRule' =
+        applyUnifiedRule
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+
 {- | Fully apply a single rewrite rule to the initial configuration.
 
 The rewrite rule is applied to the initial configuration to produce zero or more
@@ -1147,6 +1214,7 @@ applyRewriteRule
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
 
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten.
@@ -1159,38 +1227,19 @@ applyRewriteRule
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
+    unificationProcedure
 
     initial
     (RewriteRule rule)
   = Log.withLogScope "applyRewriteRule"
-    $ unwrapStepErrorVariables
-    $ do
-        let
-            -- Wrap the rule and configuration so that unification prefers to
-            -- substitute axiom variables.
-            initial' = toConfigurationVariables initial
-            rule' = toAxiomVariables rule
-        gather $ do
-            unifiedRule <- unifyRule' initial' rule'
-            let initialCondition = Predicated.withoutTerm initial'
-            final <- applyRule' initialCondition unifiedRule
-            result <- checkSubstitutionCoverage initial' unifiedRule final
-            return Result { unifiedRule, result }
-  where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
-    unifyRule' =
-        unifyRule
-            metadataTools
-            unificationProcedure
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-    applyRule' =
-        applyRule
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
+    $ applyRule
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        unificationProcedure
+        initial
+        rule
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -1394,12 +1443,14 @@ applyRewriteRules
     let rewrittenPattern = result <$> results
     return OrStepResult { rewrittenPattern, remainder }
   where
+    unificationProcedure = UnificationProcedure Unification.unificationProcedure
     applyRewriteRule' =
         applyRewriteRule
             metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+            unificationProcedure
             initial
     applyRemainder' =
         applyRemainder
@@ -1407,6 +1458,93 @@ applyRewriteRules
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+
+{- | Apply the given rewrite rules to the initial configuration in sequence.
+
+See also: 'applyRewriteRule'
+
+ -}
+sequenceRules
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten
+    -> [RulePattern Object variable]
+    -- ^ Rewrite rules
+    -> ExceptT (StepError Object variable) Simplifier
+        (OrStepResult Object variable)
+sequenceRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
+    initialConfig
+  =
+    sequenceRulesWorker empty (pure initialConfig)
+  where
+    -- The single remainder of the input configuration after rewriting to
+    -- produce the disjunction of results.
+    remainingAfter
+        :: ExpandedPattern Object variable
+        -- ^ initial configuration
+        -> MultiOr (Result variable)
+        -- ^ disjunction of results
+        -> ExpandedPattern Object variable
+    remainingAfter config results =
+        let covered =
+                mkMultiAndPredicate
+                . unificationConditions
+                . Predicated.withoutTerm
+                . unifiedRule
+                <$> results
+            notCovered =
+                PredicateSubstitution.fromPredicate
+                $ unwrapPredicateVariables
+                $ mkMultiAndPredicate
+                $ mkNotMultiOr covered
+        in config `Predicated.andCondition` notCovered
+
+    sequenceRulesWorker done pending [] =
+        return OrStepResult
+            { rewrittenPattern = done
+            , remainder = pending
+            }
+
+    sequenceRulesWorker done pending (rule : rules) = do
+        results <- traverse applyRule' pending
+        let finals = MultiOr.filterOr (fst <$> results)
+            done' = done <> Foldable.fold finals
+            pending' = MultiOr.filterOr (snd <$> results)
+        sequenceRulesWorker done' pending' rules
+      where
+        -- Apply rule to produce a pair of the rewritten patterns and
+        -- single remainder configuration.
+        applyRule' config = do
+            results <-
+                applyRule
+                    metadataTools
+                    predicateSimplifier
+                    patternSimplifier
+                    axiomSimplifiers
+                    unificationProcedure
+                    config
+                    rule
+            let pending' = remainingAfter config results
+            return (result <$> results, pending')
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -1440,54 +1578,13 @@ sequenceRewriteRules
     patternSimplifier
     axiomSimplifiers
     initialConfig
+    rewriteRules
   =
-    sequenceRewriteRulesWorker empty (pure initialConfig)
-  where
-    -- The single remainder of the input configuration after rewriting to
-    -- produce the disjunction of results.
-    remainingAfter
-        :: ExpandedPattern Object variable
-        -- ^ initial configuration
-        -> MultiOr (Result variable)
-        -- ^ disjunction of results
-        -> ExpandedPattern Object variable
-    remainingAfter config results =
-        let covered =
-                mkMultiAndPredicate
-                . unificationConditions
-                . Predicated.withoutTerm
-                . unifiedRule
-                <$> results
-            notCovered =
-                PredicateSubstitution.fromPredicate
-                $ unwrapPredicateVariables
-                $ mkMultiAndPredicate
-                $ mkNotMultiOr covered
-        in config `Predicated.andCondition` notCovered
-
-    sequenceRewriteRulesWorker done pending [] =
-        return OrStepResult
-            { rewrittenPattern = done
-            , remainder = pending
-            }
-
-    sequenceRewriteRulesWorker done pending (rewriteRule : rewriteRules) = do
-        results <- traverse applyRewriteRule' pending
-        let finals = MultiOr.filterOr (fst <$> results)
-            done' = done <> Foldable.fold finals
-            pending' = MultiOr.filterOr (snd <$> results)
-        sequenceRewriteRulesWorker done' pending' rewriteRules
-      where
-        -- Apply rewriteRule to produce a pair of the rewritten patterns and
-        -- single remainder configuration.
-        applyRewriteRule' config = do
-            results <-
-                applyRewriteRule
-                    metadataTools
-                    predicateSimplifier
-                    patternSimplifier
-                    axiomSimplifiers
-                    config
-                    rewriteRule
-            let pending' = remainingAfter config results
-            return (result <$> results, pending')
+    sequenceRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        (UnificationProcedure Unification.unificationProcedure)
+        initialConfig
+        (getRewriteRule <$> rewriteRules)
