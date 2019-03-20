@@ -60,7 +60,7 @@ axiomPatternsUnitTests =
                     { left = varI1
                     , right = varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                    , ensures = Predicate.makeTruePredicate
+                    , ensures = Predicate.wrapPredicate (mkTop sortAInt)
                     , attributes = def
                     }
                 )
@@ -109,7 +109,7 @@ axiomPatternsUnitTests =
                         { left = varI1
                         , right = varI2
                         , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                        , ensures = Predicate.makeTruePredicate
+                        , ensures = Predicate.wrapPredicate (mkTop sortAInt)
                         , attributes = def
                         }
                     ]
@@ -168,7 +168,7 @@ axiomPatternsIntegrationTests =
                             )
                             varStateCell
                     , requires = Predicate.wrapPredicate (mkTop sortTCell)
-                    , ensures = Predicate.makeTruePredicate
+                    , ensures = Predicate.wrapPredicate (mkTop sortTCell)
                     , attributes = def
                     }
                 )
