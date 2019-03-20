@@ -27,6 +27,7 @@ module Kore.Step.Step
     , unifyRule
     , applyRule
     , applyRewriteRule
+    , applyRewriteRules
     , toConfigurationVariables
     , toAxiomVariables
     , unwrapStepperVariable
@@ -1361,8 +1362,26 @@ applyRewriteRules
     -- ^ Map from symbol IDs to defined functions
 
     -> MultiOr (RewriteRule level variable)
-    -- ^ Rewriting axiom
+    -- ^ Rewrite rules
     -> ExpandedPattern level variable
-    -- ^ Configuration being rewritten.
+    -- ^ Configuration being rewritten
     -> ExceptT (StepError level variable) Simplifier
         (OrStepResult level variable)
+applyRewriteRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    rewriteRules
+    initialConfig
+  =
+    Foldable.fold <$> traverse applyRewriteRule' rewriteRules
+  where
+    applyRewriteRule' =
+        applyRewriteRule
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            initialConfig
