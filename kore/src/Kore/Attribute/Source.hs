@@ -11,7 +11,7 @@ module Kore.Attribute.Source
     ) where
 
 import           Control.Applicative
-                 ( many, optional )
+                 ( many )
 import           Control.DeepSeq
                  ( NFData )
 import           Data.Default
