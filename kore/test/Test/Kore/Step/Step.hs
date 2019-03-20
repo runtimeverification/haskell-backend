@@ -5,7 +5,7 @@ module Test.Kore.Step.Step
     , test_applyRule
     , test_unifyRule
     , test_applyRewriteRule_
-    , test_applyRewriteRule
+    , test_applyRewriteRules
     ) where
 
 import Test.Tasty
@@ -479,7 +479,7 @@ applyRewriteRule_
             (MultiOr (ExpandedPattern Object Variable))
         )
 applyRewriteRule_ initial rule = do
-    result <- applyRewriteRule initial rule
+    result <- applyRewriteRules initial [rule]
     return (discardRemainders <$> result)
   where
     discardRemainders OrStepResult { rewrittenPattern } = rewrittenPattern
@@ -836,41 +836,6 @@ test_applyRewriteRule_ =
             , attributes = def
             }
 
--- | Apply the 'RewriteRule' to the configuration.
-applyRewriteRule
-    :: ExpandedPattern Object Variable
-    -- ^ Configuration
-    -> RewriteRule Object Variable
-    -- ^ Rewrite rule
-    -> IO
-        (Either
-            (StepError Object Variable)
-            (OrStepResult Object Variable)
-        )
-applyRewriteRule initial rule =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
-    $ runExceptT
-    $ Step.applyRewriteRules
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        [rule]
-        initial
-  where
-    metadataTools = mockMetadataTools
-    predicateSimplifier =
-        PredicateSubstitution.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
-
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRules
     :: ExpandedPattern Object Variable
@@ -906,8 +871,8 @@ applyRewriteRules initial rules =
             axiomSimplifiers
     axiomSimplifiers = Map.empty
 
-test_applyRewriteRule :: [TestTree]
-test_applyRewriteRule =
+test_applyRewriteRules :: [TestTree]
+test_applyRewriteRules =
     [ testCase "if _ then _" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
         -- and `a` instead of `true`.
@@ -951,7 +916,7 @@ test_applyRewriteRule =
                     }
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial = pure initialTerm
-        actual <- applyRewriteRule initial axiomIfThen
+        actual <- applyRewriteRules initial [axiomIfThen]
         assertEqualWithExplanation "" expect actual
 
     , testCase "if _ then _ with initial condition" $ do
@@ -1010,7 +975,7 @@ test_applyRewriteRule =
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = mempty
                     }
-        actual <- applyRewriteRule initial axiomIfThen
+        actual <- applyRewriteRules initial [axiomIfThen]
         assertEqualWithExplanation "" expect actual
 
     , testCase "signum - side condition" $ do
@@ -1046,7 +1011,7 @@ test_applyRewriteRule =
                     }
             initial = pure (Mock.functionalConstr10 (mkVar Mock.x))
             requirement = makeEqualsPredicate (Mock.f (mkVar Mock.x)) Mock.b
-        actual <- applyRewriteRule initial axiomSignum
+        actual <- applyRewriteRules initial [axiomSignum]
         assertEqualWithExplanation "" expect actual
 
     , testCase "if _ then _ -- partial" $ do
@@ -1087,7 +1052,7 @@ test_applyRewriteRule =
                     }
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial = pure initialTerm
-        actual <- applyRewriteRule initial axiomIfThen
+        actual <- applyRewriteRules initial [axiomIfThen]
         assertEqualWithExplanation "" expect actual
 
     , testCase "case _ of a -> _; b -> _ -- partial" $ do
