@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Test.Kore.Builtin.Builtin where
 
 import qualified Hedgehog
@@ -19,6 +21,7 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
+import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -53,7 +56,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Step
-                 ( OrStepResult (..), applyRewriteRule )
+                 ( OrStepResult (..) )
+import qualified Kore.Step.Step as Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unparser
                  ( unparseToString )
@@ -152,7 +156,7 @@ constructorFunctions ixm =
         )
       where
         isInj = getId ident == "inj"
-        isCons = elem (getId ident) ["kseq", "dotk"]
+        isCons = Set.member (getId ident) ["kseq", "dotk"]
 
     recurseIntoImports (attrs, attributes, importedModule) =
         (attrs, attributes, constructorFunctions importedModule)
@@ -238,13 +242,13 @@ runStepResult configuration axiom =
     runSMT
     $ evalSimplifier emptyLogger
     $ runExceptT
-    $ applyRewriteRule
+    $ Step.applyRewriteRules
         testMetadataTools
         testSubstitutionSimplifier
         stepSimplifier
         evaluators
+        [axiom]
         configuration
-        axiom
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig
@@ -284,13 +288,13 @@ runStepResultWith solver configuration axiom =
     let smt =
             evalSimplifier emptyLogger
             $ runExceptT
-            $ applyRewriteRule
+            $ Step.applyRewriteRules
                 testMetadataTools
                 testSubstitutionSimplifier
                 stepSimplifier
                 evaluators
+                [axiom]
                 configuration
-                axiom
     in runReaderT (SMT.getSMT smt) solver
 
 

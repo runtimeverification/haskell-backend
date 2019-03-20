@@ -1122,6 +1122,12 @@ toConfigurationVariables
     -> ExpandedPattern level (StepperVariable variable)
 toConfigurationVariables = ExpandedPattern.mapVariables ConfigurationVariable
 
+data Result variable =
+    Result
+        { unifiedRule :: !(UnifiedRule (StepperVariable variable))
+        , result      :: !(ExpandedPattern Object variable)
+        }
+
 {- | Fully apply a single rewrite rule to the initial configuration.
 
 The rewrite rule is applied to the initial configuration to produce zero or more
@@ -1129,26 +1135,25 @@ final configurations.
 
  -}
 applyRewriteRule
-    ::  ( MetaOrObject level
-        , Ord (variable Object)
+    ::  ( Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
 
-    -> ExpandedPattern level variable
+    -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten.
-    -> RewriteRule level variable
+    -> RewriteRule Object variable
     -- ^ Rewriting axiom
-    -> ExceptT (StepError level variable) Simplifier
-        (Result level variable)
+    -> ExceptT (StepError Object variable) Simplifier
+        (MultiOr (Result variable))
 applyRewriteRule
     metadataTools
     predicateSimplifier
@@ -1158,28 +1163,19 @@ applyRewriteRule
     initial
     (RewriteRule rule)
   = Log.withLogScope "applyRewriteRule"
+    $ unwrapStepErrorVariables
     $ do
         let
             -- Wrap the rule and configuration so that unification prefers to
             -- substitute axiom variables.
             initial' = toConfigurationVariables initial
             rule' = toAxiomVariables rule
-        results <- unwrapStepErrorVariables $ gather $ do
+        gather $ do
             unifiedRule <- unifyRule' initial' rule'
             let initialCondition = Predicated.withoutTerm initial'
             final <- applyRule' initialCondition unifiedRule
             result <- checkSubstitutionCoverage initial' unifiedRule final
-            let unification = Predicated.withoutTerm unifiedRule
-            return (result, unification)
-        let matches = snd <$> results
-        remainder <- gather $ do
-            remainder <- scatter (negateUnification matches)
-            applyRemainder' initial remainder
-        let rewrittenPattern = fst <$> results
-        -- TODO (thomas.tuegel): Return the applied rules and coverage here. We
-        -- probably do not want to negate the coverage to form the remainders
-        -- until we have the coverage of all applied rules.
-        return (OrStepResult { rewrittenPattern, remainder })
+            return Result { unifiedRule, result }
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     unifyRule' =
@@ -1191,12 +1187,6 @@ applyRewriteRule
             axiomSimplifiers
     applyRule' =
         applyRule
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-    applyRemainder' =
-        applyRemainder
             metadataTools
             predicateSimplifier
             patternSimplifier
@@ -1347,26 +1337,26 @@ See also: 'applyRewriteRule'
 
  -}
 applyRewriteRules
-    ::  ( MetaOrObject level
-        , Ord (variable Object)
+    ::  forall variable
+    .   ( Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
 
-    -> MultiOr (RewriteRule level variable)
+    -> MultiOr (RewriteRule Object variable)
     -- ^ Rewrite rules
-    -> ExpandedPattern level variable
+    -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
-    -> ExceptT (StepError level variable) Simplifier
-        (OrStepResult level variable)
+    -> ExceptT (StepError Object variable) Simplifier
+        (OrStepResult Object variable)
 applyRewriteRules
     metadataTools
     predicateSimplifier
@@ -1374,9 +1364,15 @@ applyRewriteRules
     axiomSimplifiers
 
     rewriteRules
-    initialConfig
-  =
-    Foldable.fold <$> traverse applyRewriteRule' rewriteRules
+    initial
+  = do
+    results <- Monad.join <$> traverse applyRewriteRule' rewriteRules
+    let unifications = Predicated.withoutTerm . unifiedRule <$> results
+    remainder <- gather $ do
+        remainder <- scatter (negateUnification unifications)
+        applyRemainder' initial remainder
+    let rewrittenPattern = result <$> results
+    return OrStepResult { rewrittenPattern, remainder }
   where
     applyRewriteRule' =
         applyRewriteRule
@@ -1384,4 +1380,10 @@ applyRewriteRules
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
-            initialConfig
+            initial
+    applyRemainder' =
+        applyRemainder
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers

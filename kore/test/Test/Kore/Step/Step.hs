@@ -852,13 +852,13 @@ applyRewriteRule initial rule =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ runExceptT
-    $ Step.applyRewriteRule
+    $ Step.applyRewriteRules
         metadataTools
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
+        [rule]
         initial
-        rule
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =

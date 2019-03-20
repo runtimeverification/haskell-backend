@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -55,7 +57,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.Step
-                 ( OrStepResult (..), StepProof (..), applyRewriteRule )
+                 ( OrStepResult (..), StepProof (..) )
+import qualified Kore.Step.Step as Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
@@ -123,13 +126,13 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     transitionRewrite rule (config, proof) = do
         result <-
             runExceptT
-            $ applyRewriteRule
+            $ Step.applyRewriteRules
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
+                [rule]
                 config
-                rule
         case result of
             Left _ ->
                 (error . show . Pretty.vsep)
