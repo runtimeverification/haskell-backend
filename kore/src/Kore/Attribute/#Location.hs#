@@ -12,7 +12,7 @@ module Kore.Attribute.Location
     ) where
 
 import           Control.Applicative
-                 ( (<|>) )
+                 ( optional )
 import           Control.DeepSeq
                  ( NFData )
 import           Data.Default
@@ -31,11 +31,14 @@ import           Kore.Attribute.Parser
 import qualified Kore.Attribute.Parser as AttributeParser
 
 data LineColumn = LineColumn
-    { line   :: !Int
-    , column :: !Int
+    { line   :: Int
+    , column :: Int
     } deriving (Eq, Ord, Show, Generic)
 
 instance NFData LineColumn
+
+instance Default LineColumn where
+    def = LineColumn 0 0
 
 data Location = Location
     { start :: Maybe LineColumn
@@ -78,14 +81,16 @@ type StringParser = Parsec String String
 
 locationParser :: StringParser Location
 locationParser =
-    Location
-        <$> (Just <$> parseStart)
-        <*> (Just <$> parseEnd)
+    string "Location(" *>
+    ( Location
+        <$> optional parseStart
+        <*> optional parseEnd
+    )
   where
     parseStart :: StringParser LineColumn
     parseStart =
         LineColumn
-            <$> (string "Location(" *> decimal)
+            <$> decimal
             <*> (string "," *> decimal)
 
     parseEnd :: StringParser LineColumn

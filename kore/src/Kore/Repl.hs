@@ -55,8 +55,9 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.Attribute.Axiom
-                 ( LineColumn (..), Location (..), Source (..), location,
-                 source )
+                 ( LineColumn (..), Location (..), Source (..) )
+import qualified Kore.Attribute.Axiom as Attribute
+                 ( location, source )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -464,7 +465,7 @@ replInterpreter =
         -> (Source, Location)
     extractSourceAndLocation
         (RewriteRule (RulePattern{ Axiom.attributes })) =
-            (source attributes, location attributes)
+            (Attribute.source attributes, Attribute.location attributes)
 
     printNotFound :: MonadIO m => m ()
     printNotFound = putStrLn' "Variable or index not found"
