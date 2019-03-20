@@ -925,8 +925,7 @@ unifyRule
         -- Rename free axiom variables to avoid free variables from the initial
         -- configuration.
         (_, rule') = RulePattern.refreshRulePattern configVariables rule
-          where
-            configVariables = ExpandedPattern.freeVariables initial
+        configVariables = ExpandedPattern.freeVariables initial
         RulePattern { left = ruleLeft } = rule'
     unifier <- unifyPatterns ruleLeft initialTerm
     return (unifier $> rule')
