@@ -1,4 +1,4 @@
-module Test.Kore.Step.Step
+module Test.Kore.Step
     ( test_simpleStrategy
     , test_stepStrategy
     , test_unificationError
@@ -28,6 +28,7 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.AxiomPatterns as RulePattern
@@ -39,7 +40,6 @@ import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import qualified SMT
 

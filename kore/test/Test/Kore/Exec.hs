@@ -40,6 +40,8 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step
+                 ( allRewrites, anyRewrite )
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
@@ -49,8 +51,6 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.Step
-                 ( allRewrites, anyRewrite )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import qualified SMT

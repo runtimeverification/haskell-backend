@@ -1,13 +1,12 @@
-{-|
-Module      : Kore.Step.Step
-Description : Single and multiple step execution
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
--}
-module Kore.Step.Step
+
+Strategy-based interface to rule application (step-wise execution).
+
+ -}
+
+module Kore.Step
     ( -- * Primitive strategies
       Prim (..)
     , rewrite

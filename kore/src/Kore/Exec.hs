@@ -50,6 +50,7 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  unwrapPredicate )
 import qualified Kore.Repl as Repl
+import           Kore.Step
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.EvaluationStrategy
@@ -85,7 +86,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Strategy

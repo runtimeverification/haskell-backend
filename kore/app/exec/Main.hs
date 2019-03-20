@@ -38,6 +38,7 @@ import           Kore.Parser.Parser
                  ( parseKorePattern )
 import           Kore.Predicate.Predicate
                  ( makePredicate )
+import           Kore.Step
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
@@ -46,7 +47,6 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unparser
                  ( unparse )
