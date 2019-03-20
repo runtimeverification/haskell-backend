@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedLists #-}
 
-module Test.Kore.Step.BaseStep
+module Test.Kore.Step.Step
     ( test_baseStepMultipleRemainder
     , test_applyRule
     , test_unifyRule
@@ -26,9 +26,6 @@ import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
-import           Kore.Step.BaseStep hiding
-                 ( applyRewriteRule, applyRule, unifyRule )
-import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern,
@@ -42,6 +39,9 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.Step hiding
+                 ( applyRewriteRule, applyRule, unifyRule )
+import qualified Kore.Step.Step as Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
@@ -272,7 +272,7 @@ applyRule
         )
 applyRule initial unifiedRule =
     evalUnifier
-    $ BaseStep.applyRule
+    $ Step.applyRule
         metadataTools
         predicateSimplifier
         patternSimplifier
@@ -398,7 +398,7 @@ unifyRule
         )
 unifyRule initial rule =
     evalUnifier
-    $ BaseStep.unifyRule
+    $ Step.unifyRule
         metadataTools
         unificationProcedure
         predicateSimplifier
@@ -852,7 +852,7 @@ applyRewriteRule initial rule =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ runExceptT
-    $ BaseStep.applyRewriteRule
+    $ Step.applyRewriteRule
         metadataTools
         predicateSimplifier
         patternSimplifier

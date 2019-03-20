@@ -37,12 +37,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
-import           Kore.Step.BaseStep
-                 ( OrStepResult (OrStepResult), StepProof (..),
-                 simplificationProof, stepWithRemainders )
-import           Kore.Step.BaseStep as OrStepResult
-                 ( OrStepResult (..) )
-import qualified Kore.Step.BaseStep as StepProof
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
@@ -54,6 +48,11 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
+import           Kore.Step.Step
+                 ( OrStepResult (OrStepResult), StepProof (..),
+                 simplificationProof, stepWithRemainders )
+import qualified Kore.Step.Step as OrStepResult
+import qualified Kore.Step.Step as StepProof
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy

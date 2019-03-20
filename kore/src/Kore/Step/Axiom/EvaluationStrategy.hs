@@ -44,12 +44,6 @@ import           Kore.Step.Axiom.Matcher
 import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
-import           Kore.Step.BaseStep
-                 ( OrStepResult (OrStepResult),
-                 UnificationProcedure (UnificationProcedure),
-                 stepWithRemaindersForUnifier )
-import qualified Kore.Step.BaseStep as OrStepResult
-                 ( OrStepResult (..) )
 import           Kore.Step.Pattern
                  ( StepPattern, asConcreteStepPattern )
 import           Kore.Step.Representation.ExpandedPattern
@@ -64,6 +58,12 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Step
+                 ( OrStepResult (OrStepResult),
+                 UnificationProcedure (UnificationProcedure),
+                 stepWithRemaindersForUnifier )
+import qualified Kore.Step.Step as OrStepResult
+                 ( OrStepResult (..) )
 import           Kore.Step.StepperAttributes
                  ( Hook (..), StepperAttributes (..) )
 import           Kore.Unparser

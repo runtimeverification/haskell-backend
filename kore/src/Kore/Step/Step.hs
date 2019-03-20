@@ -1,13 +1,13 @@
-{-|
-Module      : Kore.Step.BaseStep
-Description : Single step execution
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
--}
-module Kore.Step.BaseStep
+
+Direct interface to rule application (step-wise execution).
+See "Kore.Step" for the high-level strategy-based interface.
+
+ -}
+
+module Kore.Step.Step
     ( OrStepResult (..)
     , RulePattern
     , StepperConfiguration (..)

@@ -43,11 +43,6 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.AxiomPatterns
                  ( RulePattern (..) )
-import           Kore.Step.BaseStep
-import           Kore.Step.BaseStep as StepResult
-                 ( StepResult (..) )
-import           Kore.Step.BaseStep as OrStepResult
-                 ( OrStepResult (..) )
 import           Kore.Step.Error
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
@@ -56,6 +51,11 @@ import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
+import           Kore.Step.Step
+import qualified Kore.Step.Step as OrStepResult
+                 ( OrStepResult (..) )
+import qualified Kore.Step.Step as StepResult
+                 ( StepResult (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
