@@ -10,7 +10,6 @@ See "Kore.Step" for the high-level strategy-based interface.
 module Kore.Step.Step
     ( OrStepResult (..)
     , RulePattern
-    , StepperConfiguration (..)
     , StepResult (..)
     , StepperVariable (..)
     , StepProof (..)
@@ -111,22 +110,6 @@ import           Kore.Unification.Substitution
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-
-{-| 'StepperConfiguration' represents the configuration to which a rewriting
-axiom is applied.
-
-A configuration consists of a pattern and a condition predicate, and would be
-represented as pattern /\ condition-predicate in Kore.
---}
-data StepperConfiguration level = StepperConfiguration
-    { stepperConfigurationPattern       :: !(CommonStepPattern level)
-    -- ^ The pattern being rewritten.
-
-    , stepperConfigurationCondition     :: !(CommonStepPattern level)
-    -- ^ The condition predicate.
-    -- TODO(virgil): Make this an EvaluatedCondition.
-    }
-    deriving (Show, Eq)
 
 {- | 'StepProof' is the proof for an execution step or steps.
  -}
