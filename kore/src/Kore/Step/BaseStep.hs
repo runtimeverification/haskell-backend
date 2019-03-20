@@ -873,11 +873,11 @@ wrapUnificationOrSubstitutionError =
 
 {- | Lift an action from the unifier into the stepper.
  -}
-fromUnification
+liftFromUnification
     :: Monad m
     => BranchT (ExceptT (UnificationOrSubstitutionError level variable) m) a
     -> BranchT (ExceptT (StepError level variable                     ) m) a
-fromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
+liftFromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
 
 type UnifiedRule variable =
     Predicated Object variable (RulePattern Object variable)
@@ -933,7 +933,7 @@ unifyRule
   where
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
-            fromUnification
+            liftFromUnification
             $ Monad.Trans.lift
             $ unificationProcedure
                 metadataTools
@@ -990,7 +990,7 @@ instantiateRule
     return (normalized { term = axiom' })
   where
     normalize =
-        fromUnification
+        liftFromUnification
         . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
@@ -1128,7 +1128,7 @@ applyInitialConditions
     return normalized { term }
   where
     normalize =
-        fromUnification
+        liftFromUnification
         . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
