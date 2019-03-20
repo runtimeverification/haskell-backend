@@ -1200,6 +1200,9 @@ applyRewriteRule
             remainder <- scatter (negateCoverage coverage)
             unwrapVariables <$> applyRemainder' initial' remainder
         let rewrittenPattern = fst <$> results
+        -- TODO (thomas.tuegel): Return the applied rules and coverage here. We
+        -- probably do not want to negate the coverage to form the remainders
+        -- until we have the coverage of all applied rules.
         return (OrStepResult { rewrittenPattern, remainder })
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
