@@ -1298,8 +1298,28 @@ mkNotMultiAnd
         , SortedVariable variable
         )
     => MultiAnd (Predicate Object variable)
-    -> MultiOr (Predicate Object variable)
+    -> MultiOr  (Predicate Object variable)
 mkNotMultiAnd = MultiOr.make . map Predicate.makeNotPredicate . Foldable.toList
+
+mkNotMultiOr
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => MultiOr  (Predicate Object variable)
+    -> MultiAnd (Predicate Object variable)
+mkNotMultiOr = MultiAnd.make . map Predicate.makeNotPredicate . Foldable.toList
+
+mkMultiAndPredicate
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => MultiAnd (Predicate Object variable)
+    ->           Predicate Object variable
+mkMultiAndPredicate = Predicate.makeMultipleAndPredicate . Foldable.toList
 
 {- | Represent the unification solution as a conjunction of predicates.
  -}
@@ -1394,26 +1414,26 @@ See also: 'applyRewriteRule'
 
  -}
 sequenceRewriteRules
-    ::  ( MetaOrObject level
-        , Ord (variable Object)
-        , Show (variable Object)
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
         , Unparse (variable Object)
-        , FreshVariable variable
+        , FreshVariable  variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
 
-    -> ExpandedPattern level variable
+    -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
-    -> [RewriteRule level variable]
+    -> [RewriteRule Object variable]
     -- ^ Rewrite rules
-    -> ExceptT (StepError level variable) Simplifier
-        (OrStepResult level variable)
+    -> ExceptT (StepError Object variable) Simplifier
+        (OrStepResult Object variable)
 sequenceRewriteRules
     metadataTools
     predicateSimplifier
@@ -1421,35 +1441,37 @@ sequenceRewriteRules
     axiomSimplifiers
     initialConfig
   =
-    sequenceRewriteRulesWorker initial
+    sequenceRewriteRulesWorker empty (pure initialConfig)
   where
-    initial =
-        OrStepResult
-            { rewrittenPattern = empty
-            , remainder = pure initialConfig
-            }
-    fromResult config Result { unifiedRule, result } = do
-        let notCovered =
+    remainingAfter
+        :: ExpandedPattern Object variable
+        -> MultiOr (Result variable)
+        -> ExpandedPattern Object variable
+    remainingAfter config results =
+        let covered =
+                mkMultiAndPredicate
+                . unificationConditions
+                . Predicated.withoutTerm
+                . unifiedRule
+                <$> results
+            notCovered =
                 PredicateSubstitution.fromPredicate
                 $ unwrapPredicateVariables
-                $ Predicate.makeNotPredicate
-                $ Predicate.makeMultipleAndPredicate
-                $ Foldable.toList
-                $ unificationConditions
-                $ Predicated.withoutTerm unifiedRule
+                $ mkMultiAndPredicate
+                $ mkNotMultiOr covered
+        in config `Predicated.andCondition` notCovered
+    sequenceRewriteRulesWorker done pending [] =
         return OrStepResult
-            { rewrittenPattern = pure result
-            , remainder = pure (config <* notCovered)
+            { rewrittenPattern = done
+            , remainder = pending
             }
-    sequenceRewriteRulesWorker pending [] = return pending
-    sequenceRewriteRulesWorker pending (rewriteRule : rewriteRules) = do
-        results <- Foldable.fold <$> traverse applyRewriteRule' remainder
-        sequenceRewriteRulesWorker (original <> results) rewriteRules
+    sequenceRewriteRulesWorker done pending (rewriteRule : rewriteRules) = do
+        results <- traverse applyRewriteRule' pending
+        let finals = fst <$> results
+            done' = done <> Foldable.fold finals
+            pending' = snd <$> results
+        sequenceRewriteRulesWorker done' pending' rewriteRules
       where
-        OrStepResult { remainder } = pending
-        original = OrStepResult { rewrittenPattern, remainder = empty }
-          where
-            OrStepResult { rewrittenPattern } = pending
         applyRewriteRule' config = do
             results <-
                 applyRewriteRule
@@ -1459,4 +1481,5 @@ sequenceRewriteRules
                     axiomSimplifiers
                     config
                     rewriteRule
-            Foldable.fold <$> traverse (fromResult config) results
+            let pending' = remainingAfter config results
+            return (result <$> results, pending')
