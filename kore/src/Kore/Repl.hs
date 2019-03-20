@@ -54,6 +54,9 @@ import qualified Kore.AST.Common as Kore
                  ( Variable )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
+import           Kore.Attribute.Axiom
+                 ( LineColumn (..), Location (..), Source (..), location,
+                 source )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -70,6 +73,8 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (..) )
 import           Kore.Step.AxiomPatterns
                  ( RulePattern (..) )
+import qualified Kore.Step.AxiomPatterns as Axiom
+                 ( RewriteRule (..), attributes )
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Simplification.Data
@@ -304,8 +309,7 @@ replInterpreter =
         putStrLn' "Could not parse command, try using 'help'."
 
     help0 :: StateT st Simplifier ()
-    help0 =
-        putStrLn' helpText
+    help0 = putStrLn' helpText
 
     showClaim0 :: Int -> StateT (ReplState level) Simplifier ()
     showClaim0 index = do
@@ -315,7 +319,16 @@ replInterpreter =
     showAxiom0 :: Int -> StateT (ReplState level) Simplifier ()
     showAxiom0 index = do
         axiom <- Lens.preuse $ lensAxioms . Lens.element index
-        putStrLn' $ maybe indexNotFound (unparseToString . unAxiom) axiom
+        case axiom of
+            Nothing -> putStrLn' indexNotFound
+            Just axiom' -> do
+                putStrLn' . unparseToString . unAxiom  $ axiom'
+                putStrLn'
+                    . maybe mempty id
+                    . formatSourceAndLocation
+                    . extractSourceAndLocation
+                    $ axiom'
+
 
     prove0 :: Int -> StateT (ReplState level) Simplifier ()
     prove0 index = do
@@ -335,7 +348,6 @@ replInterpreter =
     showGraph0 = do
         Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
         liftIO $ showDotGraph graph
-
 
     proveSteps0 :: Int -> StateT (ReplState level) Simplifier ()
     proveSteps0 n = do
@@ -370,7 +382,6 @@ replInterpreter =
                    . Graph.context graph
                    $ node'
            else putStrLn' "Invalid node!"
-
 
     performSingleStep
         :: StateT (ReplState level) Simplifier StepResult
@@ -417,9 +428,30 @@ replInterpreter =
     unparseStrategy :: CommonStrategyPattern level -> String
     unparseStrategy =
         \case
-            Bottom -> "Reached goal!"
+            Bottom -> "Reached bottom"
             Stuck pat -> "Stuck: \n" <> unparseToString pat
             RewritePattern pat -> unparseToString pat
+
+    formatSourceAndLocation :: (Source, Location) -> Maybe String
+    formatSourceAndLocation (Source { unSource }, Location { start, end }) = do
+        filename <- unSource
+        LineColumn { line = startLine, column = startColumn } <- start
+        pure
+            $  filename
+            <> ":"
+            <> show startLine
+            <> ":"
+            <> show startColumn
+            <> maybe mempty (fromEnd startLine) end
+      where
+        fromEnd line' LineColumn { line, column }
+          | line' == line = "-" <> show column
+          | otherwise     = "-" <> show line <> ":" <> show column
+
+    extractSourceAndLocation :: Axiom level -> (Source, Location)
+    extractSourceAndLocation
+        (Axiom (RewriteRule (RulePattern{ Axiom.attributes }))) =
+            (source attributes, location attributes)
 
     indexNotFound :: String
     indexNotFound = "Variable or index not found"
