@@ -111,10 +111,10 @@ test_baseStepMultipleRemainder =
                 , substitution = mempty
                 }
             [RewriteRule RulePattern
-                { left =
-                    Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+                { left = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                 , right = mkVar Mock.y
                 , requires = makeTruePredicate
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             ]
@@ -211,6 +211,7 @@ test_baseStepMultipleRemainder =
                     Mock.a (mkVar Mock.y) (mkVar Mock.z)
                 , right = mkVar Mock.y
                 , requires = makeTruePredicate
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             , RewriteRule RulePattern
@@ -218,6 +219,7 @@ test_baseStepMultipleRemainder =
                     Mock.b (mkVar Mock.y) (mkVar Mock.z)
                 , right = mkVar Mock.z
                 , requires = makeTruePredicate
+                , ensures = makeTruePredicate
                 , attributes = def
                 }
             ]
@@ -299,6 +301,7 @@ test_instantiateRule =
                     { left = mkVar Mock.x
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             unifier =
@@ -316,6 +319,7 @@ test_instantiateRule =
                     { left = Mock.a
                     , right = mkVar Mock.y
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             unifier =
@@ -334,6 +338,7 @@ test_instantiateRule =
                     , right = Mock.b
                     , requires =
                         Predicate.makeCeilPredicate (Mock.f (mkVar Mock.x))
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             unifier =
@@ -351,6 +356,7 @@ test_instantiateRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             unifier = PredicateSubstitution.bottom
@@ -364,6 +370,7 @@ test_instantiateRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             unifier =
@@ -386,6 +393,7 @@ test_instantiateRule =
                     , requires =
                         Predicate.makeNotPredicate
                         $ Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             unifier =
@@ -401,6 +409,7 @@ test_instantiateRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             unifier =
@@ -420,6 +429,7 @@ test_instantiateRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             unifier =
@@ -491,6 +501,7 @@ test_applyRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             initial = PredicateSubstitution.bottom
@@ -510,6 +521,7 @@ test_applyRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             initial = PredicateSubstitution.top
@@ -529,6 +541,7 @@ test_applyRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             initial = PredicateSubstitution.fromPredicate expect1
@@ -558,6 +571,7 @@ test_applyRule =
                     { left = Mock.a
                     , right = Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             initial =
@@ -611,6 +625,7 @@ test_unifyRule =
                     , right = Mock.g (mkVar Mock.x)
                     , requires =
                         Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
         Right [unified] <- unifyRule initial axiom
@@ -624,6 +639,7 @@ test_unifyRule =
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             expect = Right [(pure axiom) { substitution }]
@@ -639,6 +655,7 @@ test_unifyRule =
                     { left = Mock.functionalConstr11 (mkVar Mock.x)
                     , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
             expect = Right []
@@ -723,6 +740,7 @@ test_applyRewriteRule_ =
                     { left = mkVar Mock.x
                     , right = mkExists Mock.y (mkVar Mock.x)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
         actual <- applyRewriteRule_ initial axiom
@@ -880,6 +898,7 @@ test_applyRewriteRule_ =
                     { left = mkStringLiteral "sl1"
                     , right = mkVar Mock.x
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
         actual <- applyRewriteRule_ initial axiom
@@ -937,6 +956,22 @@ test_applyRewriteRule_ =
         actual <- applyRewriteRule_ initial axiomSigmaXXY
         assertEqualWithExplanation "" expect actual
 
+    -- x => x ensures g(x)=f(x)
+    -- vs
+    -- a
+    -- Expected: a and g(a)=f(a)
+    , testCase "conjoin rule ensures" $ do
+        let
+            ensures =
+                makeEqualsPredicate
+                    (Mock.functional11 (mkVar Mock.x))
+                    (Mock.functional10 (mkVar Mock.x))
+            expect = Right [ initial { predicate = ensures } ]
+            initial = pure (mkVar Mock.x)
+            axiom = RewriteRule ruleId { ensures }
+        actual <- applyRewriteRule_ initial axiom
+        assertEqualWithExplanation "" expect actual
+
     -- x => x requires g(x)=f(x)
     -- vs
     -- a
@@ -959,6 +994,7 @@ test_applyRewriteRule_ =
             { left = mkVar Mock.x
             , right = mkVar Mock.x
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
     axiomId = RewriteRule ruleId
@@ -968,6 +1004,7 @@ test_applyRewriteRule_ =
             { left = Mock.sigma (mkVar Mock.x) (mkVar Mock.x)
             , right = mkVar Mock.x
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
 
@@ -979,6 +1016,7 @@ test_applyRewriteRule_ =
                     (Mock.sigma (mkVar Mock.y) (mkVar Mock.y))
             , right = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
 
@@ -990,6 +1028,7 @@ test_applyRewriteRule_ =
                     (mkVar Mock.y)
             , right = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
 
@@ -1075,6 +1114,7 @@ test_applyRewriteRule =
             initial = pure initialTerm
         actual <- applyRewriteRule initial axiomIfThen
         assertEqualWithExplanation "" expect actual
+
     , testCase "if _ then _ with initial condition" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
         -- and `a` instead of `true`.
@@ -1176,6 +1216,7 @@ test_applyRewriteRule =
             { left = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
             , right = mkVar Mock.y
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
     axiomSignum =
@@ -1183,5 +1224,6 @@ test_applyRewriteRule =
             { left = Mock.functionalConstr10 (mkVar Mock.y)
             , right = Mock.a
             , requires = makeEqualsPredicate (Mock.f (mkVar Mock.y)) Mock.b
+            , ensures = makeTruePredicate
             , attributes = def
             }

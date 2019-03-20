@@ -394,6 +394,7 @@ test_concretizeKeysAxiom =
             { left = mkPair intSort setSort x symbolicSet
             , right = x
             , requires = Predicate.makeTruePredicate
+            , ensures = Predicate.makeTruePredicate
             , attributes = Default.def
             }
     expected = Right [ pure symbolicKey ]

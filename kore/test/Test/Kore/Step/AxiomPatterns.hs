@@ -61,6 +61,7 @@ axiomPatternsUnitTests =
                     { left = varI1
                     , right = varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
+                    , ensures = Predicate.wrapPredicate (mkTop sortAInt)
                     , attributes = def
                     }
                 )
@@ -109,6 +110,7 @@ axiomPatternsUnitTests =
                         { left = varI1
                         , right = varI2
                         , requires = Predicate.wrapPredicate (mkTop sortAInt)
+                        , ensures = Predicate.wrapPredicate (mkTop sortAInt)
                         , attributes = def
                         }
                     ]
@@ -167,6 +169,7 @@ axiomPatternsIntegrationTests =
                             )
                             varStateCell
                     , requires = Predicate.wrapPredicate (mkTop sortTCell)
+                    , ensures = Predicate.wrapPredicate (mkTop sortTCell)
                     , attributes = def
                     }
                 )
@@ -425,5 +428,6 @@ testRulePattern =
             -- Include a binder to ensure that we respect them.
             mkExists Mock.y (mkVar Mock.y)
         , requires = Predicate.makeCeilPredicate (mkVar Mock.z)
+        , ensures = Predicate.makeTruePredicate
         , attributes = def
         }

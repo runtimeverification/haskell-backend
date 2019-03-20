@@ -429,11 +429,15 @@ simplifyRulePattern tools rulePattern = do
                 requires' = substitute subst <$> requires
                   where
                     RulePattern { requires } = rulePattern
+                ensures' = substitute subst <$> ensures
+                  where
+                    RulePattern { ensures } = rulePattern
                 RulePattern { attributes } = rulePattern
             return RulePattern
                 { left = left'
                 , right = right'
                 , requires = requires'
+                , ensures = ensures'
                 , attributes = attributes
                 }
         _ ->

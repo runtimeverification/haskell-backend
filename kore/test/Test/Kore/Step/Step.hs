@@ -60,6 +60,7 @@ rewriteIdentity =
         { left = mkVar (x1 patternMetaSort)
         , right = mkVar (x1 patternMetaSort)
         , requires = makeTruePredicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
 
@@ -72,6 +73,7 @@ rewriteImplies =
                 (mkVar $ x1 patternMetaSort)
                 (mkVar $ x1 patternMetaSort)
         , requires = makeTruePredicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
 
@@ -131,6 +133,7 @@ actualFailSimple =
             , right =
                 mkVar (x1 patternMetaSort)
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
         ]
@@ -161,6 +164,7 @@ actualFailCycle =
                     (mkVar $ x1 patternMetaSort)
             , right =
                 mkVar (x1 patternMetaSort)
+            , ensures = makeTruePredicate
             , requires = makeTruePredicate
             , attributes = def
             }
@@ -244,12 +248,14 @@ axiomsSimpleStrategy =
         { left = metaF (mkVar $ x1 patternMetaSort)
         , right = metaG (mkVar $ x1 patternMetaSort)
         , requires = makeTruePredicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
     , RewriteRule $ RulePattern
         { left = metaG (mkVar $ x1 patternMetaSort)
         , right = metaH (mkVar $ x1 patternMetaSort)
         , requires = makeTruePredicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
     ]
@@ -278,6 +284,7 @@ actualOneStep =
             { left = metaF (mkVar $ x1 patternMetaSort)
             , right = metaG (mkVar $ x1 patternMetaSort)
             , requires = makeTruePredicate
+            , ensures = makeTruePredicate
             , attributes = def
             }
         ]
@@ -417,6 +424,7 @@ axiomMetaSigmaId =
         , right =
             mkVar $ x1 patternMetaSort
         , requires = makeTruePredicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
 

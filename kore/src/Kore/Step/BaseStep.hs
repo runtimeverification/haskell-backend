@@ -451,6 +451,7 @@ applyUnificationToRhs
         { left = axiomLeft
         , right = axiomRight
         , requires = axiomRequires
+        , ensures = axiomEnsures
         }
     expandedPattern@Predicated
         {term = initialTerm, substitution = initialSubstitution}
@@ -482,6 +483,7 @@ applyUnificationToRhs
                 axiomIdToSimplifier
                 [ startCondition  -- from initial configuration
                 , axiomRequires   -- from axiom
+                , axiomEnsures    -- from axiom
                 , rawPredicate    -- produced during unification
                 ]
                 [rawSubstitution, startSubstitution]
@@ -825,8 +827,9 @@ stepWithRemainders
     case resultOrError of
         Left _ -> error $
             "Not implemented error "
-            ++ " while applying a \\rewrite axiom to the pattern."
-            ++ " We decided to end the execution because we don't understand"
+            ++ " while applying a \\rewrite axiom to the pattern "
+            ++ unparseToString patt
+            ++ ". We decided to end the execution because we don't understand"
             ++ " this case well enough at the moment."
         Right result -> return result
 
@@ -972,10 +975,13 @@ instantiateRule
     patternSimplifier
     axiomSimplifiers
 
-    unified@Predicated { term = axiom@RulePattern { left, right, requires } }
+    unified@Predicated { term = axiom@RulePattern { left, right, requires, ensures } }
   = do
     let unifier = unified { term = () }
-        merged = PredicateSubstitution.fromPredicate requires *> unifier
+        merged =
+            PredicateSubstitution.fromPredicate requires
+            *> PredicateSubstitution.fromPredicate ensures
+            *> unifier
     normalized <- normalize merged
     let Predicated { substitution } = normalized
         substitution' = Substitution.toMap substitution
@@ -984,6 +990,7 @@ instantiateRule
                 { left     = Pattern.substitute   substitution' left
                 , right    = Pattern.substitute   substitution' right
                 , requires = Predicate.substitute substitution' requires
+                , ensures  = Predicate.substitute substitution' ensures
                 }
     return (normalized { term = axiom' })
   where

@@ -198,6 +198,7 @@ test_simplificationIntegration =
                                             (mkVar Mock.x)
                                     , right = mkVar Mock.y
                                     , requires = makeTruePredicate
+                                    , ensures = makeTruePredicate
                                     , attributes = def
                                     }
                                 ]
@@ -240,6 +241,7 @@ test_simplificationIntegration =
                                             (mkVar Mock.x)
                                     , right = mkVar Mock.y
                                     , requires = makeTruePredicate
+                                    , ensures = makeTruePredicate
                                     , attributes = def
                                     }
                                 ]

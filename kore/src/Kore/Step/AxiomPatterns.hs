@@ -73,6 +73,7 @@ data RulePattern level variable = RulePattern
     { left  :: !(StepPattern level variable)
     , right :: !(StepPattern level variable)
     , requires :: !(Predicate level variable)
+    , ensures :: !(Predicate level variable)
     , attributes :: !Attribute.Axiom
     }
     deriving (Eq, Show)
@@ -241,19 +242,22 @@ patternToAxiomPattern attributes pat =
         -- normal rewrite axioms
         -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
         -- quantifiers.
-        Rewrites_ _ (And_ _ requires lhs) (And_ _ _ensures rhs) ->
+        Rewrites_ _ (And_ _ requires lhs) (And_ _ ensures rhs) ->
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
+                , ensures = Predicate.wrapPredicate ensures
                 , attributes
                 }
         -- function axioms: general
         Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
+            -- TODO (traiansf): ensure that _ensures is \top
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
+                , ensures = Predicate.makeTruePredicate
                 , attributes
                 }
         -- function axioms: trivial pre- and post-conditions
@@ -262,6 +266,7 @@ patternToAxiomPattern attributes pat =
                 { left = lhs
                 , right = rhs
                 , requires = Predicate.makeTruePredicate
+                , ensures = Predicate.makeTruePredicate
                 , attributes
                 }
         Forall_ _ _ child -> patternToAxiomPattern attributes child
@@ -379,9 +384,10 @@ mapVariables
     => (variable1 level -> variable2 level)
     -> RulePattern level variable1
     -> RulePattern level variable2
-mapVariables mapping rulePattern@RulePattern { left, right, requires } =
+mapVariables mapping rulePattern@RulePattern { left, right, requires, ensures } =
     rulePattern
         { left = Pattern.mapVariables mapping left
         , right = Pattern.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
+        , ensures = Predicate.mapVariables mapping ensures
         }
