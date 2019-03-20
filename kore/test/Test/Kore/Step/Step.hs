@@ -840,7 +840,7 @@ test_applyRewriteRule_ =
 applyRewriteRules
     :: ExpandedPattern Object Variable
     -- ^ Configuration
-    -> MultiOr (RewriteRule Object Variable)
+    -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
     -> IO
         (Either

@@ -28,6 +28,7 @@ module Kore.Step.Step
     , applyRule
     , applyRewriteRule
     , applyRewriteRules
+    , sequenceRewriteRules
     , toConfigurationVariables
     , toAxiomVariables
     , unwrapStepperVariable
@@ -1351,7 +1352,7 @@ applyRewriteRules
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
 
-    -> MultiOr (RewriteRule Object variable)
+    -> [RewriteRule Object variable]
     -- ^ Rewrite rules
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
@@ -1366,7 +1367,7 @@ applyRewriteRules
     rewriteRules
     initial
   = do
-    results <- Monad.join <$> traverse applyRewriteRule' rewriteRules
+    results <- Foldable.fold <$> traverse applyRewriteRule' rewriteRules
     let unifications = Predicated.withoutTerm . unifiedRule <$> results
     remainder <- gather $ do
         remainder <- scatter (negateUnification unifications)
@@ -1387,3 +1388,70 @@ applyRewriteRules
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+
+{- | Apply the given rewrite rules to the initial configuration in sequence.
+
+See also: 'applyRewriteRule'
+
+ -}
+sequenceRewriteRules
+    ::  ( MetaOrObject level
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
+
+    -> ExpandedPattern level variable
+    -- ^ Configuration being rewritten
+    -> [RewriteRule level variable]
+    -- ^ Rewrite rules
+    -> ExceptT (StepError level variable) Simplifier
+        (OrStepResult level variable)
+sequenceRewriteRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    initialConfig
+  =
+    sequenceRewriteRulesWorker initial
+  -- = do
+  --   -- TODO (thomas.tuegel): Avoid constructing initial' twice.
+  --   let initial' = toConfigurationVariables initial
+  --   results <- Monad.join <$> traverse applyRewriteRule' rewriteRules
+  --   let coverages = coverage <$> results
+  --   remainder <- unwrapStepErrorVariables $ gather $ do
+  --       remainder <- scatter (negateCoverage coverages)
+  --       unwrapVariables <$> applyRemainder' initial' remainder
+  --   let rewrittenPattern = result <$> results
+  --   return OrStepResult { rewrittenPattern, remainder }
+  where
+    initial =
+        OrStepResult
+            { rewrittenPattern = mempty
+            , remainder = MultiOr.make [initialConfig]
+            }
+    sequenceRewriteRulesWorker pending [] = return pending
+    sequenceRewriteRulesWorker pending (rewriteRule : rewriteRules) = do
+        result <- Foldable.fold <$> traverse applyRewriteRules' remainder
+        let pending' =
+                OrStepResult { rewrittenPattern, remainder = mempty }
+                <> result
+        sequenceRewriteRulesWorker pending' rewriteRules
+      where
+        OrStepResult { rewrittenPattern, remainder } = pending
+        applyRewriteRules' =
+            applyRewriteRules
+                metadataTools
+                predicateSimplifier
+                patternSimplifier
+                axiomSimplifiers
+                [rewriteRule]
