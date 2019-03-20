@@ -27,18 +27,6 @@ import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Parser
 
-
-type Parser = Parsec String String
-
-sourceParser :: Parser Source
-sourceParser = Source <$> optional sourceParser0
-  where
-    sourceParser0 :: Parser String
-    sourceParser0 = string "Source(" *> many (noneOf excludedChars) <* string ")"
-
-    excludedChars :: [Char]
-    excludedChars = [')']
-
 data Source = Source
     { unSource :: Maybe String
     } deriving (Eq, Ord, Show, Generic)
@@ -69,3 +57,14 @@ instance ParseAttributes Source where
                     StringLiteral str <- Parser.getStringLiteral arg
                     pure . maybe def id . parseMaybe sourceParser $ Text.unpack str
                 _ -> pure def
+
+type Parser = Parsec String String
+
+sourceParser :: Parser Source
+sourceParser = Source <$> optional sourceParser0
+  where
+    sourceParser0 :: Parser String
+    sourceParser0 = string "Source(" *> many (noneOf excludedChars) <* string ")"
+
+    excludedChars :: [Char]
+    excludedChars = [')']

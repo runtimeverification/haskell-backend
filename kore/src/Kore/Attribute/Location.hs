@@ -35,26 +35,6 @@ data LineColumn = LineColumn
     , column :: Int
     } deriving (Eq, Ord, Show, Generic)
 
-type Parser = Parsec String String
-
-locationParser :: Parser Location
-locationParser =
-    Location
-        <$> optional parseStart
-        <*> optional parseEnd
-  where
-    parseStart :: Parser LineColumn
-    parseStart =
-        LineColumn
-            <$> (string "Location(" *> decimal)
-            <*> (string "," *> decimal)
-
-    parseEnd :: Parser LineColumn
-    parseEnd =
-        LineColumn
-            <$> (string "," *> decimal)
-            <*> (string "," *> decimal <* ")")
-
 instance NFData LineColumn
 
 instance Default LineColumn where
@@ -91,3 +71,23 @@ instance ParseAttributes Location where
                     StringLiteral str <- Parser.getStringLiteral arg
                     pure . maybe def id . parseMaybe locationParser $ Text.unpack str
                 _ -> pure def
+
+type Parser = Parsec String String
+
+locationParser :: Parser Location
+locationParser =
+    Location
+        <$> optional parseStart
+        <*> optional parseEnd
+  where
+    parseStart :: Parser LineColumn
+    parseStart =
+        LineColumn
+            <$> (string "Location(" *> decimal)
+            <*> (string "," *> decimal)
+
+    parseEnd :: Parser LineColumn
+    parseEnd =
+        LineColumn
+            <$> (string "," *> decimal)
+            <*> (string "," *> decimal <* ")")
