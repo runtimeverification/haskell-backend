@@ -18,9 +18,11 @@ module Kore.IndexedModule.Resolvers
     , resolveHook
     , findIndexedSort
 
-    -- TODO: This symbol is used internally - but in an untested function.
-    -- It itself is tested, so it indirectly provides a little testing for
-    -- the otherwise untested function.
+    -- TODO: This symbol is used by `resolveHook`.
+    -- `resolveHook` doesn't have tests, but
+    -- `getHeadApplicationSorts does. So this is
+    -- exported until `resolveHook` has its own
+    -- tests.
     , getHeadApplicationSorts
 
     ) where
@@ -96,7 +98,7 @@ getHeadApplicationSorts
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
-    applyToSentence sentenceSorts m patternHead
+    applyToHeadSentence sentenceSorts m patternHead
   where
     sentenceSorts :: SentenceSymbolOrAlias ssoa
                   => [Sort level] -> ssoa level pat -> ApplicationSorts level
@@ -235,6 +237,7 @@ resolveAlias m headId =
             return result
 
 
+
 {-|'resolveSort' looks up a sort id in an 'IndexedModule',
 also searching in the imported modules.
 -}
@@ -327,7 +330,7 @@ findIndexedSort indexedModule sort =
 -- It would make sense to put this in a `where` clause; however,
 -- the fully type annotation is required even there, and that makes
 -- for too much clutter.
-applyToSentence
+applyToHeadSentence
     :: (MetaOrObject level)
     => (forall ssoa .  SentenceSymbolOrAlias ssoa
        => [Sort level]
@@ -336,7 +339,7 @@ applyToSentence
     -> IndexedModule param pat declAtts axiomAtts
     -> SymbolOrAlias level
     -> result
-applyToSentence f =
+applyToHeadSentence f =
      applyToResolution (\ params (_, sentence) -> f params sentence)
 
 -- It would make sense to put this in a `where` clause; however,
@@ -353,14 +356,15 @@ applyToAttributes f =
     applyToResolution (\ _ (attrs, _) -> f attrs)
 
 
-applyToResolution :: (HasCallStack, MetaOrObject level)
-                   => (forall ssoa .  SentenceSymbolOrAlias ssoa
-                       => [Sort level]
-                       -> (declAtts, ssoa level pat)
-                       -> result)
-                   -> IndexedModule param pat declAtts axiomAtts
-                   -> SymbolOrAlias level
-                   -> result
+applyToResolution
+    :: (HasCallStack, MetaOrObject level)
+    => (forall ssoa .  SentenceSymbolOrAlias ssoa
+        => [Sort level]
+        -> (declAtts, ssoa level pat)
+        -> result)
+    -> IndexedModule param pat declAtts axiomAtts
+    -> SymbolOrAlias level
+    -> result
 applyToResolution f m patternHead =
     case symbolResult <> aliasResult of
         Right result -> result
@@ -380,6 +384,7 @@ assertRight wrapped =
     case wrapped of
         Left err      -> error (printError err)
         Right desired -> desired
+
 
 -- | A message declaring that a Sort is undefined
 noSort :: MetaOrObject level => Id level -> String
