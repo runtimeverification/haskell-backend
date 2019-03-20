@@ -21,13 +21,13 @@ import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad.Catch
-                 ( catch )
+                 ( MonadCatch, catch )
 import           Control.Monad.Extra
                  ( whileM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
-                 ( StateT )
+                 ( MonadState, StateT )
 import           Control.Monad.State.Strict
                  ( evalStateT, get )
 import           Control.Monad.State.Strict
@@ -43,7 +43,7 @@ import           Data.Maybe
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( Parsec, option, parseMaybe, (<|>) )
+                 ( Parsec, option, optional, parseMaybe, (<|>) )
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer
                  ( decimal, signed )
@@ -152,38 +152,34 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             }
 
     firstClaim :: Claim level
-    firstClaim = maybe (error "No claims found") id . listToMaybe $ claims'
+    firstClaim = maybe (error "No claims found") id $ listToMaybe claims'
 
     firstClaimExecutionGraph :: ExecutionGraph level
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0 :: StateT (ReplState level) Simplifier Bool
     stepper0 = do
-        ReplState
-            { claims
-            , axioms
-            , graph
-            , claim
-            , node
-            } <- get
+        ReplState { claims , axioms , graph , claim , node } <- get
         if Graph.outdeg (Strategy.graph graph) node == 0
             then do
-                graph' <- lift . catchInterruptWithDefault graph
-                    $ verifyClaimStep
-                        tools
-                        simplifier
-                        predicateSimplifier
-                        axiomToIdSimplifier
-                        claim
-                        claims
-                        axioms
-                        graph
-                        node
+                graph' <-
+                    lift
+                        . catchInterruptWithDefault graph
+                        $ verifyClaimStep
+                            tools
+                            simplifier
+                            predicateSimplifier
+                            axiomToIdSimplifier
+                            claim
+                            claims
+                            axioms
+                            graph
+                            node
                 lensGraph .= graph'
                 pure True
             else pure False
 
-    catchInterruptWithDefault :: a -> Simplifier a -> Simplifier a
+    catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =
         catch sa $ \UserInterrupt -> do
             liftIO $ putStrLn "Step evaluation interrupted."
@@ -194,7 +190,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: StateT (ReplState level) Simplifier String
+    prompt :: MonadIO m => MonadState (ReplState level) m => m String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do
@@ -221,7 +217,7 @@ data ReplCommand
     -- ^ Do n proof steps from curent node.
     | SelectNode !Int
     -- ^ Select a different node in the graph.
-    | ShowConfig (Maybe Int)
+    | ShowConfig !(Maybe Int)
     -- ^ Show the configuration from the current node.
     | Exit
     -- ^ Exit the repl.
@@ -239,8 +235,8 @@ helpText =
     \step [n]                attempts to run 'n' proof steps at\
                              \the current node (n=1 by default)\n\
     \select <n>              select node id 'n' from the graph\n\
-    \config                  shows the config for the selected \
-                             \node\n\
+    \config [n]              shows the config for node 'n'\
+                             \(defaults to current node)\n\
     \exit                    exits the repl"
 
 type Parser = Parsec String String
@@ -281,7 +277,7 @@ commandParser =
         fmap SelectNode $ string "select" *> space *> signed space decimal
 
     showConfig0 :: Parser ReplCommand
-    showConfig0 = fmap ShowConfig $ string "config" *> (fmap Just (space *> decimal) <|> pure Nothing)
+    showConfig0 = fmap ShowConfig $ string "config" *> optional (space *> decimal)
 
     exit0 :: Parser ReplCommand
     exit0 = Exit <$ string "exit"
@@ -304,37 +300,40 @@ replInterpreter =
         ShowConfig mc -> showConfig0 mc $> True
         Exit -> pure False
   where
-    showUsage0 :: StateT st Simplifier ()
+    showUsage0 :: MonadIO m => m ()
     showUsage0 =
         putStrLn' "Could not parse command, try using 'help'."
 
-    help0 :: StateT st Simplifier ()
+    help0 :: MonadIO m => m ()
     help0 = putStrLn' helpText
 
-    showClaim0 :: Int -> StateT (ReplState level) Simplifier ()
+    showClaim0
+        :: MonadIO m
+        => MonadState (ReplState level) m
+        => Int
+        -> m ()
     showClaim0 index = do
         claim <- Lens.preuse $ lensClaims . Lens.element index
-        putStrLn' $ maybe indexNotFound (unparseToString . unClaim) claim
+        maybe printNotFound (printRewriteRule . unClaim) $ claim
 
-    showAxiom0 :: Int -> StateT (ReplState level) Simplifier ()
+    showAxiom0
+        :: MonadIO m
+        => MonadState (ReplState level) m
+        => Int
+        -> m ()
     showAxiom0 index = do
         axiom <- Lens.preuse $ lensAxioms . Lens.element index
-        case axiom of
-            Nothing -> putStrLn' indexNotFound
-            Just axiom' -> do
-                putStrLn' . unparseToString . unAxiom  $ axiom'
-                putStrLn'
-                    . maybe mempty id
-                    . formatSourceAndLocation
-                    . extractSourceAndLocation
-                    $ axiom'
+        maybe printNotFound (printRewriteRule . unAxiom) $ axiom
 
-
-    prove0 :: Int -> StateT (ReplState level) Simplifier ()
+    prove0
+        :: MonadIO m
+        => MonadState (ReplState level) m
+        => Int
+        -> m ()
     prove0 index = do
         claim' <- Lens.preuse $ lensClaims . Lens.element index
         case claim' of
-            Nothing -> putStrLn' indexNotFound
+            Nothing -> printNotFound
             Just claim -> do
                 let
                     graph@Strategy.ExecutionGraph { root }
@@ -344,7 +343,10 @@ replInterpreter =
                 lensNode  .= root
                 putStrLn' "Execution Graph initiated"
 
-    showGraph0 :: StateT (ReplState level) Simplifier ()
+    showGraph0
+        :: MonadIO m
+        => MonadState (ReplState level) m
+        => m ()
     showGraph0 = do
         Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
         liftIO $ showDotGraph graph
@@ -382,6 +384,15 @@ replInterpreter =
                    . Graph.context graph
                    $ node'
            else putStrLn' "Invalid node!"
+
+    printRewriteRule :: MonadIO m => RewriteRule level Kore.Variable -> m ()
+    printRewriteRule rule = do
+        putStrLn' $ unparseToString rule
+        putStrLn'
+            . maybe mempty id
+            . formatSourceAndLocation
+            . extractSourceAndLocation
+            $ rule
 
     performSingleStep
         :: StateT (ReplState level) Simplifier StepResult
@@ -448,13 +459,15 @@ replInterpreter =
           | line' == line = "-" <> show column
           | otherwise     = "-" <> show line <> ":" <> show column
 
-    extractSourceAndLocation :: Axiom level -> (Source, Location)
     extractSourceAndLocation
-        (Axiom (RewriteRule (RulePattern{ Axiom.attributes }))) =
+        :: RewriteRule level Kore.Variable
+        -> (Source, Location)
+    extractSourceAndLocation
+        (RewriteRule (RulePattern{ Axiom.attributes })) =
             (source attributes, location attributes)
 
-    indexNotFound :: String
-    indexNotFound = "Variable or index not found"
+    printNotFound :: MonadIO m => m ()
+    printNotFound = putStrLn' "Variable or index not found"
 
     putStrLn' :: MonadIO m => String -> m ()
     putStrLn' = liftIO . putStrLn
