@@ -15,17 +15,15 @@ import           Control.Applicative
                  ( optional )
 import           Control.DeepSeq
                  ( NFData )
-import           Control.Monad
-                 ( (>=>) )
 import           Data.Default
 import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 import           Text.Megaparsec
-                 ( Parsec, option, parseMaybe, (<|>) )
+                 ( Parsec, parseMaybe )
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer
-                 ( decimal, signed )
+                 ( decimal )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -85,10 +83,10 @@ instance ParseAttributes Location where
             -> [CommonKorePattern]
             -> Location
             -> Parser.Parser Location
-        parseApplication params args Location { start, end } = do
+        parseApplication params args _ = do
             Parser.getZeroParams params
             case args of
-                [loc] -> do
+                [_] -> do
                     arg <- Parser.getOneArgument args
                     StringLiteral str <- Parser.getStringLiteral arg
                     pure . maybe def id . parseMaybe locationParser $ Text.unpack str

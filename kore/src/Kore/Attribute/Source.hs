@@ -14,19 +14,13 @@ import           Control.Applicative
                  ( many, optional )
 import           Control.DeepSeq
                  ( NFData )
-import           Control.Monad
-                 ( (>=>) )
-import           Data.Char
-                 ( ord )
 import           Data.Default
 import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 import           Text.Megaparsec
-                 ( Parsec, noneOf, option, parseMaybe, (<|>) )
+                 ( Parsec, noneOf, parseMaybe )
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer
-                 ( decimal, signed )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -70,7 +64,7 @@ instance ParseAttributes Source where
         parseApplication params args _ = do
             Parser.getZeroParams params
             case args of
-                [loc] -> do
+                [_] -> do
                     arg <- Parser.getOneArgument args
                     StringLiteral str <- Parser.getStringLiteral arg
                     pure . maybe def id . parseMaybe sourceParser $ Text.unpack str

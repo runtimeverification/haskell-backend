@@ -74,7 +74,7 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns
                  ( RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as Axiom
-                 ( RewriteRule (..), attributes )
+                 ( attributes )
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Simplification.Data
