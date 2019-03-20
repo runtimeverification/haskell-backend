@@ -60,8 +60,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( OrStepResult (OrStepResult),
-                 UnificationProcedure (UnificationProcedure),
-                 stepWithRemaindersForUnifier )
+                 UnificationProcedure (UnificationProcedure) )
+import qualified Kore.Step.Step as Step
 import qualified Kore.Step.Step as OrStepResult
                  ( OrStepResult (..) )
 import           Kore.Step.StepperAttributes
@@ -308,18 +308,19 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    resultOrError <- runExceptT
-        $ stepWithRemaindersForUnifier
+    resultOrError <-
+        runExceptT
+        $ Step.sequenceRules
             tools
-            (UnificationProcedure unificationWithAppMatchOnTop)
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            (map unwrapEqualityRule definitionRules)
+            (UnificationProcedure unificationWithAppMatchOnTop)
             expanded
+            (map unwrapEqualityRule definitionRules)
 
     let OrStepResult { rewrittenPattern, remainder } = case resultOrError of
-            Right (result, _proof) -> result
+            Right result -> result
             Left _ -> OrStepResult
                 { rewrittenPattern = MultiOr.make []
                 , remainder = MultiOr.make [expanded]
