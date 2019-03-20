@@ -24,6 +24,7 @@ module Kore.Step.AxiomPatterns
     , refreshRulePattern
     , freeVariables
     , Kore.Step.AxiomPatterns.mapVariables
+    , substitute
     ) where
 
 import           Control.Comonad
@@ -384,10 +385,38 @@ mapVariables
     => (variable1 level -> variable2 level)
     -> RulePattern level variable1
     -> RulePattern level variable2
-mapVariables mapping rulePattern@RulePattern { left, right, requires, ensures } =
+mapVariables mapping rulePattern =
     rulePattern
         { left = Pattern.mapVariables mapping left
         , right = Pattern.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
         , ensures = Predicate.mapVariables mapping ensures
         }
+  where
+    RulePattern { left, right, requires, ensures } = rulePattern
+
+
+{- | Traverse the predicate from the top down and apply substitutions.
+
+The 'freeVariables' annotation is used to avoid traversing subterms that
+contain none of the targeted variables.
+
+ -}
+substitute
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , SortedVariable variable
+        )
+    => Map (variable level) (StepPattern level variable)
+    -> RulePattern level variable
+    -> RulePattern level variable
+substitute subst rulePattern =
+    rulePattern
+        { left = Pattern.substitute subst left
+        , right = Pattern.substitute subst right
+        , requires = Predicate.substitute subst requires
+        , ensures = Predicate.substitute subst ensures
+        }
+  where
+    RulePattern { left, right, requires, ensures } = rulePattern
