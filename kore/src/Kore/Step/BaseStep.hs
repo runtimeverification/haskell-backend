@@ -1029,15 +1029,12 @@ applyRule
     axiomSimplifiers
 
     initial
-    instantiated@Predicated { term = axiom }
-  = do
-    let merged = initial *> instantiated { term = () }
-    normalized <- normalize merged
-    return normalized { term = right axiom }
+    instantiated
+  =
+    applyInitialConditions' initial (right <$> instantiated)
   where
-    normalize =
-        fromUnification
-        . Substitution.normalizeExcept
+    applyInitialConditions' =
+        applyInitialConditions
             metadataTools
             predicateSimplifier
             patternSimplifier
@@ -1077,9 +1074,54 @@ applyRemainder
     axiomSimplifiers
 
     initial@Predicated { term }
-    remainder
+    (PredicateSubstitution.fromPredicate -> remainder)
+  =
+    applyInitialConditions' initial (remainder $> term)
+  where
+    applyInitialConditions' =
+        applyInitialConditions
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+
+{- | Apply the initial conditions to some 'Predicated' unification term.
+
+The initial conditions are merged with the supplied unification conditions and
+normalized. @applyInitialConditions@ fails if normalization
+fails. @applyInitialConditions@ branches when the
+'PredicateSubstitutionSimplifier' causes normalization to branch.
+
+ -}
+applyInitialConditions
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> Predicated Object variable term'
+    -- ^ Initial configuration
+    -> Predicated Object variable term
+    -- ^ Instantiated rule
+    -> BranchT
+        (ExceptT (StepError Object variable) Simplifier)
+        (Predicated Object variable term)
+applyInitialConditions
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    initial
+    unification@Predicated { term }
   = do
-    let merged = initial *> PredicateSubstitution.fromPredicate remainder
+    let merged = initial *> unification { term = () }
     normalized <- normalize merged
     return normalized { term }
   where
