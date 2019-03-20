@@ -1148,7 +1148,7 @@ applyRewriteRule
     -> RewriteRule level variable
     -- ^ Rewriting axiom
     -> ExceptT (StepError level variable) Simplifier
-        (OrStepResult level variable)
+        (Result level variable)
 applyRewriteRule
     metadataTools
     predicateSimplifier
