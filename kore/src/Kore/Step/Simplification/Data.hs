@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Data
     , runSimplifier
     , evalSimplifier
     , BranchT, runBranchT
-    , getBranches
-    , liftPruned, returnPruned
     , evalSimplifierBranch
     , gather
     , gatherAll
@@ -27,16 +25,17 @@ module Kore.Step.Simplification.Data
 
 import           Colog
                  ( HasLog (..), LogAction (..) )
+import           Control.Applicative
 import           Control.Concurrent.MVar
                  ( MVar )
 import qualified Control.Monad as Monad
+import           Control.Monad.Morph
+                 ( MFunctor, MMonad )
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
-import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT (..), runExceptT )
-import qualified Data.Foldable as Foldable
 import           Data.Typeable
 import           GHC.Stack
                  ( HasCallStack )
@@ -56,12 +55,9 @@ import           Kore.Step.Representation.MultiOr
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
-import           Kore.TopBottom
-                 ( TopBottom )
-import qualified Kore.TopBottom as TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-import           ListT
+import qualified ListT
 import           SimpleSMT
                  ( Solver )
 import           SMT
@@ -107,11 +103,13 @@ Use 'scatter' and 'gather' to translate between the two forms of branches.
 -}
 newtype BranchT m a =
     -- Pay no attention to the ListT behind the curtain!
-    BranchT { runBranchT :: ListT m a }
+    BranchT { runBranchT :: ListT.ListT m a }
     deriving
         ( Alternative
         , Applicative
         , Functor
+        , MFunctor
+        , MMonad
         , Monad
         , MonadIO
         , MonadPlus
@@ -126,41 +124,6 @@ deriving instance MonadState s m => MonadState s (BranchT m)
 instance MonadSMT m => MonadSMT (BranchT m) where
     liftSMT = lift . liftSMT
     {-# INLINE liftSMT #-}
-
-{- | Collect the values produced along the disjoint branches.
- -}
-getBranches :: Applicative m => BranchT m a -> m [a]
-getBranches (BranchT as) = toListM as
-
-{- | Lift a computation into 'BranchT' while pruning 'isBottom' results.
-
-Example:
-
-@
-liftPrune (return 'Kore.Step.ExpandedPattern.bottom') === empty
-@
-
-See also: 'returnPruned'
-
- -}
-liftPruned :: (Monad m, TopBottom t) => m t -> BranchT m t
-liftPruned unlifted = Monad.Trans.lift unlifted >>= returnPruned
-
-{- | Return a 't' unless the value satisfies 'TopBottom.isBottom'.
-
-When the values satisfies 'TopBottom.isBottom', the result is 'empty' instead.
-
-Example:
-
-@
-returnPruned 'Kore.Step.ExpandedPattern.bottom' === empty
-@
-
- -}
-returnPruned :: TopBottom t => t -> BranchT m t
-returnPruned t
-  | TopBottom.isBottom t = empty
-  | otherwise = return t
 
 {- | Collect results from many simplification branches into one result.
 
@@ -181,8 +144,8 @@ gather empty === pure ('OrOfExpandedPattern.make' [])
 See also: 'scatter'
 
  -}
-gather :: Applicative m => BranchT m a -> m (MultiOr a)
-gather simpl = OrOfExpandedPattern.MultiOr <$> getBranches simpl
+gather :: Monad m => BranchT m a -> m (MultiOr a)
+gather (BranchT simpl) = OrOfExpandedPattern.MultiOr <$> ListT.gather simpl
 
 {- | Collect results from many simplification branches into one result.
 
@@ -193,7 +156,7 @@ returns one result.
 See also: 'scatter', 'gather'
 
  -}
-gatherAll :: Applicative m => BranchT m (MultiOr a) -> m (MultiOr a)
+gatherAll :: Monad m => BranchT m (MultiOr a) -> m (MultiOr a)
 gatherAll simpl = Monad.join <$> gather simpl
 
 {- | Disperse results into many simplification branches.
@@ -211,10 +174,8 @@ scatter ('OrOfExpandedPattern.make' []) === empty
 See also: 'gather'
 
  -}
-scatter
-    :: MultiOr a
-    -> BranchT m a
-scatter ors = Foldable.asum (pure <$> ors)
+scatter :: MultiOr a -> BranchT m a
+scatter = BranchT . ListT.scatter
 
 -- * Simplifier
 
@@ -295,9 +256,9 @@ evalSimplifierBranch
     -- ^ initial counter for fresh variables
     -> BranchT Simplifier a
     -- ^ simplifier computation
-    -> SMT [a]
+    -> SMT (MultiOr a)
 evalSimplifierBranch logger =
-    evalSimplifier logger . getBranches
+    evalSimplifier logger . gather
 
 {- | Run a simplification, returning the result of only one branch.
 

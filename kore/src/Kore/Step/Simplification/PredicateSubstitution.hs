@@ -32,6 +32,7 @@ import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -117,7 +118,8 @@ simplify
                             axiomIdToSimplifier
                             [simplifiedPredicate]
                             [substitution, simplifiedSubstitution]
-                    returnPruned mergedPredicateSubstitution
+                    TopBottom.guardAgainstBottom mergedPredicateSubstitution
+                    return mergedPredicateSubstitution
   where
     substitutionSimplifier =
         PredicateSubstitutionSimplifier
