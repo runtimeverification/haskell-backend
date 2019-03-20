@@ -585,7 +585,8 @@ applyUnificationToRhs
     let
         result = unwrapPatternVariables rawResult
         condition = unwrapPredicateVariables normalizedCondition
-        remainderPredicate = unwrapPredicateVariables normalizedRemainderPredicate
+        remainderPredicate =
+            unwrapPredicateVariables normalizedRemainderPredicate
 
     let isBottom = Predicate.isFalse condition
         allVarsCovered = Set.isSubsetOf
@@ -854,23 +855,21 @@ unwrapStepErrorVariables =
     withExceptT (mapStepErrorVariables unwrapStepperVariable)
 
 unwrapPatternVariables
-    ::  forall level variable
-    .   ( MetaOrObject level
-        , Ord (variable level)
-        , Unparse (variable level)
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Unparse (variable Object)
         )
-    => StepPattern level (StepperVariable variable)
-    -> StepPattern level variable
+    => StepPattern Object (StepperVariable variable)
+    -> StepPattern Object variable
 unwrapPatternVariables = Pattern.mapVariables unwrapStepperVariable
 
 unwrapPredicateVariables
-    ::  forall level variable
-    .   ( MetaOrObject level
-        , Ord (variable level)
-        , Unparse (variable level)
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Unparse (variable Object)
         )
-    => Predicate level (StepperVariable variable)
-    -> Predicate level variable
+    => Predicate Object (StepperVariable variable)
+    -> Predicate Object variable
 unwrapPredicateVariables = fmap unwrapPatternVariables
 
 wrapUnificationOrSubstitutionError
@@ -1429,13 +1428,15 @@ sequenceRewriteRules
             { rewrittenPattern = empty
             , remainder = pure initialConfig
             }
-    fromResult config Result { result, coverage } = do
-        notCovered <-
-            fmap PredicateSubstitution.fromPredicate
-            $ unwrapPredicateVariables
-            $ Predicate.makeNotPredicate
-            $ Predicate.makeMultipleAndPredicate
-            $ Foldable.toList coverage
+    fromResult config Result { unifiedRule, result } = do
+        let notCovered =
+                PredicateSubstitution.fromPredicate
+                $ unwrapPredicateVariables
+                $ Predicate.makeNotPredicate
+                $ Predicate.makeMultipleAndPredicate
+                $ Foldable.toList
+                $ unificationConditions
+                $ Predicated.withoutTerm unifiedRule
         return OrStepResult
             { rewrittenPattern = pure result
             , remainder = pure (config <* notCovered)
