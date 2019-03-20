@@ -735,6 +735,41 @@ test_baseStep =
                 )
         assertEqualWithExplanation "" expect actual
 
+    -- x => x ensures g(x)=f(x)
+    -- vs
+    -- a
+    -- Expected: a and g(a)=f(a)
+    , testCase "Conjoins axiom pre-condition" $ do
+        let
+            preCondition var =
+                makeEqualsPredicate
+                    (metaG (mkVar $ var patternMetaSort))
+                    (metaF (mkVar $ var patternMetaSort))
+            expect = Right
+                [   ( Predicated
+                        { term = mkVar $ a1 patternMetaSort
+                        , predicate = preCondition a1
+                        , substitution = mempty
+                        }
+                    , mconcat
+                        (map stepProof
+                            [ StepProofVariableRenamings []
+                            , StepProofUnification EmptyUnificationProof
+                            ]
+                        )
+                    )
+                ]
+        actual <-
+            runStep
+                mockMetaMetadataTools
+                Predicated
+                    { term = mkVar $ a1 patternMetaSort
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                (RewriteRule ruleId { ensures = preCondition x1 })
+        assertEqualWithExplanation "" expect actual
+
     -- x => x requires g(x)=f(x)
     -- vs
     -- a
