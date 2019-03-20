@@ -9,7 +9,6 @@ Portability : POSIX
 -}
 module Kore.IndexedModule.Resolvers
     ( HeadType(..)
-    , getHeadApplicationSorts
     , getHeadAttributes
     , getHeadType
     , getSortAttributes
@@ -17,10 +16,19 @@ module Kore.IndexedModule.Resolvers
     , resolveAlias
     , resolveSymbol
     , resolveHook
-    , resolveHooks
     , findIndexedSort
+
+    -- TODO: This symbol is used by `resolveHook`.
+    -- `resolveHook` doesn't have tests, but
+    -- `getHeadApplicationSorts does. So this is
+    -- exported until `resolveHook` has its own
+    -- tests.
+    , getHeadApplicationSorts
+
     ) where
 
+import           Data.Functor
+                 ( ($>) )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import           Data.Proxy
@@ -39,8 +47,9 @@ import           Kore.AST.Error
 import           Kore.AST.Kore
 import           Kore.AST.Sentence hiding
                  ( Alias (..), Symbol (..) )
+import           Kore.ASTHelpers as AST
 import           Kore.ASTHelpers
-                 ( ApplicationSorts (..), symbolOrAliasSorts )
+                 ( ApplicationSorts (..) )
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -80,30 +89,16 @@ getHeadApplicationSorts
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
-    case resolveSymbol m headName of
-        Right (_, sentence) ->
-            case symbolOrAliasSorts headParams sentence of
-                Left err     -> error (printError err)
-                Right result -> result
-        Left _ ->
-            case resolveAlias m headName of
-                Right (_, sentence) ->
-                    case symbolOrAliasSorts headParams sentence of
-                        Left err     -> error (printError err)
-                        Right result -> result
-                Left _ ->
-                    error ("Head " ++ show patternHead ++ " not defined.")
+    applyToHeadSentence sentenceSorts m patternHead
   where
-    headName = symbolOrAliasConstructor patternHead
-    headParams = symbolOrAliasParams patternHead
+    sentenceSorts :: SentenceSymbolOrAlias ssoa
+                  => [Sort level] -> ssoa level pat -> ApplicationSorts level
+    sentenceSorts sortParameters sentence =
+        assertRight $ symbolOrAliasSorts sortParameters sentence
 
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
 -- 'SentenceAlias', and returns its attributes.
--- FIXME: duplicated code as in getHeadApplicationSorts, i.e. use (<|>)
--- The problem is resolveSymbol and resolveAlias return different types
--- you could work around this with some rearrangement
--- but rather just change the types
 getHeadAttributes
     :: MetaOrObject level
     => IndexedModule sortParam patternType declAtts axiomAtts
@@ -111,15 +106,7 @@ getHeadAttributes
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> declAtts
 getHeadAttributes m patternHead =
-    case resolveSymbol m headName of
-        Right (atts, _) -> atts
-        Left _ ->
-            case resolveAlias m headName of
-                Right (atts, _) -> atts
-                Left _ ->
-                    error ("Head " ++ show patternHead ++ " not defined.")
-  where
-    headName = symbolOrAliasConstructor patternHead
+    applyToAttributes id m patternHead
 
 -- |The type of a 'SymbolOrAlias'.
 data HeadType
@@ -128,21 +115,20 @@ data HeadType
 
 -- |Given a KoreIndexedModule and a head, retrieves the head type.
 getHeadType
-    :: MetaOrObject level
+    :: (HasCallStack, MetaOrObject level)
     => IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ Module representing an indexed definition
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> HeadType
 getHeadType m patternHead =
-    case resolveSymbol m headName of
-        Right _ -> Symbol
-        Left _ ->
-            case resolveAlias m headName of
-                Right _ -> Alias
-                Left _ ->
-                    error ("Head " ++ show patternHead ++ " not defined.")
+    case symbol <> alias of
+        Right result -> result
+        Left _ -> error $ noHead patternHead
   where
     headName = symbolOrAliasConstructor patternHead
+    symbol = resolveSymbol m headName $> Symbol
+    alias = resolveAlias m headName $> Alias
+
 
 getSortAttributes
     :: (HasCallStack, MetaOrObject level)
@@ -152,7 +138,7 @@ getSortAttributes
 getSortAttributes m (SortActualSort (SortActual sortId _)) =
   case resolveSort m sortId of
     Right (atts, _) -> atts
-    Left _ -> error $ "Sort " ++ show sortId ++ " not defined."
+    Left _ -> error $ noSort sortId
 getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
 
 
@@ -222,9 +208,7 @@ resolveSymbol
 resolveSymbol m headId =
     case resolveThing (symbolSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
-            koreFailWithLocations
-                [headId]
-                ("Symbol '" ++ getIdForError headId ++  "' not defined.")
+            koreFailWithLocations [headId] (noSymbol headId)
         Just result ->
             return result
 
@@ -239,11 +223,10 @@ resolveAlias
 resolveAlias m headId =
     case resolveThing (aliasSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
-            koreFailWithLocations
-                [headId]
-                ("Alias '" ++ getIdForError headId ++  "' not defined.")
+            koreFailWithLocations [headId] (noAlias headId)
         Just result ->
             return result
+
 
 
 {-|'resolveSort' looks up a sort id in an 'IndexedModule',
@@ -331,3 +314,90 @@ findIndexedSort
     -> Either (Error e) (SentenceSort level patternType)
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)
+
+
+{- Utilities -}
+
+-- It would make sense to put this in a `where` clause; however,
+-- the fully type annotation is required even there, and that makes
+-- for too much clutter.
+applyToHeadSentence
+    :: (MetaOrObject level)
+    => (forall ssoa .  SentenceSymbolOrAlias ssoa
+       => [Sort level]
+       -> ssoa level pat
+       -> result)
+    -> IndexedModule param pat declAtts axiomAtts
+    -> SymbolOrAlias level
+    -> result
+applyToHeadSentence f =
+     applyToResolution (\ params (_, sentence) -> f params sentence)
+
+-- It would make sense to put this in a `where` clause; however,
+-- the fully type annotation is required even there, and that makes
+-- for too much clutter.
+applyToAttributes
+    :: MetaOrObject level
+    => (declAtts -> result)
+    -> IndexedModule sortParam patternType declAtts axiomAtts
+    -- ^ module representing an indexed definition
+    -> SymbolOrAlias level     -- ^the head we want to find sorts for
+    -> result
+applyToAttributes f =
+    applyToResolution (\ _ (attrs, _) -> f attrs)
+
+
+applyToResolution
+    :: (HasCallStack, MetaOrObject level)
+    => (forall ssoa .  SentenceSymbolOrAlias ssoa
+        => [Sort level]
+        -> (declAtts, ssoa level pat)
+        -> result)
+    -> IndexedModule param pat declAtts axiomAtts
+    -> SymbolOrAlias level
+    -> result
+applyToResolution f m patternHead =
+    case symbolResult <> aliasResult of
+        Right result -> result
+        Left _ -> error $ noHead patternHead
+  where
+    headName = symbolOrAliasConstructor patternHead
+    headParams = symbolOrAliasParams patternHead
+    symbolResult = f headParams <$> resolveSymbol m headName
+    aliasResult = f headParams <$> resolveAlias m headName
+
+{- Support for warning of undefined values -}
+
+-- | `error` with a helpful message in case of `Left`.
+-- | Otherwise, return what `Right` returns.
+assertRight :: Either (Error err) desired -> desired
+assertRight wrapped =
+    case wrapped of
+        Left err      -> error (printError err)
+        Right desired -> desired
+
+
+-- | A message declaring that a Sort is undefined
+noSort :: MetaOrObject level => Id level -> String
+noSort sortId =
+    notDefined "Sort" $ show sortId
+
+-- | A message declaring that a Head is undefined
+noHead :: MetaOrObject level => SymbolOrAlias level -> String
+noHead patternHead =
+    notDefined "Head" $ show patternHead
+
+-- | A message declaring that a Alias is undefined
+noAlias :: MetaOrObject level => Id level -> String
+noAlias identifier =
+    notDefined "Alias" $ getIdForError identifier
+
+-- | A message declaring that a Symbol is undefined
+noSymbol :: MetaOrObject level => Id level -> String
+noSymbol identifier =
+    notDefined "Symbol" $ getIdForError identifier
+
+-- | A message declaring that some `tag` is undefined.
+notDefined :: String -> String -> String
+notDefined tag identifier =
+    tag ++ " '" ++ identifier ++ "' not defined."
