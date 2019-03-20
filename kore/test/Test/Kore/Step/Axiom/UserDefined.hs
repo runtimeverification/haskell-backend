@@ -76,6 +76,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -92,6 +93,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
@@ -108,6 +110,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 Mock.a
                     , right = Mock.functionalConstr11 Mock.a
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
@@ -133,6 +136,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeFalsePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -154,6 +158,7 @@ test_userDefinedFunction =
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -199,6 +204,7 @@ test_userDefinedFunction =
                             (mkVar Mock.x)
                     , right = Mock.g (mkVar Mock.x)
                     , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
