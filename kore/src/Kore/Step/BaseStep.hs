@@ -1301,16 +1301,14 @@ unwrapVariables config@Predicated { substitution } =
   where
     substitution' = Substitution.filter isConfigurationVariable substitution
 
-mkNotMultiAnd
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => MultiAnd (Predicate Object variable)
-    -> MultiOr (Predicate Object variable)
-mkNotMultiAnd = MultiOr.make . map Predicate.makeNotPredicate . Foldable.toList
+{- | Negate the coverage of many rules to form the /remainders/.
 
+The /remainders/ are the parts of the initial configuration that are not matched
+by any applied rule.
+
+See also: 'unificationCoverage'
+
+ -}
 negateCoverage
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
@@ -1327,6 +1325,26 @@ negateCoverage = negateCoverageWorker . Foldable.toList
             <$> mkNotMultiAnd x
             <*> negateCoverageWorker xs
 
+mkNotMultiAnd
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => MultiAnd (Predicate Object variable)
+    -> MultiOr (Predicate Object variable)
+mkNotMultiAnd = MultiOr.make . map Predicate.makeNotPredicate . Foldable.toList
+
+{- | Return the /coverage/ of the unification solution.
+
+The /coverage/ of the unification is a predicate which restricts the initial
+configuration so that it would match the left-hand side of the applied rule.
+
+The coverage is negated to form the /remainder/ after rule application, but we
+should not do that until we have remainders from all the applied rules; see
+'negateCoverage'.
+
+ -}
 unificationCoverage
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
@@ -1334,6 +1352,7 @@ unificationCoverage
         , SortedVariable variable
         )
     => PredicateSubstitution Object (StepperVariable variable)
+    -- ^ Unification solution
     -> MultiAnd (Predicate Object (StepperVariable variable))
 unificationCoverage Predicated { predicate, substitution } =
     predicateCoverage predicate <|> substitutionCoverage substitution'
