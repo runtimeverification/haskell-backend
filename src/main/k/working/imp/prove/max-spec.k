@@ -25,8 +25,8 @@ else
     <state>
     a |-> A:Int
     b |-> B:Int
-    max |-> (_ => A)
+    max |-> (_ => ?M:Int)
     </state>
-    requires A >Int B
+    ensures (A >=Int B andBool ?M ==Int A) orBool (B >=Int A andBool ?M ==Int B)
 
 endmodule

@@ -56,7 +56,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
         ("Malformed meta sort '" ++ sortId ++ "' with non-empty Parameter sorts.")
     verifySuccess
   where
-    sortIsMeta = case asUnified sort of UnifiedObject _ -> False ; UnifiedMeta _ -> True
+    sortIsMeta = False
     sortName   = sortActualName sort
     sortId     = getIdForError sortName
 

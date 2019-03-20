@@ -1,8 +1,0 @@
-[]
-
-module TEST-EXCEPTION-20
-
-  axiom{}
-    \in{#S,S}(X:S,X:S) []
-
-endmodule []

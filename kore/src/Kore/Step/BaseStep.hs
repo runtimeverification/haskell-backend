@@ -63,8 +63,6 @@ import           Kore.Step.AxiomPatterns
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.RecursiveAttributes
-                 ( isFunctionPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -430,6 +428,7 @@ applyUnificationToRhs
         { left = axiomLeft
         , right = axiomRight
         , requires = axiomRequires
+        , ensures = axiomEnsures
         }
     expandedPattern@Predicated
         {term = initialTerm, substitution = initialSubstitution}
@@ -461,6 +460,7 @@ applyUnificationToRhs
                 axiomIdToSimplifier
                 [ startCondition  -- from initial configuration
                 , axiomRequires   -- from axiom
+                , axiomEnsures    -- from axiom
                 , rawPredicate    -- produced during unification
                 ]
                 [rawSubstitution, startSubstitution]
@@ -588,23 +588,12 @@ applyUnificationToRhs
                 `orElse` mempty
             }
         , remainder =
-            if not (isFunctionPattern tools initialTerm)
-            then error
-                (  "Cannot handle non-function patterns, \
-                \see design-decisions/\
-                \2018-10-24-And-Not-Exists-Simplification.md \
-                \for hints on how to fix:"
-                ++ show initialTerm
-                )
-            else if not (isFunctionPattern tools axiomLeft)
-            then error
-                (  "Cannot handle non-function patterns, \
-                \see design-decisions/\
-                \2018-10-24-And-Not-Exists-Simplification.md \
-                \for hints on how to fix:"
-                ++ show axiomLeft
-                )
-            else Predicated
+            -- See docs/2019-03-06-Equality-Axiom-Configuration-Splitting.md
+            -- for why this works for equality axioms.
+            -- See design-decisions/2018-10-24-And-Not-Exists-Simplification.md
+            -- for a similar argument for rewrite axioms, but note that it can
+            -- be generalized in the same way as the equality axiom document.
+            Predicated
                 { term = Pattern.mapVariables unwrapStepperVariable initialTerm
                 , predicate = remainderPredicate
                 , substitution =
@@ -614,6 +603,7 @@ applyUnificationToRhs
                 }
         }
 
+-- TODO(virgil): this seems to be used only in tests, consider deleting.
 stepWithRewriteRule
     ::  ( FreshVariable variable
         , MetaOrObject level
@@ -864,8 +854,9 @@ stepWithRemainders
     case resultOrError of
         Left _ -> error $
             "Not implemented error "
-            ++ " while applying a \\rewrite axiom to the pattern."
-            ++ " We decided to end the execution because we don't understand"
+            ++ " while applying a \\rewrite axiom to the pattern "
+            ++ unparseToString patt
+            ++ ". We decided to end the execution because we don't understand"
             ++ " this case well enough at the moment."
         Right result -> return result
 

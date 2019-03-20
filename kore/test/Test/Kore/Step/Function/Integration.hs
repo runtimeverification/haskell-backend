@@ -625,6 +625,7 @@ axiom left right predicate =
         { left
         , right
         , requires = predicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
 

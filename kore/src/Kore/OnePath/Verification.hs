@@ -35,6 +35,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject (..) )
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -52,8 +53,6 @@ import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.BaseStep
                  ( StepProof )
-import           Kore.Step.Pattern
-                 ( CommonStepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -112,7 +111,7 @@ verify
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonStepPattern level
+    ->  (  CommonExpandedPattern level
         -> [Strategy
             (Prim
                 (CommonExpandedPattern level)
@@ -160,7 +159,7 @@ defaultStrategy
     => [Claim level]
     -- The claims that we want to prove
     -> [Axiom level]
-    -> CommonStepPattern level
+    -> CommonExpandedPattern level
     -> [Strategy
         (Prim
             (CommonExpandedPattern level)
@@ -172,10 +171,10 @@ defaultStrategy
     axioms
     target
   =
-    onePathFirstStep expandedTarget rewrites
+    onePathFirstStep target rewrites
     : repeat
         (onePathFollowupStep
-            expandedTarget
+            target
             coinductiveRewrites
             rewrites
         )
@@ -186,8 +185,6 @@ defaultStrategy
         unwrap (Axiom a) = a
     coinductiveRewrites :: [RewriteRule level Variable]
     coinductiveRewrites = map rule claims
-    expandedTarget :: CommonExpandedPattern level
-    expandedTarget = ExpandedPattern.fromPurePattern target
 
 verifyClaim
     :: forall level . (MetaOrObject level)
@@ -196,7 +193,7 @@ verifyClaim
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonStepPattern level
+    ->  (  CommonExpandedPattern level
         -> [Strategy
             (Prim
                 (CommonExpandedPattern level)
@@ -215,13 +212,19 @@ verifyClaim
     substitutionSimplifier
     axiomIdToSimplifier
     strategyBuilder
-    ((RewriteRule RulePattern {left, right, requires}), stepLimit)
-  = do
+    (rule@(RewriteRule RulePattern {left, right, requires, ensures}), stepLimit)
+  = traceExceptT D_OnePath_verifyClaim [debugArg "rule" rule] $ do
     let
         strategy =
             Limit.takeWithin
                 stepLimit
-                (strategyBuilder right)
+                (strategyBuilder
+                    Predicated
+                    { term = right
+                    , predicate = ensures
+                    , substitution = mempty
+                    }
+                )
         startPattern :: CommonStrategyPattern level
         startPattern =
             StrategyPattern.RewritePattern

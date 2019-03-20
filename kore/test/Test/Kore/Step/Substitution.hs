@@ -1,17 +1,20 @@
 module Test.Kore.Step.Substitution
     ( test_mergeAndNormalizeSubstitutions
+    , test_normalize
     ) where
 
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
+
 import           Control.Monad.Except
-import qualified Control.Monad.Morph as Morph
 import qualified Data.Map as Map
-import           Test.Tasty
-                 ( TestTree )
-import           Test.Tasty.HUnit
-                 ( assertEqual, testCase )
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
@@ -19,12 +22,17 @@ import           Kore.Step.Pattern
                  ( StepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutionsExcept,
-                 normalizePredicatedSubstitution )
+                 ( mergePredicatesAndSubstitutionsExcept )
+import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
 import           SMT
@@ -38,6 +46,14 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
+
+test_normalize :: [TestTree]
+test_normalize =
+    [ testCase "predicate = \\bottom" $ do
+        let expect = mempty
+        actual <- normalize ExpandedPattern.bottomPredicate
+        assertEqual "Expected empty result" expect actual
+    ]
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
 test_mergeAndNormalizeSubstitutions =
@@ -55,7 +71,7 @@ test_mergeAndNormalizeSubstitutions =
                             ]
                         }
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , Mock.constr10 Mock.a
                         )
@@ -80,7 +96,7 @@ test_mergeAndNormalizeSubstitutions =
                             ]
                         }
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
@@ -101,7 +117,7 @@ test_mergeAndNormalizeSubstitutions =
                         , substitution = mempty
                         }
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , Mock.constr10 Mock.a
                         )
@@ -117,7 +133,7 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Left (UnificationError UnsupportedPatterns)
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
@@ -142,7 +158,7 @@ test_mergeAndNormalizeSubstitutions =
                             ]
                         }
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , Mock.constr10 Mock.a
                         )
@@ -161,7 +177,7 @@ test_mergeAndNormalizeSubstitutions =
                     Left $ SubstitutionError
                         (NonCtorCircularVariableDependency [Mock.y])
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
@@ -180,7 +196,7 @@ test_mergeAndNormalizeSubstitutions =
                     Left $ SubstitutionError
                         (NonCtorCircularVariableDependency [Mock.y])
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
@@ -196,7 +212,7 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Left $ UnificationError UnsupportedPatterns
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , mkVar Mock.y
                         )
@@ -215,7 +231,7 @@ test_mergeAndNormalizeSubstitutions =
                     $ SubstitutionError
                     $ NonCtorCircularVariableDependency [ Mock.x, Mock.y ]
             actual <-
-                normalize
+                merge
                     [   ( Mock.x
                         , mkVar Mock.y
                         )
@@ -229,16 +245,18 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Normalizes substitution"
         $ do
             let expect =
-                    Predicated
-                        { term = ()
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.constr10 Mock.a)
-                            , (Mock.y, Mock.a)
-                            ]
-                        }
+                    MultiOr.make
+                        [ Predicated
+                            { term = ()
+                            , predicate = makeTruePredicate
+                            , substitution = Substitution.unsafeWrap
+                                [ (Mock.x, Mock.constr10 Mock.a)
+                                , (Mock.y, Mock.a)
+                                ]
+                            }
+                        ]
             actual <-
-                normalizeWithPredicate
+                normalize
                     Predicated
                         { term = ()
                         , predicate = makeTruePredicate
@@ -252,14 +270,16 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Predicate from normalizing substitution"
         $ do
             let expect =
-                    Predicated
-                        { term = ()
-                        , predicate = makeEqualsPredicate Mock.cf Mock.cg
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.constr10 Mock.cf) ]
-                        }
+                    MultiOr.make
+                        [ Predicated
+                            { term = ()
+                            , predicate = makeEqualsPredicate Mock.cf Mock.cg
+                            , substitution = Substitution.unsafeWrap
+                                [ (Mock.x, Mock.constr10 Mock.cf) ]
+                            }
+                        ]
             actual <-
-                normalizeWithPredicate
+                normalize
                     Predicated
                         { term = ()
                         , predicate = makeTruePredicate
@@ -273,16 +293,18 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Normalizes substitution and substitutes in predicate"
         $ do
             let expect =
-                    Predicated
-                        { term = ()
-                        , predicate = makeCeilPredicate (Mock.f Mock.a)
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.constr10 Mock.a)
-                            , (Mock.y, Mock.a)
-                            ]
-                        }
+                    MultiOr.make
+                        [ Predicated
+                            { term = ()
+                            , predicate = makeCeilPredicate (Mock.f Mock.a)
+                            , substitution = Substitution.unsafeWrap
+                                [ (Mock.x, Mock.constr10 Mock.a)
+                                , (Mock.y, Mock.a)
+                                ]
+                            }
+                        ]
             actual <-
-                normalizeWithPredicate
+                normalize
                     Predicated
                         { term = ()
                         , predicate = makeCeilPredicate (Mock.f (mkVar Mock.y))
@@ -294,47 +316,48 @@ test_mergeAndNormalizeSubstitutions =
             assertEqualWithExplanation "" expect actual
     ]
 
-  where
-    mockMetadataTools =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            []
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        []
 
-    normalize
-        :: [(Variable Object, StepPattern Object Variable)]
-        -> [(Variable Object, StepPattern Object Variable)]
-        -> IO
-            (Either
-                ( UnificationOrSubstitutionError Object Variable )
-                ( PredicateSubstitution Object Variable )
-            )
-    normalize s1 s2 = runExceptT $ do
-        (result, _) <-
-            Morph.hoist (runSMT . evalSimplifier emptyLogger)
-            . mergePredicatesAndSubstitutionsExcept
-                mockMetadataTools
-                (Mock.substitutionSimplifier mockMetadataTools)
-                (Simplifier.create mockMetadataTools Map.empty)
-                Map.empty
-                []
-            $ Substitution.wrap <$> [s1, s2]
-        return result
+merge
+    :: [(Variable Object, StepPattern Object Variable)]
+    -> [(Variable Object, StepPattern Object Variable)]
+    -> IO
+        (Either
+            ( UnificationOrSubstitutionError Object Variable )
+            ( PredicateSubstitution Object Variable )
+        )
+merge s1 s2 =
+    runSMT
+    $ evalSimplifier emptyLogger
+    $ runExceptT
+    $ fmap fst
+    $ mergePredicatesAndSubstitutionsExcept
+        mockMetadataTools
+        (Mock.substitutionSimplifier mockMetadataTools)
+        (Simplifier.create mockMetadataTools Map.empty)
+        Map.empty
+        []
+        $ Substitution.wrap <$> [s1, s2]
 
-    normalizeWithPredicate
-        :: PredicateSubstitution Object Variable
-        -> IO (PredicateSubstitution Object Variable)
-    normalizeWithPredicate Predicated {predicate, substitution} =
-        (<$>) fst
-        $ runSMT
-        $ evalSimplifier emptyLogger
-        $ normalizePredicatedSubstitution
-            mockMetadataTools
-            (Mock.substitutionSimplifier mockMetadataTools)
-            (Simplifier.create mockMetadataTools Map.empty)
-            Map.empty
-        Predicated {term = (), predicate, substitution}
+normalize
+    :: Predicated Object Variable term
+    -> IO (MultiOr (Predicated Object Variable term))
+normalize predicated =
+    runSMT
+    $ evalSimplifier emptyLogger
+    $ gather
+    $ Substitution.normalize
+        mockMetadataTools
+        (Mock.substitutionSimplifier mockMetadataTools)
+        (Simplifier.create mockMetadataTools Map.empty)
+        Map.empty
+        predicated
 
 -- | Run an 'SMT' computation with the default configuration.
 runSMT :: SMT a -> IO a

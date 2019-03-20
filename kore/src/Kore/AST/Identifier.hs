@@ -61,7 +61,6 @@ data AstLocation
     | AstLocationGeneratedVariable
     | AstLocationTest
     | AstLocationFile FileLocation
-    | AstLocationLifted AstLocation
     | AstLocationUnknown
     -- ^ This should not be used and should be eliminated in further releases
     deriving (Eq, Show, Generic)
@@ -86,8 +85,6 @@ prettyPrintAstLocation
         }
     )
     = name ++ " " ++ show line' ++ ":" ++ show column'
-prettyPrintAstLocation (AstLocationLifted location) =
-    "<lifted(" ++ prettyPrintAstLocation location ++ ")>"
 prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@

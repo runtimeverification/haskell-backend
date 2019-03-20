@@ -63,15 +63,11 @@ verifyAttributePattern
     :: MonadError (Error VerifyError) m
     => UnifiedPattern domain variable (KorePattern domain variable annotation)
     -> m VerifySuccess
-verifyAttributePattern =
-    \case
-        UnifiedMetaPattern _ ->
-            koreFail "Meta attributes are not supported"
-        UnifiedObjectPattern pat ->
-            case pat of
-                ApplicationPattern _ -> verifySuccess
-                _ ->
-                    koreFail "Non-application attributes are not supported"
+verifyAttributePattern (UnifiedObjectPattern pat) =
+    case pat of
+        ApplicationPattern _ -> verifySuccess
+        _ ->
+            koreFail "Non-application attributes are not supported"
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 

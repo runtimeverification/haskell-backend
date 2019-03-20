@@ -15,24 +15,18 @@ import Test.Tasty.Golden
 
 import           Control.Exception
                  ( bracket )
-import           Control.Monad
-                 ( void )
-import qualified Data.ByteString.Lazy as LazyByteString
-import qualified Data.ByteString.Lazy.Char8 as LazyChar8
+import           Data.ByteString.Lazy
+                 ( ByteString )
+import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy.Char8
 import           System.Directory
                  ( getCurrentDirectory, setCurrentDirectory )
 import           System.FilePath
                  ( addExtension, splitFileName, (</>) )
 
-import           Kore.AST.PureToKore
-                 ( definitionPureToKore )
 import           Kore.AST.Sentence
-import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.MetaML.Lift
-                 ( liftDefinition )
 import           Kore.Parser.Parser
 
 import qualified Paths
@@ -40,10 +34,7 @@ import qualified Paths
 newtype InputFileName = InputFileName FilePath
 newtype GoldenFileName = GoldenFileName FilePath
 
-data VerifyRequest
-    = VerifyRequestWithLifting
-    | VerifyRequestYes
-    | VerifyRequestNo
+data VerifyRequest = VerifyRequestYes | VerifyRequestNo
 
 regressionTests :: [InputFileName] -> [TestTree]
 regressionTests = map regressionTestFromInputFile
@@ -60,7 +51,7 @@ regressionTestFromInputFile inputFileName =
     regressionTest
         inputFileName
         (goldenFromInputFileName inputFileName)
-        VerifyRequestWithLifting
+        VerifyRequestYes
 
 regressionTest :: InputFileName -> GoldenFileName -> VerifyRequest -> TestTree
 regressionTest
@@ -76,14 +67,12 @@ regressionTest
 goldenFromInputFileName :: InputFileName -> GoldenFileName
 goldenFromInputFileName (InputFileName inputFile) =
     GoldenFileName
-        (directory </> "expected" </> addExtension inputFileName ".golden")
+        (directory </> addExtension inputFileName ".golden")
   where (directory, inputFileName) = splitFileName inputFile
 
-toByteString :: Either String KoreDefinition -> LazyByteString.ByteString
-toByteString (Left err) =
-    LazyChar8.pack ("Parse error: " ++ err)
-toByteString (Right definition) =
-    LazyChar8.pack (prettyPrintToString definition)
+toByteString :: Either String KoreDefinition -> ByteString
+toByteString (Left err) = ByteString.Lazy.Char8.pack err
+toByteString (Right _) = ByteString.Lazy.Char8.empty
 
 verify :: KoreDefinition -> Either String KoreDefinition
 verify definition =
@@ -96,27 +85,21 @@ verify definition =
         Left e  -> Left (printError e)
         Right _ -> Right definition
 
-runParser :: String -> VerifyRequest -> IO LazyByteString.ByteString
+runParser :: String -> VerifyRequest -> IO ByteString
 runParser inputFileName verifyRequest = do
-    fileContent <-
-        withCurrentDirectory (Paths.dataFileName ".") (readFile inputFileName)
+    input <- readInput
     let
         definition = do
-            unverifiedDefn <- parseKoreDefinition inputFileName fileContent
-            verifiedDefinition <- case verifyRequest of
-                VerifyRequestWithLifting -> verify unverifiedDefn
-                VerifyRequestYes         -> verify unverifiedDefn
-                VerifyRequestNo          -> return unverifiedDefn
+            unverified <- parseKoreDefinition inputFileName input
             case verifyRequest of
-                VerifyRequestWithLifting ->
-                    void $ verify
-                        (definitionPureToKore
-                            (liftDefinition verifiedDefinition)
-                        )
-                VerifyRequestYes -> return ()
-                VerifyRequestNo  -> return ()
-            return verifiedDefinition
+                VerifyRequestYes -> verify unverified
+                VerifyRequestNo  -> return unverified
     return (toByteString definition)
+  where
+    readInput =
+        withCurrentDirectory
+            (Paths.dataFileName ".")
+            (readFile inputFileName)
 
 withCurrentDirectory :: FilePath -> IO a -> IO a
 withCurrentDirectory dir go =

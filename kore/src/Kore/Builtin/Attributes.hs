@@ -43,7 +43,6 @@ isConstructorModulo_
     -> Bool
 isConstructorModulo_ symbolOrAlias =
     case isMetaOrObject (Proxy :: Proxy level) of
-        IsMeta   -> False
         IsObject ->
             any (apply given symbolOrAlias)
                 [ List.isSymbolConcat, List.isSymbolElement, List.isSymbolUnit

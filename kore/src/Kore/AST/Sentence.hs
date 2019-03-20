@@ -46,6 +46,7 @@ module Kore.AST.Sentence
     , PureSentence
     , PureModule
     , PureDefinition
+    , castDefinitionDomainValues
     , VerifiedPureSentence
     , UnifiedSentence (..)
     , constructUnifiedSentence
@@ -77,6 +78,8 @@ module Kore.AST.Sentence
 import           Control.DeepSeq
                  ( NFData (..) )
 import           Data.Default
+import           Data.Functor.Const
+                 ( Const )
 import           Data.Hashable
                  ( Hashable (..) )
 import           Data.Maybe
@@ -86,6 +89,8 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import           Data.Void
+                 ( Void )
 import           GHC.Generics
                  ( Generic )
 
@@ -664,33 +669,19 @@ type VerifiedKoreSentenceHook = SentenceHook VerifiedKorePattern
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
 to allow using toghether both 'Meta' and 'Object' sentences.
 -}
-data UnifiedSentence sortParam patternType where
-    UnifiedMetaSentence
-        :: !(Sentence Meta sortParam patternType)
-        -> UnifiedSentence sortParam patternType
-
-    UnifiedObjectSentence
-        :: !(Sentence Object sortParam patternType)
-        -> UnifiedSentence sortParam patternType
-    deriving (Eq, Foldable, Functor, Ord, Show, Traversable)
+newtype UnifiedSentence sortParam patternType =
+    UnifiedObjectSentence (Sentence Object sortParam patternType)
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 instance
     (NFData sortParam, NFData patternType) =>
     NFData (UnifiedSentence sortParam patternType)
-  where
-    rnf =
-        \case
-            UnifiedMetaSentence metaS -> rnf metaS
-            UnifiedObjectSentence objectS -> rnf objectS
 
 instance
     (Unparse sortParam, Unparse patternType) =>
     Unparse (UnifiedSentence sortParam patternType)
   where
-    unparse =
-        \case
-            UnifiedMetaSentence sentence -> unparse sentence
-            UnifiedObjectSentence sentence -> unparse sentence
+    unparse (UnifiedObjectSentence sentence) = unparse sentence
 
 -- |'KoreSentence' instantiates 'UnifiedSentence' to describe sentences fully
 -- corresponding to the @declaration@ syntactic category
@@ -711,7 +702,6 @@ constructUnifiedSentence
     -> (a -> UnifiedSentence sortParam patternType)
 constructUnifiedSentence ctor =
     case isMetaOrObject (Proxy :: Proxy level) of
-        IsMeta -> UnifiedMetaSentence . ctor
         IsObject -> UnifiedObjectSentence . ctor
 
 -- |Given functions appliable to 'Meta' 'Sentence's and 'Object' 'Sentences's,
@@ -720,10 +710,7 @@ applyUnifiedSentence
     :: (Sentence Meta sortParam patternType -> b)
     -> (Sentence Object sortParam patternType -> b)
     -> (UnifiedSentence sortParam patternType -> b)
-applyUnifiedSentence metaT objectT =
-    \case
-        UnifiedMetaSentence metaS -> metaT metaS
-        UnifiedObjectSentence objectS -> objectT objectS
+applyUnifiedSentence _ objectT (UnifiedObjectSentence objectS) = objectT objectS
 
 -- | Erase the pattern annotations within a 'UnifiedSentence'.
 eraseUnifiedSentenceAnnotations
@@ -938,3 +925,9 @@ type PureModule level domain = Module (PureSentence level domain)
 
 -- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
 type PureDefinition level domain = Definition (PureSentence level domain)
+
+castDefinitionDomainValues
+    :: Functor domain
+    => PureDefinition level (Const Void)
+    -> PureDefinition level domain
+castDefinitionDomainValues = (fmap . fmap) Pure.castVoidDomainValues

@@ -191,10 +191,22 @@ class WindowState:
         self.__first_window_line = min(
             self.__selected_line, self.__first_window_line)
 
+    def pg_up(self, y):
+        self.__selected_line -= y - 1
+        if self.__selected_line <= 0:
+            self.__selected_line = 0
+        self.__first_window_line = min(
+            self.__selected_line, self.__first_window_line)
+
     def down(self):
         if self.__selected_line >= len(self.__debug.lines()) - 1:
             return
         self.__selected_line += 1
+
+    def pg_down(self, y):
+        self.__selected_line += y - 1
+        if self.__selected_line >= len(self.__debug.lines()) - 1:
+            self.__selected_line = len(self.__debug.lines()) - 1
 
     def home(self):
         self.__selected_line = 0
@@ -274,6 +286,7 @@ def main(args):
         (x, y) = window.getmaxyx()
 
         while True:
+            (x, y) = window.getmaxyx()
             window_painter.paint(window_state)
             key = window.getch()
             if key == ord('q'):
@@ -282,6 +295,10 @@ def main(args):
                 window_state.up()
             elif key == curses.KEY_DOWN:
                 window_state.down()
+            elif key == curses.KEY_PPAGE:
+                window_state.pg_up(y)
+            elif key == curses.KEY_NPAGE:
+                window_state.pg_down(y)
             elif key == curses.KEY_RIGHT:
                 window_state.expand()
             elif key == curses.KEY_LEFT:

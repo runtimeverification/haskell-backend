@@ -1,5 +1,0 @@
-Parse error: ../src/test/resources//test-exception-17.kore:6:7:
-  |
-6 |     X:#S []
-  |       ^
-genericIdRawParser: Invalid first character '#'.

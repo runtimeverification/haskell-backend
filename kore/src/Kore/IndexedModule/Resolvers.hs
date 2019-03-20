@@ -63,30 +63,21 @@ symbolSentencesMap
     -> Map.Map
         (Id level)
         (declAtts, SentenceSymbol level patternType)
-symbolSentencesMap a m =
-    case isMetaOrObject a of
-        IsMeta   -> indexedModuleMetaSymbolSentences m
-        IsObject -> indexedModuleObjectSymbolSentences m
+symbolSentencesMap _ m = indexedModuleSymbolSentences m
 
 aliasSentencesMap
     :: MetaOrObject level
     => a level
     -> IndexedModule sortParam patternType declAtts axiomAtts
     -> Map.Map (Id level) (declAtts, SentenceAlias level patternType)
-aliasSentencesMap a m =
-    case isMetaOrObject a of
-        IsMeta   -> indexedModuleMetaAliasSentences m
-        IsObject -> indexedModuleObjectAliasSentences m
+aliasSentencesMap _ m = indexedModuleAliasSentences m
 
 sortSentencesMap
     :: MetaOrObject level
     => a level
     -> IndexedModule sortParam patternType declAtts axiomAtts
     -> Map.Map (Id level) (Attribute.Sort, SentenceSort level patternType)
-sortSentencesMap a m =
-    case isMetaOrObject a of
-        IsMeta   -> indexedModuleMetaSortDescriptions m
-        IsObject -> indexedModuleObjectSortDescriptions m
+sortSentencesMap _ m = indexedModuleSortDescriptions m
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
 -- 'SentenceAlias', and instantiates sort parameters with the arguments

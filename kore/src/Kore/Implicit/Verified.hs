@@ -30,10 +30,12 @@ import           Kore.MetaML.AST
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
-    _ <- verifyImplicitKoreDefinition
-        defaultNullAttributesVerification
-        Builtin.koreVerifiers
-        (definitionPureToKore uncheckedMetaDefinition)
+    _ <-
+        verifyImplicitKoreDefinition
+            defaultNullAttributesVerification
+            Builtin.koreVerifiers
+            $ definitionPureToKore
+            $ castDefinitionDomainValues uncheckedMetaDefinition
     return uncheckedMetaDefinition
 
 {-| 'implicitMetaDefinition' is a definition with everything Meta

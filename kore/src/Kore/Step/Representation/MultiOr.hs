@@ -26,13 +26,19 @@ module Kore.Step.Representation.MultiOr
     , traverseWithPairs
     , traverseFlattenWithPairs
     , traverseFlattenWithPairsGeneric
+    -- * Re-exports
+    , Alternative (..)
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import           Control.DeepSeq
                  ( NFData )
 import           Data.List
                  ( foldl' )
 import qualified Data.Set as Set
+import           GHC.Exts
+                 ( IsList )
 import           GHC.Generics
                  ( Generic )
 
@@ -53,8 +59,21 @@ patterns.
 
 -}
 newtype MultiOr child = MultiOr { getMultiOr :: [child] }
-  deriving
-    (Applicative, Eq, Foldable, Functor, Generic, Monad, Ord, Show, Traversable)
+    deriving
+        ( Alternative
+        , Applicative
+        , Eq
+        , Foldable
+        , Functor
+        , Generic
+        , IsList
+        , Monad
+        , Monoid
+        , Ord
+        , Semigroup
+        , Show
+        , Traversable
+        )
 
 instance NFData child => NFData (MultiOr child)
 

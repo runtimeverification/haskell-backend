@@ -1,0 +1,1 @@
+Parse error: Error in module 'ARROW' -> axiom declaration -> \implies (../src/test/resources//imp2.kore 364:14) -> symbol or alias '#provable' (../src/test/resources//imp2.kore 369:7) -> (<implicitly defined entity>, ../src/test/resources//imp2.kore 370:14): Expecting sort '#Pattern{}' but got 'K{}'.

@@ -165,8 +165,6 @@ test_parse =
         "Parse"
         [ testProperty "Object testId" $
             roundtrip (idGen IsObject) (idParser Object)
-        , testProperty "Meta testId" $
-            roundtrip (idGen IsMeta) (idParser Meta)
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen stringLiteralParser
         , testProperty "CharLiteral" $

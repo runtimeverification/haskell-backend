@@ -186,8 +186,6 @@ instance
     (PrettyPrint (a Meta), PrettyPrint (a Object))
     => PrettyPrint (Unified a)
   where
-    prettyPrint flags (UnifiedMeta x) =
-        writeOneFieldStruct flags "UnifiedMeta" x
     prettyPrint flags (UnifiedObject x) =
         writeOneFieldStruct flags "UnifiedObject" x
 
@@ -606,12 +604,8 @@ instance
     ) =>
     PrettyPrint (UnifiedPattern domain var child)
   where
-    prettyPrint flags =
-        \case
-            UnifiedMetaPattern meta ->
-                writeOneFieldStruct flags "UnifiedMetaPattern" meta
-            UnifiedObjectPattern object ->
-                writeOneFieldStruct flags "UnifiedObjectPattern" object
+    prettyPrint flags (UnifiedObjectPattern object) =
+        writeOneFieldStruct flags "UnifiedObjectPattern" object
 
 instance
     ( PrettyPrint ann
@@ -761,8 +755,6 @@ instance
     (PrettyPrint sortParam, PrettyPrint patternType) =>
     PrettyPrint (UnifiedSentence sortParam patternType)
   where
-    prettyPrint flags (UnifiedMetaSentence s) =
-        writeOneFieldStruct flags "MetaSentence" s
     prettyPrint flags (UnifiedObjectSentence s) =
         writeOneFieldStruct flags "ObjectSentence" s
 

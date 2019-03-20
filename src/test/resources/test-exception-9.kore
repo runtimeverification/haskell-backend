@@ -1,5 +1,0 @@
-[]
-    module Nat
-            sort #Nat{#Char}[]
-    endmodule
-    []

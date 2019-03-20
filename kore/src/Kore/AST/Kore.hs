@@ -68,8 +68,8 @@ import           GHC.Generics
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Common hiding
-                 ( castMetaDomainValues, castVoidDomainValues, mapDomainValues,
-                 mapVariables, traverseVariables )
+                 ( castVoidDomainValues, mapDomainValues, mapVariables,
+                 traverseVariables )
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import qualified Kore.Domain.Builtin as Domain
@@ -81,78 +81,49 @@ import           Template.Tools
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.
 -}
-data UnifiedPattern domain variable child where
-    UnifiedMetaPattern
-        :: !(Pattern Meta domain variable child)
-        -> UnifiedPattern domain variable child
-
-    UnifiedObjectPattern
-        :: !(Pattern Object domain variable child)
-        -> UnifiedPattern domain variable child
+newtype UnifiedPattern domain variable child =
+    UnifiedObjectPattern (Pattern Object domain variable child)
+    deriving (Generic)
 
 $newDefinitionGroup
 -- Begin a new definition group where UnifiedPattern is in scope.
 
 instance
-    ( NFData (Pattern Meta domain variable child)
-    , NFData (Pattern Object domain variable child)
-    ) =>
+    NFData (Pattern Object domain variable child) =>
     NFData (UnifiedPattern domain variable child)
-  where
-    rnf =
-        \case
-            UnifiedMetaPattern metaP -> rnf metaP
-            UnifiedObjectPattern objectP -> rnf objectP
 
 instance
-    ( Eq1 (Pattern Meta domain variable)
-    , Eq1 (Pattern Object domain variable)
-    ) =>
+    Eq1 (Pattern Object domain variable) =>
     Eq1 (UnifiedPattern domain variable)
   where
     liftEq = $(makeLiftEq ''UnifiedPattern)
     {-# INLINE liftEq #-}
 
 instance
-    ( Ord1 (Pattern Meta domain variable)
-    , Ord1 (Pattern Object domain variable)
-    ) =>
+    Ord1 (Pattern Object domain variable) =>
     Ord1 (UnifiedPattern domain variable)
   where
     liftCompare = $(makeLiftCompare ''UnifiedPattern)
     {-# INLINE liftCompare #-}
 
 instance
-    ( Show1 (Pattern Meta domain variable)
-    , Show1 (Pattern Object domain variable)
-    ) =>
+    Show1 (Pattern Object domain variable) =>
     Show1 (UnifiedPattern domain variable)
   where
     liftShowsPrec = $(makeLiftShowsPrec ''UnifiedPattern)
 
 instance
     ( Hashable child
-    , Hashable (variable Meta)
     , Hashable (variable Object)
     , Hashable (domain child)
-    ) => Hashable (UnifiedPattern domain variable child) where
-    hashWithSalt salt =
-        \case
-            UnifiedMetaPattern metaP ->
-                salt `hashWithSalt` (0::Int) `hashWithSalt` metaP
-            UnifiedObjectPattern objectP ->
-                salt `hashWithSalt` (1::Int) `hashWithSalt` objectP
-    {-# INLINE hashWithSalt #-}
+    ) => Hashable (UnifiedPattern domain variable child)
 
 -- |View a 'Meta' or an 'Object' 'Pattern' as an 'UnifiedPattern'
 asUnifiedPattern
     :: MetaOrObject level
     => Pattern level domain variable child
     -> UnifiedPattern domain variable child
-asUnifiedPattern ph =
-    case getMetaOrObjectPatternType ph of
-        IsMeta -> UnifiedMetaPattern ph
-        IsObject -> UnifiedObjectPattern ph
+asUnifiedPattern ph = UnifiedObjectPattern ph
 
 -- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
 -- apply it on an 'UnifiedPattern'.
@@ -164,7 +135,6 @@ transformUnifiedPattern
     -> (UnifiedPattern domain variable a -> b)
 transformUnifiedPattern f =
     \case
-        UnifiedMetaPattern metaP -> f metaP
         UnifiedObjectPattern objectP -> f objectP
 
 deriving instance
@@ -208,10 +178,7 @@ instance
     ) =>
     Unparse (UnifiedPattern domain variable child)
   where
-    unparse =
-        \case
-            UnifiedMetaPattern pat -> unparse pat
-            UnifiedObjectPattern pat -> unparse pat
+    unparse (UnifiedObjectPattern pat) = unparse pat
 
 {- | The abstract syntax of Kore.
 
@@ -451,7 +418,6 @@ eraseAnnotations =
   where
     eraseAnnotationsWorker (Recursive.project -> _ :< unified) =
         case unified of
-            UnifiedMetaPattern _ -> UnifiedMeta Annotation.Null :< unified
             UnifiedObjectPattern _ -> UnifiedObject Annotation.Null :< unified
 
 -- | View a 'Meta' or 'Object' 'Pattern' as a 'KorePattern'

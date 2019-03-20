@@ -862,7 +862,7 @@ aliasVisibilityTests =
             sentenceAliasResultSort :: Sort Meta
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "#sv1"))
-        in (UnifiedMetaSentence . SentenceAliasSentence)
+        in (UnifiedObjectSentence . SentenceAliasSentence)
             SentenceAlias
                 { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts = []

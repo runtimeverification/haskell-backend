@@ -400,6 +400,7 @@ simpleRewrite left right =
         { left = left
         , right = right
         , requires = makeTruePredicate
+        , ensures = makeTruePredicate
         , attributes = def
         }
 
