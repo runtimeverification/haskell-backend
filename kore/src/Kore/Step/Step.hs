@@ -1315,3 +1315,30 @@ substitutionConditions subst =
   where
     substitutionCoverageWorker (x, t) =
         Predicate.makeEqualsPredicate (mkVar x) t
+
+{- | Apply the given rewrite rules to the initial configuration in parallel.
+
+See also: 'applyRewriteRule'
+
+ -}
+applyRewriteRules
+    ::  ( MetaOrObject level
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier level
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap level
+    -- ^ Map from symbol IDs to defined functions
+
+    -> MultiOr (RewriteRule level variable)
+    -- ^ Rewriting axiom
+    -> ExpandedPattern level variable
+    -- ^ Configuration being rewritten.
+    -> ExceptT (StepError level variable) Simplifier
+        (OrStepResult level variable)
