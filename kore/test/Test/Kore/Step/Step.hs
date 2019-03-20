@@ -1258,7 +1258,7 @@ test_sequenceRewriteRules =
                 makeAndPredicate
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
-            undefinedBranches = Predicate.makeNotPredicate definedBranches
+            -- undefinedBranches = Predicate.makeNotPredicate definedBranches
             expect =
                 Right OrStepResult
                     { rewrittenPattern =
@@ -1270,7 +1270,7 @@ test_sequenceRewriteRules =
                             }
                         , Predicated
                             { term = Mock.cg
-                            , predicate = Predicate.makeAndPredicate undefinedBranches definedBranches
+                            , predicate = definedBranches
                             , substitution =
                                 Substitution.wrap [(Mock.x, Mock.b)]
                             }
@@ -1279,18 +1279,21 @@ test_sequenceRewriteRules =
                         [ initial
                             { predicate =
                                 Predicate.makeAndPredicate
-                                    undefinedBranches
-                                    (Predicate.makeAndPredicate
-                                        (Predicate.makeNotPredicate
-                                            $ Predicate.makeEqualsPredicate
+                                    (Predicate.makeNotPredicate
+                                        $ Predicate.makeAndPredicate
+                                            definedBranches
+                                            (Predicate.makeEqualsPredicate
                                                 (mkVar Mock.x)
                                                 Mock.a
-                                        )
-                                        (Predicate.makeNotPredicate
-                                            $ Predicate.makeEqualsPredicate
+                                            )
+                                    )
+                                    (Predicate.makeNotPredicate
+                                        $ Predicate.makeAndPredicate
+                                            definedBranches
+                                            (Predicate.makeEqualsPredicate
                                                 (mkVar Mock.x)
                                                 Mock.b
-                                        )
+                                            )
                                     )
                             }
                         ]
