@@ -739,7 +739,7 @@ test_baseStep =
     -- vs
     -- a
     -- Expected: a and g(a)=f(a)
-    , testCase "Conjoins axiom pre-condition" $ do
+    , testCase "Conjoins axiom post-condition" $ do
         let
             preCondition var =
                 makeEqualsPredicate
