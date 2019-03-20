@@ -1423,35 +1423,39 @@ sequenceRewriteRules
     initialConfig
   =
     sequenceRewriteRulesWorker initial
-  -- = do
-  --   -- TODO (thomas.tuegel): Avoid constructing initial' twice.
-  --   let initial' = toConfigurationVariables initial
-  --   results <- Monad.join <$> traverse applyRewriteRule' rewriteRules
-  --   let coverages = coverage <$> results
-  --   remainder <- unwrapStepErrorVariables $ gather $ do
-  --       remainder <- scatter (negateCoverage coverages)
-  --       unwrapVariables <$> applyRemainder' initial' remainder
-  --   let rewrittenPattern = result <$> results
-  --   return OrStepResult { rewrittenPattern, remainder }
   where
     initial =
         OrStepResult
-            { rewrittenPattern = mempty
-            , remainder = MultiOr.make [initialConfig]
+            { rewrittenPattern = empty
+            , remainder = pure initialConfig
+            }
+    fromResult config Result { result, coverage } = do
+        notCovered <-
+            fmap PredicateSubstitution.fromPredicate
+            $ unwrapPredicateVariables
+            $ Predicate.makeNotPredicate
+            $ Predicate.makeMultipleAndPredicate
+            $ Foldable.toList coverage
+        return OrStepResult
+            { rewrittenPattern = pure result
+            , remainder = pure (config <* notCovered)
             }
     sequenceRewriteRulesWorker pending [] = return pending
     sequenceRewriteRulesWorker pending (rewriteRule : rewriteRules) = do
-        result <- Foldable.fold <$> traverse applyRewriteRules' remainder
-        let pending' =
-                OrStepResult { rewrittenPattern, remainder = mempty }
-                <> result
-        sequenceRewriteRulesWorker pending' rewriteRules
+        results <- Foldable.fold <$> traverse applyRewriteRule' remainder
+        sequenceRewriteRulesWorker (original <> results) rewriteRules
       where
-        OrStepResult { rewrittenPattern, remainder } = pending
-        applyRewriteRules' =
-            applyRewriteRules
-                metadataTools
-                predicateSimplifier
-                patternSimplifier
-                axiomSimplifiers
-                [rewriteRule]
+        OrStepResult { remainder } = pending
+        original = OrStepResult { rewrittenPattern, remainder = empty }
+          where
+            OrStepResult { rewrittenPattern } = pending
+        applyRewriteRule' config = do
+            results <-
+                applyRewriteRule
+                    metadataTools
+                    predicateSimplifier
+                    patternSimplifier
+                    axiomSimplifiers
+                    config
+                    rewriteRule
+            Foldable.fold <$> traverse (fromResult config) results
