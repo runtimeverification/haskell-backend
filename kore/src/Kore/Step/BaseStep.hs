@@ -975,9 +975,10 @@ instantiateRule
     patternSimplifier
     axiomSimplifiers
 
-    unified@Predicated { term = axiom@RulePattern { left, right, requires, ensures } }
+    unified@Predicated { term = axiom }
   = do
     let unifier = unified { term = () }
+        RulePattern { requires, ensures } = axiom
         merged =
             PredicateSubstitution.fromPredicate requires
             *> PredicateSubstitution.fromPredicate ensures
@@ -985,13 +986,7 @@ instantiateRule
     normalized <- normalize merged
     let Predicated { substitution } = normalized
         substitution' = Substitution.toMap substitution
-        axiom' =
-            axiom
-                { left     = Pattern.substitute   substitution' left
-                , right    = Pattern.substitute   substitution' right
-                , requires = Predicate.substitute substitution' requires
-                , ensures  = Predicate.substitute substitution' ensures
-                }
+        axiom' = RulePattern.substitute substitution' axiom
     return (normalized { term = axiom' })
   where
     normalize =
