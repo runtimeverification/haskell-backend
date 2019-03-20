@@ -33,14 +33,13 @@ import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step hiding
-                 ( applyRewriteRule, applyRule, unifyRule )
+                 ( applyRewriteRule, applyRewriteRules, applyRule, unifyRule )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
@@ -872,6 +871,41 @@ applyRewriteRule initial rule =
             axiomSimplifiers
     axiomSimplifiers = Map.empty
 
+-- | Apply the 'RewriteRule's to the configuration.
+applyRewriteRules
+    :: ExpandedPattern Object Variable
+    -- ^ Configuration
+    -> MultiOr (RewriteRule Object Variable)
+    -- ^ Rewrite rule
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (OrStepResult Object Variable)
+        )
+applyRewriteRules initial rules =
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ runExceptT
+    $ Step.applyRewriteRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        rules
+        initial
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+
 test_applyRewriteRule :: [TestTree]
 test_applyRewriteRule =
     [ testCase "if _ then _" $ do
@@ -1055,6 +1089,93 @@ test_applyRewriteRule =
             initial = pure initialTerm
         actual <- applyRewriteRule initial axiomIfThen
         assertEqualWithExplanation "" expect actual
+
+    , testCase "case _ of a -> _; b -> _ -- partial" $ do
+        -- This uses `functionalConstr30(x, y, z)` to represent a case
+        -- statement,
+        -- i.e. `case x of 1 -> y; 2 -> z`
+        -- and `a`, `b` as the case labels.
+        --
+        -- Intended:
+        --   term: case x of 1 -> cf; 2 -> cg
+        --   axiom: case 1 of 1 -> cf; 2 -> cg => cf
+        --   axiom: case 2 of 1 -> cf; 2 -> cg => cg
+        -- Actual:
+        --   term: constr30(x, cg, cf)
+        --   axiom: constr30(a, y, z) => y
+        --   axiom: constr30(b, y, z) => z
+        -- Expected:
+        --   rewritten: cf, with (⌈cf⌉ and ⌈cg⌉) and [x=a]
+        --   rewritten: cg, with (⌈cf⌉ and ⌈cg⌉) and [x=b]
+        --   remainder:
+        --     constr20(x, cf, cg)
+        --        with ¬(⌈cf⌉ and ⌈cg⌉)
+        --        or   ¬[x=a]
+        --        or   ¬[x=b]
+        let
+            definedBranches =
+                makeAndPredicate
+                    (makeCeilPredicate Mock.cf)
+                    (makeCeilPredicate Mock.cg)
+            undefinedBranches = Predicate.makeNotPredicate definedBranches
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        [ Predicated
+                            { term = Mock.cf
+                            , predicate = definedBranches
+                            , substitution =
+                                Substitution.wrap [(Mock.x, Mock.a)]
+                            }
+                        , Predicated
+                            { term = Mock.cg
+                            , predicate = definedBranches
+                            , substitution =
+                                Substitution.wrap [(Mock.x, Mock.b)]
+                            }
+                        ]
+                    , remainder =
+                        [ initial { predicate = undefinedBranches }
+                        , initial
+                            { predicate =
+                                Predicate.makeAndPredicate
+                                    undefinedBranches
+                                    (Predicate.makeNotPredicate
+                                        $ Predicate.makeEqualsPredicate
+                                            (mkVar Mock.x)
+                                            Mock.b
+                                    )
+                            }
+                        , initial
+                            { predicate =
+                                Predicate.makeAndPredicate
+                                    (Predicate.makeNotPredicate
+                                        $ Predicate.makeEqualsPredicate
+                                            (mkVar Mock.x)
+                                            Mock.a
+                                    )
+                                    undefinedBranches
+                            }
+                        , initial
+                            { predicate =
+                                Predicate.makeAndPredicate
+                                    (Predicate.makeNotPredicate
+                                        $ Predicate.makeEqualsPredicate
+                                            (mkVar Mock.x)
+                                            Mock.a
+                                    )
+                                    (Predicate.makeNotPredicate
+                                        $ Predicate.makeEqualsPredicate
+                                            (mkVar Mock.x)
+                                            Mock.b
+                                    )
+                            }
+                        ]
+                    }
+            initialTerm = Mock.functionalConstr30 (mkVar Mock.x) Mock.cf Mock.cg
+            initial = pure initialTerm
+        actual <- applyRewriteRules initial axiomsCase
+        assertEqualWithExplanation "" expect actual
     ]
   where
     axiomIfThen =
@@ -1073,3 +1194,28 @@ test_applyRewriteRule =
             , ensures = makeTruePredicate
             , attributes = def
             }
+    axiomCaseA =
+        RewriteRule RulePattern
+            { left =
+                Mock.functionalConstr30
+                    Mock.a
+                    (mkVar Mock.y)
+                    (mkVar Mock.z)
+            , right = mkVar Mock.y
+            , requires = makeTruePredicate
+            , ensures = makeTruePredicate
+            , attributes = def
+            }
+    axiomCaseB =
+        RewriteRule RulePattern
+            { left =
+                Mock.functionalConstr30
+                    Mock.b
+                    (mkVar Mock.y)
+                    (mkVar Mock.z)
+            , right = mkVar Mock.z
+            , requires = makeTruePredicate
+            , ensures = makeTruePredicate
+            , attributes = def
+            }
+    axiomsCase = [ axiomCaseA, axiomCaseB ]
