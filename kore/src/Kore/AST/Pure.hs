@@ -11,6 +11,7 @@ module Kore.AST.Pure
     , CommonPurePattern
     , ConcretePurePattern
     , ParsedPurePattern
+    , VerifiedPurePattern
     , asPurePattern
     , fromPurePattern
     , eraseAnnotations
@@ -333,6 +334,10 @@ type ConcretePurePattern level domain =
 -- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
 type ParsedPurePattern level domain =
     PurePattern level domain Variable (Annotation.Null level)
+
+-- | A pure pattern which has been parsed and verified.
+type VerifiedPurePattern level domain =
+    PurePattern level domain Variable (Valid (Variable level) level)
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 
