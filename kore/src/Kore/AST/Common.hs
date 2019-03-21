@@ -1131,12 +1131,6 @@ instance Unparse (Top level child) where
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-Note that the 'StringLiteralPattern' and 'CharLiteralPattern' should
-be members only of 'Pattern Meta'.
 -}
 -- NOTE: If you are adding a case to Pattern, you should add cases in:
 -- ASTUtils/SmartConstructors.hs
@@ -1204,6 +1198,8 @@ instance
     Show1 (Pattern level domain variable)
   where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
+
+deriving instance Generic (Pattern level domain variable child)
 
 instance
     ( Hashable child
