@@ -146,5 +146,8 @@ asUnified
     :: MetaOrObject level => thing level -> Unified thing
 asUnified x = UnifiedObject x
 
+{- | Remove a trivial 'Unified' wrapper.
+
+ -}
 fromUnified :: Unified thing -> thing Object
 fromUnified (UnifiedObject thing) = thing
