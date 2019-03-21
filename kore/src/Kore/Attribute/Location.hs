@@ -11,8 +11,6 @@ module Kore.Attribute.Location
     , LineColumn (..)
     ) where
 
-import           Control.Applicative
-                 ( (<|>) )
 import           Control.DeepSeq
                  ( NFData )
 import           Data.Default

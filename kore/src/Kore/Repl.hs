@@ -40,6 +40,8 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.Maybe
                  ( listToMaybe )
+import           Data.Text.Prettyprint.Doc
+                 ( pretty )
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
@@ -55,9 +57,9 @@ import qualified Kore.AST.Common as Kore
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.Attribute.Axiom
-                 ( LineColumn (..), Location (..), Source (..) )
+                 ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( location, source )
+                 ( sourceLocation )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -390,8 +392,8 @@ replInterpreter =
     printRewriteRule rule = do
         putStrLn' $ unparseToString rule
         putStrLn'
-            . maybe mempty id
-            . formatSourceAndLocation
+            . show
+            . pretty
             . extractSourceAndLocation
             $ rule
 
@@ -444,28 +446,12 @@ replInterpreter =
             Stuck pat -> "Stuck: \n" <> unparseToString pat
             RewritePattern pat -> unparseToString pat
 
-    formatSourceAndLocation :: (Source, Location) -> Maybe String
-    formatSourceAndLocation (Source { unSource }, Location { start, end }) = do
-        filename <- unSource
-        LineColumn { line = startLine, column = startColumn } <- start
-        pure
-            $  filename
-            <> ":"
-            <> show startLine
-            <> ":"
-            <> show startColumn
-            <> maybe mempty (fromEnd startLine) end
-      where
-        fromEnd line' LineColumn { line, column }
-          | line' == line = "-" <> show column
-          | otherwise     = "-" <> show line <> ":" <> show column
-
     extractSourceAndLocation
         :: RewriteRule level Kore.Variable
-        -> (Source, Location)
+        -> SourceLocation
     extractSourceAndLocation
         (RewriteRule (RulePattern{ Axiom.attributes })) =
-            (Attribute.source attributes, Attribute.location attributes)
+            Attribute.sourceLocation attributes
 
     printNotFound :: MonadIO m => m ()
     printNotFound = putStrLn' "Variable or index not found"
