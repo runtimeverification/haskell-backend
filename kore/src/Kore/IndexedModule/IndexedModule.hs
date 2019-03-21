@@ -212,6 +212,11 @@ type KoreIndexedModule =
 type VerifiedModule =
     IndexedModule UnifiedSortVariable VerifiedKorePattern
 
+{- | Convert a 'VerifiedModule' back into a 'Module'.
+
+The original module attributes /are/ preserved.
+
+ -}
 toVerifiedPureModule
     :: VerifiedModule declAtts axiomAtts
     -> VerifiedPureModule Object
@@ -220,7 +225,7 @@ toVerifiedPureModule module' =
         { moduleName = indexedModuleName module'
         , moduleSentences =
             sentenceKoreToPure <$> indexedModuleRawSentences module'
-        , moduleAttributes = Default.def
+        , moduleAttributes = snd (indexedModuleAttributes module')
         }
 
 toVerifiedPureDefinition
