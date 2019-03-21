@@ -32,6 +32,8 @@ module Kore.IndexedModule.IndexedModule
     , hookedObjectSymbolSentences
     , indexedModuleSubsorts
     , indexedModulesInScope
+    , toVerifiedPureModule
+    , toVerifiedPureDefinition
     ) where
 
 import           Control.DeepSeq
@@ -42,7 +44,7 @@ import           Control.Monad.State.Strict
                  ( execState )
 import qualified Control.Monad.State.Strict as Monad.State
 import           Data.Bifunctor
-import           Data.Default
+import           Data.Default as Default
 import qualified Data.Foldable as Foldable
 import           Data.Map.Strict
                  ( Map )
@@ -56,6 +58,7 @@ import           GHC.Generics
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Error
 import           Kore.AST.Kore
+import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
@@ -208,6 +211,28 @@ type KoreIndexedModule =
 
 type VerifiedModule =
     IndexedModule UnifiedSortVariable VerifiedKorePattern
+
+toVerifiedPureModule
+    :: VerifiedModule declAtts axiomAtts
+    -> VerifiedPureModule Object
+toVerifiedPureModule module' =
+    Module
+        { moduleName = indexedModuleName module'
+        , moduleSentences =
+            sentenceKoreToPure <$> indexedModuleRawSentences module'
+        , moduleAttributes = Default.def
+        }
+
+toVerifiedPureDefinition
+    :: Foldable t
+    => t (VerifiedModule declAtts axiomAtts)
+    -> VerifiedPureDefinition Object
+toVerifiedPureDefinition idx =
+    Definition
+        { definitionAttributes = Default.def
+        , definitionModules =
+            toVerifiedPureModule <$> Foldable.toList idx
+        }
 
 indexedModuleRawSentences
     :: IndexedModule param pat atts atts' -> [UnifiedSentence param pat]
