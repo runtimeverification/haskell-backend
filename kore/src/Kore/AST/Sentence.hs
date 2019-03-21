@@ -47,7 +47,15 @@ module Kore.AST.Sentence
     , PureModule
     , PureDefinition
     , castDefinitionDomainValues
+    , VerifiedPureSentenceSymbol
+    , VerifiedPureSentenceAlias
+    , VerifiedPureSentenceImport
+    , VerifiedPureSentenceAxiom
+    , VerifiedPureSentenceSort
+    , VerifiedPureSentenceHook
     , VerifiedPureSentence
+    , VerifiedPureModule
+    , VerifiedPureDefinition
     , UnifiedSentence (..)
     , constructUnifiedSentence
     , applyUnifiedSentence
@@ -819,6 +827,25 @@ type PureSentence level domain =
         (SortVariable level)
         (PurePattern level domain Variable (Annotation.Null level))
 
+
+type VerifiedPureSentenceSymbol level =
+    SentenceSymbol level (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
+
+type VerifiedPureSentenceAlias level =
+    SentenceAlias level (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
+
+type VerifiedPureSentenceImport level =
+    SentenceImport (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
+
+type VerifiedPureSentenceAxiom level =
+    SentenceAxiom (SortVariable level) (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
+
+type VerifiedPureSentenceSort level =
+    SentenceSort level (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
+
+type VerifiedPureSentenceHook level =
+    SentenceHook (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
+
 {- | A 'PureSentence' which has passed verification.
 
 The contained patterns are annotated by 'Valid'.
@@ -834,6 +861,10 @@ type VerifiedPureSentence level =
             Variable
             (Valid (Variable level) level)
         )
+
+type VerifiedPureModule level = Module (VerifiedPureSentence level)
+
+type VerifiedPureDefinition level = Definition (VerifiedPureSentence level)
 
 instance
     ( MetaOrObject level
