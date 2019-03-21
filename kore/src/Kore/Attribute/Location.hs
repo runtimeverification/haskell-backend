@@ -27,6 +27,7 @@ import           Kore.AST.Kore
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as AttributeParser
+import qualified Kore.Error
 
 data LineColumn = LineColumn
     { line   :: !Int
@@ -57,9 +58,10 @@ instance ParseAttributes Location where
             -> [CommonKorePattern]
             -> Location
             -> AttributeParser.Parser Location
-        parseApplication params args _ = do
+        parseApplication params args l@(Location Nothing Nothing) = do
             AttributeParser.getZeroParams params
             case args of
+                [] -> pure l
                 [_] -> do
                     arg <- AttributeParser.getOneArgument args
                     StringLiteral str <- AttributeParser.getStringLiteral arg
@@ -67,7 +69,11 @@ instance ParseAttributes Location where
                         . maybe def id
                         . parseMaybe locationParser
                         $ Text.unpack str
-                _ -> pure def
+                _ ->
+                    Kore.Error.koreFail
+                        ("expected one argument, found " ++ show (length args))
+        parseApplication _ _ _ =
+            AttributeParser.failDuplicate locationId
 
 -- | This parser is used to parse the inner representation of the attribute.
 -- The expected format is "Location(sl,sc,el,ec)" where sc, sc, el, and ec are

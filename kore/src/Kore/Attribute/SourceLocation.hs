@@ -6,16 +6,19 @@ License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 -}
+
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Attribute.SourceLocation
     ( SourceLocation (..)
     , Source (..)
     , Location (..)
     ) where
 
-import           Control.Applicative
-                 ( (<|>) )
 import           Control.DeepSeq
                  ( NFData )
+import           Control.Monad
+                 ( (>=>) )
 import           Data.Default
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
@@ -23,56 +26,54 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
+import qualified Control.Lens.TH.Rules as Lens
 import           Kore.Attribute.Location
                  ( LineColumn (..), Location (..) )
-import qualified Kore.Attribute.Location as Location
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import           Kore.Attribute.Source
                  ( Source (..) )
-import qualified Kore.Attribute.Source as Source
 
 data SourceLocation = SourceLocation
-    { location :: !(Maybe Location)
-    , source   :: !(Maybe Source)
+    { location :: !Location
+    , source   :: !Source
     } deriving (Eq, Ord, Show, Generic)
+
+Lens.makeLenses ''SourceLocation
 
 instance NFData SourceLocation
 
 instance Default SourceLocation where
-    def = SourceLocation Nothing Nothing
+    def = SourceLocation def def
 
 instance ParseAttributes SourceLocation where
-    parseAttribute patt SourceLocation { location, source } = do
-        l <- hasValueAt Location.start <$> parseAttribute patt def
-        s <- hasValueAt Source.unSource <$> parseAttribute patt def
-        pure
-            $ SourceLocation (location <|> l) (source <|> s)
-      where
-        hasValueAt :: (a -> Maybe b) -> a -> Maybe a
-        hasValueAt f a = maybe Nothing (const . Just $ a) $ f a
+    parseAttribute attr =
+            lensLocation (parseAttribute attr)
+            >=> lensSource (parseAttribute attr)
 
 instance Pretty SourceLocation where
     pretty SourceLocation
-        { location = Just (Location
-            { start = Just LineColumn { line = startLine, column = startColumn }
-            , end = end
-            })
-        , source = (Just (Source (Just file)))
+        { location = Location { start , end }
+        , source = (Source (Just file))
         }
-      = Pretty.hcat $
-        [ Pretty.pretty file
-        , ":"
-        , Pretty.pretty startLine
-        , ":"
-        , Pretty.pretty startColumn
-        ]
-        <> case end of
-            Nothing -> []
-            Just LineColumn { line = endLine, column = endColumn }  ->
-                [ "-"
-                , Pretty.pretty endLine
+      = Pretty.pretty file <> loc
+
+      where
+        loc :: Pretty.Doc ann
+        loc =
+            case start of
+                Just lc -> ":" <> prettyLC lc <> maybeLC end
+                Nothing -> Pretty.emptyDoc
+
+        prettyLC :: LineColumn -> Pretty.Doc ann
+        prettyLC LineColumn { line, column } =
+            Pretty.hcat
+                [ Pretty.pretty line
                 , ":"
-                , Pretty.pretty endColumn
+                , Pretty.pretty column
                 ]
+
+        maybeLC :: Maybe LineColumn -> Pretty.Doc ann
+        maybeLC Nothing = Pretty.emptyDoc
+        maybeLC (Just elc) = "-" <> prettyLC elc
     pretty _ = ""

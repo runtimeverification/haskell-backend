@@ -26,6 +26,7 @@ import           Kore.AST.Kore
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as AttributeParser
+import qualified Kore.Error
 
 newtype Source = Source
     { unSource :: Maybe String
@@ -49,9 +50,10 @@ instance ParseAttributes Source where
             -> [CommonKorePattern]
             -> Source
             -> AttributeParser.Parser Source
-        parseApplication params args _ = do
+        parseApplication params args s@(Source Nothing) = do
             AttributeParser.getZeroParams params
             case args of
+                [] -> pure s
                 [_] -> do
                     arg <- AttributeParser.getOneArgument args
                     StringLiteral str <- AttributeParser.getStringLiteral arg
@@ -59,7 +61,11 @@ instance ParseAttributes Source where
                         . maybe def id
                         . parseMaybe sourceParser
                         $ Text.unpack str
-                _ -> pure def
+                _ ->
+                    Kore.Error.koreFail
+                        ("expected one argument, found " ++ show (length args))
+        parseApplication _ _ _ =
+            AttributeParser.failDuplicate sourceId
 
 -- | This parser is used to parse the inner representation of the attribute.
 -- The expected format is "Source(path)" where path is a FilePath.
