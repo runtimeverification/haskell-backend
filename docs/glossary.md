@@ -22,7 +22,6 @@
 1. (adjective)
    A functional pattern has exactly one value, i.e. it satisfies `(∃x . x=φ)`.
 
-
 <a name="pattern"></a>*pattern*
 
 1. (noun)

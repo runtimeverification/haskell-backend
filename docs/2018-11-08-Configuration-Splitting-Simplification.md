@@ -6,7 +6,9 @@ Background
 
 ### Functional and function-like patterns
 
-See the `glossary.md` file for term definitions.
+See the `glossary.md` file for term definitions (e.g.
+[functional](glossary.md#functional) and
+[function-like](glossary.md#functionlike)).
 
 If `t` is functional (or function-like) and `φ` is a predicate,
 then `t ∧ φ` is function-like.
