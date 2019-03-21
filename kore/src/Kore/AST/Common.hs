@@ -1152,7 +1152,7 @@ data Pattern level domain variable child where
         :: !(Ceil level child) -> Pattern level domain variable child
     DomainValuePattern
         :: !(domain child)
-        -> Pattern Object domain variable child
+        -> Pattern level domain variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level domain variable child
     ExistsPattern
@@ -1168,17 +1168,17 @@ data Pattern level domain variable child where
     InPattern
         :: !(In level child) -> Pattern level domain variable child
     NextPattern
-        :: !(Next Object child) -> Pattern Object domain variable child
+        :: !(Next level child) -> Pattern level domain variable child
     NotPattern
         :: !(Not level child) -> Pattern level domain variable child
     OrPattern
         :: !(Or level child) -> Pattern level domain variable child
     RewritesPattern
-        :: !(Rewrites Object child) -> Pattern Object domain variable child
+        :: !(Rewrites level child) -> Pattern level domain variable child
     StringLiteralPattern
-        :: !StringLiteral -> Pattern Meta domain variable child
+        :: !StringLiteral -> Pattern level domain variable child
     CharLiteralPattern
-        :: !CharLiteral -> Pattern Meta domain variable child
+        :: !CharLiteral -> Pattern level domain variable child
     TopPattern
         :: !(Top level child) -> Pattern level domain variable child
     VariablePattern

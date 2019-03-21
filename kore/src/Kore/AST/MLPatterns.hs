@@ -27,10 +27,10 @@ import Kore.Implicit.ImplicitSorts
 -- result sort corresponding to an application head.
 getPatternResultSort
     :: (Domain domain, SortedVariable variable)
-    => (SymbolOrAlias level -> ApplicationSorts level)
+    => (SymbolOrAlias Object -> ApplicationSorts Object)
     -- ^Function to retrieve the sort of a given pattern Head
-    -> Pattern level domain variable child
-    -> Sort level
+    -> Pattern Object domain variable child
+    -> Sort Object
 getPatternResultSort applicationSorts =
     \case
         AndPattern And { andSort } -> andSort

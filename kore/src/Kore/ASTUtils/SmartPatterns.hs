@@ -71,7 +71,7 @@ pattern Ceil_
     -> PurePattern level dom var (Annotation.Null level)
 
 pattern DV_
-  :: Domain dom => (level ~ Object)
+  :: Domain dom
   => dom (PurePattern level dom var (Annotation.Null level))
   -> PurePattern level dom var (Annotation.Null level)
 
@@ -127,7 +127,7 @@ pattern In_
     -> PurePattern level dom var (Annotation.Null level)
 
 pattern Next_
-    :: Functor dom => (level ~ Object) =>
+    :: Functor dom =>
        Sort level
     -> PurePattern level dom var (Annotation.Null level)
     -> PurePattern level dom var (Annotation.Null level)
@@ -146,7 +146,7 @@ pattern Or_
     -> PurePattern level dom var (Annotation.Null level)
 
 pattern Rewrites_
-  :: Functor dom => (level ~ Object) =>
+  :: Functor dom =>
      Sort level
   -> PurePattern level dom var (Annotation.Null level)
   -> PurePattern level dom var (Annotation.Null level)
@@ -163,12 +163,12 @@ pattern Var_
     -> PurePattern level dom var (Annotation.Null level)
 
 pattern StringLiteral_
-  :: Functor dom => (level ~ Meta)
+  :: Functor dom
   => Text
   -> PurePattern level dom var (Annotation.Null level)
 
 pattern CharLiteral_
-  :: Functor dom => (level ~ Meta)
+  :: Functor dom
   => Char
   -> PurePattern level dom var (Annotation.Null level)
 

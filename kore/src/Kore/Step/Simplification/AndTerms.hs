@@ -1378,10 +1378,10 @@ See also: 'equalAndEquals'
 -- TODO (thomas.tuegel): This unification case assumes that \dv is injective,
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
-    :: (Eq (variable Object), Eq level, Eq (variable level))
-    => StepPattern level variable
-    -> StepPattern level variable
-    -> Maybe (StepPattern level variable, SimplificationProof level)
+    :: Eq (variable Object)
+    => StepPattern Object variable
+    -> StepPattern Object variable
+    -> Maybe (StepPattern Object variable, SimplificationProof Object)
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ (Domain.BuiltinExternal _))
     second@(DV_ _ (Domain.BuiltinExternal _))
@@ -1408,10 +1408,10 @@ See also: 'equalAndEquals'
 
  -}
 stringLiteralAndEqualsAssumesDifferent
-    :: Eq (variable Meta)
-    => StepPattern level variable
-    -> StepPattern level variable
-    -> Maybe (StepPattern level variable, SimplificationProof level)
+    :: Eq (variable Object)
+    => StepPattern Object variable
+    -> StepPattern Object variable
+    -> Maybe (StepPattern Object variable, SimplificationProof Object)
 stringLiteralAndEqualsAssumesDifferent
     first@(StringLiteral_ _)
     second@(StringLiteral_ _)
@@ -1429,10 +1429,10 @@ See also: 'equalAndEquals'
 
  -}
 charLiteralAndEqualsAssumesDifferent
-    :: Eq (variable Meta)
-    => StepPattern level variable
-    -> StepPattern level variable
-    -> Maybe (StepPattern level variable, SimplificationProof level)
+    :: Eq (variable Object)
+    => StepPattern Object variable
+    -> StepPattern Object variable
+    -> Maybe (StepPattern Object variable, SimplificationProof Object)
 charLiteralAndEqualsAssumesDifferent
     first@(CharLiteral_ _)
     second@(CharLiteral_ _)

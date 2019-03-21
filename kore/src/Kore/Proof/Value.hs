@@ -107,9 +107,9 @@ eraseSortInjection (Recursive.project -> ann :< value) =
 
  -}
 fromPattern
-    :: MetadataTools level StepperAttributes
-    -> Base (ConcreteStepPattern level) (Maybe (Value level))
-    -> Maybe (Value level)
+    :: MetadataTools Object StepperAttributes
+    -> Base (ConcreteStepPattern Object) (Maybe (Value Object))
+    -> Maybe (Value Object)
 fromPattern tools (ann :< pat) =
     case pat of
         ApplicationPattern
@@ -147,9 +147,9 @@ See also: 'fromPattern'
 
  -}
 fromConcreteStepPattern
-    :: MetadataTools level StepperAttributes
-    -> ConcreteStepPattern level
-    -> Maybe (Value level)
+    :: MetadataTools Object StepperAttributes
+    -> ConcreteStepPattern Object
+    -> Maybe (Value Object)
 fromConcreteStepPattern tools =
     Recursive.fold (fromPattern tools)
 
