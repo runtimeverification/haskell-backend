@@ -41,7 +41,7 @@ Decision: Postpone allowing them
 --------------------------------
 
 We should show an error when encountering rewrite axioms with ensures. When
-needed, er should implement the decision below. We should only allow
+needed, we should implement the decision below. We should only allow
 ensures axioms that use existential quantifiers if we don't have concrete
 examples without quantifiers.
 
