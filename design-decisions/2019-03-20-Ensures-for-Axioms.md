@@ -50,7 +50,8 @@ Decision: Check ensure validity
 
 We should have a flag `--rewrite-axiom-check` with three possible values:
 `None`, `BestEffort` and `Strict`. We should check the
-`⌈left⌉ ∧ requires ∧ ¬ensures` expression from the section below like this:
+`⌈left⌉ ∧ requires ∧ ¬ (∃ Z . ensures)` expression from the section below
+like this:
 
 1. `None`: no checks.
 1. `BestEffort`: check whether it is `⊥`, or the SMT gives up on checking it,
@@ -69,9 +70,8 @@ left ∧ requires → ensures ∧ • right  -- predicates can move out of •
 (left ∧ requires → ensures)          -- a → b ∧ c iff (a → b) ∧ (a → c)
     ∧ (left ∧ requires → • right)
 ```
-Now, note that this is an axiom, so the entire expression must be a
-`⊤` predicate. This means that both `left ∧ requires → • right` and
-`left ∧ requires → ensures` are `⊤` predicates.
+Now, note that this is an axiom, so the entire expression is a theorem. This means that both `left ∧ requires → • right` and
+`left ∧ requires → ensures` are theorems.
 
 But `ensures` is a predicate.
 1. If `ensures` is `⊥`, then `left ∧ requires` must be `⊥`, which means that either
@@ -101,22 +101,26 @@ left ∧ requires → ∃ Z . • right ∧ ensures  -- ∃ commutes with •
       ∧ (left ∧ requires → ensures)
       )
 ```
-
-But note that, as above, `ensures` is a predicate, and one of the following
-must happen:
-1. The entire expression inside `∃ Z` is `⊥`
-1. `ensures` is `⊤`
-1. `left` is `⊥`
-1. `requires` is `⊥`
-
-But there must be at least one `Z` for which the entire expression inside `∃ Z`
-is not `⊥`, so there must be at least one `Z` for which
-`ensures` is `⊤`, `left` is `⊥`, or `requires` is `⊥`, which means that there
-is one `Z` for which, as above, `¬(⌈left⌉ ∧ requires ∧ ¬ensures)`,
-which means that:
+But, since `∃ Z φ ∧ ψ → (∃ Z φ) ∧ (∃ Z ψ)`, and the above is a theorem, then the
+following two must be theorems:
 ```
-∃ Z . ¬ (⌈left⌉ ∧ requires ∧ ¬ensures)
-¬ ∀ Z . (⌈left⌉ ∧ requires ∧ ¬ensures)  -- ∃ Z . ¬ φ iff ¬ ∀ Z . φ
+∃ Z . left ∧ requires → • right
+∃ Z . left ∧ requires → ensures
 ```
-But this means that `∀ Z . (⌈left⌉ ∧ requires ∧ ¬ensures)` is `⊥`, which means
-that, as above, `(⌈left⌉ ∧ requires ∧ ¬ensures)` is `⊥`.
+but note that Z does not occur in `left ∧ requires`, so the latter becomes
+```
+left ∧ requires → ∃ Z . ensures
+```
+
+But `∃ Z . ensures` is a predicate, so we can take `ensures' = ∃ Z . ensures`
+and, as above, transform
+```
+left ∧ requires → ensures'
+```
+into
+```
+¬ (⌈left⌉ ∧ requires ∧ ¬ensures')
+```
+
+so we can just check whether `⌈left⌉ ∧ requires ∧ ¬ (∃ Z . ensures)` is
+unsatisfiable.
