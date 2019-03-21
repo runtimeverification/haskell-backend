@@ -73,7 +73,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (..) )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Pattern
@@ -88,8 +88,11 @@ import           Kore.Step.Representation.MultiOr
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
+import           Kore.Step.Representation.Predicated
+                 ( Predicated (Predicated) )
+import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution, Predicated (..) )
+                 ( PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
@@ -98,10 +101,11 @@ import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unification.Data
-                 ( UnificationProof (..) )
+                 ( UnificationProof )
 import qualified Kore.Unification.Data as Unification.Proof
 import           Kore.Unification.Error
-                 ( UnificationError (..), UnificationOrSubstitutionError )
+                 ( UnificationOrSubstitutionError )
+import qualified Kore.Unification.Error as Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -593,7 +597,7 @@ applyUnificationToRhs
         orElse :: a -> a -> a
         p1 `orElse` p2 = if isBottom then p2 else p1
     if not(isBottom) && not(allVarsCovered) && symbolicPattern
-    then throwE (StepErrorUnification UnsupportedPatterns)
+    then throwE (StepErrorUnification Unification.Error.UnsupportedPatterns)
     else return StepResult
         { rewrittenPattern = Predicated
             { term = result `orElse` mkBottom_
@@ -976,7 +980,7 @@ instantiateRule
 
     unified@Predicated { term = axiom }
   = do
-    let unifier = unified { term = () }
+    let unifier = unified { Predicated.term = () }
         RulePattern { requires, ensures } = axiom
         merged =
             PredicateSubstitution.fromPredicate requires
@@ -986,7 +990,7 @@ instantiateRule
     let Predicated { substitution } = normalized
         substitution' = Substitution.toMap substitution
         axiom' = RulePattern.substitute substitution' axiom
-    return (normalized { term = axiom' })
+    return (normalized { Predicated.term = axiom' })
   where
     normalize =
         liftFromUnification
@@ -1032,7 +1036,7 @@ applyRule
     initial
     instantiated
   =
-    applyInitialConditions' initial (right <$> instantiated)
+    applyInitialConditions' initial (RulePattern.right <$> instantiated)
   where
     applyInitialConditions' =
         applyInitialConditions
@@ -1122,9 +1126,9 @@ applyInitialConditions
     initial
     unification@Predicated { term }
   = do
-    let merged = initial *> unification { term = () }
+    let merged = initial *> unification { Predicated.term = () }
     normalized <- normalize merged
-    return normalized { term }
+    return normalized { Predicated.term = term }
   where
     normalize =
         liftFromUnification
@@ -1192,9 +1196,9 @@ applyRewriteRule
         results <- gather $ do
             unifier <- unifyRule' initial' rule'
             instantiated <- instantiateRule' unifier
-            applied <- applyRule' (initial' { term = () }) instantiated
+            applied <- applyRule' (initial' $> ()) instantiated
             result <- checkSubstitutionCoverage initial' unifier applied
-            let coverage = unificationCoverage (instantiated { term = () })
+            let coverage = unificationCoverage (instantiated $> ())
             return (result, coverage)
         let coverage = snd <$> results
         remainder <- gather $ do
@@ -1301,7 +1305,7 @@ unwrapVariables
     -> ExpandedPattern level variable
 unwrapVariables config@Predicated { substitution } =
     ExpandedPattern.mapVariables unwrapStepperVariable
-        config { substitution = substitution' }
+        config { ExpandedPattern.substitution = substitution' }
   where
     substitution' = Substitution.filter isConfigurationVariable substitution
 
