@@ -64,12 +64,7 @@ newtype AxiomPatternError = AxiomPatternError ()
 
 {- | Normal rewriting and function axioms, claims and patterns.
 
-Currently @RulePattern@ can only represent rules of the form
-@
-  left => right if requires
-  left = right if requires
-@
---}
+ -}
 data RulePattern level variable = RulePattern
     { left  :: !(StepPattern level variable)
     , right :: !(StepPattern level variable)
