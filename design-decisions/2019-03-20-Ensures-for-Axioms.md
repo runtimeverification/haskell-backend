@@ -28,7 +28,7 @@ Questions
 
 Should we allow ensure clauses in axioms?
 
-It is not at all obvious that we actually need them. Also, it is very easy to
+It is not at all obvious that we actually need them. Also, given that it is very easy to
 make mistakes when writing them, should we try to detect errors?
 
 As an example, the following axiom infers that `a ≤ b` out of thin air:
