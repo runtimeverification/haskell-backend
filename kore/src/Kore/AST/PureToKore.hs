@@ -14,13 +14,12 @@ structures from "Kore.AST.PureML" to their @Kore@ counterparts in
 -}
 module Kore.AST.PureToKore
     ( patternPureToKore
-    , patternKoreToPure'
+    , patternKoreToPure
     , sentencePureToKore
     , sentenceKoreToPure
     , axiomSentencePureToKore
     , modulePureToKore
     , definitionPureToKore
-    , patternKoreToPure
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -32,7 +31,6 @@ import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Error
 
 patternPureToKore
     :: (Functor domain, MetaOrObject level)
@@ -44,30 +42,23 @@ patternPureToKore =
     patternPureToKoreWorker (Recursive.project -> ann :< pat) =
         asUnified ann :< asUnifiedPattern pat
 
--- |Given a level, this function attempts to extract a pure patten
--- of this level from a KorePattern.
--- Note that this function does not lift the term, but rather fails with
--- 'error' any part of the pattern if of a different level.
--- For lifting functions see "Kore.MetaML.Lift".
 patternKoreToPure
-    :: (MetaOrObject level, Traversable domain)
-    => level
-    -> KorePattern domain variable (Unified annotation)
-    -> Either (Error a) (PurePattern level domain variable (annotation level))
-patternKoreToPure _ = Right . Recursive.fold extractPurePattern
+    :: Traversable domain
+    => KorePattern domain Variable (Unified annotation)
+    -> PurePattern Object domain Variable (annotation Object)
+patternKoreToPure = Recursive.fold extractPurePattern
 
-patternKoreToPure'
-    :: VerifiedKorePattern
-    -> VerifiedPurePattern Object Domain.Builtin
-patternKoreToPure' =
-    fmap (Valid.mapVariables fromUnified)
-    . Recursive.fold extractPurePattern
+annotationKoreToPure
+    :: Functor f
+    => f (Valid (Unified Variable) Object)
+    -> f (Valid (Variable Object) Object)
+annotationKoreToPure = fmap (Valid.mapVariables fromUnified)
 
 sentenceKoreToPure
     :: UnifiedSentence UnifiedSortVariable VerifiedKorePattern
     -> Sentence Object (SortVariable Object) (VerifiedPurePattern Object Domain.Builtin)
 sentenceKoreToPure (UnifiedObjectSentence sentence) =
-    case fmap patternKoreToPure' sentence of
+    case annotationKoreToPure . patternKoreToPure <$> sentence of
         SentenceAliasSentence sentenceAlias ->
             SentenceAliasSentence sentenceAlias
         SentenceSymbolSentence sentenceSymbol ->
