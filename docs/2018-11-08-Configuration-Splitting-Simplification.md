@@ -6,11 +6,9 @@ Background
 
 ### Functional and function-like patterns
 
-A functional pattern has exactly one element, i.e. `t` is functional iff
-`∃x . x=t`. A function-like pattern is similar, but it can also be `⊥`, i.e.
-`t` is function-like if `(∃x . x=t) ∨ ⌈¬t⌉`.
+See the `glossary.md` file for term definitions.
 
-Note that if `t` is functional (or function-like) and `φ` is a predicate,
+If `t` is functional (or function-like) and `φ` is a predicate,
 then `t ∧ φ` is function-like.
 
 In the sequel all of our pattern meta-variables will be assumes to denote
