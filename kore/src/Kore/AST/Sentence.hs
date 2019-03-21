@@ -93,6 +93,8 @@ import           Data.Hashable
 import           Data.Maybe
                  ( catMaybes )
 import           Data.Proxy
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -270,7 +272,7 @@ instance Unparse (SentenceSymbol level patternType) where
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: Text }
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, Generic, IsString, Ord, Show)
 
 instance Hashable ModuleName
 
