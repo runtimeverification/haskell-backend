@@ -14,7 +14,9 @@ structures from "Kore.AST.PureML" to their @Kore@ counterparts in
 -}
 module Kore.AST.PureToKore
     ( patternPureToKore
+    , patternKoreToPure'
     , sentencePureToKore
+    , sentenceKoreToPure
     , axiomSentencePureToKore
     , modulePureToKore
     , definitionPureToKore
@@ -25,10 +27,12 @@ import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
 import qualified Data.Functor.Foldable as Recursive
 
-import Kore.AST.Kore
-import Kore.AST.Pure
-import Kore.AST.Sentence
-import Kore.Error
+import qualified Kore.Annotation.Valid as Valid
+import           Kore.AST.Kore
+import           Kore.AST.Pure
+import           Kore.AST.Sentence
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Error
 
 patternPureToKore
     :: (Functor domain, MetaOrObject level)
@@ -50,25 +54,59 @@ patternKoreToPure
     => level
     -> KorePattern domain variable (Unified annotation)
     -> Either (Error a) (PurePattern level domain variable (annotation level))
-patternKoreToPure level =
-    Recursive.fold (extractPurePattern $ isMetaOrObject $ toProxy level)
+patternKoreToPure _ = Right . Recursive.fold extractPurePattern
+
+patternKoreToPure'
+    :: VerifiedKorePattern
+    -> VerifiedPurePattern Object Domain.Builtin
+patternKoreToPure' =
+    fmap (Valid.mapVariables fromUnified)
+    . Recursive.fold extractPurePattern
+
+sentenceKoreToPure
+    :: UnifiedSentence UnifiedSortVariable VerifiedKorePattern
+    -> Sentence Object (SortVariable Object) (VerifiedPurePattern Object Domain.Builtin)
+sentenceKoreToPure (UnifiedObjectSentence sentence) =
+    case fmap patternKoreToPure' sentence of
+        SentenceAliasSentence sentenceAlias ->
+            SentenceAliasSentence sentenceAlias
+        SentenceSymbolSentence sentenceSymbol ->
+            SentenceSymbolSentence sentenceSymbol
+        SentenceImportSentence sentenceImport ->
+            SentenceImportSentence sentenceImport
+        SentenceSortSentence sentenceSort ->
+            SentenceSortSentence sentenceSort
+        SentenceHookSentence sentenceHook ->
+            SentenceHookSentence sentenceHook
+        SentenceAxiomSentence sentenceAxiom ->
+            SentenceAxiomSentence
+            $ sentenceKoreAxiomToPure sentenceAxiom
+        SentenceClaimSentence sentenceClaim ->
+            SentenceClaimSentence
+            $ sentenceKoreAxiomToPure sentenceClaim
+
+sentenceKoreAxiomToPure
+    :: SentenceAxiom UnifiedSortVariable patternType
+    -> SentenceAxiom (SortVariable Object) patternType
+sentenceKoreAxiomToPure sentenceAxiom =
+    sentenceAxiom
+        { sentenceAxiomParameters =
+            sortVariableKoreToPure <$> sentenceAxiomParameters sentenceAxiom
+        }
+
+sortVariableKoreToPure
+    :: UnifiedSortVariable -> SortVariable Object
+sortVariableKoreToPure (UnifiedObject var) = var
 
 extractPurePattern
     ::  ( MetaOrObject level
         , Traversable domain
         , result ~ PurePattern level domain variable (annotation level)
         )
-    => IsMetaOrObject level
-    -> Base
-        (KorePattern domain variable (Unified annotation))
-        (Either (Error e) result)
-    -> Either (Error e) result
-extractPurePattern IsObject = \(ann :< pat) ->
-    case pat of
-        UnifiedObjectPattern opat ->
-            case ann of
-                UnifiedObject oann ->
-                    Recursive.embed . (oann :<) <$> sequence opat
+    => Base (KorePattern domain variable (Unified annotation)) result
+    -> result
+extractPurePattern (UnifiedObject oann :< UnifiedObjectPattern opat) =
+    Recursive.embed (oann :< opat)
 
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure
