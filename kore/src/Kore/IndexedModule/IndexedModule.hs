@@ -228,6 +228,17 @@ toVerifiedPureModule module' =
         , moduleAttributes = snd (indexedModuleAttributes module')
         }
 
+{- | Convert any collection of 'VerifiedModule's back into a 'Definition'.
+
+The definition attributes are lost in the process of indexing the original
+definition.
+
+Although all 'IndexedModule's refer to the implicit Kore module, it is not
+included in the output of this function because it is /implicit/.
+
+See also: 'toVerifiedPureModule'
+
+ -}
 toVerifiedPureDefinition
     :: Foldable t
     => t (VerifiedModule declAtts axiomAtts)
@@ -236,8 +247,12 @@ toVerifiedPureDefinition idx =
     Definition
         { definitionAttributes = Default.def
         , definitionModules =
-            toVerifiedPureModule <$> Foldable.toList idx
+            toVerifiedPureModule
+            <$> filter notImplicitKoreModule (Foldable.toList idx)
         }
+  where
+    notImplicitKoreModule verifiedModule =
+        indexedModuleName verifiedModule /= "kore"
 
 indexedModuleRawSentences
     :: IndexedModule param pat atts atts' -> [UnifiedSentence param pat]
