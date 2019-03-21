@@ -75,7 +75,7 @@ Now, note that this is an axiom, so the entire expression must be a
 
 But `ensures` is a predicate.
 1. If `ensures` is `⊥`, then `left ∧ requires` must be `⊥`, which means that either
-   `left` or `requires` are `⊥`, which means that `⌈left⌉` is `⊥`.
+   `left` is `⊥` or `requires` is `⊥`, which means that either `⌈left⌉` is `⊥`  or `requires` is `⊥`
 1. If `ensures` is `⊤`, then the right hand side of the implication does not
    matter.
 
