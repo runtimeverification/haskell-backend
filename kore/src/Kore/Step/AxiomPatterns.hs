@@ -80,7 +80,7 @@ data RulePattern level variable = RulePattern
     deriving (Eq, Show)
 
 instance Unparse (variable level) => Pretty (RulePattern level variable) where
-    pretty RulePattern { left, right, requires } =
+    pretty rulePattern@(RulePattern _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
             , Pretty.indent 4 (unparse left)
@@ -88,7 +88,11 @@ instance Unparse (variable level) => Pretty (RulePattern level variable) where
             , Pretty.indent 4 (unparse right)
             , "requires:"
             , Pretty.indent 4 (unparse requires)
+            , "ensures:"
+            , Pretty.indent 4 (unparse ensures)
             ]
+      where
+        RulePattern { left, right, requires, ensures } = rulePattern
 
 {-  | Equality-based rule pattern.
 -}
