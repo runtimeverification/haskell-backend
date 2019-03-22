@@ -1010,7 +1010,7 @@ applyRule
         Predicated { term = renamedRule } = unifiedRule
         RulePattern { ensures } = renamedRule
         ensuresCondition = PredicateSubstitution.fromPredicate ensures
-        unification = () <$ unifiedRule
+        unification = Predicated.withoutTerm unifiedRule
     finalCondition <- normalize (initial <> unification <> ensuresCondition)
     -- Apply the normalized substitution to the right-hand side of the axiom.
     let
@@ -1065,7 +1065,7 @@ applyRemainder
     (PredicateSubstitution.fromPredicate -> remainder)
   = do
     let final = initial <* remainder
-        finalCondition = () <$ final
+        finalCondition = Predicated.withoutTerm final
         Predicated { Predicated.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
     return normalizedCondition { Predicated.term = finalTerm }
@@ -1134,10 +1134,10 @@ applyRewriteRule
             rule' = toAxiomVariables rule
         results <- unwrapStepErrorVariables $ gather $ do
             unifiedRule <- unifyRule' initial' rule'
-            let initialCondition = initial' $> ()
+            let initialCondition = Predicated.withoutTerm initial'
             final <- applyRule' initialCondition unifiedRule
             result <- checkSubstitutionCoverage initial' unifiedRule final
-            let unification = unifiedRule $> ()
+            let unification = Predicated.withoutTerm unifiedRule
             return (result, unification)
         let matches = snd <$> results
         remainder <- gather $ do
