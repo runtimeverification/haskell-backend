@@ -7,6 +7,7 @@ Representation of conditional terms.
 module Kore.Step.Representation.Predicated
     ( Predicated (..)
     , withoutTerm
+    , withCondition
     , Kore.Step.Representation.Predicated.freeVariables
     , substitutionToPredicate
     , toPredicate
@@ -183,6 +184,15 @@ instance
  -}
 withoutTerm :: Predicated level variable term -> Predicated level variable ()
 withoutTerm predicated = predicated { term = () }
+
+{- | Attach the condition to the given 'term'.
+ -}
+withCondition
+    :: term
+    -> Predicated level variable ()
+    -- ^ Condition
+    -> Predicated level variable term
+withCondition term predicated = predicated { term }
 
 {- | Extract the set of free variables from a 'Predicated' term.
 

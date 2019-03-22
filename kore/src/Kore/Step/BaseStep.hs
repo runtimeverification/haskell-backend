@@ -946,7 +946,7 @@ unifyRule
         RulePattern { requires = ruleRequires } = rule'
         requires' = PredicateSubstitution.fromPredicate ruleRequires
     unification' <- normalize (unification <> requires')
-    return (unification' $> rule')
+    return (rule' `Predicated.withCondition` unification')
   where
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
