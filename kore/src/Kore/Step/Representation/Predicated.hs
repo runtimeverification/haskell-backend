@@ -8,6 +8,7 @@ module Kore.Step.Representation.Predicated
     ( Predicated (..)
     , withoutTerm
     , withCondition
+    , andCondition
     , Kore.Step.Representation.Predicated.freeVariables
     , substitutionToPredicate
     , toPredicate
@@ -193,6 +194,19 @@ withCondition
     -- ^ Condition
     -> Predicated level variable term
 withCondition term predicated = predicated { term }
+
+{- | Combine the conditions of both arguments, taking the 'term' of the first.
+ -}
+andCondition
+    ::  ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => Predicated Object variable term
+    -> Predicated Object variable ()
+    -> Predicated Object variable term
+andCondition = (<*)
 
 {- | Extract the set of free variables from a 'Predicated' term.
 
