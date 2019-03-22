@@ -42,11 +42,29 @@ patternPureToKore =
     patternPureToKoreWorker (Recursive.project -> ann :< pat) =
         asUnified ann :< asUnifiedPattern pat
 
+{- | Unwrap a 'KorePattern'.
+
+For historical reasons, the parser produces a 'KorePattern' but most code
+operates on 'PurePattern'.
+
+ -}
+-- TODO (thomas.tuegel): Remove the distinction between KorePattern and
+-- PurePattern.
 patternKoreToPure
     :: Traversable domain
     => KorePattern domain Variable (Unified annotation)
     -> PurePattern Object domain Variable (annotation Object)
 patternKoreToPure = Recursive.fold extractPurePattern
+
+extractPurePattern
+    ::  ( MetaOrObject level
+        , Traversable domain
+        , result ~ PurePattern level domain variable (annotation level)
+        )
+    => Base (KorePattern domain variable (Unified annotation)) result
+    -> result
+extractPurePattern (UnifiedObject oann :< UnifiedObjectPattern opat) =
+    Recursive.embed (oann :< opat)
 
 annotationKoreToPure
     :: Functor f
@@ -54,6 +72,14 @@ annotationKoreToPure
     -> f (Valid (Variable Object) Object)
 annotationKoreToPure = fmap (Valid.mapVariables fromUnified)
 
+{- | Unwrap a 'UnifiedSentence'.
+
+For historical reasons, the parser produces a 'UnifiedSentence' but most code
+operates on 'Sentence'.
+
+ -}
+-- TODO (thomas.tuegel): Remove the distinction between UnifiedSentence and
+-- Sentence.
 sentenceKoreToPure
     :: UnifiedSentence UnifiedSortVariable VerifiedKorePattern
     -> Sentence Object (SortVariable Object) (VerifiedPurePattern Object Domain.Builtin)
@@ -88,16 +114,6 @@ sentenceKoreAxiomToPure sentenceAxiom =
 sortVariableKoreToPure
     :: UnifiedSortVariable -> SortVariable Object
 sortVariableKoreToPure (UnifiedObject var) = var
-
-extractPurePattern
-    ::  ( MetaOrObject level
-        , Traversable domain
-        , result ~ PurePattern level domain variable (annotation level)
-        )
-    => Base (KorePattern domain variable (Unified annotation)) result
-    -> result
-extractPurePattern (UnifiedObject oann :< UnifiedObjectPattern opat) =
-    Recursive.embed (oann :< opat)
 
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure
