@@ -64,6 +64,50 @@ instance
 
 instance
     ( MetaOrObject level
+    , Ord (variable Object)
+    , Unparse (variable Object)
+    , SortedVariable variable
+    , Semigroup term
+    ) =>
+    Semigroup (Predicated level variable term)
+  where
+    (<>) predicated1 predicated2 =
+        Predicated
+            { term = term1 <> term2
+            , predicate = makeAndPredicate predicate1 predicate2
+            , substitution = substitution1 <> substitution2
+            }
+      where
+        Predicated { term = term1 } = predicated1
+        Predicated { term = term2 } = predicated2
+        Predicated { predicate = predicate1 } = predicated1
+        Predicated { predicate = predicate2 } = predicated2
+        Predicated { substitution = substitution1 } = predicated1
+        Predicated { substitution = substitution2 } = predicated2
+    {-# INLINE (<>) #-}
+
+instance
+    ( MetaOrObject level
+    , Ord (variable Object)
+    , Unparse (variable Object)
+    , SortedVariable variable
+    , Monoid term
+    ) =>
+    Monoid (Predicated level variable term)
+  where
+    mempty =
+        Predicated
+            { term = mempty
+            , predicate = makeTruePredicate
+            , substitution = mempty
+            }
+    {-# INLINE mempty #-}
+
+    mappend = (<>)
+    {-# INLINE mappend #-}
+
+instance
+    ( MetaOrObject level
     , SortedVariable variable
     , Ord (variable level)
     , Show (variable level)
