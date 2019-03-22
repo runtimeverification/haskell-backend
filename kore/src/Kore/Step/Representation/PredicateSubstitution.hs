@@ -43,7 +43,7 @@ type CommonPredicateSubstitution level = PredicateSubstitution level Variable
 erasePredicatedTerm
     :: Predicated level variable child
     -> PredicateSubstitution level variable
-erasePredicatedTerm = (<$) ()
+erasePredicatedTerm = Predicated.withoutTerm
 
 top :: MetaOrObject level => PredicateSubstitution level variable
 top =

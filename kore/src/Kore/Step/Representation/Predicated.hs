@@ -6,6 +6,7 @@ Representation of conditional terms.
 -}
 module Kore.Step.Representation.Predicated
     ( Predicated (..)
+    , withoutTerm
     , Kore.Step.Representation.Predicated.freeVariables
     , substitutionToPredicate
     , toPredicate
@@ -177,6 +178,11 @@ instance
             "\\and" <> parameters' ["_"] <> arguments' [first, second]
         below first second =
             (Pretty.align . Pretty.vsep) [first, second]
+
+{- | Forget the 'term', keeping only the attached conditions.
+ -}
+withoutTerm :: Predicated level variable term -> Predicated level variable ()
+withoutTerm predicated = predicated { term = () }
 
 {- | Extract the set of free variables from a 'Predicated' term.
 
