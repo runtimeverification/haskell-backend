@@ -883,16 +883,26 @@ liftFromUnification
     -> BranchT (ExceptT (StepError level variable                     ) m) a
 liftFromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
 
+{- | A @UnifiedRule@ has been renamed and unified with a configuration.
+
+The rule's 'RulePattern.requires' clause is combined with the unification
+solution and the renamed rule is wrapped with the combined condition.
+
+ -}
 type UnifiedRule variable =
     Predicated Object variable (RulePattern Object variable)
 
 {- | Attempt to unify a rule with the initial configuration.
 
-The rule variables are renamed to avoid collision with the
-configuration. @unifyRule@ fails if unification fails. @unifyRule@ returns the
-applied rule wrapped in the unification solution, but the rule is not yet
-instantiated to the solution (see 'instantiateRule'). The initial conditions are
-not applied to the rule (see 'applyRule').
+The rule variables are renamed to avoid collision with the configuration. The
+rule's 'RulePattern.requires' clause is combined with the unification
+solution. The combined condition is simplified and checked for
+satisfiability.
+
+If any of these steps produces an error, then @unifyRule@ returns that error.
+
+@unifyRule@ returns the renamed rule wrapped with the combined conditions on
+unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
@@ -925,14 +935,22 @@ unifyRule
     initial@Predicated { term = initialTerm }
     rule
   = do
+    -- Rename free axiom variables to avoid free variables from the initial
+    -- configuration.
     let
-        -- Rename free axiom variables to avoid free variables from the initial
-        -- configuration.
-        (_, rule') = RulePattern.refreshRulePattern configVariables rule
         configVariables = ExpandedPattern.freeVariables initial
+        (_, rule') = RulePattern.refreshRulePattern configVariables rule
+    -- Unify the left-hand side of the rule with the term of the initial
+    -- configuration.
+    let
         RulePattern { left = ruleLeft } = rule'
-    unifier <- unifyPatterns ruleLeft initialTerm
-    return (unifier $> rule')
+    unification <- unifyPatterns ruleLeft initialTerm
+    -- Combine the unification solution with the rule's requirement clause.
+    let
+        RulePattern { requires = ruleRequires } = rule'
+        requires' = PredicateSubstitution.fromPredicate ruleRequires
+    unification' <- normalize (unification <> requires')
+    return (unification' $> rule')
   where
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
@@ -946,6 +964,13 @@ unifyRule
                 pat1
                 pat2
         scatter unifiers
+    normalize =
+        liftFromUnification
+        . Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
 
 {- | Instantiate the rule by applying the unification solution.
 
