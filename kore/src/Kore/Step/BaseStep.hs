@@ -993,7 +993,7 @@ applyRule
 
     -> PredicateSubstitution Object variable
     -- ^ Initial conditions
-    -> ExpandedPattern Object variable
+    -> UnifiedRule variable
     -- ^ Non-normalized final configuration
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
@@ -1005,14 +1005,18 @@ applyRule
     axiomSimplifiers
 
     initial
-    final
+    unifiedRule
   = do
-    let unification = () <$ final
-    finalCondition <- normalize (initial <> unification)
+    let
+        Predicated { term = renamedRule } = unifiedRule
+        RulePattern { ensures } = renamedRule
+        ensuresCondition = PredicateSubstitution.fromPredicate ensures
+        unification = () <$ unifiedRule
+    finalCondition <- normalize (initial <> unification <> ensuresCondition)
     let
         Predicated { substitution } = finalCondition
         substitution' = Substitution.toMap substitution
-        Predicated { term = finalTerm } = final
+        RulePattern { right = finalTerm } = renamedRule
         finalTerm' = Pattern.substitute substitution' finalTerm
     return finalCondition { ExpandedPattern.term = finalTerm' }
   where
@@ -1175,7 +1179,7 @@ applyRewriteRule
         results <- gather $ do
             appliedRule <- unifyRule' initial' rule'
             let initialCondition = initial' $> ()
-            final <- applyRule' initialCondition (RulePattern.right <$> appliedRule)
+            final <- applyRule' initialCondition appliedRule
             result <- checkSubstitutionCoverage initial' appliedRule final
             let coverage = unificationCoverage (appliedRule $> ())
             return (result, coverage)
