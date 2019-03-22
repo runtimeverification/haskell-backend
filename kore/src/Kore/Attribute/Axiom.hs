@@ -23,6 +23,7 @@ module Kore.Attribute.Axiom
     , lensOverload, Overload (..)
     , lensSmtLemma, SmtLemma (..)
     , lensLabel, Label (..)
+    , lensSourceLocation, SourceLocation (..)
     ) where
 
 import           Control.DeepSeq
@@ -47,6 +48,7 @@ import           Kore.Attribute.Parser
 import           Kore.Attribute.ProductionID
 import           Kore.Attribute.Simplification
 import           Kore.Attribute.SmtLemma
+import           Kore.Attribute.SourceLocation
 import           Kore.Attribute.Trusted
 
 {- | Attributes specific to Kore axiom sentences.
@@ -77,8 +79,9 @@ data Axiom =
     -- ^ The axiom should be sent to SMT as a lemma.
     , label :: !Label
     -- ^ The user-defined label associated with the axiom.
-    }
-    deriving (Eq, Ord, Show, Generic)
+    , sourceLocation :: !SourceLocation
+    -- ^ Source and location in the original file.
+    } deriving (Eq, Ord, Show, Generic)
 
 instance NFData Axiom
 
@@ -99,6 +102,7 @@ instance Default Axiom where
             , overload = def
             , smtLemma = def
             , label = def
+            , sourceLocation = def
             }
 
 instance ParseAttributes Axiom where
@@ -115,3 +119,4 @@ instance ParseAttributes Axiom where
         Monad.>=> lensOverload (parseAttribute attr)
         Monad.>=> lensSmtLemma (parseAttribute attr)
         Monad.>=> lensLabel (parseAttribute attr)
+        Monad.>=> lensSourceLocation (parseAttribute attr)

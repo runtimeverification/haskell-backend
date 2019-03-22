@@ -70,7 +70,6 @@ symbolOrAliasSorts params sentence = do
     parametrizedArgumentSorts = getSentenceSymbolOrAliasArgumentSorts sentence
     parametrizedReturnSort = getSentenceSymbolOrAliasResultSort sentence
 
-
 substituteSortVariables
     :: MonadError (Error e) m
     => Map.Map (SortVariable level) (Sort level)

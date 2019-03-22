@@ -1,3 +1,8 @@
+<a name="BMC"></a>*BMC*
+
+1. (noun, acronym)
+   Bounded model checking. Execute the program on all paths for a given number of steps (a.k.a. bound), attempting to identify given properties (bugs, unexpected behaviours, and so on) in the execution graph.
+
 <a name="function"></a>*function*
 
 1. (noun)
@@ -16,7 +21,6 @@
 
 1. (adjective)
    A functional pattern has exactly one value, i.e. it satisfies `(∃x . x=φ)`.
-
 
 <a name="pattern"></a>*pattern*
 
@@ -37,6 +41,13 @@
    identify, so some of the code that identifies predicates fails on these.
    Whenever a [substitution](#substitution) can be extracted efficiently,
    the "predicate" term may refer to the non-substitution part of the predicate.
+
+<a name="SBC"></a>*SBC*
+
+1. (noun, acronym)
+   Semantics-based compilation. Compilation that uses the semantics of the
+   language to analyze the behaviour of the program (e.g. through symbolic
+   execution), and uses what it learned to improve the compilation result.
 
 <a name="substitution"></a>*substitution*
 
