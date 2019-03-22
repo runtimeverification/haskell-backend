@@ -1004,12 +1004,15 @@ applyRule
     initial
     unifiedRule
   = do
+    -- Combine the initial conditions, the unification conditions, and the axiom
+    -- ensures clause. The axiom requires clause is included by unifyRule.
     let
         Predicated { term = renamedRule } = unifiedRule
         RulePattern { ensures } = renamedRule
         ensuresCondition = PredicateSubstitution.fromPredicate ensures
         unification = () <$ unifiedRule
     finalCondition <- normalize (initial <> unification <> ensuresCondition)
+    -- Apply the normalized substitution to the right-hand side of the axiom.
     let
         Predicated { substitution } = finalCondition
         substitution' = Substitution.toMap substitution
