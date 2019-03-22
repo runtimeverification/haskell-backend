@@ -1177,11 +1177,11 @@ applyRewriteRule
             initial' = toConfigurationVariables initial
             rule' = toAxiomVariables rule
         results <- gather $ do
-            appliedRule <- unifyRule' initial' rule'
+            unifiedRule <- unifyRule' initial' rule'
             let initialCondition = initial' $> ()
-            final <- applyRule' initialCondition appliedRule
-            result <- checkSubstitutionCoverage initial' appliedRule final
-            let coverage = unificationCoverage (appliedRule $> ())
+            final <- applyRule' initialCondition unifiedRule
+            result <- checkSubstitutionCoverage initial' unifiedRule final
+            let coverage = unificationCoverage (unifiedRule $> ())
             return (result, coverage)
         let matches = snd <$> results
         remainder <- gather $ do
@@ -1240,7 +1240,7 @@ checkSubstitutionCoverage
     => ExpandedPattern level (StepperVariable variable)
     -- ^ Initial configuration
     -> UnifiedRule (StepperVariable variable)
-    -- ^ Unified rule before instantiation
+    -- ^ Unified rule
     -> ExpandedPattern level (StepperVariable variable)
     -- ^ Configuration after applying rule
     -> m (ExpandedPattern level variable)
