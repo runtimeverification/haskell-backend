@@ -2,7 +2,6 @@
 
 module Test.Kore.Step.BaseStep
     ( test_baseStepMultipleRemainder
-    , test_instantiateRule
     , test_applyRule
     , test_unifyRule
     , test_applyRewriteRule_
@@ -16,7 +15,6 @@ import           Control.Monad.Except
                  ( ExceptT, runExceptT )
 import           Data.Default as Default
                  ( def )
-import qualified Data.Either as Either
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -29,7 +27,7 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.BaseStep hiding
-                 ( applyRewriteRule, applyRule, instantiateRule, unifyRule )
+                 ( applyRewriteRule, applyRule, unifyRule )
 import qualified Kore.Step.BaseStep as BaseStep
 import           Kore.Step.Error
 import           Kore.Step.Representation.ExpandedPattern
@@ -255,35 +253,6 @@ runStepWithRemainders metadataTools configuration axioms =
                 axioms
             )
 
-instantiateRule
-    :: RulePattern Object Variable
-    -> PredicateSubstitution Object Variable
-    -> IO
-        (Either
-            (StepError Object Variable)
-            (MultiOr (UnifiedRule Variable))
-        )
-instantiateRule axiom unifier =
-    evalUnifier
-    $ BaseStep.instantiateRule
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unifier { term = axiom }
-  where
-    metadataTools = mockMetadataTools
-    predicateSimplifier =
-        PredicateSubstitution.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
-
 evalUnifier
     :: BranchT (ExceptT e Simplifier) a
     -> IO (Either e (MultiOr a))
@@ -293,170 +262,6 @@ evalUnifier =
     . runExceptT
     . gather
 
-test_instantiateRule :: [TestTree]
-test_instantiateRule =
-    [ testCase "substitute left-hand side" $ do
-        let axiom =
-                RulePattern
-                    { left = mkVar Mock.x
-                    , right = Mock.b
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            unifier =
-                PredicateSubstitution.top
-                    { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
-            expect = Mock.a
-        Right [ instantiated ] <- instantiateRule axiom unifier
-        let Predicated { term = axiom' } = instantiated
-            RulePattern { left = actual } = axiom'
-        assertEqual "" expect actual
-
-    , testCase "substitute right-hand side" $ do
-        let axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = mkVar Mock.y
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            unifier =
-                PredicateSubstitution.top
-                    { substitution = Substitution.wrap [(Mock.y, Mock.b)] }
-            expect = Mock.b
-        Right [ instantiated ] <- instantiateRule axiom unifier
-        let Predicated { term = axiom' } = instantiated
-            RulePattern { right = actual } = axiom'
-        assertEqual "" expect actual
-
-    , testCase "substitute requires clause" $ do
-        let axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = Mock.b
-                    , requires =
-                        Predicate.makeCeilPredicate (Mock.f (mkVar Mock.x))
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            unifier =
-                PredicateSubstitution.top
-                    { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
-            expect = Predicate.makeCeilPredicate (Mock.f Mock.a)
-        Right [ instantiated ] <- instantiateRule axiom unifier
-        let Predicated { term = axiom' } = instantiated
-            RulePattern { requires = actual } = axiom'
-        assertEqual "" expect actual
-
-    , testCase "\\bottom unification condition" $ do
-        let axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = Mock.b
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            unifier = PredicateSubstitution.bottom
-            expect = Right []
-        actual <- instantiateRule axiom unifier
-        assertEqual "" expect actual
-
-    , testCase "conflicted unification" $ do
-        let axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = Mock.b
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            unifier =
-                Predicated
-                    { term = ()
-                    , predicate =
-                        Predicate.makeNotPredicate
-                        $ Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
-                    , substitution = Substitution.wrap [(Mock.x, Mock.a)]
-                    }
-            expect = Right []
-        actual <- instantiateRule axiom unifier
-        assertEqual "" expect actual
-
-    , testCase "unification conflicts with requirement" $ do
-        let axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = Mock.b
-                    , requires =
-                        Predicate.makeNotPredicate
-                        $ Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            unifier =
-                PredicateSubstitution.top
-                    { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
-            expect = Right []
-        actual <- instantiateRule axiom unifier
-        assertEqual "" expect actual
-
-    , testCase "normalization failure" $ do
-        let axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = Mock.b
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            unifier =
-                PredicateSubstitution.top
-                    { substitution =
-                        Substitution.wrap
-                            [ (Mock.x, Mock.f (mkVar Mock.y))
-                            , (Mock.y, mkVar Mock.x)
-                            ]
-                    }
-        actual <- instantiateRule axiom unifier
-        assertBool "" (Either.isLeft actual)
-
-    , testCase "normalize substitution" $ do
-        let axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = Mock.b
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            unifier =
-                PredicateSubstitution.top
-                    { substitution = Substitution.wrap [(Mock.x, Mock.a)] }
-        Right [ instantiated ] <- instantiateRule axiom unifier
-        let Predicated { substitution = actual } = instantiated
-        assertBool "" (Substitution.isNormalized actual)
-
-    -- Uncomment below when PredicateSubstitution simplifier branches.
-    -- , testCase "branch on requirement" $ do
-    --     let axiom =
-    --             RulePattern
-    --                 { left = Mock.a
-    --                 , right = Mock.b
-    --                 , requires = Predicate.makeOrPredicate expect1 expect2
-    --                 , attributes = Default.def
-    --                 }
-    --         unifier = ExpandedPattern.topPredicate
-    --         expect1 = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
-    --         expect2 = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
-    --     Right [ actual1, actual2 ] <- instantiateRule axiom unifier
-    --     assertEqual "" expect1 (predicate actual1)
-    --     assertEqual "" expect2 (predicate actual2)
-
-    ]
-
 applyRule
     :: PredicateSubstitution Object Variable
     -> UnifiedRule Variable
@@ -465,7 +270,7 @@ applyRule
             (StepError Object Variable)
             (MultiOr (ExpandedPattern Object Variable))
         )
-applyRule initial instantiated =
+applyRule initial unifiedRule =
     evalUnifier
     $ BaseStep.applyRule
         metadataTools
@@ -473,7 +278,7 @@ applyRule initial instantiated =
         patternSimplifier
         axiomSimplifiers
         initial
-        instantiated
+        unifiedRule
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
@@ -490,7 +295,7 @@ applyRule initial instantiated =
 test_applyRule :: [TestTree]
 test_applyRule =
     [ testCase "\\bottom initial condition" $ do
-        let instantiated =
+        let unifiedRule =
                 Predicated
                     { term = axiom
                     , predicate = Predicate.makeTruePredicate
@@ -506,11 +311,11 @@ test_applyRule =
                     }
             initial = PredicateSubstitution.bottom
             expect = Right []
-        actual <- applyRule initial instantiated
+        actual <- applyRule initial unifiedRule
         assertEqual "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
-        let instantiated =
+        let unifiedRule =
                 Predicated
                     { term = axiom
                     , predicate = Predicate.makeTruePredicate
@@ -526,11 +331,11 @@ test_applyRule =
                     }
             initial = PredicateSubstitution.top
             expect = Right [ right axiom <$ initial ]
-        actual <- applyRule initial instantiated
+        actual <- applyRule initial unifiedRule
         assertEqual "" expect actual
 
     , testCase "combine initial and rule conditions" $ do
-        let instantiated =
+        let unifiedRule =
                 Predicated
                     { term = axiom
                     , predicate = expect2
@@ -554,13 +359,13 @@ test_applyRule =
                     (Mock.f $ mkVar Mock.y)
                     Mock.b
             expect = Predicate.makeAndPredicate expect1 expect2
-        Right [ applied ] <- applyRule initial instantiated
+        Right [ applied ] <- applyRule initial unifiedRule
         let Predicated { predicate = actual } = applied
         assertEqual "" expect actual
 
     , testCase "conflicting initial and rule conditions" $ do
         let predicate = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
-            instantiated =
+            unifiedRule =
                 Predicated
                     { term = axiom
                     , predicate
@@ -578,7 +383,7 @@ test_applyRule =
                 PredicateSubstitution.fromPredicate
                 $ Predicate.makeNotPredicate predicate
             expect = Right []
-        actual <- applyRule initial instantiated
+        actual <- applyRule initial unifiedRule
         assertEqual "" expect actual
 
     ]
