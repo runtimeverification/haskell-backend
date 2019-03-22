@@ -1061,57 +1061,14 @@ applyRemainder
     patternSimplifier
     axiomSimplifiers
 
-    initial@Predicated { term }
-    (PredicateSubstitution.fromPredicate -> remainder)
-  =
-    applyInitialConditions' initial (remainder $> term)
-  where
-    applyInitialConditions' =
-        applyInitialConditions
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-
-{- | Apply the initial conditions to some 'Predicated' unification term.
-
-The initial conditions are merged with the supplied unification conditions and
-normalized. @applyInitialConditions@ fails if normalization
-fails. @applyInitialConditions@ branches when the
-'PredicateSubstitutionSimplifier' causes normalization to branch.
-
- -}
-applyInitialConditions
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , FreshVariable  variable
-        , SortedVariable variable
-        )
-    => MetadataTools Object StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-
-    -> Predicated Object variable term'
-    -- ^ Initial configuration
-    -> Predicated Object variable term
-    -- ^ Instantiated rule
-    -> BranchT
-        (ExceptT (StepError Object variable) Simplifier)
-        (Predicated Object variable term)
-applyInitialConditions
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-
     initial
-    unification@Predicated { term }
+    (PredicateSubstitution.fromPredicate -> remainder)
   = do
-    let merged = initial *> unification { Predicated.term = () }
-    normalized <- normalize merged
-    return normalized { Predicated.term = term }
+    let final = initial <* remainder
+        finalCondition = () <$ final
+        Predicated { Predicated.term = finalTerm } = final
+    normalizedCondition <- normalize finalCondition
+    return normalizedCondition { Predicated.term = finalTerm }
   where
     normalize =
         liftFromUnification
@@ -1169,24 +1126,23 @@ applyRewriteRule
     initial
     (RewriteRule rule)
   = Log.withLogScope "applyRewriteRule"
-    $ unwrapStepErrorVariables
     $ do
         let
             -- Wrap the rule and configuration so that unification prefers to
             -- substitute axiom variables.
             initial' = toConfigurationVariables initial
             rule' = toAxiomVariables rule
-        results <- gather $ do
+        results <- unwrapStepErrorVariables $ gather $ do
             unifiedRule <- unifyRule' initial' rule'
             let initialCondition = initial' $> ()
             final <- applyRule' initialCondition unifiedRule
             result <- checkSubstitutionCoverage initial' unifiedRule final
-            let coverage = unificationCoverage (unifiedRule $> ())
-            return (result, coverage)
+            let unification = unifiedRule $> ()
+            return (result, unification)
         let matches = snd <$> results
         remainder <- gather $ do
-            remainder <- scatter (negateCoverage matches)
-            unwrapVariables <$> applyRemainder' initial' remainder
+            remainder <- scatter (negateUnification matches)
+            applyRemainder' initial remainder
         let rewrittenPattern = fst <$> results
         -- TODO (thomas.tuegel): Return the applied rules and coverage here. We
         -- probably do not want to negate the coverage to form the remainders
@@ -1286,29 +1242,32 @@ unwrapVariables config@Predicated { substitution } =
   where
     substitution' = Substitution.filter isConfigurationVariable substitution
 
-{- | Negate the coverage of many rules to form the /remainders/.
+{- | Negate the disjunction of unification solutions to form the /remainders/.
 
 The /remainders/ are the parts of the initial configuration that are not matched
 by any applied rule.
 
-See also: 'unificationCoverage'
-
  -}
-negateCoverage
+negateUnification
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => MultiOr (MultiAnd (Predicate Object variable))
+    => MultiOr (PredicateSubstitution Object (StepperVariable variable))
     -> MultiOr (Predicate Object variable)
-negateCoverage = negateCoverageWorker . Foldable.toList
+negateUnification =
+    fmap unwrapPredicateVariables
+    . foldr negateUnification1 top
+    . Foldable.toList
   where
-    negateCoverageWorker [] = MultiOr.singleton Predicate.makeTruePredicate
-    negateCoverageWorker (x : xs) =
+    top = pure Predicate.makeTruePredicate
+    negateUnification1 unification negations =
         Predicate.makeAndPredicate
-            <$> mkNotMultiAnd x
-            <*> negateCoverageWorker xs
+            <$> mkNotMultiAnd conditions
+            <*> negations
+      where
+        conditions = unificationConditions unification
 
 mkNotMultiAnd
     ::  ( Ord     (variable Object)
@@ -1320,17 +1279,9 @@ mkNotMultiAnd
     -> MultiOr (Predicate Object variable)
 mkNotMultiAnd = MultiOr.make . map Predicate.makeNotPredicate . Foldable.toList
 
-{- | Return the /coverage/ of the unification solution.
-
-The /coverage/ of the unification is a predicate which restricts the initial
-configuration so that it would match the left-hand side of the applied rule.
-
-The coverage is negated to form the /remainder/ after rule application, but we
-should not do that until we have remainders from all the applied rules; see
-'negateCoverage'.
-
+{- | Represent the unification solution as a conjunction of predicates.
  -}
-unificationCoverage
+unificationConditions
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
@@ -1339,22 +1290,12 @@ unificationCoverage
     => PredicateSubstitution Object (StepperVariable variable)
     -- ^ Unification solution
     -> MultiAnd (Predicate Object (StepperVariable variable))
-unificationCoverage Predicated { predicate, substitution } =
-    predicateCoverage predicate <|> substitutionCoverage substitution'
+unificationConditions Predicated { predicate, substitution } =
+    pure predicate <|> substitutionConditions substitution'
   where
     substitution' = Substitution.filter isConfigurationVariable substitution
 
-predicateCoverage
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => Predicate Object variable
-    -> MultiAnd (Predicate Object variable)
-predicateCoverage = pure
-
-substitutionCoverage
+substitutionConditions
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
@@ -1362,7 +1303,7 @@ substitutionCoverage
         )
     => Substitution Object variable
     -> MultiAnd (Predicate Object variable)
-substitutionCoverage subst =
+substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
     substitutionCoverageWorker (x, t) =
