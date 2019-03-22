@@ -1064,7 +1064,7 @@ applyRemainder
     initial
     (PredicateSubstitution.fromPredicate -> remainder)
   = do
-    let final = initial <* remainder
+    let final = initial `Predicated.andCondition` remainder
         finalCondition = Predicated.withoutTerm final
         Predicated { Predicated.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
