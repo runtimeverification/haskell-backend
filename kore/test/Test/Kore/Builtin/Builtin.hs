@@ -30,6 +30,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -164,6 +165,11 @@ verifiedModules =
 
 verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
+
+indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
+indexedModule =
+    makeIndexedModuleAttributesNull
+    $ mapIndexedModulePatterns Kore.eraseAnnotations verifiedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
