@@ -43,11 +43,20 @@ module Kore.AST.Sentence
     , PureSentenceAlias
     , PureSentenceImport
     , PureSentenceAxiom
+    , PureSentenceHook
     , PureSentence
     , PureModule
     , PureDefinition
     , castDefinitionDomainValues
+    , VerifiedPureSentenceSymbol
+    , VerifiedPureSentenceAlias
+    , VerifiedPureSentenceImport
+    , VerifiedPureSentenceAxiom
+    , VerifiedPureSentenceSort
+    , VerifiedPureSentenceHook
     , VerifiedPureSentence
+    , VerifiedPureModule
+    , VerifiedPureDefinition
     , UnifiedSentence (..)
     , constructUnifiedSentence
     , applyUnifiedSentence
@@ -85,6 +94,8 @@ import           Data.Hashable
 import           Data.Maybe
                  ( catMaybes )
 import           Data.Proxy
+import           Data.String
+                 ( IsString )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -262,7 +273,7 @@ instance Unparse (SentenceSymbol level patternType) where
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: Text }
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, Generic, IsString, Ord, Show)
 
 instance Hashable ModuleName
 
@@ -797,27 +808,65 @@ instance
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level domain =
-    SentenceAxiom
-        (SortVariable level)
-        (PurePattern level domain Variable (Annotation.Null level))
+    SentenceAxiom (SortVariable level) (ParsedPurePattern level domain)
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
 type PureSentenceAlias level domain =
-    SentenceAlias level (PurePattern level domain Variable (Annotation.Null level))
+    SentenceAlias level (ParsedPurePattern level domain)
 
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
 type PureSentenceSymbol level domain =
-    SentenceSymbol level (PurePattern level domain Variable (Annotation.Null level))
+    SentenceSymbol level (ParsedPurePattern level domain)
 
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
 type PureSentenceImport level domain =
-    SentenceImport (PurePattern level domain Variable (Annotation.Null level))
+    SentenceImport (ParsedPurePattern level domain)
+
+-- | 'PureSentenceHook' is the pure (fixed-@level@) version of 'SentenceHook'.
+type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level domain =
-    Sentence level
+    Sentence level (SortVariable level) (ParsedPurePattern level domain)
+
+{- | A 'PureSentenceSymbol' which has passed verification.
+ -}
+type VerifiedPureSentenceSymbol level =
+    SentenceSymbol level (VerifiedPurePattern level Domain.Builtin)
+
+{- | A 'PureSentenceAlias' which has passed verification.
+
+The patterns contained are annotated by 'Valid'.
+
+ -}
+type VerifiedPureSentenceAlias level =
+    SentenceAlias level (VerifiedPurePattern level Domain.Builtin)
+
+{- | A 'PureSentenceImport' which has passed verification.
+ -}
+type VerifiedPureSentenceImport level =
+    SentenceImport (VerifiedPurePattern level Domain.Builtin)
+
+{- | A 'PureSentenceAxiom' which has passed verification.
+
+The patterns contained are annotated by 'Valid'.
+
+ -}
+type VerifiedPureSentenceAxiom level =
+    SentenceAxiom
         (SortVariable level)
-        (PurePattern level domain Variable (Annotation.Null level))
+        (VerifiedPurePattern level Domain.Builtin)
+
+type VerifiedPureSentenceSort level =
+    SentenceSort level (VerifiedPurePattern level Domain.Builtin)
+
+{- | A 'PureSentenceHook' which has passed verification.
+
+The contained patterns are annotated by 'Valid'.
+
+ -}
+type VerifiedPureSentenceHook level =
+    SentenceHook (VerifiedPurePattern level Domain.Builtin)
 
 {- | A 'PureSentence' which has passed verification.
 
@@ -834,6 +883,10 @@ type VerifiedPureSentence level =
             Variable
             (Valid (Variable level) level)
         )
+
+type VerifiedPureModule level = Module (VerifiedPureSentence level)
+
+type VerifiedPureDefinition level = Definition (VerifiedPureSentence level)
 
 instance
     ( MetaOrObject level
