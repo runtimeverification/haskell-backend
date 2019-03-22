@@ -26,7 +26,6 @@ module Kore.Step.BaseStep
     --
     , UnifiedRule
     , unifyRule
-    , instantiateRule
     , applyRule
     , applyRewriteRule
     , toConfigurationVariables
@@ -972,59 +971,6 @@ unifyRule
             patternSimplifier
             axiomSimplifiers
 
-{- | Instantiate the rule by applying the unification solution.
-
-The unification solution is normalized with the 'requires' clause from the
-unified rule. @instantiateRule@ fails if normalization fails. @instantiateRule@
-branches when the 'PredicateSubstitutionSimplifier' causes normalization to
-branch.
-
- -}
-instantiateRule
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , FreshVariable  variable
-        , SortedVariable variable
-        )
-    => MetadataTools Object StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-
-    -> UnifiedRule variable
-    -- ^ Rule and unification solution
-    -> BranchT
-        (ExceptT (StepError Object variable) Simplifier)
-        (UnifiedRule variable)
-instantiateRule
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-
-    unified@Predicated { term = axiom }
-  = do
-    let unifier = unified { Predicated.term = () }
-        RulePattern { requires, ensures } = axiom
-        merged =
-            PredicateSubstitution.fromPredicate requires
-            *> PredicateSubstitution.fromPredicate ensures
-            *> unifier
-    normalized <- normalize merged
-    let Predicated { substitution } = normalized
-        substitution' = Substitution.toMap substitution
-        axiom' = RulePattern.substitute substitution' axiom
-    return (normalized { Predicated.term = axiom' })
-  where
-    normalize =
-        liftFromUnification
-        . Substitution.normalizeExcept
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-
 {- | Apply a rule to produce final configurations given some initial conditions.
 
 The rule should be instantiated with 'instantiateRule'. The initial conditions
@@ -1047,8 +993,8 @@ applyRule
 
     -> PredicateSubstitution Object variable
     -- ^ Initial conditions
-    -> UnifiedRule variable
-    -- ^ Instantiated rule
+    -> ExpandedPattern Object variable
+    -- ^ Non-normalized final configuration
     -> BranchT
         (ExceptT (StepError Object variable) Simplifier)
         (ExpandedPattern Object variable)
@@ -1059,12 +1005,20 @@ applyRule
     axiomSimplifiers
 
     initial
-    instantiated
-  =
-    applyInitialConditions' initial (RulePattern.right <$> instantiated)
+    final
+  = do
+    let unification = () <$ final
+    finalCondition <- normalize (initial <> unification)
+    let
+        Predicated { substitution } = finalCondition
+        substitution' = Substitution.toMap substitution
+        Predicated { term = finalTerm } = final
+        finalTerm' = Pattern.substitute substitution' finalTerm
+    return finalCondition { ExpandedPattern.term = finalTerm' }
   where
-    applyInitialConditions' =
-        applyInitialConditions
+    normalize =
+        liftFromUnification
+        . Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
             patternSimplifier
@@ -1219,15 +1173,15 @@ applyRewriteRule
             initial' = toConfigurationVariables initial
             rule' = toAxiomVariables rule
         results <- gather $ do
-            unifier <- unifyRule' initial' rule'
-            instantiated <- instantiateRule' unifier
-            applied <- applyRule' (initial' $> ()) instantiated
-            result <- checkSubstitutionCoverage initial' unifier applied
-            let coverage = unificationCoverage (instantiated $> ())
+            appliedRule <- unifyRule' initial' rule'
+            let initialCondition = initial' $> ()
+            final <- applyRule' initialCondition (RulePattern.right <$> appliedRule)
+            result <- checkSubstitutionCoverage initial' appliedRule final
+            let coverage = unificationCoverage (appliedRule $> ())
             return (result, coverage)
-        let coverage = snd <$> results
+        let matches = snd <$> results
         remainder <- gather $ do
-            remainder <- scatter (negateCoverage coverage)
+            remainder <- scatter (negateCoverage matches)
             unwrapVariables <$> applyRemainder' initial' remainder
         let rewrittenPattern = fst <$> results
         -- TODO (thomas.tuegel): Return the applied rules and coverage here. We
@@ -1240,12 +1194,6 @@ applyRewriteRule
         unifyRule
             metadataTools
             unificationProcedure
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-    instantiateRule' =
-        instantiateRule
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
