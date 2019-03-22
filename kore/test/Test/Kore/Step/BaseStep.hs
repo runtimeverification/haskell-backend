@@ -672,7 +672,7 @@ test_applyRewriteRule_ =
             expect =
                 Right
                     [ Predicated
-                        { term = Mock.sigma fy fy
+                        { term = Mock.sigma fz fz
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap
