@@ -573,9 +573,10 @@ applyUnificationToRhs
 
     -- Unwrap internal 'StepperVariable's and collect the variable mappings
     -- for the proof.
-    result <- unwrapPatternVariables rawResult
-    condition <- unwrapPredicateVariables normalizedCondition
-    remainderPredicate <- unwrapPredicateVariables normalizedRemainderPredicate
+    let
+        result = unwrapPatternVariables rawResult
+        condition = unwrapPredicateVariables normalizedCondition
+        remainderPredicate = unwrapPredicateVariables normalizedRemainderPredicate
 
     let isBottom = Predicate.isFalse condition
         allVarsCovered = Set.isSubsetOf
@@ -844,28 +845,24 @@ unwrapStepErrorVariables =
     withExceptT (mapStepErrorVariables unwrapStepperVariable)
 
 unwrapPatternVariables
-    ::  forall level variable m
+    ::  forall level variable
     .   ( MetaOrObject level
-        , Monad m
         , Ord (variable level)
         , Unparse (variable level)
-        , FreshVariable variable
         )
     => StepPattern level (StepperVariable variable)
-    -> m (StepPattern level variable)
-unwrapPatternVariables = return . Pattern.mapVariables unwrapStepperVariable
+    -> StepPattern level variable
+unwrapPatternVariables = Pattern.mapVariables unwrapStepperVariable
 
 unwrapPredicateVariables
-    ::  forall level variable m
+    ::  forall level variable
     .   ( MetaOrObject level
-        , Monad m
         , Ord (variable level)
         , Unparse (variable level)
-        , FreshVariable variable
         )
     => Predicate level (StepperVariable variable)
-    -> m (Predicate level variable)
-unwrapPredicateVariables = traverse unwrapPatternVariables
+    -> Predicate level variable
+unwrapPredicateVariables = fmap unwrapPatternVariables
 
 wrapUnificationOrSubstitutionError
     :: Functor m
