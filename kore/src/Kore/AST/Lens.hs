@@ -21,18 +21,18 @@ import Kore.AST.Pure
 import Kore.Domain.Class
 
 patternLens
-    ::  forall f level domain variable1 variable2 annotation.
-        (Applicative f, Domain domain, Traversable domain)
-    => (Sort level -> f (Sort level))  -- ^ Operand sorts
-    -> (Sort level -> f (Sort level))
+    ::  forall f domain variable1 variable2 annotation
+    .   (Applicative f, Domain domain, Traversable domain)
+    => (Sort Object -> f (Sort Object))  -- ^ Operand sorts
+    -> (Sort Object -> f (Sort Object))
     -- ^ Result sorts, and operand sorts when the two are equal
-    -> (variable1 level -> f (variable2 level))  -- ^ Variables
-    ->  (  PurePattern level domain variable1 annotation
-        -> f (PurePattern level domain variable2 annotation)
+    -> (variable1 Object -> f (variable2 Object))  -- ^ Variables
+    ->  (  PurePattern Object domain variable1 annotation
+        -> f (PurePattern Object domain variable2 annotation)
         )
         -- ^ Children
-    ->  (  PurePattern level domain variable1 annotation
-        -> f (PurePattern level domain variable2 annotation)
+    ->  (  PurePattern Object domain variable1 annotation
+        -> f (PurePattern Object domain variable2 annotation)
         )
 patternLens
     lensOperandSort   -- input sort
@@ -200,7 +200,7 @@ patternLens
 -- | The sort returned by a top-level constructor.
 resultSort
     :: (Domain domain, Traversable domain)
-    => Traversal' (PurePattern level domain variable annotation) (Sort level)
+    => Traversal' (PurePattern Object domain variable annotation) (Sort Object)
 resultSort = \f -> patternLens pure f pure pure
 
 -- | All sub-expressions which are 'Pattern's.
@@ -208,8 +208,8 @@ resultSort = \f -> patternLens pure f pure pure
 allChildren
     :: (Domain domain, Traversable domain)
     => Traversal'
-        (PurePattern level domain variable annotation)
-        (PurePattern level domain variable annotation)
+        (PurePattern Object domain variable annotation)
+        (PurePattern Object domain variable annotation)
 allChildren = patternLens pure pure pure
 
 -- | Applies a function at an `[Int]` path.
