@@ -62,6 +62,7 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
+import           Kore.Variables.Target
 
 import Test.Tasty.HUnit.Extensions
 
@@ -995,23 +996,23 @@ instance
 
 instance
     (EqualWithExplanation (variable level), Show (variable level))
-    => SumEqualWithExplanation (StepperVariable variable level)
+    => SumEqualWithExplanation (Target variable level)
   where
-    sumConstructorPair (AxiomVariable a1) (AxiomVariable a2) =
-        SumConstructorSameWithArguments (EqWrap "AxiomVariable" a1 a2)
-    sumConstructorPair a1@(AxiomVariable _) a2 =
+    sumConstructorPair (Target a1) (Target a2) =
+        SumConstructorSameWithArguments (EqWrap "Target" a1 a2)
+    sumConstructorPair a1@(Target _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-    sumConstructorPair (ConfigurationVariable a1) (ConfigurationVariable a2) =
-        SumConstructorSameWithArguments (EqWrap "ConfigurationVariable" a1 a2)
-    sumConstructorPair a1@(ConfigurationVariable _) a2 =
+    sumConstructorPair (NonTarget a1) (NonTarget a2) =
+        SumConstructorSameWithArguments (EqWrap "NonTarget" a1 a2)
+    sumConstructorPair a1@(NonTarget _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
 instance
     (EqualWithExplanation (variable level), Show (variable level))
-    => EqualWithExplanation (StepperVariable variable level)
+    => EqualWithExplanation (Target variable level)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

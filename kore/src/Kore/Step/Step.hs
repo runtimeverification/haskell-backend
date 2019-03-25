@@ -11,7 +11,6 @@ module Kore.Step.Step
     ( OrStepResult (..)
     , RulePattern
     , StepResult (..)
-    , StepperVariable (..)
     , UnificationProcedure (..)
     --
     , UnifiedRule
@@ -25,7 +24,6 @@ module Kore.Step.Step
     , sequenceRewriteRules
     , toConfigurationVariables
     , toAxiomVariables
-    , unwrapStepperVariable
     ) where
 
 import           Control.Applicative
@@ -41,7 +39,6 @@ import           Data.Semigroup
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
@@ -88,61 +85,9 @@ import           Kore.Unification.Substitution
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-
-{- | Distinguish variables by their source (axiom or configuration).
-
-@StepperVariable@ ensures that axiom variables are always 'LT' configuration
-variables, so that the unification procedure prefers to generate substitutions
-for axiom variables instead of configuration variables.
-
- -}
-data StepperVariable variable level
-    = AxiomVariable !(variable level)
-    | ConfigurationVariable !(variable level)
-    deriving (Show, Ord, Eq)
-
-unwrapStepperVariable :: StepperVariable variable level -> variable level
-unwrapStepperVariable (AxiomVariable variable) = variable
-unwrapStepperVariable (ConfigurationVariable variable) = variable
-
-isConfigurationVariable :: StepperVariable variable level -> Bool
-isConfigurationVariable (AxiomVariable _) = False
-isConfigurationVariable (ConfigurationVariable _) = True
-
-instance
-    SortedVariable variable
-    => SortedVariable (StepperVariable variable)
-  where
-    sortedVariableSort (AxiomVariable variable) =
-        sortedVariableSort variable
-    sortedVariableSort (ConfigurationVariable variable) =
-        sortedVariableSort variable
-    fromVariable = AxiomVariable . fromVariable
-    toVariable (AxiomVariable var) = toVariable var
-    toVariable (ConfigurationVariable var) = toVariable var
-
-{- | The implementation of @refreshVariable@ for 'StepperVariable' ensures that
-fresh variables are always unique under projection by 'unwrapStepperVariable'.
- -}
-instance
-    (FreshVariable variable, SortedVariable variable) =>
-    FreshVariable (StepperVariable variable)
-  where
-    refreshVariable (Set.map unwrapStepperVariable -> avoiding) =
-        \case
-            AxiomVariable variable ->
-                AxiomVariable <$> refreshVariable avoiding variable
-            ConfigurationVariable variable ->
-                ConfigurationVariable <$> refreshVariable avoiding variable
-
-instance
-    Unparse (variable level) =>
-    Unparse (StepperVariable variable level)
-  where
-    unparse =
-        \case
-            AxiomVariable var -> "Axiom" <> unparse var
-            ConfigurationVariable var -> "Config" <> unparse var
+import           Kore.Variables.Target
+                 ( Target )
+import qualified Kore.Variables.Target as Target
 
 {-| The result of applying an axiom to a pattern. Contains the rewritten
 pattern (if any) and the unrewritten part of the original pattern.
@@ -225,26 +170,26 @@ newtype UnificationProcedure level =
 
 unwrapStepErrorVariables
     :: Functor m
-    => ExceptT (StepError level (StepperVariable variable)) m a
+    => ExceptT (StepError level (Target variable)) m a
     -> ExceptT (StepError level                  variable ) m a
 unwrapStepErrorVariables =
-    withExceptT (mapStepErrorVariables unwrapStepperVariable)
+    withExceptT (mapStepErrorVariables Target.unwrapVariable)
 
 unwrapPatternVariables
     ::  forall variable
     .   ( Ord     (variable Object)
         , Unparse (variable Object)
         )
-    => StepPattern Object (StepperVariable variable)
+    => StepPattern Object (Target variable)
     -> StepPattern Object variable
-unwrapPatternVariables = Pattern.mapVariables unwrapStepperVariable
+unwrapPatternVariables = Pattern.mapVariables Target.unwrapVariable
 
 unwrapPredicateVariables
     ::  forall variable
     .   ( Ord     (variable Object)
         , Unparse (variable Object)
         )
-    => Predicate Object (StepperVariable variable)
+    => Predicate Object (Target variable)
     -> Predicate Object variable
 unwrapPredicateVariables = fmap unwrapPatternVariables
 
@@ -489,18 +434,18 @@ applyRemainder
 toAxiomVariables
     :: Ord (variable level)
     => RulePattern level variable
-    -> RulePattern level (StepperVariable variable)
-toAxiomVariables = RulePattern.mapVariables AxiomVariable
+    -> RulePattern level (Target variable)
+toAxiomVariables = RulePattern.mapVariables Target.Target
 
 toConfigurationVariables
     :: Ord (variable level)
     => ExpandedPattern level variable
-    -> ExpandedPattern level (StepperVariable variable)
-toConfigurationVariables = ExpandedPattern.mapVariables ConfigurationVariable
+    -> ExpandedPattern level (Target variable)
+toConfigurationVariables = ExpandedPattern.mapVariables Target.NonTarget
 
 data Result variable =
     Result
-        { unifiedRule :: !(UnifiedRule (StepperVariable variable))
+        { unifiedRule :: !(UnifiedRule (Target variable))
         , result      :: !(ExpandedPattern Object variable)
         }
 
@@ -625,7 +570,7 @@ coverage check indicates a problem with unification, so in that case
 initial and final configurations.
 
 @checkSubstitutionCoverage@ calls @unwrapVariables@ to remove the axiom
-variables from the substitution and unwrap all the 'StepperVariable's; this is
+variables from the substitution and unwrap all the 'Target's; this is
 safe because we have already checked that all the universally-quantified axiom
 variables have been instantiated by the substitution.
 
@@ -638,11 +583,11 @@ checkSubstitutionCoverage
         , Show    (variable level)
         , Unparse (variable level)
         )
-    => ExpandedPattern level (StepperVariable variable)
+    => ExpandedPattern level (Target variable)
     -- ^ Initial configuration
-    -> UnifiedRule (StepperVariable variable)
+    -> UnifiedRule (Target variable)
     -- ^ Unified rule
-    -> ExpandedPattern level (StepperVariable variable)
+    -> ExpandedPattern level (Target variable)
     -- ^ Configuration after applying rule
     -> m (ExpandedPattern level variable)
 checkSubstitutionCoverage initial unified final = do
@@ -673,19 +618,19 @@ checkSubstitutionCoverage initial unified final = do
         Set.isSubsetOf leftAxiomVariables substitutionVariables
     isInitialSymbolic =
         (not . Set.null)
-            (Set.filter isConfigurationVariable substitutionVariables)
+            (Set.filter Target.isTarget substitutionVariables)
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
 unwrapVariables
     :: Ord (variable level)
-    => ExpandedPattern level (StepperVariable variable)
+    => ExpandedPattern level (Target variable)
     -> ExpandedPattern level variable
 unwrapVariables config@Predicated { substitution } =
-    ExpandedPattern.mapVariables unwrapStepperVariable
+    ExpandedPattern.mapVariables Target.unwrapVariable
         config { ExpandedPattern.substitution = substitution' }
   where
-    substitution' = Substitution.filter isConfigurationVariable substitution
+    substitution' = Substitution.filter Target.isTarget substitution
 
 {- | Negate the disjunction of unification solutions to form the /remainders/.
 
@@ -699,7 +644,7 @@ negateUnification
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => MultiOr (PredicateSubstitution Object (StepperVariable variable))
+    => MultiOr (PredicateSubstitution Object (Target variable))
     -> MultiOr (Predicate Object variable)
 negateUnification =
     fmap unwrapPredicateVariables
@@ -752,13 +697,13 @@ unificationConditions
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => PredicateSubstitution Object (StepperVariable variable)
+    => PredicateSubstitution Object (Target variable)
     -- ^ Unification solution
-    -> MultiAnd (Predicate Object (StepperVariable variable))
+    -> MultiAnd (Predicate Object (Target variable))
 unificationConditions Predicated { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
-    substitution' = Substitution.filter isConfigurationVariable substitution
+    substitution' = Substitution.filter Target.isTarget substitution
 
 substitutionConditions
     ::  ( Ord     (variable Object)

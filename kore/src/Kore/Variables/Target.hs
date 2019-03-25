@@ -1,0 +1,85 @@
+{- |
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+Target specific variables for unification.
+
+ -}
+
+module Kore.Variables.Target where
+
+import           Data.Hashable
+                 ( Hashable )
+import qualified Data.Set as Set
+import           GHC.Generics
+                 ( Generic )
+
+import Kore.AST.Common
+       ( SortedVariable (..) )
+import Kore.Unparser
+       ( Unparse (..) )
+import Kore.Variables.Fresh
+       ( FreshVariable (..) )
+
+{- | Distinguish variables by their source.
+
+@StepperVariable@ ensures that axiom variables are always 'LT' configuration
+variables, so that the unification procedure prefers to generate substitutions
+for axiom variables instead of configuration variables.
+
+ -}
+data Target variable level
+    = Target !(variable level)
+    | NonTarget !(variable level)
+    deriving (Eq, Generic, Show)
+
+instance Ord (variable level) => Ord (Target variable level) where
+    compare (Target var1) (Target var2) = compare var1 var2
+    compare (Target _) (NonTarget _) = LT
+    compare (NonTarget var1) (NonTarget var2) = compare var1 var2
+    compare (NonTarget _) (Target _) = GT
+
+instance Hashable (variable level) => Hashable (Target variable level)
+
+unwrapVariable :: Target variable level -> variable level
+unwrapVariable (Target variable) = variable
+unwrapVariable (NonTarget variable) = variable
+
+isTarget :: Target variable level -> Bool
+isTarget (Target _) = False
+isTarget (NonTarget _) = True
+
+instance
+    SortedVariable variable
+    => SortedVariable (Target variable)
+  where
+    sortedVariableSort (Target variable) =
+        sortedVariableSort variable
+    sortedVariableSort (NonTarget variable) =
+        sortedVariableSort variable
+    fromVariable = Target . fromVariable
+    toVariable (Target var) = toVariable var
+    toVariable (NonTarget var) = toVariable var
+
+{- | The implementation of @refreshVariable@ for 'StepperVariable' ensures that
+fresh variables are always unique under projection by 'unwrapStepperVariable'.
+ -}
+instance
+    (FreshVariable variable, SortedVariable variable) =>
+    FreshVariable (Target variable)
+  where
+    refreshVariable (Set.map unwrapVariable -> avoiding) =
+        \case
+            Target variable ->
+                Target <$> refreshVariable avoiding variable
+            NonTarget variable ->
+                NonTarget <$> refreshVariable avoiding variable
+
+instance
+    Unparse (variable level) =>
+    Unparse (Target variable level)
+  where
+    unparse =
+        \case
+            Target var -> unparse var
+            NonTarget var -> unparse var
