@@ -61,7 +61,6 @@ import           Kore.Variables.Fresh
 {-| Evaluates a pattern using user-defined axioms. After
 evaluating the pattern, it tries to re-apply all axioms on the result.
 -}
--- TODO: Rename to equalityRuleEvaluator
 equalityRuleEvaluator
     ::  forall level variable.
         ( FreshVariable variable

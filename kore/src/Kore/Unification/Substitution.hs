@@ -20,20 +20,25 @@ module Kore.Unification.Substitution
     , variables
     , unsafeWrap
     , Kore.Unification.Substitution.filter
+    , Kore.Unification.Substitution.freeVariables
     ) where
 
 import           Control.DeepSeq
                  ( NFData )
+import qualified Data.Foldable as Foldable
 import           Data.Hashable
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 import           Prelude hiding
                  ( null )
 
-import Kore.Step.Pattern
+import Kore.Step.Pattern as Pattern
 import Kore.TopBottom
        ( TopBottom (..) )
 
@@ -125,7 +130,7 @@ mapVariables variableMapper =
         mapper
         (variable, patt)
       =
-        (mapper variable, Kore.Step.Pattern.mapVariables mapper patt)
+        (mapper variable, Pattern.mapVariables mapper patt)
 
 -- | Returns true iff the substitution is normalized.
 isNormalized :: Substitution level variable -> Bool
@@ -149,3 +154,21 @@ filter
     -> Substitution level variable
 filter filtering =
     modify (Prelude.filter (filtering . fst))
+
+{- | Return the free variables of the 'Substitution'.
+
+In a substitution of the form
+@
+variable = term
+@
+the free variables are @variable@ and all the free variables of @term@.
+
+ -}
+freeVariables
+    :: Ord (variable level)
+    => Substitution level variable
+    -> Set (variable level)
+freeVariables = Foldable.foldl' freeVariablesWorker Set.empty . unwrap
+  where
+    freeVariablesWorker freeVars (x, t) =
+        freeVars <> Set.insert x (Pattern.freeVariables t)

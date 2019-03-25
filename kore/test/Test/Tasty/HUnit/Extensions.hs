@@ -24,6 +24,8 @@ import           Data.Sequence
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 import           Data.Void
                  ( Void )
 
@@ -164,6 +166,10 @@ rawCompareWithExplanation expected actual =
     if expected /= actual
         then Just $ formatDiffForExplanation (show expected) (show actual)
         else Nothing
+
+instance EqualWithExplanation Text where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
 
 instance (EqualWithExplanation a1, EqualWithExplanation a2)
     => EqualWithExplanation (a1, a2)

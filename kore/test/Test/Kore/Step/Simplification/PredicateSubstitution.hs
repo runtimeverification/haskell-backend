@@ -23,13 +23,14 @@ import           Kore.Step.Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonPredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( CommonPredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as Predicated
 import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PSSimplifier
@@ -338,7 +339,7 @@ simpleEvaluator ((from, to) : ps) patt
   | from == patt =
     return
         ( Applied AttemptedAxiomResults
-            { results = MultiOr.make [Predicated.fromPurePattern to]
+            { results = MultiOr.make [ExpandedPattern.fromPurePattern to]
             , remainders = MultiOr.make []
             }
         , SimplificationProof
