@@ -26,6 +26,7 @@ module Kore.Step.Step
     , unifyRule
     , applyUnifiedRule
     , applyRule
+    , applyRules
     , applyRewriteRule
     , applyRewriteRules
     , sequenceRules
@@ -1398,6 +1399,65 @@ substitutionConditions subst =
   where
     substitutionCoverageWorker (x, t) =
         Predicate.makeEqualsPredicate (mkVar x) t
+
+{- | Apply the given rules to the initial configuration in parallel.
+
+See also: 'applyRewriteRule'
+
+ -}
+applyRules
+    ::  forall variable
+    .   ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+
+    -> [RulePattern Object variable]
+    -- ^ Rewrite rules
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten
+    -> ExceptT (StepError Object variable) Simplifier
+        (OrStepResult Object variable)
+applyRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    rules
+    initial
+  = do
+    results <- Foldable.fold <$> traverse applyRule' rules
+    let unifications = Predicated.withoutTerm . unifiedRule <$> results
+    remainder <- gather $ do
+        remainder <- scatter (negateUnification unifications)
+        applyRemainder' initial remainder
+    let rewrittenPattern = result <$> results
+    return OrStepResult { rewrittenPattern, remainder }
+  where
+    unificationProcedure = UnificationProcedure Unification.unificationProcedure
+    applyRule' =
+        applyRule
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            unificationProcedure
+            initial
+    applyRemainder' =
+        applyRemainder
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
