@@ -1165,7 +1165,7 @@ applyRule
 
     initial
     rule
-  = Log.withLogScope "applyRewriteRule"
+  = Log.withLogScope "applyRule"
     $ unwrapStepErrorVariables
     $ do
         let
