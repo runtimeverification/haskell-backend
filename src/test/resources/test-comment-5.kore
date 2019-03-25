@@ -6,7 +6,7 @@ module TEST-COMMENT-5
      /* /* /*
   */
 
-  sort Nat{} [] 
+  sort Nat{} []
 
 endmodule []
 

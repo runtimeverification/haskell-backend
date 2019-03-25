@@ -1,24 +1,30 @@
-demo-kompiled/definition.kore: demo.k
-	kompile demo.k --backend haskell --syntax-module DEMO
+include $(CURDIR)/../include.mk
 
-%.demo.kore: %.demo demo-kompiled/definition.kore
-	krun $< --dry-run
+KOMPILED = demo-kompiled
+DEFINITION = $(KOMPILED)/definition.kore
 
-%.output: %.demo demo-kompiled/definition.kore
-	krun $< --output-file $@
+$(DEFINITION): demo.k
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module DEMO
 
-%.krun: %.demo demo-kompiled/definition.kore
-	krun $<
+%.output: %.demo $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@
+
+%.krun: %.demo $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
-	diff $< $<.golden
+	diff -u $<.golden $<
 
 %.output.golden: %.output
 	mv $< $<.golden
 
 test: tests/Nat.test tests/NatList.test tests/Truth.test
 
+test-k: test
+
 golden: tests/Nat.output.golden tests/NatList.output.golden tests/Truth.output.golden
 
 clean:
-	rm -rf demo-kompiled tests/*.demo.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.output
+
+.PHONY: test-k test golden clean %.test %.krun

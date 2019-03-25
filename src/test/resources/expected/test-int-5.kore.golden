@@ -1,3 +1,0 @@
-Parse error: Error in module 'INT' -> alias 'abcdInt' declaration (../../../test/resources//test-int-5.kore 4:11) -> \dv (../../../test/resources//test-int-5.kore 4:56) -> Verifying builtin sort 'INT.Int' -> While parsing domain value: <string literal>:1:1:
-unexpected 'a'
-expecting '+', '-', or integer

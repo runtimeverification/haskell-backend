@@ -1,3 +1,6 @@
+/.build/*
+/evm-semantics
+
 *.cache
 *.class
 *.iml
@@ -14,6 +17,7 @@ target
 !docs/hash-symbol.pdf
 *.fdb_latexmk
 *.fls
+*.tix
 *.toc
 .stack-work
 .*.swp
@@ -23,5 +27,11 @@ tags
 .project
 .settings
 *-kompiled/
-src/main/haskell/stack.yaml
 .dir-locals.el
+*.prof
+.kprove-*
+.stack-work-haddock
+/coverage_report
+/haskell_documentation
+.stack-work-test
+/kore/test-results.xml

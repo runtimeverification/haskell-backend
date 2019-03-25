@@ -1,0 +1,13 @@
+<T>
+  <k>
+    ready
+  </k>
+  <a>
+    SetItem ( x )
+    SetItem ( y )
+  </a>
+  <b>
+    SetItem ( x )
+    SetItem ( z )
+  </b>
+</T>

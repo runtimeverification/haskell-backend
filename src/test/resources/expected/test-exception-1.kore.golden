@@ -1,1 +1,0 @@
-Parse error: Error in module 'Nat' -> symbol '#succ' declaration (../../../test/resources//test-exception-1.kore 5:20) -> (../../../test/resources//test-exception-1.kore 5:30): Malformed meta sort '#Nat' with non-empty Parameter sorts.

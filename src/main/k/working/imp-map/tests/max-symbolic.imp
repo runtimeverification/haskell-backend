@@ -1,0 +1,10 @@
+// This program calculates in `max`
+// the maximum of `x`, `y`, and `z`.
+
+int x, y, z, max;
+x = symInt;
+y = symInt;
+z = symInt;
+max = x;
+if (max <= y) {max = y;} else {}
+if (max <= z) {max = z;} else {}

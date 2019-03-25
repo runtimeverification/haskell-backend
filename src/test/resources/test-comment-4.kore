@@ -5,7 +5,7 @@ module TEST-COMMENT-4
   /* This is a block comment.
      This is a block comment. */
 
-  sort Nat{} [] 
+  sort Nat{} []
 
 endmodule []
 

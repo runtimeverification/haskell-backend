@@ -1,1 +1,0 @@
-Parse error: Error in module 'TEST-Exception-11' -> axiom declaration -> \implies (../../../test/resources//test-exception-11.kore 6:8) -> sort '#S' (../../../test/resources//test-exception-11.kore 6:8) -> (../../../test/resources//test-exception-11.kore 6:8): Sort '#S' not declared.

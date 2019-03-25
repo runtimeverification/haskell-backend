@@ -1,0 +1,197 @@
+name:                kore
+version:             0.0.1.0
+github:              "kframework/kore"
+license:             NCSA
+license-file:        LICENSE
+author:              "Virgil Serbanuta"
+maintainer:          "virgil.serbanuta@runtimeverification.com"
+copyright:           "2018-2019 Runtime Verification Inc"
+category:            Language
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description: Please see the [README](README.md) file.
+
+dependencies:
+  - base >= 4.7
+  - array
+  - bytestring >= 0.10
+  - comonad
+  - containers >= 0.5.8
+  - clock
+  - co-log
+  - cryptonite
+  - data-default
+  - deepseq
+  - deriving-compat
+  - errors
+  - exceptions
+  - extra
+  - fgl
+  - free
+  - gitrev
+  - graphviz
+  - groom
+  - hashable
+  - haskeline
+  - integer-gmp
+  - lens
+  - megaparsec >= 7.0.4
+  - memory
+  - mmorph
+  - mtl
+  - optparse-applicative
+  - parser-combinators
+  - prettyprinter
+  - process
+  - profunctors
+  - recursion-schemes
+  - reflection
+  - template-haskell
+  - text
+  - these
+  - time
+  - transformers
+  - unordered-containers
+
+build-tools:
+  - tasty-discover
+
+default-extensions:
+  - BangPatterns
+  - ConstraintKinds
+  - DataKinds
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - DuplicateRecordFields
+  - EmptyCase
+  - ExistentialQuantification
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - KindSignatures
+  - LambdaCase
+  - MonoLocalBinds
+  - MultiParamTypeClasses
+  - NamedFieldPuns
+  - OverloadedStrings
+  - PatternSynonyms
+  - QuantifiedConstraints
+  - RankNTypes
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TypeApplications
+  - TypeFamilies
+  - TypeSynonymInstances
+  - UndecidableInstances
+  - ViewPatterns
+
+library:
+  source-dirs: src
+
+executables:
+  kore-parser:
+    main: Main.hs
+    source-dirs:
+      - app/parser
+      - app/share
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    dependencies:
+      - kore
+
+  kore-exec:
+    main: Main.hs
+    source-dirs:
+      - app/exec
+      - app/share
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    dependencies:
+      - kore
+
+  kore-format:
+    main: Main.hs
+    source-dirs:
+      - app/format
+      - app/share
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    dependencies:
+      - kore
+
+  kore-repl:
+    main: Main.hs
+    source-dirs:
+      - app/repl
+      - app/share
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    dependencies:
+      - kore
+
+tests:
+  kore-test:
+    main: Test.hs
+    source-dirs:
+      - test
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    dependencies:
+      - kore
+      - call-stack
+      - directory >= 1.2.2
+      - filepath
+      - hedgehog
+      - QuickCheck
+      - quickcheck-instances
+      - tasty
+      - tasty-ant-xml
+      - tasty-hedgehog
+      - tasty-hunit
+      - tasty-golden
+      - tasty-quickcheck
+      - template-haskell
+
+benchmarks:
+  kore-parser-benchmark:
+    main: Main.hs
+    other-modules:
+      - Paths
+    source-dirs:
+      - bench/parser
+      - test
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    dependencies:
+      - kore
+      - criterion
+      - directory >= 1.2.2
+      - filepath
+      - template-haskell
+
+  kore-exec-benchmark:
+    main: Main.hs
+    other-modules:
+      - Paths
+    source-dirs:
+      - bench/exec
+      - test
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    dependencies:
+      - kore
+      - criterion
+      - directory >= 1.2.2
+      - filepath
+      - process
+      - template-haskell
+      - temporary

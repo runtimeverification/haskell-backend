@@ -208,6 +208,7 @@ The absolute value of the argument.
 ### INT.tdiv
 
 Quotient of the first argument divided by the second (truncated toward zero).
+The result is `bottom{}()` if the second argument is zero.
 
 ~~~
     hooked-symbol tdiv{}(Int{}, Int{}) : Int{}
@@ -217,10 +218,202 @@ Quotient of the first argument divided by the second (truncated toward zero).
 ### INT.tmod
 
 Remainder of the first argument divided by the second (truncated toward zero).
+The result is `bottom{}()` if the second argument is zero.
 
 ~~~
     hooked-symbol tmod{}(Int{}, Int{}) : Int{}
         [hook{}("INT.tmod")]
+~~~
+
+### INT.emod
+
+Remainder of the first argument divided by the second (using the euclidean
+algorithm).
+The result is `bottom{}()` if the second argument is zero.
+
+~~~
+    hooked-symbol emod{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.emod")]
+~~~
+
+### INT.and
+
+Bitwise and of the arguments.
+
+~~~
+    hooked-symbol and{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.and")]
+~~~
+
+### INT.or
+
+Bitwise or of the arguments.
+
+~~~
+    hooked-symbol or{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.or")]
+~~~
+
+### INT.xor
+
+Bitwise exclusive or of the arguments.
+
+~~~
+    hooked-symbol xor{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.xor")]
+~~~
+
+### INT.not
+
+Bitwise complement of the argument.
+
+~~~
+    hooked-symbol not{}(Int{}) : Int{}
+        [hook{}("INT.not")]
+~~~
+
+### INT.shl
+
+Shift the bits of the first argument to the left. The second argument specifies
+how many bits to shift by, and will be truncated to the least-significant
+Haskell Int. The second argument can be negative, in which case the first
+argument will be shifted right.
+
+~~~
+    hooked-symbol shl{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.shl")]
+~~~
+
+### INT.shr
+
+Shift the bits of the first argument to the right. The second argument specifies
+how many bits to shift by, and will be truncated to the least-significant
+Haskell Int. The second argument can be negative, in which case the first
+argument will be shifted left.
+
+~~~
+    hooked-symbol shr{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.shr")]
+~~~
+
+### INT.pow
+
+The first argument raised to the power of the second argument. The result is
+`bottom{}()` if the second argument is negative.
+
+~~~
+    hooked-symbol pow{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.pow")]
+~~~
+
+### INT.powmod
+
+The first argument raised to the power of the second argument, but performed
+modulo the third argument. The result is `\bottom{}()` if either
+- The second argument is zero, or
+- The second argument is negative and the first and third arguments are not
+  coprime
+
+~~~
+    hooked-symbol powmod{}(Int{}, Int{}, Int{}) : Int{}
+        [hook{}("INT.powmod")]
+~~~
+
+### INT.log2
+
+The base 2 logarithm of the argument. The result is `bottom{}()` if the second
+argument is not positive.
+
+~~~
+    hooked-symbol log2{}(Int{}) : Int{}
+        [hook{}("INT.log2")]
+~~~
+
+## STRING
+
+Depends on `BOOL`.
+
+### STRING.String
+
+The builtin String sort:
+
+~~~
+    hooked-sort String{}
+        [hook{}("STRING.String")]
+~~~
+
+Valid domain values are strings.
+
+~~~
+    \dv{String{}}("string")
+~~~
+
+### STRING.lt
+
+Comparison: is the first argument less than the second?
+
+~~~
+    hooked-symbol lt{}(String{}, String{}) : Bool{}
+        [hook{}("STRING.lt")]
+~~~
+
+### STRING.concat
+
+Concatenate two strings.
+
+~~~
+    hooked-symbol concat{}(String{}, String{}) : String{}
+        [hook{}("STRING.concat")]
+~~~
+
+### STRING.string2int
+
+Convert a base10 string to its integer value.
+
+~~~
+    hooked-symbol string2int{}(String{}) : Int{}
+        [hook{}("STRING.string2int")]
+~~~
+
+### STRING.string2base
+
+Takes a string and a base and converts the string from `base` to its integer
+value.
+Currently only works for base 8, 10, and 16.
+
+~~~
+    hooked-symbol string2base{}(String{}, Int{}) : Int{}
+        [hook{}("STRING.string2base")]
+~~~
+
+### STRING.substr
+
+Substr takes a string and two indices (start and end) and returns the substring
+that starts at index `start` and ends at index `end`.
+
+~~~
+    hooked-symbol substr{}(String{}, Int{}, Int{}) : String{}
+        [hook{}("STRING.substr")]
+~~~
+
+### STRING.length
+
+Calculates the length of a string.
+
+~~~
+    hooked-symbol length{}(String{}): Int{}
+        [hook{}("STRING.length")]
+~~~
+
+### STRING.find
+
+Takes a string, a substring and an index and searches for `substring` in
+the `string`, starting at `index`, returning the resulting index, or `-1` if it
+is not found.
+
+~~~
+    hooked-symbol find{}(String{}, String{}, Int{}): Int{}
+        [hook{}("STRING.find")]
 ~~~
 
 ## MAP
@@ -353,4 +546,91 @@ of the list and negative indices count from the end. The first element is
 ~~~
     hooked-symbol get{}(List{}, Int{}) : Elem{}
         [hook{}("LIST.concat")]
+~~~
+
+## SET
+
+Depends on `BOOL`.
+
+The sort of set elements is arbitrary, but must be consistent between symbol
+declarations. The sort consistency of hooked symbols is *not* checked. The
+element sort is referred to as `Elem{}` below.
+
+### SET.Set
+
+The builtin sort of sets.
+
+~~~
+    hooked-sort Set{}
+        [hook{}("SET.Set")]
+~~~
+
+### SET.unit
+
+The empty set.
+
+~~~
+    hooked-symbol unit{}() : Set{}
+        [hook{}("SET.unit")]
+~~~
+
+### SET.element
+
+The singleton set.
+
+~~~
+    hooked-symbol element{}(Elem{}) : Set{}
+        [hook{}("SET.element")]
+~~~
+
+### SET.concat
+
+The union of both arguments.
+
+~~~
+    hooked-symbol concat{}(Set{}, Set{}) : Set{}
+        [hook{}("SET.concat")]
+~~~
+
+### SET.in
+
+Is the element a member of the given set?
+
+~~~
+    hooked-symbol in{}(Elem{}, Set{}) : Bool{}
+        [hook{}("SET.in")]
+~~~
+
+## KEQUAL
+
+Depends on `BOOL`.
+
+The sorts on which equality is tested are referred to as `Item`.
+
+### KEQUAL.eq
+
+Comparison: is the first argument equal to the second?
+
+~~~
+    hooked-symbol eq{}(Item{}, Item{}) : Bool{}
+        [hook{}("KEQUAL.eq")]
+~~~
+
+
+### KEQUAL.neq
+
+Comparison: is the first argument inequal to the second?
+
+~~~
+    hooked-symbol neq{}(Item{}, Item{}) : Bool{}
+        [hook{}("KEQUAL.neq")]
+~~~
+
+### KEQUAL.ite
+
+If-then-else: if condition then something, else something else.
+
+~~~
+    hooked-symbol ite{}(Bool{}, Item{}, Item{}) : Item{}
+        [hook{}("KEQUAL.ite")]
 ~~~

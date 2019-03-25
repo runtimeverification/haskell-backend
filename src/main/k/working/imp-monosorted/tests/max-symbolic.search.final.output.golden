@@ -1,0 +1,99 @@
+    {
+      Result
+    #Equals
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          x |-> varvarVar'Ques'I0 y |-> varvarVar'Ques'I1 z |-> varvarVar'Ques'I2 max |-> varvarVar'Ques'I0 .State
+        </state>
+      </T>
+    }
+  #And
+    {
+      false
+    #Equals
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
+    }
+  #And
+    {
+      false
+    #Equals
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I2
+    }
+#Or
+    {
+      Result
+    #Equals
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          x |-> varvarVar'Ques'I0 y |-> varvarVar'Ques'I1 z |-> varvarVar'Ques'I2 max |-> varvarVar'Ques'I1 .State
+        </state>
+      </T>
+    }
+  #And
+    {
+      false
+    #Equals
+      varvarVar'Ques'I1 <=Int varvarVar'Ques'I2
+    }
+  #And
+    {
+      true
+    #Equals
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
+    }
+#Or
+    {
+      Result
+    #Equals
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          x |-> varvarVar'Ques'I0 y |-> varvarVar'Ques'I1 z |-> varvarVar'Ques'I2 max |-> varvarVar'Ques'I2 .State
+        </state>
+      </T>
+    }
+  #And
+    {
+      false
+    #Equals
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
+    }
+  #And
+    {
+      true
+    #Equals
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I2
+    }
+#Or
+    {
+      Result
+    #Equals
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          x |-> varvarVar'Ques'I0 y |-> varvarVar'Ques'I1 z |-> varvarVar'Ques'I2 max |-> varvarVar'Ques'I2 .State
+        </state>
+      </T>
+    }
+  #And
+    {
+      true
+    #Equals
+      varvarVar'Ques'I0 <=Int varvarVar'Ques'I1
+    }
+  #And
+    {
+      true
+    #Equals
+      varvarVar'Ques'I1 <=Int varvarVar'Ques'I2
+    }

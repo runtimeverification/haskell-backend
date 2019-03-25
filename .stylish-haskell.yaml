@@ -243,6 +243,7 @@ language_extensions:
   - DeriveGeneric
   - DeriveTraversable
   - DuplicateRecordFields
+  - EmptyCase
   - ExistentialQuantification
   - FlexibleContexts
   - FlexibleInstances
@@ -257,6 +258,7 @@ language_extensions:
   - OverloadedStrings
   - PatternSynonyms
   - PolyKinds
+  - QuantifiedConstraints
   - RankNTypes
   - ScopedTypeVariables
   - StandaloneDeriving
@@ -265,4 +267,3 @@ language_extensions:
   - TypeSynonymInstances
   - UndecidableInstances
   - ViewPatterns
-

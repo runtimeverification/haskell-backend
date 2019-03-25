@@ -1,0 +1,5 @@
+Parse error: ../src/test/resources//test-exception-12.kore:6:9:
+  |
+6 |     f{S,#S}() []
+  |         ^
+genericIdRawParser: Invalid first character '#'.

@@ -1,1 +1,0 @@
-Parse error: Error in module 'TEST-HOOKS-6' -> hooked-symbol 'f' declaration (../../../test/resources//test-hooks-6.kore 8:17): Builtin 'F.f' is hooked to multiple identifiers: 'ff', 'f'

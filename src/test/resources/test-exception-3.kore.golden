@@ -1,0 +1,6 @@
+../src/test/resources//test-exception-3.kore:6:7:
+  |
+6 |     'X:S []
+  |       ^
+unexpected ':'
+expecting '''

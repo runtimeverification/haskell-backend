@@ -1,24 +1,36 @@
-imp-kompiled/definition.kore: imp.k
-	kompile imp.k --backend haskell --syntax-module IMP
+include $(CURDIR)/../include.mk
 
-%.imp.kore: %.imp imp-kompiled/definition.kore
-	krun $< --dry-run
+KOMPILED := imp-kompiled
+DEFINITION := $(KOMPILED)/definition.kore
 
-%.output: %.imp imp-kompiled/definition.kore
-	krun $< --output-file $@
+$(DEFINITION): imp.k
+	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
 
-%.krun: %.imp imp-kompiled/definition.kore
-	krun $<
+%.output: %.imp $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@
+
+%.search.final.output: %.imp $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
+
+%.krun: %.imp $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $<
 
 %.test: %.output
-	diff $< $<.golden
+	diff -u $<.golden $<
 
 %.output.golden: %.output
 	mv $< $<.golden
 
-test: tests/sum.test tests/primes.test tests/collatz.test
+all_tests := collatz max-symbolic.search.final primes sum
+k_tests := sum
 
-golden: tests/sum.output.golden tests/primes.output.golden tests/collatz.output.golden
+test: $(foreach test, $(all_tests), tests/$(test).test)
+
+test-k: $(foreach test, $(k_tests), tests/$(test).test)
+
+golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
 
 clean:
-	rm -rf imp-kompiled tests/*.imp.kore tests/*.output
+	rm -rf $(KOMPILED) tests/*.output
+
+.PHONY: test-k test golden clean %.test %.krun
