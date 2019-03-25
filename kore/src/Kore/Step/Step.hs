@@ -144,7 +144,7 @@ instance
             AxiomVariable var -> "Axiom" <> unparse var
             ConfigurationVariable var -> "Config" <> unparse var
 
-{-! The result of applying an axiom to a pattern. Contains the rewritten
+{-| The result of applying an axiom to a pattern. Contains the rewritten
 pattern (if any) and the unrewritten part of the original pattern.
 -}
 data StepResult level variable =
@@ -156,7 +156,7 @@ data StepResult level variable =
         }
     deriving (Eq, Show)
 
-{-! The result of applying an axiom to a pattern, as an Or.
+{-| The result of applying an axiom to a pattern, as an Or.
 
 Contains the rewritten pattern (if any) and the unrewritten part of the
 original pattern.
