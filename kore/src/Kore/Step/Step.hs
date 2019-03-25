@@ -40,13 +40,11 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Logger as Log
 import           Kore.Predicate.Predicate
                  ( Predicate )
-import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
@@ -54,12 +52,10 @@ import           Kore.Step.AxiomPatterns
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Representation.MultiAnd
-                 ( MultiAnd )
-import qualified Kore.Step.Representation.MultiAnd as MultiAnd
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -80,8 +76,6 @@ import           Kore.Unification.Data
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
-import           Kore.Unification.Substitution
-                 ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -175,24 +169,6 @@ unwrapStepErrorVariables
 unwrapStepErrorVariables =
     withExceptT (mapStepErrorVariables Target.unwrapVariable)
 
-unwrapPatternVariables
-    ::  forall variable
-    .   ( Ord     (variable Object)
-        , Unparse (variable Object)
-        )
-    => StepPattern Object (Target variable)
-    -> StepPattern Object variable
-unwrapPatternVariables = Pattern.mapVariables Target.unwrapVariable
-
-unwrapPredicateVariables
-    ::  forall variable
-    .   ( Ord     (variable Object)
-        , Unparse (variable Object)
-        )
-    => Predicate Object (Target variable)
-    -> Predicate Object variable
-unwrapPredicateVariables = fmap unwrapPatternVariables
-
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
 unwrapConfiguration
@@ -204,26 +180,6 @@ unwrapConfiguration config@Predicated { substitution } =
         config { ExpandedPattern.substitution = substitution' }
   where
     substitution' = Substitution.filter Target.isNonTarget substitution
-
-unwrapRemainder
-    :: (Ord (variable Object), Unparse (variable Object))
-    => Predicate Object (Target variable)
-    -> Predicate Object variable
-unwrapRemainder remainder
-  | hasFreeAxiomVariables =
-    (error . show . Pretty.vsep)
-        [ "Unexpected free axiom variables:"
-        , (Pretty.indent 4 . Pretty.sep)
-            (unparse <$> Foldable.toList freeAxiomVariables)
-        , "in remainder:"
-        , Pretty.indent 4 (unparse remainder)
-        ]
-  | otherwise =
-    unwrapPredicateVariables remainder
-  where
-    freeAxiomVariables =
-        Set.filter Target.isTarget (Predicate.freeVariables remainder)
-    hasFreeAxiomVariables = not (Set.null freeAxiomVariables)
 
 wrapUnificationOrSubstitutionError
     :: Functor m
@@ -644,93 +600,6 @@ checkSubstitutionCoverage initial unified final = do
     isInitialSymbolic =
         (not . Foldable.any Target.isNonTarget) substitutionVariables
 
-{- | Negate the disjunction of unification solutions to form the /remainders/.
-
-The /remainders/ are the parts of the initial configuration that are not matched
-by any applied rule.
-
- -}
-negateUnification
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => MultiOr (PredicateSubstitution Object (Target variable))
-    -> MultiOr (Predicate Object variable)
-negateUnification =
-    fmap unwrapRemainder
-    . foldr negateUnification1 top
-    . Foldable.toList
-  where
-    top = pure Predicate.makeTruePredicate
-    negateUnification1 unification negations =
-        Predicate.makeAndPredicate
-            <$> mkNotMultiAnd conditions
-            <*> negations
-      where
-        conditions = unificationConditions unification
-
-mkNotMultiAnd
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => MultiAnd (Predicate Object variable)
-    -> MultiOr  (Predicate Object variable)
-mkNotMultiAnd = MultiOr.make . map Predicate.makeNotPredicate . Foldable.toList
-
-mkNotMultiOr
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => MultiOr  (Predicate Object variable)
-    -> MultiAnd (Predicate Object variable)
-mkNotMultiOr = MultiAnd.make . map Predicate.makeNotPredicate . Foldable.toList
-
-mkMultiAndPredicate
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => MultiAnd (Predicate Object variable)
-    ->           Predicate Object variable
-mkMultiAndPredicate = Predicate.makeMultipleAndPredicate . Foldable.toList
-
-{- | Represent the unification solution as a conjunction of predicates.
- -}
-unificationConditions
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => PredicateSubstitution Object (Target variable)
-    -- ^ Unification solution
-    -> MultiAnd (Predicate Object (Target variable))
-unificationConditions Predicated { predicate, substitution } =
-    pure predicate <|> substitutionConditions substitution'
-  where
-    substitution' = Substitution.filter Target.isNonTarget substitution
-
-substitutionConditions
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => Substitution Object variable
-    -> MultiAnd (Predicate Object variable)
-substitutionConditions subst =
-    MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
-  where
-    substitutionCoverageWorker (x, t) =
-        Predicate.makeEqualsPredicate (mkVar x) t
-
 {- | Apply the given rules to the initial configuration in parallel.
 
 See also: 'applyRewriteRule'
@@ -771,7 +640,7 @@ applyRules
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications = Predicated.withoutTerm . unifiedRule <$> results
     remainder <- gather $ do
-        remainder <- scatter (negateUnification unifications)
+        remainder <- scatter (Remainder.remainders unifications)
         applyRemainder' initial remainder
     let rewrittenPattern = result <$> results
     return OrStepResult { rewrittenPattern, remainder }
@@ -879,18 +748,20 @@ sequenceRules
         -- ^ disjunction of results
         -> ExpandedPattern Object variable
     remainingAfter config results =
-        let covered =
-                mkMultiAndPredicate
-                . unificationConditions
-                . Predicated.withoutTerm
-                . unifiedRule
-                <$> results
-            notCovered =
+        let remainder =
                 PredicateSubstitution.fromPredicate
-                $ unwrapRemainder
-                $ mkMultiAndPredicate
-                $ mkNotMultiOr covered
-        in config `Predicated.andCondition` notCovered
+                $ Remainder.remainder
+                $ Predicated.withoutTerm . unifiedRule <$> results
+        in config `Predicated.andCondition` remainder
+
+    sequenceRulesWorker
+        :: MultiOr (ExpandedPattern Object variable)
+        -- ^ rewritten configurations
+        -> MultiOr (ExpandedPattern Object variable)
+        -- ^ remaining configurations
+        -> [RulePattern Object variable]
+        -> ExceptT (StepError Object variable) Simplifier
+            (OrStepResult Object variable)
 
     sequenceRulesWorker done pending [] =
         return OrStepResult
@@ -899,26 +770,26 @@ sequenceRules
             }
 
     sequenceRulesWorker done pending (rule : rules) = do
-        results <- traverse applyRule' pending
+        results <- traverse (applyRule' rule) pending
         let finals = MultiOr.filterOr (fst <$> results)
             done' = done <> Foldable.fold finals
             pending' = MultiOr.filterOr (snd <$> results)
         sequenceRulesWorker done' pending' rules
-      where
-        -- Apply rule to produce a pair of the rewritten patterns and
-        -- single remainder configuration.
-        applyRule' config = do
-            results <-
-                applyRule
-                    metadataTools
-                    predicateSimplifier
-                    patternSimplifier
-                    axiomSimplifiers
-                    unificationProcedure
-                    config
-                    rule
-            let pending' = remainingAfter config results
-            return (result <$> results, pending')
+
+    -- Apply rule to produce a pair of the rewritten patterns and
+    -- single remainder configuration.
+    applyRule' rule config = do
+        results <-
+            applyRule
+                metadataTools
+                predicateSimplifier
+                patternSimplifier
+                axiomSimplifiers
+                unificationProcedure
+                config
+                rule
+        let pending' = remainingAfter config results
+        return (result <$> results, pending')
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
