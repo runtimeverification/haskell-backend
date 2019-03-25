@@ -1,0 +1,263 @@
+{-|
+Module      : Kore.Interpreter
+Description : REPL interpreter
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+Maintainer  : vladimir.ciobanu@runtimeverification.com
+-}
+
+module Kore.Repl.Interpreter
+    ( replInterpreter
+    , emptyExecutionGraph
+    ) where
+
+import           Control.Lens
+                 ( (.=) )
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
+import           Control.Monad.Extra
+                 ( loopM )
+import           Control.Monad.IO.Class
+                 ( MonadIO, liftIO )
+import           Control.Monad.State.Strict
+                 ( MonadState, StateT )
+import           Data.Functor
+                 ( ($>) )
+import           Data.Graph.Inductive.Graph
+                 ( Graph )
+import qualified Data.Graph.Inductive.Graph as Graph
+import qualified Data.GraphViz as Graph
+import           Data.Text.Prettyprint.Doc
+                 ( pretty )
+
+import           Kore.AST.Common
+                 ( Variable )
+import           Kore.AST.MetaOrObject
+                 ( MetaOrObject )
+import           Kore.Attribute.Axiom
+                 ( SourceLocation (..) )
+import qualified Kore.Attribute.Axiom as Attribute
+                 ( sourceLocation )
+import           Kore.OnePath.Step
+                 ( CommonStrategyPattern, StrategyPattern (..) )
+import           Kore.OnePath.Verification
+                 ( Axiom (..) )
+import           Kore.OnePath.Verification
+                 ( Claim (..) )
+import           Kore.Repl.Data
+import           Kore.Step.AxiomPatterns
+                 ( RewriteRule (..) )
+import           Kore.Step.AxiomPatterns
+                 ( RulePattern (..) )
+import qualified Kore.Step.AxiomPatterns as Axiom
+                 ( attributes )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (..) )
+import           Kore.Step.Simplification.Data
+                 ( Simplifier )
+import qualified Kore.Step.Strategy as Strategy
+import           Kore.Unparser
+                 ( unparseToString )
+
+replInterpreter
+    :: forall level
+    .  MetaOrObject level
+    => ReplCommand
+    -> StateT (ReplState level) Simplifier Bool
+replInterpreter =
+    \case
+        ShowUsage -> showUsage0 $> True
+        Help -> help0 $> True
+        ShowClaim c -> showClaim0 c $> True
+        ShowAxiom a -> showAxiom0 a $> True
+        Prove i -> prove0 i $> True
+        ShowGraph -> showGraph0 $> True
+        ProveSteps n -> proveSteps0 n $> True
+        SelectNode i -> selectNode0 i $> True
+        ShowConfig mc -> showConfig0 mc $> True
+        Exit -> pure False
+  where
+    showUsage0 :: MonadIO m => m ()
+    showUsage0 =
+        putStrLn' "Could not parse command, try using 'help'."
+
+    help0 :: MonadIO m => m ()
+    help0 = putStrLn' helpText
+
+    showClaim0
+        :: MonadIO m
+        => MonadState (ReplState level) m
+        => Int
+        -> m ()
+    showClaim0 index = do
+        claim <- Lens.preuse $ lensClaims . Lens.element index
+        maybe printNotFound (printRewriteRule . unClaim) $ claim
+
+    showAxiom0
+        :: MonadIO m
+        => MonadState (ReplState level) m
+        => Int
+        -> m ()
+    showAxiom0 index = do
+        axiom <- Lens.preuse $ lensAxioms . Lens.element index
+        maybe printNotFound (printRewriteRule . unAxiom) $ axiom
+
+    prove0
+        :: MonadIO m
+        => MonadState (ReplState level) m
+        => Int
+        -> m ()
+    prove0 index = do
+        claim' <- Lens.preuse $ lensClaims . Lens.element index
+        case claim' of
+            Nothing -> printNotFound
+            Just claim -> do
+                let
+                    graph@Strategy.ExecutionGraph { root }
+                        = emptyExecutionGraph claim
+                lensGraph .= graph
+                lensClaim .= claim
+                lensNode  .= root
+                putStrLn' "Execution Graph initiated"
+
+    showGraph0
+        :: MonadIO m
+        => MonadState (ReplState level) m
+        => m ()
+    showGraph0 = do
+        Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+        liftIO $ showDotGraph graph
+
+    proveSteps0 :: Int -> StateT (ReplState level) Simplifier ()
+    proveSteps0 n = do
+        result <- loopM performStepNoBranching (n, Success)
+        case result of
+            (0, Success) -> pure ()
+            (done, res) ->
+                putStrLn'
+                    $ "Stopped after "
+                    <> show (n - done - 1)
+                    <> " step(s) due to "
+                    <> show res
+
+    selectNode0 :: Int -> StateT (ReplState level) Simplifier ()
+    selectNode0 i = do
+        Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+        if i `elem` Graph.nodes graph
+            then lensNode .= i
+            else putStrLn' "Invalid node!"
+
+    showConfig0 :: Maybe Int -> StateT (ReplState level) Simplifier ()
+    showConfig0 configNode = do
+        Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+        node <- Lens.use lensNode
+        let node' = maybe node id configNode
+        if node' `elem` Graph.nodes graph
+           then do
+               putStrLn' $ "Config at node " <> show node' <> " is:"
+               putStrLn'
+                   . unparseStrategy
+                   . Graph.lab'
+                   . Graph.context graph
+                   $ node'
+           else putStrLn' "Invalid node!"
+
+    printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
+    printRewriteRule rule = do
+        putStrLn' $ unparseToString rule
+        putStrLn'
+            . show
+            . pretty
+            . extractSourceAndLocation
+            $ rule
+
+    performSingleStep
+        :: StateT (ReplState level) Simplifier StepResult
+    performSingleStep = do
+        f <- Lens.use lensStepper
+        node <- Lens.use lensNode
+        res <- f
+        if res
+            then do
+                Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+                let
+                    context = Graph.context graph node
+                case Graph.suc' context of
+                    [] -> pure NoChildNodes
+                    [configNo] -> do
+                        lensNode .= configNo
+                        pure Success
+                    neighbors -> pure (Branch neighbors)
+            else pure NodeAlreadyEvaluated
+
+    -- | Performs n proof steps, picking the next node unless branching occurs.
+    -- Returns 'Left' while it has to continue looping, and 'Right' when done
+    -- or when execution branches or proof finishes earlier than the counter.
+    --
+    -- See 'loopM' for details.
+    performStepNoBranching
+        :: (Int, StepResult)
+        -- ^ (current step, last result)
+        -> StateT
+            (ReplState level)
+            Simplifier
+                (Either
+                     (Int, StepResult)
+                     (Int, StepResult)
+                )
+    performStepNoBranching (0, res) =
+        pure $ Right (0, res)
+    performStepNoBranching (n, Success) = do
+        res <- performSingleStep
+        pure $ Left (n-1, res)
+    performStepNoBranching (n, res) =
+        pure $ Right (n, res)
+
+    unparseStrategy :: CommonStrategyPattern level -> String
+    unparseStrategy =
+        \case
+            Bottom -> "Reached bottom"
+            Stuck pat -> "Stuck: \n" <> unparseToString pat
+            RewritePattern pat -> unparseToString pat
+
+    extractSourceAndLocation
+        :: RewriteRule level Variable
+        -> SourceLocation
+    extractSourceAndLocation
+        (RewriteRule (RulePattern{ Axiom.attributes })) =
+            Attribute.sourceLocation attributes
+
+    printNotFound :: MonadIO m => m ()
+    printNotFound = putStrLn' "Variable or index not found"
+
+    putStrLn' :: MonadIO m => String -> m ()
+    putStrLn' = liftIO . putStrLn
+
+    showDotGraph :: Graph gr => gr nl el -> IO ()
+    showDotGraph =
+        (flip Graph.runGraphvizCanvas') Graph.Xlib
+            . Graph.graphToDot Graph.nonClusteredParams
+
+data StepResult
+    = NodeAlreadyEvaluated
+    | NoChildNodes
+    | Branch [Graph.Node]
+    | Success
+    deriving Show
+
+unClaim :: forall level. Claim level -> RewriteRule level Variable
+unClaim Claim { rule } = rule
+
+unAxiom :: Axiom level -> RewriteRule level Variable
+unAxiom (Axiom rule) = rule
+
+emptyExecutionGraph
+    :: Claim level
+    -> Strategy.ExecutionGraph (CommonStrategyPattern level)
+emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
+
+extractConfig
+    :: RewriteRule level Variable
+    -> CommonStrategyPattern level
+extractConfig (RewriteRule RulePattern { left, requires }) =
+    RewritePattern $ Predicated left requires mempty
