@@ -20,7 +20,6 @@ module Kore.Step.Step
     , stepProof
     , stepProofSumName
     , stepWithRemainders
-    , stepWithRule
     --
     , UnifiedRule
     , unifyRule
