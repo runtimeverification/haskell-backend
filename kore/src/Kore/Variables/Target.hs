@@ -6,7 +6,12 @@ Target specific variables for unification.
 
  -}
 
-module Kore.Variables.Target where
+module Kore.Variables.Target
+    ( Target (..)
+    , unwrapVariable
+    , isTarget
+    , isNonTarget
+    ) where
 
 import           Data.Hashable
                  ( Hashable )
