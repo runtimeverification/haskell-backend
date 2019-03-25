@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA

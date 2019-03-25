@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module Test.Kore.Builtin.Builtin where
 
 import qualified Hedgehog
@@ -156,7 +154,7 @@ constructorFunctions ixm =
         )
       where
         isInj = getId ident == "inj"
-        isCons = Set.member (getId ident) ["kseq", "dotk"]
+        isCons = Set.member (getId ident) (Set.fromList ["kseq", "dotk"])
 
     recurseIntoImports (attrs, attributes, importedModule) =
         (attrs, attributes, constructorFunctions importedModule)

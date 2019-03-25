@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module Test.Kore.Builtin.Set where
 
 import           Hedgehog hiding
@@ -33,6 +31,8 @@ import           Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import qualified Kore.Step.StepperAttributes as StepperAttributes
@@ -378,10 +378,8 @@ test_concretizeKeysAxiom =
     testCaseWithSolver "unify Set with symbolic keys in axiom" $ \solver -> do
         let pair = mkPair intSort setSort symbolicKey concreteSet
         config <- evaluateWith solver pair
-        assertEqualWithExplanation
-            ""
-            expected
-            =<< runStepWith solver config axiom
+        actual <- runStepWith solver config axiom
+        assertEqualWithExplanation "" expected actual
   where
     x = mkIntVar (testId "x")
     key = 1
@@ -397,7 +395,7 @@ test_concretizeKeysAxiom =
             , ensures = Predicate.makeTruePredicate
             , attributes = Default.def
             }
-    expected = Right [ pure symbolicKey ]
+    expected = Right (MultiOr [ pure symbolicKey ])
 
 test_isBuiltin :: [TestTree]
 test_isBuiltin =

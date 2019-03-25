@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module Test.Kore.Unification.Unifier
     ( test_unification
     , test_unsupportedConstructs
@@ -19,6 +17,8 @@ import           Data.Function
                  ( on )
 import           Data.List
                  ( sortBy )
+import           Data.List.NonEmpty
+                 ( NonEmpty ((:|)) )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text
@@ -275,7 +275,7 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
             (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)
             Map.empty
-            [unificationProblem term1 term2]
+            (unificationProblem term1 term2 :| [])
     let
         subst'' =
             subst'
@@ -304,7 +304,7 @@ andSimplifyFailure term1 term2 err = do
             (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)
             Map.empty
-            [unificationProblem term1 term2]
+            (unificationProblem term1 term2 :| [])
     assertEqualWithPrinter show "" expect actual
 
 andSimplifyException
@@ -329,7 +329,7 @@ andSimplifyException message term1 term2 exceptionMessage =
                     (Mock.substitutionSimplifier tools)
                     (Simplifier.create tools Map.empty)
                     Map.empty
-                    [unificationProblem term1 term2]
+                    (unificationProblem term1 term2 :| [])
             _ <- evaluate var
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) =
