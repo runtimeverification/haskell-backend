@@ -22,8 +22,6 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Predicate.Predicate
-                 ( pattern PredicateFalse )
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.Data as AttemptedAxiomResults
@@ -37,21 +35,18 @@ import           Kore.Step.AxiomPatterns
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
-                 ( StepProof, StepResult (StepResult),
-                 UnificationProcedure (..), stepWithRule )
-import qualified Kore.Step.Step as StepResult
-                 ( StepResult (..) )
+                 ( OrStepResult, UnificationProcedure (..) )
+import qualified Kore.Step.Step as Step
+import qualified Kore.Step.Step as OrStepResult
+                 ( OrStepResult (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Unparser
@@ -97,73 +92,52 @@ equalityRuleEvaluator
   , not (Pure.isConcrete patt)
   = notApplicable
   | otherwise = do
-    result <- runExceptT stepResult
+    result <- runExceptT $ applyRule patt rule
     case result of
         Left _ ->
             notApplicable
-        Right results -> do
-            processedResults <- mapM processResult results
-            return
-                ( AttemptedAxiom.Applied
-                    (mconcat (map dropProof processedResults))
-                , SimplificationProof
-                )
+        Right results ->
+            (,)
+                <$> (AttemptedAxiom.Applied <$> simplifyResults results)
+                <*> pure SimplificationProof
   where
     notApplicable =
         return (AttemptedAxiom.NotApplicable, SimplificationProof)
-    dropProof :: (a, SimplificationProof level) -> a
-    dropProof = fst
 
-    stepResult =
-        stepWithRule
+    unificationProcedure = UnificationProcedure matchAsUnification
+
+    applyRule patt' rule' =
+        Step.applyRules
             tools
-            (UnificationProcedure matchAsUnification)
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            (ExpandedPattern.fromPurePattern patt)
-            (RulePattern.mapVariables fromVariable rule)
+            unificationProcedure
+            [RulePattern.mapVariables fromVariable rule']
+            (ExpandedPattern.fromPurePattern patt')
 
-    processResult
-        :: (StepResult level variable, StepProof level variable)
-        -> Simplifier
-            (AttemptedAxiomResults level variable, SimplificationProof level)
-    processResult
-        ( StepResult
-            { rewrittenPattern = stepPattern, remainder = remainderPattern }
-        , _proof
-        )
-      = do
-        (   rewrittenPattern@Predicated { predicate = rewritingCondition }
-            , _
-            ) <-
-                ExpandedPattern.simplifyPredicate
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    stepPattern
-        (   rewrittenRemainder@Predicated { predicate = remainderCondition }
-            , _
-            ) <-
-                ExpandedPattern.simplifyPredicate
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    remainderPattern
-        return
-            ( AttemptedAxiomResults
-                { results = MultiOr.make
-                    (case rewritingCondition of
-                        PredicateFalse -> []
-                        _ -> [rewrittenPattern]
-                    )
-                , remainders = MultiOr.make
-                    (case remainderCondition of
-                        PredicateFalse -> []
-                        _ -> [rewrittenRemainder]
-                    )
-                }
-            , SimplificationProof
-            )
+    simplifyOrOfExpandedPattern unsimplified =
+        MultiOr.filterOr
+        <$> traverse simplifyExpandedPattern unsimplified
+
+    simplifyExpandedPattern config = do
+        (config', _) <-
+            ExpandedPattern.simplifyPredicate
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                config
+        return config'
+
+    simplifyResults
+        :: OrStepResult Object variable
+        -> Simplifier (AttemptedAxiomResults Object variable)
+    simplifyResults stepResults = do
+        results <-
+            simplifyOrOfExpandedPattern
+            $ OrStepResult.rewrittenPattern stepResults
+        remainders <-
+            simplifyOrOfExpandedPattern
+            $ OrStepResult.remainder stepResults
+        return AttemptedAxiomResults { results, remainders }
