@@ -12,13 +12,7 @@ module Kore.Step.Step
     , RulePattern
     , StepResult (..)
     , StepperVariable (..)
-    , StepProof (..)
-    , StepProofAtom (..)
     , UnificationProcedure (..)
-    , VariableRenaming (..)
-    , simplificationProof
-    , stepProof
-    , stepProofSumName
     --
     , UnifiedRule
     , unifyRule
@@ -41,17 +35,11 @@ import           Control.Monad.Except
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.Hashable as Hashable
 import qualified Data.Map.Strict as Map
 import           Data.Semigroup
                  ( Semigroup (..) )
-import           Data.Sequence
-                 ( Seq )
-import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
 
 import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
@@ -100,51 +88,6 @@ import           Kore.Unification.Substitution
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-
-{- | 'StepProof' is the proof for an execution step or steps.
- -}
-newtype StepProof (level :: *) (variable :: * -> *) =
-    StepProof { getStepProof :: Seq (StepProofAtom level variable) }
-  deriving (Eq, Show)
-
-instance Hashable.Hashable (StepProof level variable) where
-    hashWithSalt s _ = Hashable.hashWithSalt s (0 :: Int)
-
-instance Semigroup (StepProof level variable) where
-    (<>) (StepProof a) (StepProof b) = StepProof (a <> b)
-
-instance Monoid (StepProof level variable) where
-    mempty = StepProof mempty
-    mappend = (<>)
-
-stepProof :: StepProofAtom level variable -> StepProof level variable
-stepProof atom = StepProof (Seq.singleton atom)
-
-simplificationProof :: SimplificationProof level -> StepProof level variable
-simplificationProof = stepProof . StepProofSimplification
-
-{- | The smallest unit of a 'StepProof'.
-
-  @StepProofAtom@ encapsulates the separate proofs resulting from unification,
-  variable renaming, and simplification.
-
- -}
-data StepProofAtom (level :: *) (variable :: * -> *)
-    = StepProofUnification !(UnificationProof level variable)
-    -- ^ Proof for a unification that happened during the step.
-    | StepProofVariableRenamings [VariableRenaming level variable]
-    -- ^ Proof for the remanings that happened during ther proof.
-    | StepProofSimplification !(SimplificationProof level)
-    -- ^ Proof for the simplification part of a step.
-    deriving (Show, Eq, Generic)
-
-{-| 'VariableRenaming' represents a renaming of a variable.
--}
-data VariableRenaming level variable = VariableRenaming
-    { variableRenamingOriginal :: variable level
-    , variableRenamingRenamed  :: variable level
-    }
-    deriving (Show, Eq)
 
 {- | Distinguish variables by their source (axiom or configuration).
 
@@ -250,12 +193,6 @@ instance Monoid (OrStepResult level variable) where
 
     mempty = OrStepResult { rewrittenPattern = mempty, remainder = mempty }
     {-# INLINE mempty #-}
-
-{-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
-stepProofSumName :: StepProofAtom variable level -> String
-stepProofSumName (StepProofUnification _)       = "StepProofUnification"
-stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
-stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in

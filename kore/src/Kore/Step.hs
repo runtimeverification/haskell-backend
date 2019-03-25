@@ -48,6 +48,8 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
+import           Kore.Step.Proof
+                 ( StepProof (..) )
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -57,7 +59,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.Step
-                 ( OrStepResult (..), StepProof (..) )
+                 ( OrStepResult (..) )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )

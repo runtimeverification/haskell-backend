@@ -40,6 +40,9 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
+import           Kore.Step.Proof
+                 ( StepProof )
+import qualified Kore.Step.Proof as Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
@@ -52,10 +55,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.Step
-                 ( OrStepResult (OrStepResult), StepProof (..),
-                 simplificationProof )
+                 ( OrStepResult (OrStepResult) )
 import qualified Kore.Step.Step as Step
-import qualified Kore.Step.Step as StepProof
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
@@ -234,7 +235,7 @@ transitionRule
                     axiomIdToSimplifier
                     config
             let
-                proof'' = proof <> simplificationProof proof'
+                proof'' = proof <> Step.Proof.simplificationProof proof'
                 prove config' = (config', proof'')
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
@@ -359,7 +360,7 @@ transitionRule
                 axiomIdToSimplifier
                 result
         let
-            finalProof = proof1 <> StepProof.simplificationProof proof
+            finalProof = proof1 <> Step.Proof.simplificationProof proof
             patternsWithProofs =
                 map
                     (\p ->

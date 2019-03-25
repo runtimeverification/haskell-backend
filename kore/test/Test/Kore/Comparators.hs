@@ -46,6 +46,7 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.Error
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
+import           Kore.Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Representation.MultiOr

@@ -36,12 +36,13 @@ import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
+import           Kore.Step.Proof
+                 ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..), fromPurePattern )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Step.Strategy
                  ( ExecutionGraph, Strategy, pickFinal, runStrategy )

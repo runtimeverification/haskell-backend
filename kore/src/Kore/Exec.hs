@@ -66,6 +66,8 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Pattern
+import           Kore.Step.Proof
+                 ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -84,8 +86,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.Step
-                 ( StepProof )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Step.Strategy

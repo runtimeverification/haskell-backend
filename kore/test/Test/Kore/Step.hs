@@ -10,10 +10,7 @@ import Test.Tasty.HUnit
 import qualified Control.Exception as Exception
 import           Data.Default
                  ( def )
-import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Ord
-                 ( comparing )
 import qualified Data.Set as Set
 
 import           Data.Limit
@@ -34,12 +31,13 @@ import           Kore.Step.AxiomPatterns
 import           Kore.Step.AxiomPatterns as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Pattern
+import           Kore.Step.Proof
+                 ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import qualified SMT
 
@@ -79,19 +77,18 @@ rewriteImplies =
 
 expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta Variable)]
 expectTwoAxioms =
-    List.sortBy (comparing fst)
-        [   ( pure (mkVar $ v1 patternMetaSort), mempty )
-        ,   ( Predicated
-                { term =
-                    mkImplies
-                        (mkVar $ v1 patternMetaSort)
-                        (mkVar $ v1 patternMetaSort)
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
-            , mempty
-            )
-        ]
+    [   ( pure (mkVar $ v1 patternMetaSort), mempty )
+    ,   ( Predicated
+            { term =
+                mkImplies
+                    (mkVar $ v1 patternMetaSort)
+                    (mkVar $ v1 patternMetaSort)
+            , predicate = makeTruePredicate
+            , substitution = mempty
+            }
+        , mempty
+        )
+    ]
 
 actualTwoAxioms :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 actualTwoAxioms =
