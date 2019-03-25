@@ -1252,7 +1252,8 @@ test_sequenceRewriteRules =
         --   rewritten: cg, with (⌈cf⌉ and ⌈cg⌉) and [x=b]
         --   remainder:
         --     constr20(x, cf, cg)
-        --        with ¬(⌈cf⌉ and ⌈cg⌉) and ¬[x=a] and ¬[x=b]
+        --        with ¬(⌈cf⌉ and [x=a])
+        --         and ¬(⌈cg⌉ and [x=b])
         let
             definedBranches =
                 makeAndPredicate
