@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedLists #-}
 
 module Test.Kore.Step.Step
-    ( test_baseStepMultipleRemainder
-    , test_applyUnifiedRule
+    ( test_applyUnifiedRule
     , test_unifyRule
     , test_applyRewriteRule_
     , test_applyRewriteRules
@@ -29,11 +28,9 @@ import           Kore.Step.AxiomPatterns
 import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern,
-                 PredicateSubstitution, Predicated (..) )
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
@@ -58,172 +55,8 @@ import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
                  ( makeMetadataTools )
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
-
-test_baseStepMultipleRemainder :: [TestTree]
-test_baseStepMultipleRemainder =
-    [ testCase "If-then" $ do
-        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
-        -- and `a` instead of `true`.
-        --
-        -- Intended:
-        --   term: if x then cg
-        --   axiom: if true y => y
-        -- Actual:
-        --   term: constr20(x, cg)
-        --   axiom: constr20(a, y) => y
-        -- Expected:
-        --   rewritten: cg, with ⌈cg⌉ and [x=a]
-        --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
-        let
-            expected =
-                OrStepResult
-                    { rewrittenPattern = MultiOr.make
-                        [ Predicated
-                            { term = Mock.cg
-                            , predicate = makeCeilPredicate Mock.cg
-                            , substitution =
-                                Substitution.wrap [(Mock.x, Mock.a)]
-                            }
-                        ]
-                    , remainder = MultiOr.make
-                        [ Predicated
-                            { term =
-                                Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
-                            , predicate =
-                                makeNotPredicate
-                                    (makeAndPredicate
-                                        (makeCeilPredicate Mock.cg)
-                                        (makeEqualsPredicate (mkVar Mock.x) Mock.a)
-                                    )
-                            , substitution = mempty
-                            }
-                        ]
-                    }
-        actual <- runStepWithRemainders
-            mockMetadataTools
-            Predicated
-                { term = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
-            [RewriteRule RulePattern
-                { left = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
-                , right = mkVar Mock.y
-                , requires = makeTruePredicate
-                , ensures = makeTruePredicate
-                , attributes = def
-                }
-            ]
-        assertEqualWithExplanation "" expected actual
-    , testCase "case" $ do
-        -- This uses `functionalConstr30(x, y, z)` to represent a case
-        -- statement,
-        -- i.e. `case x of 1 -> y; 2 -> z`
-        -- and `a`, `b` as the case labels.
-        --
-        -- Intended:
-        --   term: case x of 1 -> cf; 2 -> cg
-        --   axiom: case 1 of 1 -> cf; 2 -> cg => cf
-        --   axiom: case 2 of 1 -> cf; 2 -> cg => cg
-        -- Actual:
-        --   term: constr30(x, cg, cf)
-        --   axiom: constr30(a, y, z) => y
-        --   axiom: constr30(b, y, z) => z
-        -- Expected:
-        --   rewritten: cf, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
-        --   rewritten:
-        --      cg, with ¬(⌈cf⌉ and ⌈cg⌉ and x=b) and (⌈cf⌉ and ⌈cg⌉ and b=a)
-        --   remainder:
-        --     constr20(x, cf, cg)
-        --        with ¬(⌈cf⌉ and ⌈cg⌉ and x=a)
-        --        and ¬(⌈cf⌉ and ⌈cg⌉ and x=b)
-        let
-            unificationNotBottom =
-                makeAndPredicate
-                    (makeCeilPredicate Mock.cf)
-                    (makeCeilPredicate Mock.cg)
-            expected =
-                OrStepResult
-                    { rewrittenPattern = MultiOr.make
-                        [ Predicated
-                            { term = Mock.cf
-                            , predicate = unificationNotBottom
-                            , substitution =
-                                Substitution.wrap [(Mock.x, Mock.a)]
-                            }
-                        , Predicated
-                            { term = Mock.cg
-                            , predicate = makeAndPredicate
-                                (makeNotPredicate
-                                    (makeAndPredicate
-                                        unificationNotBottom
-                                        (makeEqualsPredicate Mock.b Mock.a)
-                                    )
-                                )
-                                unificationNotBottom
-                            , substitution =
-                                Substitution.wrap [(Mock.x, Mock.b)]
-                            }
-                        ]
-                    , remainder = MultiOr.make
-                        [ Predicated
-                            { term =
-                                Mock.functionalConstr30
-                                    (mkVar Mock.x) Mock.cf Mock.cg
-                            , predicate =
-                                makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeAndPredicate
-                                            unificationNotBottom
-                                            (makeEqualsPredicate
-                                                (mkVar Mock.x)
-                                                Mock.a
-                                            )
-                                        )
-                                    )
-                                    (makeNotPredicate
-                                        (makeAndPredicate
-                                            unificationNotBottom
-                                            (makeEqualsPredicate
-                                                (mkVar Mock.x)
-                                                Mock.b
-                                            )
-                                        )
-                                    )
-                            , substitution = mempty
-                            }
-                        ]
-                    }
-        actual <- runStepWithRemainders
-            mockMetadataTools
-            Predicated
-                { term =
-                    Mock.functionalConstr30 (mkVar Mock.x) Mock.cf Mock.cg
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
-            [ RewriteRule RulePattern
-                { left = Mock.functionalConstr30
-                    Mock.a (mkVar Mock.y) (mkVar Mock.z)
-                , right = mkVar Mock.y
-                , requires = makeTruePredicate
-                , ensures = makeTruePredicate
-                , attributes = def
-                }
-            , RewriteRule RulePattern
-                { left = Mock.functionalConstr30
-                    Mock.b (mkVar Mock.y) (mkVar Mock.z)
-                , right = mkVar Mock.z
-                , requires = makeTruePredicate
-                , ensures = makeTruePredicate
-                , attributes = def
-                }
-            ]
-        assertEqualWithExplanation "" expected actual
-    ]
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
@@ -232,27 +65,6 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
-
-runStepWithRemainders
-    :: MetaOrObject level
-    => MetadataTools level StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> CommonExpandedPattern level
-    -- ^left-hand-side of unification
-    -> [RewriteRule level Variable]
-    -> IO (OrStepResult level Variable)
-runStepWithRemainders metadataTools configuration axioms =
-    fst
-    <$> SMT.runSMT SMT.defaultConfig
-            ( evalSimplifier emptyLogger
-            $ stepWithRemainders
-                metadataTools
-                (Mock.substitutionSimplifier metadataTools)
-                (Simplifier.create metadataTools Map.empty)
-                Map.empty
-                configuration
-                axioms
-            )
 
 evalUnifier
     :: BranchT (ExceptT e Simplifier) a
