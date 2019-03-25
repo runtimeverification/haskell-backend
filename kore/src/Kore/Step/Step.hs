@@ -1419,6 +1419,7 @@ applyRules
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
 
     -> [RulePattern Object variable]
     -- ^ Rewrite rules
@@ -1431,6 +1432,7 @@ applyRules
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
+    unificationProcedure
 
     rules
     initial
@@ -1443,7 +1445,6 @@ applyRules
     let rewrittenPattern = result <$> results
     return OrStepResult { rewrittenPattern, remainder }
   where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
     applyRule' =
         applyRule
             metadataTools
@@ -1492,31 +1493,14 @@ applyRewriteRules
     axiomSimplifiers
 
     rewriteRules
-    initial
-  = do
-    results <- Foldable.fold <$> traverse applyRewriteRule' rewriteRules
-    let unifications = Predicated.withoutTerm . unifiedRule <$> results
-    remainder <- gather $ do
-        remainder <- scatter (negateUnification unifications)
-        applyRemainder' initial remainder
-    let rewrittenPattern = result <$> results
-    return OrStepResult { rewrittenPattern, remainder }
-  where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
-    applyRewriteRule' =
-        applyRewriteRule
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-            initial
-    applyRemainder' =
-        applyRemainder
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
+  =
+    applyRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        (UnificationProcedure Unification.unificationProcedure)
+        (getRewriteRule <$> rewriteRules)
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
