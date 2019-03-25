@@ -17,7 +17,6 @@ module Kore.Step.Representation.Predicated
 
 import           Control.DeepSeq
                  ( NFData )
-import qualified Control.Monad as Monad
 import           Data.Hashable
 import           Data.Monoid
                  ( (<>) )
@@ -74,19 +73,7 @@ instance
     ) =>
     Semigroup (Predicated level variable term)
   where
-    (<>) predicated1 predicated2 =
-        Predicated
-            { term = term1 <> term2
-            , predicate = makeAndPredicate predicate1 predicate2
-            , substitution = substitution1 <> substitution2
-            }
-      where
-        Predicated { term = term1 } = predicated1
-        Predicated { term = term2 } = predicated2
-        Predicated { predicate = predicate1 } = predicated1
-        Predicated { predicate = predicate2 } = predicated2
-        Predicated { substitution = substitution1 } = predicated1
-        Predicated { substitution = substitution2 } = predicated2
+    (<>) predicated1 predicated2 = (<>) <$> predicated1 <*> predicated2
     {-# INLINE (<>) #-}
 
 instance
@@ -113,36 +100,20 @@ instance
     ( MetaOrObject level
     , SortedVariable variable
     , Ord (variable level)
-    , Show (variable level)
     , Unparse (variable level)
     ) =>
     Applicative (Predicated level variable)
   where
     pure a = Predicated a makeTruePredicate mempty
-    (<*>) = Monad.ap
-
-instance
-    ( MetaOrObject level
-    , SortedVariable variable
-    , Ord (variable level)
-    , Show (variable level)
-    , Unparse (variable level)
-    ) =>
-    Monad (Predicated level variable)
-  where
-    return = pure
-    {-# INLINE return #-}
-
-    (>>=) predicated1 binding =
+    (<*>) predicated1 predicated2 =
         Predicated
-            { term = term2
-            , predicate = predicate1 `makeAndPredicate` predicate2
+            { term = f a
+            , predicate = makeAndPredicate predicate1 predicate2
             , substitution = substitution1 <> substitution2
             }
       where
-        Predicated term1 predicate1 substitution1 = predicated1
-        Predicated term2 predicate2 substitution2 = binding term1
-    {-# INLINE (>>=) #-}
+        Predicated f predicate1 substitution1 = predicated1
+        Predicated a predicate2 substitution2 = predicated2
 
 instance TopBottom term
     => TopBottom (Predicated level variable term)
