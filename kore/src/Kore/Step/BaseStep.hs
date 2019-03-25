@@ -902,7 +902,8 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    ::  ( Ord     (variable Object)
+    ::  forall variable
+    .   ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , FreshVariable  variable
@@ -948,6 +949,12 @@ unifyRule
     unification' <- normalize (unification <> requires')
     return (rule' `Predicated.withCondition` unification')
   where
+    unifyPatterns
+        :: StepPattern Object variable
+        -> StepPattern Object variable
+        -> BranchT
+            (ExceptT (StepError Object variable) Simplifier)
+            (PredicateSubstitution Object variable)
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
             liftFromUnification
@@ -960,6 +967,11 @@ unifyRule
                 pat1
                 pat2
         scatter unifiers
+    normalize
+        :: PredicateSubstitution Object variable
+        -> BranchT
+            (ExceptT (StepError Object variable) Simplifier)
+            (PredicateSubstitution Object variable)
     normalize =
         liftFromUnification
         . Substitution.normalizeExcept
@@ -977,7 +989,8 @@ the 'PredicateSubstitutionSimplifier' causes normalization to branch.
 
  -}
 applyRule
-    ::  ( Ord     (variable Object)
+    ::  forall variable
+    .   ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , FreshVariable  variable
@@ -1020,6 +1033,11 @@ applyRule
         finalTerm' = Pattern.substitute substitution' finalTerm
     return finalCondition { ExpandedPattern.term = finalTerm' }
   where
+    normalize
+        :: PredicateSubstitution Object variable
+        -> BranchT
+            (ExceptT (StepError Object variable) Simplifier)
+            (PredicateSubstitution Object variable)
     normalize =
         liftFromUnification
         . Substitution.normalizeExcept
@@ -1037,7 +1055,8 @@ the 'PredicateSubstitutionSimplifier' causes normalization to branch.
 
  -}
 applyRemainder
-    ::  ( Ord     (variable Object)
+    ::  forall variable
+    .   ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , FreshVariable  variable
@@ -1070,6 +1089,11 @@ applyRemainder
     normalizedCondition <- normalize finalCondition
     return normalizedCondition { Predicated.term = finalTerm }
   where
+    normalize
+        :: PredicateSubstitution Object variable
+        -> BranchT
+            (ExceptT (StepError Object variable) Simplifier)
+            (PredicateSubstitution Object variable)
     normalize =
         liftFromUnification
         . Substitution.normalizeExcept
