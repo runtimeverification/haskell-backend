@@ -193,6 +193,18 @@ unwrapPredicateVariables
     -> Predicate Object variable
 unwrapPredicateVariables = fmap unwrapPatternVariables
 
+{- | Remove axiom variables from the substitution and unwrap all variables.
+ -}
+unwrapConfiguration
+    :: Ord (variable level)
+    => ExpandedPattern level (Target variable)
+    -> ExpandedPattern level variable
+unwrapConfiguration config@Predicated { substitution } =
+    ExpandedPattern.mapVariables Target.unwrapVariable
+        config { ExpandedPattern.substitution = substitution' }
+  where
+    substitution' = Substitution.filter Target.isTarget substitution
+
 wrapUnificationOrSubstitutionError
     :: Functor m
     => ExceptT (UnificationOrSubstitutionError level variable) m a
@@ -597,7 +609,7 @@ checkSubstitutionCoverage initial unified final = do
             (unparse <$> Set.toAscList leftAxiomVariables)
         , "in the left-hand side of the axiom."
         ]
-    return (unwrapVariables final)
+    return (unwrapConfiguration final)
   where
     checkPass = isCoveringSubstitution || isInitialSymbolic
     Predicated { term = axiom } = unified
@@ -612,18 +624,6 @@ checkSubstitutionCoverage initial unified final = do
     isInitialSymbolic =
         (not . Set.null)
             (Set.filter Target.isTarget substitutionVariables)
-
-{- | Remove axiom variables from the substitution and unwrap all variables.
- -}
-unwrapVariables
-    :: Ord (variable level)
-    => ExpandedPattern level (Target variable)
-    -> ExpandedPattern level variable
-unwrapVariables config@Predicated { substitution } =
-    ExpandedPattern.mapVariables Target.unwrapVariable
-        config { ExpandedPattern.substitution = substitution' }
-  where
-    substitution' = Substitution.filter Target.isTarget substitution
 
 {- | Negate the disjunction of unification solutions to form the /remainders/.
 
