@@ -203,7 +203,27 @@ unwrapConfiguration config@Predicated { substitution } =
     ExpandedPattern.mapVariables Target.unwrapVariable
         config { ExpandedPattern.substitution = substitution' }
   where
-    substitution' = Substitution.filter Target.isTarget substitution
+    substitution' = Substitution.filter Target.isNonTarget substitution
+
+unwrapRemainder
+    :: (Ord (variable Object), Unparse (variable Object))
+    => Predicate Object (Target variable)
+    -> Predicate Object variable
+unwrapRemainder remainder
+  | hasFreeAxiomVariables =
+    (error . show . Pretty.vsep)
+        [ "Unexpected free axiom variables:"
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Foldable.toList freeAxiomVariables)
+        , "in remainder:"
+        , Pretty.indent 4 (unparse remainder)
+        ]
+  | otherwise =
+    unwrapPredicateVariables remainder
+  where
+    freeAxiomVariables =
+        Set.filter Target.isTarget (Predicate.freeVariables remainder)
+    hasFreeAxiomVariables = not (Set.null freeAxiomVariables)
 
 wrapUnificationOrSubstitutionError
     :: Functor m
@@ -622,8 +642,7 @@ checkSubstitutionCoverage initial unified final = do
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
     isInitialSymbolic =
-        (not . Set.null)
-            (Set.filter Target.isTarget substitutionVariables)
+        (not . Foldable.any Target.isNonTarget) substitutionVariables
 
 {- | Negate the disjunction of unification solutions to form the /remainders/.
 
@@ -640,7 +659,7 @@ negateUnification
     => MultiOr (PredicateSubstitution Object (Target variable))
     -> MultiOr (Predicate Object variable)
 negateUnification =
-    fmap unwrapPredicateVariables
+    fmap unwrapRemainder
     . foldr negateUnification1 top
     . Foldable.toList
   where
@@ -696,7 +715,7 @@ unificationConditions
 unificationConditions Predicated { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
-    substitution' = Substitution.filter Target.isTarget substitution
+    substitution' = Substitution.filter Target.isNonTarget substitution
 
 substitutionConditions
     ::  ( Ord     (variable Object)
@@ -868,7 +887,7 @@ sequenceRules
                 <$> results
             notCovered =
                 PredicateSubstitution.fromPredicate
-                $ unwrapPredicateVariables
+                $ unwrapRemainder
                 $ mkMultiAndPredicate
                 $ mkNotMultiOr covered
         in config `Predicated.andCondition` notCovered

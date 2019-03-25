@@ -23,9 +23,9 @@ import Kore.Variables.Fresh
 
 {- | Distinguish variables by their source.
 
-@StepperVariable@ ensures that axiom variables are always 'LT' configuration
-variables, so that the unification procedure prefers to generate substitutions
-for axiom variables instead of configuration variables.
+'Target' variables always compare 'LT' 'NonTarget' variables, so that the
+unification procedure prefers to generate substitutions for 'Target' variables
+instead of 'NonTarget' variables.
 
  -}
 data Target variable level
@@ -46,8 +46,11 @@ unwrapVariable (Target variable) = variable
 unwrapVariable (NonTarget variable) = variable
 
 isTarget :: Target variable level -> Bool
-isTarget (Target _) = False
-isTarget (NonTarget _) = True
+isTarget (Target _) = True
+isTarget (NonTarget _) = False
+
+isNonTarget :: Target variable level -> Bool
+isNonTarget = not . isTarget
 
 instance
     SortedVariable variable
@@ -79,7 +82,5 @@ instance
     Unparse (variable level) =>
     Unparse (Target variable level)
   where
-    unparse =
-        \case
-            Target var -> unparse var
-            NonTarget var -> unparse var
+    unparse (Target var) = unparse var
+    unparse (NonTarget var) = unparse var
