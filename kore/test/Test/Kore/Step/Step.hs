@@ -1258,7 +1258,6 @@ test_sequenceRewriteRules =
                 makeAndPredicate
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
-            -- undefinedBranches = Predicate.makeNotPredicate definedBranches
             expect =
                 Right OrStepResult
                     { rewrittenPattern =
