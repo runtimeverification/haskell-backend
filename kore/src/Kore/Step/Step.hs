@@ -10,7 +10,6 @@ See "Kore.Step" for the high-level strategy-based interface.
 module Kore.Step.Step
     ( OrStepResult (..)
     , RulePattern
-    , StepResult (..)
     , UnificationProcedure (..)
     --
     , UnifiedRule
@@ -82,18 +81,6 @@ import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
-
-{-| The result of applying an axiom to a pattern. Contains the rewritten
-pattern (if any) and the unrewritten part of the original pattern.
--}
-data StepResult level variable =
-    StepResult
-        { rewrittenPattern :: !(ExpandedPattern level variable)
-        -- ^ The result of rewritting the pattern
-        , remainder :: !(ExpandedPattern level variable)
-        -- ^ The unrewritten part of the original pattern
-        }
-    deriving (Eq, Show)
 
 {-| The result of applying an axiom to a pattern, as an Or.
 

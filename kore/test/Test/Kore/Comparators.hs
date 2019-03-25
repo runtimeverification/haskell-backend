@@ -55,8 +55,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Step
 import qualified Kore.Step.Step as OrStepResult
                  ( OrStepResult (..) )
-import qualified Kore.Step.Step as StepResult
-                 ( StepResult (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -1405,39 +1403,6 @@ instance
     => EqualWithExplanation (Unified a)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation (variable level)
-    , EqualWithExplanation (StepPattern level variable)
-    )
-    => StructEqualWithExplanation (StepResult level variable)
-  where
-    structFieldsWithNames
-        expected@(StepResult _ _)
-        actual@(StepResult _ _)
-      = [ EqWrap
-            "rewrittenPattern = "
-            (StepResult.rewrittenPattern expected)
-            (StepResult.rewrittenPattern actual)
-        , EqWrap
-            "remainder = "
-            (StepResult.remainder expected)
-            (StepResult.remainder actual)
-        ]
-    structConstructorName _ = "StepResult"
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation (variable level)
-    , EqualWithExplanation (StepPattern level variable)
-    )
-    => EqualWithExplanation (StepResult level variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
