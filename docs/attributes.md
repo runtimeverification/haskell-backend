@@ -215,6 +215,26 @@ A symbol is functional if it is given the `functional` attribute or the
 
 ## misc.
 
+### Location
+
+```
+org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(sl,sc,el,ec)")
+```
+
+Used for defining the location of the current declaration in the original file.
+The numbers represent start line (sl), start column (sc), end line (el), and end
+column (ec).
+
+### Source
+
+```
+org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(FilePath)")
+
+```
+
+Used for defining the source (K) file of the current declaration. 'FilePath' is
+the full path to the original file.
+
 ### Subsort
 
 ```

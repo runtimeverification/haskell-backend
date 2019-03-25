@@ -16,6 +16,7 @@ module Kore.AST.MetaOrObject
     , MetaOrObject (..)
     , Unified (..)
     , asUnified
+    , fromUnified
     , applyUnified
     , transformUnified
     , mapUnified
@@ -144,3 +145,9 @@ into the corresponding 'Unified' @thing@.
 asUnified
     :: MetaOrObject level => thing level -> Unified thing
 asUnified x = UnifiedObject x
+
+{- | Remove a trivial 'Unified' wrapper.
+
+ -}
+fromUnified :: Unified thing -> thing Object
+fromUnified (UnifiedObject thing) = thing
