@@ -27,7 +27,7 @@ import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

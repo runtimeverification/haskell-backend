@@ -33,9 +33,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.Unification.Error
@@ -125,7 +125,7 @@ normalizeSubstitution tools substitution =
         :: Maybe [variable level]
         -> m (PredicateSubstitution level variable)
     maybeToBottom = maybe
-        (return Predicated.bottomPredicate)
+        (return PredicateSubstitution.bottom)
         normalizeSortedSubstitution'
 
 variableToSubstitution
@@ -162,7 +162,7 @@ normalizeSortedSubstitution
     substitution
   =
     case Cofree.tailF (Recursive.project varPattern) of
-        BottomPattern _ -> return Predicated.bottomPredicate
+        BottomPattern _ -> return PredicateSubstitution.bottom
         VariablePattern var'
           | var == var' ->
             normalizeSortedSubstitution unprocessed result substitution
@@ -191,9 +191,9 @@ getDependencies
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
         VariablePattern v | v == var -> Set.empty
-        _ -> Set.intersection interesting freeVariables
+        _ -> Set.intersection interesting freeVars
   where
-    Valid { freeVariables } = valid
+    Valid { freeVariables = freeVars } = valid
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.

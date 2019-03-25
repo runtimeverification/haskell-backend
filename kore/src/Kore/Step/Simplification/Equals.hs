@@ -35,9 +35,7 @@ import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..),
-                 predicateSubstitutionToExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge )
@@ -45,6 +43,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( toExpandedPattern, toPredicate )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -222,7 +221,7 @@ simplifyEvaluated
     first
     second
   | first == second =
-    return (MultiOr.make [Predicated.top], SimplificationProof)
+    return (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
@@ -439,7 +438,7 @@ makeEvaluate
             firstTerm
             secondTerm
     return
-        ( fmap predicateSubstitutionToExpandedPattern result
+        ( fmap ExpandedPattern.fromPredicateSubstitution result
         , SimplificationProof
         )
 makeEvaluate
@@ -598,7 +597,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
             first
             second
     return
-        ( fmap predicateSubstitutionToExpandedPattern result
+        ( fmap ExpandedPattern.fromPredicateSubstitution result
         , SimplificationProof
         )
 
@@ -636,7 +635,7 @@ makeEvaluateTermsToPredicateSubstitution
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =
     return
-        ( MultiOr.make [Predicated.topPredicate]
+        ( MultiOr.make [PredicateSubstitution.top]
         , SimplificationProof
         )
   | otherwise = do

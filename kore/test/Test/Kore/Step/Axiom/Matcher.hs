@@ -24,13 +24,13 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfPredicateSubstitution )
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as Predicated
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )

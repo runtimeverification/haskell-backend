@@ -22,13 +22,15 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, CommonPredicateSubstitution,
-                 Predicated (..) )
+                 ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, CommonOrOfPredicateSubstitution )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( CommonPredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
@@ -388,14 +390,14 @@ test_equalsSimplification_Patterns =
     [ testCase "bottom == bottom"
         (assertTermEquals
             mockMetadataTools
-            Predicated.topPredicate
+            PredicateSubstitution.topPredicate
             mkBottom_
             mkBottom_
         )
     , testCase "domain-value == domain-value"
         (assertTermEquals
             mockMetadataTools
-            Predicated.topPredicate
+            PredicateSubstitution.topPredicate
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
@@ -414,7 +416,7 @@ test_equalsSimplification_Patterns =
     , testCase "domain-value != domain-value"
         (assertTermEquals
             mockMetadataTools
-            Predicated.bottomPredicate
+            PredicateSubstitution.bottomPredicate
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
@@ -433,7 +435,7 @@ test_equalsSimplification_Patterns =
     , testCase "domain-value != domain-value because of sorts"
         (assertTermEquals
             mockMetadataTools
-            Predicated.bottomPredicate
+            PredicateSubstitution.bottomPredicate
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
@@ -452,42 +454,42 @@ test_equalsSimplification_Patterns =
     , testCase "\"a\" == \"a\""
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            Predicated.topPredicate
+            PredicateSubstitution.topPredicate
             (mkStringLiteral "a")
             (mkStringLiteral "a")
         )
     , testCase "\"a\" != \"b\""
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            Predicated.bottomPredicate
+            PredicateSubstitution.bottomPredicate
             (mkStringLiteral "a")
             (mkStringLiteral "b")
         )
     , testCase "'a' == 'a'"
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            Predicated.topPredicate
+            PredicateSubstitution.topPredicate
             (mkCharLiteral 'a')
             (mkCharLiteral 'a')
         )
     , testCase "'a' != 'b'"
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            Predicated.bottomPredicate
+            PredicateSubstitution.bottomPredicate
             (mkCharLiteral 'a')
             (mkCharLiteral 'b')
         )
     , testCase "a != bottom"
         (assertTermEquals
             mockMetadataTools
-            Predicated.bottomPredicate
+            PredicateSubstitution.bottomPredicate
             mkBottom_
             Mock.a
         )
     , testCase "a == a"
         (assertTermEquals
             mockMetadataTools
-            Predicated.topPredicate
+            PredicateSubstitution.topPredicate
             Mock.a
             Mock.a
         )
@@ -505,7 +507,7 @@ test_equalsSimplification_Patterns =
     , testCase "constructor1(a) vs constructor1(a)"
         (assertTermEquals
             mockMetadataTools
-            Predicated.topPredicate
+            PredicateSubstitution.topPredicate
             constructor1OfA
             constructor1OfA
         )
@@ -513,21 +515,21 @@ test_equalsSimplification_Patterns =
         "functionalconstructor1(a) vs functionalconstructor2(a)"
         (assertTermEquals
             mockMetadataTools
-            Predicated.bottomPredicate
+            PredicateSubstitution.bottomPredicate
             functionalConstructor1OfA
             functionalConstructor2OfA
         )
     , testCase "constructor1(a) vs constructor2(a)"
         (assertTermEquals
             mockMetadataTools
-            Predicated.bottomPredicate
+            PredicateSubstitution.bottomPredicate
             constructor1OfA
             constructor2OfA
         )
     , testCase "constructor1(f(a)) vs constructor1(f(a))"
         (assertTermEquals
             mockMetadataTools
-            Predicated.topPredicate
+            PredicateSubstitution.topPredicate
             (Mock.constr10 fOfA)
             (Mock.constr10 fOfA)
         )
@@ -680,7 +682,7 @@ test_equalsSimplification_Patterns =
         , testCase "concrete Map, different keys"
             (assertTermEquals
                 mockMetadataTools
-                Predicated.bottomPredicate
+                PredicateSubstitution.bottomPredicate
                 (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
                 (Mock.builtinMap [(Mock.bConcrete, mkVar Mock.x)])
             )
@@ -804,7 +806,7 @@ test_equalsSimplification_Patterns =
         ,
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
-                unified34 = Predicated.bottomPredicate
+                unified34 = PredicateSubstitution.bottomPredicate
             in
                 testCase "[same head, different head]"
                     (assertTermEquals
@@ -838,7 +840,7 @@ test_equalsSimplification_Patterns =
                 testCase "different lengths"
                     (assertTermEquals
                         mockMetadataTools
-                        Predicated.bottomPredicate
+                        PredicateSubstitution.bottomPredicate
                         term7
                         term8
                     )

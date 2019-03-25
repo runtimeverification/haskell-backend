@@ -37,12 +37,10 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), evalSimplifier )
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
-import           Kore.Unification.Unifier
-                 ( UnificationProof (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -82,17 +80,7 @@ rewriteImplies =
 expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta Variable)]
 expectTwoAxioms =
     List.sortBy (comparing fst)
-        [   ( Predicated
-                { term = mkVar (v1 patternMetaSort)
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
-            , (mconcat . map stepProof)
-                [ StepProofVariableRenamings []
-                , StepProofUnification EmptyUnificationProof
-                , StepProofSimplification SimplificationProof
-                ]
-            )
+        [   ( pure (mkVar $ v1 patternMetaSort), mempty )
         ,   ( Predicated
                 { term =
                     mkImplies
@@ -101,11 +89,7 @@ expectTwoAxioms =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-            , (mconcat . map stepProof)
-                [ StepProofVariableRenamings []
-                , StepProofUnification EmptyUnificationProof
-                , StepProofSimplification SimplificationProof
-                ]
+            , mempty
             )
         ]
 
@@ -195,16 +179,7 @@ initialIdentity =
         }
 
 expectIdentity :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-expectIdentity =
-    [
-        ( initialIdentity
-        , (mconcat . map stepProof)
-            [ StepProofVariableRenamings []
-            , StepProofUnification EmptyUnificationProof
-            , StepProofSimplification SimplificationProof
-            ]
-        )
-    ]
+expectIdentity = [ (initialIdentity, mempty) ]
 
 actualIdentity :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 actualIdentity =
@@ -292,13 +267,7 @@ expectOneStep =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    , mconcat
-        (map stepProof
-            [ StepProofVariableRenamings []
-            , StepProofUnification EmptyUnificationProof
-            , StepProofSimplification SimplificationProof
-            ]
-        )
+    , mempty
     )
 
 actualOneStep :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
@@ -327,14 +296,7 @@ expectTwoSteps =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    , (mconcat . map stepProof)
-        [ StepProofVariableRenamings []
-        , StepProofUnification EmptyUnificationProof
-        , StepProofSimplification SimplificationProof
-        , StepProofVariableRenamings []
-        , StepProofUnification EmptyUnificationProof
-        , StepProofSimplification SimplificationProof
-        ]
+    , mempty
     )
 
 actualTwoSteps :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
@@ -379,11 +341,7 @@ expectStepLimit =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    , (mconcat . map stepProof)
-        [ StepProofVariableRenamings []
-        , StepProofUnification EmptyUnificationProof
-        , StepProofSimplification SimplificationProof
-        ]
+    , mempty
     )
 
 actualStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)

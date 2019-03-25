@@ -37,6 +37,7 @@ module Kore.Predicate.Predicate
     , stringFromPredicate
     , substitutionToPredicate
     , fromPredicate
+    , fromSubstitution
     , unwrapPredicate
     , wrapPredicate
     , substitute
@@ -492,8 +493,8 @@ freeVariables = freePureVariables . unwrapPredicate
 
 {- | 'substitutionToPredicate' transforms a substitution in a predicate.
 
-    An empty substitution list returns a true predicate. A non-empty
-    substitution returns a conjunction of variable/substitution equalities.
+An empty substitution list returns a true predicate. A non-empty substitution
+returns a conjunction of variable/substitution equalities.
 
 -}
 substitutionToPredicate
@@ -521,6 +522,23 @@ singleSubstitutionToPredicate
     -> Predicate level variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (mkVar var) patt
+
+{- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
+
+An empty substitution list returns a true predicate. A non-empty substitution
+returns a conjunction of variable-substitution equalities.
+
+-}
+fromSubstitution
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        )
+    => Substitution level variable
+    -> Predicate level variable
+fromSubstitution = substitutionToPredicate
 
 {- | Traverse the predicate from the top down and apply substitutions.
 
