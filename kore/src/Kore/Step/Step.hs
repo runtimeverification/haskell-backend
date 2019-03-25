@@ -311,10 +311,8 @@ unifyRule
 
 {- | Apply a rule to produce final configurations given some initial conditions.
 
-The rule should be instantiated with 'instantiateRule'. The initial conditions
-are merged with any conditions from the rule instantiation and
-normalized. @applyRule@ fails if normalization fails. @applyRule@ branches when
-the 'PredicateSubstitutionSimplifier' causes normalization to branch.
+The initial conditions are merged with any conditions from the rule unification
+and normalized.
 
  -}
 applyUnifiedRule
@@ -375,12 +373,7 @@ applyUnifiedRule
             patternSimplifier
             axiomSimplifiers
 
-{- | Apply a rule to produce final configurations given some initial conditions.
-
-The rule should be instantiated with 'instantiateRule'. The initial conditions
-are merged with any conditions from the rule instantiation and
-normalized. @applyRule@ fails if normalization fails. @applyRule@ branches when
-the 'PredicateSubstitutionSimplifier' causes normalization to branch.
+{- | Apply the remainder predicate to the given initial configuration.
 
  -}
 applyRemainder
