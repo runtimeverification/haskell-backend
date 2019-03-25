@@ -1579,11 +1579,12 @@ instance
   where
     structConstructorName _ = "RulePattern"
     structFieldsWithNames expect actual =
-        [ Function.on (EqWrap "left = "      ) left       expect actual
-        , Function.on (EqWrap "right = "     ) right      expect actual
-        , Function.on (EqWrap "requires = "  ) requires   expect actual
-        , Function.on (EqWrap "attributes = ") attributes expect actual
-        ]
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "left = "      ) left
+            , Function.on (EqWrap "right = "     ) right
+            , Function.on (EqWrap "requires = "  ) requires
+            , Function.on (EqWrap "attributes = ") attributes
+            ]
 
 instance EqualWithExplanation Attribute.Axiom where
     compareWithExplanation = structCompareWithExplanation
@@ -1592,29 +1593,34 @@ instance EqualWithExplanation Attribute.Axiom where
 instance StructEqualWithExplanation Attribute.Axiom where
     structConstructorName _ = "Axiom"
     structFieldsWithNames expect actual =
-        [ Function.on (EqWrap "heatCool = "       ) Attribute.heatCool       expect actual
-        , Function.on (EqWrap "productionID = "   ) Attribute.productionID   expect actual
-        , Function.on (EqWrap "assoc = "          ) Attribute.assoc          expect actual
-        , Function.on (EqWrap "comm = "           ) Attribute.comm           expect actual
-        , Function.on (EqWrap "unit = "           ) Attribute.unit           expect actual
-        , Function.on (EqWrap "idem = "           ) Attribute.idem           expect actual
-        , Function.on (EqWrap "trusted = "        ) Attribute.trusted        expect actual
-        , Function.on (EqWrap "concrete = "       ) Attribute.concrete       expect actual
-        , Function.on (EqWrap "simplification = " ) Attribute.simplification expect actual
-        , Function.on (EqWrap "overload = "       ) Attribute.overload       expect actual
-        , Function.on (EqWrap "smtLemma = "       ) Attribute.smtLemma       expect actual
-        , Function.on (EqWrap "label = "          ) Attribute.label          expect actual
-        ]
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "heatCool = "       ) Attribute.heatCool
+            , Function.on (EqWrap "productionID = "   ) Attribute.productionID
+            , Function.on (EqWrap "assoc = "          ) Attribute.assoc
+            , Function.on (EqWrap "comm = "           ) Attribute.comm
+            , Function.on (EqWrap "unit = "           ) Attribute.unit
+            , Function.on (EqWrap "idem = "           ) Attribute.idem
+            , Function.on (EqWrap "trusted = "        ) Attribute.trusted
+            , Function.on (EqWrap "concrete = "       ) Attribute.concrete
+            , Function.on (EqWrap "simplification = " ) Attribute.simplification
+            , Function.on (EqWrap "overload = "       ) Attribute.overload
+            , Function.on (EqWrap "smtLemma = "       ) Attribute.smtLemma
+            , Function.on (EqWrap "label = "          ) Attribute.label
+            ]
 
 instance EqualWithExplanation Attribute.HeatCool where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance SumEqualWithExplanation Attribute.HeatCool where
-    sumConstructorPair Attribute.Heat   Attribute.Heat   = SumConstructorSameNoArguments
-    sumConstructorPair Attribute.Normal Attribute.Normal = SumConstructorSameNoArguments
-    sumConstructorPair Attribute.Cool   Attribute.Cool   = SumConstructorSameNoArguments
-    sumConstructorPair expect           actual           = SumConstructorDifferent (show expect) (show actual)
+    sumConstructorPair Attribute.Heat   Attribute.Heat   =
+        SumConstructorSameNoArguments
+    sumConstructorPair Attribute.Normal Attribute.Normal =
+        SumConstructorSameNoArguments
+    sumConstructorPair Attribute.Cool   Attribute.Cool   =
+        SumConstructorSameNoArguments
+    sumConstructorPair expect           actual           =
+        SumConstructorDifferent (show expect) (show actual)
 
 instance EqualWithExplanation Attribute.ProductionID where
     compareWithExplanation = wrapperCompareWithExplanation
@@ -1622,7 +1628,8 @@ instance EqualWithExplanation Attribute.ProductionID where
 
 instance WrapperEqualWithExplanation Attribute.ProductionID where
     wrapperConstructorName _ = "ProductionID"
-    wrapperField = Function.on (EqWrap "getProductionID = ") Attribute.getProductionID
+    wrapperField =
+        Function.on (EqWrap "getProductionID = ") Attribute.getProductionID
 
 instance EqualWithExplanation Attribute.Assoc where
     compareWithExplanation = wrapperCompareWithExplanation
@@ -1678,7 +1685,8 @@ instance EqualWithExplanation Attribute.Simplification where
 
 instance WrapperEqualWithExplanation Attribute.Simplification where
     wrapperConstructorName _ = "Simplification"
-    wrapperField = Function.on (EqWrap "isSimplification = ") Attribute.isSimplification
+    wrapperField =
+        Function.on (EqWrap "isSimplification = ") Attribute.isSimplification
 
 instance EqualWithExplanation Attribute.Overload where
     compareWithExplanation = wrapperCompareWithExplanation
