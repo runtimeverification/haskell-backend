@@ -60,6 +60,8 @@ import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( sourceLocation )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Step
@@ -86,8 +88,6 @@ import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unparser
                  ( unparseToString )

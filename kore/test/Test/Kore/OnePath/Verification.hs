@@ -20,6 +20,7 @@ import           Data.Limit
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.OnePath.Verification as OnePath
@@ -44,7 +45,6 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.StepperAttributes
 import qualified SMT
 
 import           Test.Kore

@@ -21,6 +21,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( simplificationSymbol )
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -46,7 +47,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.StepperAttributes
 import qualified SMT
 
 import           Test.Kore

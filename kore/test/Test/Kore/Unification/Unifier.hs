@@ -33,6 +33,7 @@ import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Injective
 import           Kore.Attribute.SortInjection
+import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
@@ -53,7 +54,6 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
@@ -186,7 +186,7 @@ isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
 mockStepperAttributes patternHead =
-    defaultStepperAttributes
+    defaultSymbolAttributes
         { constructor = Constructor { isConstructor }
         , functional = Functional { isDeclaredFunctional }
         , function = Function { isDeclaredFunction }

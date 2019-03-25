@@ -20,6 +20,8 @@ import           Kore.AST.Pure hiding
 import qualified Kore.AST.Pure as Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.Axiom.Data as AttemptedAxiom
@@ -47,8 +49,6 @@ import           Kore.Step.Step
 import qualified Kore.Step.Step as Step
 import qualified Kore.Step.Step as OrStepResult
                  ( OrStepResult (..) )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh

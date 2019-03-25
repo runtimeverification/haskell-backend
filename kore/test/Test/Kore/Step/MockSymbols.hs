@@ -38,6 +38,7 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute
 import qualified Kore.Attribute.Sort.Element as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
@@ -47,7 +48,6 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Sort
 import           Kore.Step.Pattern
-import           Kore.Step.StepperAttributes
 import qualified SimpleSMT as SMT
 
 import           Test.Kore

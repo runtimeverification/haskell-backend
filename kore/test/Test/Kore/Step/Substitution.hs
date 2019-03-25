@@ -13,6 +13,8 @@ import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -28,8 +30,6 @@ import           Kore.Step.Representation.PredicateSubstitution
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution

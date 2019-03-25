@@ -12,6 +12,8 @@ module Kore.Step.Simplification.AndPredicates
     ) where
 
 import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
@@ -33,8 +35,6 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser

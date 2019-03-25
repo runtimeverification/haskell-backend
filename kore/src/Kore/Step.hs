@@ -38,6 +38,8 @@ import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Logger as Log
@@ -59,8 +61,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( OrStepResult (..) )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unparser

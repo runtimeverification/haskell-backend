@@ -29,6 +29,9 @@ import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.AST.Valid
                  ( pattern App_ )
+import           Kore.Attribute.Symbol
+                 ( Hook (..), StepperAttributes )
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.Axiom.Data
@@ -64,8 +67,6 @@ import           Kore.Step.Step
 import qualified Kore.Step.Step as Step
 import qualified Kore.Step.Step as OrStepResult
                  ( OrStepResult (..) )
-import           Kore.Step.StepperAttributes
-                 ( Hook (..), StepperAttributes (..) )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -184,7 +185,7 @@ evaluateBuiltin
         Value.fromConcreteStepPattern tools =<< asConcreteStepPattern pat
     -- TODO(virgil): Send this from outside.
     getAppHookString appHead =
-        Text.unpack <$> (getHook . hook . symAttributes tools) appHead
+        Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
 
 applyFirstSimplifierThatWorks
     :: forall variable level

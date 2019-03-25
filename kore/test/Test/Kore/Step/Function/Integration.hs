@@ -13,6 +13,7 @@ import           Data.Sup
 import           Kore.AST.Pure hiding
                  ( mapVariables )
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -50,7 +51,6 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 import qualified SMT

@@ -31,6 +31,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -56,7 +57,6 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
 import           Kore.Step.Step
                  ( OrStepResult (..) )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.StepperAttributes
 import           Kore.Unparser
                  ( unparseToString )
 import           SMT

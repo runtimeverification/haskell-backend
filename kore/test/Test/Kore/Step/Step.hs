@@ -19,6 +19,7 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate as Predicate
@@ -40,7 +41,6 @@ import           Kore.Step.Step hiding
                  ( applyRewriteRule, applyRewriteRules, applyRule,
                  applyUnifiedRule, sequenceRewriteRules, unifyRule )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Procedure as Unification

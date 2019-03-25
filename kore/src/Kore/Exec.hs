@@ -34,6 +34,8 @@ import           Kore.AST.MetaOrObject
                  ( Object (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
@@ -86,8 +88,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import           Kore.Step.Strategy
                  ( ExecutionGraph )
 import qualified Kore.Unification.Substitution as Substitution

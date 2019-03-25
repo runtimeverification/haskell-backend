@@ -39,6 +39,8 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Logger as Log
@@ -67,8 +69,6 @@ import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unification.Data
                  ( UnificationProof )

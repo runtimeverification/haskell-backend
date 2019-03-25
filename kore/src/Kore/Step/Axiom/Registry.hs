@@ -29,6 +29,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Overload
 import           Kore.Attribute.Simplification
                  ( Simplification (..) )
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifier (..) )
@@ -48,7 +49,6 @@ import           Kore.Step.AxiomPatterns
                  verifiedKoreSentenceToAxiomPattern )
 import qualified Kore.Step.AxiomPatterns
                  ( RulePattern (..) )
-import           Kore.Step.StepperAttributes
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 

@@ -24,6 +24,7 @@ import           Kore.AST.Common
                  ( Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.OnePath.Step
@@ -43,7 +44,6 @@ import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.StepperAttributes
 import           Kore.Step.Strategy
                  ( ExecutionGraph, Strategy, pickFinal, runStrategy )
 import qualified Kore.Unification.Substitution as Substitution

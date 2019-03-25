@@ -18,6 +18,7 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
@@ -38,7 +39,6 @@ import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.StepperAttributes
 import qualified SMT
 
 import           Test.Kore
@@ -378,7 +378,7 @@ actualUnificationError =
 
 mockSymbolAttributes :: SymbolOrAlias Meta -> StepperAttributes
 mockSymbolAttributes patternHead =
-    defaultStepperAttributes
+    defaultSymbolAttributes
         { constructor = Constructor { isConstructor }
         , functional = Functional { isDeclaredFunctional }
         , function = Function { isDeclaredFunction }

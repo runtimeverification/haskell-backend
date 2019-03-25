@@ -15,6 +15,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -41,7 +42,6 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
-import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

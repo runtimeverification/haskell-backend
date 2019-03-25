@@ -33,6 +33,8 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import           Kore.Exec
@@ -51,8 +53,6 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import qualified SMT
 
 import Test.Kore

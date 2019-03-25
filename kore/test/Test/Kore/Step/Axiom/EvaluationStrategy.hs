@@ -12,6 +12,7 @@ import qualified Data.Map as Map
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -47,7 +48,6 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

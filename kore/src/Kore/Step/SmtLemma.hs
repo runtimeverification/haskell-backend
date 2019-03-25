@@ -31,12 +31,12 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.SmtLemma
 import           Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort as Attribute
+import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
-import           Kore.Step.StepperAttributes
 import           Kore.Step.TranslateSMT
 import           Kore.Unparser
 import           SMT

@@ -22,6 +22,8 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification, verifyAndIndexDefinition )
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -29,8 +31,6 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 
 import GlobalMain
 

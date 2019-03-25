@@ -27,6 +27,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
@@ -47,7 +48,6 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.StepperAttributes
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT

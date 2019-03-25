@@ -24,6 +24,7 @@ import           Data.Reflection
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
@@ -35,7 +36,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
                  StepPatternSimplifier (..) )
-import           Kore.Step.StepperAttributes
 import           Kore.Step.TranslateSMT
 import           Kore.Unparser
 import           Kore.Variables.Fresh

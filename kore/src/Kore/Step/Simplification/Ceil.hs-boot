@@ -17,7 +17,7 @@ import Kore.Step.Representation.OrOfExpandedPattern
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
        StepPatternSimplifier )
-import Kore.Step.StepperAttributes
+import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.Unparser
        ( Unparse )

@@ -35,6 +35,8 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject (..) )
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -65,8 +67,6 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy

@@ -18,7 +18,7 @@ import Kore.Step.Representation.ExpandedPattern
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
        StepPatternSimplifier )
-import Kore.Step.StepperAttributes
+import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.Unification.Error
        ( UnificationOrSubstitutionError )
