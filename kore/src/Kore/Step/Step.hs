@@ -235,7 +235,7 @@ unifyRule
 
     initial@Predicated { term = initialTerm }
     rule
-  = do
+  = liftFromUnification $ do
     -- Rename free axiom variables to avoid free variables from the initial
     -- configuration.
     let
@@ -253,16 +253,9 @@ unifyRule
     unification' <- normalize (unification <> requires')
     return (rule' `Predicated.withCondition` unification')
   where
-    unifyPatterns
-        :: StepPattern Object variable
-        -> StepPattern Object variable
-        -> BranchT
-            (ExceptT (StepError Object variable) Simplifier)
-            (PredicateSubstitution Object variable)
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
-            liftFromUnification
-            $ Monad.Trans.lift
+            Monad.Trans.lift
             $ unificationProcedure
                 metadataTools
                 predicateSimplifier
@@ -271,18 +264,13 @@ unifyRule
                 pat1
                 pat2
         scatter unifiers
-    normalize
-        :: PredicateSubstitution Object variable
-        -> BranchT
-            (ExceptT (StepError Object variable) Simplifier)
-            (PredicateSubstitution Object variable)
-    normalize =
-        liftFromUnification
-        . Substitution.normalizeExcept
+    normalize condition =
+        Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+            condition
 
 {- | Apply a rule to produce final configurations given some initial conditions.
 
@@ -318,7 +306,7 @@ applyUnifiedRule
 
     initial
     unifiedRule
-  = do
+  = liftFromUnification $ do
     -- Combine the initial conditions, the unification conditions, and the axiom
     -- ensures clause. The axiom requires clause is included by unifyRule.
     let
@@ -335,18 +323,13 @@ applyUnifiedRule
         finalTerm' = Pattern.substitute substitution' finalTerm
     return finalCondition { ExpandedPattern.term = finalTerm' }
   where
-    normalize
-        :: PredicateSubstitution Object variable
-        -> BranchT
-            (ExceptT (StepError Object variable) Simplifier)
-            (PredicateSubstitution Object variable)
-    normalize =
-        liftFromUnification
-        . Substitution.normalizeExcept
+    normalize condition =
+        Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+            condition
 
 {- | Apply the remainder predicate to the given initial configuration.
 
@@ -379,25 +362,20 @@ applyRemainder
 
     initial
     (PredicateSubstitution.fromPredicate -> remainder)
-  = do
+  = liftFromUnification $ do
     let final = initial `Predicated.andCondition` remainder
         finalCondition = Predicated.withoutTerm final
         Predicated { Predicated.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
     return normalizedCondition { Predicated.term = finalTerm }
   where
-    normalize
-        :: PredicateSubstitution Object variable
-        -> BranchT
-            (ExceptT (StepError Object variable) Simplifier)
-            (PredicateSubstitution Object variable)
-    normalize =
-        liftFromUnification
-        . Substitution.normalizeExcept
+    normalize condition =
+        Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+            condition
 
 toAxiomVariables
     :: Ord (variable level)
