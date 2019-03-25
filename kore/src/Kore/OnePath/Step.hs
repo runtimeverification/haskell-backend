@@ -18,12 +18,15 @@ module Kore.OnePath.Step
     , onePathFollowupStep
     ) where
 
+import           Control.Monad.Except
+                 ( runExceptT )
 import           Data.Foldable
                  ( toList )
 import           Data.Hashable
 import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
 
 import           Kore.AST.Common
@@ -50,14 +53,15 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import           Kore.Step.Step
                  ( OrStepResult (OrStepResult), StepProof (..),
-                 simplificationProof, stepWithRemainders )
-import qualified Kore.Step.Step as OrStepResult
+                 simplificationProof )
+import qualified Kore.Step.Step as Step
 import qualified Kore.Step.Step as StepProof
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -268,41 +272,52 @@ transitionRule
     transitionMultiApplyWithRemainders _ (config, _)
         | ExpandedPattern.isBottom config = return []
     transitionMultiApplyWithRemainders rules (config, proof) = do
-        (OrStepResult { rewrittenPattern, remainder }, proof') <-
-            stepWithRemainders
+        result <-
+            runExceptT
+            $ Step.sequenceRewriteRules
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
                 config
                 rules
-        let
-            combinedProof :: StepProof level Variable
-            combinedProof = proof <> proof'
+        case result of
+            Left _ ->
+                (error . show . Pretty.vsep)
+                [ "Not implemented error:"
+                , "while applying a \\rewrite axiom to the pattern:"
+                , Pretty.indent 4 (unparse config)
+                ,   "We decided to end the execution because we don't \
+                    \understand this case well enough at the moment."
+                ]
+            Right OrStepResult { rewrittenPattern, remainder } -> do
+                let
+                    combinedProof :: StepProof level Variable
+                    combinedProof = proof
 
-            rewriteResults
-                ::  [   ( CommonStrategyPattern level
-                        , StepProof level Variable
-                        )
-                    ]
-            rewriteResults =
-                map
-                    (\ p -> (RewritePattern p, combinedProof))
-                    (MultiOr.extractPatterns rewrittenPattern)
+                    rewriteResults
+                        ::  [   ( CommonStrategyPattern level
+                                , StepProof level Variable
+                                )
+                            ]
+                    rewriteResults =
+                        map
+                            (\ p -> (RewritePattern p, combinedProof))
+                            (MultiOr.extractPatterns rewrittenPattern)
 
-            remainderResults
-                ::  [   ( CommonStrategyPattern level
-                        , StepProof level Variable
-                        )
-                    ]
-            remainderResults =
-                map
-                    (\ p -> (Stuck p, combinedProof))
-                    (MultiOr.extractPatterns remainder)
+                    remainderResults
+                        ::  [   ( CommonStrategyPattern level
+                                , StepProof level Variable
+                                )
+                            ]
+                    remainderResults =
+                        map
+                            (\ p -> (Stuck p, combinedProof))
+                            (MultiOr.extractPatterns remainder)
 
-        if null rewriteResults
-            then return ((Bottom, combinedProof) : remainderResults)
-            else return (rewriteResults ++ remainderResults)
+                if null rewriteResults
+                    then return ((Bottom, combinedProof) : remainderResults)
+                    else return (rewriteResults ++ remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
