@@ -1,4 +1,4 @@
-module Test.Kore.Step.AxiomPatterns
+module Test.Kore.Step.Rule
     ( test_axiomPatterns
     , test_freeVariables
     , test_refreshRulePattern
@@ -34,11 +34,11 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Parser.ParserImpl
 import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.AxiomPatterns hiding
-                 ( freeVariables )
-import qualified Kore.Step.AxiomPatterns as AxiomPatterns
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
+import           Kore.Step.Rule hiding
+                 ( freeVariables )
+import qualified Kore.Step.Rule as Rule
 
 import           Test.Kore
                  ( testId )
@@ -54,7 +54,7 @@ test_axiomPatterns =
 axiomPatternsUnitTests :: TestTree
 axiomPatternsUnitTests =
     testGroup
-        "AxiomPatterns Unit Tests"
+        "Rule Unit Tests"
         [ testCase "I1:AInt => I2:AInt"
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
@@ -138,7 +138,7 @@ axiomPatternsUnitTests =
 axiomPatternsIntegrationTests :: TestTree
 axiomPatternsIntegrationTests =
     testGroup
-        "AxiomPatterns Unit Tests"
+        "Rule Unit Tests"
         [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
@@ -396,17 +396,17 @@ test_freeVariables :: TestTree
 test_freeVariables =
     testCase "Extract free variables" $ do
         let expect = Set.fromList [Mock.x, Mock.z]
-            actual = AxiomPatterns.freeVariables testRulePattern
+            actual = Rule.freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
 test_refreshRulePattern :: TestTree
 test_refreshRulePattern =
     testCase "Rename target variables" $ do
-        let avoiding = AxiomPatterns.freeVariables testRulePattern
+        let avoiding = Rule.freeVariables testRulePattern
             (renaming, rulePattern') =
                 refreshRulePattern avoiding testRulePattern
             renamed = Set.fromList (Foldable.toList renaming)
-            free' = AxiomPatterns.freeVariables rulePattern'
+            free' = Rule.freeVariables rulePattern'
         assertEqual
             "Expected to rename all free variables of original RulePattern"
             avoiding

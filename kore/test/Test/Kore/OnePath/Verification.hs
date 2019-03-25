@@ -27,10 +27,6 @@ import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
 import           Kore.Step.Representation.ExpandedPattern
@@ -42,6 +38,10 @@ import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
+import           Kore.Step.Rule
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+import           Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier

@@ -27,12 +27,12 @@ import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.AxiomPatterns
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
+import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Unification.Substitution as Substitution
 

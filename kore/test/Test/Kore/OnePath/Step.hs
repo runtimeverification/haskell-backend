@@ -31,16 +31,16 @@ import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..), fromPurePattern )
+import           Kore.Step.Rule
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+import           Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier

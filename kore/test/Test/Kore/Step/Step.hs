@@ -23,9 +23,6 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate as Predicate
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (..) )
-import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
@@ -33,6 +30,9 @@ import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
 import qualified Kore.Step.Representation.Predicated as Predicated
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Rule
+                 ( RewriteRule (RewriteRule), RulePattern (..) )
+import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier

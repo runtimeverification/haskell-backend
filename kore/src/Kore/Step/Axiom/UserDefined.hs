@@ -33,13 +33,13 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
-import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule), RulePattern (..) )
-import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Pattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule), RulePattern (..) )
+import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )

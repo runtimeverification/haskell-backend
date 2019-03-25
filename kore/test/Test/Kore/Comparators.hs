@@ -41,8 +41,6 @@ import           Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.AxiomPatterns
-                 ( RulePattern (..) )
 import           Kore.Step.Error
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
@@ -50,6 +48,8 @@ import           Kore.Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Representation.MultiOr
+import           Kore.Step.Rule
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
 import           Kore.Step.Step

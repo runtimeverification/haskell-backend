@@ -44,10 +44,10 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step
                  ( allRewrites, anyRewrite )
-import           Kore.Step.AxiomPatterns
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
+import           Kore.Step.Rule
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search

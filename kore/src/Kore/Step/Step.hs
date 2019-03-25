@@ -48,9 +48,6 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (..), RulePattern (RulePattern) )
-import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Error
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Remainder as Remainder
@@ -68,6 +65,9 @@ import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Rule
+                 ( RewriteRule (..), RulePattern (RulePattern) )
+import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unification.Data

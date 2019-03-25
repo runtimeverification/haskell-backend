@@ -7,7 +7,7 @@ literals.
 
 ## Axiom Pattern Attributes
 
-Kore.Step.AxiomPatterns
+Kore.Attribute.Axiom
 
 Attributes specific to interpreting axiom patterns.
 

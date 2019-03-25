@@ -41,8 +41,6 @@ import           Kore.Parser.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule )
 import           Kore.Step.Error
                  ( StepError )
 import           Kore.Step.Pattern
@@ -51,6 +49,8 @@ import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Rule
+                 ( RewriteRule )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution

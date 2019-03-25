@@ -49,10 +49,6 @@ import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern
@@ -64,6 +60,10 @@ import           Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
+import           Kore.Step.Rule
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+import           Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )

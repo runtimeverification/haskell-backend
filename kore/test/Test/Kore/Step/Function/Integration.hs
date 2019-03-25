@@ -29,10 +29,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern,
@@ -41,6 +37,10 @@ import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), mapVariables )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import           Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier, StepPatternSimplifier,

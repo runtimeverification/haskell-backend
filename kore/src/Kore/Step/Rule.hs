@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.Step.AxiomPatterns
-Description : Rewriting and function axioms
+Description : Rewrite and equality rules
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
-module Kore.Step.AxiomPatterns
+module Kore.Step.Rule
     ( EqualityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
@@ -23,7 +21,7 @@ module Kore.Step.AxiomPatterns
     , mkEqualityAxiom
     , refreshRulePattern
     , freeVariables
-    , Kore.Step.AxiomPatterns.mapVariables
+    , Kore.Step.Rule.mapVariables
     , substitute
     ) where
 

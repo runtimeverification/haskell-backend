@@ -61,12 +61,6 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
-import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), extractRewriteAxioms,
-                 extractRewriteClaims )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.Proof
                  ( StepProof )
@@ -78,6 +72,12 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern), extractRewriteAxioms,
+                 extractRewriteClaims )
+import           Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search

@@ -40,8 +40,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule )
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Proof as Step.Proof
@@ -51,6 +49,8 @@ import qualified Kore.Step.Representation.ExpandedPattern as Predicated
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Rule
+                 ( RewriteRule )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )

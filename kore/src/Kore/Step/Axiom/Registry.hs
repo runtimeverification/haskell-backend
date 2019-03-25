@@ -42,12 +42,12 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.AxiomPatterns
+import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
                  QualifiedAxiomPattern (FunctionAxiomPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern),
                  verifiedKoreSentenceToAxiomPattern )
-import qualified Kore.Step.AxiomPatterns
+import qualified Kore.Step.Rule
                  ( RulePattern (..) )
 
 {- | Create a mapping from symbol identifiers to their defining axioms.

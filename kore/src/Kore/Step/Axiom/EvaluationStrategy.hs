@@ -44,9 +44,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
-import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule) )
-import qualified Kore.Step.AxiomPatterns as RulePattern
 import           Kore.Step.Pattern
                  ( StepPattern, asConcreteStepPattern )
 import           Kore.Step.Representation.ExpandedPattern
@@ -57,6 +54,9 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse )
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule) )
+import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
