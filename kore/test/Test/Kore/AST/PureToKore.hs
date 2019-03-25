@@ -17,10 +17,9 @@ import           Kore.MetaML.AST
 import Test.Kore
 
 
-pureToKoreToPureProp
-    :: MonadTest m => CommonMetaPattern -> m ()
+pureToKoreToPureProp :: MonadTest m => CommonMetaPattern -> m ()
 pureToKoreToPureProp p =
-    Right p === patternKoreToPure Meta (patternPureToKore p)
+    p === patternKoreToPure (patternPureToKore p)
 
 test_pureToKore :: [TestTree]
 test_pureToKore =
