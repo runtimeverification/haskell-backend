@@ -12,7 +12,7 @@ import Kore.Step.Strategy ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
 @
 -}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 module Kore.Step.Strategy
     ( -- * Strategies
       Strategy (..)
@@ -310,8 +310,8 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
         Just configNode@ConfigNode { config } -> do
             configs <- transitionRule transit prim config
             let
-                max     = succ . snd . Graph.nodeRange $ graph
-                nodes   = mkConfigNodes configNode <$> zip [max ..] configs
+                max'    = succ . snd . Graph.nodeRange $ graph
+                nodes   = mkConfigNodes configNode <$> zip [max' ..] configs
             pure . toGraph $ history ++ [nodes]
   where
     nodeIsNotLeaf :: Bool
@@ -324,11 +324,11 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
         :: ConfigNode config
         -> (Graph.Node, config)
         -> ConfigNode config
-    mkConfigNodes ConfigNode { timestep, nodeId } (node, config) =
+    mkConfigNodes ConfigNode { timestep, nodeId } (node', config) =
         ConfigNode
             config
             (timestep + 1)
-            node
+            node'
             [nodeId]
 
 -- | Create a default/empty execution graph for the provided configuration. Note
