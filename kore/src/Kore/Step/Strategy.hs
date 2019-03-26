@@ -324,12 +324,13 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
         :: ConfigNode config
         -> (Graph.Node, config)
         -> ConfigNode config
-    mkConfigNodes ConfigNode { timestep, nodeId } (node', config) =
+    mkConfigNodes ConfigNode { timestep, nodeId } (nodeId', config) =
         ConfigNode
-            config
-            (timestep + 1)
-            node'
-            [nodeId]
+            { config
+            , timestep = timestep + 1
+            , nodeId = nodeId'
+            , parents = [nodeId]
+            }
 
 -- | Create a default/empty execution graph for the provided configuration. Note
 -- that the ID of the root node is NOT a hash but rather just '0'.
