@@ -37,6 +37,7 @@ import           Data.Reflection
 import           Kore.AST.Kore
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
+import           Kore.Attribute.Smthook
 import           Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Symbol
@@ -213,16 +214,22 @@ translatePredicate translateUninterpreted predicate =
             { applicationSymbolOrAlias
             , applicationChildren
             }
-      = case getSmtlib (symAttributes smtTools applicationSymbolOrAlias) of
+      = case
+            getSmtlib (symAttributes smtlibTools applicationSymbolOrAlias)
+            <|>
+            getSmthook (symAttributes smthookTools applicationSymbolOrAlias)
+        of
             Nothing -> empty
             Just sExpr -> shortenSExpr <$>
                 applySExpr sExpr
                     <$> zipWithM translatePattern
                         applicationChildrenSorts
                         applicationChildren
-        where
-        smtTools :: MetadataTools Object Smtlib
-        smtTools = StepperAttributes.smtlib <$> given
+      where
+        smtlibTools :: MetadataTools Object Smtlib
+        smtlibTools = StepperAttributes.smtlib <$> given
+        smthookTools :: MetadataTools Object Smthook
+        smthookTools = StepperAttributes.smthook <$> given
 
         applicationChildrenSorts = getSort <$> applicationChildren
 

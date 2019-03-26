@@ -60,6 +60,7 @@ import           Kore.AST.Kore hiding
 import           Kore.AST.Sentence
                  ( Attributes (Attributes) )
 import qualified Kore.Attribute.Hook.Hook as Attribute
+import qualified Kore.Attribute.Smtlib.Smthook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
@@ -296,6 +297,19 @@ instance ParseAttributes Attribute.Smtlib where
       where
         withApplication' = withApplication Attribute.smtlibId
         failDuplicate' = failDuplicate Attribute.smtlibId
+
+instance ParseAttributes Attribute.Smthook where
+    parseAttribute =
+        withApplication' $ \params args Attribute.Smthook { getSmthook } -> do
+            getZeroParams params
+            arg <- getOneArgument args
+            StringLiteral syntax <- getStringLiteral arg
+            sExpr <- parseSExpr syntax
+            Monad.unless (Maybe.isNothing getSmthook) failDuplicate'
+            return Attribute.Smthook { getSmthook = Just sExpr }
+      where
+        withApplication' = withApplication Attribute.smthookId
+        failDuplicate' = failDuplicate Attribute.smthookId
 
 instance ParseAttributes Attribute.Sort.Unit where
     parseAttribute = withApplication' parseApplication
