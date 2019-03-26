@@ -214,15 +214,18 @@ translatePredicate translateUninterpreted predicate =
             { applicationSymbolOrAlias
             , applicationChildren
             }
-      = case getSmtlib (symAttributes smtlibTools applicationSymbolOrAlias)
-         <|> getSmthook (symAttributes smthookTools applicationSymbolOrAlias)
-         of Nothing -> empty
+      = case
+            getSmtlib (symAttributes smtlibTools applicationSymbolOrAlias)
+            <|>
+            getSmthook (symAttributes smthookTools applicationSymbolOrAlias)
+        of
+            Nothing -> empty
             Just sExpr -> shortenSExpr <$>
                 applySExpr sExpr
                     <$> zipWithM translatePattern
                         applicationChildrenSorts
                         applicationChildren
-        where
+      where
         smtlibTools :: MetadataTools Object Smtlib
         smtlibTools = StepperAttributes.smtlib <$> given
         smthookTools :: MetadataTools Object Smthook

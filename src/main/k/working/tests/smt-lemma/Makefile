@@ -26,7 +26,7 @@ $(DEFINITION): test.k
 
 test: tests/1.test tests/2.test tests/3.test
 
-test-prove: prove/1-spec.kprove
+test-prove: prove/one-spec.kprove
 
 test-k: tests/1.test tests/2.test tests/3.test \
     	test-prove

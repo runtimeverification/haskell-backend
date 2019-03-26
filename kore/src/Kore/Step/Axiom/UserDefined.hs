@@ -93,6 +93,8 @@ equalityRuleEvaluator
     simplifier
     axiomIdToSimplifier
     patt
+  -- TODO(traiansf): never apply smt-lemma axioms,
+  -- neither as simplification rules nor as function definition rules
   | Axiom.Concrete.isConcrete (Attribute.concrete $ attributes rule)
   , not (Pure.isConcrete patt)
   = notApplicable
