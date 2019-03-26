@@ -34,11 +34,18 @@ success input expected = Success SuccessfulTest
     , successExpected = expected
     }
 
+parsesTo :: String -> a -> ParserTest a
+parsesTo = success
+
+
 failure :: String -> String -> ParserTest a
 failure input expected = Failure FailureTest
     { failureInput = input
     , failureExpected = expected
     }
+
+failsWith :: String -> String -> ParserTest a
+failsWith = failure
 
 parseTree
     :: (HasCallStack, Show a, Eq a)
