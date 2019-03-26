@@ -201,6 +201,12 @@ The list may contain special meta-varialbes `#1`, `#2`, ... (not a valid
 SMT-LIB syntax) which indicate the position of the arguments of the application
 pattern.
 
+### Smthook
+
+The `smt-hook` is similar to [`smtlib`](#Smtlib), except that it's meant to
+specify that the symbol will be translated to a predefined SMT operator, so
+the SMT operator needs not be declared.
+
 ### SortInjection
 
 ```

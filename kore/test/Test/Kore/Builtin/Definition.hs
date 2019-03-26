@@ -13,6 +13,7 @@ import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Injective
+import           Kore.Attribute.Smthook
 import           Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
@@ -718,23 +719,23 @@ boolModule =
         , moduleSentences =
             [ boolSortDecl
             , binarySymbolDecl orBoolSymbol
-                [hookAttribute "BOOL.or", smtlibAttribute "or"]
+                [hookAttribute "BOOL.or", smthookAttribute "or"]
             , binarySymbolDecl orElseBoolSymbol
                 [hookAttribute "BOOL.orElse"]
             , binarySymbolDecl andBoolSymbol
-                [hookAttribute "BOOL.and", smtlibAttribute "and"]
+                [hookAttribute "BOOL.and", smthookAttribute "and"]
             , binarySymbolDecl andThenBoolSymbol
                 [hookAttribute "BOOL.andThen"]
             , binarySymbolDecl xorBoolSymbol
-                [hookAttribute "BOOL.xor", smtlibAttribute "xor"]
+                [hookAttribute "BOOL.xor", smthookAttribute "xor"]
             , binarySymbolDecl neBoolSymbol
-                [hookAttribute "BOOL.ne", smtlibAttribute "distinct"]
+                [hookAttribute "BOOL.ne", smthookAttribute "distinct"]
             , binarySymbolDecl eqBoolSymbol
-                [hookAttribute "BOOL.eq", smtlibAttribute "="]
+                [hookAttribute "BOOL.eq", smthookAttribute "="]
             , binarySymbolDecl impliesBoolSymbol
-                [hookAttribute "BOOL.implies", smtlibAttribute "=>"]
+                [hookAttribute "BOOL.implies", smthookAttribute "=>"]
             , hookedSymbolDecl notBoolSymbol boolSort [boolSort]
-                [hookAttribute "BOOL.not", smtlibAttribute "not"]
+                [hookAttribute "BOOL.not", smthookAttribute "not"]
             ]
         }
   where
@@ -757,36 +758,36 @@ intModule =
             , intSortDecl
             -- comparison symbols
             , comparisonSymbolDecl gtIntSymbol
-                [hookAttribute "INT.gt", smtlibAttribute ">"]
+                [hookAttribute "INT.gt", smthookAttribute ">"]
             , comparisonSymbolDecl geIntSymbol
-                [hookAttribute "INT.ge", smtlibAttribute ">="]
+                [hookAttribute "INT.ge", smthookAttribute ">="]
             , comparisonSymbolDecl eqIntSymbol
-                [hookAttribute "INT.eq", smtlibAttribute "="]
+                [hookAttribute "INT.eq", smthookAttribute "="]
             , comparisonSymbolDecl leIntSymbol
-                [hookAttribute "INT.le", smtlibAttribute "<="]
+                [hookAttribute "INT.le", smthookAttribute "<="]
             , comparisonSymbolDecl ltIntSymbol
-                [hookAttribute "INT.lt", smtlibAttribute "<"]
+                [hookAttribute "INT.lt", smthookAttribute "<"]
             , comparisonSymbolDecl neIntSymbol
-                [hookAttribute "INT.ne", smtlibAttribute "distinct"]
+                [hookAttribute "INT.ne", smthookAttribute "distinct"]
 
             , binarySymbolDecl minIntSymbol
                 [hookAttribute "INT.min", smtlibAttribute "int_min"]
             , binarySymbolDecl maxIntSymbol
                 [hookAttribute "INT.max", smtlibAttribute "int_max"]
             , binarySymbolDecl addIntSymbol
-                [hookAttribute "INT.add", smtlibAttribute "+"]
+                [hookAttribute "INT.add", smthookAttribute "+"]
             , binarySymbolDecl subIntSymbol
-                [hookAttribute "INT.sub", smtlibAttribute "-"]
+                [hookAttribute "INT.sub", smthookAttribute "-"]
             , binarySymbolDecl mulIntSymbol
-                [hookAttribute "INT.mul", smtlibAttribute "*"]
+                [hookAttribute "INT.mul", smthookAttribute "*"]
             , unarySymbolDecl absIntSymbol
                 [hookAttribute "INT.abs", smtlibAttribute "int_abs"]
             , binarySymbolDecl tdivIntSymbol
-                [hookAttribute "INT.tdiv", smtlibAttribute "div"]
+                [hookAttribute "INT.tdiv", smthookAttribute "div"]
             , binarySymbolDecl tmodIntSymbol
-                [hookAttribute "INT.tmod", smtlibAttribute "mod"]
+                [hookAttribute "INT.tmod", smthookAttribute "mod"]
             , binarySymbolDecl emodIntSymbol
-                [hookAttribute "INT.emod", smtlibAttribute "mod"]
+                [hookAttribute "INT.emod", smthookAttribute "mod"]
             , unhookedUnarySymbolDecl dummyIntSymbol
                 []
             , binarySymbolDecl andIntSymbol
