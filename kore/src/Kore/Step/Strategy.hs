@@ -289,7 +289,7 @@ constructExecutionHistory transit instrs0 config0 =
 -- Using simple ID's for nodes will likely be changed in the future in order to
 -- allow merging of states, loop detection, etc.
 executionHistoryStep
-    :: forall m config prim
+    :: forall m config rule prim
     .  Monad m
     => Hashable config
     => Show config
@@ -297,11 +297,11 @@ executionHistoryStep
     -- ^ state stepper
     -> Strategy prim
     -- ^ Primitive strategy
-    -> ExecutionGraph config ()
+    -> ExecutionGraph config rule
     -- ^ execution graph so far
     -> Graph.Node
     -- ^ current "selected" node
-    -> m (ExecutionGraph config ())
+    -> m (ExecutionGraph config rule)
     -- ^ graph with one more step executed for the selected node
 executionHistoryStep transit prim ExecutionGraph { graph, history } node
   | nodeIsNotLeaf = error "Node has already been evaluated"
@@ -385,7 +385,7 @@ constructExecutionGraph transit instrs0 config0 =
 -- @a@ in one step in whatever execution strategy was used.
 -- Note this is NOT the same as @b@ following from @a@ with
 -- the application of exactly one axiom.
-toGraph :: [[ConfigNode config]] -> ExecutionGraph config ()
+toGraph :: [[ConfigNode config]] -> ExecutionGraph config rule
 toGraph history =
     ExecutionGraph
         { root = fst $ head vertices
@@ -397,9 +397,10 @@ toGraph history =
     vertices = map
         (\(ConfigNode config _ node _) -> (node, config))
         allConfigNodes
-    edges = concatMap
-        (\(ConfigNode _ _ node parents) -> map (\p -> (p, node, ())) parents)
-        allConfigNodes
+    edges = do
+        ConfigNode { nodeId, parents } <- allConfigNodes
+        parent <- parents
+        pure (parent, nodeId, undefined)
 
 {- | Transition rule for running a 'Strategy'.
 
