@@ -31,13 +31,13 @@ If the ExecutionGraph has a confluence at any point,
 all nodes downstream of it will be duplicated.
 From the point of view of these unit tests this behavior is correct.
 -}
-toTree :: ExecutionGraph config -> Tree config
+toTree :: ExecutionGraph config rule -> Tree config
 toTree (ExecutionGraph root graph _) = Tree.unfoldTree findChildren root
   where
     findChildren node =
         ( fromJust $ Graph.lab graph node
         , map snd $ filter ((node==) . fst) edges)
-    edges = map (\(a,b,()) -> (a,b)) $ Graph.labEdges graph
+    edges = map (\(a,b,_) -> (a,b)) $ Graph.labEdges graph
 
 data Prim
     = Const Natural
@@ -124,7 +124,7 @@ unlimited = Unlimited
 runStrategy
     :: [Strategy Prim]
     -> Natural
-    -> ExecutionGraph Natural
+    -> ExecutionGraph Natural ()
 runStrategy strategy z =
     let
         Identity rs = Strategy.runStrategy transitionPrim strategy z
@@ -233,7 +233,7 @@ prop_stepLimit i =
 -- | Enumerate values from zero to @n@, then get stuck.
 enumerate
     :: Natural  -- ^ @n@
-    -> ExecutionGraph Natural
+    -> ExecutionGraph Natural ()
 enumerate n = runStrategy (Limit.replicate (Limit n) succ_) 0
 
 prop_pickLongest :: Integer -> Property
