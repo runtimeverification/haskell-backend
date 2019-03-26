@@ -271,11 +271,11 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Axiom level]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph (CommonStrategyPattern level) ()
+    -> ExecutionGraph (CommonStrategyPattern level) (Axiom level)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> Simplifier (ExecutionGraph (CommonStrategyPattern level) ())
+    -> Simplifier (ExecutionGraph (CommonStrategyPattern level) (Axiom level))
 verifyClaimStep
     tools
     simplifier
