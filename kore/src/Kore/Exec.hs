@@ -88,8 +88,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.Strategy
-                 ( ExecutionGraph )
+import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Unification.Substitution as Substitution
 
 -- | Configuration used in symbolic execution.
@@ -101,8 +100,10 @@ type Proof = StepProof Object Variable
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule Object Variable
 
--- | Function rule used during execution
+-- | Function rule used during execution.
 type Equality = EqualityRule Object Variable
+
+type ExecutionGraph = Strategy.ExecutionGraph (Config, Proof) ()
 
 -- | A collection of rules and simplifiers used during execution.
 data Initialized =
@@ -120,7 +121,7 @@ data Execution =
         , simplifier :: !(StepPatternSimplifier Object)
         , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
-        , executionGraph :: !(ExecutionGraph (Config, Proof))
+        , executionGraph :: !ExecutionGraph
         }
 
 -- | Symbolic execution
