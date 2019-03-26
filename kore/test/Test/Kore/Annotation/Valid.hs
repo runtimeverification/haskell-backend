@@ -6,7 +6,8 @@ import Control.Comonad
 
 import           Kore.Annotation.Valid
                  ( Valid (..) )
-import           Kore.Step.Pattern
+import           Kore.AST.MetaOrObject
+                 ( Object )
 import qualified Kore.Variables.Free as Variables.Free
 
 import Test.Kore

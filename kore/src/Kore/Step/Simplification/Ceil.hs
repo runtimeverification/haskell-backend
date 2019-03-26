@@ -36,8 +36,7 @@ import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), erasePredicatedTerm,
-                 predicateSubstitutionToExpandedPattern )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
                  ( make )
@@ -45,6 +44,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, traverseFlattenWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -234,11 +234,11 @@ makeEvaluateNonBoolCeil
         simplifier
         axiomIdToEvaluator
         (MultiAnd.make
-            [ MultiOr.make [erasePredicatedTerm patt]
+            [ MultiOr.make [PredicateSubstitution.erasePredicatedTerm patt]
             , termCeil
             ]
         )
-    return (fmap predicateSubstitutionToExpandedPattern result, proof)
+    return (fmap ExpandedPattern.fromPredicateSubstitution result, proof)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -274,14 +274,14 @@ makeEvaluateTerm
     term@(Recursive.project -> _ :< projected)
   | TopPattern _ <- projected =
     return
-        ( MultiOr.make [ExpandedPattern.topPredicate]
+        ( MultiOr.make [PredicateSubstitution.top]
         , SimplificationProof
         )
   | BottomPattern _ <- projected =
     return (MultiOr.make [], SimplificationProof)
   | isTotalPattern tools term =
     return
-        ( MultiOr.make [ExpandedPattern.topPredicate]
+        ( MultiOr.make [PredicateSubstitution.top]
         , SimplificationProof
         )
   | otherwise =
@@ -379,7 +379,7 @@ makeEvaluateBuiltin
             -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return
-                ( MultiOr.make [ExpandedPattern.topPredicate]
+                ( MultiOr.make [PredicateSubstitution.top]
                 , SimplificationProof
                 )
         _ ->
@@ -465,6 +465,6 @@ topPredicateWithProof
         )
     => (OrOfPredicateSubstitution level variable, SimplificationProof level)
 topPredicateWithProof =
-    ( MultiOr.make [ExpandedPattern.topPredicate]
+    ( MultiOr.make [PredicateSubstitution.top]
     , SimplificationProof
     )

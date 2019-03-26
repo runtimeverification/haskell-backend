@@ -24,6 +24,7 @@ module Kore.Step.AxiomPatterns
     , refreshRulePattern
     , freeVariables
     , Kore.Step.AxiomPatterns.mapVariables
+    , substitute
     ) where
 
 import           Control.Comonad
@@ -35,6 +36,9 @@ import           Data.Maybe
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Kore hiding
                  ( freeVariables )
@@ -49,7 +53,9 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern as Pattern
+import           Kore.Step.Pattern
+                 ( CommonStepPattern, StepPattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
@@ -58,12 +64,7 @@ newtype AxiomPatternError = AxiomPatternError ()
 
 {- | Normal rewriting and function axioms, claims and patterns.
 
-Currently @RulePattern@ can only represent rules of the form
-@
-  left => right if requires
-  left = right if requires
-@
---}
+ -}
 data RulePattern level variable = RulePattern
     { left  :: !(StepPattern level variable)
     , right :: !(StepPattern level variable)
@@ -72,6 +73,21 @@ data RulePattern level variable = RulePattern
     , attributes :: !Attribute.Axiom
     }
     deriving (Eq, Show)
+
+instance Unparse (variable level) => Pretty (RulePattern level variable) where
+    pretty rulePattern@(RulePattern _ _ _ _ _) =
+        Pretty.vsep
+            [ "left:"
+            , Pretty.indent 4 (unparse left)
+            , "right:"
+            , Pretty.indent 4 (unparse right)
+            , "requires:"
+            , Pretty.indent 4 (unparse requires)
+            , "ensures:"
+            , Pretty.indent 4 (unparse ensures)
+            ]
+      where
+        RulePattern { left, right, requires, ensures } = rulePattern
 
 {-  | Equality-based rule pattern.
 -}
@@ -206,7 +222,7 @@ sentenceToAxiomPattern
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
             sentenceAxiomAttributes
-    stepPattern <- fromKorePattern level sentenceAxiomPattern
+    stepPattern <- Pattern.fromKorePattern level sentenceAxiomPattern
     patternToAxiomPattern attributes stepPattern
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
@@ -267,7 +283,7 @@ mkRewriteAxiom
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
 mkRewriteAxiom lhs rhs requires =
-    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
+    (asKoreAxiomSentence . Pattern.toKoreSentenceAxiom . mkAxiom_)
         (mkRewrites
             (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
             (mkAnd (mkTop patternSort) rhs)
@@ -286,12 +302,13 @@ mkEqualityAxiom
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
     -> VerifiedKoreSentence
 mkEqualityAxiom lhs rhs requires =
-    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom [sortVariableR])
-        (case requires of
-            Just requires' ->
-                mkImplies (requires' sortR) (mkAnd function mkTop_)
-            Nothing -> function
-        )
+    asKoreAxiomSentence
+    $ Pattern.toKoreSentenceAxiom
+    $ mkAxiom [sortVariableR]
+    $ case requires of
+        Just requires' ->
+            mkImplies (requires' sortR) (mkAnd function mkTop_)
+        Nothing -> function
   where
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR
@@ -367,10 +384,38 @@ mapVariables
     => (variable1 level -> variable2 level)
     -> RulePattern level variable1
     -> RulePattern level variable2
-mapVariables mapping rulePattern@RulePattern { left, right, requires, ensures } =
+mapVariables mapping rulePattern =
     rulePattern
         { left = Pattern.mapVariables mapping left
         , right = Pattern.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
         , ensures = Predicate.mapVariables mapping ensures
         }
+  where
+    RulePattern { left, right, requires, ensures } = rulePattern
+
+
+{- | Traverse the predicate from the top down and apply substitutions.
+
+The 'freeVariables' annotation is used to avoid traversing subterms that
+contain none of the targeted variables.
+
+ -}
+substitute
+    ::  ( FreshVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , SortedVariable variable
+        )
+    => Map (variable level) (StepPattern level variable)
+    -> RulePattern level variable
+    -> RulePattern level variable
+substitute subst rulePattern =
+    rulePattern
+        { left = Pattern.substitute subst left
+        , right = Pattern.substitute subst right
+        , requires = Predicate.substitute subst requires
+        , ensures = Predicate.substitute subst ensures
+        }
+  where
+    RulePattern { left, right, requires, ensures } = rulePattern

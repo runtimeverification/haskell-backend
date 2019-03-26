@@ -322,8 +322,8 @@ transitionRule
         (RewritePattern patt@Predicated{term, predicate, substitution}, proof1)
       = do
         let
-            pattVars = ExpandedPattern.freeEpVariables patt
-            destinationVars = ExpandedPattern.freeEpVariables destination
+            pattVars = ExpandedPattern.freeVariables patt
+            destinationVars = ExpandedPattern.freeVariables destination
             extraVars = Set.difference destinationVars pattVars
             destinationPatt = ExpandedPattern.toMLPattern destination
             pattPatt = ExpandedPattern.toMLPattern patt

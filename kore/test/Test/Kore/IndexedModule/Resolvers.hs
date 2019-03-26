@@ -25,7 +25,8 @@ import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
-import           Kore.Step.Pattern
+import           Kore.Step.Pattern hiding
+                 ( freeVariables )
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

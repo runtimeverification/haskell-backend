@@ -925,9 +925,9 @@ isSymbol builtinName MetadataTools { symAttributes } sym =
  -}
 expectNormalConcreteTerm
     :: Monad m
-    => MetadataTools level StepperAttributes
-    -> StepPattern level variable
-    -> MaybeT m (ConcreteStepPattern level)
+    => MetadataTools Object StepperAttributes
+    -> StepPattern Object variable
+    -> MaybeT m (ConcreteStepPattern Object)
 expectNormalConcreteTerm tools purePattern =
     MaybeT $ return $ do
         p <- asConcreteStepPattern purePattern

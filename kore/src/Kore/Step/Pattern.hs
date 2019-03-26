@@ -12,6 +12,7 @@ module Kore.Step.Pattern
     , ConcreteStepPattern
     , module Kore.AST.MetaOrObject
     , module Kore.AST.Pure
+    , Kore.Step.Pattern.freeVariables
     , mapVariables
     , traverseVariables
     , asConcreteStepPattern
@@ -38,6 +39,8 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 
 import           Kore.Annotation.Valid
@@ -66,6 +69,11 @@ type StepPattern level variable =
 type CommonStepPattern level = StepPattern level Variable
 
 type ConcreteStepPattern level = StepPattern level Concrete
+
+freeVariables :: StepPattern level variable -> Set (variable level)
+freeVariables stepPattern =
+    let Valid { freeVariables = freeVars } = extract stepPattern
+    in freeVars
 
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.
 
@@ -323,8 +331,8 @@ substitute
     -> StepPattern level variable
 substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
   where
-    getFreeVariables Valid { freeVariables } = freeVariables
-    setFreeVariables valid freeVariables = valid { freeVariables }
+    getFreeVariables Valid { freeVariables = freeVars } = freeVars
+    setFreeVariables valid freeVars = valid { Valid.freeVariables = freeVars }
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 
@@ -345,9 +353,9 @@ externalizeFreshVariables stepPattern =
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition Base.isOriginalVariable freeVariables
+        Set.partition Base.isOriginalVariable freeVars
       where
-        Valid { freeVariables } = extract stepPattern
+        Valid { Valid.freeVariables = freeVars } = extract stepPattern
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
