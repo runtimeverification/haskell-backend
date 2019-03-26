@@ -67,7 +67,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( Hook (..), StepperAttributes (..) )
 import           Kore.Unparser
-                 ( Unparse )
+                 ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -256,10 +256,11 @@ applyFirstSimplifierThatWorks
                     --
                     -- Until we have a clear example that this can actually
                     -- happen, we throw an error.
-                    (error
-                        (  "Unexpected simplification result with remainder: "
-                        ++ show applicationResult
-                        )
+                    ((error . unlines)
+                        [ "Unexpected simplification result with remainder:"
+                        , "  input: " ++ unparseToString patt
+                        , "  result: " ++ show applicationResult
+                        ]
                     )
                 return (applicationResult, SimplificationProof)
         AttemptedAxiom.NotApplicable ->
