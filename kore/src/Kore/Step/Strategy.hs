@@ -337,11 +337,16 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
 -- Using simple ID's for nodes will likely be changed in the future in order to
 -- allow merging of states, loop detection, etc.
 emptyExecutionGraph
-    :: forall config
+    :: forall config rule
     .  Hashable config
     => config
-    -> ExecutionGraph config ()
-emptyExecutionGraph config = toGraph [[configNode]]
+    -> ExecutionGraph config rule
+emptyExecutionGraph config =
+    ExecutionGraph
+        { root = 0
+        , graph = Graph.insNode (0, config) Graph.empty
+        , history = [[configNode]]
+        }
   where
     configNode :: ConfigNode config
     configNode = ConfigNode config 0 (0 :: Int) []
