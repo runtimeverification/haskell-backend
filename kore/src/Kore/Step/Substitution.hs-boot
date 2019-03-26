@@ -6,6 +6,8 @@ import Control.Monad.Except
 import Kore.AST.Common
        ( SortedVariable )
 import Kore.AST.MetaOrObject
+import Kore.Attribute.Symbol
+       ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Predicate.Predicate
@@ -16,8 +18,6 @@ import Kore.Step.Representation.ExpandedPattern
        ( PredicateSubstitution )
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, Simplifier, StepPatternSimplifier )
-import Kore.Attribute.Symbol
-       ( StepperAttributes )
 import Kore.Unification.Data
        ( UnificationProof )
 import Kore.Unification.Error
