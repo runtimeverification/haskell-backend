@@ -22,6 +22,8 @@ import           Control.Monad.State.Strict
                  ( StateT )
 import qualified Data.Graph.Inductive.Graph as Graph
 
+import           Kore.AST.MetaOrObject
+                 ( Object )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern )
 import           Kore.OnePath.Verification
@@ -78,8 +80,8 @@ helpText =
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph level =
-    Strategy.ExecutionGraph (CommonStrategyPattern level) ()
+type ExecutionGraph =
+    Strategy.ExecutionGraph (CommonStrategyPattern Object) ()
 
 -- | State for the rep.
 data ReplState level = ReplState
@@ -89,7 +91,7 @@ data ReplState level = ReplState
     -- ^ List of claims to be proven
     , claim   :: Claim level
     -- ^ Currently focused claim in the repl
-    , graph   :: ExecutionGraph level
+    , graph   :: ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node    :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root

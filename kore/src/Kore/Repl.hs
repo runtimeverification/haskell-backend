@@ -105,7 +105,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     firstClaim :: Claim level
     firstClaim = maybe (error "No claims found") id $ listToMaybe claims'
 
-    firstClaimExecutionGraph :: ExecutionGraph level
+    firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0 :: StateT (ReplState level) Simplifier Bool
