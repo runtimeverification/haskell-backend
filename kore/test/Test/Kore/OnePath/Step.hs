@@ -422,9 +422,10 @@ runSteps
             ( CommonStrategyPattern level
             , StepProof level Variable
             )
-        -> Maybe (ExecutionGraph (b, StepProof level Variable))
+            r
+        -> Maybe (ExecutionGraph (b, StepProof level Variable) r)
         )
-    -> (ExecutionGraph (b, StepProof level Variable) -> a)
+    -> (ExecutionGraph (b, StepProof level Variable) r -> a)
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [Strategy
