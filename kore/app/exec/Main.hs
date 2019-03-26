@@ -6,6 +6,7 @@ import Data.List
        ( intercalate )
 import Data.Maybe
        ( fromMaybe )
+import Data.Reflection
 import Data.Semigroup
        ( (<>) )
 import Data.Text.Prettyprint.Doc.Render.Text
@@ -32,6 +33,7 @@ import           Kore.Error
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
+import           Kore.IndexedModule.MetadataTools
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
 import           Kore.Parser.Parser
@@ -46,6 +48,7 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import           Kore.Step.SmtLemma
 import           Kore.Step.Step
 import           Kore.Step.StepperAttributes
 import           Kore.Unparser
@@ -342,7 +345,13 @@ mainWithOptions
             $ withLogger koreLogOptions (\logger ->
                 SMT.runSMT smtConfig
                 $ evalSimplifier logger
-                $ case proveParameters of
+                $ do
+                  give
+                      (extractMetadataTools indexedModule
+                          :: MetadataTools Object StepperAttributes
+                      )
+                      (declareSMTLemmas indexedModule)
+                  case proveParameters of
                     Nothing -> do
                         let purePattern =
                                 fromMaybe
