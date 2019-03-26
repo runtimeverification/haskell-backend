@@ -11,6 +11,8 @@ module Kore.Step.Transition
     , scatter
     , addRule
     , addRules
+    -- * Re-exports
+    , Seq
     ) where
 
 import           Control.Applicative
@@ -21,6 +23,9 @@ import           Control.Monad.Trans.Accum
                  ( AccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Accum
 import qualified Data.Foldable as Foldable
+import           Data.Sequence
+                 ( Seq )
+import qualified Data.Sequence as Seq
 import           Data.Typeable
                  ( Typeable )
 
@@ -43,7 +48,7 @@ separate record of applied rules after the branch.
 
  -}
 newtype TransitionT rule m a =
-    TransitionT { getTransitionT :: AccumT [rule] (ListT m) a }
+    TransitionT { getTransitionT :: AccumT (Seq rule) (ListT m) a }
     deriving
         ( Alternative
         , Applicative
@@ -61,16 +66,16 @@ instance MonadSMT m => MonadSMT (TransitionT rule m) where
     liftSMT = lift . liftSMT
     {-# INLINE liftSMT #-}
 
-runTransitionT :: Monad m => TransitionT rule m a -> m [(a, [rule])]
-runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge [])
+runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
+runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
 
 tryTransitionT
     :: Monad m
     => TransitionT rule m a
-    -> TransitionT rule m [(a, [rule])]
+    -> TransitionT rule m [(a, Seq rule)]
 tryTransitionT = Monad.Trans.lift . runTransitionT
 
-scatter :: [(a, [rule])] -> TransitionT rule m a
+scatter :: [(a, Seq rule)] -> TransitionT rule m a
 scatter edges = do
     (a, rules) <- TransitionT (Monad.Trans.lift (ListT.scatter edges))
     addRules rules
@@ -83,9 +88,9 @@ addRules
     => f rule
     -- ^ Sequence of applied rules
     -> TransitionT rule m ()
-addRules = TransitionT . Accum.add . Foldable.toList
+addRules = TransitionT . Accum.add . Seq.fromList . Foldable.toList
 
 {- | Record the application of a single rule.
  -}
 addRule :: rule -> TransitionT rule m ()
-addRule = TransitionT . Accum.add . (: [])
+addRule = TransitionT . Accum.add . Seq.singleton

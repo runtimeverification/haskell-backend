@@ -216,7 +216,7 @@ continue = Continue
 
 data ExecutionGraph config rule = ExecutionGraph
     { root :: Graph.Node
-    , graph :: Gr config [rule]
+    , graph :: Gr config (Seq rule)
     , history :: [[ConfigNode config rule]]
     }
     deriving(Eq, Show)
@@ -232,7 +232,7 @@ data ConfigNode config rule = ConfigNode
     -- are considered different for the purposes of this algorithm.
     , nodeId :: Int
     -- ^ 'nodeId' is the hash of 'config' and 'timestep'.
-    , parents :: [([rule], Int)]
+    , parents :: [(Seq rule, Int)]
     -- ^ The predecessor configurations in the execution graph and the sequence
     -- of rules applied from the parent configuration to the present
     -- configuration.
@@ -334,7 +334,7 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
     mkChildNode
         :: ConfigNode config rule
         -- ^ Parent node
-        -> (Graph.Node, (config, [rule]))
+        -> (Graph.Node, (config, Seq rule))
         -- ^ Child node identifier and configuration
         -> ConfigNode config rule
     mkChildNode ConfigNode { timestep, nodeId } (nodeId', (config, rules)) =
