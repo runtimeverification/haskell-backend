@@ -22,6 +22,8 @@ import           Control.Monad.State.Strict
                  ( StateT )
 import qualified Data.Graph.Inductive.Graph as Graph
 
+import           Kore.AST.Common
+                 ( Variable )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.OnePath.Step
@@ -30,6 +32,8 @@ import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim (..) )
+import           Kore.Step.Rule
+                 ( RewriteRule )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
@@ -81,7 +85,9 @@ helpText =
 
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
-    Strategy.ExecutionGraph (CommonStrategyPattern Object) ()
+    Strategy.ExecutionGraph
+        (CommonStrategyPattern Object)
+        (RewriteRule Object Variable)
 
 -- | State for the rep.
 data ReplState level = ReplState

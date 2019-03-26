@@ -37,7 +37,7 @@ import           Data.Text.Prettyprint.Doc
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
+                 ( MetaOrObject, Object )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -111,7 +111,7 @@ showAxiom index = do
 
 prove
     :: MonadIO m
-    => MonadState (ReplState level) m
+    => MonadState (ReplState Object) m
     => Int
     -> m ()
 prove index = do
@@ -289,7 +289,7 @@ unClaim Claim { rule } = rule
 unAxiom :: Axiom level -> RewriteRule level Variable
 unAxiom (Axiom rule) = rule
 
-emptyExecutionGraph :: Claim level -> ExecutionGraph level
+emptyExecutionGraph :: Claim Object -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
 
 extractConfig

@@ -40,8 +40,13 @@ module Kore.Step.Strategy
     , assert
     , executionHistoryStep
     , emptyExecutionGraph
+    , module Kore.Step.Transition
     ) where
 
+import           Control.Applicative
+                 ( Alternative (empty, (<|>)) )
+import           Control.Monad
+                 ( (>=>) )
 import           Data.Foldable
                  ( asum )
 import           Data.Function
@@ -57,6 +62,7 @@ import           Prelude hiding
                  ( all, and, any, or, replicate, seq, sequence )
 
 import Kore.Debug
+import Kore.Step.Transition
 
 assert :: Bool -> a -> a
 assert b a = if b then a else error "assertion failed"
@@ -233,14 +239,10 @@ data ConfigNode config rule = ConfigNode
     }
     deriving (Eq, Show, Functor)
 
--- | A transition rule for interpreting @instr@ instructions.
-type TransitionRule m instr config rule =
-    instr -> ([rule], config) -> m [([rule], config)]
-
 constructExecutionHistory
     :: forall m config rule instr
     .  (Monad m, Hashable config, Show config, Show rule)
-    => TransitionRule m instr config rule
+    => (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> config
     -> m [[ConfigNode config rule]]
@@ -270,7 +272,7 @@ constructExecutionHistory transit instrs0 config0 =
         -> ConfigNode config rule
         -> m [ConfigNode config rule]
     getChildNodes instr (ConfigNode config timestep node _) = do
-        children <- transit instr ([], config)
+        children <- runTransitionT (transit instr config)
         pure
             [ ConfigNode
                 { config = child
@@ -278,7 +280,7 @@ constructExecutionHistory transit instrs0 config0 =
                 , nodeId = hash (child, timestep + 1)
                 , parents = [(rules, node)]
                 }
-            | (rules, child) <- children
+            | (child, rules) <- children
             ]
 
     mergeDuplicates :: [ConfigNode config rule] -> [ConfigNode config rule]
@@ -302,8 +304,8 @@ executionHistoryStep
     .  Monad m
     => Hashable config
     => Show config
-    => TransitionRule m prim config rule
-    -- ^ state stepper
+    => (prim -> config -> TransitionT rule m config)
+    -- ^ Transition rule
     -> Strategy prim
     -- ^ Primitive strategy
     -> ExecutionGraph config rule
@@ -317,7 +319,7 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
   | otherwise = case configNode0 of
         Nothing -> error "ExecutionGraph not setup properly; node does not exist"
         Just parent@ConfigNode { config } -> do
-            configs <- transitionRule transit prim ([], config)
+            configs <- runTransitionT (transitionRule transit prim config)
             let
                 max'    = succ . snd . Graph.nodeRange $ graph
                 nodes   = mkChildNode parent <$> zip [max' ..] configs
@@ -332,15 +334,15 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
     mkChildNode
         :: ConfigNode config rule
         -- ^ Parent node
-        -> (Graph.Node, ([rule], config))
+        -> (Graph.Node, (config, [rule]))
         -- ^ Child node identifier and configuration
         -> ConfigNode config rule
-    mkChildNode ConfigNode { timestep, nodeId } (nodeId', (rule, config)) =
+    mkChildNode ConfigNode { timestep, nodeId } (nodeId', (config, rules)) =
         ConfigNode
             { config
             , timestep = timestep + 1
             , nodeId = nodeId'
-            , parents = [(rule, nodeId)]
+            , parents = [(rules, nodeId)]
             }
 
 -- | Create a default/empty execution graph for the provided configuration. Note
@@ -387,7 +389,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 constructExecutionGraph
     :: forall m config rule instr
     .  (Monad m, Hashable config, Show config, Show rule)
-    => TransitionRule m instr config rule
+    => (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> config
     -> m (ExecutionGraph config rule)
@@ -424,9 +426,9 @@ toGraph history =
  -}
 transitionRule
     :: Monad m
-    => TransitionRule m prim config rule
+    => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
-    -> TransitionRule m (Strategy prim) config rule
+    -> (Strategy prim -> config -> TransitionT rule m config)
 transitionRule applyPrim = transitionRule0
   where
     transitionRule0 =
@@ -439,32 +441,28 @@ transitionRule applyPrim = transitionRule0
             Stuck -> transitionStuck
 
     -- End execution.
-    transitionStuck _ = return []
+    transitionStuck _ = empty
 
-    transitionContinue result = return [result]
+    transitionContinue result = return result
 
     -- Apply the instructions in sequence.
-    transitionSeq instr1 instr2 config0 = do
-        configs1 <- transitionRule0 instr1 config0
-        concat <$> mapM (transitionRule0 instr2) configs1
+    transitionSeq instr1 instr2 =
+        transitionRule0 instr1 >=> transitionRule0 instr2
 
     -- Attempt both instructions, i.e. create a branch for each.
     transitionAnd instr1 instr2 config =
-        (++)
-            <$> transitionRule0 instr1 config
-            <*> transitionRule0 instr2 config
+        transitionRule0 instr1 config <|> transitionRule0 instr2 config
 
     -- Attempt the first instruction. Fall back to the second if it is
     -- unsuccessful.
-    transitionOr instr1 instr2 config =
-        transitionRule0 instr1 config >>=
-            \case
-                [] -> transitionRule0 instr2 config
-                configs -> return configs
+    transitionOr instr1 instr2 config = do
+        results <- tryTransitionT (transitionRule0 instr1 config)
+        case results of
+            [] -> transitionRule0 instr2 config
+            _  -> scatter results
 
     -- Apply a primitive rule. Throw an exception if the rule is not successful.
-    transitionApply prim config =
-        applyPrim prim config
+    transitionApply = applyPrim
 
 {- | Execute a 'Strategy'.
 
@@ -483,7 +481,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 runStrategy
     :: forall m prim rule config
     .  (Monad m, Show config, Show rule, Hashable config)
-    => TransitionRule m prim config rule
+    => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
     -- ^ Strategies

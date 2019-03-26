@@ -8,8 +8,10 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import           Data.Functor.Identity
-import           Data.Graph.Inductive.Graph as Graph
+import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Tree
                  ( Tree (..) )
 import qualified Data.Tree as Tree
@@ -22,7 +24,7 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Data.Maybe
 import           Kore.Step.Strategy
-                 ( ExecutionGraph (..), Strategy )
+                 ( ExecutionGraph (..), Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
 
 {-| Convert an ExecutionGraph to a Tree, for the sake
@@ -81,12 +83,10 @@ instance Arbitrary prim => Arbitrary (Strategy prim) where
             Strategy.Stuck -> []
             Strategy.Continue -> []
 
-transitionPrim :: Prim -> Natural -> Identity [Natural]
-transitionPrim =
-    \case
-        Const n -> \_ -> pure [n]
-        Succ -> \n -> pure [succ n]
-        Throw -> \_ -> pure []
+transitionPrim :: Prim -> Natural -> TransitionT () Identity Natural
+transitionPrim (Const n) = \_ -> pure n
+transitionPrim Succ      = \n -> pure (succ n)
+transitionPrim Throw     = \_ -> empty
 
 apply :: Prim -> Strategy Prim
 apply = Strategy.apply

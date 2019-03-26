@@ -996,28 +996,30 @@ test_applyRewriteRules =
             expect =
                 Right OrStepResult
                     { rewrittenPattern =
-                        [ Predicated
-                            { term = Mock.cg
-                            , predicate = makeCeilPredicate Mock.cg
-                            , substitution =
-                                Substitution.wrap [(Mock.x, Mock.a)]
-                            }
-                        ]
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.cg
+                                , predicate = makeCeilPredicate Mock.cg
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.a)]
+                                }
+                            ]
                     , remainder =
-                        [ initial
-                            { predicate =
-                                makeNotPredicate (makeCeilPredicate Mock.cg)
-                            }
-                        , initial
-                            { predicate =
-                                makeNotPredicate
-                                $ makeEqualsPredicate (mkVar Mock.x) Mock.a
-                            }
-                        ]
+                        MultiOr
+                            [ initial
+                                { predicate =
+                                    makeNotPredicate (makeCeilPredicate Mock.cg)
+                                }
+                            , initial
+                                { predicate =
+                                    makeNotPredicate
+                                    $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                                }
+                            ]
                     }
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial = pure initialTerm
-        actual <- applyRewriteRule initial axiomIfThen
+        actual <- applyRewriteRules initial [axiomIfThen]
         assertEqualWithExplanation "" expect actual
     ]
 

@@ -103,7 +103,8 @@ type Rewrite = RewriteRule Object Variable
 -- | Function rule used during execution.
 type Equality = EqualityRule Object Variable
 
-type ExecutionGraph = Strategy.ExecutionGraph (Config, Proof) ()
+type ExecutionGraph =
+    Strategy.ExecutionGraph (Config, Proof) (RewriteRule Object Variable)
 
 -- | A collection of rules and simplifiers used during execution.
 data Initialized =

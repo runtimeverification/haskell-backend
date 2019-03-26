@@ -70,7 +70,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy
-                 ( Strategy, pickFinal, runStrategy )
+                 ( Strategy, TransitionT, pickFinal, runStrategy )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..) )
 import qualified Kore.TopBottom as TopBottom
@@ -247,7 +247,8 @@ verifyClaim
     transitionRule'
         :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
         -> (CommonStrategyPattern level, StepProof level Variable)
-        -> Simplifier [(CommonStrategyPattern level, StepProof level Variable)]
+        -> TransitionT (RewriteRule level Variable) Simplifier
+            (CommonStrategyPattern level, StepProof level Variable)
     transitionRule' =
         OnePath.transitionRule
             metadataTools
@@ -271,11 +272,11 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Axiom level]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph (CommonStrategyPattern level) (Axiom level)
+    -> ExecutionGraph (CommonStrategyPattern level) (RewriteRule level Variable)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> Simplifier (ExecutionGraph (CommonStrategyPattern level) (Axiom level))
+    -> Simplifier (ExecutionGraph (CommonStrategyPattern level) (RewriteRule level Variable))
 verifyClaimStep
     tools
     simplifier
@@ -295,7 +296,8 @@ verifyClaimStep
     transitionRule'
         :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
         -> CommonStrategyPattern level
-        -> Simplifier [CommonStrategyPattern level]
+        -> TransitionT (RewriteRule level Variable) Simplifier
+            (CommonStrategyPattern level)
     transitionRule' =
         stripProof
             $ OnePath.transitionRule
@@ -330,12 +332,8 @@ verifyClaimStep
     -- Given a default proof, pass it as a default to the transitionRule and
     -- discard the proof part of its result.
     stripProof
-        :: forall prim strategy f g proof
-        .  (Functor f, Functor g, Monoid proof)
-        => (prim -> (strategy, proof) -> f (g (strategy, proof)))
-        -> prim -> strategy -> f (g strategy)
-    stripProof fn prim =
-        dimap
-            (\a -> (a, mempty))
-            ((fmap . fmap) fst)
-            $ fn prim
+        :: forall prim strategy f proof
+        .  (Functor f, Monoid proof)
+        => (prim -> (strategy, proof) -> f (strategy, proof))
+        -> prim -> strategy -> f strategy
+    stripProof fn prim = dimap (\a -> (a, mempty)) (fmap fst) (fn prim)

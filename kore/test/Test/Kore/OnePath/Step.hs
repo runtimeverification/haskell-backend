@@ -45,7 +45,8 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Strategy
-                 ( ExecutionGraph, Strategy, pickFinal, runStrategy )
+                 ( Strategy, pickFinal, runStrategy )
+import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -55,6 +56,11 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
+
+type ExecutionGraph a =
+    Strategy.ExecutionGraph
+        (a, StepProof Object Variable)
+        (RewriteRule Object Variable)
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
@@ -418,14 +424,10 @@ runSteps
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    ->  (ExecutionGraph
-            ( CommonStrategyPattern level
-            , StepProof level Variable
-            )
-            r
-        -> Maybe (ExecutionGraph (b, StepProof level Variable) r)
+    ->  (  ExecutionGraph (CommonStrategyPattern Object)
+        -> Maybe (ExecutionGraph b)
         )
-    -> (ExecutionGraph (b, StepProof level Variable) r -> a)
+    -> (ExecutionGraph b -> a)
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [Strategy
