@@ -34,11 +34,11 @@ import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
+import           Kore.Step
+                 ( anyRewrite )
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.Step
-                 ( anyRewrite )
 import qualified SMT
 
 import           System.Directory
