@@ -1,0 +1,41 @@
+module Test.Kore.Repl.Parser
+    ( test_replParser
+    ) where
+
+import Test.Tasty
+       ( TestTree, testGroup )
+
+import Data.Text
+       ( Text )
+
+import Kore.Repl.Data
+import Kore.Repl.Parser
+
+import Test.Kore
+import Test.Kore.Parser
+
+-- TODO: Rename `success` to `parsesTo` and use infix notation
+test_replParser :: [TestTree]
+test_replParser =
+    [ testGroup "REPL.Parser.help"  helpTests
+    , testGroup "REPL.Parser.claim" claimTests
+    ]
+
+helpTests :: [TestTree]
+helpTests =
+    parseTree commandParser
+        [ "help" `parsesTo` Help
+        ]
+
+claimTests :: [TestTree]
+claimTests =
+    parseTree commandParser
+        [ "claim 0" `parsesTo` ShowClaim 0
+        , "claim 5" `parsesTo` ShowClaim 5
+        , "claim -5" `failsWith` "<test-string>:1:7:\n\
+                                 \  |\n\
+                                 \1 | claim -5\n\
+                                 \  |       ^\n\
+                                 \unexpected '-'\n\
+                                 \expecting integer or white space\n"
+        ]

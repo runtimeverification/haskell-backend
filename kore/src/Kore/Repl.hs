@@ -1,6 +1,6 @@
 {-|
 Module      : Kore.Repl
-Description : REPL
+Description : Proof REPL
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
@@ -8,7 +8,6 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
-    , ReplState (..)
     ) where
 
 import           Control.Exception

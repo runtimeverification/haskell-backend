@@ -55,6 +55,7 @@ data ReplCommand
     -- ^ Show the configuration from the current node.
     | Exit
     -- ^ Exit the repl.
+    deriving (Eq, Show)
 
 -- | Please remember to update this text whenever you update the ADT above.
 helpText :: String

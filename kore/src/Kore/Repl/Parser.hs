@@ -38,28 +38,31 @@ commandParser =
     <|> exit
 
 help :: Parser ReplCommand
-help = Help <$ string "help"
+help = Help <$ (string "help" *> space)
 
 showClaim :: Parser ReplCommand
-showClaim = fmap ShowClaim $ string "claim" *> space *> decimal
+showClaim = fmap ShowClaim $ string "claim" *> space *> decimal <* space
 
 showAxiom :: Parser ReplCommand
-showAxiom = fmap ShowAxiom $ string "axiom" *> space *> decimal
+showAxiom = fmap ShowAxiom $ string "axiom" *> space *> decimal <* space
 
 prove :: Parser ReplCommand
-prove = fmap Prove $ string "prove" *> space *> decimal
+prove = fmap Prove $ string "prove" *> space *> decimal <* space
 
 showGraph :: Parser ReplCommand
-showGraph = ShowGraph <$ string "graph"
+showGraph = ShowGraph <$ (string "graph" *> space)
 
 proveSteps :: Parser ReplCommand
-proveSteps = fmap ProveSteps $ string "step" *> space *> option 1 decimal
+proveSteps =
+    fmap ProveSteps $ string "step" *> space *> option 1 decimal <* space
 
 selectNode :: Parser ReplCommand
-selectNode = fmap SelectNode $ string "select" *> space *> signed space decimal
+selectNode =
+    fmap SelectNode $ string "select" *> space *> decimal <* space
 
 showConfig :: Parser ReplCommand
-showConfig = fmap ShowConfig $ string "config" *> optional (space *> decimal)
+showConfig =
+    fmap ShowConfig $ string "config" *> space *> optional decimal <* space
 
 exit :: Parser ReplCommand
-exit = Exit <$ string "exit"
+exit = Exit <$ (string "exit" *> space)
