@@ -368,12 +368,12 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
   -}
 
 constructExecutionGraph
-    :: forall m config instr
+    :: forall m config rule instr
     .  (Monad m, Hashable config, Show config)
     => (instr -> config -> m [config])
     -> [instr]
     -> config
-    -> m (ExecutionGraph config ())
+    -> m (ExecutionGraph config rule)
 constructExecutionGraph transit instrs0 config0 =
     toGraph <$> constructExecutionHistory transit instrs0 config0
 
@@ -466,7 +466,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
  -}
 
 runStrategy
-    :: forall m prim config
+    :: forall m prim rule config
     .  (Monad m, Show config, Hashable config)
     => (prim -> config -> m [config])
     -- ^ Primitive strategy rule
@@ -474,7 +474,7 @@ runStrategy
     -- ^ Strategies
     -> config
     -- ^ Initial configuration
-    -> m (ExecutionGraph config ())
+    -> m (ExecutionGraph config rule)
 runStrategy applyPrim instrs0 config0 =
     constructExecutionGraph (transitionRule applyPrim) instrs0 config0
 
