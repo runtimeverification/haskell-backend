@@ -22,6 +22,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  verifyAndIndexDefinition )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -38,7 +39,6 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Step
                  ( anyRewrite )
-import           Kore.Step.StepperAttributes
 import qualified SMT
 
 import           System.Directory
