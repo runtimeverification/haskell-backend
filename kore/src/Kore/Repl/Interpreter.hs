@@ -289,9 +289,7 @@ unClaim Claim { rule } = rule
 unAxiom :: Axiom level -> RewriteRule level Variable
 unAxiom (Axiom rule) = rule
 
-emptyExecutionGraph
-    :: Claim level
-    -> Strategy.ExecutionGraph (CommonStrategyPattern level)
+emptyExecutionGraph :: Claim level -> ExecutionGraph level
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
 
 extractConfig

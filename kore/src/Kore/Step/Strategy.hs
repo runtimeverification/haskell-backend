@@ -208,9 +208,9 @@ seq a continue === a
 continue :: Strategy prim
 continue = Continue
 
-data ExecutionGraph config = ExecutionGraph
+data ExecutionGraph config rule = ExecutionGraph
     { root :: Graph.Node
-    , graph :: Gr config (UnifiedRule Variable)
+    , graph :: Gr config rule
     , history :: [[ConfigNode config]]
     }
     deriving(Eq, Show)
@@ -297,11 +297,11 @@ executionHistoryStep
     -- ^ state stepper
     -> Strategy prim
     -- ^ Primitive strategy
-    -> ExecutionGraph config
+    -> ExecutionGraph config ()
     -- ^ execution graph so far
     -> Graph.Node
     -- ^ current "selected" node
-    -> m (ExecutionGraph config)
+    -> m (ExecutionGraph config ())
     -- ^ graph with one more step executed for the selected node
 executionHistoryStep transit prim ExecutionGraph { graph, history } node
   | nodeIsNotLeaf = error "Node has already been evaluated"
@@ -340,7 +340,7 @@ emptyExecutionGraph
     :: forall config
     .  Hashable config
     => config
-    -> ExecutionGraph config
+    -> ExecutionGraph config ()
 emptyExecutionGraph config = toGraph [[configNode]]
   where
     configNode :: ConfigNode config
@@ -362,11 +362,12 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
   -}
 
 constructExecutionGraph
-    :: forall m config instr . (Monad m, Hashable config, Show config)
+    :: forall m config instr
+    .  (Monad m, Hashable config, Show config)
     => (instr -> config -> m [config])
     -> [instr]
     -> config
-    -> m (ExecutionGraph config)
+    -> m (ExecutionGraph config ())
 constructExecutionGraph transit instrs0 config0 =
     toGraph <$> constructExecutionHistory transit instrs0 config0
 
@@ -378,11 +379,13 @@ constructExecutionGraph transit instrs0 config0 =
 -- @a@ in one step in whatever execution strategy was used.
 -- Note this is NOT the same as @b@ following from @a@ with
 -- the application of exactly one axiom.
-toGraph :: [[ConfigNode config]] -> ExecutionGraph config
-toGraph history = ExecutionGraph
-    (fst $ head vertices)
-    (Graph.mkGraph vertices edges)
-    history
+toGraph :: [[ConfigNode config]] -> ExecutionGraph config ()
+toGraph history =
+    ExecutionGraph
+        { root = fst $ head vertices
+        , graph = Graph.mkGraph vertices edges
+        , history
+        }
   where
     allConfigNodes = concat history
     vertices = map
@@ -456,14 +459,15 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
  -}
 
 runStrategy
-    :: forall m prim config . (Monad m, Show config, Hashable config)
+    :: forall m prim config
+    .  (Monad m, Show config, Hashable config)
     => (prim -> config -> m [config])
     -- ^ Primitive strategy rule
     -> [Strategy prim]
     -- ^ Strategies
     -> config
     -- ^ Initial configuration
-    -> m (ExecutionGraph config)
+    -> m (ExecutionGraph config ())
 runStrategy applyPrim instrs0 config0 =
     constructExecutionGraph (transitionRule applyPrim) instrs0 config0
 
@@ -473,14 +477,14 @@ runStrategy applyPrim instrs0 config0 =
 
  -}
 
-pickLongest :: ExecutionGraph config -> config
+pickLongest :: ExecutionGraph config rule -> config
 pickLongest ExecutionGraph { history } =
     config $ head $ last $ history
 
 {- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
  -}
 
-pickFinal :: ExecutionGraph config -> [config]
+pickFinal :: ExecutionGraph config rule -> [config]
 pickFinal ExecutionGraph { graph } =
     map (fromJust . Graph.lab graph) $
     filter isFinal $
@@ -490,7 +494,7 @@ pickFinal ExecutionGraph { graph } =
 {- | Return all configurations reachable in one step.
  -}
 
-pickOne :: ExecutionGraph config -> [config]
+pickOne :: ExecutionGraph config rule -> [config]
 pickOne ExecutionGraph { root, graph } =
     map (fromJust . Graph.lab graph) $
     Graph.neighbors graph root
@@ -498,13 +502,13 @@ pickOne ExecutionGraph { root, graph } =
 {- | Return all reachable configurations.
  -}
 
-pickStar :: ExecutionGraph config -> [config]
+pickStar :: ExecutionGraph config rule -> [config]
 pickStar ExecutionGraph { graph } = map snd $ Graph.labNodes graph
 
 {- | Return all configurations reachable after at least one step.
  -}
 
-pickPlus :: ExecutionGraph config -> [config]
+pickPlus :: ExecutionGraph config rule -> [config]
 pickPlus ExecutionGraph { root, graph } =
     map snd $
     filter ((/= root) . fst) $

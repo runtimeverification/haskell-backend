@@ -78,7 +78,8 @@ helpText =
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph level = Strategy.ExecutionGraph (CommonStrategyPattern level)
+type ExecutionGraph level =
+    Strategy.ExecutionGraph (CommonStrategyPattern level) ()
 
 -- | State for the rep.
 data ReplState level = ReplState
