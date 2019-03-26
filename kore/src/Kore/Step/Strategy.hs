@@ -210,7 +210,7 @@ continue = Continue
 
 data ExecutionGraph config = ExecutionGraph
     { root :: Graph.Node
-    , graph :: Gr config ()
+    , graph :: Gr config (UnifiedRule Variable)
     , history :: [[ConfigNode config]]
     }
     deriving(Eq, Show)
