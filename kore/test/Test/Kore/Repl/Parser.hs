@@ -5,13 +5,9 @@ module Test.Kore.Repl.Parser
 import Test.Tasty
        ( TestTree, testGroup )
 
-import Data.Text
-       ( Text )
-
 import Kore.Repl.Data
 import Kore.Repl.Parser
 
-import Test.Kore
 import Test.Kore.Parser
 
 test_replParser :: [TestTree]
@@ -28,11 +24,11 @@ test_replParser =
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
-tests tests pname =
+tests ts pname =
     testGroup
         ("REPL.Parser." <> pname)
         . parseTree commandParser
-        $ tests
+        $ ts
 
 helpTests :: [ParserTest ReplCommand]
 helpTests =
@@ -46,17 +42,17 @@ claimTests =
     , "claim 0 " `parsesTo`  ShowClaim 0
     , "claim 5"  `parsesTo`  ShowClaim 5
     , "claim"    `failsWith` "<test-string>:1:6:\n\
-                                \  |\n\
-                                \1 | claim\n\
-                                \  |      ^\n\
-                                \unexpected end of input\n\
-                                \expecting integer or white space\n"
+                             \  |\n\
+                             \1 | claim\n\
+                             \  |      ^\n\
+                             \unexpected end of input\n\
+                             \expecting integer or white space\n"
     , "claim -5" `failsWith` "<test-string>:1:7:\n\
-                                \  |\n\
-                                \1 | claim -5\n\
-                                \  |       ^\n\
-                                \unexpected '-'\n\
-                                \expecting integer or white space\n"
+                             \  |\n\
+                             \1 | claim -5\n\
+                             \  |       ^\n\
+                             \unexpected '-'\n\
+                             \expecting integer or white space\n"
     ]
 
 axiomTests :: [ParserTest ReplCommand]
@@ -65,17 +61,17 @@ axiomTests =
     , "axiom 0 " `parsesTo`   ShowAxiom 0
     , "axiom 5"  `parsesTo`   ShowAxiom 5
     , "axiom"    `failsWith`  "<test-string>:1:6:\n\
-                                \  |\n\
-                                \1 | axiom\n\
-                                \  |      ^\n\
-                                \unexpected end of input\n\
-                                \expecting integer or white space\n"
+                              \  |\n\
+                              \1 | axiom\n\
+                              \  |      ^\n\
+                              \unexpected end of input\n\
+                              \expecting integer or white space\n"
     , "axiom -5"  `failsWith` "<test-string>:1:7:\n\
-                                \  |\n\
-                                \1 | axiom -5\n\
-                                \  |       ^\n\
-                                \unexpected '-'\n\
-                                \expecting integer or white space\n"
+                              \  |\n\
+                              \1 | axiom -5\n\
+                              \  |       ^\n\
+                              \unexpected '-'\n\
+                              \expecting integer or white space\n"
     ]
 
 proveTests :: [ParserTest ReplCommand]
@@ -84,17 +80,17 @@ proveTests =
     , "prove 0 " `parsesTo`   Prove 0
     , "prove 5"  `parsesTo`   Prove 5
     , "prove"    `failsWith`  "<test-string>:1:6:\n\
-                                \  |\n\
-                                \1 | prove\n\
-                                \  |      ^\n\
-                                \unexpected end of input\n\
-                                \expecting integer or white space\n"
+                              \  |\n\
+                              \1 | prove\n\
+                              \  |      ^\n\
+                              \unexpected end of input\n\
+                              \expecting integer or white space\n"
     , "prove -5"  `failsWith` "<test-string>:1:7:\n\
-                                \  |\n\
-                                \1 | prove -5\n\
-                                \  |       ^\n\
-                                \unexpected '-'\n\
-                                \expecting integer or white space\n"
+                              \  |\n\
+                              \1 | prove -5\n\
+                              \  |       ^\n\
+                              \unexpected '-'\n\
+                              \expecting integer or white space\n"
     ]
 
 graphTests :: [ParserTest ReplCommand]

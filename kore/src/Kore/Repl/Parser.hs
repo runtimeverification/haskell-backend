@@ -14,7 +14,7 @@ import Text.Megaparsec
        ( Parsec, option, optional, (<|>) )
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
-       ( decimal, signed )
+       ( decimal )
 
 import Kore.Repl.Data
        ( ReplCommand (..) )
