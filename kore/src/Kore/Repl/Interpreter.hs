@@ -15,6 +15,8 @@ import           Control.Lens
                  ( (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
+import           Control.Monad
+                 ( join )
 import           Control.Monad.Extra
                  ( loopM )
 import           Control.Monad.IO.Class
@@ -31,8 +33,12 @@ import           Data.List.Extra
                  ( groupSort )
 import           Data.Maybe
                  ( catMaybes )
+import           Data.Sequence
+                 ( Seq )
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
+import           GHC.Exts
+                 ( toList )
 
 import           Kore.AST.Common
                  ( Variable )
@@ -82,6 +88,7 @@ replInterpreter =
         SelectNode i -> selectNode i $> True
         ShowConfig mc -> showConfig mc $> True
         ShowLeafs -> showLeafs $> True
+        ShowRule   mc -> showRule mc $> True
         Exit -> pure False
 
 showUsage :: MonadIO m => m ()
@@ -200,6 +207,24 @@ showLeafs = do
     showPair :: (NodeStates, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
 
+showRule
+    :: MetaOrObject level
+    => Maybe Int
+    -> StateT (ReplState level) Simplifier ()
+showRule configNode = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    let node' = maybe node id configNode
+    if node' `elem` Graph.nodes graph
+        then do
+            putStrLn' $ "Rule for node " <> show node' <> " is:"
+            putStrLn'
+                . unparseNodeLabels
+                . Graph.inn'
+                . Graph.context graph
+                $ node'
+        else putStrLn' "Invalid node!"
+
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
     putStrLn' $ unparseToString rule
@@ -257,6 +282,18 @@ unparseStrategy =
         unparseToString
         (mappend "Stuck: \n" . unparseToString)
         "Reached bottom"
+
+unparseNodeLabels
+    :: [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
+    -> String
+unparseNodeLabels =
+    join
+    . fmap unparseToString
+    . join
+    . fmap (toList . third)
+  where
+    third :: (a, b, c) -> c
+    third (_, _, c) = c
 
 extractSourceAndLocation
     :: RewriteRule level Variable

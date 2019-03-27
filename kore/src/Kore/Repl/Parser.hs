@@ -36,6 +36,7 @@ commandParser =
     <|> selectNode
     <|> showConfig
     <|> showLeafs
+    <|> showRule
     <|> exit
 
 help :: Parser ReplCommand
@@ -67,6 +68,10 @@ showConfig =
 
 showLeafs :: Parser ReplCommand
 showLeafs = ShowLeafs <$ (string "leafs" *> space)
+
+showRule :: Parser ReplCommand
+showRule =
+    fmap ShowRule $ string "rule" *> space *> optional decimal <* space
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)

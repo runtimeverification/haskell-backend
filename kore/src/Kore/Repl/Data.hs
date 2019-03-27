@@ -61,6 +61,8 @@ data ReplCommand
     -- ^ Show the configuration from the current node.
     | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
+    | ShowRule !(Maybe Int)
+    -- ^ Show the rule(s) that got us to this configuration.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -81,6 +83,8 @@ helpText =
     \config [n]              shows the config for node 'n'\
                              \(defaults to current node)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
+    \rule [n]                shows the rule for node 'n'\
+                             \(defaults to current node)\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
