@@ -1014,13 +1014,13 @@ attributesMapping =
     ,   ( lessIntSymbol
         , Mock.functionalAttributes
             { hook = Hook (Just "INT.lt")
-            , smtlib = Smtlib (Just (SMT.Atom "<"))
+            , smthook = Smthook (Just (SMT.Atom "<"))
             }
         )
     ,   ( greaterEqIntSymbol
         , Mock.functionalAttributes
             { hook = Hook (Just "INT.ge")
-            , smtlib = Smtlib (Just (SMT.Atom ">="))
+            , smthook = Smthook (Just (SMT.Atom ">="))
             }
         )
     ,   ( sigmaSymbol

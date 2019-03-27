@@ -43,14 +43,14 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule )
 import           Kore.Step.BaseStep
-                 ( StepProof, StepResult (StepResult), stepWithRewriteRule )
-import qualified Kore.Step.BaseStep as StepResult
-                 ( StepResult (..) )
+                 ( OrStepResult (..), applyRewriteRule )
 import           Kore.Step.Error
                  ( StepError )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -224,14 +224,11 @@ runStep
     -> IO
         (Either
             (StepError Object Variable)
-            [(CommonExpandedPattern Object, StepProof Object Variable)]
+            (MultiOr (CommonExpandedPattern Object))
         )
 runStep configuration axiom = do
-    ioResult <- runStepResult configuration axiom
-    return (map processResult <$> ioResult)
-  where
-    processResult (StepResult { rewrittenPattern }, proof) =
-        (rewrittenPattern, proof)
+    result <- runStepResult configuration axiom
+    return (discardRemainders <$> result)
 
 runStepResult
     :: CommonExpandedPattern Object
@@ -241,18 +238,19 @@ runStepResult
     -> IO
         (Either
             (StepError Object Variable)
-            [(StepResult Object Variable, StepProof Object Variable)]
+            (OrStepResult Object Variable)
         )
 runStepResult configuration axiom =
-    (runSMT . evalSimplifier emptyLogger . runExceptT)
-        (stepWithRewriteRule
-            testMetadataTools
-            testSubstitutionSimplifier
-            stepSimplifier
-            evaluators
-            configuration
-            axiom
-        )
+    runSMT
+    $ evalSimplifier emptyLogger
+    $ runExceptT
+    $ applyRewriteRule
+        testMetadataTools
+        testSubstitutionSimplifier
+        stepSimplifier
+        evaluators
+        configuration
+        axiom
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig
@@ -266,15 +264,16 @@ runStepWith
     -> IO
         (Either
             (StepError Object Variable)
-            [(CommonExpandedPattern Object, StepProof Object Variable)]
+            (MultiOr (CommonExpandedPattern Object))
         )
 runStepWith solver configuration axiom = do
-    ioResult <- runStepResultWith
-        solver configuration axiom
-    return (map processResult <$> ioResult)
-  where
-    processResult (StepResult { rewrittenPattern }, proof) =
-        (rewrittenPattern, proof)
+    result <- runStepResultWith solver configuration axiom
+    return (discardRemainders <$> result)
+
+discardRemainders
+    :: OrStepResult Object Variable
+    -> MultiOr (CommonExpandedPattern Object)
+discardRemainders OrStepResult { rewrittenPattern } = rewrittenPattern
 
 runStepResultWith
     :: MVar Solver
@@ -285,19 +284,19 @@ runStepResultWith
     -> IO
         (Either
             (StepError Object Variable)
-            [(StepResult Object Variable, StepProof Object Variable)]
+            (OrStepResult Object Variable)
         )
 runStepResultWith solver configuration axiom =
     let smt =
-            (evalSimplifier emptyLogger . runExceptT)
-                (stepWithRewriteRule
-                    testMetadataTools
-                    testSubstitutionSimplifier
-                    stepSimplifier
-                    evaluators
-                    configuration
-                    axiom
-                )
+            evalSimplifier emptyLogger
+            $ runExceptT
+            $ applyRewriteRule
+                testMetadataTools
+                testSubstitutionSimplifier
+                stepSimplifier
+                evaluators
+                configuration
+                axiom
     in runReaderT (SMT.getSMT smt) solver
 
 

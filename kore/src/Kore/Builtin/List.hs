@@ -495,7 +495,7 @@ unifyEquals
             let
                 propagatedUnified =
                     (propagatePredicates . discardProofs) unified
-                result = asExpandedPattern builtinListSort =<< propagatedUnified
+                result = asInternal tools builtinListSort <$> propagatedUnified
             return (result, SimplificationProof)
       where
         Domain.InternalList { builtinListSort } = builtin1

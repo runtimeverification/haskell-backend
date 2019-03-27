@@ -1131,12 +1131,6 @@ instance Unparse (Top level child) where
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-Note that the 'StringLiteralPattern' and 'CharLiteralPattern' should
-be members only of 'Pattern Meta'.
 -}
 -- NOTE: If you are adding a case to Pattern, you should add cases in:
 -- ASTUtils/SmartConstructors.hs
@@ -1152,7 +1146,7 @@ data Pattern level domain variable child where
         :: !(Ceil level child) -> Pattern level domain variable child
     DomainValuePattern
         :: !(domain child)
-        -> Pattern Object domain variable child
+        -> Pattern level domain variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level domain variable child
     ExistsPattern
@@ -1168,17 +1162,17 @@ data Pattern level domain variable child where
     InPattern
         :: !(In level child) -> Pattern level domain variable child
     NextPattern
-        :: !(Next Object child) -> Pattern Object domain variable child
+        :: !(Next level child) -> Pattern level domain variable child
     NotPattern
         :: !(Not level child) -> Pattern level domain variable child
     OrPattern
         :: !(Or level child) -> Pattern level domain variable child
     RewritesPattern
-        :: !(Rewrites Object child) -> Pattern Object domain variable child
+        :: !(Rewrites level child) -> Pattern level domain variable child
     StringLiteralPattern
-        :: !StringLiteral -> Pattern Meta domain variable child
+        :: !StringLiteral -> Pattern level domain variable child
     CharLiteralPattern
-        :: !CharLiteral -> Pattern Meta domain variable child
+        :: !CharLiteral -> Pattern level domain variable child
     TopPattern
         :: !(Top level child) -> Pattern level domain variable child
     VariablePattern
@@ -1205,34 +1199,14 @@ instance
   where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
 
+deriving instance Generic (Pattern level domain variable child)
+
 instance
     ( Hashable child
     , Hashable (variable level)
     , Hashable (domain child)
     ) =>
     Hashable (Pattern level domain variable child)
-  where
-    hashWithSalt s = \case
-        AndPattern           p -> s `hashWithSalt` (0::Int) `hashWithSalt` p
-        ApplicationPattern   p -> s `hashWithSalt` (1::Int) `hashWithSalt` p
-        BottomPattern        p -> s `hashWithSalt` (2::Int) `hashWithSalt` p
-        CeilPattern          p -> s `hashWithSalt` (3::Int) `hashWithSalt` p
-        DomainValuePattern   p -> s `hashWithSalt` (4::Int) `hashWithSalt` p
-        EqualsPattern        p -> s `hashWithSalt` (5::Int) `hashWithSalt` p
-        ExistsPattern        p -> s `hashWithSalt` (6::Int) `hashWithSalt` p
-        FloorPattern         p -> s `hashWithSalt` (7::Int) `hashWithSalt` p
-        ForallPattern        p -> s `hashWithSalt` (8::Int) `hashWithSalt` p
-        IffPattern           p -> s `hashWithSalt` (9::Int) `hashWithSalt` p
-        ImpliesPattern       p -> s `hashWithSalt` (10::Int) `hashWithSalt` p
-        InPattern            p -> s `hashWithSalt` (11::Int) `hashWithSalt` p
-        NextPattern          p -> s `hashWithSalt` (12::Int) `hashWithSalt` p
-        NotPattern           p -> s `hashWithSalt` (13::Int) `hashWithSalt` p
-        OrPattern            p -> s `hashWithSalt` (14::Int) `hashWithSalt` p
-        RewritesPattern      p -> s `hashWithSalt` (15::Int) `hashWithSalt` p
-        StringLiteralPattern p -> s `hashWithSalt` (16::Int) `hashWithSalt` p
-        CharLiteralPattern   p -> s `hashWithSalt` (17::Int) `hashWithSalt` p
-        TopPattern           p -> s `hashWithSalt` (18::Int) `hashWithSalt` p
-        VariablePattern      p -> s `hashWithSalt` (19::Int) `hashWithSalt` p
 
 instance
     ( NFData child
@@ -1240,29 +1214,6 @@ instance
     , NFData (domain child)
     ) =>
     NFData (Pattern level domain var child)
-  where
-    rnf =
-        \case
-            AndPattern p -> rnf p
-            ApplicationPattern p -> rnf p
-            BottomPattern p -> rnf p
-            CeilPattern p -> rnf p
-            DomainValuePattern p -> rnf p
-            EqualsPattern p -> rnf p
-            ExistsPattern p -> rnf p
-            FloorPattern p -> rnf p
-            ForallPattern p -> rnf p
-            IffPattern p -> rnf p
-            ImpliesPattern p -> rnf p
-            InPattern p -> rnf p
-            NextPattern p -> rnf p
-            NotPattern p -> rnf p
-            OrPattern p -> rnf p
-            RewritesPattern p -> rnf p
-            StringLiteralPattern p -> rnf p
-            CharLiteralPattern p -> rnf p
-            TopPattern p -> rnf p
-            VariablePattern p -> rnf p
 
 instance
     (Eq child, Eq (variable level), Eq1 domain) =>

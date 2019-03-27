@@ -9,6 +9,7 @@ import Test.Tasty.HUnit
 
 import Kore.AST.Sentence
 import Kore.Attribute.Parser
+import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 
 -- | A list of arguments to @smtlib@, extracted from the K distribution
@@ -64,8 +65,8 @@ extracted =
     , "ite"
     ]
 
-test_extracted :: [TestTree]
-test_extracted =
+test_extracted_smtlib :: [TestTree]
+test_extracted_smtlib =
     map test extracted
   where
     test arg =
@@ -84,6 +85,31 @@ isRightAndJust =
     \case
         Right Smtlib { getSmtlib } ->
             case getSmtlib of
+                Nothing -> False
+                Just sExpr ->
+                    seq sExpr True
+        Left _ -> False
+
+test_extracted_smthook :: [TestTree]
+test_extracted_smthook =
+    map test extracted
+  where
+    test arg =
+        testCase caseName
+            $ assertBool "expected successful parse"
+            $ isSmthookRightAndJust $ parseSmthook attrs
+      where
+        attrs = Attributes [ smthookAttribute arg ]
+        caseName = "[smt-hook{}(\"" ++ Text.unpack arg ++ "\")]"
+
+parseSmthook :: Attributes -> Parser Smthook
+parseSmthook = parseAttributes
+
+isSmthookRightAndJust :: Parser Smthook -> Bool
+isSmthookRightAndJust =
+    \case
+        Right Smthook { getSmthook } ->
+            case getSmthook of
                 Nothing -> False
                 Just sExpr ->
                     seq sExpr True

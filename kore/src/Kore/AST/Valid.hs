@@ -1156,10 +1156,10 @@ pattern Ceil_
     -> PurePattern level dom var annotation
 
 pattern DV_
-  :: Domain dom => (level ~ Object)
-  => Sort level
-  -> dom (PurePattern level dom var annotation)
-  -> PurePattern level dom var annotation
+  :: Domain dom
+  => Sort Object
+  -> dom (PurePattern Object dom var annotation)
+  -> PurePattern Object dom var annotation
 
 pattern Equals_
     :: Functor dom
@@ -1213,8 +1213,8 @@ pattern In_
     -> PurePattern level dom var annotation
 
 pattern Next_
-    :: Functor dom => (level ~ Object) =>
-       Sort level
+    :: Functor dom
+    => Sort level
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
@@ -1232,8 +1232,8 @@ pattern Or_
     -> PurePattern level dom var annotation
 
 pattern Rewrites_
-  :: Functor dom => (level ~ Object) =>
-     Sort level
+  :: Functor dom
+  => Sort level
   -> PurePattern level dom var annotation
   -> PurePattern level dom var annotation
   -> PurePattern level dom var annotation
@@ -1249,12 +1249,12 @@ pattern Var_
     -> PurePattern level dom var annotation
 
 pattern StringLiteral_
-  :: Functor dom => (level ~ Meta)
+  :: Functor dom
   => Text
   -> PurePattern level dom var annotation
 
 pattern CharLiteral_
-  :: Functor dom => (level ~ Meta)
+  :: Functor dom
   => Char
   -> PurePattern level dom var annotation
 

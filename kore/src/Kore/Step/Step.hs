@@ -28,12 +28,7 @@ module Kore.Step.Step
 
 import           Control.Monad.Except
                  ( runExceptT )
-import           Data.Foldable
-                 ( toList )
-import           Data.Maybe
-                 ( mapMaybe )
-import           Data.Semigroup
-                 ( (<>) )
+import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Stack
                  ( HasCallStack )
@@ -53,13 +48,9 @@ import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
 import           Kore.Step.BaseStep
-                 ( StepProof (..), StepResult (StepResult),
-                 simplificationProof, stepWithRewriteRule )
-import           Kore.Step.BaseStep as StepResult
-                 ( StepResult (..) )
+                 ( OrStepResult (..), StepProof (..), applyRewriteRule )
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
@@ -118,7 +109,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
   where
     transitionSimplify (config, proof) =
         do
-            (configs, proof') <-
+            (configs, _) <-
                 ExpandedPattern.simplify
                     tools
                     substitutionSimplifier
@@ -126,15 +117,14 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     axiomIdToSimplifier
                     config
             let
-                proof'' = proof <> simplificationProof proof'
-                prove config' = (config', proof'')
+                prove config' = (config', proof)
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
-            return (prove <$> toList nonEmptyConfigs)
+            return (prove <$> Foldable.toList nonEmptyConfigs)
     transitionRewrite rule (config, proof) = do
         result <-
             runExceptT
-            $ stepWithRewriteRule
+            $ applyRewriteRule
                 tools
                 substitutionSimplifier
                 simplifier
@@ -150,22 +140,11 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , unparse config
                     , "Un-implemented unification case; aborting execution."
                     ]
-            Right results ->
+            Right OrStepResult { rewrittenPattern = results } ->
                 Log.withLogScope "transitionRule" $
-                    return $ mapMaybe (patternFromResult proof) results
-    patternFromResult
-        :: StepProof level Variable
-        -> (StepResult level Variable, StepProof level Variable)
-        -> Maybe (CommonExpandedPattern level, StepProof level Variable)
-    patternFromResult
-        proof
-        ( StepResult { rewrittenPattern = config' }
-        , proof'
-        )
-      =
-        if ExpandedPattern.isBottom config'
-            then Nothing
-            else Just (config', proof <> proof')
+                    return $ withProof <$> Foldable.toList results
+              where
+                withProof result' = (result', proof)
 
 
 {- | A strategy that applies all the rewrites in parallel.

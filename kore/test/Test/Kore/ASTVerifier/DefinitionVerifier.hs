@@ -20,7 +20,8 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
-import           Kore.Step.Pattern
+import           Kore.Step.Pattern hiding
+                 ( freeVariables )
 import           Kore.Unparser
                  ( unparseToString )
 

@@ -669,8 +669,8 @@ unifyEquals
                 -- remainder of map2.
                 ExpandedPattern.bottom
               | otherwise =
-                Reflection.give tools asExpandedPattern builtinMapSort
-                    =<< (propagatePredicates . discardProofs) intersect
+                asInternal tools builtinMapSort
+                    <$> (propagatePredicates . discardProofs) intersect
               where
                 -- Elements of map1 missing from map2
                 remainder1 = Map.difference map1 map2

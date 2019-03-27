@@ -14,9 +14,13 @@ module Kore.Step.Representation.MultiAnd
     , make
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import           Control.DeepSeq
                  ( NFData )
 import qualified Data.Set as Set
+import           GHC.Exts
+                 ( IsList )
 import           GHC.Generics
                  ( Generic )
 
@@ -36,8 +40,21 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 'Bottom' patterns.
 -}
 newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
-  deriving
-    (Applicative, Eq, Foldable, Functor, Generic, Monad, Ord, Show, Traversable)
+    deriving
+        ( Alternative
+        , Applicative
+        , Eq
+        , Foldable
+        , Functor
+        , Generic
+        , IsList
+        , Monad
+        , Monoid
+        , Ord
+        , Semigroup
+        , Show
+        , Traversable
+        )
 
 instance NFData child => NFData (MultiAnd child)
 

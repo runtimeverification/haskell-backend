@@ -16,15 +16,15 @@ module Kore.Step.Substitution
     , mergePredicatesAndSubstitutionsExcept
     , normalizePredicatedSubstitution
     , normalize
+    , normalizeExcept
     ) where
 
 import           Control.Monad.Except
-                 ( ExceptT, lift, runExceptT, withExceptT )
+                 ( ExceptT, runExceptT, withExceptT )
 import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Trans.Class
                  ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import qualified Control.Monad.Trans.Except as Except
 import qualified Data.Foldable as Foldable
 import           GHC.Stack
                  ( HasCallStack )
@@ -35,13 +35,13 @@ import           Kore.AST.MetaOrObject
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeMultipleAndPredicate )
+                 ( Predicate, makeAndPredicate, makeMultipleAndPredicate,
+                 substitutionToPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..),
-                 substitutionToPredicate )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import           Kore.Step.StepperAttributes
 import qualified Kore.TopBottom as TopBottom
@@ -94,15 +94,15 @@ normalize
     -- substitution to the predicate when there is an error on *any* branch.
     results <-
         Monad.Trans.lift
-        $ gather
         $ runExceptT
-        $ normalizeWorker
+        $ gather
+        $ normalizeExcept
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             Predicated { term = (), predicate, substitution }
-    case sequence results of
+    case results of
         Right normal -> scatter (applyTerm <$> normal)
         Left _ ->
             return Predicated
@@ -116,7 +116,7 @@ normalize
   where
     applyTerm predicated = predicated { term }
 
-normalizeWorker
+normalizeExcept
     ::  ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -131,12 +131,12 @@ normalizeWorker
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitution level variable
-    -> ExceptT (UnificationOrSubstitutionError level variable)
-        (BranchT Simplifier)
+    -> BranchT
+        (ExceptT (UnificationOrSubstitutionError level variable) Simplifier)
         (PredicateSubstitution level variable)
-normalizeWorker
+normalizeExcept
     tools
-    wrappedSimplifier@(PredicateSubstitutionSimplifier substitutionSimplifier)
+    predicateSimplifier@(PredicateSubstitutionSimplifier simplifySubstitution)
     simplifier
     axiomIdToSimplifier
     Predicated { predicate, substitution }
@@ -157,24 +157,24 @@ normalizeWorker
             makeMultipleAndPredicate
                 [predicate, duplicationPredicate, normalizedPredicate]
 
-    lift $ do
-        TopBottom.guardAgainstBottom mergedPredicate
-        substitutionSimplifier Predicated
+    TopBottom.guardAgainstBottom mergedPredicate
+    Monad.Morph.hoist Monad.Trans.lift
+        $ simplifySubstitution Predicated
             { term = ()
             , predicate = mergedPredicate
             , substitution = normalizedSubstitution
             }
   where
     normalizeSubstitutionDuplication' =
-        Monad.Morph.hoist Monad.Trans.lift
+        Monad.Trans.lift
         . normalizeSubstitutionDuplication
             tools
-            wrappedSimplifier
+            predicateSimplifier
             simplifier
             axiomIdToSimplifier
 
     normalizeSubstitution' =
-        Monad.Morph.hoist Monad.Trans.lift
+        Monad.Trans.lift
         . withExceptT substitutionToUnifyOrSubError
         . normalizeSubstitution tools
 
@@ -477,7 +477,7 @@ normalizeSubstitutionAfterMerge
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitution level variable
     -> ExceptT
-          ( UnificationOrSubstitutionError level variable )
+          (UnificationOrSubstitutionError level variable)
           Simplifier
           ( PredicateSubstitution level variable
           , UnificationProof level variable
@@ -490,8 +490,8 @@ normalizeSubstitutionAfterMerge
     predicateSubstitution
   = do
     results <-
-        lift $ gather $ runExceptT
-        $ normalizeWorker
+        gather
+        $ normalizeExcept
             tools
             substitutionSimplifier
             simplifier
@@ -499,9 +499,8 @@ normalizeSubstitutionAfterMerge
             predicateSubstitution
     case Foldable.toList results of
         [] -> return
-            ( ExpandedPattern.bottomPredicate
+            ( PredicateSubstitution.bottom
             , EmptyUnificationProof
             )
-        [Right normal] -> return (normal, EmptyUnificationProof)
-        [Left e] -> Except.throwE e
+        [normal] -> return (normal, EmptyUnificationProof)
         _ -> error "Not implemented: branching during normalization"
