@@ -6,6 +6,7 @@ module Test.Kore.Step.BaseStep
     , test_unifyRule
     , test_applyRewriteRule_
     , test_applyRewriteRule
+    , test_sequenceMatchingRules
     ) where
 
 import Test.Tasty
@@ -23,6 +24,7 @@ import           Kore.AST.Valid
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate as Predicate
+import qualified Kore.Step.Axiom.Matcher as Matcher
 import           Kore.Step.AxiomPatterns
                  ( RewriteRule (RewriteRule), RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as RulePattern
@@ -34,7 +36,7 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern,
                  PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
+                 ( MultiOr (MultiOr) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
@@ -1032,3 +1034,84 @@ test_applyRewriteRule =
             , ensures = makeTruePredicate
             , attributes = def
             }
+
+axiomFunctionalSigma :: RulePattern Object Variable
+axiomFunctionalSigma =
+    RulePattern
+        { left = Mock.functional10 (Mock.sigma x y)
+        , right = Mock.a
+        , requires = Predicate.makeTruePredicate
+        , ensures = Predicate.makeTruePredicate
+        , attributes = Default.def
+        }
+  where
+    x = mkVar Mock.x
+    y = mkVar Mock.y
+
+-- | Apply the 'RewriteRule's to the configuration in sequence.
+sequenceMatchingRules
+    :: ExpandedPattern Object Variable
+    -- ^ Configuration
+    -> [RulePattern Object Variable]
+    -- ^ Rewrite rule
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (OrStepResult Object Variable)
+        )
+sequenceMatchingRules initial rules =
+    (fmap . fmap) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ runExceptT
+    $ stepWithRemaindersForUnifier
+        metadataTools
+        unificationProcedure
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        rules
+        initial
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+    unificationProcedure =
+        UnificationProcedure Matcher.unificationWithAppMatchOnTop
+
+test_sequenceMatchingRules :: [TestTree]
+test_sequenceMatchingRules =
+    [ testCase "functional10(x) and functional10(sigma(x, y)) => a" $ do
+        let
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern = MultiOr [ final ]
+                    , remainder = MultiOr [ remainder' ]
+                    }
+            initialTerm = Mock.functional10 (mkVar Mock.x)
+            initial = pure initialTerm
+            remainder' =
+                initial
+                    { predicate =
+                        Predicate.makeNotPredicate
+                        $ Predicate.makeEqualsPredicate (mkVar Mock.x) substX
+                    }
+            final =
+                Predicated
+                    { term = Mock.a
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.x, substX)]
+                    }
+            x' = nextVariable Mock.x
+            substX = Mock.sigma (mkVar x') (mkVar Mock.y)
+        actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
+        assertEqualWithExplanation "" expect actual
+    ]
