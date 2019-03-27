@@ -50,7 +50,7 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.SmtLemma
+import           Kore.Step.SMT.Lemma
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT
@@ -346,39 +346,46 @@ mainWithOptions
                 SMT.runSMT smtConfig
                 $ evalSimplifier logger
                 $ do
-                  give
-                      (extractMetadataTools indexedModule
-                          :: MetadataTools Object StepperAttributes
-                      )
-                      (declareSMTLemmas indexedModule)
-                  case proveParameters of
-                    Nothing -> do
-                        let purePattern =
-                                fromMaybe
+                    give
+                        (extractMetadataTools indexedModule
+                            :: MetadataTools Object StepperAttributes
+                        )
+                        (declareSMTLemmas indexedModule)
+                    case proveParameters of
+                        Nothing -> do
+                            let
+                                purePattern = fromMaybe
                                     (error "Missing: --pattern PATTERN_FILE")
                                     maybePurePattern
-                        case searchParameters of
-                            Nothing -> do
-                                pat <- exec indexedModule strategy' purePattern
-                                exitCode <- execGetExitCode indexedModule strategy' pat
-                                return (exitCode, pat)
-                            Just (searchPattern, searchConfig) -> do
-                                pat <-
-                                    search
-                                        indexedModule
-                                        strategy'
-                                        purePattern
-                                        searchPattern
-                                        searchConfig
-                                return (ExitSuccess, pat)
-                    Just specIndexedModule ->
-                        either
-                            (\pat -> (ExitFailure 1, pat))
-                            (\_ -> (ExitSuccess, mkTop $ mkSortVariable "R" ))
-                        <$> prove
-                                stepLimit
-                                indexedModule
-                                specIndexedModule
+                            case searchParameters of
+                                Nothing -> do
+                                    pat <-
+                                        exec indexedModule strategy' purePattern
+                                    exitCode <-
+                                        execGetExitCode
+                                            indexedModule strategy' pat
+                                    return (exitCode, pat)
+                                Just (searchPattern, searchConfig) -> do
+                                    pat <-
+                                        search
+                                            indexedModule
+                                            strategy'
+                                            purePattern
+                                            searchPattern
+                                            searchConfig
+                                    return (ExitSuccess, pat)
+                        Just specIndexedModule ->
+                            either
+                                (\pat -> (ExitFailure 1, pat))
+                                (\_ ->
+                                        ( ExitSuccess
+                                        , mkTop $ mkSortVariable "R"
+                                        )
+                                )
+                            <$> prove
+                                    stepLimit
+                                    indexedModule
+                                    specIndexedModule
                 )
         let unparsed = (unparse . externalizeFreshVariables) finalPattern
         case outputFileName of

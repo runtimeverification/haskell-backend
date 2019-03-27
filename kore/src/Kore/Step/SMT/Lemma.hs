@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.SmtLemma
+Module      : Kore.Step.SMT.Lemma
 Description : Declares all rules marked smt-lemma to the SMT solver.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -7,7 +7,7 @@ Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.SmtLemma
+module Kore.Step.SMT.Lemma
     ( declareSMTLemmas
     ) where
 
@@ -37,7 +37,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
-import           Kore.Step.TranslateSMT
+import           Kore.Step.SMT.Translate
 import           Kore.Unparser
 import           SMT
                  ( MonadSMT, SExpr (..), SMT )
