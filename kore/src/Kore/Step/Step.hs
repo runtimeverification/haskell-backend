@@ -563,7 +563,7 @@ checkSubstitutionCoverage initial unified final = do
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
     isInitialSymbolic =
-        (not . Foldable.any Target.isNonTarget) substitutionVariables
+        Foldable.any Target.isNonTarget substitutionVariables
 
 {- | Apply the given rules to the initial configuration in parallel.
 
