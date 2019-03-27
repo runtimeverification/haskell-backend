@@ -1149,7 +1149,7 @@ axiomFunctionalSigma :: EqualityRule Object Variable
 axiomFunctionalSigma =
     EqualityRule RulePattern
         { left = Mock.functional10 (Mock.sigma x y)
-        , right = Mock.sigma x (Mock.functional10 y)
+        , right = Mock.a
         , requires = Predicate.makeTruePredicate
         , ensures = Predicate.makeTruePredicate
         , attributes = Default.def
@@ -1202,11 +1202,27 @@ test_sequenceMatchingRules =
         let
             expect =
                 Right OrStepResult
-                    { rewrittenPattern = MultiOr []
-                    , remainder = MultiOr [ initial ]
+                    { rewrittenPattern = MultiOr [ final ]
+                    , remainder = MultiOr [ remainder' ]
                     }
             initialTerm = Mock.functional10 (mkVar Mock.x)
             initial = pure initialTerm
+            remainder' =
+                initial
+                    { predicate =
+                        Predicate.makeNotPredicate
+                        $ Predicate.makeEqualsPredicate (mkVar Mock.x) substX
+                    }
+            final =
+                Predicated
+                    { term = Mock.a
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution =
+                        Substitution.wrap
+                            [(Mock.x, substX)]
+                    }
+            x' = nextVariable Mock.x
+            substX = Mock.sigma (mkVar x') (mkVar Mock.y)
         actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
         assertEqualWithExplanation "" expect actual
     ]
