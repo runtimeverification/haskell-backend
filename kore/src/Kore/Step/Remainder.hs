@@ -12,8 +12,6 @@ module Kore.Step.Remainder
 import           Control.Applicative
                  ( Alternative (..) )
 import qualified Data.Foldable as Foldable
-import qualified Data.Set as Set
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -94,29 +92,13 @@ remainder results =
 
 {- | Unwrap a remainder predicate.
 
-@unwrapRemainder@ throws an error if there are any free 'Target' variables in
-the remainder predicate.
-
  -}
 unwrapRemainder
     :: (Ord (variable Object), Unparse (variable Object))
     => Predicate Object (Target variable)
     -> Predicate Object variable
-unwrapRemainder remainder'
-  | hasFreeAxiomVariables =
-    (error . show . Pretty.vsep)
-        [ "Unexpected free axiom variables:"
-        , (Pretty.indent 4 . Pretty.sep)
-            (unparse <$> Foldable.toList freeAxiomVariables)
-        , "in remainder:"
-        , Pretty.indent 4 (unparse remainder')
-        ]
-  | otherwise =
+unwrapRemainder remainder' =
     Predicate.mapVariables Target.unwrapVariable remainder'
-  where
-    freeAxiomVariables =
-        Set.filter Target.isTarget (Predicate.freeVariables remainder')
-    hasFreeAxiomVariables = not (Set.null freeAxiomVariables)
 
 mkNotMultiAnd
     ::  ( Ord     (variable Object)
