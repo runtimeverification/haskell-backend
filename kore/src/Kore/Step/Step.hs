@@ -775,6 +775,7 @@ sequenceRewriteRules
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
 
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
@@ -787,6 +788,8 @@ sequenceRewriteRules
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
+    unificationProcedure
+
     initialConfig
     rewriteRules
   =
@@ -795,6 +798,6 @@ sequenceRewriteRules
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
-        (UnificationProcedure Unification.unificationProcedure)
+        unificationProcedure
         initialConfig
         (getRewriteRule <$> rewriteRules)

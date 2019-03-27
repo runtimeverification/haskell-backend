@@ -689,41 +689,6 @@ applyRewriteRules initial rules =
             axiomSimplifiers
     axiomSimplifiers = Map.empty
 
--- | Apply the 'RewriteRule's to the configuration in sequence.
-sequenceRewriteRules
-    :: ExpandedPattern Object Variable
-    -- ^ Configuration
-    -> [RewriteRule Object Variable]
-    -- ^ Rewrite rule
-    -> IO
-        (Either
-            (StepError Object Variable)
-            (OrStepResult Object Variable)
-        )
-sequenceRewriteRules initial rules =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
-    $ runExceptT
-    $ Step.sequenceRewriteRules
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        initial
-        rules
-  where
-    metadataTools = mockMetadataTools
-    predicateSimplifier =
-        PredicateSubstitution.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
-
 test_applyRewriteRules :: [TestTree]
 test_applyRewriteRules =
     [ testCase "if _ then _" $ do
@@ -1060,6 +1025,45 @@ axiomCaseB =
 
 axiomsCase :: [RewriteRule Object Variable]
 axiomsCase = [axiomCaseA, axiomCaseB]
+
+
+-- | Apply the 'RewriteRule's to the configuration in sequence.
+sequenceRewriteRules
+    :: ExpandedPattern Object Variable
+    -- ^ Configuration
+    -> [RewriteRule Object Variable]
+    -- ^ Rewrite rule
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (OrStepResult Object Variable)
+        )
+sequenceRewriteRules initial rules =
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ runExceptT
+    $ Step.sequenceRewriteRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        unificationProcedure
+        initial
+        rules
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+    unificationProcedure =
+        UnificationProcedure Unification.unificationProcedure
 
 test_sequenceRewriteRules :: [TestTree]
 test_sequenceRewriteRules =

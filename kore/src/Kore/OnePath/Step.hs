@@ -62,6 +62,7 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
@@ -280,6 +281,7 @@ transitionRule
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
+                (Step.UnificationProcedure Unification.unificationProcedure)
                 config
                 rules
         case result of
