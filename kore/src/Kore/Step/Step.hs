@@ -703,7 +703,7 @@ sequenceRules
     unificationProcedure
     initialConfig
   =
-    sequenceRulesWorker empty (pure initialConfig)
+    Foldable.foldlM sequenceRules1 mempty { remainder = pure initialConfig }
   where
     -- The single remainder of the input configuration after rewriting to
     -- produce the disjunction of results.
@@ -720,27 +720,14 @@ sequenceRules
                 $ Predicated.withoutTerm . unifiedRule <$> results
         in config `Predicated.andCondition` remainder
 
-    sequenceRulesWorker
-        :: MultiOr (ExpandedPattern Object variable)
-        -- ^ rewritten configurations
-        -> MultiOr (ExpandedPattern Object variable)
-        -- ^ remaining configurations
-        -> [RulePattern Object variable]
+    sequenceRules1
+        :: OrStepResult Object variable
+        -> RulePattern Object variable
         -> ExceptT (StepError Object variable) Simplifier
             (OrStepResult Object variable)
-
-    sequenceRulesWorker done pending [] =
-        return OrStepResult
-            { rewrittenPattern = done
-            , remainder = pending
-            }
-
-    sequenceRulesWorker done pending (rule : rules) = do
-        results <- traverse (applyRule' rule) pending
-        let finals = MultiOr.filterOr (fst <$> results)
-            done' = done <> Foldable.fold finals
-            pending' = MultiOr.filterOr (snd <$> results)
-        sequenceRulesWorker done' pending' rules
+    sequenceRules1 results rule = do
+        results' <- traverse (applyRule' rule) (remainder results)
+        return (results { remainder = empty } <> Foldable.fold results')
 
     -- Apply rule to produce a pair of the rewritten patterns and
     -- single remainder configuration.
@@ -755,7 +742,10 @@ sequenceRules
                 config
                 rule
         let pending' = remainingAfter config results
-        return (result <$> results, pending')
+        return OrStepResult
+            { rewrittenPattern = MultiOr.filterOr (result <$> results)
+            , remainder = pure pending'
+            }
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
