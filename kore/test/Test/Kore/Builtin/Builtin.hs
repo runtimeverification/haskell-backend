@@ -57,6 +57,7 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
 import           Kore.Step.Step
                  ( OrStepResult (..) )
 import qualified Kore.Step.Step as Step
+import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
                  ( unparseToString )
 import           SMT
@@ -245,6 +246,7 @@ runStepResult configuration axiom =
         testSubstitutionSimplifier
         stepSimplifier
         evaluators
+        (Step.UnificationProcedure Unification.unificationProcedure)
         [axiom]
         configuration
 
@@ -291,6 +293,7 @@ runStepResultWith solver configuration axiom =
                 testSubstitutionSimplifier
                 stepSimplifier
                 evaluators
+                (Step.UnificationProcedure Unification.unificationProcedure)
                 [axiom]
                 configuration
     in runReaderT (SMT.getSMT smt) solver

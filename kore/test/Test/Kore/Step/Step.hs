@@ -676,6 +676,7 @@ applyRewriteRules initial rules =
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
+        unificationProcedure
         rules
         initial
   where
@@ -690,6 +691,8 @@ applyRewriteRules initial rules =
             metadataTools
             axiomSimplifiers
     axiomSimplifiers = Map.empty
+    unificationProcedure =
+        UnificationProcedure Unification.unificationProcedure
 
 test_applyRewriteRules :: [TestTree]
 test_applyRewriteRules =

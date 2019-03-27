@@ -74,7 +74,6 @@ import           Kore.Unification.Data
                  ( UnificationProof )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
-import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -644,6 +643,7 @@ applyRewriteRules
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
 
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules
@@ -656,6 +656,7 @@ applyRewriteRules
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
+    unificationProcedure
 
     rewriteRules
   =
@@ -664,7 +665,7 @@ applyRewriteRules
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
-        (UnificationProcedure Unification.unificationProcedure)
+        unificationProcedure
         (getRewriteRule <$> rewriteRules)
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
