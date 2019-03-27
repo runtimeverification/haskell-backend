@@ -35,6 +35,7 @@ commandParser =
     <|> proveSteps
     <|> selectNode
     <|> showConfig
+    <|> showLeafs
     <|> exit
 
 help :: Parser ReplCommand
@@ -63,6 +64,9 @@ selectNode =
 showConfig :: Parser ReplCommand
 showConfig =
     fmap ShowConfig $ string "config" *> space *> optional decimal <* space
+
+showLeafs :: Parser ReplCommand
+showLeafs = ShowLeafs <$ (string "leafs" *> space)
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)

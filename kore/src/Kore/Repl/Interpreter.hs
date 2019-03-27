@@ -21,12 +21,18 @@ import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT )
+import           Data.Function
+                 ( on )
 import           Data.Functor
                  ( ($>) )
 import           Data.Graph.Inductive.Graph
                  ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
+import           Data.List
+                 ( groupBy )
+import           Data.Maybe
+                 ( listToMaybe )
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
 
@@ -76,6 +82,7 @@ replInterpreter =
         ProveSteps n -> proveSteps n $> True
         SelectNode i -> selectNode i $> True
         ShowConfig mc -> showConfig mc $> True
+        ShowLeafs -> showLeafs $> True
         Exit -> pure False
 
 showUsage :: MonadIO m => m ()
@@ -165,6 +172,42 @@ showConfig configNode = do
                 . Graph.context graph
                 $ node'
         else putStrLn' "Invalid node!"
+
+-- TODO: cleanup, I don't like that showLeafs0 depends on the output from unparseStrategy',
+-- and implementation seems a little too complicated; also switch to where
+-- also there's a bug
+showLeafs
+    :: MetaOrObject level
+    => StateT (ReplState level) Simplifier ()
+showLeafs = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    let nodes = Graph.nodes graph
+    let leafs = filter (\x -> (Graph.outdeg graph x) == 0) nodes
+    let aux = fmap (\x -> (x, (unparseStrategy' . Graph.lab' . Graph.context graph) x)) leafs
+    let aux3 = groupBy (on (==) snd) aux
+    -- ^ this doesn't work as expected
+    -- putStrLn' $ concat (fmap show aux3)
+    let aux4 = zip ((fmap . fmap) fst aux3) ((fmap . fmap) snd aux3)
+    let aux5 = concat (fmap showLeafs0 aux4)
+    putStrLn' $ if aux5 == ""
+                   then "All nodes were evaluated."
+                   else aux5
+
+showLeafs0 :: ([Graph.Node], [String]) -> String
+showLeafs0 p =
+    case ((listToMaybe . snd) p) of
+        Just "Unevaluated" -> "Unevaluated nodes: " <> show (fst p)
+        Just "Stuck" -> "Stuck nodes: " <> show (fst p)
+        Just "Reached bottom" -> ""
+        _ -> "error"
+-- TODO: ^ treat this case in some way
+
+unparseStrategy' :: MetaOrObject level => CommonStrategyPattern level -> String
+unparseStrategy' =
+    \case
+        Bottom -> "Reached bottom"
+        Stuck pat -> "Stuck"
+        RewritePattern pat -> "Unevaluated"
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
