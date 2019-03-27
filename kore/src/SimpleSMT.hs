@@ -45,6 +45,7 @@ module SimpleSMT
     , declareFun
     , declareSort
     , declareDatatype
+    , declareDatatypes
     , define
     , defineFun
     , assert
@@ -136,6 +137,9 @@ module SimpleSMT
     -- ** Arrays
     , select
     , store
+
+    -- Quantifiers
+    , forallQ
     ) where
 
 import           Control.Applicative
@@ -190,6 +194,8 @@ import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as Lexer
 import           Text.Read
                  ( readMaybe )
+
+import Kore.Debug
 
 -- | Results of checking for satisfiability.
 data Result = Sat         -- ^ The assertions are satisfiable
@@ -339,9 +345,11 @@ newSolver exe opts mbLog = do
             info ("[recv] " <> Text.Lazy.fromStrict resp)
             readSExpr resp
 
-        command c = do
-            send c
-            recv
+        command c =
+            traceNonErrorMonad D_SMT_command [debugArg "c" (showSExpr c)]
+            $ do
+              send c
+              recv
 
         stop = do
             send (List [Atom "exit"])
@@ -471,6 +479,39 @@ declareSort proc f n = do
     ackCommandIgnoreErr proc $ fun "declare-sort" [ Atom f, (Atom . Text.pack . show) n]
     pure (const f)
 
+-- | Declare a set of ADTs
+declareDatatypes
+  :: Solver
+  ->  [
+        ( Text  -- datatype name
+        , [Text]  -- sort parameters
+        , [(Text, [(Text, SExpr)])]  --constructors
+        )
+      ]
+  -> IO ()
+declareDatatypes proc datatypes =
+  ackCommand proc $
+    -- (declare-datatypes () ((S C (D (a Int)))))
+    fun "declare-datatypes"
+      [ List []
+      , List $ map datatypeRepresentation datatypes
+      ]
+ where
+  datatypeRepresentation (t, [], cs) =
+    List
+      ( Atom t
+      : [ constructorRepresentation c
+        | c <- cs
+        ]
+      )
+  datatypeRepresentation _ = error "Unimplemented"
+  constructorRepresentation (constructorName, []) = Atom constructorName
+  constructorRepresentation (constructorName, constructorArgs) =
+    List
+      ( Atom constructorName
+      : [ List [Atom s, argTy] | (s, argTy) <- constructorArgs ]
+      )
+
 -- | Declare an ADT using the format introduced in SmtLib 2.6.
 declareDatatype ::
   Solver ->
@@ -480,10 +521,31 @@ declareDatatype ::
   IO ()
 declareDatatype proc t [] cs =
   ackCommand proc $
+    -- (declare-datatypes () ((S C (D (a Int)))))
+    fun "declare-datatypes"
+      [ List []
+      , List
+        [List
+          ( Atom t
+          : [ constructorRepresentation c
+            | c <- cs
+            ]
+          )
+        ]
+      ]
+ where
+  constructorRepresentation (constructorName, []) = Atom constructorName
+  constructorRepresentation (constructorName, constructorArgs) =
+    List
+      ( Atom constructorName
+      : [ List [Atom s, argTy] | (s, argTy) <- constructorArgs ]
+      )
+{-
     fun "declare-datatype" $
       [ Atom t
       , List [ List (Atom c : [ List [Atom s, argTy] | (s, argTy) <- args]) | (c, args) <- cs ]
       ]
+      -}
 declareDatatype proc t ps cs =
   ackCommand proc $
     fun "declare-datatype" $
@@ -944,6 +1006,12 @@ store :: SExpr {- ^ array -}     ->
          SExpr
 store x y z = fun "store" [x,y,z]
 
+-- | Quantifiers: forall
+--
+-- Each variable is an (variable-name variable-type) sexpression.
+forallQ :: [SExpr] -> SExpr -> SExpr
+forallQ variables expression =
+    fun "forall" [List variables, expression]
 
 --------------------------------------------------------------------------------
 -- Attributes

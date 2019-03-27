@@ -24,6 +24,7 @@ module Kore.Attribute.Axiom
     , lensSmtLemma, SmtLemma (..)
     , lensLabel, Label (..)
     , lensSourceLocation, SourceLocation (..)
+    , lensConstructor, Constructor (..)
     ) where
 
 import           Control.DeepSeq
@@ -37,6 +38,7 @@ import           GHC.Generics
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.Attribute.Assoc
 import           Kore.Attribute.Axiom.Concrete
+import           Kore.Attribute.Axiom.Constructor
 import           Kore.Attribute.Axiom.Unit
 import           Kore.Attribute.Comm
 import           Kore.Attribute.HeatCool
@@ -81,6 +83,9 @@ data Axiom =
     -- ^ The user-defined label associated with the axiom.
     , sourceLocation :: !SourceLocation
     -- ^ Source and location in the original file.
+    , constructor :: !Constructor
+    -- ^ Shows that this is one of the constructor axioms
+    -- (e.g. no confusion, no junk)
     } deriving (Eq, Ord, Show, Generic)
 
 instance NFData Axiom
@@ -103,6 +108,7 @@ instance Default Axiom where
             , smtLemma = def
             , label = def
             , sourceLocation = def
+            , constructor = def
             }
 
 instance ParseAttributes Axiom where
@@ -120,3 +126,4 @@ instance ParseAttributes Axiom where
         Monad.>=> lensSmtLemma (parseAttribute attr)
         Monad.>=> lensLabel (parseAttribute attr)
         Monad.>=> lensSourceLocation (parseAttribute attr)
+        Monad.>=> lensConstructor (parseAttribute attr)

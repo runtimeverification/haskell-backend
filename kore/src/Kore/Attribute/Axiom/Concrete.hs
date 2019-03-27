@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Attribute.Concrete
+Module      : Kore.Attribute.Axiom.Concrete
 Description : Concrete axiom attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
