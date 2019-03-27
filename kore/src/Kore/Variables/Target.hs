@@ -61,10 +61,8 @@ instance
     SortedVariable variable
     => SortedVariable (Target variable)
   where
-    sortedVariableSort (Target variable) =
-        sortedVariableSort variable
-    sortedVariableSort (NonTarget variable) =
-        sortedVariableSort variable
+    sortedVariableSort (Target variable) = sortedVariableSort variable
+    sortedVariableSort (NonTarget variable) = sortedVariableSort variable
     fromVariable = Target . fromVariable
     toVariable (Target var) = toVariable var
     toVariable (NonTarget var) = toVariable var
