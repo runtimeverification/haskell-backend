@@ -1149,7 +1149,7 @@ axiomFunctionalSigma :: EqualityRule Object Variable
 axiomFunctionalSigma =
     EqualityRule RulePattern
         { left = Mock.functional10 (Mock.sigma x y)
-        , right = Mock.a
+        , right = Mock.sigma x (Mock.functional10 y)
         , requires = Predicate.makeTruePredicate
         , ensures = Predicate.makeTruePredicate
         , attributes = Default.def
