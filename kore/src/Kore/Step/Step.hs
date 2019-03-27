@@ -712,13 +712,13 @@ sequenceRules
         -- ^ initial configuration
         -> MultiOr (Result variable)
         -- ^ disjunction of results
-        -> ExpandedPattern Object variable
+        -> OrOfExpandedPattern Object variable
     remainingAfter config results =
         let remainder =
                 PredicateSubstitution.fromPredicate
                 $ Remainder.remainder
                 $ Predicated.withoutTerm . unifiedRule <$> results
-        in config `Predicated.andCondition` remainder
+        in MultiOr.make [config `Predicated.andCondition` remainder]
 
     sequenceRules1
         :: OrStepResult Object variable
@@ -741,10 +741,9 @@ sequenceRules
                 unificationProcedure
                 config
                 rule
-        let pending' = remainingAfter config results
         return OrStepResult
             { rewrittenPattern = MultiOr.filterOr (result <$> results)
-            , remainder = pure pending'
+            , remainder = remainingAfter config results
             }
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
