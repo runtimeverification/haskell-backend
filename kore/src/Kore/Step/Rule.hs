@@ -89,7 +89,8 @@ instance Unparse (variable level) => Pretty (RulePattern level variable) where
 
 {-  | Equality-based rule pattern.
 -}
-newtype EqualityRule level variable = EqualityRule (RulePattern level variable)
+newtype EqualityRule level variable =
+    EqualityRule { getEqualityRule :: RulePattern level variable }
     deriving (Eq, Show)
 
 {-  | Rewrite-based rule pattern.
