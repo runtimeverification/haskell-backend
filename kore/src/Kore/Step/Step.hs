@@ -545,7 +545,7 @@ checkSubstitutionCoverage initial unified final = do
         , "to the final configuration:"
         , Pretty.indent 4 (unparse final)
         , "Failed substitution coverage check!"
-        , "Expected substitution to cover all variables:"
+        , "Expected substitution (above) to cover all variables:"
         , (Pretty.indent 4 . Pretty.sep)
             (unparse <$> Set.toAscList leftAxiomVariables)
         , "in the left-hand side of the axiom."
