@@ -185,12 +185,12 @@ showLeafs = do
     let result =
             groupSort
                 . catMaybes
-                . fmap (f graph)
+                . fmap (getNodeState graph)
                 $ leafs
 
     putStrLn' $ foldr ((<>) . showPair) "" result
   where
-    f graph node =
+    getNodeState graph node =
         maybe Nothing (\x -> Just (x, node))
         . strategyPattern (const . Just $ UnevaluatedNode) (const . Just $ StuckNode) Nothing
         . Graph.lab'
