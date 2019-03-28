@@ -5,6 +5,7 @@ import Test.Tasty.HUnit
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
@@ -13,7 +14,6 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.Pattern
-import           Kore.Step.StepperAttributes
 
 import           Test.Kore
 import           Test.Kore.Builtin.Definition

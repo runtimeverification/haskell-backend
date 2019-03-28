@@ -11,11 +11,11 @@ import qualified Data.Text as Text
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-import           Kore.Step.StepperAttributes
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -76,7 +76,7 @@ testBinary symb impl =
         actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
         symAttributes testMetadataTools symb
 
 -- | Test a unary operator hooked to the given symbol
@@ -93,7 +93,7 @@ testUnary symb impl =
         actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
         symAttributes testMetadataTools symb
 
 test_simplification :: TestTree

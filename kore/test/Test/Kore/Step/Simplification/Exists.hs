@@ -9,6 +9,8 @@ import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -28,8 +30,6 @@ import qualified Kore.Step.Simplification.Exists as Exists
                  ( makeEvaluate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

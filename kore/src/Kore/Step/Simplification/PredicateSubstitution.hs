@@ -19,6 +19,8 @@ import           Data.List
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -28,8 +30,6 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import qualified Kore.TopBottom as TopBottom

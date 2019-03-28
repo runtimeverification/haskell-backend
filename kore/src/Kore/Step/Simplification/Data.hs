@@ -36,7 +36,11 @@ import           Control.Monad.State.Class
                  ( MonadState )
 import           Control.Monad.Trans.Except
                  ( ExceptT (..), runExceptT )
+import           Data.Hashable
+                 ( Hashable )
 import           Data.Typeable
+import           GHC.Generics
+                 ( Generic )
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -72,7 +76,9 @@ data SimplificationType = And | Equals
 simplification of a MetaMLPattern was correct.
 -}
 data SimplificationProof level = SimplificationProof
-    deriving (Show, Eq)
+    deriving (Eq, Generic, Show)
+
+instance Hashable (SimplificationProof level)
 
 -- * Branching
 

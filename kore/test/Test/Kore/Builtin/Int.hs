@@ -20,11 +20,11 @@ import           GHC.Integer.Logarithms
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-import           Kore.Step.StepperAttributes
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
@@ -54,7 +54,11 @@ testUnary symb impl =
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools symb
 
 -- | Test a binary operator hooked to the given symbol.
@@ -72,7 +76,11 @@ testBinary symb impl =
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools symb
 
 -- | Test a comparison operator hooked to the given symbol
@@ -90,7 +98,11 @@ testComparison symb impl =
         actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools symb
 
 -- | Test a partial unary operator hooked to the given symbol.
@@ -107,7 +119,11 @@ testPartialUnary symb impl =
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools symb
 
 -- | Test a partial binary operator hooked to the given symbol.
@@ -125,7 +141,11 @@ testPartialBinary symb impl =
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools symb
 
 -- | Test a partial binary operator hooked to the given symbol, passing zero as
@@ -143,7 +163,11 @@ testPartialBinaryZero symb impl =
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, 0])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools symb
 
 -- | Test a partial ternary operator hooked to the given symbol.
@@ -162,7 +186,11 @@ testPartialTernary symb impl =
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools symb
 
 -- Comparison operators

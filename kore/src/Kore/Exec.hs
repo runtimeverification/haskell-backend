@@ -34,6 +34,8 @@ import           Kore.AST.MetaOrObject
                  ( Object (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
@@ -50,6 +52,7 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  unwrapPredicate )
 import qualified Kore.Repl as Repl
+import           Kore.Step
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.EvaluationStrategy
@@ -58,15 +61,9 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
-import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), extractRewriteAxioms,
-                 extractRewriteClaims )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.BaseStep
-                 ( StepProof )
 import           Kore.Step.Pattern
+import           Kore.Step.Proof
+                 ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -75,6 +72,12 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern), extractRewriteAxioms,
+                 extractRewriteClaims )
+import           Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
@@ -85,9 +88,6 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.Step
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import           Kore.Step.Strategy
                  ( ExecutionGraph )
 import qualified Kore.Unification.Substitution as Substitution

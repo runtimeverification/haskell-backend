@@ -85,7 +85,6 @@ data DebugPlace
     | D_OnePath_Step_transitionRule
     | D_OnePath_verifyClaim
     | D_Step
-    | D_BaseStep_stepWithRule
     | D_Function_evaluatePattern
     | D_SMT_refutePredicate
   deriving (Eq, Ord, Show)
@@ -129,13 +128,13 @@ onePathWithFunctionNames =
     $ Map.insert D_OnePath_verifyClaim DebugNoResult
     $ Map.insert D_OnePath_Step_transitionRule DebugResult
     $ Map.insert D_SMT_refutePredicate DebugResult
-    $ Map.singleton D_BaseStep_stepWithRule DebugResult
+    $ Map.empty
 
 executionWithFunctionNames :: Map DebugPlace DebugResult
 executionWithFunctionNames =
     Map.insert D_Function_evaluatePattern DebugNoResult
     $ Map.insert D_Step DebugNoResult
-    $ Map.singleton D_BaseStep_stepWithRule DebugResult
+    $ Map.empty
 
 traceWhenEnabled
     :: DebugPlace -> (DebugResult -> a -> a) -> (a -> a)

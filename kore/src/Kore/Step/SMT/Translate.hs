@@ -40,13 +40,13 @@ import           Kore.Attribute.Hook
 import           Kore.Attribute.Smthook
 import           Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort as Attribute
+import           Kore.Attribute.Symbol
+import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
-import           Kore.Step.StepperAttributes
-import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           SMT
                  ( SExpr (..), SMT )
 import qualified SMT
