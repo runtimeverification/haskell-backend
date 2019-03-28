@@ -167,10 +167,6 @@ rawCompareWithExplanation expected actual =
         then Just $ formatDiffForExplanation (show expected) (show actual)
         else Nothing
 
-instance EqualWithExplanation Text where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
 instance (EqualWithExplanation a1, EqualWithExplanation a2)
     => EqualWithExplanation (a1, a2)
   where
@@ -286,6 +282,14 @@ instance EqualWithExplanation Integer where
     printWithExplanation = show
 
 instance EqualWithExplanation Bool where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation Text where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance {-# OVERLAPPING #-} EqualWithExplanation String where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
