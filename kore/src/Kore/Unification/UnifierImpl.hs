@@ -53,7 +53,7 @@ import           Kore.Variables.Fresh
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
        ( termUnification )
 import {-# SOURCE #-} Kore.Step.Substitution
-       ( noBranching, normalizeExcept )
+       ( mergePredicatesAndSubstitutionsExcept )
 
 {-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
@@ -145,21 +145,24 @@ simplifyAnds
                         axiomIdToSimplifier
                         (ExpandedPattern.term intermediate)
                         pat
-                let merged =
-                        Predicated.withoutTerm result
-                        <> Predicated.withoutTerm intermediate
-                (normalized, _) <-
-                    noBranching $ normalizeExcept
+                (predSubst, _) <-
+                    mergePredicatesAndSubstitutionsExcept
                         tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
-                        merged
-                return
-                    (Predicated.withCondition
-                        (ExpandedPattern.term result)
-                        normalized
-                    )
+                        [ ExpandedPattern.predicate result
+                        , ExpandedPattern.predicate intermediate
+                        ]
+                        [ ExpandedPattern.substitution result
+                        , ExpandedPattern.substitution intermediate
+                        ]
+                return ExpandedPattern.Predicated
+                    { term = ExpandedPattern.term result
+                    , predicate = Predicated.predicate predSubst
+                    , substitution = Predicated.substitution predSubst
+                    }
+
 
 groupSubstitutionByVariable
     :: Ord (variable level)
