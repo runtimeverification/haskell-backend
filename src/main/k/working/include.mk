@@ -28,6 +28,10 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.search.final.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
 
+%.psearch.final.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
+	    $(foreach pat, $(wildcard $*.search.pattern), --pattern "$$(cat $(pat))")
+
 %.krepl: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m VERIFICATION $<
 

@@ -10,6 +10,7 @@ all_tests := \
 	sum
 k_tests := \
 	impossible-branch.search.final \
+	impossible-branch.psearch.final \
 	sum
 prove_tests := \
 	add-spec \
