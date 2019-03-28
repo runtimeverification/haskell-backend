@@ -25,7 +25,7 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.kprove: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
-%.search.final.output: %.$(DEFINITION) $(DEFINITION) $(KORE_EXEC)
+%.search.final.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
 
 %.krepl: %.k $(DEFINITION) $(KORE_EXEC)
