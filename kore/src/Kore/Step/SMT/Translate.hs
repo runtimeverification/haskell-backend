@@ -1,6 +1,6 @@
 {-|
-Module      : Kore.Step.TranslateSMT
-Description : Evaluates conditions.
+Module      : Kore.Step.SMT.Translate
+Description : Translates conditions to something that a SMT solver understands.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 
-module Kore.Step.TranslateSMT
+module Kore.Step.SMT.Translate
     ( translatePredicate
     , Translator
     , VarContext
