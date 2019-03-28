@@ -346,11 +346,11 @@ mainWithOptions
                 SMT.runSMT smtConfig
                 $ evalSimplifier logger
                 $ do
-                    give
-                        (extractMetadataTools indexedModule
-                            :: MetadataTools Object StepperAttributes
-                        )
-                        (declareSMTLemmas indexedModule)
+                    -- give
+                    --     (extractMetadataTools indexedModule
+                    --         :: MetadataTools Object StepperAttributes
+                    --     )
+                    --     (declareSMTLemmas indexedModule)
                     case proveParameters of
                         Nothing -> do
                             let
