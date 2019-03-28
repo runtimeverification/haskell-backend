@@ -224,9 +224,28 @@ test_equalsSimplification_OrOfExpandedPatterns =
                         , predicate =
                             makeMultipleAndPredicate
                                 [ definedF
-                                , makeOrPredicate definedG definedH
+                                , definedG
                                 , makeImpliesPredicate
-                                    definedG
+                                    (makeAndPredicate
+                                        definedG
+                                        (makeEqualsPredicate Mock.a Mock.a)
+                                    )
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
+                                    definedH
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                ]
+                        , substitution =
+                            Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                        }
+                    , Predicated
+                        { term = mkTop_
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ definedF
+                                , definedH
+                                , makeImpliesPredicate
+                                    (makeAndPredicate definedG substG)
                                     (makeEqualsPredicate Mock.cf Mock.cg)
                                 , makeImpliesPredicate
                                     definedH
@@ -239,7 +258,8 @@ test_equalsSimplification_OrOfExpandedPatterns =
                         , predicate =
                             makeMultipleAndPredicate
                                 [ makeNotPredicate definedF
-                                , makeNotPredicate definedG
+                                , makeNotPredicate
+                                    (makeAndPredicate definedG substG)
                                 , makeNotPredicate definedH
                                 ]
                         , substitution = mempty
@@ -247,10 +267,8 @@ test_equalsSimplification_OrOfExpandedPatterns =
                     ]
               where
                 definedF = makeCeilPredicate Mock.cf
-                definedG =
-                    makeAndPredicate
-                        (makeCeilPredicate Mock.cg)
-                        (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                definedG = makeCeilPredicate Mock.cg
+                substG = makeEqualsPredicate (mkVar Mock.x) Mock.a
                 definedH = makeCeilPredicate Mock.ch
             first =
                 MultiOr.make
