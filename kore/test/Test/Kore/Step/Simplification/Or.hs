@@ -35,10 +35,10 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 
 -- * Part 1: 'simplifyEvaluated'
 
-{-
+{- |
 
-`SimplifyEvaluated` is the core function. It converts two `OrOfExpandedPattern`
-values into a simplifier that is to produce a single `OrOfExpandedPattern`. We
+'simplifyEvaluated' is the core function. It converts two 'OrOfExpandedPattern'
+values into a simplifier that is to produce a single 'OrOfExpandedPattern'. We
 run the simplifier to check correctness.
 
 -}
@@ -73,19 +73,13 @@ test_disjoinPredicates =
         , p1 <- predicates, p2 <- predicates
         , s1 <- substitutions, s2 <- substitutions
         , let
-            -- If the terms are equal, expect the given simplification.
-            -- Otherwise, the predicates should not be merged.
+            -- If the terms and substitutions are equal, expect the given
+            -- simplification. Otherwise, the predicates should not be merged.
             expectation
-              | t1 == t2  = simplifiesTo
-              | otherwise = \initial _ -> doesNotSimplify initial
-            (p', s')
-              | s1 == s2  = (makeOrPredicate p1 p2, s1)
-              | otherwise =
-                ( makeOrPredicate
-                    (makeAndPredicate p1 (substitutionToPredicate s1))
-                    (makeAndPredicate p2 (substitutionToPredicate s2))
-                , mempty
-                )
+              | t1 == t2, s1 == s2 = simplifiesTo
+              | otherwise          = \initial _ -> doesNotSimplify initial
+            p' = makeOrPredicate p1 p2
+            s' = s1
         ]
   where
     terms = [ tM, tm ]
@@ -119,11 +113,11 @@ test_deduplicateMiddle =
         ]
 
 
--- * Part 2: `simplify` is just a trivial use of `simplifyEvaluated`
+-- * Part 2: 'simplify' is just a trivial use of 'simplifyEvaluated'
 
 test_simplify :: TestTree
 test_simplify =
-    testGroup "`simplify` just calls `simplifyEvaluated`"
+    testGroup "simplify just calls simplifyEvaluated"
         [ equals_
             (simplify $        binaryOr orPattern1 orPattern2 )
             (simplifyEvaluated          orPattern1 orPattern2 )
@@ -136,25 +130,25 @@ test_simplify =
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 
     binaryOr
-      :: OrOfExpandedPattern Object Variable
-      -> OrOfExpandedPattern Object Variable
-      -> Or Object (OrOfExpandedPattern Object Variable)
+        :: OrOfExpandedPattern Object Variable
+        -> OrOfExpandedPattern Object Variable
+        -> Or Object (OrOfExpandedPattern Object Variable)
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
 
 -- * Part 3: The values and functions relevant to this test
 
-{-
+{- |
 Key for variable names:
-1. `OrOfExpandedPattern` values are represented by a tuple containing
+1. 'OrOfExpandedPattern' values are represented by a tuple containing
    the term, predicate, and substitution, in that order. They're
-   also tagged with `t`, `p`, and `s`.
+   also tagged with 't', 'p', and 's'.
 2. The second character has this meaning:
    T : top
    _ : bottom
    m or M : a character neither top nor bottom. Two values
-            named `pm` and `pM` are expected to be unequal.
+            named 'pm' and 'pM' are expected to be unequal.
 -}
 
 {- | Short-hand for: @ExpandedPattern Object Variable@
