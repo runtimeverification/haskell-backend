@@ -12,18 +12,17 @@ module Kore.Step.Simplification.Predicate
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import Kore.AST.Pure
-import Kore.AST.Valid
-import Kore.Predicate.Predicate
-       ( Predicate, unwrapPredicate )
-import Kore.Step.Representation.ExpandedPattern
-       ( PredicateSubstitution, Predicated (..) )
-import Kore.Step.Simplification.Data
-import Kore.Unparser
-import Kore.Variables.Fresh
-       ( FreshVariable )
+import           Kore.AST.Pure
+import           Kore.Predicate.Predicate
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Representation.ExpandedPattern
+                 ( PredicateSubstitution, Predicated (..) )
+import           Kore.Step.Simplification.Data
+import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {- | Simplify the 'Predicate' once; return but do not apply the substitution.
 
@@ -52,15 +51,22 @@ simplifyPartial
   = do
     (patternOr, _proof) <-
         Monad.Trans.lift
-        $ simplifier substitutionSimplifier (unwrapPredicate predicate)
+        $ simplifier substitutionSimplifier
+        $ Predicate.unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
     -- for \bottom because patternOr is an OrOfExpandedPattern.
-    scatter (eraseTerm <$> patternOr)
+    scatter (rewrapPredicate <$> patternOr)
   where
-    eraseTerm predicated@Predicated { term }
-      | Top_ _ <- term = predicated { term = () }
-      | otherwise =
-        (error . show . Pretty.vsep)
-            [ "Expecting a \\top term, but found:"
-            , unparse predicated
-            ]
+    rewrapPredicate predicated =
+        predicated
+            { term = ()
+            , predicate =
+                -- It is safe to re-wrap the simplified term as a predicate:
+                -- simplifying a predicate must produce a predicate because
+                -- simplification preserves sorts.
+                Predicate.makeAndPredicate
+                    (Predicate.wrapPredicate simplified)
+                    predicate'
+            }
+      where
+        Predicated { term = simplified, predicate = predicate' } = predicated
