@@ -269,14 +269,6 @@ instance
         "Element (" ++ printWithExplanation a ++ ")"
     printWithExplanation Sup  = "Sup"
 
-newtype EWEString = EWEString String
-
-instance EqualWithExplanation EWEString
-  where
-    compareWithExplanation (EWEString s1) (EWEString s2) =
-        rawCompareWithExplanation s1 s2
-    printWithExplanation (EWEString s) = show s
-
 instance EqualWithExplanation Integer where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
