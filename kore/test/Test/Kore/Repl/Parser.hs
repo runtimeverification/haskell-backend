@@ -138,6 +138,12 @@ configTests =
                               \expecting end of input, integer, or white space\n"
     ]
 
+leafsTests :: [ParserTest ReplCommand]
+leafsTests =
+    [ "leafs"  `parsesTo` ShowLeafs
+    , "leafs " `parsesTo` ShowLeafs
+    ]
+
 exitTests :: [ParserTest ReplCommand]
 exitTests =
     [ "exit"  `parsesTo` Exit

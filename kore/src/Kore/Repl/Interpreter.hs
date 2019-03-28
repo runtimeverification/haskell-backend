@@ -21,18 +21,16 @@ import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT )
-import           Data.Function
-                 ( on )
 import           Data.Functor
                  ( ($>) )
 import           Data.Graph.Inductive.Graph
                  ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
-import           Data.List
-                 ( groupBy )
+import           Data.List.Extra
+                 ( groupSort )
 import           Data.Maybe
-                 ( listToMaybe )
+                 ( catMaybes )
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
 
@@ -45,7 +43,8 @@ import           Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
                  ( sourceLocation )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..) )
+                 ( CommonStrategyPattern, StrategyPattern (..),
+                 strategyPattern )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -173,6 +172,9 @@ showConfig configNode = do
                 $ node'
         else putStrLn' "Invalid node!"
 
+data NodeStates = StuckNode | UnevaluatedNode
+    deriving (Eq, Ord, Show)
+
 showLeafs
     :: MetaOrObject level
     => StateT (ReplState level) Simplifier ()
@@ -180,20 +182,23 @@ showLeafs = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     let nodes = Graph.nodes graph
     let leafs = filter (\x -> (Graph.outdeg graph x) == 0) nodes
-    let aux = fmap (\x -> (x, (Graph.lab' . Graph.context graph) x)) leafs
-    let aux2 = fmap fst $ filter (\(x, y) -> isStuck y) aux
-    let aux3 = fmap fst $ filter (\(x, y) -> isUnevaluated y) aux
-    putStrLn' $
-        "Unevaluated nodes: " <> (show aux3) <> "\n"
-        <> "Stuck nodes: " <> (show aux2)
+    let result =
+            groupSort
+                . catMaybes
+                . fmap (f graph)
+                $ leafs
 
-isStuck :: MetaOrObject level => CommonStrategyPattern level -> Bool
-isStuck (Stuck p) = True
-isStuck _ = False
+    putStrLn' $ foldr ((<>) . showPair) "" result
+  where
+    f graph node =
+        maybe Nothing (\x -> Just (x, node))
+        . strategyPattern (const . Just $ UnevaluatedNode) (const . Just $ StuckNode) Nothing
+        . Graph.lab'
+        . Graph.context graph
+        $ node
 
-isUnevaluated :: MetaOrObject level => CommonStrategyPattern level -> Bool
-isUnevaluated (RewritePattern p) = True
-isUnevaluated _ = False
+    showPair :: (NodeStates, [Graph.Node]) -> String
+    showPair (ns, xs) = show ns <> ": " <> show xs
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
@@ -248,10 +253,10 @@ performStepNoBranching (n, res) =
 
 unparseStrategy :: MetaOrObject level => CommonStrategyPattern level -> String
 unparseStrategy =
-    \case
-        Bottom -> "Reached bottom"
-        Stuck pat -> "Stuck: \n" <> unparseToString pat
-        RewritePattern pat -> unparseToString pat
+    strategyPattern
+        unparseToString
+        (mappend "Stuck: \n" . unparseToString)
+        "Reached bottom"
 
 extractSourceAndLocation
     :: RewriteRule level Variable
