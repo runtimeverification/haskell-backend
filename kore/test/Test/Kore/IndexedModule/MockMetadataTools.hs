@@ -23,13 +23,13 @@ import           Kore.Attribute.Functional
 import           Kore.Attribute.Injective
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.SortInjection
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( HeadType, MetadataTools (MetadataTools) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Sort
                  ( Sort )
-import           Kore.Step.StepperAttributes
 
 makeMetadataTools
     :: [(SymbolOrAlias level, StepperAttributes)]
@@ -78,7 +78,7 @@ functionalAttributes = defaultAttributes { functional = Functional True }
 
 constructorAttributes :: StepperAttributes
 constructorAttributes =
-    defaultStepperAttributes
+    defaultSymbolAttributes
         { constructor = Constructor True
         , injective = Injective True
         }
@@ -98,4 +98,4 @@ sortInjectionAttributes =
         }
 
 defaultAttributes :: StepperAttributes
-defaultAttributes = defaultStepperAttributes
+defaultAttributes = defaultSymbolAttributes

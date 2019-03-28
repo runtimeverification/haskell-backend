@@ -1,525 +1,1208 @@
 module Test.Kore.Step.Step
-    ( test_simpleStrategy
-    , test_stepStrategy
-    , test_unificationError
+    ( test_applyUnifiedRule
+    , test_unifyRule
+    , test_applyRewriteRule_
+    , test_applyRewriteRules
+    , test_sequenceRewriteRules
+    , test_sequenceMatchingRules
     ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Control.Exception as Exception
-import           Data.Default
+import           Control.Monad.Except
+                 ( ExceptT, runExceptT )
+import           Data.Default as Default
                  ( def )
-import qualified Data.List as List
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
-import           Data.Ord
-                 ( comparing )
 import qualified Data.Set as Set
 
-import           Data.Limit
-                 ( Limit (..) )
-import qualified Data.Limit as Limit
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Implicit.ImplicitSorts
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.BaseStep
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+import           Kore.Predicate.Predicate as Predicate
+import qualified Kore.Step.Axiom.Matcher as Matcher
+import           Kore.Step.Error
+import           Kore.Step.Representation.ExpandedPattern
+                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr (..) )
+import qualified Kore.Step.Representation.Predicated as Predicated
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Rule
+                 ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
+import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.Step
-import           Kore.Step.StepperAttributes
+                 ( create )
+import           Kore.Step.Step hiding
+                 ( applyRewriteRule, applyRewriteRules, applyRule,
+                 applyUnifiedRule, sequenceRewriteRules, unifyRule )
+import qualified Kore.Step.Step as Step
+import           Kore.Unification.Error
+                 ( SubstitutionError (..) )
+import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unification.Unifier
+                 ( UnificationError (..) )
+import           Kore.Variables.Fresh
+                 ( nextVariable )
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+                 ( makeMetadataTools )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-v1, a1, b1, x1 :: Sort Meta -> Variable Meta
-v1 = Variable (testId "#v1") mempty
-a1 = Variable (testId "#a1") mempty
-b1 = Variable (testId "#b1") mempty
-x1 = Variable (testId "#x1") mempty
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        Mock.subsorts
 
-rewriteIdentity :: RewriteRule Meta Variable
-rewriteIdentity =
-    RewriteRule RulePattern
-        { left = mkVar (x1 patternMetaSort)
-        , right = mkVar (x1 patternMetaSort)
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
+evalUnifier
+    :: BranchT (ExceptT e Simplifier) a
+    -> IO (Either e (MultiOr a))
+evalUnifier =
+    SMT.runSMT SMT.defaultConfig
+    . evalSimplifier emptyLogger
+    . runExceptT
+    . gather
 
-rewriteImplies :: RewriteRule Meta Variable
-rewriteImplies =
-    RewriteRule $ RulePattern
-        { left = mkVar (x1 patternMetaSort)
-        , right =
-            mkImplies
-                (mkVar $ x1 patternMetaSort)
-                (mkVar $ x1 patternMetaSort)
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-
-expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta Variable)]
-expectTwoAxioms =
-    List.sortBy (comparing fst)
-        [   ( pure (mkVar $ v1 patternMetaSort), mempty )
-        ,   ( Predicated
-                { term =
-                    mkImplies
-                        (mkVar $ v1 patternMetaSort)
-                        (mkVar $ v1 patternMetaSort)
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
-            , mempty
-            )
-        ]
-
-actualTwoAxioms :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-actualTwoAxioms =
-    runStep
-        mockMetadataTools
-        Predicated
-            { term = mkVar (v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        [ rewriteIdentity
-        , rewriteImplies
-        ]
-
-initialFailSimple :: ExpandedPattern Meta Variable
-initialFailSimple =
-    Predicated
-        { term =
-            metaSigma
-                (metaG (mkVar $ a1 patternMetaSort))
-                (metaF (mkVar $ b1 patternMetaSort))
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-
-expectFailSimple :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-expectFailSimple = [ (initialFailSimple, mempty) ]
-
-actualFailSimple :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-actualFailSimple =
-    runStep
-        mockMetadataTools
-        initialFailSimple
-        [ RewriteRule $ RulePattern
-            { left =
-                metaSigma
-                    (mkVar $ x1 patternMetaSort)
-                    (mkVar $ x1 patternMetaSort)
-            , right =
-                mkVar (x1 patternMetaSort)
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
-        ]
-
-initialFailCycle :: ExpandedPattern Meta Variable
-initialFailCycle =
-    Predicated
-        { term =
-            metaSigma
-                (mkVar $ a1 patternMetaSort)
-                (mkVar $ a1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-
-expectFailCycle :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-expectFailCycle = [ (initialFailCycle, mempty) ]
-
-actualFailCycle :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-actualFailCycle =
-    runStep
-        mockMetadataTools
-        initialFailCycle
-        [ RewriteRule $ RulePattern
-            { left =
-                metaSigma
-                    (metaF (mkVar $ x1 patternMetaSort))
-                    (mkVar $ x1 patternMetaSort)
-            , right =
-                mkVar (x1 patternMetaSort)
-            , ensures = makeTruePredicate
-            , requires = makeTruePredicate
-            , attributes = def
-            }
-        ]
-
-initialIdentity :: ExpandedPattern Meta Variable
-initialIdentity =
-    Predicated
-        { term = mkVar (v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-
-expectIdentity :: [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-expectIdentity = [ (initialIdentity, mempty) ]
-
-actualIdentity :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-actualIdentity =
-    runStep
-        mockMetadataTools
-        initialIdentity
-        [ rewriteIdentity ]
-
-test_stepStrategy :: [TestTree]
-test_stepStrategy =
-    [ testCase "Applies a simple axiom"
-        -- Axiom: X1 => X1
-        -- Start pattern: V1
-        -- Expected: V1
-        (assertEqualWithExplanation "" expectIdentity =<< actualIdentity)
-    , testCase "Applies two simple axioms"
-        -- Axiom: X1 => X1
-        -- Axiom: X1 => implies(X1, X1)
-        -- Start pattern: V1
-        -- Expected: V1
-        -- Expected: implies(V1, V1)
-        (assertEqualWithExplanation "" expectTwoAxioms =<< actualTwoAxioms)
-    , testCase "Fails to apply a simple axiom"
-        -- Axiom: sigma(X1, X1) => X1
-        -- Start pattern: sigma(f(A1), g(B1))
-        -- Expected: empty result list
-        (assertEqualWithExplanation "" expectFailSimple =<< actualFailSimple)
-    , testCase "Fails to apply a simple axiom due to cycle."
-        -- Axiom: sigma(f(X1), X1) => X1
-        -- Start pattern: sigma(A1, A1)
-        -- Expected: empty result list
-        (assertEqualWithExplanation "" expectFailCycle =<< actualFailCycle)
-    ]
-
-test_simpleStrategy :: [TestTree]
-test_simpleStrategy =
-    [ testCase "Runs one step"
-        -- Axiom: f(X1) => g(X1)
-        -- Start pattern: f(V1)
-        -- Expected: g(V1)
-        (assertEqualWithExplanation "" expectOneStep =<< actualOneStep)
-    , testCase "Runs two steps"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: h(V1)
-        (assertEqualWithExplanation "" expectTwoSteps =<< actualTwoSteps)
-    , testCase "Obeys step limit"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: g(V1)
-        (assertEqualWithExplanation "" expectStepLimit =<< actualStepLimit)
-    , testCase "0 step limit"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: f(V1)
-        (assertEqualWithExplanation "" expectZeroStepLimit
-            =<< actualZeroStepLimit)
-    ]
-
-axiomsSimpleStrategy :: [RewriteRule Meta Variable]
-axiomsSimpleStrategy =
-    [ RewriteRule $ RulePattern
-        { left = metaF (mkVar $ x1 patternMetaSort)
-        , right = metaG (mkVar $ x1 patternMetaSort)
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-    , RewriteRule $ RulePattern
-        { left = metaG (mkVar $ x1 patternMetaSort)
-        , right = metaH (mkVar $ x1 patternMetaSort)
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-    ]
-
-expectOneStep :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectOneStep =
-    ( Predicated
-        { term = metaG (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualOneStep :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualOneStep =
-    runSteps
-        mockMetadataTools
-        Unlimited
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        [ RewriteRule $ RulePattern
-            { left = metaF (mkVar $ x1 patternMetaSort)
-            , right = metaG (mkVar $ x1 patternMetaSort)
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
-        ]
-
-expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectTwoSteps =
-    ( Predicated
-        { term = metaH (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualTwoSteps :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualTwoSteps =
-    runSteps
-        mockMetadataTools
-        Unlimited
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
-
-
-expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectZeroStepLimit =
-        ( Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        , mempty
+applyUnifiedRule
+    :: PredicateSubstitution Object Variable
+    -> UnifiedRule Variable
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (MultiOr (ExpandedPattern Object Variable))
         )
-
-actualZeroStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualZeroStepLimit =
-    runSteps
-        mockMetadataTools
-        (Limit 0)
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
-
-expectStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectStepLimit =
-    ( Predicated
-        { term = metaG (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualStepLimit =
-    runSteps
-        mockMetadataTools
-        (Limit 1)
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
-
-test_unificationError :: TestTree
-test_unificationError =
-    testCase "Throws unification error" $ do
-        result <- Exception.try actualUnificationError
-        case result of
-            Left (Exception.ErrorCall _) -> return ()
-            Right _ -> assertFailure "Expected unification error"
-
-actualUnificationError
-    :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
-actualUnificationError =
-    runStep
-        mockMetadataTools
-        Predicated
-            { term =
-                metaSigma
-                    (mkVar $ a1 patternMetaSort)
-                    (metaI (mkVar $ b1 patternMetaSort))
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        [axiomMetaSigmaId]
-
-mockSymbolAttributes :: SymbolOrAlias Meta -> StepperAttributes
-mockSymbolAttributes patternHead =
-    defaultStepperAttributes
-        { constructor = Constructor { isConstructor }
-        , functional = Functional { isDeclaredFunctional }
-        , function = Function { isDeclaredFunction }
-        , injective = Injective { isDeclaredInjective }
-        }
+applyUnifiedRule initial unifiedRule =
+    evalUnifier
+    $ Step.applyUnifiedRule
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        initial
+        unifiedRule
   where
-    isConstructor = patternHead /= iSymbol
-    isDeclaredFunctional = patternHead /= iSymbol
-    isDeclaredFunction = patternHead /= iSymbol
-    isDeclaredInjective = patternHead /= iSymbol
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
 
-mockMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetadataTools = MetadataTools
-    { symAttributes = mockSymbolAttributes
-    , symbolOrAliasType = const HeadType.Symbol
-    , sortAttributes = const def
-    , isSubsortOf = const $ const False
-    , subsorts = Set.singleton
-    }
+test_applyUnifiedRule :: [TestTree]
+test_applyUnifiedRule =
+    [ testCase "\\bottom initial condition" $ do
+        let unifiedRule =
+                Predicated
+                    { term = axiom
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+            initial = PredicateSubstitution.bottom
+            expect = Right mempty
+        actual <- applyUnifiedRule initial unifiedRule
+        assertEqual "" expect actual
 
-sigmaSymbol :: SymbolOrAlias Meta
-sigmaSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = testId "#sigma"
-    , symbolOrAliasParams = []
-    }
+    , testCase "returns axiom right-hand side" $ do
+        let unifiedRule =
+                Predicated
+                    { term = axiom
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+            initial = PredicateSubstitution.top
+            expect = Right (MultiOr [ right axiom <$ initial ])
+        actual <- applyUnifiedRule initial unifiedRule
+        assertEqual "" expect actual
 
-metaSigma
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
-    -> CommonStepPattern Meta
-metaSigma p1 p2 = mkApp patternMetaSort sigmaSymbol [p1, p2]
+    , testCase "combine initial and rule conditions" $ do
+        let unifiedRule =
+                Predicated
+                    { term = axiom
+                    , predicate = expect2
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+            initial = PredicateSubstitution.fromPredicate expect1
+            expect1 =
+                Predicate.makeEqualsPredicate
+                    (Mock.f $ mkVar Mock.x)
+                    Mock.a
+            expect2 =
+                Predicate.makeEqualsPredicate
+                    (Mock.f $ mkVar Mock.y)
+                    Mock.b
+            expect = MultiOr [Predicate.makeAndPredicate expect1 expect2]
+        Right applied <- applyUnifiedRule initial unifiedRule
+        let actual = Predicated.predicate <$> applied
+        assertEqual "" expect actual
 
-axiomMetaSigmaId :: RewriteRule Meta Variable
-axiomMetaSigmaId =
+    , testCase "conflicting initial and rule conditions" $ do
+        let predicate = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+            unifiedRule =
+                Predicated
+                    { term = axiom
+                    , predicate
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+            initial =
+                PredicateSubstitution.fromPredicate
+                $ Predicate.makeNotPredicate predicate
+            expect = Right mempty
+        actual <- applyUnifiedRule initial unifiedRule
+        assertEqual "" expect actual
+
+    ]
+
+unifyRule
+    :: ExpandedPattern Object Variable
+    -> RulePattern Object Variable
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (MultiOr (Predicated Object Variable (RulePattern Object Variable)))
+        )
+unifyRule initial rule =
+    evalUnifier
+    $ Step.unifyRule
+        metadataTools
+        unificationProcedure
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        initial
+        rule
+  where
+    metadataTools = mockMetadataTools
+    unificationProcedure = UnificationProcedure Unification.unificationProcedure
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+
+test_unifyRule :: [TestTree]
+test_unifyRule =
+    [ testCase "renames axiom left variables" $ do
+        let initial = pure (Mock.f (mkVar Mock.x))
+            axiom =
+                RulePattern
+                    { left = Mock.f (mkVar Mock.x)
+                    , right = Mock.g (mkVar Mock.x)
+                    , requires =
+                        Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+        Right unified <- unifyRule initial axiom
+        let actual = Predicated.term <$> unified
+        assertBool ""
+            $ Foldable.all (Set.notMember Mock.x)
+            $ RulePattern.freeVariables <$> actual
+
+    , testCase "performs unification with initial term" $ do
+        let initial = pure (Mock.functionalConstr10 Mock.a)
+            axiom =
+                RulePattern
+                    { left = Mock.functionalConstr10 (mkVar Mock.x)
+                    , right = Mock.g Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+            expect = Right (MultiOr [(pure axiom) { substitution }])
+              where
+                substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+        actual <- unifyRule initial axiom
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "returns unification failures" $ do
+        let initial = pure (Mock.functionalConstr10 Mock.a)
+            axiom =
+                RulePattern
+                    { left = Mock.functionalConstr11 (mkVar Mock.x)
+                    , right = Mock.g Mock.b
+                    , requires = Predicate.makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+            expect = Right mempty
+        actual <- unifyRule initial axiom
+        assertEqualWithExplanation "" expect actual
+    ]
+
+-- | Apply the 'RewriteRule' to the configuration, but discard remainders.
+applyRewriteRule_
+    :: ExpandedPattern Object Variable
+    -- ^ Configuration
+    -> RewriteRule Object Variable
+    -- ^ Rewrite rule
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (MultiOr (ExpandedPattern Object Variable))
+        )
+applyRewriteRule_ initial rule = do
+    result <- applyRewriteRules initial [rule]
+    return (discardRemainders <$> result)
+  where
+    discardRemainders OrStepResult { rewrittenPattern } = rewrittenPattern
+
+test_applyRewriteRule_ :: [TestTree]
+test_applyRewriteRule_ =
+    [ testCase "apply identity axiom" $ do
+        let expect = Right (MultiOr [ initial ])
+            initial = pure (mkVar Mock.x)
+        actual <- applyRewriteRule_ initial axiomId
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "apply identity without renaming" $ do
+        let expect = Right (MultiOr [ initial ])
+            initial = pure (mkVar Mock.y)
+        actual <- applyRewriteRule_ initial axiomId
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "substitute variable with itself" $ do
+        let expect = Right (MultiOr [ initial { term = mkVar Mock.x } ])
+            initial = pure (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
+        actual <- applyRewriteRule_ initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "merge configuration patterns" $ do
+        let term = Mock.functionalConstr10 (mkVar Mock.y)
+            expect =
+                Right (MultiOr [ initial { term, substitution } ])
+              where
+                substitution = Substitution.wrap [ (Mock.x, term) ]
+            initial = pure (Mock.sigma (mkVar Mock.x) term)
+        actual <- applyRewriteRule_ initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "substitution with symbol matching" $ do
+        let expect =
+                Right (MultiOr [ initial { term = fz, substitution } ])
+              where
+                substitution = Substitution.wrap [ (Mock.y, mkVar Mock.z) ]
+            fy = Mock.functionalConstr10 (mkVar Mock.y)
+            fz = Mock.functionalConstr10 (mkVar Mock.z)
+            initial = pure (Mock.sigma fy fz)
+        actual <- applyRewriteRule_ initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "merge multiple variables" $ do
+        let expect =
+                Right (MultiOr [ initial { term = yy, substitution } ])
+              where
+                substitution = Substitution.wrap [ (Mock.x, mkVar Mock.y) ]
+            xy = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
+            yx = Mock.sigma (mkVar Mock.y) (mkVar Mock.x)
+            yy = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
+            initial = pure (Mock.sigma xy yx)
+        actual <- applyRewriteRule_ initial axiomSigmaXXYY
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "rename quantified right variables" $ do
+        let expect = Right (MultiOr [ pure final ])
+            final = mkExists (nextVariable Mock.y) (mkVar Mock.y)
+            initial = pure (mkVar Mock.y)
+            axiom =
+                RewriteRule RulePattern
+                    { left = mkVar Mock.x
+                    , right = mkExists Mock.y (mkVar Mock.x)
+                    , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = def
+                    }
+        actual <- applyRewriteRule_ initial axiom
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "symbol clash" $ do
+        let expect = Right mempty
+            fx = Mock.functionalConstr10 (mkVar Mock.x)
+            gy = Mock.functionalConstr11 (mkVar Mock.y)
+            initial = pure (Mock.sigma fx gy)
+        actual <- applyRewriteRule_ initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "impossible substitution" $ do
+        let expect = Right mempty
+            xfy =
+                Mock.sigma
+                    (mkVar Mock.x)
+                    (Mock.functionalConstr10 (mkVar Mock.y))
+            xy = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
+            initial = pure (Mock.sigma xfy xy)
+        actual <- applyRewriteRule_ initial axiomSigmaXXYY
+        assertEqualWithExplanation "" expect actual
+
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(a, f(b)) with substitution b=a
+    , testCase "impossible substitution (ctor)" $ do
+        let expect = Right mempty
+            initial =
+                Predicated
+                    { term =
+                        Mock.sigma
+                            (mkVar Mock.x)
+                            (Mock.functionalConstr10 (mkVar Mock.y))
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.y, mkVar Mock.x)]
+                    }
+        actual <- applyRewriteRule_ initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(a, h(b)) with substitution b=a
+    , testCase "circular dependency error" $ do
+        let expect =
+                -- TODO(virgil): This should probably be a normal result with
+                -- b=h(b) in the predicate.
+                Left
+                $ StepErrorSubstitution
+                $ NonCtorCircularVariableDependency [Mock.y]
+            initial =
+                Predicated
+                    { term =
+                        Mock.sigma
+                            (mkVar Mock.x)
+                            (Mock.functional10 (mkVar Mock.y))
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.y, mkVar Mock.x)]
+                    }
+        actual <- applyRewriteRule_ initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(a, i(b)) with substitution b=a
+    , testCase "non-function substitution error" $ do
+        let expect = Left $ StepErrorUnification UnsupportedPatterns
+            initial =
+                pure $ Mock.sigma (mkVar Mock.x) (Mock.plain10 (mkVar Mock.y))
+        actual <- applyRewriteRule_ initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
+    , testCase "unify all children" $ do
+        let expect = (Right . MultiOr)
+                [ Predicated
+                    { term = Mock.sigma zz zz
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap
+                        [ (Mock.x, zz)
+                        , (Mock.y, mkVar Mock.z)
+                        ]
+                    }
+                ]
+            xx = Mock.sigma (mkVar Mock.x) (mkVar Mock.x)
+            yy = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
+            zz = Mock.sigma (mkVar Mock.z) (mkVar Mock.z)
+            yz = Mock.sigma (mkVar Mock.y) (mkVar Mock.z)
+            initial = pure $ Mock.sigma xx (Mock.sigma yz yy)
+        actual <- applyRewriteRule_ initial axiomSigmaId
+        assertEqualWithExplanation "" expect actual
+
+    -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, f(b)), a)
+    -- Expected: sigma(f(b), f(b)) and a=f(b)
+    , testCase "normalize substitution" $ do
+        let
+            fb = Mock.functional10 (mkVar Mock.y)
+            expect =
+                (Right . MultiOr)
+                    [ Predicated
+                        { term = Mock.sigma fb fb
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.wrap [(Mock.x, fb)]
+                        }
+                    ]
+            initial =
+                pure $ Mock.sigma (Mock.sigma (mkVar Mock.x) fb) (mkVar Mock.x)
+        actual <- applyRewriteRule_ initial axiomSigmaXXY
+        assertEqualWithExplanation "" expect actual
+
+    -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, f(b)), a) and a=f(c)
+    -- Expected: sigma(f(b), f(b)) and a=f(b), b=c
+    , testCase "merge substitution with initial" $ do
+        let
+            fy = Mock.functionalConstr10 (mkVar Mock.y)
+            fz = Mock.functionalConstr10 (mkVar Mock.z)
+            expect =
+                (Right . MultiOr)
+                    [ Predicated
+                        { term = Mock.sigma fz fz
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.wrap
+                                [ (Mock.x, fz)
+                                , (Mock.y, mkVar Mock.z)
+                                ]
+                        }
+                    ]
+            initial =
+                Predicated
+                    { term =
+                        Mock.sigma (Mock.sigma (mkVar Mock.x) fy) (mkVar Mock.x)
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.x, fz)]
+                    }
+        actual <- applyRewriteRule_ initial axiomSigmaXXY
+        assertEqualWithExplanation "" expect actual
+
+    -- "sl1" => x
+    -- vs
+    -- "sl2"
+    -- Expected: bottom
+    , testCase "unmatched string literals" $ do
+        let expect = Right mempty
+            initial = pure (mkStringLiteral "sl2")
+            axiom =
+                RewriteRule RulePattern
+                    { left = mkStringLiteral "sl1"
+                    , right = mkVar Mock.x
+                    , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = def
+                    }
+        actual <- applyRewriteRule_ initial axiom
+        assertEqualWithExplanation "" expect actual
+
+    -- x => x
+    -- vs
+    -- a and g(a)=f(a)
+    -- Expected: a and g(a)=f(a)
+    , testCase "preserve initial condition" $ do
+        let expect = Right (MultiOr [initial])
+            predicate =
+                makeEqualsPredicate
+                    (Mock.functional11 Mock.a)
+                    (Mock.functional10 Mock.a)
+            initial =
+                Predicated
+                    { term = Mock.a
+                    , predicate
+                    , substitution = mempty
+                    }
+        actual <- applyRewriteRule_ initial axiomId
+        assertEqualWithExplanation "" expect actual
+
+    -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, f(b)), a) and g(a)=f(a)
+    -- Expected: sigma(f(b), f(b)) and a=f(b) and and g(f(b))=f(f(b))
+    , testCase "normalize substitution with initial condition" $ do
+        let
+            fb = Mock.functional10 (mkVar Mock.y)
+            expect =
+                (Right . MultiOr)
+                    [ Predicated
+                        { term = Mock.sigma fb fb
+                        , predicate =
+                            makeEqualsPredicate
+                                (Mock.functional11 fb)
+                                (Mock.functional10 fb)
+                        , substitution = Substitution.wrap [(Mock.x, fb)]
+                        }
+                    ]
+            initial =
+                Predicated
+                    { term =
+                        Mock.sigma
+                            (Mock.sigma (mkVar Mock.x) fb)
+                            (mkVar Mock.x)
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.functional11 (mkVar Mock.x))
+                            (Mock.functional10 (mkVar Mock.x))
+                    , substitution = mempty
+                    }
+        actual <- applyRewriteRule_ initial axiomSigmaXXY
+        assertEqualWithExplanation "" expect actual
+
+    -- x => x ensures g(x)=f(x)
+    -- vs
+    -- a
+    -- Expected: a and g(a)=f(a)
+    , testCase "conjoin rule ensures" $ do
+        let
+            ensures =
+                makeEqualsPredicate
+                    (Mock.functional11 (mkVar Mock.x))
+                    (Mock.functional10 (mkVar Mock.x))
+            expect = Right (MultiOr [ initial { predicate = ensures } ])
+            initial = pure (mkVar Mock.x)
+            axiom = RewriteRule ruleId { ensures }
+        actual <- applyRewriteRule_ initial axiom
+        assertEqualWithExplanation "" expect actual
+
+    -- x => x requires g(x)=f(x)
+    -- vs
+    -- a
+    -- Expected: y1 and g(a)=f(a)
+    , testCase "conjoin rule requirement" $ do
+        let
+            requires =
+                makeEqualsPredicate
+                    (Mock.functional11 (mkVar Mock.x))
+                    (Mock.functional10 (mkVar Mock.x))
+            expect = Right (MultiOr [ initial { predicate = requires } ])
+            initial = pure (mkVar Mock.x)
+            axiom = RewriteRule ruleId { requires }
+        actual <- applyRewriteRule_ initial axiom
+        assertEqualWithExplanation "" expect actual
+    ]
+  where
+    ruleId =
+        RulePattern
+            { left = mkVar Mock.x
+            , right = mkVar Mock.x
+            , requires = makeTruePredicate
+            , ensures = makeTruePredicate
+            , attributes = def
+            }
+    axiomId = RewriteRule ruleId
+
+    axiomSigmaId =
+        RewriteRule RulePattern
+            { left = Mock.sigma (mkVar Mock.x) (mkVar Mock.x)
+            , right = mkVar Mock.x
+            , requires = makeTruePredicate
+            , ensures = makeTruePredicate
+            , attributes = def
+            }
+
+    axiomSigmaXXYY =
+        RewriteRule RulePattern
+            { left =
+                Mock.sigma
+                    (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
+                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.y))
+            , right = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
+            , requires = makeTruePredicate
+            , ensures = makeTruePredicate
+            , attributes = def
+            }
+
+    axiomSigmaXXY =
+        RewriteRule RulePattern
+            { left =
+                Mock.sigma
+                    (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
+                    (mkVar Mock.y)
+            , right = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
+            , requires = makeTruePredicate
+            , ensures = makeTruePredicate
+            , attributes = def
+            }
+
+-- | Apply the 'RewriteRule's to the configuration.
+applyRewriteRules
+    :: ExpandedPattern Object Variable
+    -- ^ Configuration
+    -> [RewriteRule Object Variable]
+    -- ^ Rewrite rule
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (OrStepResult Object Variable)
+        )
+applyRewriteRules initial rules =
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ runExceptT
+    $ Step.applyRewriteRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        unificationProcedure
+        rules
+        initial
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+    unificationProcedure =
+        UnificationProcedure Unification.unificationProcedure
+
+test_applyRewriteRules :: [TestTree]
+test_applyRewriteRules =
+    [ testCase "if _ then _" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: constr20(x, cg)
+        --   axiom: constr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cg⌉ and [x=a]
+        --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
+        let
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.cg
+                                , predicate = makeCeilPredicate Mock.cg
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.a)]
+                                }
+                            ]
+                    , remainder =
+                        MultiOr
+                            [ Predicated
+                                { term = initialTerm
+                                , predicate =
+                                    makeNotPredicate
+                                    $ makeCeilPredicate Mock.cg
+                                , substitution = mempty
+                                }
+                            , Predicated
+                                { term = initialTerm
+                                , predicate =
+                                    makeNotPredicate
+                                    $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                                , substitution = mempty
+                                }
+                            ]
+                    }
+            initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+            initial = pure initialTerm
+        actual <- applyRewriteRules initial [axiomIfThen]
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "if _ then _ with initial condition" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: constr20(x, cg), with a ⌈cf⌉ predicate
+        --   axiom: constr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
+        --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
+        let
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.cg
+                                , predicate =
+                                    makeAndPredicate
+                                        (makeCeilPredicate Mock.cf)
+                                        (makeCeilPredicate Mock.cg)
+                                , substitution =
+                                    Substitution.wrap
+                                        [(Mock.x, Mock.a)]
+                                }
+                            ]
+                    , remainder =
+                        MultiOr
+                            [ Predicated
+                                { term =
+                                    Mock.functionalConstr20
+                                        (mkVar Mock.x)
+                                        Mock.cg
+                                , predicate =
+                                    makeAndPredicate (makeCeilPredicate Mock.cf)
+                                    $ makeNotPredicate
+                                    $ makeCeilPredicate Mock.cg
+                                , substitution = mempty
+                                }
+                            , Predicated
+                                { term =
+                                    Mock.functionalConstr20
+                                        (mkVar Mock.x)
+                                        Mock.cg
+                                , predicate =
+                                    makeAndPredicate (makeCeilPredicate Mock.cf)
+                                    $ makeNotPredicate
+                                    $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                                , substitution = mempty
+                                }
+                            ]
+                    }
+            initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+            initial =
+                Predicated
+                    { term = initialTerm
+                    , predicate = makeCeilPredicate Mock.cf
+                    , substitution = mempty
+                    }
+        actual <- applyRewriteRules initial [axiomIfThen]
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "signum - side condition" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: signum(x)
+        --   axiom: signum(y) => -1 if (y<0 == true)
+        -- Actual:
+        --   term: functionalConstr10(x)
+        --   axiom: functionalConstr10(y) => a if f(y) == b
+        -- Expected:
+        --   rewritten: a, with f(x) == b
+        --   remainder: functionalConstr10(x), with ¬(f(x) == b)
+        let
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.a
+                                , predicate = requirement
+                                , substitution = mempty
+                                }
+                            ]
+                    , remainder =
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.functionalConstr10 (mkVar Mock.x)
+                                , predicate = makeNotPredicate requirement
+                                , substitution = mempty
+                                }
+                            ]
+                    }
+            initial = pure (Mock.functionalConstr10 (mkVar Mock.x))
+            requirement = makeEqualsPredicate (Mock.f (mkVar Mock.x)) Mock.b
+        actual <- applyRewriteRules initial [axiomSignum]
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "if _ then _ -- partial" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: functionalConstr20(x, cg)
+        --   axiom: functionalConstr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cg⌉ and [x=a]
+        --   remainder: functionalConstr20(x, cg), with ¬(⌈cg⌉ and x=a)
+        let
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.cg
+                                , predicate = makeCeilPredicate Mock.cg
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.a)]
+                                }
+                            ]
+                    , remainder =
+                        MultiOr
+                            [ initial
+                                { predicate =
+                                    makeNotPredicate (makeCeilPredicate Mock.cg)
+                                }
+                            , initial
+                                { predicate =
+                                    makeNotPredicate
+                                    $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                                }
+                            ]
+                    }
+            initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+            initial = pure initialTerm
+        actual <- applyRewriteRules initial [axiomIfThen]
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "case _ of a -> _; b -> _ -- partial" $ do
+        -- This uses `functionalConstr30(x, y, z)` to represent a case
+        -- statement,
+        -- i.e. `case x of 1 -> y; 2 -> z`
+        -- and `a`, `b` as the case labels.
+        --
+        -- Intended:
+        --   term: case x of 1 -> cf; 2 -> cg
+        --   axiom: case 1 of 1 -> cf; 2 -> cg => cf
+        --   axiom: case 2 of 1 -> cf; 2 -> cg => cg
+        -- Actual:
+        --   term: constr30(x, cg, cf)
+        --   axiom: constr30(a, y, z) => y
+        --   axiom: constr30(b, y, z) => z
+        -- Expected:
+        --   rewritten: cf, with (⌈cf⌉ and ⌈cg⌉) and [x=a]
+        --   rewritten: cg, with (⌈cf⌉ and ⌈cg⌉) and [x=b]
+        --   remainder:
+        --     constr20(x, cf, cg)
+        --        with ¬(⌈cf⌉ and ⌈cg⌉)
+        --        or   ¬[x=a]
+        --        or   ¬[x=b]
+        let
+            definedBranches =
+                makeAndPredicate
+                    (makeCeilPredicate Mock.cf)
+                    (makeCeilPredicate Mock.cg)
+            undefinedBranches = Predicate.makeNotPredicate definedBranches
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.cf
+                                , predicate = definedBranches
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.a)]
+                                }
+                            , Predicated
+                                { term = Mock.cg
+                                , predicate = definedBranches
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.b)]
+                                }
+                            ]
+                    , remainder =
+                        MultiOr
+                            [ initial { predicate = undefinedBranches }
+                            , initial
+                                { predicate =
+                                    Predicate.makeAndPredicate
+                                        undefinedBranches
+                                        (Predicate.makeNotPredicate
+                                            $ Predicate.makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.b
+                                        )
+                                }
+                            , initial
+                                { predicate =
+                                    Predicate.makeAndPredicate
+                                        (Predicate.makeNotPredicate
+                                            $ Predicate.makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.a
+                                        )
+                                        undefinedBranches
+                                }
+                            , initial
+                                { predicate =
+                                    Predicate.makeAndPredicate
+                                        (Predicate.makeNotPredicate
+                                            $ Predicate.makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.a
+                                        )
+                                        (Predicate.makeNotPredicate
+                                            $ Predicate.makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.b
+                                        )
+                                }
+                            ]
+                    }
+            initialTerm = Mock.functionalConstr30 (mkVar Mock.x) Mock.cf Mock.cg
+            initial = pure initialTerm
+        actual <- applyRewriteRules initial axiomsCase
+        assertEqualWithExplanation "" expect actual
+    ]
+
+axiomIfThen :: RewriteRule Object Variable
+axiomIfThen =
+    RewriteRule RulePattern
+        { left = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+        , right = mkVar Mock.y
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+axiomSignum :: RewriteRule Object Variable
+axiomSignum =
+    RewriteRule RulePattern
+        { left = Mock.functionalConstr10 (mkVar Mock.y)
+        , right = Mock.a
+        , requires = makeEqualsPredicate (Mock.f (mkVar Mock.y)) Mock.b
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+axiomCaseA :: RewriteRule Object Variable
+axiomCaseA =
     RewriteRule RulePattern
         { left =
-            metaSigma
-                (mkVar $ x1 patternMetaSort)
-                (mkVar $ x1 patternMetaSort)
-        , right =
-            mkVar $ x1 patternMetaSort
+            Mock.functionalConstr30
+                Mock.a
+                (mkVar Mock.y)
+                (mkVar Mock.z)
+        , right = mkVar Mock.y
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
         }
 
+axiomCaseB :: RewriteRule Object Variable
+axiomCaseB =
+    RewriteRule RulePattern
+        { left =
+            Mock.functionalConstr30
+                Mock.b
+                (mkVar Mock.y)
+                (mkVar Mock.z)
+        , right = mkVar Mock.z
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
 
-fSymbol :: SymbolOrAlias Meta
-fSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#f" AstLocationTest
-    , symbolOrAliasParams = []
-    }
-
-metaF
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
-metaF p = mkApp patternMetaSort fSymbol [p]
-
-
-gSymbol :: SymbolOrAlias Meta
-gSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#g" AstLocationTest
-    , symbolOrAliasParams = []
-    }
-
-metaG
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
-metaG p = mkApp patternMetaSort gSymbol [p]
+axiomsCase :: [RewriteRule Object Variable]
+axiomsCase = [axiomCaseA, axiomCaseB]
 
 
-hSymbol :: SymbolOrAlias Meta
-hSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#h" AstLocationTest
-    , symbolOrAliasParams = []
-    }
-
-metaH
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
-metaH p = mkApp patternMetaSort hSymbol [p]
-
-iSymbol :: SymbolOrAlias Meta
-iSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#i" AstLocationTest
-    , symbolOrAliasParams = []
-    }
-
-metaI
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
-metaI p = mkApp patternMetaSort iSymbol [p]
-
-runStep
-    :: MetaOrObject level
-    => MetadataTools level StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> CommonExpandedPattern level
-    -- ^left-hand-side of unification
-    -> [RewriteRule level Variable]
-    -> IO [(CommonExpandedPattern level, StepProof level Variable)]
-runStep metadataTools configuration axioms =
-    (<$>) pickFinal
-    $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
-    $ runStrategy
-        (transitionRule
-            metadataTools
-            (Mock.substitutionSimplifier metadataTools)
-            simplifier
-            Map.empty
+-- | Apply the 'RewriteRule's to the configuration in sequence.
+sequenceRewriteRules
+    :: ExpandedPattern Object Variable
+    -- ^ Configuration
+    -> [RewriteRule Object Variable]
+    -- ^ Rewrite rule
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (OrStepResult Object Variable)
         )
-        [allRewrites axioms]
-        (configuration, mempty)
-  where
-    simplifier = Simplifier.create metadataTools Map.empty
-
-runSteps
-    :: MetaOrObject level
-    => MetadataTools level StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> Limit Natural
-    -> CommonExpandedPattern level
-    -- ^left-hand-side of unification
-    -> [RewriteRule level Variable]
-    -> IO (CommonExpandedPattern level, StepProof level Variable)
-runSteps metadataTools stepLimit configuration axioms =
-    (<$>) pickLongest
-    $ SMT.runSMT SMT.defaultConfig
+sequenceRewriteRules initial rules =
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ runStrategy
-        (transitionRule
-            metadataTools
-            (Mock.substitutionSimplifier metadataTools)
-            simplifier
-            Map.empty
-        )
-        (Limit.replicate stepLimit $ allRewrites axioms)
-        (configuration, mempty)
+    $ runExceptT
+    $ Step.sequenceRewriteRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        unificationProcedure
+        initial
+        rules
   where
-    simplifier = Simplifier.create metadataTools Map.empty
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+    unificationProcedure =
+        UnificationProcedure Unification.unificationProcedure
+
+test_sequenceRewriteRules :: [TestTree]
+test_sequenceRewriteRules =
+    [ testCase "case _ of a -> _; b -> _ -- partial" $ do
+        -- This uses `functionalConstr30(x, y, z)` to represent a case
+        -- statement,
+        -- i.e. `case x of 1 -> y; 2 -> z`
+        -- and `a`, `b` as the case labels.
+        --
+        -- Intended:
+        --   term: case x of 1 -> cf; 2 -> cg
+        --   axiom: case 1 of 1 -> cf; 2 -> cg => cf
+        --   axiom: case 2 of 1 -> cf; 2 -> cg => cg
+        -- Actual:
+        --   term: constr30(x, cg, cf)
+        --   axiom: constr30(a, y, z) => y
+        --   axiom: constr30(b, y, z) => z
+        -- Expected:
+        --   rewritten: cf, with (⌈cf⌉ and ⌈cg⌉) and [x=a]
+        --   rewritten: cg, with (⌈cf⌉ and ⌈cg⌉) and [x=b]
+        --   remainder:
+        --     constr20(x, cf, cg)
+        --        with ¬(⌈cf⌉ and [x=a])
+        --         and ¬(⌈cg⌉ and [x=b])
+        let
+            definedBranches =
+                makeAndPredicate
+                    (makeCeilPredicate Mock.cf)
+                    (makeCeilPredicate Mock.cg)
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.cf
+                                , predicate = definedBranches
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.a)]
+                                }
+                            , Predicated
+                                { term = Mock.cg
+                                , predicate = definedBranches
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.b)]
+                                }
+                            ]
+                    , remainder =
+                        MultiOr
+                            [ initial
+                                { predicate =
+                                    Predicate.makeAndPredicate
+                                        (Predicate.makeNotPredicate
+                                            $ Predicate.makeAndPredicate
+                                                definedBranches
+                                                (Predicate.makeEqualsPredicate
+                                                    (mkVar Mock.x)
+                                                    Mock.a
+                                                )
+                                        )
+                                        (Predicate.makeNotPredicate
+                                            $ Predicate.makeAndPredicate
+                                                definedBranches
+                                                (Predicate.makeEqualsPredicate
+                                                    (mkVar Mock.x)
+                                                    Mock.b
+                                                )
+                                        )
+                                }
+                            ]
+                    }
+            initialTerm = Mock.functionalConstr30 (mkVar Mock.x) Mock.cf Mock.cg
+            initial = pure initialTerm
+        actual <- sequenceRewriteRules initial axiomsCase
+        assertEqualWithExplanation "" expect actual
+    ]
+
+axiomFunctionalSigma :: EqualityRule Object Variable
+axiomFunctionalSigma =
+    EqualityRule RulePattern
+        { left = Mock.functional10 (Mock.sigma x y)
+        , right = Mock.a
+        , requires = Predicate.makeTruePredicate
+        , ensures = Predicate.makeTruePredicate
+        , attributes = Default.def
+        }
+  where
+    x = mkVar Mock.x
+    y = mkVar Mock.y
+
+-- | Apply the 'RewriteRule's to the configuration in sequence.
+sequenceMatchingRules
+    :: ExpandedPattern Object Variable
+    -- ^ Configuration
+    -> [EqualityRule Object Variable]
+    -- ^ Rewrite rule
+    -> IO
+        (Either
+            (StepError Object Variable)
+            (OrStepResult Object Variable)
+        )
+sequenceMatchingRules initial rules =
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ runExceptT
+    $ Step.sequenceRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        unificationProcedure
+        initial
+        (getEqualityRule <$> rules)
+  where
+    metadataTools = mockMetadataTools
+    predicateSimplifier =
+        PredicateSubstitution.create
+            metadataTools
+            patternSimplifier
+            axiomSimplifiers
+    patternSimplifier =
+        Simplifier.create
+            metadataTools
+            axiomSimplifiers
+    axiomSimplifiers = Map.empty
+    unificationProcedure =
+        UnificationProcedure Matcher.unificationWithAppMatchOnTop
+
+test_sequenceMatchingRules :: [TestTree]
+test_sequenceMatchingRules =
+    [ testCase "functional10(x) and functional10(sigma(x, y)) => a" $ do
+        let
+            expect = Left StepErrorUnsupportedSymbolic
+            initialTerm = Mock.functional10 (mkVar Mock.x)
+            initial = pure initialTerm
+        actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
+        assertEqualWithExplanation "" expect actual
+    ]

@@ -7,6 +7,8 @@ import Kore.AST.Common
        ( SortedVariable )
 import Kore.AST.MetaOrObject
        ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
+import Kore.Attribute.Symbol
+       ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
 import Kore.Step.Axiom.Data
@@ -18,8 +20,6 @@ import Kore.Step.Representation.ExpandedPattern
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
        StepPatternSimplifier )
-import Kore.Step.StepperAttributes
-       ( StepperAttributes )
 import Kore.Unification.Error
        ( UnificationOrSubstitutionError )
 import Kore.Unparser

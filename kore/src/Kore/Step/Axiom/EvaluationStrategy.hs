@@ -29,6 +29,9 @@ import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.AST.Valid
                  ( pattern App_ )
+import           Kore.Attribute.Symbol
+                 ( Hook (..), StepperAttributes )
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Step.Axiom.Data
@@ -41,15 +44,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
-import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule) )
-import qualified Kore.Step.AxiomPatterns as RulePattern
-import           Kore.Step.BaseStep
-                 ( OrStepResult (OrStepResult),
-                 UnificationProcedure (UnificationProcedure),
-                 stepWithRemaindersForUnifier )
-import qualified Kore.Step.BaseStep as OrStepResult
-                 ( OrStepResult (..) )
 import           Kore.Step.Pattern
                  ( StepPattern, asConcreteStepPattern )
 import           Kore.Step.Representation.ExpandedPattern
@@ -60,12 +54,19 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse )
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule) )
+import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
-import           Kore.Step.StepperAttributes
-                 ( Hook (..), StepperAttributes (..) )
+import           Kore.Step.Step
+                 ( OrStepResult (OrStepResult),
+                 UnificationProcedure (UnificationProcedure) )
+import qualified Kore.Step.Step as Step
+import qualified Kore.Step.Step as OrStepResult
+                 ( OrStepResult (..) )
 import           Kore.Unparser
                  ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
@@ -184,7 +185,7 @@ evaluateBuiltin
         Value.fromConcreteStepPattern tools =<< asConcreteStepPattern pat
     -- TODO(virgil): Send this from outside.
     getAppHookString appHead =
-        Text.unpack <$> (getHook . hook . symAttributes tools) appHead
+        Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
 
 applyFirstSimplifierThatWorks
     :: forall variable level
@@ -309,18 +310,19 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    resultOrError <- runExceptT
-        $ stepWithRemaindersForUnifier
+    resultOrError <-
+        runExceptT
+        $ Step.sequenceRules
             tools
-            (UnificationProcedure unificationWithAppMatchOnTop)
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            (map unwrapEqualityRule definitionRules)
+            (UnificationProcedure unificationWithAppMatchOnTop)
             expanded
+            (map unwrapEqualityRule definitionRules)
 
     let OrStepResult { rewrittenPattern, remainder } = case resultOrError of
-            Right (result, _proof) -> result
+            Right result -> result
             Left _ -> OrStepResult
                 { rewrittenPattern = MultiOr.make []
                 , remainder = MultiOr.make [expanded]

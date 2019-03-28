@@ -17,6 +17,8 @@ import Data.Reflection
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
@@ -35,8 +37,6 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( PredicateSubstitutionMerger )
 import           Kore.TopBottom
@@ -129,4 +129,3 @@ mergeWithPredicateSubstitutionAssumesEvaluated
             )
             patt
     return (evaluated, SimplificationProof)
-

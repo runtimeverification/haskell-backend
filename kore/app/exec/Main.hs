@@ -28,6 +28,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
@@ -40,6 +41,7 @@ import           Kore.Parser.Parser
                  ( parseKorePattern )
 import           Kore.Predicate.Predicate
                  ( makePredicate )
+import           Kore.Step
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
@@ -49,8 +51,6 @@ import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.SMT.Lemma
-import           Kore.Step.Step
-import           Kore.Step.StepperAttributes
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT

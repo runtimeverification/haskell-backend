@@ -17,6 +17,8 @@ import Data.Data
        ( Data )
 import Data.Hashable
        ( Hashable )
+import Data.Text.Prettyprint.Doc
+       ( Pretty (..) )
 import Data.Typeable
        ( Typeable )
 import GHC.Generics
@@ -53,3 +55,7 @@ instance Applicative Sup where
     pure = Element
     (<*>) Sup         = \_ -> Sup
     (<*>) (Element f) = \case { Sup -> Sup; Element a -> Element (f a) }
+
+instance Pretty a => Pretty (Sup a) where
+    pretty (Element a) = pretty a
+    pretty Sup = mempty
