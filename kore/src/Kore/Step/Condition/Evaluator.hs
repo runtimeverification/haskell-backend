@@ -14,6 +14,7 @@ module Kore.Step.Condition.Evaluator
 import Data.Reflection
 
 import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
@@ -26,7 +27,6 @@ import           Kore.Step.Simplification.Data
                  SimplificationProof (SimplificationProof), Simplifier,
                  StepPatternSimplifier (..) )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import           Kore.Step.StepperAttributes
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )

@@ -24,25 +24,26 @@ import           Kore.AST.Common
                  ( Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.BaseStep
 import           Kore.Step.Pattern
                  ( CommonStepPattern )
+import           Kore.Step.Proof
+                 ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..), fromPurePattern )
+import           Kore.Step.Rule
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+import           Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.StepperAttributes
 import           Kore.Step.Strategy
                  ( ExecutionGraph, Strategy, pickFinal, runStrategy )
 import qualified Kore.Unification.Substitution as Substitution

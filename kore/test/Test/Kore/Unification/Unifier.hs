@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module Test.Kore.Unification.Unifier
     ( test_unification
     , test_unsupportedConstructs
@@ -19,6 +17,8 @@ import           Data.Function
                  ( on )
 import           Data.List
                  ( sortBy )
+import           Data.List.NonEmpty
+                 ( NonEmpty ((:|)) )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text
@@ -33,6 +33,7 @@ import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Injective
 import           Kore.Attribute.SortInjection
+import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
@@ -53,7 +54,6 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
@@ -186,7 +186,7 @@ isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
 mockStepperAttributes patternHead =
-    defaultStepperAttributes
+    defaultSymbolAttributes
         { constructor = Constructor { isConstructor }
         , functional = Functional { isDeclaredFunctional }
         , function = Function { isDeclaredFunction }
@@ -275,7 +275,7 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
             (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)
             Map.empty
-            [unificationProblem term1 term2]
+            (unificationProblem term1 term2 :| [])
     let
         subst'' =
             subst'
@@ -304,7 +304,7 @@ andSimplifyFailure term1 term2 err = do
             (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)
             Map.empty
-            [unificationProblem term1 term2]
+            (unificationProblem term1 term2 :| [])
     assertEqualWithPrinter show "" expect actual
 
 andSimplifyException
@@ -329,7 +329,7 @@ andSimplifyException message term1 term2 exceptionMessage =
                     (Mock.substitutionSimplifier tools)
                     (Simplifier.create tools Map.empty)
                     Map.empty
-                    [unificationProblem term1 term2]
+                    (unificationProblem term1 term2 :| [])
             _ <- evaluate var
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) =

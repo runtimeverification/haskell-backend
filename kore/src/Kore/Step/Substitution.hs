@@ -32,6 +32,7 @@ import           GHC.Stack
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -43,7 +44,6 @@ import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
-import           Kore.Step.StepperAttributes
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof (EmptyUnificationProof) )

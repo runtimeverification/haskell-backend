@@ -34,6 +34,8 @@ import           Kore.AST.Pure
                  ( fromPurePattern )
 import           Kore.AST.Valid
                  ( Valid )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Identifier
@@ -47,8 +49,6 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -257,4 +257,3 @@ applicationAxiomSimplifier applicationSimplifier =
                     (valid :< p)
             _ -> error
                 ("Expected an application pattern, but got: " ++ show patt)
-

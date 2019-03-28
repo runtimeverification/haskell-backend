@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module Test.Kore.Builtin.Map where
 
 import           Hedgehog
@@ -22,18 +20,20 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.AxiomPatterns
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr (..) )
+import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
-import qualified Kore.Step.StepperAttributes as StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
@@ -479,7 +479,7 @@ test_concretizeKeysAxiom =
             , ensures = Predicate.makeTruePredicate
             , attributes = Default.def
             }
-    expected = Right [ pure val ]
+    expected = Right (MultiOr [ pure val ])
 
 hprop_unparse :: Property
 hprop_unparse =

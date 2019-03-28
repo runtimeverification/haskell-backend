@@ -12,6 +12,7 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
@@ -20,7 +21,6 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
 import           Kore.Step.Pattern
                  ( StepPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
-import           Kore.Step.StepperAttributes
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution

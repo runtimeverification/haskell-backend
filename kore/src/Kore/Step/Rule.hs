@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.Step.AxiomPatterns
-Description : Rewriting and function axioms
+Description : Rewrite and equality rules
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
-module Kore.Step.AxiomPatterns
+module Kore.Step.Rule
     ( EqualityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
@@ -23,7 +21,7 @@ module Kore.Step.AxiomPatterns
     , mkEqualityAxiom
     , refreshRulePattern
     , freeVariables
-    , Kore.Step.AxiomPatterns.mapVariables
+    , Kore.Step.Rule.mapVariables
     , substitute
     ) where
 
@@ -91,12 +89,14 @@ instance Unparse (variable level) => Pretty (RulePattern level variable) where
 
 {-  | Equality-based rule pattern.
 -}
-newtype EqualityRule level variable = EqualityRule (RulePattern level variable)
+newtype EqualityRule level variable =
+    EqualityRule { getEqualityRule :: RulePattern level variable }
     deriving (Eq, Show)
 
 {-  | Rewrite-based rule pattern.
 -}
-newtype RewriteRule level variable = RewriteRule (RulePattern level variable)
+newtype RewriteRule level variable =
+    RewriteRule { getRewriteRule :: RulePattern level variable }
     deriving (Eq, Show)
 
 instance (Unparse (variable level), Ord (variable level)) => Unparse (RewriteRule level variable) where
