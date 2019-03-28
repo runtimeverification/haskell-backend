@@ -36,6 +36,7 @@ commandParser =
     <|> selectNode
     <|> showConfig
     <|> showLeafs
+    <|> showPrecBranch
     <|> exit
 
 help :: Parser ReplCommand
@@ -67,6 +68,9 @@ showConfig =
 
 showLeafs :: Parser ReplCommand
 showLeafs = ShowLeafs <$ (string "leafs" *> space)
+
+showPrecBranch :: Parser ReplCommand
+showPrecBranch = ShowPrecBranch <$ (string "prec-branch" *> space)
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)
