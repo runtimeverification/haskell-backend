@@ -53,7 +53,7 @@ import           Kore.ASTHelpers
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.Error
-                 ( noSort, noHead, noAlias, noSymbol )
+                 ( noAlias, noHead, noSort, noSymbol )
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), getIndexedSentence,
                  indexedModulesInScope )

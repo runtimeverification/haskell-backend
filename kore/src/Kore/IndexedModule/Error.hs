@@ -10,7 +10,7 @@ module Kore.IndexedModule.Error
     , noSymbol
     )
 where
-import           Kore.AST.Kore
+import Kore.AST.Kore
 
 -- | A message declaring that a Sort is undefined
 noSort :: MetaOrObject level => Id level -> String
