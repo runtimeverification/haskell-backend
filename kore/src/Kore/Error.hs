@@ -15,6 +15,7 @@ module Kore.Error
     , koreFailWhen
     , withContext
     , castError
+    , assertRight
     , module Control.Monad.Except
     ) where
 
@@ -84,3 +85,12 @@ castError
         , errorError = err
         }
 castError (Right r) = Right r
+
+
+-- | `error` with a helpful message in case of `Left`.
+-- | Otherwise, return what `Right` returns.
+assertRight :: Either (Error err) desired -> desired
+assertRight wrapped =
+    case wrapped of
+        Left err      -> error (printError err)
+        Right desired -> desired
