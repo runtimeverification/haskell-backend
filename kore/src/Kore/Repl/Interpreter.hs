@@ -207,7 +207,6 @@ showPrecBranch
 showPrecBranch = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     node <- Lens.use lensNode
-    let pre' = Graph.pre graph
     putStrLn' $ show (findBranch graph [node])
   where
     findBranch gph xs
