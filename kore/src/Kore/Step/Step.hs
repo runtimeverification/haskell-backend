@@ -726,13 +726,20 @@ sequenceRules
         -- ^ initial configuration
         -> MultiOr (Result variable)
         -- ^ disjunction of results
-        -> OrOfExpandedPattern Object variable
-    remainingAfter config results =
+        -> ExceptT (StepError Object variable) Simplifier
+            (OrOfExpandedPattern Object variable)
+    remainingAfter config results = do
         let remainder =
-                PredicateSubstitution.fromPredicate
-                $ Remainder.remainder
+                Remainder.remainder
                 $ Predicated.withoutTerm . unifiedRule <$> results
-        in MultiOr.make [config `Predicated.andCondition` remainder]
+        gather $ applyRemainder' config remainder
+
+    applyRemainder' =
+        applyRemainder
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
 
     sequenceRules1
         :: OrStepResult Object variable
@@ -755,9 +762,10 @@ sequenceRules
                 unificationProcedure
                 config
                 rule
+        remainder <- remainingAfter config results
         return OrStepResult
             { rewrittenPattern = MultiOr.filterOr (result <$> results)
-            , remainder = remainingAfter config results
+            , remainder
             }
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
