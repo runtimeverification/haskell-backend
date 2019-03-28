@@ -27,6 +27,10 @@ import           Data.Graph.Inductive.Graph
                  ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
+import           Data.List.Extra
+                 ( groupSort )
+import           Data.Maybe
+                 ( catMaybes )
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
 
@@ -39,7 +43,8 @@ import           Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
                  ( sourceLocation )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..) )
+                 ( CommonStrategyPattern, StrategyPattern (..),
+                 strategyPattern )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -76,6 +81,7 @@ replInterpreter =
         ProveSteps n -> proveSteps n $> True
         SelectNode i -> selectNode i $> True
         ShowConfig mc -> showConfig mc $> True
+        ShowLeafs -> showLeafs $> True
         Exit -> pure False
 
 showUsage :: MonadIO m => m ()
@@ -166,6 +172,34 @@ showConfig configNode = do
                 $ node'
         else putStrLn' "Invalid node!"
 
+data NodeStates = StuckNode | UnevaluatedNode
+    deriving (Eq, Ord, Show)
+
+showLeafs
+    :: MetaOrObject level
+    => StateT (ReplState level) Simplifier ()
+showLeafs = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    let nodes = Graph.nodes graph
+    let leafs = filter (\x -> (Graph.outdeg graph x) == 0) nodes
+    let result =
+            groupSort
+                . catMaybes
+                . fmap (getNodeState graph)
+                $ leafs
+
+    putStrLn' $ foldr ((<>) . showPair) "" result
+  where
+    getNodeState graph node =
+        maybe Nothing (\x -> Just (x, node))
+        . strategyPattern (const . Just $ UnevaluatedNode) (const . Just $ StuckNode) Nothing
+        . Graph.lab'
+        . Graph.context graph
+        $ node
+
+    showPair :: (NodeStates, [Graph.Node]) -> String
+    showPair (ns, xs) = show ns <> ": " <> show xs
+
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
     putStrLn' $ unparseToString rule
@@ -219,10 +253,10 @@ performStepNoBranching (n, res) =
 
 unparseStrategy :: MetaOrObject level => CommonStrategyPattern level -> String
 unparseStrategy =
-    \case
-        Bottom -> "Reached bottom"
-        Stuck pat -> "Stuck: \n" <> unparseToString pat
-        RewritePattern pat -> unparseToString pat
+    strategyPattern
+        unparseToString
+        (mappend "Stuck: \n" . unparseToString)
+        "Reached bottom"
 
 extractSourceAndLocation
     :: RewriteRule level Variable

@@ -16,6 +16,7 @@ module Kore.OnePath.Step
     , transitionRule
     , onePathFirstStep
     , onePathFollowupStep
+    , strategyPattern
     ) where
 
 import           Control.Monad.Except
@@ -133,6 +134,22 @@ data StrategyPattern patt
     -- This is needed when bottom results are expected and we want to
     -- differentiate between them and stuck results.
   deriving (Show, Eq, Ord, Generic)
+
+-- | Catamorphism for 'StrategyPattern'
+strategyPattern
+    :: (patt -> a)
+    -- ^ case for RewritePattern
+    -> (patt -> a)
+    -- ^ case for Stuck
+    -> a
+    -- ^ value for Bottom
+    -> StrategyPattern patt
+    -> a
+strategyPattern f g x =
+    \case
+        RewritePattern patt -> f patt
+        Stuck patt -> g patt
+        Bottom -> x
 
 -- | A 'StrategyPattern' instantiated to 'CommonExpandedPattern' for convenience.
 type CommonStrategyPattern level = StrategyPattern (CommonExpandedPattern level)
