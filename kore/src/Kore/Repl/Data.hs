@@ -53,6 +53,8 @@ data ReplCommand
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe Int)
     -- ^ Show the configuration from the current node.
+    | ShowLeafs
+    -- ^ Show leafs which can continue evaluation and leafs which are stuck
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -72,6 +74,7 @@ helpText =
     \select <n>              select node id 'n' from the graph\n\
     \config [n]              shows the config for node 'n'\
                              \(defaults to current node)\n\
+    \leafs                   shows unevaluated or stuck leafs\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
