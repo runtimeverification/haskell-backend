@@ -13,8 +13,11 @@ module Kore.Step.Simplification.And
     , simplifyEvaluated
     ) where
 
-import Data.List
-       ( foldl1', nub )
+import qualified Control.Monad.Trans as Monad.Trans
+import           Data.List
+                 ( foldl1', nub )
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -26,22 +29,25 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, isBottom, isTop )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( crossProductGenericF, filterOr, make )
+                 ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue )
+import           Kore.Step.Representation.Predicated
+                 ( Predicated (..) )
+import qualified Kore.Step.Representation.Predicated as Predicated
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
+                 ( BranchT, PredicateSubstitutionSimplifier,
+                 SimplificationProof (..), Simplifier, StepPatternSimplifier,
+                 gather, scatter )
+import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -174,24 +180,18 @@ simplifyEvaluated
     return (first, SimplificationProof)
 
   | otherwise = do
-    orWithProof <-
-        MultiOr.crossProductGenericF
-            (makeEvaluate
+    result <-
+        gather $ do
+            first1 <- scatter first
+            second1 <- scatter second
+            makeEvaluate
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-            )
-            first
-            second
-    return
-        -- TODO: It's not obvious at all when filtering occurs and when it
-        -- doesn't.
-        ( MultiOr.filterOr
-            -- TODO: Remove fst.
-            (fst <$> orWithProof)
-        , SimplificationProof
-        )
+                first1
+                second1
+    return (result, SimplificationProof)
 
 {-|'makeEvaluate' simplifies an 'And' of 'ExpandedPattern's.
 
@@ -206,6 +206,7 @@ makeEvaluate
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , HasCallStack
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -215,15 +216,15 @@ makeEvaluate
     -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> BranchT Simplifier (ExpandedPattern level variable)
 makeEvaluate
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
-    return (ExpandedPattern.bottom, SimplificationProof)
+    return ExpandedPattern.bottom
   | ExpandedPattern.isTop first =
-    return (second, SimplificationProof)
+    return second
   | ExpandedPattern.isTop second =
-    return (first, SimplificationProof)
+    return first
   | otherwise =
     makeEvaluateNonBool
         tools
@@ -242,6 +243,7 @@ makeEvaluateNonBool
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , HasCallStack
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -251,56 +253,39 @@ makeEvaluateNonBool
     -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedPattern level variable
     -> ExpandedPattern level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> BranchT Simplifier (ExpandedPattern level variable)
 makeEvaluateNonBool
     tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    Predicated
-        { term = firstTerm
-        , predicate = firstPredicate
-        , substitution = firstSubstitution
-        }
-    Predicated
-        { term = secondTerm
-        , predicate = secondPredicate
-        , substitution = secondSubstitution
-        }
-  = do -- IntCounter monad
-    ( Predicated
-            { term = termTerm
-            , predicate = termPredicate
-            , substitution = termSubstitution
-            }
-        , _proof
-        ) <- makeTermAnd
+    first@Predicated { term = firstTerm }
+    second@Predicated { term = secondTerm }
+  = do
+    (terms, _proof) <-
+        Monad.Trans.lift $ makeTermAnd
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             firstTerm
             secondTerm
-    (   Predicated
-            { predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , _proof
-        ) <- mergePredicatesAndSubstitutions
+    let firstCondition = Predicated.withoutTerm first
+        secondCondition = Predicated.withoutTerm second
+        initialConditions = firstCondition <> secondCondition
+        merged = Predicated.andCondition terms initialConditions
+    normalized <-
+        Substitution.normalize
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            [firstPredicate, secondPredicate, termPredicate]
-            [firstSubstitution, secondSubstitution, termSubstitution]
+            merged
     return
-        ( Predicated
-            { term = applyAndIdempotence termTerm
-            , predicate = applyAndIdempotence <$> mergedPredicate
-            , substitution = mergedSubstitution
+        (applyAndIdempotence <$> normalized)
+            { predicate =
+                applyAndIdempotence <$> Predicated.predicate normalized
             }
-        , SimplificationProof
-        )
 
 applyAndIdempotence
     ::  ( Ord (variable level)
