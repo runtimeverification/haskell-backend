@@ -148,9 +148,9 @@ newtype UnificationProcedure level =
         )
 
 unwrapStepErrorVariables
-    :: Functor m
+    :: (Functor m, Ord (variable level))
     => ExceptT (StepError level (Target variable)) m a
-    -> ExceptT (StepError level                  variable ) m a
+    -> ExceptT (StepError level         variable ) m a
 unwrapStepErrorVariables =
     withExceptT (mapStepErrorVariables Target.unwrapVariable)
 
@@ -542,7 +542,10 @@ checkSubstitutionCoverage initial unified final
     -- of the rule, but this was not unexpected because the initial
     -- configuration was symbolic. This case is not yet supported, but it is not
     -- a fatal error.
-    Monad.Trans.lift (Monad.Except.throwError StepErrorUnsupportedSymbolic)
+    (Monad.Trans.lift . Monad.Except.throwError)
+        (StepErrorUnsupportedSymbolic
+            UnsupportedSymbolic { unification, rule = axiom }
+        )
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
@@ -562,6 +565,7 @@ checkSubstitutionCoverage initial unified final
         , "in the left-hand side of the axiom."
         ]
   where
+    unification = Predicated.withoutTerm unified
     Predicated { term = axiom } = unified
     leftAxiomVariables =
         Pattern.freeVariables leftAxiom

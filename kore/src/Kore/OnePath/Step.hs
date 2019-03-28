@@ -302,11 +302,11 @@ transitionRule
                 config
                 rules
         case result of
-            Left _ ->
+            Left stepError ->
                 (error . show . Pretty.vsep)
-                [ "Not implemented error:"
-                , "while applying a \\rewrite axiom to the pattern:"
+                [ "While applying a \\rewrite rule to the pattern:"
                 , Pretty.indent 4 (unparse config)
+                , Pretty.pretty stepError
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]

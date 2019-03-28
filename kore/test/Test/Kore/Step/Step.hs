@@ -28,12 +28,14 @@ import qualified Kore.Step.Axiom.Matcher as Matcher
 import           Kore.Step.Error
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
 import qualified Kore.Step.Representation.Predicated as Predicated
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
+import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
@@ -1200,7 +1202,24 @@ test_sequenceMatchingRules :: [TestTree]
 test_sequenceMatchingRules =
     [ testCase "functional10(x) and functional10(sigma(x, y)) => a" $ do
         let
-            expect = Left StepErrorUnsupportedSymbolic
+            expect =
+                Left $ StepErrorUnsupportedSymbolic UnsupportedSymbolic
+                    { unification =
+                        Predicated
+                            { term = ()
+                            , predicate = Predicate.makeTruePredicate
+                            , substitution =
+                                Substitution.wrap
+                                    [(Mock.x, Mock.sigma (mkVar x') (mkVar y))]
+                            }
+                    , rule = rule'
+                    }
+            (_, rule') =
+                Rule.refreshRulePattern
+                    (ExpandedPattern.freeVariables initial)
+                    (getEqualityRule axiomFunctionalSigma)
+            x' = nextVariable Mock.x
+            y = Mock.y
             initialTerm = Mock.functional10 (mkVar Mock.x)
             initial = pure initialTerm
         actual <- sequenceMatchingRules initial [axiomFunctionalSigma]

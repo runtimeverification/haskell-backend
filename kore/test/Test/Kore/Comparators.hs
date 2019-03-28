@@ -42,6 +42,7 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Error
+import qualified Kore.Step.Error as Step.Error
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Proof
@@ -861,8 +862,11 @@ instance (Show (variable level), EqualWithExplanation (variable level))
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance (Show (variable level), EqualWithExplanation (variable level))
-    => SumEqualWithExplanation (StepError level variable)
+instance
+    ( Ord (variable Object), Show (variable Object)
+    , EqualWithExplanation (variable Object)
+    ) =>
+    SumEqualWithExplanation (StepError Object variable)
   where
     sumConstructorPair (StepErrorUnification a1) (StepErrorUnification a2) =
         SumConstructorSameWithArguments (EqWrap "StepErrorUnification" a1 a2)
@@ -876,17 +880,47 @@ instance (Show (variable level), EqualWithExplanation (variable level))
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-    sumConstructorPair StepErrorUnsupportedSymbolic StepErrorUnsupportedSymbolic =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@StepErrorUnsupportedSymbolic a2 =
+    sumConstructorPair
+        (StepErrorUnsupportedSymbolic a)
+        (StepErrorUnsupportedSymbolic b)
+      =
+        SumConstructorSameWithArguments
+        $ EqWrap "StepErrorUnsupportedSymbolic" a b
+
+    sumConstructorPair a1@(StepErrorUnsupportedSymbolic _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-instance (Show (variable level), EqualWithExplanation (variable level))
-    => EqualWithExplanation (StepError level variable)
+instance
+    ( Ord (variable Object), Show (variable Object)
+    , EqualWithExplanation (variable Object)
+    ) =>
+    EqualWithExplanation (StepError Object variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
+
+instance
+    ( EqualWithExplanation (variable Object)
+    , Ord (variable Object), Show (variable Object)
+    ) =>
+    EqualWithExplanation (Step.Error.UnsupportedSymbolic Object variable)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation (variable Object)
+    , Ord (variable Object), Show (variable Object)
+    ) =>
+    StructEqualWithExplanation (Step.Error.UnsupportedSymbolic Object variable)
+  where
+    structConstructorName _ = "UnsupportedSymbolic"
+    structFieldsWithNames expect actual =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "unification = ") Step.Error.unification
+            , Function.on (EqWrap "rule = "       ) Step.Error.rule
+            ]
 
 instance
     ( Eq (variable level)
