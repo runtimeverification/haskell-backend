@@ -173,9 +173,6 @@ showConfig configNode = do
                 $ node'
         else putStrLn' "Invalid node!"
 
--- TODO: cleanup, I don't like that showLeafs0 depends on the output from unparseStrategy',
--- and implementation seems a little too complicated; also switch to where
--- also there's a bug
 showLeafs
     :: MetaOrObject level
     => StateT (ReplState level) Simplifier ()
@@ -183,31 +180,20 @@ showLeafs = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     let nodes = Graph.nodes graph
     let leafs = filter (\x -> (Graph.outdeg graph x) == 0) nodes
-    let aux = fmap (\x -> (x, (unparseStrategy' . Graph.lab' . Graph.context graph) x)) leafs
-    let aux3 = groupBy (on (==) snd) aux
-    -- ^ this doesn't work as expected
-    -- putStrLn' $ concat (fmap show aux3)
-    let aux4 = zip ((fmap . fmap) fst aux3) ((fmap . fmap) snd aux3)
-    let aux5 = concat (fmap showLeafs0 aux4)
-    putStrLn' $ if aux5 == ""
-                   then "All nodes were evaluated."
-                   else aux5
+    let aux = fmap (\x -> (x, (Graph.lab' . Graph.context graph) x)) leafs
+    let aux2 = fmap fst $ filter (\(x, y) -> isStuck y) aux
+    let aux3 = fmap fst $ filter (\(x, y) -> isUnevaluated y) aux
+    putStrLn' $
+        "Unevaluated nodes: " <> (show aux3) <> "\n"
+        <> "Stuck nodes: " <> (show aux2)
 
-showLeafs0 :: ([Graph.Node], [String]) -> String
-showLeafs0 p =
-    case ((listToMaybe . snd) p) of
-        Just "Unevaluated" -> "Unevaluated nodes: " <> show (fst p)
-        Just "Stuck" -> "Stuck nodes: " <> show (fst p)
-        Just "Reached bottom" -> ""
-        _ -> "error"
--- TODO: ^ treat this case in some way
+isStuck :: MetaOrObject level => CommonStrategyPattern level -> Bool
+isStuck (Stuck p) = True
+isStuck _ = False
 
-unparseStrategy' :: MetaOrObject level => CommonStrategyPattern level -> String
-unparseStrategy' =
-    \case
-        Bottom -> "Reached bottom"
-        Stuck pat -> "Stuck"
-        RewritePattern pat -> "Unevaluated"
+isUnevaluated :: MetaOrObject level => CommonStrategyPattern level -> Bool
+isUnevaluated (RewritePattern p) = True
+isUnevaluated _ = False
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
