@@ -1200,29 +1200,9 @@ test_sequenceMatchingRules :: [TestTree]
 test_sequenceMatchingRules =
     [ testCase "functional10(x) and functional10(sigma(x, y)) => a" $ do
         let
-            expect =
-                Right OrStepResult
-                    { rewrittenPattern = MultiOr [ final ]
-                    , remainder = MultiOr [ remainder' ]
-                    }
+            expect = Left StepErrorUnsupportedSymbolic
             initialTerm = Mock.functional10 (mkVar Mock.x)
             initial = pure initialTerm
-            remainder' =
-                initial
-                    { predicate =
-                        Predicate.makeNotPredicate
-                        $ Predicate.makeEqualsPredicate (mkVar Mock.x) substX
-                    }
-            final =
-                Predicated
-                    { term = Mock.a
-                    , predicate = Predicate.makeTruePredicate
-                    , substitution =
-                        Substitution.wrap
-                            [(Mock.x, substX)]
-                    }
-            x' = nextVariable Mock.x
-            substX = Mock.sigma (mkVar x') (mkVar Mock.y)
         actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
         assertEqualWithExplanation "" expect actual
     ]
