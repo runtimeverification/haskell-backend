@@ -39,17 +39,18 @@ import           Kore.Attribute.Symbol
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Proof as Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (Predicated) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
-                 ( Predicated (..) )
+                 ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Step.Representation.Predicated as Predicated
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
@@ -351,26 +352,21 @@ transitionRule
             ]
     transitionRemoveDestination _ (Bottom, _) = return []
     transitionRemoveDestination _ (Stuck _, _) = return []
-    transitionRemoveDestination
-        destination
-        (RewritePattern patt@Predicated{term, predicate, substitution}, proof1)
-      = do
+    transitionRemoveDestination destination (RewritePattern patt, proof1) = do
         let
             pattVars = ExpandedPattern.freeVariables patt
             destinationVars = ExpandedPattern.freeVariables destination
             extraVars = Set.difference destinationVars pattVars
             destinationPatt = ExpandedPattern.toMLPattern destination
             pattPatt = ExpandedPattern.toMLPattern patt
-            removalPatt =
-                mkNot
-                    (mkMultipleExists
-                        extraVars
-                        (mkCeil_
-                            (mkAnd destinationPatt pattPatt)
-                        )
-                    )
-            resultTerm = mkAnd term removalPatt
-            result = Predicated {term = resultTerm, predicate, substitution}
+            removal =
+                PredicateSubstitution.fromPredicate
+                $ Predicate.makeNotPredicate
+                $ makeMultipleExists extraVars
+                $ Predicate.makeCeilPredicate
+                $ mkAnd destinationPatt pattPatt
+            result =
+                patt `Predicated.andCondition` removal
         (orResult, proof) <-
             ExpandedPattern.simplify
                 tools
@@ -392,8 +388,8 @@ transitionRule
             then return [(Bottom, finalProof)]
             else return patternsWithProofs
 
-    mkMultipleExists vars phi =
-        foldl (\patt v -> mkExists v patt) phi vars
+    makeMultipleExists vars phi =
+        foldr Predicate.makeExistsPredicate phi vars
 
 
 {-| A strategy for doing the first step of a one-path verification.
