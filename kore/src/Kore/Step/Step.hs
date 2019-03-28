@@ -27,8 +27,7 @@ module Kore.Step.Step
 
 import           Control.Applicative
                  ( Alternative (..) )
-import qualified Control.Monad as Monad
-import           Control.Monad.Except
+import           Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
@@ -534,9 +533,22 @@ checkSubstitutionCoverage
     -- ^ Unified rule
     -> ExpandedPattern level (Target variable)
     -- ^ Configuration after applying rule
-    -> m (ExpandedPattern level variable)
-checkSubstitutionCoverage initial unified final = do
-    (Monad.unless checkPass . error . show . Pretty.vsep)
+    -> BranchT (ExceptT (StepError level (Target variable)) m)
+        (ExpandedPattern level variable)
+checkSubstitutionCoverage initial unified final
+  | isCoveringSubstitution = return (unwrapConfiguration final)
+  | isSymbolic =
+    -- The substitution does not cover all the variables on the left-hand side
+    -- of the rule, but this was not unexpected because the initial
+    -- configuration was symbolic. This case is not yet supported, but it is not
+    -- a fatal error.
+    Monad.Trans.lift (Monad.Except.throwError StepErrorUnsupportedSymbolic)
+  | otherwise =
+    -- The substitution does not cover all the variables on the left-hand side
+    -- of the rule *and* we did not generate a substitution for a symbolic
+    -- initial configuration. This is a fatal error because it indicates
+    -- something has gone horribly wrong.
+    (error . show . Pretty.vsep)
         [ "While applying axiom:"
         , Pretty.indent 4 (Pretty.pretty axiom)
         , "from the initial configuration:"
@@ -549,9 +561,7 @@ checkSubstitutionCoverage initial unified final = do
             (unparse <$> Set.toAscList leftAxiomVariables)
         , "in the left-hand side of the axiom."
         ]
-    return (unwrapConfiguration final)
   where
-    checkPass = isCoveringSubstitution || isInitialSymbolic
     Predicated { term = axiom } = unified
     leftAxiomVariables =
         Pattern.freeVariables leftAxiom
@@ -561,7 +571,7 @@ checkSubstitutionCoverage initial unified final = do
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
-    isInitialSymbolic =
+    isSymbolic =
         Foldable.any Target.isNonTarget substitutionVariables
 
 {- | Apply the given rules to the initial configuration in parallel.
