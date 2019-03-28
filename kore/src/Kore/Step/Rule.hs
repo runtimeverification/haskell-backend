@@ -4,11 +4,13 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
+
 module Kore.Step.Rule
     ( EqualityRule (..)
     , RewriteRule (..)
     , OnePathRule (..)
     , AllPathRule (..)
+    , ImplicationRule (..)
     , RulePattern (..)
     , isHeatingRule
     , isCoolingRule
@@ -20,6 +22,7 @@ module Kore.Step.Rule
     , extractRewriteAxioms
     , extractOnePathClaims
     , extractAllPathClaims
+    , extractImplicationClaims
     , mkRewriteAxiom
     , mkEqualityAxiom
     , refreshRulePattern
@@ -27,7 +30,6 @@ module Kore.Step.Rule
     , Kore.Step.Rule.mapVariables
     , substitute
     ) where
-
 import           Control.Comonad
 import           Data.Map.Strict
                  ( Map )
@@ -100,6 +102,12 @@ newtype RewriteRule level variable =
     RewriteRule { getRewriteRule :: RulePattern level variable }
     deriving (Eq, Show)
 
+{-  | Implication-based pattern.
+-}
+newtype ImplicationRule level variable =
+    ImplicationRule { getImplicationRule :: RulePattern level variable }
+    deriving (Eq, Show)
+
 instance (Unparse (variable level), Ord (variable level)) => Unparse (RewriteRule level variable) where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
         unparse
@@ -138,6 +146,7 @@ data QualifiedAxiomPattern level variable
     | FunctionAxiomPattern (EqualityRule level variable)
     | OnePathClaimPattern (OnePathRule level variable)
     | AllPathClaimPattern (AllPathRule level variable)
+    | ImplicationAxiomPattern (ImplicationRule level variable)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
     -- not only to function-related ones.
     deriving (Eq, Show)
@@ -241,6 +250,30 @@ extractAllPathClaimFrom sentence =
   where
     koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
 
+-- | Extract all 'ImplicationRule' claims matching a given @level@ from
+-- a verified definition.
+extractImplicationClaims
+    :: VerifiedModule declAtts axiomAtts
+    -- ^'IndexedModule' containing the definition
+    -> [(axiomAtts, ImplicationRule Object Variable)]
+extractImplicationClaims idxMod =
+    mapMaybe
+        ( sequence                               -- (a, Maybe b) -> Maybe (a,b)
+        . fmap extractImplicationClaimFrom       -- applying on second component
+        )
+    $ (indexedModuleClaims idxMod)
+
+extractImplicationClaimFrom
+    :: SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    -- ^ Sentence to extract axiom pattern from
+    -> Maybe (ImplicationRule Object Variable)
+extractImplicationClaimFrom sentence =
+    case verifiedKoreSentenceToAxiomPattern Object koreSentence of
+        Right (ImplicationAxiomPattern axiomPat) -> Just axiomPat
+        _ -> Nothing
+  where
+    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
+
 -- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
 -- a given 'KoreSentence'.
 verifiedKoreSentenceToAxiomPattern
@@ -337,7 +370,24 @@ patternToAxiomPattern attributes pat =
                 , attributes
                 }
         Forall_ _ _ child -> patternToAxiomPattern attributes child
+        -- implication axioms:
+        -- init -> modal_op ( prop )
+        Implies_ _ lhs rhs@(App_ SymbolOrAlias { symbolOrAliasConstructor } _)
+            | isModalSymbol symbolOrAliasConstructor ->
+                pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
+                    { left = lhs
+                    , right = rhs
+                    , requires = Predicate.makeTruePredicate
+                    , ensures = Predicate.makeTruePredicate
+                    , attributes
+                    }
         _ -> koreFail "Unsupported pattern type in axiom"
+      where
+        isModalSymbol symbol =
+            case getId symbol of
+                "ag" -> True
+                "ef" -> True
+                _  -> False
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
 
