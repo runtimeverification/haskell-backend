@@ -20,6 +20,7 @@ test_replParser =
     , stepTests   `tests` "step"
     , selectTests `tests` "select"
     , configTests `tests` "config"
+    , leafsTests  `tests` "leafs"
     , exitTests   `tests` "exit"
     ]
 
