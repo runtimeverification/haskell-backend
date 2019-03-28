@@ -16,6 +16,7 @@ module Kore.Step.Substitution
     , mergePredicatesAndSubstitutionsExcept
     , normalize
     , normalizeExcept
+    , noBranching
     ) where
 
 import           Control.Monad.Except
@@ -275,7 +276,7 @@ mergePredicatesAndSubstitutionsExcept
         mergedSubstitution = Foldable.fold substitutions
         mergedPredicate = makeMultipleAndPredicate predicates
     (Predicated {predicate, substitution}, _proof) <-
-        normalizeSubstitutionAfterMerge
+        noBranching $ normalizeExcept
             tools
             substitutionSimplifier
             simplifier
@@ -411,43 +412,12 @@ createLiftedPredicatesAndSubstitutionsMerger
             substitutions
         return merged
 
-normalizeSubstitutionAfterMerge
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , SortedVariable variable
-        , FreshVariable variable
-        , HasCallStack
-        )
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitution level variable
-    -> ExceptT
-          (UnificationOrSubstitutionError level variable)
-          Simplifier
-          ( PredicateSubstitution level variable
-          , UnificationProof level variable
-          )
-normalizeSubstitutionAfterMerge
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    predicateSubstitution
-  = do
-    results <-
-        gather
-        $ normalizeExcept
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            predicateSubstitution
+noBranching
+    :: (Monad m, HasCallStack)
+    => BranchT m (PredicateSubstitution Object variable)
+    -> m (PredicateSubstitution Object variable, UnificationProof Object variable)
+noBranching action = do
+    results <- gather action
     case Foldable.toList results of
         [] -> return
             ( PredicateSubstitution.bottom
