@@ -37,6 +37,8 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( SentenceSymbol (..) )
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -57,8 +59,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )

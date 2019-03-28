@@ -140,8 +140,11 @@ instance Hashable (Variable level)
 instance NFData (Variable level)
 
 instance Unparse (Variable level) where
-    unparse Variable { variableName, variableSort } =
-        unparse variableName <> Pretty.colon <> unparse variableSort
+    unparse Variable { variableName, variableCounter, variableSort } =
+        unparse variableName
+        <> Pretty.pretty variableCounter
+        <> Pretty.colon
+        <> unparse variableSort
 
 {- | Is the variable original (as opposed to generated)?
  -}
