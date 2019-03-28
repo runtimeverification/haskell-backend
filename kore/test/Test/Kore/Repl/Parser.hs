@@ -20,6 +20,7 @@ test_replParser =
     , stepTests   `tests` "step"
     , selectTests `tests` "select"
     , configTests `tests` "config"
+    , leafsTests  `tests` "leafs"
     , exitTests   `tests` "exit"
     ]
 
@@ -136,6 +137,12 @@ configTests =
                               \  |        ^\n\
                               \unexpected '-'\n\
                               \expecting end of input, integer, or white space\n"
+    ]
+
+leafsTests :: [ParserTest ReplCommand]
+leafsTests =
+    [ "leafs"  `parsesTo` ShowLeafs
+    , "leafs " `parsesTo` ShowLeafs
     ]
 
 exitTests :: [ParserTest ReplCommand]
