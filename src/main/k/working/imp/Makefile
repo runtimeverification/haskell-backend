@@ -4,12 +4,12 @@ include $(CURDIR)/../include.mk
 
 all_tests := \
 	collatz \
+	impossible-branch.psearch.final \
 	impossible-branch.search.final \
 	max-symbolic.search.final \
 	primes \
 	sum
 k_tests := \
-	impossible-branch.search.final \
 	impossible-branch.psearch.final \
 	sum
 prove_tests := \
