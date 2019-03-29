@@ -26,7 +26,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
                  StepPatternSimplifier (..) )
-import qualified Kore.Step.SMT.Evaluator as SmtEvaluator
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -69,7 +69,7 @@ evaluate
         case () of
             _ | OrOfExpandedPattern.isTrue simplified -> return (Just True)
               | OrOfExpandedPattern.isFalse simplified -> return (Just False)
-              | otherwise -> SmtEvaluator.decidePredicate predicate
+              | otherwise -> SMT.Evaluator.decidePredicate predicate
     let simplified' =
             case refute of
                 Just False -> ExpandedPattern.bottom
