@@ -38,6 +38,7 @@ commandParser =
     <|> showLeafs
     <|> showPrecBranch
     <|> showChildren
+    <|> showLabels
     <|> exit
 
 help :: Parser ReplCommand
@@ -77,6 +78,10 @@ showPrecBranch =
 showChildren :: Parser ReplCommand
 showChildren =
     fmap ShowChildren $ string "children" *> space *> optional decimal <* space
+
+showLabels :: Parser ReplCommand
+showLabels =
+    ShowLabels <$ (string "labels" *> space)
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)

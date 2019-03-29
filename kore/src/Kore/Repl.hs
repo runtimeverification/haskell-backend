@@ -29,6 +29,8 @@ import           Control.Monad.State.Strict
 import           Control.Monad.State.Strict
                  ( lift )
 import qualified Data.Graph.Inductive.Graph as Graph
+import           Data.Map.Strict
+                 ( empty )
 import           Data.Maybe
                  ( listToMaybe )
 import           System.IO
@@ -100,6 +102,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
             , stepper = stepper0
+            , labels  = empty
             }
 
     firstClaim :: Claim level

@@ -22,6 +22,8 @@ import           Control.Monad.State.Strict
                  ( StateT )
 import qualified Data.Graph.Inductive.Graph as Graph
 
+import           Data.Map.Strict
+                 ( Map )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern )
 import           Kore.OnePath.Verification
@@ -59,6 +61,8 @@ data ReplCommand
     -- ^ Show the first preceding branch
     | ShowChildren !(Maybe Int)
     -- ^ Show direct children of node
+    | ShowLabels
+    -- ^ Show all node labels
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -83,6 +87,7 @@ helpText =
                              \(defaults to current node)\n\
     \children [n]            shows direct children of node\n\
                              \(defaults to current node)\n\
+    \labels                  shows all node labels\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
@@ -102,6 +107,8 @@ data ReplState level = ReplState
     -- ^ Currently selected node in the graph; initialized with node = root
     , stepper :: StateT (ReplState level) Simplifier Bool
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
+    , labels  :: Map String Graph.Node
+    -- ^
     }
 
 Lens.makeLenses ''ReplState

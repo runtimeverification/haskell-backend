@@ -84,6 +84,7 @@ replInterpreter =
         ShowLeafs -> showLeafs $> True
         ShowPrecBranch mn -> showPrecBranch mn $> True
         ShowChildren mn -> showChildren mn $> True
+        ShowLabels -> showLabels $> True
         Exit -> pure False
 
 showUsage :: MonadIO m => m ()
@@ -228,6 +229,10 @@ showChildren mnode = do
     if node' `elem` Graph.nodes graph
        then putStrLn' $ show (Graph.suc graph node')
        else putStrLn' "Invalid node!"
+
+showLabels :: StateT (ReplState level) Simplifier ()
+showLabels = do
+    pure ()
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
