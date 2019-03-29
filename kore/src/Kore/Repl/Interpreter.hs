@@ -12,7 +12,7 @@ module Kore.Repl.Interpreter
     ) where
 
 import           Control.Lens
-                 ( (.=) )
+                 ( (%=), (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad.Extra
@@ -21,19 +21,28 @@ import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT )
+import           Data.Foldable
+                 ( traverse_ )
 import           Data.Functor
                  ( ($>) )
+import           Data.Functor.Foldable
+                 ( embed, project )
 import           Data.Graph.Inductive.Graph
                  ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
+import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
 
 import           Kore.AST.Common
-                 ( Variable )
+                 ( SymbolOrAlias (..), Variable )
+import qualified Kore.AST.Identifier as Identifier
+                 ( Id (..) )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
+import           Kore.AST.Valid
+                 ( pattern App_, mkTop_ )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -51,6 +60,8 @@ import           Kore.Step.AxiomPatterns
                  ( RulePattern (..) )
 import qualified Kore.Step.AxiomPatterns as Axiom
                  ( attributes )
+import           Kore.Step.Pattern
+                 ( StepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Simplification.Data
@@ -67,16 +78,17 @@ replInterpreter
     -> StateT (ReplState level) Simplifier Bool
 replInterpreter =
     \case
-        ShowUsage -> showUsage $> True
-        Help -> help $> True
-        ShowClaim c -> showClaim c $> True
-        ShowAxiom a -> showAxiom a $> True
-        Prove i -> prove i $> True
-        ShowGraph -> showGraph $> True
-        ProveSteps n -> proveSteps n $> True
-        SelectNode i -> selectNode i $> True
+        ShowUsage     -> showUsage     $> True
+        Help          -> help          $> True
+        ShowClaim c   -> showClaim c   $> True
+        ShowAxiom a   -> showAxiom a   $> True
+        Prove i       -> prove i       $> True
+        ShowGraph     -> showGraph     $> True
+        ProveSteps n  -> proveSteps n  $> True
+        SelectNode i  -> selectNode i  $> True
         ShowConfig mc -> showConfig mc $> True
-        Exit -> pure False
+        OmitCell c    -> omitCell c    $> True
+        Exit          -> pure             False
 
 showUsage :: MonadIO m => m ()
 showUsage =
@@ -158,13 +170,31 @@ showConfig configNode = do
     let node' = maybe node id configNode
     if node' `elem` Graph.nodes graph
         then do
+            omit <- Lens.use lensOmit
             putStrLn' $ "Config at node " <> show node' <> " is:"
             putStrLn'
-                . unparseStrategy
+                . unparseStrategy omit
                 . Graph.lab'
                 . Graph.context graph
                 $ node'
         else putStrLn' "Invalid node!"
+
+omitCell :: Maybe String -> StateT (ReplState level) Simplifier ()
+omitCell =
+    \case
+        Nothing  -> showCells
+        Just str -> addOrRemove str
+  where
+    showCells :: StateT (ReplState level) Simplifier ()
+    showCells = Lens.use lensOmit >>= traverse_ putStrLn'
+
+    addOrRemove :: String -> StateT (ReplState level) Simplifier ()
+    addOrRemove str = lensOmit %= toggle str
+
+    toggle :: String -> [String] -> [String]
+    toggle x xs
+      | x `elem` xs = filter (/= x) xs
+      | otherwise   = x : xs
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
@@ -217,12 +247,32 @@ performStepNoBranching (n, Success) = do
 performStepNoBranching (n, res) =
     pure $ Right (n, res)
 
-unparseStrategy :: MetaOrObject level => CommonStrategyPattern level -> String
-unparseStrategy =
+unparseStrategy
+    :: forall level
+    .  MetaOrObject level
+    => [String]
+    -> CommonStrategyPattern level -> String
+unparseStrategy omitList =
     \case
         Bottom -> "Reached bottom"
-        Stuck pat -> "Stuck: \n" <> unparseToString pat
-        RewritePattern pat -> unparseToString pat
+        Stuck pat -> "Stuck: \n" <> unparseToString (go <$> pat)
+        RewritePattern pat -> unparseToString (go <$> pat)
+  where
+    -- TODO(Vladimir): I think this is a 'hoist'.
+    go :: StepPattern level Variable -> StepPattern level Variable
+    go =
+        \case
+            pat@(App_ soa _) ->
+                case shouldBeExcluded soa of
+                    False -> embed . fmap go . project $ pat
+                    True -> mkTop_
+            pat -> embed . fmap go . project $ pat
+
+    shouldBeExcluded =
+       (flip elem) omitList
+           . Text.unpack
+           . Identifier.getId
+           . symbolOrAliasConstructor
 
 extractSourceAndLocation
     :: RewriteRule level Variable

@@ -20,6 +20,7 @@ test_replParser =
     , stepTests   `tests` "step"
     , selectTests `tests` "select"
     , configTests `tests` "config"
+    , omitTests   `tests` "omit"
     , exitTests   `tests` "exit"
     ]
 
@@ -136,6 +137,16 @@ configTests =
                               \  |        ^\n\
                               \unexpected '-'\n\
                               \expecting end of input, integer, or white space\n"
+    ]
+
+omitTests :: [ParserTest ReplCommand]
+omitTests =
+    [ "omit"        `parsesTo` OmitCell Nothing
+    , "omit "       `parsesTo` OmitCell Nothing
+    , "omit   "     `parsesTo` OmitCell Nothing
+    , "omit k"      `parsesTo` OmitCell (Just "k")
+    , "omit k "     `parsesTo` OmitCell (Just "k")
+    , "omit state " `parsesTo` OmitCell (Just "state")
     ]
 
 exitTests :: [ParserTest ReplCommand]

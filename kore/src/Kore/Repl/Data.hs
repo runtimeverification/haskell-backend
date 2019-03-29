@@ -15,6 +15,7 @@ module Kore.Repl.Data
     , ReplState (..)
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
+    , lensOmit
     ) where
 
 import qualified Control.Lens.TH.Rules as Lens
@@ -53,6 +54,8 @@ data ReplCommand
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe Int)
     -- ^ Show the configuration from the current node.
+    | OmitCell !(Maybe String)
+    -- ^ Adds or removes cell to omit list, or shows current omit list.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -72,6 +75,8 @@ helpText =
     \select <n>              select node id 'n' from the graph\n\
     \config [n]              shows the config for node 'n'\
                              \(defaults to current node)\n\
+    \omit [cell]             adds or removes cell to omit list\
+                             \(defaults to showing the omit list)\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
@@ -89,6 +94,8 @@ data ReplState level = ReplState
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node    :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root
+    , omit    :: [String]
+    -- ^ The omit list, initially empty
     , stepper :: StateT (ReplState level) Simplifier Bool
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     }
