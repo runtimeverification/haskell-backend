@@ -83,6 +83,7 @@ replInterpreter =
         ShowConfig mc -> showConfig mc $> True
         ShowLeafs -> showLeafs $> True
         ShowPrecBranch -> showPrecBranch $> True
+        ShowChildren -> showChildren $> True
         Exit -> pure False
 
 showUsage :: MonadIO m => m ()
@@ -217,6 +218,15 @@ showPrecBranch = do
           x = head xs
           pre' = Graph.pre gph
           outdeg' = Graph.outdeg gph
+
+showChildren
+    :: MetaOrObject level
+    => StateT (ReplState level) Simplifier ()
+showChildren = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    putStrLn' $ show (Graph.suc graph node)
+
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do

@@ -57,6 +57,8 @@ data ReplCommand
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
     | ShowPrecBranch
     -- ^ Show the first preceding branch
+    | ShowChildren
+    -- ^ Show direct children of node
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -78,6 +80,7 @@ helpText =
                              \(defaults to current node)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
     \prec-branch             shows first preceding branch\n\
+    \children                shows direct children of node\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
