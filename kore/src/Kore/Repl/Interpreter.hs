@@ -214,9 +214,9 @@ showPrecBranch mnode = do
        else putStrLn' "Invalid node!"
   where
     loopCond gph n
-      | (Graph.outdeg gph n) <= 1 && (not . null) (Graph.pre gph n)
+      | (Graph.outdeg gph n) <= 1 && (not . null . Graph.pre gph $ n)
           = Left $ head (Graph.pre gph n)
-      | otherwise = Right [n]
+      | otherwise = Right n
 
 showChildren
     :: Maybe Int
