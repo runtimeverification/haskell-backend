@@ -55,9 +55,9 @@ data ReplCommand
     -- ^ Show the configuration from the current node.
     | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
-    | ShowPrecBranch
+    | ShowPrecBranch !(Maybe Int)
     -- ^ Show the first preceding branch
-    | ShowChildren
+    | ShowChildren !(Maybe Int)
     -- ^ Show direct children of node
     | Exit
     -- ^ Exit the repl.
@@ -79,8 +79,8 @@ helpText =
     \config [n]              shows the config for node 'n'\
                              \(defaults to current node)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
-    \prec-branch             shows first preceding branch\n\
-    \children                shows direct children of node\n\
+    \prec-branch [n]         shows first preceding branch\n\
+    \children [n]            shows direct children of node\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.

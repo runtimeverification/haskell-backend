@@ -82,8 +82,8 @@ replInterpreter =
         SelectNode i -> selectNode i $> True
         ShowConfig mc -> showConfig mc $> True
         ShowLeafs -> showLeafs $> True
-        ShowPrecBranch -> showPrecBranch $> True
-        ShowChildren -> showChildren $> True
+        ShowPrecBranch mn -> showPrecBranch mn $> True
+        ShowChildren mn -> showChildren mn $> True
         Exit -> pure False
 
 showUsage :: MonadIO m => m ()
@@ -204,29 +204,34 @@ showLeafs = do
 
 showPrecBranch
     :: MetaOrObject level
-    => StateT (ReplState level) Simplifier ()
-showPrecBranch = do
+    => Maybe Int
+    -> StateT (ReplState level) Simplifier ()
+showPrecBranch mnode = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     node <- Lens.use lensNode
-    putStrLn' $ show (findBranch graph [node])
+    let node' = maybe node id mnode
+    if node' `elem` Graph.nodes graph
+        then do
+            putStrLn' $ show (findBranch graph [node'])
+        else putStrLn' "Invalid node!"
   where
     findBranch gph xs
       | xs == [] = []
-      | outdeg' x <= 1 = (findBranch gph) ([x] >>= pre')
+      | (Graph.outdeg gph) (head xs) <= 1 = (findBranch gph) ([head xs] >>= (Graph.pre gph))
       | otherwise = xs
-      where
-          x = head xs
-          pre' = Graph.pre gph
-          outdeg' = Graph.outdeg gph
 
 showChildren
     :: MetaOrObject level
-    => StateT (ReplState level) Simplifier ()
-showChildren = do
+    => Maybe Int
+    -> StateT (ReplState level) Simplifier ()
+showChildren mnode = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     node <- Lens.use lensNode
-    putStrLn' $ show (Graph.suc graph node)
-
+    let node' = maybe node id mnode
+    if node' `elem` Graph.nodes graph
+       then do
+           putStrLn' $ show (Graph.suc graph node')
+       else putStrLn' "Invalid node!"
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do

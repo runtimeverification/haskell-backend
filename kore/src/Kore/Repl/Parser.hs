@@ -71,10 +71,12 @@ showLeafs :: Parser ReplCommand
 showLeafs = ShowLeafs <$ (string "leafs" *> space)
 
 showPrecBranch :: Parser ReplCommand
-showPrecBranch = ShowPrecBranch <$ (string "prec-branch" *> space)
+showPrecBranch =
+    fmap ShowPrecBranch $ string "prec-branch" *> space *> optional decimal <* space
 
 showChildren :: Parser ReplCommand
-showChildren = ShowChildren <$ (string "children" *> space)
+showChildren =
+    fmap ShowChildren $ string "children" *> space *> optional decimal <* space
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)
