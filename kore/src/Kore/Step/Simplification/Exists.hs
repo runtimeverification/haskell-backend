@@ -19,6 +19,8 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -42,8 +44,6 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

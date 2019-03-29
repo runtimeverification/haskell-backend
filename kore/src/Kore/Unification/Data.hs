@@ -13,6 +13,11 @@ module Kore.Unification.Data
     , Kore.Unification.Data.mapVariables
     ) where
 
+import Data.Hashable
+       ( Hashable )
+import GHC.Generics
+       ( Generic )
+
 import           Kore.AST.Pure
 import           Kore.Proof.Functional
                  ( FunctionalProof (..) )
@@ -62,7 +67,9 @@ data UnificationProof level variable
     -- ((x = t1) /\ (t1 = t2)) = (x = (t1 /\ (t1 = t2)))
     -- then, applying Proposition 5.24(3), this further gets to
     -- (x = (t1 /\ t2))
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance Hashable (variable level) => Hashable (UnificationProof level variable)
 
 instance Semigroup (UnificationProof level variable) where
     (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]

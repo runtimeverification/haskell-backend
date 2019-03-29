@@ -33,6 +33,8 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import           Kore.Exec
@@ -40,19 +42,17 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.AxiomPatterns
+import           Kore.Step
+                 ( allRewrites, anyRewrite )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
+import           Kore.Step.Rule
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.Step
-                 ( allRewrites, anyRewrite )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 import qualified SMT
 
 import Test.Kore

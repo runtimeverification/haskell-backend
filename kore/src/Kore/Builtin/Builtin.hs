@@ -104,6 +104,8 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.Builtin.Error
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
@@ -136,8 +138,6 @@ import           Kore.Step.Simplification.Data
                  SimplificationType, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unparser
 
 type Parser = Parsec Void Text

@@ -43,6 +43,9 @@ import           Kore.AST.Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import           Kore.Builtin.Error
@@ -63,8 +66,6 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Pattern
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes (..) )
 
 {- | The default type of builtin domain values.
  -}
@@ -169,7 +170,7 @@ evaluators builtins indexedModule =
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
     lookupBuiltins :: StepperAttributes -> Maybe Builtin.Function
-    lookupBuiltins StepperAttributes { hook = Hook { getHook } } =
+    lookupBuiltins Attribute.Symbol { Attribute.hook = Hook { getHook } } =
         do
             name <- getHook
             impl <- Map.lookup name builtins

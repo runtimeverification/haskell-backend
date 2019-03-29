@@ -21,6 +21,7 @@ import           Kore.Attribute.Functional
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Subsort
                  ( subsortAttribute )
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
@@ -28,7 +29,6 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.Step.Pattern
-import           Kore.Step.StepperAttributes
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

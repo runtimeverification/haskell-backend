@@ -17,15 +17,15 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
-import qualified Kore.Step.StepperAttributes as StepperAttributes
 
 import           Test.Kore
                  ( testId )

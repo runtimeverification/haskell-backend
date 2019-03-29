@@ -609,7 +609,12 @@ verifyBinder binderSort binderVariable = \binder -> do
                         variable
                         declaredVariables
                 }
-    Reader.local withQuantifiedVariable (verifyOperands binderSort binder)
+    valid :< binder' <-
+        Reader.local
+            withQuantifiedVariable
+            (verifyOperands binderSort binder)
+    let valid' = Valid.deleteFreeVariable (asUnified variable) valid
+    return (valid' :< binder')
 {-# INLINE verifyBinder #-}
 
 verifyExists

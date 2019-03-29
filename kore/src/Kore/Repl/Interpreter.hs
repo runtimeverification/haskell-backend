@@ -50,14 +50,14 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim (..) )
 import           Kore.Repl.Data
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (..) )
-import           Kore.Step.AxiomPatterns
-                 ( RulePattern (..) )
-import qualified Kore.Step.AxiomPatterns as Axiom
-                 ( attributes )
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
+import           Kore.Step.Rule
+                 ( RewriteRule (..) )
+import           Kore.Step.Rule
+                 ( RulePattern (..) )
+import qualified Kore.Step.Rule as Axiom
+                 ( attributes )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
