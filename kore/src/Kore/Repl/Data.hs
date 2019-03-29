@@ -63,6 +63,10 @@ data ReplCommand
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
     | ShowRule !(Maybe Int)
     -- ^ Show the rule(s) that got us to this configuration.
+    | ShowPrecBranch !(Maybe Int)
+    -- ^ Show the first preceding branch
+    | ShowChildren !(Maybe Int)
+    -- ^ Show direct children of node
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -84,6 +88,10 @@ helpText =
                              \(defaults to current node)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
     \rule [n]                shows the rule for node 'n'\
+                             \(defaults to current node)\n\
+    \prec-branch [n]         shows first preceding branch\n\
+                             \(defaults to current node)\n\
+    \children [n]            shows direct children of node\n\
                              \(defaults to current node)\n\
     \exit                    exits the repl"
 

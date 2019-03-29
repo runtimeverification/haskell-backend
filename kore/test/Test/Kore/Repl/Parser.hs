@@ -12,16 +12,18 @@ import Test.Kore.Parser
 
 test_replParser :: [TestTree]
 test_replParser =
-    [ helpTests   `tests` "help"
-    , claimTests  `tests` "claim"
-    , axiomTests  `tests` "axiom"
-    , proveTests  `tests` "prove"
-    , graphTests  `tests` "graph"
-    , stepTests   `tests` "step"
-    , selectTests `tests` "select"
-    , configTests `tests` "config"
-    , leafsTests  `tests` "leafs"
-    , exitTests   `tests` "exit"
+    [ helpTests       `tests` "help"
+    , claimTests      `tests` "claim"
+    , axiomTests      `tests` "axiom"
+    , proveTests      `tests` "prove"
+    , graphTests      `tests` "graph"
+    , stepTests       `tests` "step"
+    , selectTests     `tests` "select"
+    , configTests     `tests` "config"
+    , leafsTests      `tests` "leafs"
+    , precBranchTests `tests` "prec-branch"
+    , childrenTests   `tests` "children"
+    , exitTests       `tests` "exit"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -143,6 +145,32 @@ leafsTests :: [ParserTest ReplCommand]
 leafsTests =
     [ "leafs"  `parsesTo` ShowLeafs
     , "leafs " `parsesTo` ShowLeafs
+    ]
+
+precBranchTests :: [ParserTest ReplCommand]
+precBranchTests =
+    [ "prec-branch"    `parsesTo`  ShowPrecBranch Nothing
+    , "prec-branch "   `parsesTo`  ShowPrecBranch Nothing
+    , "prec-branch 5"  `parsesTo`  ShowPrecBranch (Just 5)
+    , "prec-branch -5" `failsWith` "<test-string>:1:13:\n\
+                                    \  |\n\
+                                    \1 | prec-branch -5\n\
+                                    \  |             ^\n\
+                                    \unexpected '-'\n\
+                                    \expecting end of input, integer, or white space\n"
+    ]
+
+childrenTests :: [ParserTest ReplCommand]
+childrenTests =
+    [ "children"    `parsesTo`  ShowChildren Nothing
+    , "children "   `parsesTo`  ShowChildren Nothing
+    , "children 5"  `parsesTo`  ShowChildren (Just 5)
+    , "children -5" `failsWith` "<test-string>:1:10:\n\
+                                 \  |\n\
+                                 \1 | children -5\n\
+                                 \  |          ^\n\
+                                 \unexpected '-'\n\
+                                 \expecting end of input, integer, or white space\n"
     ]
 
 exitTests :: [ParserTest ReplCommand]
