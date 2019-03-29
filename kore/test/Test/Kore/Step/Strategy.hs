@@ -35,7 +35,7 @@ all nodes downstream of it will be duplicated.
 From the point of view of these unit tests this behavior is correct.
 -}
 toTree :: ExecutionGraph config rule -> Tree config
-toTree (ExecutionGraph root graph _) = Tree.unfoldTree findChildren root
+toTree (ExecutionGraph root graph) = Tree.unfoldTree findChildren root
   where
     findChildren node =
         ( fromJust $ Graph.lab graph node
