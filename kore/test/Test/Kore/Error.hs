@@ -16,26 +16,35 @@ import Kore.Error
 test_assertRight :: TestTree
 test_assertRight =
     testGroup "assertRight"
-        [ assertRight (mkRight "expected") `equals_` "expected"
-    --    , assertRight (mkLeft someError) `throws_` (printerr someError)
-        , testCase "case" $ handler (assertRight (mkLeft someError))
+        [ try (mkRight "expected") `equals_` "expected"
+        , try (mkLeft   someError) `throws_` (printError someError)
         ]
     where
+        try = assertRight
         someError = koreError "the error message"
 
-        handler :: a -> Assertion
-        handler x =
-            do
-              catch (evaluate x >> assertFailure "didn't throw") $ \ (ErrorCall msg) ->
-                assertEqualWithExplanation "ksdj" msg (printError someError)
-              return ()
+
+
+throws_ :: a -> String -> TestTree
+throws_ lazyValue expected =
+    testCase "throws" $ do
+        catch (evaluate lazyValue >> missingThrow) messageChecker
+        return ()
+  where
+    missingThrow =
+        assertFailure "No `error` was raised."
+
+    messageChecker (ErrorCall msg) =
+        assertEqualWithExplanation "assertion" msg expected
+
+
 
 
 type DontCare = Void
 type Wrapper = Either (Error DontCare) String
 
 mkRight :: String -> Wrapper
-mkRight r = Right r :: Wrapper
+mkRight = Right
 
 mkLeft :: Error DontCare -> Wrapper
-mkLeft l = Left l :: Wrapper
+mkLeft = Left
