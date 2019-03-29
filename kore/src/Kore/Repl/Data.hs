@@ -58,6 +58,10 @@ data ReplCommand
     -- ^ Adds or removes cell to omit list, or shows current omit list.
     | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
+    | ShowPrecBranch !(Maybe Int)
+    -- ^ Show the first preceding branch
+    | ShowChildren !(Maybe Int)
+    -- ^ Show direct children of node
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -80,6 +84,10 @@ helpText =
     \omit [cell]             adds or removes cell to omit list\
                              \(defaults to showing the omit list)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
+    \prec-branch [n]         shows first preceding branch\n\
+                             \(defaults to current node)\n\
+    \children [n]            shows direct children of node\n\
+                             \(defaults to current node)\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
