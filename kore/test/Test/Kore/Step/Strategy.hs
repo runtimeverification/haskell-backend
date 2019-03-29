@@ -26,6 +26,7 @@ import           Data.Maybe
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..), Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 
 {-| Convert an ExecutionGraph to a Tree, for the sake
 of keeping the old Tree-based unit tests.
@@ -84,9 +85,12 @@ instance Arbitrary prim => Arbitrary (Strategy prim) where
             Strategy.Continue -> []
 
 transitionPrim :: Prim -> Natural -> TransitionT Prim Identity Natural
-transitionPrim (Const n) = \_ -> pure n
-transitionPrim Succ      = \n -> pure (succ n)
-transitionPrim Throw     = \_ -> empty
+transitionPrim rule n = do
+    Transition.addRule rule
+    case rule of
+        Const i -> pure i
+        Succ    -> pure (succ n)
+        Throw   -> empty
 
 apply :: Prim -> Strategy Prim
 apply = Strategy.apply
