@@ -16,7 +16,7 @@ import           Control.Lens
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad.Extra
-                 ( loopM )
+                 ( loop, loopM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
@@ -82,6 +82,8 @@ replInterpreter =
         SelectNode i -> selectNode i $> True
         ShowConfig mc -> showConfig mc $> True
         ShowLeafs -> showLeafs $> True
+        ShowPrecBranch mn -> showPrecBranch mn $> True
+        ShowChildren mn -> showChildren mn $> True
         Exit -> pure False
 
 showUsage :: MonadIO m => m ()
@@ -199,6 +201,33 @@ showLeafs = do
 
     showPair :: (NodeStates, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
+
+showPrecBranch
+    :: Maybe Int
+    -> StateT (ReplState level) Simplifier ()
+showPrecBranch mnode = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    let node' = maybe node id mnode
+    if node' `elem` Graph.nodes graph
+       then putStrLn' . show $ loop (loopCond graph) node'
+       else putStrLn' "Invalid node!"
+  where
+    loopCond gph n
+      | (Graph.outdeg gph n) <= 1 && (not . null . Graph.pre gph $ n)
+          = Left $ head (Graph.pre gph n)
+      | otherwise = Right n
+
+showChildren
+    :: Maybe Int
+    -> StateT (ReplState level) Simplifier ()
+showChildren mnode = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    let node' = maybe node id mnode
+    if node' `elem` Graph.nodes graph
+       then putStrLn' $ show (Graph.suc graph node')
+       else putStrLn' "Invalid node!"
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
