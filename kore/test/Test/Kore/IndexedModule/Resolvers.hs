@@ -23,6 +23,7 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
+import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Step.Pattern hiding
@@ -275,7 +276,7 @@ test_resolvers =
         (assertEqual ""
             (Left Error
                 { errorContext = ["(<test data>)"]
-                , errorError = "Alias '#a' not defined."}
+                , errorError = Error.noAlias "#a" }
             )
             (resolveAlias testIndexedModule (testId "#a" :: Id Meta))
         )
