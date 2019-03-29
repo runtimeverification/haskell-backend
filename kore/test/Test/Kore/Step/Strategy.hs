@@ -45,7 +45,7 @@ data Prim
     = Const Natural
     | Succ
     | Throw
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 instance Arbitrary Prim where
     arbitrary = do
@@ -83,7 +83,7 @@ instance Arbitrary prim => Arbitrary (Strategy prim) where
             Strategy.Stuck -> []
             Strategy.Continue -> []
 
-transitionPrim :: Prim -> Natural -> TransitionT () Identity Natural
+transitionPrim :: Prim -> Natural -> TransitionT Prim Identity Natural
 transitionPrim (Const n) = \_ -> pure n
 transitionPrim Succ      = \n -> pure (succ n)
 transitionPrim Throw     = \_ -> empty
@@ -124,7 +124,7 @@ unlimited = Unlimited
 runStrategy
     :: [Strategy Prim]
     -> Natural
-    -> ExecutionGraph Natural ()
+    -> ExecutionGraph Natural Prim
 runStrategy strategy z =
     let
         Identity rs = Strategy.runStrategy transitionPrim strategy z
@@ -233,7 +233,7 @@ prop_stepLimit i =
 -- | Enumerate values from zero to @n@, then get stuck.
 enumerate
     :: Natural  -- ^ @n@
-    -> ExecutionGraph Natural ()
+    -> ExecutionGraph Natural Prim
 enumerate n = runStrategy (Limit.replicate (Limit n) succ_) 0
 
 prop_pickLongest :: Integer -> Property
