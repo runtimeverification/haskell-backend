@@ -15,6 +15,7 @@ module Kore.Repl.Data
     , ReplState (..)
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
+    , lensLabels
     ) where
 
 import qualified Control.Lens.TH.Rules as Lens
@@ -108,7 +109,7 @@ data ReplState level = ReplState
     , stepper :: StateT (ReplState level) Simplifier Bool
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , labels  :: Map String Graph.Node
-    -- ^
+    -- ^ Map from labels to nodes
     }
 
 Lens.makeLenses ''ReplState

@@ -29,6 +29,8 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.List.Extra
                  ( groupSort )
+import           Data.Map.Strict
+                 ( foldrWithKey )
 import           Data.Maybe
                  ( catMaybes )
 import           Data.Text.Prettyprint.Doc
@@ -232,7 +234,12 @@ showChildren mnode = do
 
 showLabels :: StateT (ReplState level) Simplifier ()
 showLabels = do
-    pure ()
+    labels <- Lens.use lensLabels
+    putStrLn' $ foldrWithKey f "Labels: " labels
+  where
+    f :: String -> Graph.Node -> String -> String
+    f key node res =
+        res <> "\n  " <> key <> ": " <> (show node)
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
