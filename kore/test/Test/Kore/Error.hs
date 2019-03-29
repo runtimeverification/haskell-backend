@@ -26,11 +26,11 @@ type DontCare = Void
 test_assertRight :: TestTree
 test_assertRight =
     testGroup "assertRight"
-        [ try (mkRight "expected") `equals_` "expected"
-        , try (mkLeft   someError) `throws_` (printError someError)
+        [ run (mkRight "expected") `equals_` "expected"
+        , run (mkLeft   someError) `throws_` (printError someError)
         ]
       where
-        try = assertRight
+        run = assertRight
         someError = koreError "the error message"
 
 
