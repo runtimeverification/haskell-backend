@@ -167,10 +167,6 @@ rawCompareWithExplanation expected actual =
         then Just $ formatDiffForExplanation (show expected) (show actual)
         else Nothing
 
-instance EqualWithExplanation Text where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
 instance (EqualWithExplanation a1, EqualWithExplanation a2)
     => EqualWithExplanation (a1, a2)
   where
@@ -273,19 +269,19 @@ instance
         "Element (" ++ printWithExplanation a ++ ")"
     printWithExplanation Sup  = "Sup"
 
-newtype EWEString = EWEString String
-
-instance EqualWithExplanation EWEString
-  where
-    compareWithExplanation (EWEString s1) (EWEString s2) =
-        rawCompareWithExplanation s1 s2
-    printWithExplanation (EWEString s) = show s
-
 instance EqualWithExplanation Integer where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance EqualWithExplanation Bool where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation Text where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance {-# OVERLAPPING #-} EqualWithExplanation String where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
