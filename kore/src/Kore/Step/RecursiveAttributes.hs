@@ -17,10 +17,11 @@ module Kore.Step.RecursiveAttributes
 import qualified Data.Functor.Foldable as Recursive
 
 import Kore.AST.Pure
+import Kore.Attribute.Symbol
+       ( StepperAttributes, isFunction, isFunctional, isTotal )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
 import Kore.Step.Pattern
-import Kore.Step.StepperAttributes
 
 recursivelyCheckHeadProperty
     :: forall level variable .

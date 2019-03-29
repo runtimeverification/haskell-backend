@@ -14,6 +14,8 @@ module Kore.Step.Simplification.Pattern
 
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
@@ -68,8 +70,6 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

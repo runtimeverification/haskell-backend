@@ -59,6 +59,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  verifyAndIndexDefinitionWithBase )
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -66,7 +67,6 @@ import           Kore.IndexedModule.IndexedModule
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition )
-import           Kore.Step.StepperAttributes
 import qualified Paths_kore as MetaData
                  ( version )
 

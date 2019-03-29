@@ -19,6 +19,7 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
+import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -30,6 +31,8 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Null as Attribute
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -39,10 +42,6 @@ import           Kore.Parser.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule )
-import           Kore.Step.BaseStep
-                 ( OrStepResult (..), applyRewriteRule )
 import           Kore.Step.Error
                  ( StepError )
 import           Kore.Step.Pattern
@@ -51,10 +50,15 @@ import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Rule
+                 ( RewriteRule )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
-import           Kore.Step.StepperAttributes
+import           Kore.Step.Step
+                 ( OrStepResult (..) )
+import qualified Kore.Step.Step as Step
+import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
                  ( unparseToString )
 import           SMT
@@ -152,7 +156,7 @@ constructorFunctions ixm =
         )
       where
         isInj = getId ident == "inj"
-        isCons = elem (getId ident) ["kseq", "dotk"]
+        isCons = Set.member (getId ident) (Set.fromList ["kseq", "dotk"])
 
     recurseIntoImports (attrs, attributes, importedModule) =
         (attrs, attributes, constructorFunctions importedModule)
@@ -164,6 +168,11 @@ verifiedModules =
 
 verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
+
+indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
+indexedModule =
+    makeIndexedModuleAttributesNull
+    $ mapIndexedModulePatterns Kore.eraseAnnotations verifiedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
@@ -238,13 +247,14 @@ runStepResult configuration axiom =
     runSMT
     $ evalSimplifier emptyLogger
     $ runExceptT
-    $ applyRewriteRule
+    $ Step.applyRewriteRules
         testMetadataTools
         testSubstitutionSimplifier
         stepSimplifier
         evaluators
+        (Step.UnificationProcedure Unification.unificationProcedure)
+        [axiom]
         configuration
-        axiom
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig
@@ -284,13 +294,14 @@ runStepResultWith solver configuration axiom =
     let smt =
             evalSimplifier emptyLogger
             $ runExceptT
-            $ applyRewriteRule
+            $ Step.applyRewriteRules
                 testMetadataTools
                 testSubstitutionSimplifier
                 stepSimplifier
                 evaluators
+                (Step.UnificationProcedure Unification.unificationProcedure)
+                [axiom]
                 configuration
-                axiom
     in runReaderT (SMT.getSMT smt) solver
 
 

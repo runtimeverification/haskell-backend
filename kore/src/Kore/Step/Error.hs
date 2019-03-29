@@ -25,7 +25,11 @@ a single step.
 -}
 data StepError level variable
     = StepErrorUnification UnificationError
+    -- ^ Error from a unification sub-step.
     | StepErrorSubstitution (SubstitutionError level variable)
+    -- ^ Error from a substitution normalization sub-step.
+    | StepErrorUnsupportedSymbolic
+    -- ^ Error from an unsupported symbolic rule application.
     deriving (Show, Eq)
 
 {-| 'substitutionErrorVariables' extracts all variables in a
@@ -34,8 +38,9 @@ data StepError level variable
 stepErrorVariables
     :: Ord (variable level)
     => StepError level variable -> Set.Set (variable level)
-stepErrorVariables (StepErrorUnification _)  = Set.empty
-stepErrorVariables (StepErrorSubstitution a) = substitutionErrorVariables a
+stepErrorVariables (StepErrorUnification _)     = Set.empty
+stepErrorVariables (StepErrorSubstitution a)    = substitutionErrorVariables a
+stepErrorVariables StepErrorUnsupportedSymbolic = Set.empty
 
 {-| 'mapStepErrorVariables' replaces all variables in a 'StepError' using
 the provided mapping.
@@ -47,6 +52,8 @@ mapStepErrorVariables
 mapStepErrorVariables _ (StepErrorUnification a) = StepErrorUnification a
 mapStepErrorVariables mapper (StepErrorSubstitution a) =
     StepErrorSubstitution (mapSubstitutionErrorVariables mapper a)
+mapStepErrorVariables _ StepErrorUnsupportedSymbolic =
+    StepErrorUnsupportedSymbolic
 
 {-| 'unificationToStepError' converts an action with a 'UnificationError' into
 an action with a 'StepError'.

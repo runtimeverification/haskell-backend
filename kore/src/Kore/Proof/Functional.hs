@@ -14,6 +14,11 @@ module Kore.Proof.Functional
     , mapVariables
     ) where
 
+import Data.Hashable
+       ( Hashable )
+import GHC.Generics
+       ( Generic )
+
 import           Kore.AST.Common
                  ( CharLiteral, StringLiteral, SymbolOrAlias )
 import qualified Kore.Domain.Builtin as Domain
@@ -39,7 +44,9 @@ data FunctionalProof level variable
     -- ^A string literal is the repeated application of functional constructors.
     | FunctionalCharLiteral CharLiteral
     -- ^A char literal is a functional constructor without arguments.
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance Hashable (variable level) => Hashable (FunctionalProof level variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a

@@ -1,200 +1,803 @@
-{-|
-Module      : Kore.Step.Step
-Description : Single and multiple step execution
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
--}
+
+Direct interface to rule application (step-wise execution).
+See "Kore.Step" for the high-level strategy-based interface.
+
+ -}
+
 module Kore.Step.Step
-    ( -- * Primitive strategies
-      Prim (..)
-    , rewrite
-    , simplify
-    , rewriteStep
-    , transitionRule
-    , allRewrites
-    , anyRewrite
-    , heatingCooling
-      -- * Re-exports
+    ( OrStepResult (..)
     , RulePattern
-    , Natural
-    , Strategy
-    , pickLongest
-    , pickFinal
-    , runStrategy
+    , UnificationProcedure (..)
+    --
+    , UnifiedRule
+    , unifyRule
+    , applyUnifiedRule
+    , applyRule
+    , applyRules
+    , applyRewriteRule
+    , applyRewriteRules
+    , sequenceRules
+    , sequenceRewriteRules
+    , toConfigurationVariables
+    , toAxiomVariables
     ) where
 
-import           Control.Monad.Except
-                 ( runExceptT )
+import           Control.Applicative
+                 ( Alternative (..) )
+import           Control.Monad.Except as Monad.Except
+import qualified Control.Monad.Morph as Monad.Morph
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
+import qualified Data.Map.Strict as Map
+import           Data.Semigroup
+                 ( Semigroup (..) )
+import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Stack
-                 ( HasCallStack )
-import           Numeric.Natural
-                 ( Natural )
 
-import           Kore.AST.Common
-                 ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
+import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Logger as Log
+import           Kore.Predicate.Predicate
+                 ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
-                 isHeatingRule, isNormalRule )
-import           Kore.Step.BaseStep
-                 ( OrStepResult (..), StepProof (..), applyRewriteRule )
+import           Kore.Step.Error
+import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( ExpandedPattern )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Representation.OrOfExpandedPattern
+                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
+import           Kore.Step.Representation.Predicated
+                 ( Predicated (Predicated) )
+import qualified Kore.Step.Representation.Predicated as Predicated
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( PredicateSubstitution )
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Rule
+                 ( RewriteRule (..), RulePattern (RulePattern) )
+import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
-                 ( simplify )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
-import           Kore.Step.Strategy
-import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Substitution as Substitution
+import           Kore.Unification.Data
+                 ( UnificationProof )
+import           Kore.Unification.Error
+                 ( UnificationOrSubstitutionError )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+import           Kore.Variables.Target
+                 ( Target )
+import qualified Kore.Variables.Target as Target
 
-{- | A strategy primitive: a rewrite rule or builtin simplification step.
+{-| The result of applying an axiom to a pattern, as an Or.
+
+Contains the rewritten pattern (if any) and the unrewritten part of the
+original pattern.
+-}
+data OrStepResult level variable =
+    OrStepResult
+        { rewrittenPattern :: !(OrOfExpandedPattern level variable)
+        -- ^ The result of rewritting the pattern
+        , remainder :: !(OrOfExpandedPattern level variable)
+        -- ^ The unrewritten part of the original pattern
+        }
+    deriving (Eq, Show)
+
+instance Semigroup (OrStepResult level variable) where
+    (<>)
+        OrStepResult
+            { rewrittenPattern = rewrittenPattern1
+            , remainder = remainder1
+            }
+        OrStepResult
+            { rewrittenPattern = rewrittenPattern2
+            , remainder = remainder2
+            }
+      =
+        OrStepResult
+            { rewrittenPattern = rewrittenPattern1 <> rewrittenPattern2
+            , remainder = remainder1 <> remainder2
+            }
+    {-# INLINE (<>) #-}
+
+instance Monoid (OrStepResult level variable) where
+    mappend = (<>)
+    {-# INLINE mappend #-}
+
+    mempty = OrStepResult { rewrittenPattern = mempty, remainder = mempty }
+    {-# INLINE mempty #-}
+
+-- | Wraps functions such as 'unificationProcedure' and
+-- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
+-- 'stepWithRule'.
+newtype UnificationProcedure level =
+    UnificationProcedure
+        ( forall variable
+        .   ( SortedVariable variable
+            , Ord (variable level)
+            , Show (variable level)
+            , Unparse (variable level)
+            , OrdMetaOrObject variable
+            , ShowMetaOrObject variable
+            , MetaOrObject level
+            , FreshVariable variable
+            )
+        => MetadataTools level StepperAttributes
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier level
+        -> BuiltinAndAxiomSimplifierMap level
+        -> StepPattern level variable
+        -> StepPattern level variable
+        -> ExceptT
+            (UnificationOrSubstitutionError level variable)
+            Simplifier
+            ( OrOfPredicateSubstitution level variable
+            , UnificationProof level variable
+            )
+        )
+
+unwrapStepErrorVariables
+    :: Functor m
+    => ExceptT (StepError level (Target variable)) m a
+    -> ExceptT (StepError level                  variable ) m a
+unwrapStepErrorVariables =
+    withExceptT (mapStepErrorVariables Target.unwrapVariable)
+
+{- | Remove axiom variables from the substitution and unwrap all variables.
  -}
-data Prim rewrite = Simplify | Rewrite !rewrite
-
--- | Apply the rewrite.
-rewrite :: rewrite -> Prim rewrite
-rewrite = Rewrite
-
--- | Apply builtin simplification rewrites and evaluate functions.
-simplify :: Prim rewrite
-simplify = Simplify
-
-{- | A single-step strategy which applies the given rewrite rule.
-
-If the rewrite is successful, the built-in simplification rules and function
-evaluator are applied (see 'ExpandedPattern.simplify' for details).
-
- -}
-rewriteStep :: rewrite -> Strategy (Prim rewrite)
-rewriteStep a =
-    Strategy.sequence [Strategy.apply (rewrite a), Strategy.apply simplify]
-
-{- | Transition rule for primitive strategies in 'Prim'.
-
-@transitionRule@ is intended to be partially applied and passed to
-'Strategy.runStrategy'.
- -}
-transitionRule
-    :: (HasCallStack, MetaOrObject level)
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from symbol IDs to defined functions
-    -> Prim (RewriteRule level Variable)
-    -> (CommonExpandedPattern level, StepProof level Variable)
-    -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier [(CommonExpandedPattern level, StepProof level Variable)]
-transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
-    \case
-        Simplify -> transitionSimplify
-        Rewrite a -> transitionRewrite a
+unwrapConfiguration
+    :: Ord (variable level)
+    => ExpandedPattern level (Target variable)
+    -> ExpandedPattern level variable
+unwrapConfiguration config@Predicated { substitution } =
+    ExpandedPattern.mapVariables Target.unwrapVariable
+        config { ExpandedPattern.substitution = substitution' }
   where
-    transitionSimplify (config, proof) =
-        do
-            (configs, _) <-
-                ExpandedPattern.simplify
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    config
-            let
-                prove config' = (config', proof)
-                -- Filter out ⊥ patterns
-                nonEmptyConfigs = MultiOr.filterOr configs
-            return (prove <$> Foldable.toList nonEmptyConfigs)
-    transitionRewrite rule (config, proof) = do
-        result <-
-            runExceptT
-            $ applyRewriteRule
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
+    substitution' = Substitution.filter Target.isNonTarget substitution
+
+wrapUnificationOrSubstitutionError
+    :: Functor m
+    => ExceptT (UnificationOrSubstitutionError level variable) m a
+    -> ExceptT (StepError                      level variable) m a
+wrapUnificationOrSubstitutionError =
+    withExceptT unificationOrSubstitutionToStepError
+
+{- | Lift an action from the unifier into the stepper.
+ -}
+liftFromUnification
+    :: Monad m
+    => BranchT (ExceptT (UnificationOrSubstitutionError level variable) m) a
+    -> BranchT (ExceptT (StepError level variable                     ) m) a
+liftFromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
+
+{- | A @UnifiedRule@ has been renamed and unified with a configuration.
+
+The rule's 'RulePattern.requires' clause is combined with the unification
+solution and the renamed rule is wrapped with the combined condition.
+
+ -}
+type UnifiedRule variable =
+    Predicated Object variable (RulePattern Object variable)
+
+{- | Attempt to unify a rule with the initial configuration.
+
+The rule variables are renamed to avoid collision with the configuration. The
+rule's 'RulePattern.requires' clause is combined with the unification
+solution. The combined condition is simplified and checked for
+satisfiability.
+
+If any of these steps produces an error, then @unifyRule@ returns that error.
+
+@unifyRule@ returns the renamed rule wrapped with the combined conditions on
+unification. The substitution is not applied to the renamed rule.
+
+ -}
+unifyRule
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> UnificationProcedure Object
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Initial configuration
+    -> RulePattern Object variable
+    -- ^ Rule
+    -> BranchT
+        (ExceptT (StepError Object variable) Simplifier)
+        (UnifiedRule variable)
+unifyRule
+    metadataTools
+    (UnificationProcedure unificationProcedure)
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    initial@Predicated { term = initialTerm }
+    rule
+  = liftFromUnification $ do
+    -- Rename free axiom variables to avoid free variables from the initial
+    -- configuration.
+    let
+        configVariables = ExpandedPattern.freeVariables initial
+        (_, rule') = RulePattern.refreshRulePattern configVariables rule
+    -- Unify the left-hand side of the rule with the term of the initial
+    -- configuration.
+    let
+        RulePattern { left = ruleLeft } = rule'
+    unification <- unifyPatterns ruleLeft initialTerm
+    -- Combine the unification solution with the rule's requirement clause.
+    let
+        RulePattern { requires = ruleRequires } = rule'
+        requires' = PredicateSubstitution.fromPredicate ruleRequires
+    unification' <- normalize (unification <> requires')
+    return (rule' `Predicated.withCondition` unification')
+  where
+    unifyPatterns pat1 pat2 = do
+        (unifiers, _) <-
+            Monad.Trans.lift
+            $ unificationProcedure
+                metadataTools
+                predicateSimplifier
+                patternSimplifier
+                axiomSimplifiers
+                pat1
+                pat2
+        scatter unifiers
+    normalize condition =
+        Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            condition
+
+{- | Apply a rule to produce final configurations given some initial conditions.
+
+The initial conditions are merged with any conditions from the rule unification
+and normalized.
+
+ -}
+applyUnifiedRule
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> PredicateSubstitution Object variable
+    -- ^ Initial conditions
+    -> UnifiedRule variable
+    -- ^ Non-normalized final configuration
+    -> BranchT
+        (ExceptT (StepError Object variable) Simplifier)
+        (ExpandedPattern Object variable)
+applyUnifiedRule
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    initial
+    unifiedRule
+  = liftFromUnification $ do
+    -- Combine the initial conditions, the unification conditions, and the axiom
+    -- ensures clause. The axiom requires clause is included by unifyRule.
+    let
+        Predicated { term = renamedRule } = unifiedRule
+        RulePattern { ensures } = renamedRule
+        ensuresCondition = PredicateSubstitution.fromPredicate ensures
+        unification = Predicated.withoutTerm unifiedRule
+    finalCondition <- normalize (initial <> unification <> ensuresCondition)
+    -- Apply the normalized substitution to the right-hand side of the axiom.
+    let
+        Predicated { substitution } = finalCondition
+        substitution' = Substitution.toMap substitution
+        RulePattern { right = finalTerm } = renamedRule
+        finalTerm' = Pattern.substitute substitution' finalTerm
+    return finalCondition { ExpandedPattern.term = finalTerm' }
+  where
+    normalize condition =
+        Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            condition
+
+{- | Apply the remainder predicate to the given initial configuration.
+
+ -}
+applyRemainder
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Initial configuration
+    -> Predicate Object variable
+    -- ^ Remainder
+    -> BranchT
+        (ExceptT (StepError Object variable) Simplifier)
+        (ExpandedPattern Object variable)
+applyRemainder
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    initial
+    (PredicateSubstitution.fromPredicate -> remainder)
+  = liftFromUnification $ do
+    let final = initial `Predicated.andCondition` remainder
+        finalCondition = Predicated.withoutTerm final
+        Predicated { Predicated.term = finalTerm } = final
+    normalizedCondition <- normalize finalCondition
+    return normalizedCondition { Predicated.term = finalTerm }
+  where
+    normalize condition =
+        Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            condition
+
+toAxiomVariables
+    :: Ord (variable level)
+    => RulePattern level variable
+    -> RulePattern level (Target variable)
+toAxiomVariables = RulePattern.mapVariables Target.Target
+
+toConfigurationVariables
+    :: Ord (variable level)
+    => ExpandedPattern level variable
+    -> ExpandedPattern level (Target variable)
+toConfigurationVariables = ExpandedPattern.mapVariables Target.NonTarget
+
+data Result variable =
+    Result
+        { unifiedRule :: !(UnifiedRule (Target variable))
+        , result      :: !(ExpandedPattern Object variable)
+        }
+
+{- | Fully apply a single rule to the initial configuration.
+
+The rule is applied to the initial configuration to produce zero or more final
+configurations.
+
+ -}
+applyRule
+    ::  ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten.
+    -> RulePattern Object variable
+    -- ^ Rewriting axiom
+    -> ExceptT (StepError Object variable) Simplifier
+        (MultiOr (Result variable))
+applyRule
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
+
+    initial
+    rule
+  = Log.withLogScope "applyRule"
+    $ unwrapStepErrorVariables
+    $ do
+        let
+            -- Wrap the rule and configuration so that unification prefers to
+            -- substitute axiom variables.
+            initial' = toConfigurationVariables initial
+            rule' = toAxiomVariables rule
+        gather $ do
+            unifiedRule <- unifyRule' initial' rule'
+            let initialCondition = Predicated.withoutTerm initial'
+            final <- applyUnifiedRule' initialCondition unifiedRule
+            result <- checkSubstitutionCoverage initial' unifiedRule final
+            return Result { unifiedRule, result }
+  where
+    unifyRule' =
+        unifyRule
+            metadataTools
+            unificationProcedure
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+    applyUnifiedRule' =
+        applyUnifiedRule
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+
+{- | Fully apply a single rewrite rule to the initial configuration.
+
+The rewrite rule is applied to the initial configuration to produce zero or more
+final configurations.
+
+ -}
+applyRewriteRule
+    ::  ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten.
+    -> RewriteRule Object variable
+    -- ^ Rewriting axiom
+    -> ExceptT (StepError Object variable) Simplifier
+        (MultiOr (Result variable))
+applyRewriteRule
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
+
+    initial
+    (RewriteRule rule)
+  = Log.withLogScope "applyRewriteRule"
+    $ applyRule
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        unificationProcedure
+        initial
+        rule
+
+{- | Check that the final substitution covers the applied rule appropriately.
+
+The final substitution should cover all the free variables on the left-hand side
+of the applied rule; otherwise, we would wrongly introduce
+universally-quantified variables into the final configuration. Failure of the
+coverage check indicates a problem with unification, so in that case
+@checkSubstitutionCoverage@ throws an error message with the axiom and the
+initial and final configurations.
+
+@checkSubstitutionCoverage@ calls @unwrapVariables@ to remove the axiom
+variables from the substitution and unwrap all the 'Target's; this is
+safe because we have already checked that all the universally-quantified axiom
+variables have been instantiated by the substitution.
+
+ -}
+checkSubstitutionCoverage
+    ::  ( MetaOrObject level
+        , Monad m
+        , SortedVariable variable
+        , Ord     (variable level)
+        , Show    (variable level)
+        , Unparse (variable level)
+        )
+    => ExpandedPattern level (Target variable)
+    -- ^ Initial configuration
+    -> UnifiedRule (Target variable)
+    -- ^ Unified rule
+    -> ExpandedPattern level (Target variable)
+    -- ^ Configuration after applying rule
+    -> BranchT (ExceptT (StepError level (Target variable)) m)
+        (ExpandedPattern level variable)
+checkSubstitutionCoverage initial unified final
+  | isCoveringSubstitution = return (unwrapConfiguration final)
+  | isSymbolic =
+    -- The substitution does not cover all the variables on the left-hand side
+    -- of the rule, but this was not unexpected because the initial
+    -- configuration was symbolic. This case is not yet supported, but it is not
+    -- a fatal error.
+    Monad.Trans.lift (Monad.Except.throwError StepErrorUnsupportedSymbolic)
+  | otherwise =
+    -- The substitution does not cover all the variables on the left-hand side
+    -- of the rule *and* we did not generate a substitution for a symbolic
+    -- initial configuration. This is a fatal error because it indicates
+    -- something has gone horribly wrong.
+    (error . show . Pretty.vsep)
+        [ "While applying axiom:"
+        , Pretty.indent 4 (Pretty.pretty axiom)
+        , "from the initial configuration:"
+        , Pretty.indent 4 (unparse initial)
+        , "to the final configuration:"
+        , Pretty.indent 4 (unparse final)
+        , "Failed substitution coverage check!"
+        , "Expected substitution (above) to cover all variables:"
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Set.toAscList leftAxiomVariables)
+        , "in the left-hand side of the axiom."
+        ]
+  where
+    Predicated { term = axiom } = unified
+    leftAxiomVariables =
+        Pattern.freeVariables leftAxiom
+      where
+        RulePattern { left = leftAxiom } = axiom
+    Predicated { substitution } = final
+    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    isCoveringSubstitution =
+        Set.isSubsetOf leftAxiomVariables substitutionVariables
+    isSymbolic =
+        Foldable.any Target.isNonTarget substitutionVariables
+
+{- | Apply the given rules to the initial configuration in parallel.
+
+See also: 'applyRewriteRule'
+
+ -}
+applyRules
+    ::  forall variable
+    .   ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
+
+    -> [RulePattern Object variable]
+    -- ^ Rewrite rules
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten
+    -> ExceptT (StepError Object variable) Simplifier
+        (OrStepResult Object variable)
+applyRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
+
+    rules
+    initial
+  = do
+    results <- Foldable.fold <$> traverse applyRule' rules
+    let unifications = Predicated.withoutTerm . unifiedRule <$> results
+    remainder <- gather $ do
+        remainder <- scatter (Remainder.remainders unifications)
+        applyRemainder' initial remainder
+    let rewrittenPattern = result <$> results
+    return OrStepResult { rewrittenPattern, remainder }
+  where
+    applyRule' =
+        applyRule
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            unificationProcedure
+            initial
+    applyRemainder' =
+        applyRemainder
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+
+{- | Apply the given rewrite rules to the initial configuration in parallel.
+
+See also: 'applyRewriteRule'
+
+ -}
+applyRewriteRules
+    ::  forall variable
+    .   ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
+
+    -> [RewriteRule Object variable]
+    -- ^ Rewrite rules
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten
+    -> ExceptT (StepError Object variable) Simplifier
+        (OrStepResult Object variable)
+applyRewriteRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
+
+    rewriteRules
+  =
+    applyRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        unificationProcedure
+        (getRewriteRule <$> rewriteRules)
+
+{- | Apply the given rewrite rules to the initial configuration in sequence.
+
+See also: 'applyRewriteRule'
+
+ -}
+sequenceRules
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
+
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten
+    -> [RulePattern Object variable]
+    -- ^ Rewrite rules
+    -> ExceptT (StepError Object variable) Simplifier
+        (OrStepResult Object variable)
+sequenceRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
+    initialConfig
+  =
+    Foldable.foldlM sequenceRules1 mempty { remainder = pure initialConfig }
+  where
+    -- The single remainder of the input configuration after rewriting to
+    -- produce the disjunction of results.
+    remainingAfter
+        :: ExpandedPattern Object variable
+        -- ^ initial configuration
+        -> MultiOr (Result variable)
+        -- ^ disjunction of results
+        -> OrOfExpandedPattern Object variable
+    remainingAfter config results =
+        let remainder =
+                PredicateSubstitution.fromPredicate
+                $ Remainder.remainder
+                $ Predicated.withoutTerm . unifiedRule <$> results
+        in MultiOr.make [config `Predicated.andCondition` remainder]
+
+    sequenceRules1
+        :: OrStepResult Object variable
+        -> RulePattern Object variable
+        -> ExceptT (StepError Object variable) Simplifier
+            (OrStepResult Object variable)
+    sequenceRules1 results rule = do
+        results' <- traverse (applyRule' rule) (remainder results)
+        return (results { remainder = empty } <> Foldable.fold results')
+
+    -- Apply rule to produce a pair of the rewritten patterns and
+    -- single remainder configuration.
+    applyRule' rule config = do
+        results <-
+            applyRule
+                metadataTools
+                predicateSimplifier
+                patternSimplifier
+                axiomSimplifiers
+                unificationProcedure
                 config
                 rule
-        case result of
-            Left _ ->
-                (error . show . Pretty.vsep)
-                    [ "Could not apply the axiom:"
-                    , unparse rule
-                    , "to the configuration:"
-                    , unparse config
-                    , "Un-implemented unification case; aborting execution."
-                    ]
-            Right OrStepResult { rewrittenPattern = results } ->
-                Log.withLogScope "transitionRule" $
-                    return $ withProof <$> Foldable.toList results
-              where
-                withProof result' = (result', proof)
+        return OrStepResult
+            { rewrittenPattern = MultiOr.filterOr (result <$> results)
+            , remainder = remainingAfter config results
+            }
 
+{- | Apply the given rewrite rules to the initial configuration in sequence.
 
-{- | A strategy that applies all the rewrites in parallel.
-
-After each successful rewrite, the built-in simplification rules and function
-evaluator are applied (see 'ExpandedPattern.simplify' for details).
-
-See also: 'Strategy.all'
+See also: 'applyRewriteRule'
 
  -}
-allRewrites
-    :: [rewrite]
-    -> Strategy (Prim rewrite)
-allRewrites rewrites =
-    Strategy.all (rewriteStep <$> rewrites)
+sequenceRewriteRules
+    ::  forall variable
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap Object
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure Object
 
-{- | A strategy that applies the rewrites until one succeeds.
+    -> ExpandedPattern Object variable
+    -- ^ Configuration being rewritten
+    -> [RewriteRule Object variable]
+    -- ^ Rewrite rules
+    -> ExceptT (StepError Object variable) Simplifier
+        (OrStepResult Object variable)
+sequenceRewriteRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
 
-The rewrites are attempted in order until one succeeds. After a successful
-rewrite, the built-in simplification rules and function evaluator are applied
-(see 'ExpandedPattern.simplify' for details).
-
-See also: 'Strategy.any'
-
- -}
-anyRewrite
-    :: [rewrite]
-    -> Strategy (Prim rewrite)
-anyRewrite rewrites =
-    Strategy.any (rewriteStep <$> rewrites)
-
-{- | Heat the configuration, apply a normal rewrite, and cool the result.
- -}
--- TODO (thomas.tuegel): This strategy is not right because heating/cooling
--- rules must have side conditions if encoded as \rewrites, or they must be
--- \equals rules, which are not handled by this strategy.
-heatingCooling
-    :: (forall rewrite. [rewrite] -> Strategy (Prim rewrite))
-    -- ^ 'allRewrites' or 'anyRewrite'
-    -> [RewriteRule level Variable]
-    -> Strategy (Prim (RewriteRule level Variable))
-heatingCooling rewriteStrategy rewrites =
-    Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
-  where
-    heatingRules = filter isHeating rewrites
-    isHeating (RewriteRule rule) = isHeatingRule rule
-    heat = rewriteStrategy heatingRules
-    normalRules = filter isNormal rewrites
-    isNormal (RewriteRule rule) = isNormalRule rule
-    normal = rewriteStrategy normalRules
-    coolingRules = filter isCooling rewrites
-    isCooling (RewriteRule rule) = isCoolingRule rule
-    cool = rewriteStrategy coolingRules
+    initialConfig
+    rewriteRules
+  =
+    sequenceRules
+        metadataTools
+        predicateSimplifier
+        patternSimplifier
+        axiomSimplifiers
+        unificationProcedure
+        initialConfig
+        (getRewriteRule <$> rewriteRules)

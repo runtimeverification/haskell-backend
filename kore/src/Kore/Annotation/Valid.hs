@@ -10,6 +10,7 @@ module Kore.Annotation.Valid
     ( Valid (..)
     , mapVariables
     , traverseVariables
+    , deleteFreeVariable
     ) where
 
 import           Control.DeepSeq
@@ -72,3 +73,13 @@ traverseVariables
 traverseVariables traversing valid@Valid { freeVariables } =
     (\freeVariables' -> valid { freeVariables = Set.fromList freeVariables' })
         <$> traverse traversing (Set.toList freeVariables)
+
+{- | Delete the given variable from the set of free variables.
+ -}
+deleteFreeVariable
+    :: Ord variable
+    => variable
+    -> Valid variable level
+    -> Valid variable level
+deleteFreeVariable variable valid@Valid { freeVariables } =
+    valid { freeVariables = Set.delete variable freeVariables }

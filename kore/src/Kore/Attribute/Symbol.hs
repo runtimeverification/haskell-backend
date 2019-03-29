@@ -1,17 +1,21 @@
-{-|
-Module      : Kore.Step.StepperAttributes
-Description : Attributes used for step execution
-Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
-Maintainer  : traian.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
--}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Step.StepperAttributes
-    ( StepperAttributes (..)
-    , defaultStepperAttributes
+{- |
+Description : Symbol declaration attributes
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+
+This module is intended to be imported qualified:
+@
+import qualified Kore.Attribute.Symbol as Attribute
+@
+
+ -}
+
+module Kore.Attribute.Symbol
+    ( Symbol (..)
+    , StepperAttributes
+    , defaultSymbolAttributes
     -- * Function symbols
     , lensFunction, Function (..)
     , functionAttribute
@@ -74,17 +78,16 @@ import Kore.Attribute.SortInjection
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
 
-{- | Attributes used during Kore execution.
+{- | Symbol attributes used during Kore execution.
 
-@StepperAttributes@ records the declared attributes of a Kore sentence, but the
-effective attributes can be different; for example, constructors and sort
-injections are injective, even if their declaration is not given the @injective@
-attribute. To view the effective attributes, use the functions defined in this
-module.
+@Symbol@ records the declared attributes of a Kore symbol, but the effective
+attributes can be different; for example, constructors and sort injections are
+injective, even if their declaration is not given the @injective@ attribute. To
+view the effective attributes, use the functions defined in this module.
 
  -}
-data StepperAttributes =
-    StepperAttributes
+data Symbol =
+    Symbol
     { function      :: !Function
       -- ^ Whether a symbol represents a function
     , functional    :: !Functional
@@ -100,15 +103,17 @@ data StepperAttributes =
     , smtlib        :: !Smtlib
     , smthook       :: !Smthook
     }
-  deriving (Generic, Eq, Show)
+    deriving (Eq, Ord, Generic, Show)
 
-Lens.makeLenses ''StepperAttributes
+type StepperAttributes = Symbol
 
-instance NFData StepperAttributes
+Lens.makeLenses ''Symbol
 
-instance ParseAttributes StepperAttributes where
+instance NFData Symbol
+
+instance ParseAttributes Symbol where
     parseAttribute attr =
-            lensFunction (parseAttribute attr)
+        lensFunction (parseAttribute attr)
         >=> lensFunctional (parseAttribute attr)
         >=> lensConstructor (parseAttribute attr)
         >=> lensSortInjection (parseAttribute attr)
@@ -117,22 +122,22 @@ instance ParseAttributes StepperAttributes where
         >=> lensSmtlib (parseAttribute attr)
         >=> lensSmthook (parseAttribute attr)
 
-defaultStepperAttributes :: StepperAttributes
-defaultStepperAttributes =
-    StepperAttributes
-    { function       = def
-    , functional     = def
-    , constructor    = def
-    , injective      = def
-    , sortInjection  = def
-    , hook           = def
-    , smtlib         = def
-    , smthook        = def
-    }
+defaultSymbolAttributes :: Symbol
+defaultSymbolAttributes =
+    Symbol
+        { function       = def
+        , functional     = def
+        , constructor    = def
+        , injective      = def
+        , sortInjection  = def
+        , hook           = def
+        , smtlib         = def
+        , smthook        = def
+        }
 
--- | See also: 'defaultStepperAttributes'
-instance Default StepperAttributes where
-    def = defaultStepperAttributes
+-- | See also: 'defaultSymbolAttributes'
+instance Default Symbol where
+    def = defaultSymbolAttributes
 
 -- | Is a symbol total (non-@\\bottom@)?
 isTotal_

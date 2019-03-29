@@ -19,47 +19,52 @@ module Kore.OnePath.Step
     , strategyPattern
     ) where
 
+import           Control.Monad.Except
+                 ( runExceptT )
 import           Data.Foldable
                  ( toList )
 import           Data.Hashable
 import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
 
 import           Kore.AST.Common
                  ( Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule )
-import           Kore.Step.BaseStep
-                 ( OrStepResult (OrStepResult), StepProof (..),
-                 simplificationProof, stepWithRemainders )
-import           Kore.Step.BaseStep as OrStepResult
-                 ( OrStepResult (..) )
-import qualified Kore.Step.BaseStep as StepProof
+import           Kore.Step.Proof
+                 ( StepProof )
+import qualified Kore.Step.Proof as Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (Predicated) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Rule
+                 ( RewriteRule )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
+import           Kore.Step.Step
+                 ( OrStepResult (OrStepResult) )
+import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Unification.Procedure as Unification
+import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -248,7 +253,7 @@ transitionRule
                     axiomIdToSimplifier
                     config
             let
-                proof'' = proof <> simplificationProof proof'
+                proof'' = proof <> Step.Proof.simplificationProof proof'
                 prove config' = (config', proof'')
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
@@ -286,41 +291,53 @@ transitionRule
     transitionMultiApplyWithRemainders _ (config, _)
         | ExpandedPattern.isBottom config = return []
     transitionMultiApplyWithRemainders rules (config, proof) = do
-        (OrStepResult { rewrittenPattern, remainder }, proof') <-
-            stepWithRemainders
+        result <-
+            runExceptT
+            $ Step.sequenceRewriteRules
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
+                (Step.UnificationProcedure Unification.unificationProcedure)
                 config
                 rules
-        let
-            combinedProof :: StepProof level Variable
-            combinedProof = proof <> proof'
+        case result of
+            Left _ ->
+                (error . show . Pretty.vsep)
+                [ "Not implemented error:"
+                , "while applying a \\rewrite axiom to the pattern:"
+                , Pretty.indent 4 (unparse config)
+                ,   "We decided to end the execution because we don't \
+                    \understand this case well enough at the moment."
+                ]
+            Right OrStepResult { rewrittenPattern, remainder } -> do
+                let
+                    combinedProof :: StepProof level Variable
+                    combinedProof = proof
 
-            rewriteResults
-                ::  [   ( CommonStrategyPattern level
-                        , StepProof level Variable
-                        )
-                    ]
-            rewriteResults =
-                map
-                    (\ p -> (RewritePattern p, combinedProof))
-                    (MultiOr.extractPatterns rewrittenPattern)
+                    rewriteResults
+                        ::  [   ( CommonStrategyPattern level
+                                , StepProof level Variable
+                                )
+                            ]
+                    rewriteResults =
+                        map
+                            (\ p -> (RewritePattern p, combinedProof))
+                            (MultiOr.extractPatterns rewrittenPattern)
 
-            remainderResults
-                ::  [   ( CommonStrategyPattern level
-                        , StepProof level Variable
-                        )
-                    ]
-            remainderResults =
-                map
-                    (\ p -> (Stuck p, combinedProof))
-                    (MultiOr.extractPatterns remainder)
+                    remainderResults
+                        ::  [   ( CommonStrategyPattern level
+                                , StepProof level Variable
+                                )
+                            ]
+                    remainderResults =
+                        map
+                            (\ p -> (Stuck p, combinedProof))
+                            (MultiOr.extractPatterns remainder)
 
-        if null rewriteResults
-            then return ((Bottom, combinedProof) : remainderResults)
-            else return (rewriteResults ++ remainderResults)
+                if null rewriteResults
+                    then return ((Bottom, combinedProof) : remainderResults)
+                    else return (rewriteResults ++ remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
@@ -362,7 +379,7 @@ transitionRule
                 axiomIdToSimplifier
                 result
         let
-            finalProof = proof1 <> StepProof.simplificationProof proof
+            finalProof = proof1 <> Step.Proof.simplificationProof proof
             patternsWithProofs =
                 map
                     (\p ->
