@@ -11,6 +11,8 @@ module Kore.Repl.Interpreter
     , emptyExecutionGraph
     ) where
 
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
 import           Control.Lens
                  ( (%=), (.=) )
 import qualified Control.Lens as Lens hiding
@@ -25,8 +27,7 @@ import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
                  ( ($>) )
-import           Data.Functor.Foldable
-                 ( embed, project )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Graph.Inductive.Graph
                  ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -40,13 +41,12 @@ import           Data.Text.Prettyprint.Doc
                  ( pretty )
 
 import           Kore.AST.Common
-                 ( SymbolOrAlias (..), Variable )
+                 ( Application (..), Pattern (..), SymbolOrAlias (..),
+                 Variable )
 import qualified Kore.AST.Identifier as Identifier
                  ( Id (..) )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
-import           Kore.AST.Valid
-                 ( pattern App_, mkApp, predicateSort )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -324,10 +324,15 @@ unparseStrategy omitList =
   where
     hide :: StepPattern level Variable -> StepPattern level Variable
     hide =
-        \case
-            App_ soa _
-              | shouldBeExcluded soa -> mkApp predicateSort soa []
-            pat -> embed . fmap hide . project $ pat
+        Recursive.unfold $ \stepPattern ->
+            case Recursive.project stepPattern of
+                ann :< ApplicationPattern app
+                  | shouldBeExcluded (applicationSymbolOrAlias app) ->
+                    -- Do not display children
+                    ann :< ApplicationPattern (withoutChildren app)
+                projected -> projected
+      where
+        withoutChildren app = app { applicationChildren = [] }
 
     shouldBeExcluded =
        (flip elem) omitList
