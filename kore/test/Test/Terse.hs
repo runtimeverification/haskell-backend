@@ -21,6 +21,7 @@ module Test.Terse
     , unequals
     , has
     , gives
+    , throws
         -- * Variants
     , satisfies_
     , equals_
@@ -78,37 +79,37 @@ import Test.Tasty.HUnit.Extensions
 -}
 
 -- |
--- > 3 + 4 `satisfies` isOdd "addition works"
+-- > (3 + 4) `satisfies` isOdd $ "addition works"
 satisfies :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
 satisfies = actual_predicate_name
 
 -- |
--- > 3 + 4 `satisfies_` isOdd
+-- > (3 + 4) `satisfies_` isOdd
 satisfies_ :: HasCallStack => a -> (a -> Bool)-> TestTree
 satisfies_ = actual_predicate
 
 -- |
--- > 3 + 4 `equals` 7  "addition works"
+-- > (3 + 4) `equals` 7  $ "addition works"
 equals
     :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
     => a -> a -> String -> TestTree
 equals = actual_expected_name
 
 -- |
--- > 3 + 4 `equals_` 7
+-- > (3 + 4) `equals_` 7
 equals_
     :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
     => a -> a -> TestTree
 equals_ = actual_expected
 
 -- |
--- > 3 + 4 `'unequals'` 8  "name"
+-- > (3 + 4) `unequals' 8  $ "name"
 unequals :: (HasCallStack, Eq a, Show a) => a -> a -> String -> TestTree
 unequals actual unexpected name =
     actual_predicate_name actual (/= unexpected) name
 
 -- |
--- > 3 + 4 `'unequals'` 8
+-- > 3 + 4 'unequals' 8
 unequals_ :: (HasCallStack, Eq a, Show a) => a -> a -> TestTree
 unequals_ actual unexpected =
     unequals actual unexpected ""
@@ -147,6 +148,30 @@ gives predicate tuples name =
 gives_ :: forall a . HasCallStack => (a -> Bool) -> [(a, Bool)] -> TestTree
 gives_ predicate tuples =
     gives predicate tuples "Gives"
+
+-- |
+-- > aLazyValue `throws_` "an expected string" "test name"
+-- |
+-- | Forces evaluation of a lazy expression. There are two cases:
+-- | 1. It is an assertion failure if `error` is not used (no error thrown)
+-- | 2. `error` is used, in which case the expected string is compared to
+-- |    the actual.
+throws
+    :: (HasCallStack)
+    => a -> String -> String -> TestTree
+throws = throws_from_expected_name
+
+-- |
+-- > aLazyValue `throws_` "an expected string"
+-- |
+-- | Forces evaluation of a lazy expression. There are two cases:
+-- | 1. It is an assertion failure if `error` is not used (no error thrown)
+-- | 2. `error` is used, in which case the expected string is compared to
+-- |    the actual.
+throws_
+    :: (HasCallStack)
+    => a -> String -> TestTree
+throws_ = throws_from_expected
 
 
 -- $builderFunctions
@@ -214,18 +239,32 @@ f_2_expected
 f_2_expected f tuple expected =
     f_2_expected_name f tuple expected "f_2_expected with no name"
 
-throws_ :: a -> String -> TestTree
-throws_ lazyValue expected =
-    testCase "throws" $ do
+
+throws_from_expected_name_intention
+    :: (HasCallStack)
+    => a -> String -> String -> String -> TestTree
+throws_from_expected_name_intention lazyValue expected name intention =
+    testCase name $ do
         catch (evaluate lazyValue >> missingThrow) messageChecker
         return ()
   where
     missingThrow =
-        assertFailure "No `error` was raised."
+        assertFailure $ "No `error` was raised for " <> name <> "."
 
     messageChecker (ErrorCall msg) =
-        assertEqualWithExplanation "assertion" msg expected
+        assertEqualWithExplanation intention msg expected
 
+throws_from_expected_name
+    :: (HasCallStack)
+    => a -> String -> String -> TestTree
+throws_from_expected_name lazyValue expected name =
+    throws_from_expected_name_intention lazyValue expected name ""
+
+throws_from_expected
+    :: (HasCallStack)
+    => a -> String -> TestTree
+throws_from_expected lazyValue expected =
+    throws_from_expected_name lazyValue expected "unnamed `throws_`"
 
 
 -- $wrappedFunctions
