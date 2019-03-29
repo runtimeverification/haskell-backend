@@ -42,7 +42,7 @@ import qualified Kore.AST.Identifier as Identifier
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.AST.Valid
-                 ( pattern App_, mkTop_ )
+                 ( pattern App_, mkApp, predicateSort )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -265,7 +265,7 @@ unparseStrategy omitList =
             pat@(App_ soa _) ->
                 case shouldBeExcluded soa of
                     False -> embed . fmap go . project $ pat
-                    True -> mkTop_
+                    True -> mkApp predicateSort soa []
             pat -> embed . fmap go . project $ pat
 
     shouldBeExcluded =
