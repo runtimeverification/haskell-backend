@@ -63,6 +63,7 @@ import           Kore.Step.Step
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
 
@@ -127,6 +128,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 nonEmptyConfigs = MultiOr.filterOr configs
             (Foldable.asum . fmap pure) (prove <$> nonEmptyConfigs)
     transitionRewrite rule (config, proof) = do
+        Transition.addRule rule
         result <-
             Monad.Trans.lift
             $ runExceptT
