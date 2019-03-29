@@ -316,7 +316,8 @@ executionHistoryStep
     -- ^ graph with one more step executed for the selected node
 executionHistoryStep transit prim ExecutionGraph { graph, history } node
   | nodeIsNotLeaf = error "Node has already been evaluated"
-  | otherwise = case configNode0 of
+  | otherwise =
+    case configNode0 of
         Nothing -> error "ExecutionGraph not setup properly; node does not exist"
         Just parent@ConfigNode { config } -> do
             configs <- runTransitionT (transitionRule transit prim config)
