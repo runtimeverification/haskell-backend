@@ -27,6 +27,7 @@ module Test.Terse
     , unequals_
     , has_
     , gives_
+    , throws_
 
         -- * Builder Functions
         --
@@ -53,8 +54,10 @@ module Test.Terse
         -- $rationale
     ) where
 
+import Control.Exception
 import Data.Foldable
        ( traverse_ )
+
 import Prelude
 import Test.Tasty
        ( TestTree )
@@ -210,6 +213,19 @@ f_2_expected
     => (a -> b -> e) -> (a, b) -> e -> TestTree
 f_2_expected f tuple expected =
     f_2_expected_name f tuple expected "f_2_expected with no name"
+
+throws_ :: a -> String -> TestTree
+throws_ lazyValue expected =
+    testCase "throws" $ do
+        catch (evaluate lazyValue >> missingThrow) messageChecker
+        return ()
+  where
+    missingThrow =
+        assertFailure "No `error` was raised."
+
+    messageChecker (ErrorCall msg) =
+        assertEqualWithExplanation "assertion" msg expected
+
 
 
 -- $wrappedFunctions
