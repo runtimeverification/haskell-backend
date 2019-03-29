@@ -286,22 +286,20 @@ unparseStrategy
     :: forall level
     .  MetaOrObject level
     => [String]
-    -> CommonStrategyPattern level -> String
+    -> CommonStrategyPattern level
+    -> String
 unparseStrategy omitList =
     strategyPattern
-        (\pat -> unparseToString (go <$> pat))
-        (\pat -> "Stuck: \n" <> unparseToString (go <$> pat))
+        (\pat -> unparseToString (hide <$> pat))
+        (\pat -> "Stuck: \n" <> unparseToString (hide <$> pat))
         "Reached bottom"
   where
-    -- TODO(Vladimir): I think this is a 'hoist'.
-    go :: StepPattern level Variable -> StepPattern level Variable
-    go =
+    hide :: StepPattern level Variable -> StepPattern level Variable
+    hide =
         \case
-            pat@(App_ soa _) ->
-                case shouldBeExcluded soa of
-                    False -> embed . fmap go . project $ pat
-                    True -> mkApp predicateSort soa []
-            pat -> embed . fmap go . project $ pat
+            App_ soa _
+              | shouldBeExcluded soa -> mkApp predicateSort soa []
+            pat -> embed . fmap hide . project $ pat
 
     shouldBeExcluded =
        (flip elem) omitList
