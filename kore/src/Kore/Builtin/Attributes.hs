@@ -25,14 +25,14 @@ import Data.Reflection
 import           Kore.AST.Common
                  ( SymbolOrAlias )
 import           Kore.AST.MetaOrObject
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes, isConstructor_, isSortInjection_ )
+import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes, isConstructor_, isSortInjection_ )
-import qualified Kore.Step.StepperAttributes as StepperAttributes
 
 -- | Is the symbol a constructor modulo associativity, commutativity and
 -- neutral element?

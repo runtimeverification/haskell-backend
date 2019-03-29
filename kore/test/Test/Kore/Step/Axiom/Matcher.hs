@@ -15,6 +15,8 @@ import qualified Data.Map as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -34,8 +36,6 @@ import qualified Kore.Step.Representation.PredicateSubstitution as Predicated
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution

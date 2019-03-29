@@ -1,4 +1,4 @@
-module Test.Kore.Step.StepperAttributes (test_stepperAttributes) where
+module Test.Kore.Attribute.Symbol (test_stepperAttributes) where
 
 import Test.Tasty
        ( TestTree )
@@ -17,9 +17,9 @@ import Kore.AST.Sentence
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser
        ( ParseError, parseAttributes )
+import Kore.Attribute.Symbol
 import Kore.Error
        ( Error )
-import Kore.Step.StepperAttributes
 
 import Test.Kore.Comparators ()
 
@@ -97,7 +97,7 @@ test_stepperAttributes =
         )
     , testCase "Testing parseAttributes"
         (assertEqual "[functional{}(),function{}(),hook{}(\"builtin\")]"
-            (defaultStepperAttributes
+            (defaultSymbolAttributes
                 & Lens.set lensFunction (Function True)
                 & Lens.set lensFunctional (Functional True)
                 & Lens.set lensHook (Hook $ Just "builtin")

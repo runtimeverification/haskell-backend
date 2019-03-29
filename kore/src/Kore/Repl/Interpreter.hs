@@ -31,6 +31,10 @@ import           Data.Graph.Inductive.Graph
                  ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
+import           Data.List.Extra
+                 ( groupSort )
+import           Data.Maybe
+                 ( catMaybes )
 import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
@@ -48,22 +52,23 @@ import           Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
                  ( sourceLocation )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..) )
+                 ( CommonStrategyPattern, StrategyPattern (..),
+                 strategyPattern )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim (..) )
 import           Kore.Repl.Data
-import           Kore.Step.AxiomPatterns
-                 ( RewriteRule (..) )
-import           Kore.Step.AxiomPatterns
-                 ( RulePattern (..) )
-import qualified Kore.Step.AxiomPatterns as Axiom
-                 ( attributes )
 import           Kore.Step.Pattern
                  ( StepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
+import           Kore.Step.Rule
+                 ( RewriteRule (..) )
+import           Kore.Step.Rule
+                 ( RulePattern (..) )
+import qualified Kore.Step.Rule as Axiom
+                 ( attributes )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
@@ -88,6 +93,7 @@ replInterpreter =
         SelectNode i  -> selectNode i  $> True
         ShowConfig mc -> showConfig mc $> True
         OmitCell c    -> omitCell c    $> True
+        ShowLeafs     -> showLeafs     $> True
         Exit          -> pure             False
 
 showUsage :: MonadIO m => m ()
@@ -196,6 +202,35 @@ omitCell =
       | x `elem` xs = filter (/= x) xs
       | otherwise   = x : xs
 
+data NodeStates = StuckNode | UnevaluatedNode
+    deriving (Eq, Ord, Show)
+
+showLeafs
+    :: MetaOrObject level
+    => StateT (ReplState level) Simplifier ()
+showLeafs = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    let nodes = Graph.nodes graph
+    let leafs = filter (\x -> (Graph.outdeg graph x) == 0) nodes
+    let result =
+            groupSort
+                . catMaybes
+                . fmap (getNodeState graph)
+                $ leafs
+
+    putStrLn' $ foldr ((<>) . showPair) "" result
+  where
+    getNodeState graph node =
+        maybe Nothing (\x -> Just (x, node))
+        . strategyPattern (const . Just $ UnevaluatedNode) (const . Just $ StuckNode) Nothing
+        . Graph.lab'
+        . Graph.context graph
+        $ node
+
+    showPair :: (NodeStates, [Graph.Node]) -> String
+    showPair (ns, xs) = show ns <> ": " <> show xs
+
+
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
     putStrLn' $ unparseToString rule
@@ -253,10 +288,10 @@ unparseStrategy
     => [String]
     -> CommonStrategyPattern level -> String
 unparseStrategy omitList =
-    \case
-        Bottom -> "Reached bottom"
-        Stuck pat -> "Stuck: \n" <> unparseToString (go <$> pat)
-        RewritePattern pat -> unparseToString (go <$> pat)
+    strategyPattern
+        (\pat -> unparseToString (go <$> pat))
+        (\pat -> "Stuck: \n" <> unparseToString (go <$> pat))
+        "Reached bottom"
   where
     -- TODO(Vladimir): I think this is a 'hoist'.
     go :: StepPattern level Variable -> StepPattern level Variable

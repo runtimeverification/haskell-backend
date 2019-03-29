@@ -23,6 +23,9 @@ import qualified Data.Text as Text
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( Hook (..), StepperAttributes, isSortInjection_ )
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
@@ -51,8 +54,6 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (..),
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
-import           Kore.Step.StepperAttributes
-                 ( Hook (..), StepperAttributes (..), isSortInjection_ )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -135,7 +136,7 @@ evaluateApplication
     unchanged = (unchangedOr, SimplificationProof)
 
     getAppHookString =
-        Text.unpack <$> (getHook . hook . symAttributes tools) appHead
+        Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
 
 {-| Evaluates axioms on patterns.
 -}

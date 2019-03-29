@@ -36,6 +36,9 @@ import           Prelude hiding
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( SortInjection (..), StepperAttributes )
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
@@ -68,9 +71,6 @@ import           Kore.Step.Simplification.Data
                  SimplificationType, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import           Kore.Step.StepperAttributes
-                 ( SortInjection (..), StepperAttributes (..) )
-import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Step.Substitution
                  ( PredicateSubstitutionMerger (PredicateSubstitutionMerger),
                  createLiftedPredicatesAndSubstitutionsMerger,
@@ -1036,8 +1036,8 @@ functionVariableAndEquals
 
 This includes constructors and sort injections.
 
-See also: 'StepperAttributes.isInjective', 'StepperAttributes.isSortInjection',
-'StepperAttributes.isConstructor'
+See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
+'Attribute.isConstructor'
 
  -}
 equalInjectiveHeadsAndEquals
@@ -1089,8 +1089,8 @@ equalInjectiveHeadsAndEquals
             , SimplificationProof
             )
   where
-    isFirstInjective = give tools StepperAttributes.isInjective_ firstHead
-    isSecondInjective = give tools StepperAttributes.isInjective_ secondHead
+    isFirstInjective = give tools Attribute.isInjective_ firstHead
+    isSecondInjective = give tools Attribute.isInjective_ secondHead
 
 equalInjectiveHeadsAndEquals _ _ _ _ _ = Error.nothing
 
@@ -1209,9 +1209,9 @@ simplifySortInjections
     firstHeadAttributes = MetadataTools.symAttributes tools firstHead
     secondHeadAttributes = MetadataTools.symAttributes tools secondHead
 
-    StepperAttributes { sortInjection = SortInjection isFirstSortInjection } =
+    Attribute.Symbol { sortInjection = SortInjection isFirstSortInjection } =
         firstHeadAttributes
-    StepperAttributes { sortInjection = SortInjection isSecondSortInjection } =
+    Attribute.Symbol { sortInjection = SortInjection isSecondSortInjection } =
         secondHeadAttributes
 
     isSubsortOf = MetadataTools.isSubsortOf tools
@@ -1309,8 +1309,8 @@ constructorSortInjectionAndEquals
         (||)
             (isConstructor   firstHead && isSortInjection secondHead)
             (isSortInjection firstHead && isConstructor   secondHead)
-    isConstructor = give tools StepperAttributes.isConstructor_
-    isSortInjection = give tools StepperAttributes.isSortInjection_
+    isConstructor = give tools Attribute.isConstructor_
+    isSortInjection = give tools Attribute.isSortInjection_
 constructorSortInjectionAndEquals _ _ _ = empty
 
 {-| Unify two constructor application patterns.
@@ -1335,7 +1335,7 @@ constructorAndEqualsAssumesDifferentHeads
     assert (firstHead /= secondHead) $
         return (mkBottom_, SimplificationProof)
   where
-    isConstructor = give tools StepperAttributes.isConstructor_
+    isConstructor = give tools Attribute.isConstructor_
 constructorAndEqualsAssumesDifferentHeads _ _ _ = empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
@@ -1357,13 +1357,13 @@ domainValueAndConstructorErrors
     tools
     (DV_ _ _)
     (App_ secondHead _)
-    | give tools StepperAttributes.isConstructor_ secondHead =
+    | give tools Attribute.isConstructor_ secondHead =
       error "Cannot handle DomainValue and Constructor"
 domainValueAndConstructorErrors
     tools
     (App_ firstHead _)
     (DV_ _ _)
-    | give tools StepperAttributes.isConstructor_ firstHead =
+    | give tools Attribute.isConstructor_ firstHead =
       error "Cannot handle Constructor and DomainValue"
 domainValueAndConstructorErrors _ _ _ = empty
 

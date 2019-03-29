@@ -56,6 +56,8 @@ data ReplCommand
     -- ^ Show the configuration from the current node.
     | OmitCell !(Maybe String)
     -- ^ Adds or removes cell to omit list, or shows current omit list.
+    | ShowLeafs
+    -- ^ Show leafs which can continue evaluation and leafs which are stuck
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -77,6 +79,7 @@ helpText =
                              \(defaults to current node)\n\
     \omit [cell]             adds or removes cell to omit list\
                              \(defaults to showing the omit list)\n\
+    \leafs                   shows unevaluated or stuck leafs\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.

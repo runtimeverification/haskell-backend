@@ -21,6 +21,7 @@ test_replParser =
     , selectTests `tests` "select"
     , configTests `tests` "config"
     , omitTests   `tests` "omit"
+    , leafsTests  `tests` "leafs"
     , exitTests   `tests` "exit"
     ]
 
@@ -147,6 +148,12 @@ omitTests =
     , "omit k"      `parsesTo` OmitCell (Just "k")
     , "omit k "     `parsesTo` OmitCell (Just "k")
     , "omit state " `parsesTo` OmitCell (Just "state")
+    ]
+
+leafsTests :: [ParserTest ReplCommand]
+leafsTests =
+    [ "leafs"  `parsesTo` ShowLeafs
+    , "leafs " `parsesTo` ShowLeafs
     ]
 
 exitTests :: [ParserTest ReplCommand]

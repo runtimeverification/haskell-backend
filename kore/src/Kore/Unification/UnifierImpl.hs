@@ -24,6 +24,7 @@ import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 
 import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate, makeTruePredicate )
@@ -40,7 +41,6 @@ import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubs
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..), Simplifier,
                  StepPatternSimplifier )
-import           Kore.Step.StepperAttributes
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution

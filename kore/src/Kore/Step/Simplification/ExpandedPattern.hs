@@ -16,6 +16,8 @@ import           Data.Reflection
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
@@ -34,8 +36,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..),
                  StepPatternSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser

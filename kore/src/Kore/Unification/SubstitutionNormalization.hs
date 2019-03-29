@@ -28,6 +28,8 @@ import qualified Data.Set as Set
 import           Data.Graph.TopologicalSort
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -36,8 +38,6 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import           Kore.Unification.Substitution

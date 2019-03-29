@@ -21,6 +21,10 @@ import qualified Data.Map as Map
 import           Kore.AST.Pure
 import           Kore.AST.Valid
                  ( pattern Top_, mkCeil_, mkTop_ )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as StepperAttributes
+                 ( isTotal )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -49,10 +53,6 @@ import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
-import qualified Kore.Step.StepperAttributes as StepperAttributes
-                 ( isTotal )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )

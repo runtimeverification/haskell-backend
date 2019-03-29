@@ -15,6 +15,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
+import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
@@ -29,19 +30,18 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.AxiomPatterns
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
-import           Kore.Step.AxiomPatterns as RulePattern
-                 ( RulePattern (..) )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern, Predicated (..), bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import           Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
-import           Kore.Step.StepperAttributes
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

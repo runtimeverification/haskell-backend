@@ -20,6 +20,7 @@ module Kore.AST.PureToKore
     , axiomSentencePureToKore
     , modulePureToKore
     , definitionPureToKore
+    , annotationKoreToPure
     ) where
 
 import           Control.Comonad.Trans.Cofree

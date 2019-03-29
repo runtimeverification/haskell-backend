@@ -38,6 +38,7 @@ commandParser =
     <|> selectNode
     <|> showConfig
     <|> omitCell
+    <|> showLeafs
     <|> exit
 
 help :: Parser ReplCommand
@@ -77,6 +78,9 @@ omitCell =
         \case
             ""  -> Nothing
             str -> Just str
+
+showLeafs :: Parser ReplCommand
+showLeafs = ShowLeafs <$ (string "leafs" *> space)
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)
