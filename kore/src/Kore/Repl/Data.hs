@@ -80,7 +80,9 @@ helpText =
                              \(defaults to current node)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
     \prec-branch [n]         shows first preceding branch\n\
+                             \(defaults to current node)\n\
     \children [n]            shows direct children of node\n\
+                             \(defaults to current node)\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
