@@ -317,25 +317,39 @@ test_resolvers =
     charMetaId = sortActualName charMetaSortActual
 
 
-test_undefined :: TestTree
-test_undefined =
+test_undefined_messages :: TestTree
+test_undefined_messages =
     testGroup "each resolver has a standard failure message"
         [ resolveAlias `produces_` Error.noAlias
         , resolveSymbol `produces_` Error.noSymbol
         ]
       where
-        run resolver input =
-            resolver testIndexedModule (testId input :: Id Object)
+        run resolver =
+            resolver testIndexedModule (testId "#anyOldId" :: Id Object)
+
+        checker expected =
+            assertError_ ["(<test data>)"] expected
+
         produces_ resolver formatter =
-            let
-                actual = run resolver "#anyOldId"
-                expected = formatter "#anyOldId"
-              in
-                case actual of
-                    Left Error {errorContext, errorError} ->
-                        testCase "alias error" $ do
-                            assertEqual "" errorContext ["(<test data>)"]
-                            assertEqual "" errorError expected
-                    Right unexpected ->
-                        testCase "alias error" $
-                            assertFailure ("Unexpected Right " <> show unexpected)
+            rightOf_ (run resolver) (checker $ formatter "#anyOldId" )
+
+assertError_ :: [String] -> String -> Error a -> Assertion
+assertError_ actualContext actualError expected =
+    do
+        assertEqual "" expectedContext actualContext
+        assertEqual "" expectedError actualError
+    where
+        Error { errorContext = expectedContext
+              , errorError = expectedError
+              } = expected
+
+
+
+rightOf_ :: Show r => Either l r -> (l -> Assertion) -> TestTree
+rightOf_ actual testBody =
+    testCase "" $
+        case actual of
+            Left l ->
+                testBody l
+            Right unexpected ->
+                assertFailure ("Unexpected Right " <> show unexpected)
