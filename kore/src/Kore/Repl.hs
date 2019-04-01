@@ -101,6 +101,9 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
+            -- TODO(Vladimir): should initialize this to the value obtained from
+            -- the frontend via '--omit-labels'.
+            , omit    = []
             , stepper = stepper0
             , labels  = empty
             }

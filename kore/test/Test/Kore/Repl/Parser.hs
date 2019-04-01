@@ -28,6 +28,7 @@ test_replParser =
     , setLabelTests    `tests` "set-label"
     , gotoLabelTests   `tests` "goto-label"
     , removeLabelTests `tests` "remove-label"
+    , omitTests        `tests` "omit"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -143,6 +144,16 @@ configTests =
                               \  |        ^\n\
                               \unexpected '-'\n\
                               \expecting end of input, integer, or white space\n"
+    ]
+
+omitTests :: [ParserTest ReplCommand]
+omitTests =
+    [ "omit"        `parsesTo` OmitCell Nothing
+    , "omit "       `parsesTo` OmitCell Nothing
+    , "omit   "     `parsesTo` OmitCell Nothing
+    , "omit k"      `parsesTo` OmitCell (Just "k")
+    , "omit k "     `parsesTo` OmitCell (Just "k")
+    , "omit state " `parsesTo` OmitCell (Just "state")
     ]
 
 leafsTests :: [ParserTest ReplCommand]

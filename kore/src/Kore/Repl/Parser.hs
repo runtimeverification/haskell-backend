@@ -10,8 +10,10 @@ module Kore.Repl.Parser
     ( commandParser
     ) where
 
+import Control.Applicative
+       ( many )
 import Text.Megaparsec
-       ( Parsec, option, optional, some, (<|>) )
+       ( Parsec, noneOf, option, optional, some, (<|>) )
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
        ( decimal )
@@ -35,6 +37,7 @@ commandParser =
     <|> proveSteps
     <|> selectNode
     <|> showConfig
+    <|> omitCell
     <|> showLeafs
     <|> showPrecBranch
     <|> showChildren
@@ -70,6 +73,17 @@ selectNode =
 showConfig :: Parser ReplCommand
 showConfig =
     fmap ShowConfig $ string "config" *> space *> optional decimal <* space
+
+omitCell :: Parser ReplCommand
+omitCell =
+    fmap (OmitCell . toMaybe)
+        $ string "omit" *> space *> many (noneOf [' ']) <* space
+  where
+    toMaybe :: String -> Maybe String
+    toMaybe =
+        \case
+            ""  -> Nothing
+            str -> Just str
 
 showLeafs :: Parser ReplCommand
 showLeafs = ShowLeafs <$ (string "leafs" *> space)

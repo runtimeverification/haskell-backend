@@ -11,8 +11,10 @@ module Kore.Repl.Interpreter
     , emptyExecutionGraph
     ) where
 
+import           Control.Comonad.Trans.Cofree
+                 ( CofreeF (..) )
 import           Control.Lens
-                 ( (.=) )
+                 ( (%=), (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad.Extra
@@ -21,8 +23,11 @@ import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT )
+import           Data.Foldable
+                 ( traverse_ )
 import           Data.Functor
                  ( ($>) )
+import qualified Data.Functor.Foldable as Recursive
 import           Data.Graph.Inductive.Graph
                  ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -32,11 +37,15 @@ import           Data.List.Extra
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( catMaybes )
+import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
 
 import           Kore.AST.Common
-                 ( Variable )
+                 ( Application (..), Pattern (..), SymbolOrAlias (..),
+                 Variable )
+import qualified Kore.AST.Identifier as Identifier
+                 ( Id (..) )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.Attribute.Axiom
@@ -51,6 +60,8 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim (..) )
 import           Kore.Repl.Data
+import           Kore.Step.Pattern
+                 ( StepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Rule
@@ -73,23 +84,24 @@ replInterpreter
     -> StateT (ReplState level) Simplifier Bool
 replInterpreter =
     \case
-        ShowUsage -> showUsage $> True
-        Help -> help $> True
-        ShowClaim c -> showClaim c $> True
-        ShowAxiom a -> showAxiom a $> True
-        Prove i -> prove i $> True
-        ShowGraph -> showGraph $> True
-        ProveSteps n -> proveSteps n $> True
-        SelectNode i -> selectNode i $> True
-        ShowConfig mc -> showConfig mc $> True
-        ShowLeafs -> showLeafs $> True
+        ShowUsage         -> showUsage         $> True
+        Help              -> help              $> True
+        ShowClaim c       -> showClaim c       $> True
+        ShowAxiom a       -> showAxiom a       $> True
+        Prove i           -> prove i           $> True
+        ShowGraph         -> showGraph         $> True
+        ProveSteps n      -> proveSteps n      $> True
+        SelectNode i      -> selectNode i      $> True
+        ShowConfig mc     -> showConfig mc     $> True
+        OmitCell c        -> omitCell c        $> True
+        ShowLeafs         -> showLeafs         $> True
         ShowPrecBranch mn -> showPrecBranch mn $> True
-        ShowChildren mn -> showChildren mn $> True
-        ShowLabels -> showLabels $> True
-        SetLabel l n -> setLabel l n $> True
-        GotoLabel l -> gotoLabel l $> True
-        RemoveLabel l -> removeLabel l $> True
-        Exit -> pure False
+        ShowChildren mn   -> showChildren mn   $> True
+        ShowLabels        -> showLabels        $> True
+        SetLabel l n      -> setLabel l n      $> True
+        GotoLabel l       -> gotoLabel l       $> True
+        RemoveLabel l     -> removeLabel l     $> True
+        Exit              -> pure False
 
 showUsage :: MonadIO m => m ()
 showUsage =
@@ -172,13 +184,31 @@ showConfig configNode = do
     let node' = maybe node id configNode
     if node' `elem` Graph.nodes graph
         then do
+            omit <- Lens.use lensOmit
             putStrLn' $ "Config at node " <> show node' <> " is:"
             putStrLn'
-                . unparseStrategy
+                . unparseStrategy omit
                 . Graph.lab'
                 . Graph.context graph
                 $ node'
         else putStrLn' "Invalid node!"
+
+omitCell :: Maybe String -> StateT (ReplState level) Simplifier ()
+omitCell =
+    \case
+        Nothing  -> showCells
+        Just str -> addOrRemove str
+  where
+    showCells :: StateT (ReplState level) Simplifier ()
+    showCells = Lens.use lensOmit >>= traverse_ putStrLn'
+
+    addOrRemove :: String -> StateT (ReplState level) Simplifier ()
+    addOrRemove str = lensOmit %= toggle str
+
+    toggle :: String -> [String] -> [String]
+    toggle x xs
+      | x `elem` xs = filter (/= x) xs
+      | otherwise   = x : xs
 
 data NodeStates = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
@@ -324,12 +354,35 @@ performStepNoBranching (n, Success) = do
 performStepNoBranching (n, res) =
     pure $ Right (n, res)
 
-unparseStrategy :: MetaOrObject level => CommonStrategyPattern level -> String
-unparseStrategy =
+unparseStrategy
+    :: forall level
+    .  MetaOrObject level
+    => [String]
+    -> CommonStrategyPattern level
+    -> String
+unparseStrategy omitList =
     strategyPattern
-        unparseToString
-        (mappend "Stuck: \n" . unparseToString)
+        (\pat -> unparseToString (hide <$> pat))
+        (\pat -> "Stuck: \n" <> unparseToString (hide <$> pat))
         "Reached bottom"
+  where
+    hide :: StepPattern level Variable -> StepPattern level Variable
+    hide =
+        Recursive.unfold $ \stepPattern ->
+            case Recursive.project stepPattern of
+                ann :< ApplicationPattern app
+                  | shouldBeExcluded (applicationSymbolOrAlias app) ->
+                    -- Do not display children
+                    ann :< ApplicationPattern (withoutChildren app)
+                projected -> projected
+      where
+        withoutChildren app = app { applicationChildren = [] }
+
+    shouldBeExcluded =
+       (flip elem) omitList
+           . Text.unpack
+           . Identifier.getId
+           . symbolOrAliasConstructor
 
 extractSourceAndLocation
     :: RewriteRule level Variable
