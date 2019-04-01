@@ -39,8 +39,8 @@ one consequence of the above is that `[w]φ = φ ∨ (○[w]φ ∧ •⊤)`
 Problem Description
 -------------------
 
-Given a set of claims of the form `∀x.φ(x) → ∃z.[w]ψ(x,z)`, we are trying to prove
-all of them together.
+Given a set of all-path reachability claims, of the form `∀x.φ(x) → ∃z.[w]ψ(x,z)`,
+we are trying to prove all of them together.
 
 
 Algorithms
@@ -59,14 +59,14 @@ __Output:__ Proved or Unproved
     * While `Goals` is not empty:
         * Remove `goal` of the form `∀x.φ → ∃z.[w]ψ` from `Goals`
         * Let `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → ∃z.[w]ψ`
-        * If `goalᵣₑₘ` is trivialy valid (i.e., if `φ ∧ ¬∃z.⌈φ ∧ ψ⌉ = ⊥`)
+        * If `goalᵣₑₘ` is trivialy valid (i.e., if `φ ∧ ¬∃z.⌈φ ∧ ψ⌉ ≡ ⊥`)
             * continue to the next goal
         * If not the first while iteration for this claim:
             * `(Goals', goal'ᵣₑₘ) := deriveSeq(goalᵣₑₘ, claims)`
                 (alternatively, one can use `(Goals', goal'ᵣₑₘ) := derivePar(goalᵣₑₘ, claims)`)
         * Else, let `(Goals', goal'ᵣₑₘ) := (∅, goalᵣₑₘ)`
         * Let `(Goals'', goal''ᵣₑₘ) := derivePar(goal'ᵣₑₘ, axioms)`
-        * If `goal''ᵣₑₘ` is not trivially valid (its lhs is not `⊥`)
+        * If `goal''ᵣₑₘ` is not trivially valid (its lhs is not equivalent to `⊥`)
             * Return `Unprovable`
         * Let `Goals := Goals ∪ Goals' ∪ Goals''`
 * Return `Provable`
@@ -88,20 +88,20 @@ __Output:__ `(Goals, goalᵣₑₘ)`
 
 ### Algorithm `deriveSeq`
 
-__Input:__: goal and set of claims/axioms
+__Input:__: goal and set of claims
 
 * goal: `∀x.φ → ∃z.[w]ψ`
-* Either claims or axioms:
-    * claims `∀x₁.φ₁ → ∃z₁.[w]ψ₁`, `∀x₂.φ₂ → ∃z₂.[w]ψ₂`, …, `∀xₙ.φₙ → ∃zₙ.[w]ψₙ`
-    * axioms `∀x₁.φ₁ → ∃z₁.•ψ₁`, `∀x₂.φ₂ → ∃z₂.•ψ₂`, …, `∀xₙ.φₙ → ∃zₙ.•ψₙ`
-    * we will not consider the form, but just the patterns and variables involved
+* claims `∀x₁.φ₁ → ∃z₁.[w]ψ₁`, `∀x₂.φ₂ → ∃z₂.[w]ψ₂`, …, `∀xₙ.φₙ → ∃zₙ.[w]ψₙ`
 
 __Output:__ `(Goals, goalᵣₑₘ)`
 
 * Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → ∃z.[w]ψ`
-* Let `Goals := { ∀x∪z₁.∃x₁.(ψ₁ ∧ ⌈φ1ʳᵉᵐ ∧φ₁⌉) → ∃z.[w]ψ, … , ∀x∪zₙ.∃xₙ.(ψₙ ∧ ⌈φnʳᵉᵐ φ∧φₙ⌉) → ∃z.[w]ψ }`
+* Let `Goals := { ∀x∪z₁.∃x₁.(ψ₁ ∧ ⌈φ₁ʳᵉᵐ ∧φ₁⌉) → ∃z.[w]ψ, … , ∀x∪zₙ.∃xₙ.(ψₙ ∧ ⌈φₙʳᵉᵐ φ∧φₙ⌉) → ∃z.[w]ψ }`
 
-where `φ1ʳᵉᵐ := φ` and `φ(i+1)ʳᵉᵐ := φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉`
+where `φ₁ʳᵉᵐ := φ` and
+```
+φᵢ₊₁ʳᵉᵐ := φᵢʳᵉᵐ ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉ = φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉
+```
 
 
 Explanation
@@ -123,7 +123,7 @@ Moving `∃z.ψ` to the left of the implication, we get the equivalent
 
 Let `φᵣₑₘ` be `φ ∧ ¬∃z.ψ`. This step eliminates the cases in which `∃z.ψ` holds now.
 
-If `φᵣₑₘ` is `⊥`, then the implication holds and we are done.
+If `φᵣₑₘ` is equivalent to `⊥`, then the implication holds and we are done.
 
 ### Simplifying `φ(x) ∧ ¬∃y.ψ(x,y)` where y does not appear in `φ(x)`
 
@@ -169,14 +169,14 @@ We have a chioce whether to apply circularities sequentially or in parallel.
 ```
 
 Note that the remainder `∀x.φ ∧ ¬∃xᵢ.φᵢ → ∃z.[w]ψ` can be rewritten as
-`φ' ∧ ¬∃xᵢ.⌈φ'∧φᵢ⌉ → [w]ψ`, as detailed above.
+`∀x.φ ∧ ¬∃xᵢ.⌈φ'∧φᵢ⌉ → [w]ψ`, as detailed above.
 
 __Note:__ If there are multiple claims which could apply on the same concrete
 instance of a configuration, then applying them sequentially would reduce
 the search space by potentially creating less goals.
 
 If so, then `φ` for claim `i+1` would be
-`φ(i+1)ʳᵉᵐ := φ ∧ ¬∃z.⌈φ∧ψ⌉ ∧ ¬∃x₁.⌈φ'∧φ₁⌉ ∧ …  ∧ ¬∃xᵢ.⌈φ'∧φᵢ⌉`
+`φᵢ₊₁ʳᵉᵐ := φ ∧ ¬∃z.⌈φ∧ψ⌉ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉`
 
 #### Applying claims in parallel
 
@@ -185,7 +185,7 @@ is computed at every claim application; it is equally possible
 to do it only once for all claims:
 
 ```
-∀x.φ → ∃z.[q]ψ                                      
+∀x.φ → ∃z.[q]ψ
 ∀x.φ ∧ (∃x₁.φ₁ ∨ … ∨ ∃x₁.φₙ ∨ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ) → ∃z.[w]ψ  
 ∀x.(φ ∧ ∃x₁.φ₁) ∨ … ∨ (φ' ∧ ∃xₙ.φₙ) ∨ (φ' ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → ∃z.[w]ψ
 (∀x.φ ∧ ∃x₁.φ₁ → ∃z.[w]ψ)  ∧ … (∀x.φ ∧ ∃xₙ.φₙ → ∃z.[w]ψ) ∧ (∀x.(φ ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → ∃z.[w]ψ)
@@ -206,17 +206,12 @@ from one derivation to the next.
 #### Using a claim to advance the corresponding goal
 
 Say we want to use the `∀xᵢ.φᵢ → ∃zᵢ.[w]ψᵢ` claim.
-Note that `φ ∧ ∃xᵢ.φᵢ` is equivalent to `φᵢ ∧ ∃xᵢ.⌈φ'∧φᵢ⌉`, the second conjunct
-being the substitution. We can therefore derive:
+Note that `φ ∧ ∃xᵢ.φᵢ` is equivalent to `∃xᵢ.φ ∧ φᵢ`, which is further equivalent to
+`∃xᵢ.φᵢ ∧ ⌈φ ∧ φᵢ⌉`.
+Instantiating the axiom, we obtain:
+`∃xᵢ.φᵢ ∧ ⌈φ ∧ φᵢ⌉ → ∃xᵢ.∃zᵢ.[w]ψᵢ ∧ ⌈φ ∧ φᵢ⌉`
 
-```
-φᵢ ∧ ∃xᵢ.⌈φ'∧φᵢ⌉ → ∃zᵢ.[w]ψᵢ ∧ ∃xᵢ.⌈φ'∧φᵢ⌉ , and by using that `∃xᵢ.⌈φ'∧φᵢ⌉` is a predicate
-φᵢ ∧ ∃xᵢ.⌈φ'∧φᵢ⌉ → ∃zᵢ.[w](ψᵢ ∧ ∃xᵢ.⌈φ'∧φᵢ⌉)    Therefore, 
-φ ∧ φᵢ → ∃zᵢ.[w](ψᵢ ∧ ∃xᵢ.⌈φ'∧φᵢ⌉), and, by generalization,
-∀x.φ ∧ φᵢ → ∃zᵢ.[w](ψᵢ ∧ ∃xᵢ.⌈φ'∧φᵢ⌉), and, by generalization,
-```
-
-Hence it is sound to replace the first conjunct in (1) by `∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ'∧φᵢ⌉ → [w]ψ`
+Hence it is sound to replace the first conjunct in (1) by `∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]ψ`
 because the "`→ [w]`" relation is transitive, and if the implication holds for all 
 `zᵢ`, it will also hold for those derived from the claim.
 
