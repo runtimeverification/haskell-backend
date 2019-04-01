@@ -324,14 +324,12 @@ test_undefined_messages =
         , resolveSymbol `produces_` Error.noSymbol
         ]
       where
+        produces_ resolver formatter =
+            forRightOf_ (run resolver) (checkWith formatter)
         run resolver =
             resolver testIndexedModule (testId "#anyOldId" :: Id Object)
-
-        checker expected =
-            assertError_ ["(<test data>)"] expected
-
-        produces_ resolver formatter =
-            rightOf_ (run resolver) (checker $ formatter "#anyOldId" )
+        checkWith formatter =
+            assertError_ ["(<test data>)"] $ formatter "#anyOldId"
 
 assertError_ :: [String] -> String -> Error a -> Assertion
 assertError_ actualContext actualError expected =
@@ -345,8 +343,8 @@ assertError_ actualContext actualError expected =
 
 
 
-rightOf_ :: Show r => Either l r -> (l -> Assertion) -> TestTree
-rightOf_ actual testBody =
+forRightOf_ :: Show r => Either l r -> (l -> Assertion) -> TestTree
+forRightOf_ actual testBody =
     testCase "" $
         case actual of
             Left l ->
