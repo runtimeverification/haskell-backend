@@ -101,7 +101,7 @@ replInterpreter =
         SetLabel l n      -> setLabel l n      $> True
         GotoLabel l       -> gotoLabel l       $> True
         RemoveLabel l     -> removeLabel l     $> True
-        Exit              -> pure              False
+        Exit              -> pure                 False
 
 showUsage :: MonadIO m => m ()
 showUsage =
