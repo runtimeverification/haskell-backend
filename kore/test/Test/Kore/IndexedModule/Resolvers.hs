@@ -319,42 +319,23 @@ test_resolvers =
 
 test_undefined :: TestTree
 test_undefined =
-    testGroup "there is a consistent error when a name does not resolve"
-        [ run resolveAlias "#a" `hasError_` Error.noAlias "#a"
+    testGroup "each resolver has a standard failure message"
+        [ resolveAlias `produces_` Error.noAlias
+        , resolveSymbol `produces_` Error.noSymbol
         ]
       where
-        run f input =
-            f testIndexedModule (testId input :: Id Object)
-        hasError_ actual expected =
-            testCase "alias error" $ do
+        run resolver input =
+            resolver testIndexedModule (testId input :: Id Object)
+        produces_ resolver formatter =
+            let
+                actual = run resolver "#anyOldId"
+                expected = formatter "#anyOldId"
+              in
                 case actual of
                     Left Error {errorContext, errorError} ->
-                        do
+                        testCase "alias error" $ do
                             assertEqual "" errorContext ["(<test data>)"]
                             assertEqual "" errorError expected
-                    Right _ ->
-                        assertFailure "Unexpected Right"
-
-            -- testCase expected $
-            --   return ()
-              -- case expected of
-              --     Left _ ->
-              --       assertFailure "Unexpected Left"
-              --     Right
-              --       assertFailure "Unexpected Right"
-        --
-        -- hasError_ (Right {errorContext, errorError}) expected =
-        --     testCase expected $ do
-        --       assertEqual "" errorContext ["(<test data>)"]
-        --       assertEqual "" errorMessage errorMessage expected
-        -- has_Error_ (Left actual) _ =
-        --     testCase expected $
-        --       assertFailure "Unexpected Left"
-        --
-        -- run f name =
-        --     f testIndexedModule (testId name :: Id Object)
-        -- errorFor tag name =
-        --     Left Error
-        --         { errorContext = ["(<test data>)"]
-        --         , errorError = tag <> " '" <> name <> "' not defined."
-        --         }
+                    Right unexpected ->
+                        testCase "alias error" $
+                            assertFailure ("Unexpected Right " <> show unexpected)
