@@ -53,6 +53,8 @@ data ReplCommand
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe Int)
     -- ^ Show the configuration from the current node.
+    | Redirect ReplCommand FilePath
+    -- ^ prints the output of the inner command to the file.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -72,7 +74,10 @@ helpText =
     \select <n>              select node id 'n' from the graph\n\
     \config [n]              shows the config for node 'n'\
                              \(defaults to current node)\n\
-    \exit                    exits the repl"
+    \exit                    exits the repl\n\
+    \\n\
+    \Available modifiers:\n\
+    \<command> > file        prints the output of 'command' to file\n"
 
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph level = Strategy.ExecutionGraph (CommonStrategyPattern level)

@@ -11,10 +11,10 @@ module Kore.Repl.Parser
     ) where
 
 import Text.Megaparsec
-       ( Parsec, option, optional, (<|>) )
+       ( Parsec, manyTill, option, optional, (<|>) )
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
-       ( decimal )
+       ( charLiteral, decimal )
 
 import Kore.Repl.Data
        ( ReplCommand (..) )
@@ -35,6 +35,7 @@ commandParser =
     <|> proveSteps
     <|> selectNode
     <|> showConfig
+    <|> redirect
     <|> exit
 
 help :: Parser ReplCommand
@@ -63,6 +64,10 @@ selectNode =
 showConfig :: Parser ReplCommand
 showConfig =
     fmap ShowConfig $ string "config" *> space *> optional decimal <* space
+
+redirect :: Parser ReplCommand
+redirect = Redirect <$> commandParser <*>
+    (space *> string "|" *> space *> manyTill charLiteral space)
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)
