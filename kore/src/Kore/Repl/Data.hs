@@ -15,6 +15,7 @@ module Kore.Repl.Data
     , ReplState (..)
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
+    , lensOmit
     ) where
 
 import qualified Control.Lens.TH.Rules as Lens
@@ -53,6 +54,14 @@ data ReplCommand
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe Int)
     -- ^ Show the configuration from the current node.
+    | OmitCell !(Maybe String)
+    -- ^ Adds or removes cell to omit list, or shows current omit list.
+    | ShowLeafs
+    -- ^ Show leafs which can continue evaluation and leafs which are stuck
+    | ShowPrecBranch !(Maybe Int)
+    -- ^ Show the first preceding branch
+    | ShowChildren !(Maybe Int)
+    -- ^ Show direct children of node
     | Redirect ReplCommand FilePath
     -- ^ prints the output of the inner command to the file.
     | Exit
@@ -74,6 +83,13 @@ helpText =
     \select <n>              select node id 'n' from the graph\n\
     \config [n]              shows the config for node 'n'\
                              \(defaults to current node)\n\
+    \omit [cell]             adds or removes cell to omit list\
+                             \(defaults to showing the omit list)\n\
+    \leafs                   shows unevaluated or stuck leafs\n\
+    \prec-branch [n]         shows first preceding branch\n\
+                             \(defaults to current node)\n\
+    \children [n]            shows direct children of node\n\
+                             \(defaults to current node)\n\
     \exit                    exits the repl\n\
     \\n\
     \Available modifiers:\n\
@@ -94,6 +110,8 @@ data ReplState level = ReplState
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node    :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root
+    , omit    :: [String]
+    -- ^ The omit list, initially empty
     , stepper :: StateT (ReplState level) Simplifier Bool
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     }

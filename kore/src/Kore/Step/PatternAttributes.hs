@@ -30,6 +30,7 @@ import           Data.Reflection
                  ( give )
 
 import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
 import           Kore.Builtin.Attributes
                  ( isConstructorModulo_ )
 import           Kore.IndexedModule.MetadataTools
@@ -41,7 +42,6 @@ import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..), TotalError (..) )
-import           Kore.Step.StepperAttributes
 
 functionalProofVars
     :: Prism

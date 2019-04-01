@@ -157,8 +157,7 @@ instance SortedVariable W where
 instance SumEqualWithExplanation (W level)
   where
     sumConstructorPair (W a1) (W a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "W" (EWEString a1) (EWEString a2))
+        SumConstructorSameWithArguments (EqWrap "W" a1 a2)
 
 instance EqualWithExplanation (W level)
   where

@@ -13,6 +13,8 @@ module Kore.Step.Simplification.In
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
@@ -35,8 +37,6 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

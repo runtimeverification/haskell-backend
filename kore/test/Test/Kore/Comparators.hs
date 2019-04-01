@@ -41,26 +41,26 @@ import           Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.AxiomPatterns
-                 ( RulePattern (..) )
-import           Kore.Step.BaseStep
-import           Kore.Step.BaseStep as StepResult
-                 ( StepResult (..) )
-import           Kore.Step.BaseStep as OrStepResult
-                 ( OrStepResult (..) )
 import           Kore.Step.Error
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
+import           Kore.Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Representation.MultiOr
+import           Kore.Step.Rule
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
+import           Kore.Step.Step
+import qualified Kore.Step.Step as OrStepResult
+                 ( OrStepResult (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
+import           Kore.Variables.Target
 
 import Test.Tasty.HUnit.Extensions
 
@@ -784,21 +784,14 @@ instance EqualWithExplanation (Concrete level) where
     compareWithExplanation = \case {}
     printWithExplanation = \case {}
 
-instance StructEqualWithExplanation (Id level)
-    where
-      structFieldsWithNames
-          expected@(Id _ _)
-          actual@(Id _ _)
-        = [ EqWrap
-              "getId = "
-              (EWEString $ getIdForError expected)
-              (EWEString $ getIdForError actual)
-          , EqWrap
-              "idLocation = "
-              (EWEString "")
-              (EWEString "")
-          ]
-      structConstructorName _ = "Id"
+instance StructEqualWithExplanation (Id level) where
+    structFieldsWithNames expected@(Id _ _) actual@(Id _ _) =
+        map (\f -> f expected actual)
+            [ Function.on (EqWrap "getId = ") getIdForError
+            , Function.on (EqWrap "idLocation = ") (const ())
+            ]
+    structConstructorName _ = "Id"
+
 instance EqualWithExplanation (Id level)
   where
     compareWithExplanation = structCompareWithExplanation
@@ -873,6 +866,12 @@ instance (Show (variable level), EqualWithExplanation (variable level))
     sumConstructorPair (StepErrorSubstitution a1) (StepErrorSubstitution a2) =
         SumConstructorSameWithArguments (EqWrap "StepErrorSubstitution" a1 a2)
     sumConstructorPair a1@(StepErrorSubstitution _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair StepErrorUnsupportedSymbolic StepErrorUnsupportedSymbolic =
+        SumConstructorSameNoArguments
+    sumConstructorPair a1@StepErrorUnsupportedSymbolic a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
@@ -994,23 +993,23 @@ instance
 
 instance
     (EqualWithExplanation (variable level), Show (variable level))
-    => SumEqualWithExplanation (StepperVariable variable level)
+    => SumEqualWithExplanation (Target variable level)
   where
-    sumConstructorPair (AxiomVariable a1) (AxiomVariable a2) =
-        SumConstructorSameWithArguments (EqWrap "AxiomVariable" a1 a2)
-    sumConstructorPair a1@(AxiomVariable _) a2 =
+    sumConstructorPair (Target a1) (Target a2) =
+        SumConstructorSameWithArguments (EqWrap "Target" a1 a2)
+    sumConstructorPair a1@(Target _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-    sumConstructorPair (ConfigurationVariable a1) (ConfigurationVariable a2) =
-        SumConstructorSameWithArguments (EqWrap "ConfigurationVariable" a1 a2)
-    sumConstructorPair a1@(ConfigurationVariable _) a2 =
+    sumConstructorPair (NonTarget a1) (NonTarget a2) =
+        SumConstructorSameWithArguments (EqWrap "NonTarget" a1 a2)
+    sumConstructorPair a1@(NonTarget _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
 instance
     (EqualWithExplanation (variable level), Show (variable level))
-    => EqualWithExplanation (StepperVariable variable level)
+    => EqualWithExplanation (Target variable level)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -1403,39 +1402,6 @@ instance
     => EqualWithExplanation (Unified a)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation (variable level)
-    , EqualWithExplanation (StepPattern level variable)
-    )
-    => StructEqualWithExplanation (StepResult level variable)
-  where
-    structFieldsWithNames
-        expected@(StepResult _ _)
-        actual@(StepResult _ _)
-      = [ EqWrap
-            "rewrittenPattern = "
-            (StepResult.rewrittenPattern expected)
-            (StepResult.rewrittenPattern actual)
-        , EqWrap
-            "remainder = "
-            (StepResult.remainder expected)
-            (StepResult.remainder actual)
-        ]
-    structConstructorName _ = "StepResult"
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation (variable level)
-    , EqualWithExplanation (StepPattern level variable)
-    )
-    => EqualWithExplanation (StepResult level variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance

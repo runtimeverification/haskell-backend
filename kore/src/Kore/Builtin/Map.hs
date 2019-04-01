@@ -70,6 +70,9 @@ import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -88,9 +91,6 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
-import qualified Kore.Step.StepperAttributes as StepperAttributes
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError (..) )
 import           Kore.Unparser

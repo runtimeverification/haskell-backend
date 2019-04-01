@@ -8,9 +8,9 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.String as String
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.StepperAttributes
 
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -29,7 +29,11 @@ testKeyRecover messageHash v r s result =
             ]
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools ecdsaRecoverSymbol
 
 testKeccak :: Text -> Text -> TestTree
@@ -41,7 +45,11 @@ testKeccak input result =
             ]
         (===) expect actual
   where
-    StepperAttributes { hook = Hook { getHook = Just name } } =
+    Attribute.Symbol
+        { Attribute.hook =
+            Attribute.Hook { Attribute.getHook = Just name }
+        }
+      =
         symAttributes testMetadataTools ecdsaRecoverSymbol
 
 test_ecdsaRecover :: [TestTree]

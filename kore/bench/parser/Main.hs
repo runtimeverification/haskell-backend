@@ -10,11 +10,11 @@ import System.FilePath
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( defaultAttributesVerification, verifyDefinition )
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import           Kore.Parser.Parser
                  ( parseKoreDefinition )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 
 import qualified Paths
 

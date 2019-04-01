@@ -17,7 +17,7 @@ import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.SMT.Evaluator as SmtEvaluator
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -109,7 +109,7 @@ div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 assertRefuted :: CommonPredicate Object -> Assertion
 assertRefuted prop = give testMetadataTools $ do
     let expect = Just False
-    actual <- SMT.runSMT SMT.defaultConfig $ SmtEvaluator.decidePredicate prop
+    actual <- SMT.runSMT SMT.defaultConfig $ SMT.Evaluator.decidePredicate prop
     assertEqual "" expect actual
 
 unit_1 :: Assertion

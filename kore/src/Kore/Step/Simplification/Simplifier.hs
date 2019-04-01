@@ -13,6 +13,8 @@ module Kore.Step.Simplification.Simplifier
     ) where
 
 import           Kore.AST.Pure
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Step.Axiom.Data
@@ -21,8 +23,6 @@ import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 
 create
     ::  ( MetaOrObject level )

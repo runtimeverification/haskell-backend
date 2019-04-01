@@ -38,6 +38,8 @@ import           Text.Megaparsec
 
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.OnePath.Verification
@@ -57,8 +59,6 @@ import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import qualified Kore.Step.Strategy as Strategy
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
@@ -99,6 +99,9 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
+            -- TODO(Vladimir): should initialize this to the value obtained from
+            -- the frontend via '--omit-labels'.
+            , omit    = []
             , stepper = stepper0
             }
 

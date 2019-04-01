@@ -27,14 +27,14 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( IsMetaOrObject (IsObject), MetaOrObject, Object,
                  isMetaOrObject )
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import           Kore.Step.SMT.Translate
                  ( Translator, evalTranslator, translatePredicate )
-import           Kore.Step.StepperAttributes
-                 ( StepperAttributes )
 import           Kore.Unparser
                  ( Unparse )
 import           SMT
