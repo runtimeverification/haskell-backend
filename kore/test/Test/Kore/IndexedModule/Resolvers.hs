@@ -1,9 +1,9 @@
-module Test.Kore.IndexedModule.Resolvers (test_resolvers) where
+module Test.Kore.IndexedModule.Resolvers
+where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+-- import Test.Terse
 
 import           Data.Default
 import qualified Data.Map as Map
@@ -315,3 +315,46 @@ test_resolvers =
     SortActualSort charMetaSortActual = charMetaSort
     charMetaId :: Id Meta
     charMetaId = sortActualName charMetaSortActual
+
+
+test_undefined :: TestTree
+test_undefined =
+    testGroup "there is a consistent error when a name does not resolve"
+        [ run resolveAlias "#a" `hasError_` Error.noAlias "#a"
+        ]
+      where
+        run f input =
+            f testIndexedModule (testId input :: Id Object)
+        hasError_ actual expected =
+            testCase "alias error" $ do
+                case actual of
+                    Left Error {errorContext, errorError} ->
+                        do
+                            assertEqual "" errorContext ["(<test data>)"]
+                            assertEqual "" errorError expected
+                    Right _ ->
+                        assertFailure "Unexpected Right"
+
+            -- testCase expected $
+            --   return ()
+              -- case expected of
+              --     Left _ ->
+              --       assertFailure "Unexpected Left"
+              --     Right
+              --       assertFailure "Unexpected Right"
+        --
+        -- hasError_ (Right {errorContext, errorError}) expected =
+        --     testCase expected $ do
+        --       assertEqual "" errorContext ["(<test data>)"]
+        --       assertEqual "" errorMessage errorMessage expected
+        -- has_Error_ (Left actual) _ =
+        --     testCase expected $
+        --       assertFailure "Unexpected Left"
+        --
+        -- run f name =
+        --     f testIndexedModule (testId name :: Id Object)
+        -- errorFor tag name =
+        --     Left Error
+        --         { errorContext = ["(<test data>)"]
+        --         , errorError = tag <> " '" <> name <> "' not defined."
+        --         }
