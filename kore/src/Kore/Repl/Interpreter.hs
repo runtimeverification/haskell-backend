@@ -129,9 +129,10 @@ prove index = do
             let
                 graph@Strategy.ExecutionGraph { root }
                     = emptyExecutionGraph claim
-            lensGraph .= graph
-            lensClaim .= claim
-            lensNode  .= root
+            lensGraph  .= graph
+            lensClaim  .= claim
+            lensNode   .= root
+            lensLabels .= Map.empty
             putStrLn' "Execution Graph initiated"
 
 showGraph

@@ -12,18 +12,22 @@ import Test.Kore.Parser
 
 test_replParser :: [TestTree]
 test_replParser =
-    [ helpTests       `tests` "help"
-    , claimTests      `tests` "claim"
-    , axiomTests      `tests` "axiom"
-    , proveTests      `tests` "prove"
-    , graphTests      `tests` "graph"
-    , stepTests       `tests` "step"
-    , selectTests     `tests` "select"
-    , configTests     `tests` "config"
-    , leafsTests      `tests` "leafs"
-    , precBranchTests `tests` "prec-branch"
-    , childrenTests   `tests` "children"
-    , exitTests       `tests` "exit"
+    [ helpTests        `tests` "help"
+    , claimTests       `tests` "claim"
+    , axiomTests       `tests` "axiom"
+    , proveTests       `tests` "prove"
+    , graphTests       `tests` "graph"
+    , stepTests        `tests` "step"
+    , selectTests      `tests` "select"
+    , configTests      `tests` "config"
+    , leafsTests       `tests` "leafs"
+    , precBranchTests  `tests` "prec-branch"
+    , childrenTests    `tests` "children"
+    , exitTests        `tests` "exit"
+    , showLabelsTests  `tests` "labels"
+    , setLabelTests    `tests` "set-label"
+    , gotoLabelTests   `tests` "goto-label"
+    , removeLabelTests `tests` "remove-label"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -173,6 +177,77 @@ childrenTests =
                                  \expecting end of input, integer, or white space\n"
     ]
 
+showLabelsTests :: [ParserTest ReplCommand]
+showLabelsTests =
+    [ "labels"  `parsesTo` ShowLabels
+    , "labels " `parsesTo` ShowLabels
+    ]
+
+setLabelTests :: [ParserTest ReplCommand]
+setLabelTests =
+    [ "set-label l 5"      `parsesTo` SetLabel "l" 5
+    , "set-label label 5"  `parsesTo` SetLabel "label" 5
+    , "set-label 1ab31 5"  `parsesTo` SetLabel "1ab31" 5
+    , "set-label 1ab31 5 " `parsesTo` SetLabel "1ab31" 5
+    , "set-label 5"        `failsWith` "<test-string>:1:12:\n\
+                                        \  |\n\
+                                        \1 | set-label 5\n\
+                                        \  |            ^\n\
+                                        \unexpected end of input\n\
+                                        \expecting alphanumeric character, integer, or white space\n"
+    , "set-label 5 "       `failsWith` "<test-string>:1:13:\n\
+                                        \  |\n\
+                                        \1 | set-label 5 \n\
+                                        \  |             ^\n\
+                                        \unexpected end of input\n\
+                                        \expecting integer or white space\n"
+    , "set-label label -5" `failsWith` "<test-string>:1:17:\n\
+                                        \  |\n\
+                                        \1 | set-label label -5\n\
+                                        \  |                 ^\n\
+                                        \unexpected '-'\n\
+                                        \expecting integer or white space\n"
+    ]
+
+gotoLabelTests :: [ParserTest ReplCommand]
+gotoLabelTests =
+    [ "goto-label l"      `parsesTo` GotoLabel "l"
+    , "goto-label label"  `parsesTo` GotoLabel "label"
+    , "goto-label 1ab31"  `parsesTo` GotoLabel "1ab31"
+    , "goto-label 1ab31 " `parsesTo` GotoLabel "1ab31"
+    , "goto-label"        `failsWith` "<test-string>:1:11:\n\
+                                       \  |\n\
+                                       \1 | goto-label\n\
+                                       \  |           ^\n\
+                                       \unexpected end of input\n\
+                                       \expecting alphanumeric character or white space\n"
+    , "goto-label "       `failsWith` "<test-string>:1:12:\n\
+                                       \  |\n\
+                                       \1 | goto-label \n\
+                                       \  |            ^\n\
+                                       \unexpected end of input\n\
+                                       \expecting alphanumeric character or white space\n"
+    ]
+
+removeLabelTests :: [ParserTest ReplCommand]
+removeLabelTests =
+    [ "remove-label l"      `parsesTo` RemoveLabel "l"
+    , "remove-label label"  `parsesTo` RemoveLabel "label"
+    , "remove-label 1ab31"  `parsesTo` RemoveLabel "1ab31"
+    , "remove-label 1ab31 " `parsesTo` RemoveLabel "1ab31"
+    , "remove-label"        `failsWith` "<test-string>:1:13:\n\
+                                         \  |\n\
+                                         \1 | remove-label\n\
+                                         \  |             ^\n\
+                                         \unexpected end of input\n\
+                                         \expecting alphanumeric character or white space\n"
+    , "remove-label "       `failsWith` "<test-string>:1:14:\n\
+                                         \  |\n\
+                                         \1 | remove-label \n\
+                                         \  |              ^\n\
+                                         \unexpected end of input\n\
+                                         \expecting alphanumeric character or white space\n"
+    ]
 exitTests :: [ParserTest ReplCommand]
 exitTests =
     [ "exit"  `parsesTo` Exit

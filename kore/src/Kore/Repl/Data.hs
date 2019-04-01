@@ -95,9 +95,9 @@ helpText =
     \children [n]            shows direct children of node\n\
                              \(defaults to current node)\n\
     \labels                  shows all node labels\n\
-    \set-label <label> <n>   add a new label for a node\n\
-    \goto-label <label>      jump to a label\n\
-    \remove-label <label>    remove a label\n\
+    \set-label <l> <n>       add a new label for a node\n\
+    \goto-label <l>          jump to a label\n\
+    \remove-label <l>        remove a label\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
