@@ -264,22 +264,6 @@ test_resolvers =
             ))
             (resolveAlias testIndexedModule (testId "#b" :: Id Meta))
         )
-    , testCase "symbol error"
-        (assertEqual ""
-            (Left Error
-                { errorContext = ["(<test data>)"]
-                , errorError = "Symbol '#b' not defined."}
-            )
-            (resolveSymbol testIndexedModule (testId "#b" :: Id Meta))
-        )
-    , testCase "alias error"
-        (assertEqual ""
-            (Left Error
-                { errorContext = ["(<test data>)"]
-                , errorError = Error.noAlias "#a" }
-            )
-            (resolveAlias testIndexedModule (testId "#a" :: Id Meta))
-        )
     , testCase "sort error"
         (assertEqual ""
             (Left Error
@@ -317,11 +301,16 @@ test_resolvers =
     charMetaId = sortActualName charMetaSortActual
 
 
-test_undefined_messages :: TestTree
-test_undefined_messages =
+test_resolver_undefined_messages :: TestTree
+test_resolver_undefined_messages =
     testGroup "each resolver has a standard failure message"
         [ resolveAlias `produces_` Error.noAlias
         , resolveSymbol `produces_` Error.noSymbol
+        -- , resolveSort `produces_` Error.noSort
+        -- ^^^ TODO: The above cannot be done until `resolveSort`
+        -- is changed to be consistent with the other error
+        -- messages, which has to wait until a number of
+        -- other tests are fixed.
         ]
       where
         produces_ resolver formatter =
@@ -330,6 +319,10 @@ test_undefined_messages =
             resolver testIndexedModule (testId "#anyOldId" :: Id Object)
         checkWith formatter =
             assertError_ ["(<test data>)"] $ formatter "#anyOldId"
+
+-- TODO: Find out how to compose functions like the following
+-- out of Test.Terse primitives. Is there a clean way to
+-- do testcase nesting?
 
 assertError_ :: [String] -> String -> Error a -> Assertion
 assertError_ actualContext actualError expected =
