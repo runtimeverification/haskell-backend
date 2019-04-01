@@ -11,7 +11,7 @@ module Kore.Repl.Parser
     ) where
 
 import Text.Megaparsec
-       ( Parsec, option, optional, (<|>) )
+       ( Parsec, option, optional, some, (<|>) )
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
        ( decimal )
@@ -39,6 +39,9 @@ commandParser =
     <|> showPrecBranch
     <|> showChildren
     <|> showLabels
+    <|> setLabel
+    <|> gotoLabel
+    <|> removeLabel
     <|> exit
 
 help :: Parser ReplCommand
@@ -82,6 +85,20 @@ showChildren =
 showLabels :: Parser ReplCommand
 showLabels =
     ShowLabels <$ (string "labels" *> space)
+
+setLabel :: Parser ReplCommand
+setLabel = do
+    label <- string "set-label" *> space *> some alphaNumChar <* space
+    node  <- decimal <* space
+    return $ SetLabel label node
+
+gotoLabel :: Parser ReplCommand
+gotoLabel =
+    fmap GotoLabel $ string "goto-label" *> space *> some alphaNumChar <* space
+
+removeLabel :: Parser ReplCommand
+removeLabel =
+    fmap RemoveLabel $ string "remove-label" *> space *> some alphaNumChar <* space
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)

@@ -29,8 +29,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.List.Extra
                  ( groupSort )
-import           Data.Map.Strict
-                 ( foldrWithKey )
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( catMaybes )
 import           Data.Text.Prettyprint.Doc
@@ -87,6 +86,9 @@ replInterpreter =
         ShowPrecBranch mn -> showPrecBranch mn $> True
         ShowChildren mn -> showChildren mn $> True
         ShowLabels -> showLabels $> True
+        SetLabel l n -> setLabel l n $> True
+        GotoLabel l -> gotoLabel l $> True
+        RemoveLabel l -> removeLabel l $> True
         Exit -> pure False
 
 showUsage :: MonadIO m => m ()
@@ -235,11 +237,40 @@ showChildren mnode = do
 showLabels :: StateT (ReplState level) Simplifier ()
 showLabels = do
     labels <- Lens.use lensLabels
-    putStrLn' $ foldrWithKey f "Labels: " labels
+    if null labels
+       then putStrLn' "No labels are set."
+       else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
   where
-    f :: String -> Graph.Node -> String -> String
-    f key node res =
+    acc :: String -> Graph.Node -> String -> String
+    acc key node res =
         res <> "\n  " <> key <> ": " <> (show node)
+
+setLabel
+    :: String
+    -> Int
+    -> StateT (ReplState level) Simplifier ()
+setLabel label node = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    labels <- Lens.use lensLabels
+    if label `Map.notMember` labels && node `elem` Graph.nodes graph
+       then do
+           lensLabels .= Map.insert label node labels
+           putStrLn' "Label added."
+       else putStrLn' "Label already exists or the node isn't in the graph."
+
+gotoLabel :: String -> StateT (ReplState level) Simplifier ()
+gotoLabel label = do
+    labels <- Lens.use lensLabels
+    selectNode $ maybe (-1) id (Map.lookup label labels)
+
+removeLabel :: String -> StateT (ReplState level) Simplifier ()
+removeLabel label = do
+    labels <- Lens.use lensLabels
+    if label `Map.member` labels
+       then do
+           lensLabels .= Map.delete label labels
+           putStrLn' "Removed label."
+       else putStrLn' "Label doesn't exist."
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
