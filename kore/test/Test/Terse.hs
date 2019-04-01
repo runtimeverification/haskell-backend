@@ -16,7 +16,7 @@ module Test.Terse
         -- * Common Functions
         --
         -- $commonFunctions
-        satisfies
+      satisfies
     , equals
     , unequals
     , has
@@ -103,13 +103,13 @@ equals_
 equals_ = actual_expected
 
 -- |
--- > (3 + 4) `unequals' 8  $ "name"
+-- > (3 + 4) `unequals` 8  $ "name"
 unequals :: (HasCallStack, Eq a, Show a) => a -> a -> String -> TestTree
 unequals actual unexpected name =
     actual_predicate_name actual (/= unexpected) name
 
 -- |
--- > 3 + 4 'unequals' 8
+-- > (3 + 4) `unequals_` 8
 unequals_ :: (HasCallStack, Eq a, Show a) => a -> a -> TestTree
 unequals_ actual unexpected =
     unequals actual unexpected ""
