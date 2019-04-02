@@ -53,7 +53,8 @@ import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
-                 ( RewriteRule )
+                 ( RewriteRule (RewriteRule) )
+import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -63,8 +64,10 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
+import qualified Kore.Variables.Target as Target
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -306,14 +309,24 @@ transitionRule
 
                     rewriteResults, remainderResults
                         ::  MultiOr.MultiOr
-                                ( CommonStrategyPattern level
-                                , StepProof level Variable
+                                (TransitionT
+                                    (RewriteRule level Variable)
+                                    Simplifier
+                                    ( CommonStrategyPattern level
+                                    , StepProof level Variable
+                                    )
                                 )
-                    rewriteResults =
-                        withProof . RewritePattern . Step.result <$> results
-                    remainderResults = withProof . Stuck <$> remainders
+                    rewriteResults = fmap withProof . transition <$> results
+                    transition result' = do
+                        let rule =
+                                Rule.mapVariables Target.unwrapVariable
+                                $ Predicated.term $ Step.unifiedRule result'
+                        Transition.addRule (RewriteRule rule)
+                        return (RewritePattern $ Step.result result')
+                    remainderResults =
+                        pure . withProof . Stuck <$> remainders
 
-                (Foldable.asum . fmap pure) (rewriteResults <> remainderResults)
+                Foldable.asum (rewriteResults <> remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
