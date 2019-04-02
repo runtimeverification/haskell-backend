@@ -110,7 +110,7 @@ maybeDecimal :: Parser (Maybe Int)
 maybeDecimal = optional decimal
 
 string :: Parser String
-string = some Char.alphaNumChar
+string = some Char.alphaNumChar <* Char.space
 
 maybeString :: Parser (Maybe String)
 maybeString = optional string

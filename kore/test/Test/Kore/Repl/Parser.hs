@@ -25,6 +25,7 @@ test_replParser =
     , precBranchTests `tests` "prec-branch"
     , childrenTests   `tests` "children"
     , exitTests       `tests` "exit"
+    , redirectTests   `tests` "redirect"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -45,18 +46,8 @@ claimTests =
     [ "claim 0"  `parsesTo`  ShowClaim 0
     , "claim 0 " `parsesTo`  ShowClaim 0
     , "claim 5"  `parsesTo`  ShowClaim 5
-    , "claim"    `failsWith` "<test-string>:1:6:\n\
-                             \  |\n\
-                             \1 | claim\n\
-                             \  |      ^\n\
-                             \unexpected end of input\n\
-                             \expecting integer or white space\n"
-    , "claim -5" `failsWith` "<test-string>:1:7:\n\
-                             \  |\n\
-                             \1 | claim -5\n\
-                             \  |       ^\n\
-                             \unexpected '-'\n\
-                             \expecting integer or white space\n"
+    , "claim"    `failsWith` "needs parameters"
+    , "claim -5" `failsWith` "no negative numbers"
     ]
 
 axiomTests :: [ParserTest ReplCommand]
@@ -64,18 +55,8 @@ axiomTests =
     [ "axiom 0"  `parsesTo`   ShowAxiom 0
     , "axiom 0 " `parsesTo`   ShowAxiom 0
     , "axiom 5"  `parsesTo`   ShowAxiom 5
-    , "axiom"    `failsWith`  "<test-string>:1:6:\n\
-                              \  |\n\
-                              \1 | axiom\n\
-                              \  |      ^\n\
-                              \unexpected end of input\n\
-                              \expecting integer or white space\n"
-    , "axiom -5"  `failsWith` "<test-string>:1:7:\n\
-                              \  |\n\
-                              \1 | axiom -5\n\
-                              \  |       ^\n\
-                              \unexpected '-'\n\
-                              \expecting integer or white space\n"
+    , "axiom"    `failsWith`  "needs parameters"
+    , "axiom -5"  `failsWith` "no negative numbers"
     ]
 
 proveTests :: [ParserTest ReplCommand]
@@ -83,18 +64,8 @@ proveTests =
     [ "prove 0"  `parsesTo`   Prove 0
     , "prove 0 " `parsesTo`   Prove 0
     , "prove 5"  `parsesTo`   Prove 5
-    , "prove"    `failsWith`  "<test-string>:1:6:\n\
-                              \  |\n\
-                              \1 | prove\n\
-                              \  |      ^\n\
-                              \unexpected end of input\n\
-                              \expecting integer or white space\n"
-    , "prove -5"  `failsWith` "<test-string>:1:7:\n\
-                              \  |\n\
-                              \1 | prove -5\n\
-                              \  |       ^\n\
-                              \unexpected '-'\n\
-                              \expecting integer or white space\n"
+    , "prove"    `failsWith`  "needs parameters"
+    , "prove -5"  `failsWith` "no negative numbers"
     ]
 
 graphTests :: [ParserTest ReplCommand]
@@ -109,24 +80,14 @@ stepTests =
     , "step "   `parsesTo`  ProveSteps 1
     , "step 5"  `parsesTo`  ProveSteps 5
     , "step 5 " `parsesTo`  ProveSteps 5
-    , "step -5" `failsWith` "<test-string>:1:6:\n\
-                            \  |\n\
-                            \1 | step -5\n\
-                            \  |      ^\n\
-                            \unexpected '-'\n\
-                            \expecting end of input, integer, or white space\n"
+    , "step -5" `failsWith` "no negative numbers"
     ]
 
 selectTests :: [ParserTest ReplCommand]
 selectTests =
     [ "select 5"  `parsesTo`  SelectNode 5
     , "select 5 " `parsesTo`  SelectNode 5
-    , "select -5" `failsWith` "<test-string>:1:8:\n\
-                              \  |\n\
-                              \1 | select -5\n\
-                              \  |        ^\n\
-                              \unexpected '-'\n\
-                              \expecting integer or white space\n"
+    , "select -5" `failsWith` "no negative numbers"
     ]
 
 configTests :: [ParserTest ReplCommand]
@@ -134,12 +95,7 @@ configTests =
     [ "config"    `parsesTo`  ShowConfig Nothing
     , "config "   `parsesTo`  ShowConfig Nothing
     , "config 5"  `parsesTo`  ShowConfig (Just 5)
-    , "config -5" `failsWith` "<test-string>:1:8:\n\
-                              \  |\n\
-                              \1 | config -5\n\
-                              \  |        ^\n\
-                              \unexpected '-'\n\
-                              \expecting end of input, integer, or white space\n"
+    , "config -5" `failsWith` "no negative numbers"
     ]
 
 omitTests :: [ParserTest ReplCommand]
@@ -163,12 +119,7 @@ precBranchTests =
     [ "prec-branch"    `parsesTo`  ShowPrecBranch Nothing
     , "prec-branch "   `parsesTo`  ShowPrecBranch Nothing
     , "prec-branch 5"  `parsesTo`  ShowPrecBranch (Just 5)
-    , "prec-branch -5" `failsWith` "<test-string>:1:13:\n\
-                                    \  |\n\
-                                    \1 | prec-branch -5\n\
-                                    \  |             ^\n\
-                                    \unexpected '-'\n\
-                                    \expecting end of input, integer, or white space\n"
+    , "prec-branch -5" `failsWith` "no negative numbers"
     ]
 
 childrenTests :: [ParserTest ReplCommand]
@@ -176,16 +127,19 @@ childrenTests =
     [ "children"    `parsesTo`  ShowChildren Nothing
     , "children "   `parsesTo`  ShowChildren Nothing
     , "children 5"  `parsesTo`  ShowChildren (Just 5)
-    , "children -5" `failsWith` "<test-string>:1:10:\n\
-                                 \  |\n\
-                                 \1 | children -5\n\
-                                 \  |          ^\n\
-                                 \unexpected '-'\n\
-                                 \expecting end of input, integer, or white space\n"
+    , "children -5" `failsWith` "no negative numbers"
     ]
 
 exitTests :: [ParserTest ReplCommand]
 exitTests =
     [ "exit"  `parsesTo` Exit
     , "exit " `parsesTo` Exit
+    ]
+
+redirectTests :: [ParserTest ReplCommand]
+redirectTests =
+    [ "config > file"    `parsesTo` Redirect (ShowConfig Nothing)  "file"
+    , "config 5 > file"  `parsesTo` Redirect (ShowConfig (Just 5)) "file"
+    , "config 5 > file"  `parsesTo` Redirect (ShowConfig (Just 5)) "file"
+    , "claim 3 > cf"     `parsesTo` Redirect (ShowClaim 3)         "cf"
     ]
