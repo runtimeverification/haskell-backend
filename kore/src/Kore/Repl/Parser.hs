@@ -97,6 +97,7 @@ exit = const Exit <$$> literal "exit"
 
 infixr 1 <$$>
 
+ -- | This is only a low-precedence fmap used to make the parser functions nicer.
 (<$$>) :: (a -> ReplCommand) -> Parser a -> Parser ReplCommand
 (<$$>) = fmap
 

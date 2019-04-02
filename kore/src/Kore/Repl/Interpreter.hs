@@ -77,6 +77,10 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unparser
                  ( unparseToString )
 
+-- | Warning: you should never use WriterT or RWST. It is used here with
+-- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
+-- rid of the WriterT part of the stack. This happens in the implementation of
+-- 'replInterpreter'.
 type ReplM level a = RWST () String (ReplState level) Simplifier a
 
 -- | Interprets a REPL command in a stateful Simplifier context.
