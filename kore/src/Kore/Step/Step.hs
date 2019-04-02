@@ -745,8 +745,7 @@ sequenceRules
     -- ^ Configuration being rewritten
     -> [RulePattern Object variable]
     -- ^ Rewrite rules
-    -> ExceptT (StepError Object variable) Simplifier
-        (OrStepResult Object variable)
+    -> ExceptT (StepError Object variable) Simplifier (Results variable)
 sequenceRules
     metadataTools
     predicateSimplifier
@@ -755,7 +754,7 @@ sequenceRules
     unificationProcedure
     initialConfig
   =
-    Foldable.foldlM sequenceRules1 mempty { remainder = pure initialConfig }
+    Foldable.foldlM sequenceRules1 mempty { remainders = pure initialConfig }
   where
     -- The single remainder of the input configuration after rewriting to
     -- produce the disjunction of results.
@@ -764,7 +763,7 @@ sequenceRules
         -- ^ initial configuration
         -> MultiOr (Result variable)
         -- ^ disjunction of results
-        -> OrOfExpandedPattern Object variable
+        -> MultiOr (ExpandedPattern Object variable)
     remainingAfter config results =
         let remainder =
                 PredicateSubstitution.fromPredicate
@@ -773,13 +772,12 @@ sequenceRules
         in MultiOr.make [config `Predicated.andCondition` remainder]
 
     sequenceRules1
-        :: OrStepResult Object variable
+        :: Results variable
         -> RulePattern Object variable
-        -> ExceptT (StepError Object variable) Simplifier
-            (OrStepResult Object variable)
+        -> ExceptT (StepError Object variable) Simplifier (Results variable)
     sequenceRules1 results rule = do
-        results' <- traverse (applyRule' rule) (remainder results)
-        return (results { remainder = empty } <> Foldable.fold results')
+        results' <- traverse (applyRule' rule) (remainders results)
+        return (withoutRemainders results <> Foldable.fold results')
 
     -- Apply rule to produce a pair of the rewritten patterns and
     -- single remainder configuration.
@@ -793,9 +791,9 @@ sequenceRules
                 unificationProcedure
                 config
                 rule
-        return OrStepResult
-            { rewrittenPattern = MultiOr.filterOr (result <$> results)
-            , remainder = remainingAfter config results
+        return Results
+            { results
+            , remainders = remainingAfter config results
             }
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -823,8 +821,7 @@ sequenceRewriteRules
     -- ^ Configuration being rewritten
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules
-    -> ExceptT (StepError Object variable) Simplifier
-        (OrStepResult Object variable)
+    -> ExceptT (StepError Object variable) Simplifier (Results variable)
 sequenceRewriteRules
     metadataTools
     predicateSimplifier
