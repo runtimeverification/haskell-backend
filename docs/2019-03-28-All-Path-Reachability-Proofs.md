@@ -165,7 +165,7 @@ We have a chioce whether to apply circularities sequentially or in parallel.
 ```
 
 Note that the remainder `∀x.φ ∧ ¬∃xᵢ.φᵢ → [w]∃z.ψ` can be rewritten as
-`∀x.φ ∧ ¬∃xᵢ.⌈φ'∧φᵢ⌉ → [w]ψ`, as detailed above.
+`∀x.φ ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉ → [w]ψ`, as detailed above.
 
 __Note:__ If there are multiple claims which could apply on the same concrete
 instance of a configuration, then applying them sequentially would reduce
@@ -181,7 +181,7 @@ is computed at every claim application; it is equally possible
 to do it only once for all claims:
 
 ```
-∀x.φ → ∃z.[q]ψ
+∀x.φ → [w]∃z.ψ
 ∀x.φ ∧ (∃x₁.φ₁ ∨ … ∨ ∃x₁.φₙ ∨ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ) → [w]∃z.ψ  
 ∀x.(φ ∧ ∃x₁.φ₁) ∨ … ∨ (φ' ∧ ∃xₙ.φₙ) ∨ (φ' ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → [w]∃z.ψ
 (∀x.φ ∧ ∃x₁.φ₁ → [w]∃z.ψ)  ∧ … (∀x.φ ∧ ∃xₙ.φₙ → [w]∃z.ψ) ∧ (∀x.(φ ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → [w]∃z.ψ)
@@ -201,15 +201,15 @@ from one derivation to the next.
 
 #### Using a claim to advance the corresponding goal
 
-Say we want to use the `∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ` claim.
-Note that `φ ∧ ∃xᵢ.φᵢ` is equivalent to `∃xᵢ.φ ∧ φᵢ`, which is further equivalent to
-`∃xᵢ.φᵢ ∧ ⌈φ ∧ φᵢ⌉`.
-Instantiating the axiom, we obtain:
-`∃xᵢ.φᵢ ∧ ⌈φ ∧ φᵢ⌉ → ∃xᵢ.[w]∃zᵢ.ψᵢ ∧ ⌈φ ∧ φᵢ⌉`
+We want to prove that from
+```
+∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ
+∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]ψ
+```
+we can deduce that `∀x.φ ∧ ∃xᵢ.φᵢ → [w]∃z.ψ`.
 
-Hence it is sound to replace the first conjunct in (1) by `∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]ψ`
-because the "`→ [w]`" relation is transitive, and if the implication holds for all 
-`zᵢ`, it will also hold for those derived from the claim.
+This would allow us to replace goal `∀x.φ ∧ ∃xᵢ.φᵢ → [w]∃z.ψ`
+with goal '∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]ψ'.
 
 ### Applying axioms
 
@@ -221,40 +221,33 @@ Therefore we need to check two things:
 1. That `φ` is not stuck
 1. That `∀x.φ →  ○[w]ψ`
 
-Therefore, when using axioms to advance a goal, we want to find a `φ'`
-such that `∀x.φ → •φ'` (making sure `φ` does not have any stuck parts)
-and `φ' → ○φ'` (making sure that `φ'` covers everything `φ` can advance to).
+Assume `∀xᵢ.φᵢ →  •∃zᵢ.ψᵢ, 1 ≤ i ≤ n`  are all the one-step axioms
+in the definition.
 
-If we have such a `φ'`, then it is sound to replace the goal by `∀x.φ' →  [w]ψ`
-because
-
+Using the same reasoning as in when applying all claims in parallel,
+`∀x.φ → α` is equivalent with
 ```
-∀x.φ' → [w]∃z.ψ   implies that
-∀x.○φ' → ∃z.○[w]ψ  and using transity with ∀x.φ → ○φ' it implies that
-∀x.φ → ∃z.○[w]ψ
+(∀x.φ ∧ ∃x₁.φ₁ → α) ∧ … ∧ (∀x.φ ∧ ∃xₙ.φₙ → α) ∧ (∀x.φ ∧ ¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ → α)
 ```
 
-Note also that we want a minimal such `φ'`, to maximize our chances to prove
-the replacement goal; otherwise `⊤` would fit the description.
+Now, for the first thing to check, take `α := ⊤`.  
+Since all but the last conjunct are guaranteed to hold
+(because of the rewrite axioms), `φ` is stuck if the remainder after attempting
+to apply all axioms (i.e., the lhs of the last conjunct) is not equivalent to `⊥`.
 
-Now assuming `∀yᵢ.αᵢ →  •∃zᵢ.βᵢ, 1 ≤ i ≤ n`  are all the one-step axioms
-in the definition, we can pick 
+We want to prove that from
 ```
-φ' := (∃y₁.⌈φ' ∧ α₁⌉ ∧ ∃z₁.β₁) ∨ … ∨ (∃yₙ.⌈φ' ∧ αₙ⌉ ∧ ∃zₙ.βₙ)
-```
-while also checking that the remainder
-```
-φ ∧ ¬(∃y.⌈φ ∧ α₁⌉) ∧ … ∧ ¬(∃y.⌈φ ∧ αₙ⌉)
-```
-is `⊥`, that is, that there is no stuck part of `φ`
-
-That `φ'` can be chosen like this is a consequence of the __STEP__ axiom:
-```
-P -> o ((∃y₁.⌈P ∧ α₁⌉ ∧ ∃z₁.β₁) ∨ … ∨ (∃yₙ.⌈P ∧ αₙ⌉ ∧ ∃zₙ.βₙ))      (STEP)
+(∀x∪z₁.ψ₁ ∧ ∃x₁.⌈φ ∧ φ₁⌉ → [w]∃z.ψ) ∧ … ∧ (∀x∪zₙ.ψₙ ∧ ∃xₙ.⌈φ ∧ φₙ⌉ → [w]∃z.ψ)
+P -> o ((∃x₁.⌈P ∧ φ₁⌉ ∧ ∃z₁.ψ₁) ∨ … ∨ (∃xₙ.⌈P ∧ φₙ⌉ ∧ ∃zₙ.ψₙ))      (STEP)
+∀xᵢ.φᵢ →  •∃zᵢ.ψᵢ, 1 ≤ i ≤ n
 ```
 
-Note that then it is sound to replace the goal `∀x.φ → [w]∃z.ψ` with the conjunction of goals 
+we can derive
 ```
-(∀x∪z₁.β₁ ∧ ∃y₁.⌈φ' ∧ α₁⌉ → [w]∃z.ψ) ∧ … ∧ (∀x∪zₙ.βₙ ∧ ∃yₙ.⌈φ' ∧ αₙ⌉ → [w]∃z.ψ)
+∀x.φ →  ○[w]ψ
 ```
 
+This would allow us to replace the goal `∀x.φ →  ○[w]ψ` with the set of goals
+```
+{ ∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]∃z.ψ : 1 ≤ i ≤ n }
+```
