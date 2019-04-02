@@ -59,8 +59,6 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import           Kore.Step.Step
-                 ( OrStepResult (OrStepResult) )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -301,7 +299,7 @@ transitionRule
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]
-            Right OrStepResult { rewrittenPattern, remainder } -> do
+            Right Step.Results { results, remainders } -> do
                 let
                     withProof :: forall x. x -> (x, StepProof level Variable)
                     withProof x = (x, proof)
@@ -312,8 +310,8 @@ transitionRule
                                 , StepProof level Variable
                                 )
                     rewriteResults =
-                        withProof . RewritePattern <$> rewrittenPattern
-                    remainderResults = withProof . Stuck <$> remainder
+                        withProof . RewritePattern . Step.result <$> results
+                    remainderResults = withProof . Stuck <$> remainders
 
                 (Foldable.asum . fmap pure) (rewriteResults <> remainderResults)
 

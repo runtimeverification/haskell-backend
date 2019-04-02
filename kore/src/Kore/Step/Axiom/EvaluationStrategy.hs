@@ -62,11 +62,8 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
-                 ( OrStepResult (OrStepResult),
-                 UnificationProcedure (UnificationProcedure) )
+                 ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
-import qualified Kore.Step.Step as OrStepResult
-                 ( OrStepResult (..) )
 import           Kore.Unparser
                  ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
@@ -321,15 +318,16 @@ evaluateWithDefinitionAxioms
             expanded
             (map unwrapEqualityRule definitionRules)
 
-    let OrStepResult { rewrittenPattern, remainder } = case resultOrError of
-            Right result -> result
-            Left _ -> OrStepResult
-                { rewrittenPattern = MultiOr.make []
-                , remainder = MultiOr.make [expanded]
-                }
+    let Step.Results { results, remainders } =
+            case resultOrError of
+                Right result -> result
+                Left _ -> Step.Results
+                    { Step.results = mempty
+                    , Step.remainders = MultiOr.make [expanded]
+                    }
     let
         remainderResults :: [ExpandedPattern level variable]
-        remainderResults = MultiOr.extractPatterns remainder
+        remainderResults = MultiOr.extractPatterns remainders
 
         simplifyPredicate
             :: ExpandedPattern level variable
@@ -349,7 +347,7 @@ evaluateWithDefinitionAxioms
             unzip simplifiedRemainderList
     return
         ( AttemptedAxiom.Applied AttemptedAxiomResults
-            { results = rewrittenPattern
+            { results = Step.result <$> results
             , remainders = MultiOr.make simplifiedRemainderResults
             }
         , SimplificationProof

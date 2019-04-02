@@ -1079,11 +1079,7 @@ sequenceRewriteRules
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
-    -> IO
-        (Either
-            (StepError Object Variable)
-            (OrStepResult Object Variable)
-        )
+    -> IO (Either (StepError Object Variable) (Results Variable))
 sequenceRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
@@ -1139,51 +1135,49 @@ test_sequenceRewriteRules =
                 makeAndPredicate
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
-            expect =
-                Right OrStepResult
-                    { rewrittenPattern =
-                        MultiOr
-                            [ Predicated
-                                { term = Mock.cf
-                                , predicate = definedBranches
-                                , substitution =
-                                    Substitution.wrap [(Mock.x, Mock.a)]
-                                }
-                            , Predicated
-                                { term = Mock.cg
-                                , predicate = definedBranches
-                                , substitution =
-                                    Substitution.wrap [(Mock.x, Mock.b)]
-                                }
-                            ]
-                    , remainder =
-                        MultiOr
-                            [ initial
-                                { predicate =
-                                    Predicate.makeAndPredicate
-                                        (Predicate.makeNotPredicate
-                                            $ Predicate.makeAndPredicate
-                                                definedBranches
-                                                (Predicate.makeEqualsPredicate
-                                                    (mkVar Mock.x)
-                                                    Mock.a
-                                                )
+            results =
+                MultiOr
+                    [ Predicated
+                        { term = Mock.cf
+                        , predicate = definedBranches
+                        , substitution =
+                            Substitution.wrap [(Mock.x, Mock.a)]
+                        }
+                    , Predicated
+                        { term = Mock.cg
+                        , predicate = definedBranches
+                        , substitution =
+                            Substitution.wrap [(Mock.x, Mock.b)]
+                        }
+                    ]
+            remainders =
+                MultiOr
+                    [ initial
+                        { predicate =
+                            Predicate.makeAndPredicate
+                                (Predicate.makeNotPredicate
+                                    $ Predicate.makeAndPredicate
+                                        definedBranches
+                                        (Predicate.makeEqualsPredicate
+                                            (mkVar Mock.x)
+                                            Mock.a
                                         )
-                                        (Predicate.makeNotPredicate
-                                            $ Predicate.makeAndPredicate
-                                                definedBranches
-                                                (Predicate.makeEqualsPredicate
-                                                    (mkVar Mock.x)
-                                                    Mock.b
-                                                )
+                                )
+                                (Predicate.makeNotPredicate
+                                    $ Predicate.makeAndPredicate
+                                        definedBranches
+                                        (Predicate.makeEqualsPredicate
+                                            (mkVar Mock.x)
+                                            Mock.b
                                         )
-                                }
-                            ]
-                    }
+                                )
+                        }
+                    ]
             initialTerm = Mock.functionalConstr30 (mkVar Mock.x) Mock.cf Mock.cg
             initial = pure initialTerm
-        actual <- sequenceRewriteRules initial axiomsCase
-        assertEqualWithExplanation "" expect actual
+        Right actual <- sequenceRewriteRules initial axiomsCase
+        checkResults results actual
+        checkRemainders remainders actual
     ]
 
 axiomFunctionalSigma :: EqualityRule Object Variable
@@ -1205,11 +1199,7 @@ sequenceMatchingRules
     -- ^ Configuration
     -> [EqualityRule Object Variable]
     -- ^ Rewrite rule
-    -> IO
-        (Either
-            (StepError Object Variable)
-            (OrStepResult Object Variable)
-        )
+    -> IO (Either (StepError Object Variable) (Results Variable))
 sequenceMatchingRules initial rules =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
@@ -1241,9 +1231,9 @@ test_sequenceMatchingRules :: [TestTree]
 test_sequenceMatchingRules =
     [ testCase "functional10(x) and functional10(sigma(x, y)) => a" $ do
         let
-            expect = Left StepErrorUnsupportedSymbolic
+            expect = StepErrorUnsupportedSymbolic
             initialTerm = Mock.functional10 (mkVar Mock.x)
             initial = pure initialTerm
-        actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
+        Left actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
         assertEqualWithExplanation "" expect actual
     ]
