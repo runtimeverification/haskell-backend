@@ -47,6 +47,9 @@ import           Control.Applicative
                  ( Alternative (empty, (<|>)) )
 import           Control.Monad
                  ( (>=>) )
+import           Control.Monad.State.Strict
+                 ( State )
+import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
@@ -218,7 +221,7 @@ data ExecutionGraph config rule = ExecutionGraph
 -- | A temporary data structure used to construct the 'ExecutionGraph'.
 -- Well, it was intended to be temporary, but for the purpose of making
 -- 'pickLongest' fast it turns out to be useful to keep it around.
-data ConfigNode config rule = ConfigNode
+data ChildNode config rule = ChildNode
     { config :: config
     , parents :: [(Seq rule, Graph.Node)]
     -- ^ The predecessor configurations in the execution graph and the sequence
@@ -227,22 +230,25 @@ data ConfigNode config rule = ConfigNode
     }
     deriving (Eq, Show, Functor)
 
-insNode
-    :: ConfigNode config rule
-    -> Gr config (Seq rule)
-    -> (Graph.Node, Gr config (Seq rule))
-insNode configNode graph =
-    Graph.insEdges newEdges
-    $ Graph.insNode newNode
-    $ graph
-  where
-    nodeId = (succ . snd) (Graph.nodeRange graph)
-    ConfigNode { config } = configNode
-    newNode = (nodeId, config)
-    ConfigNode { parents } = configNode
-    newEdges = do
-        (edge, parentNodeId) <- parents
-        return (parentNodeId, nodeId, edge)
+insChildNode
+    :: ChildNode config rule
+    -> State (Gr config (Seq rule)) Graph.Node
+insChildNode configNode = do
+    graph <- State.get
+    let
+        nodeId = (succ . snd) (Graph.nodeRange graph)
+        ChildNode { config } = configNode
+        newNode = (nodeId, config)
+        ChildNode { parents } = configNode
+        newEdges = do
+            (edge, parentNodeId) <- parents
+            return (parentNodeId, nodeId, edge)
+        graph' =
+            Graph.insEdges newEdges
+            $ Graph.insNode newNode
+            $ graph
+    State.put graph'
+    return nodeId
 
 -- | Perform a single step in the execution starting from the selected node in
 -- the graph and returning the resulting graph. Note that this does *NOT* do
@@ -274,9 +280,12 @@ executionHistoryStep transit prim exe@ExecutionGraph { graph } node
         Just config -> do
             configs <- runTransitionT (transitionRule transit prim config)
             let
-                max'    = succ . snd . Graph.nodeRange $ graph
-                nodes   = mkChildNode <$> zip [max' ..] configs
-            pure $ exe { graph = Foldable.foldr insNode graph nodes }
+                nodes  = mkChildNode <$> configs
+                graph' =
+                    State.execState
+                        (Foldable.traverse_ insChildNode nodes)
+                        graph
+            pure $ exe { graph = graph' }
   where
     nodeIsNotLeaf :: Bool
     nodeIsNotLeaf = Graph.outdeg graph node > 0
@@ -284,9 +293,9 @@ executionHistoryStep transit prim exe@ExecutionGraph { graph } node
     mkChildNode
         :: (config, Seq rule)
         -- ^ Child node identifier and configuration
-        -> ConfigNode config rule
+        -> ChildNode config rule
     mkChildNode (config, rules) =
-        ConfigNode
+        ChildNode
             { config
             , parents = [(rules, node)]
             }
@@ -302,11 +311,10 @@ emptyExecutionGraph
     => config
     -> ExecutionGraph config rule
 emptyExecutionGraph config =
-    ExecutionGraph { root, graph }
-  where
-    (root, graph) = insNode configNode Graph.empty
-    configNode :: ConfigNode config rule
-    configNode = ConfigNode { config, parents = [] }
+    ExecutionGraph
+        { root = 0
+        , graph = Graph.insNode (0, config) Graph.empty
+        }
 
 {- | Execute a 'Strategy'.
 
@@ -357,19 +365,17 @@ constructExecutionGraph transit instrs config0 = do
             Just config -> do
                 configs <- runTransitionT (transit instr config)
                 let
-                    max'  = succ . snd . Graph.nodeRange $ graph
-                    nodes = mkChildNode <$> zip [max' ..] configs
-                    (graph', todo') =
-                        State.runState (Foldable.foldlM (State.state . insNode) nodes) graph
-                    todo' = todo ++ _
-                return (todo', Foldable.foldr insNode graph nodes)
+                    nodes = mkChildNode <$> configs
+                    (todo', graph') =
+                        State.runState (traverse insChildNode nodes) graph
+                return (todo ++ todo', graph')
       where
         mkChildNode
             :: (config, Seq rule)
             -- ^ Child node identifier and configuration
-            -> ConfigNode config rule
+            -> ChildNode config rule
         mkChildNode (config, rules) =
-            ConfigNode
+            ChildNode
                 { config
                 , parents = [(rules, node)]
                 }
