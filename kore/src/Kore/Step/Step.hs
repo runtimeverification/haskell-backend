@@ -8,10 +8,8 @@ See "Kore.Step" for the high-level strategy-based interface.
  -}
 
 module Kore.Step.Step
-    ( OrStepResult (..)
-    , RulePattern
+    ( RulePattern
     , UnificationProcedure (..)
-    --
     , UnifiedRule
     , Results (..)
     , Result (..)
@@ -62,7 +60,7 @@ import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
+                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Representation.Predicated
                  ( Predicated (Predicated) )
 import qualified Kore.Step.Representation.Predicated as Predicated
@@ -85,44 +83,6 @@ import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
-
-{-| The result of applying an axiom to a pattern, as an Or.
-
-Contains the rewritten pattern (if any) and the unrewritten part of the
-original pattern.
--}
-data OrStepResult level variable =
-    OrStepResult
-        { rewrittenPattern :: !(OrOfExpandedPattern level variable)
-        -- ^ The result of rewritting the pattern
-        , remainder :: !(OrOfExpandedPattern level variable)
-        -- ^ The unrewritten part of the original pattern
-        }
-    deriving (Eq, Show)
-
-instance Semigroup (OrStepResult level variable) where
-    (<>)
-        OrStepResult
-            { rewrittenPattern = rewrittenPattern1
-            , remainder = remainder1
-            }
-        OrStepResult
-            { rewrittenPattern = rewrittenPattern2
-            , remainder = remainder2
-            }
-      =
-        OrStepResult
-            { rewrittenPattern = rewrittenPattern1 <> rewrittenPattern2
-            , remainder = remainder1 <> remainder2
-            }
-    {-# INLINE (<>) #-}
-
-instance Monoid (OrStepResult level variable) where
-    mappend = (<>)
-    {-# INLINE mappend #-}
-
-    mempty = OrStepResult { rewrittenPattern = mempty, remainder = mempty }
-    {-# INLINE mempty #-}
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
@@ -152,6 +112,62 @@ newtype UnificationProcedure level =
             , UnificationProof level variable
             )
         )
+
+{- | A @UnifiedRule@ has been renamed and unified with a configuration.
+
+The rule's 'RulePattern.requires' clause is combined with the unification
+solution and the renamed rule is wrapped with the combined condition.
+
+ -}
+type UnifiedRule variable =
+    Predicated Object variable (RulePattern Object variable)
+
+-- | The result of applying a single rule.
+data Result variable =
+    Result
+        { unifiedRule :: !(UnifiedRule (Target variable))
+        , result      :: !(ExpandedPattern Object variable)
+        }
+    deriving GHC.Generic
+
+deriving instance Eq (variable Object) => Eq (Result variable)
+
+deriving instance Ord (variable Object) => Ord (Result variable)
+
+deriving instance Show (variable Object) => Show (Result variable)
+
+{- | The results of applying many rules.
+
+The rules may be applied in sequence or in parallel and the 'remainders' vary
+accordingly.
+
+ -}
+data Results variable =
+    Results
+        { results :: !(MultiOr (Result variable))
+        , remainders :: !(MultiOr (ExpandedPattern Object variable))
+        }
+    deriving GHC.Generic
+
+deriving instance Eq (variable Object) => Eq (Results variable)
+
+deriving instance Ord (variable Object) => Ord (Results variable)
+
+deriving instance Show (variable Object) => Show (Results variable)
+
+instance Semigroup (Results variable) where
+    (<>) results1 results2 =
+        Results
+            { results = Function.on (<>) results results1 results2
+            , remainders = Function.on (<>) remainders results1 results2
+            }
+
+instance Monoid (Results variable) where
+    mempty = Results { results = empty, remainders = empty }
+    mappend = (<>)
+
+withoutRemainders :: Results variable -> Results variable
+withoutRemainders results = results { remainders = empty }
 
 unwrapStepErrorVariables
     :: Functor m
@@ -193,15 +209,6 @@ liftFromUnification
     => BranchT (ExceptT (UnificationOrSubstitutionError level variable) m) a
     -> BranchT (ExceptT (StepError level variable                     ) m) a
 liftFromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
-
-{- | A @UnifiedRule@ has been renamed and unified with a configuration.
-
-The rule's 'RulePattern.requires' clause is combined with the unification
-solution and the renamed rule is wrapped with the combined condition.
-
- -}
-type UnifiedRule variable =
-    Predicated Object variable (RulePattern Object variable)
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -399,53 +406,6 @@ toConfigurationVariables
     => ExpandedPattern level variable
     -> ExpandedPattern level (Target variable)
 toConfigurationVariables = ExpandedPattern.mapVariables Target.NonTarget
-
--- | The result of applying a single rule.
-data Result variable =
-    Result
-        { unifiedRule :: !(UnifiedRule (Target variable))
-        , result      :: !(ExpandedPattern Object variable)
-        }
-    deriving GHC.Generic
-
-deriving instance Eq (variable Object) => Eq (Result variable)
-
-deriving instance Ord (variable Object) => Ord (Result variable)
-
-deriving instance Show (variable Object) => Show (Result variable)
-
-{- | The results of applying many rules.
-
-The rules may be applied in sequence or in parallel and the 'remainders' vary
-accordingly.
-
- -}
-data Results variable =
-    Results
-        { results :: !(MultiOr (Result variable))
-        , remainders :: !(MultiOr (ExpandedPattern Object variable))
-        }
-    deriving GHC.Generic
-
-deriving instance Eq (variable Object) => Eq (Results variable)
-
-deriving instance Ord (variable Object) => Ord (Results variable)
-
-deriving instance Show (variable Object) => Show (Results variable)
-
-instance Semigroup (Results variable) where
-    (<>) results1 results2 =
-        Results
-            { results = Function.on (<>) results results1 results2
-            , remainders = Function.on (<>) remainders results1 results2
-            }
-
-instance Monoid (Results variable) where
-    mempty = Results { results = empty, remainders = empty }
-    mappend = (<>)
-
-withoutRemainders :: Results variable -> Results variable
-withoutRemainders results = results { remainders = empty }
 
 {- | Fully apply a single rule to the initial configuration.
 
