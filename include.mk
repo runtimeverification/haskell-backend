@@ -1,6 +1,7 @@
 # Settings
 
 TOP ?= $(shell git rev-parse --show-toplevel)
+export TOP  # so that sub-makes do not invoke git again
 UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
@@ -34,11 +35,12 @@ STACK_BUILD = $(STACK) build --pedantic
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
-# These paths are assigned with ?= so they will only be assigned once.
-# Sub-processes will inherit the setting from their parent process.
 STACK_LOCAL_INSTALL_ROOT ?= $(shell $(STACK) path --local-install-root)
 STACK_LOCAL_DOC_ROOT ?= $(shell $(STACK_HADDOCK) path --local-doc-root)
 STACK_LOCAL_HPC_ROOT ?= $(shell $(STACK_TEST) path --local-hpc-root)
+export STACK_LOCAL_INSTALL_ROOT  # so that sub-makes do not invoke stack again
+export STACK_LOCAL_DOC_ROOT  # so that sub-makes do not invoke stack again
+export STACK_LOCAL_HPC_ROOT  # so that sub-makes do not invoke stack again
 
 KORE_EXEC = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-exec
 KORE_EXEC_OPTS =
