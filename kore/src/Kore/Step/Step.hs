@@ -13,6 +13,8 @@ module Kore.Step.Step
     , UnificationProcedure (..)
     --
     , UnifiedRule
+    , Results (..)
+    , Result (..)
     , unifyRule
     , applyUnifiedRule
     , applyRule
@@ -387,10 +389,23 @@ toConfigurationVariables
     -> ExpandedPattern level (Target variable)
 toConfigurationVariables = ExpandedPattern.mapVariables Target.NonTarget
 
+-- | The result of applying a single rule.
 data Result variable =
     Result
         { unifiedRule :: !(UnifiedRule (Target variable))
         , result      :: !(ExpandedPattern Object variable)
+        }
+
+{- | The results of applying many rules.
+
+The rules may be applied in sequence or in parallel and the 'remainders' vary
+accordingly.
+
+ -}
+data Results variable =
+    Results
+        { results :: !(MultiOr (Result variable))
+        , remainders :: !(MultiOr (ExpandedPattern Object variable))
         }
 
 {- | Fully apply a single rule to the initial configuration.
@@ -599,8 +614,7 @@ applyRules
     -- ^ Rewrite rules
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
-    -> ExceptT (StepError Object variable) Simplifier
-        (OrStepResult Object variable)
+    -> ExceptT (StepError Object variable) Simplifier (Results variable)
 applyRules
     metadataTools
     predicateSimplifier
@@ -613,11 +627,10 @@ applyRules
   = do
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications = Predicated.withoutTerm . unifiedRule <$> results
-    remainder <- gather $ do
+    remainders <- gather $ do
         remainder <- scatter (Remainder.remainders unifications)
         applyRemainder' initial remainder
-    let rewrittenPattern = result <$> results
-    return OrStepResult { rewrittenPattern, remainder }
+    return Results { results, remainders }
   where
     applyRule' =
         applyRule
@@ -659,8 +672,7 @@ applyRewriteRules
     -- ^ Rewrite rules
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
-    -> ExceptT (StepError Object variable) Simplifier
-        (OrStepResult Object variable)
+    -> ExceptT (StepError Object variable) Simplifier (Results variable)
 applyRewriteRules
     metadataTools
     predicateSimplifier
