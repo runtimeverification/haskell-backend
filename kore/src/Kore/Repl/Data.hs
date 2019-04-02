@@ -25,12 +25,18 @@ import qualified Data.Graph.Inductive.Graph as Graph
 
 import           Data.Map.Strict
                  ( Map )
+import           Kore.AST.Common
+                 ( Variable )
+import           Kore.AST.MetaOrObject
+                 ( Object )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim (..) )
+import           Kore.Step.Rule
+                 ( RewriteRule )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
@@ -60,6 +66,8 @@ data ReplCommand
     -- ^ Adds or removes cell to omit list, or shows current omit list.
     | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
+    | ShowRule !(Maybe Int)
+    -- ^ Show the rule(s) that got us to this configuration.
     | ShowPrecBranch !(Maybe Int)
     -- ^ Show the first preceding branch
     | ShowChildren !(Maybe Int)
@@ -92,6 +100,8 @@ helpText =
     \omit [cell]             adds or removes cell to omit list\
                              \(defaults to showing the omit list)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
+    \rule [n]                shows the rule for node 'n'\
+                             \(defaults to current node)\n\
     \prec-branch [n]         shows first preceding branch\n\
                              \(defaults to current node)\n\
     \children [n]            shows direct children of node\n\
@@ -104,7 +114,10 @@ helpText =
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph level = Strategy.ExecutionGraph (CommonStrategyPattern level)
+type ExecutionGraph =
+    Strategy.ExecutionGraph
+        (CommonStrategyPattern Object)
+        (RewriteRule Object Variable)
 
 -- | State for the rep.
 data ReplState level = ReplState
@@ -114,7 +127,7 @@ data ReplState level = ReplState
     -- ^ List of claims to be proven
     , claim   :: Claim level
     -- ^ Currently focused claim in the repl
-    , graph   :: ExecutionGraph level
+    , graph   :: ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node    :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root
