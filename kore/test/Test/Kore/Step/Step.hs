@@ -978,6 +978,49 @@ test_applyRewriteRules =
             initial = pure initialTerm
         actual <- applyRewriteRules initial axiomsCase
         assertEqualWithExplanation "" expect actual
+
+    , testCase "if _ then _ -- partial" $ do
+        -- This uses `functionalConstr20(x, y)` instead of `if x then y`
+        -- and `a` instead of `true`.
+        --
+        -- Intended:
+        --   term: if x then cg
+        --   axiom: if true y => y
+        -- Actual:
+        --   term: functionalConstr20(x, cg)
+        --   axiom: functionalConstr20(a, y) => y
+        -- Expected:
+        --   rewritten: cg, with ⌈cg⌉ and [x=a]
+        --   remainder: functionalConstr20(x, cg), with ¬(⌈cg⌉ and x=a)
+        let
+            expect =
+                Right OrStepResult
+                    { rewrittenPattern =
+                        MultiOr
+                            [ Predicated
+                                { term = Mock.cg
+                                , predicate = makeCeilPredicate Mock.cg
+                                , substitution =
+                                    Substitution.wrap [(Mock.x, Mock.a)]
+                                }
+                            ]
+                    , remainder =
+                        MultiOr
+                            [ initial
+                                { predicate =
+                                    makeNotPredicate (makeCeilPredicate Mock.cg)
+                                }
+                            , initial
+                                { predicate =
+                                    makeNotPredicate
+                                    $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                                }
+                            ]
+                    }
+            initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
+            initial = pure initialTerm
+        actual <- applyRewriteRules initial [axiomIfThen]
+        assertEqualWithExplanation "" expect actual
     ]
 
 axiomIfThen :: RewriteRule Object Variable

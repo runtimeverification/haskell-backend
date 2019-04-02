@@ -43,6 +43,12 @@ pipeline {
           }
         }
         stage('KEVM Integration') {
+          when {
+            anyOf {
+              branch 'master'
+              changelog '^.*\\[kevm-integration\\].*$'
+            }
+          }
           steps {
             ansiColor('xterm') {
               sh '''

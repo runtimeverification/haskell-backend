@@ -8,8 +8,10 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import           Data.Functor.Identity
-import           Data.Graph.Inductive.Graph as Graph
+import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Tree
                  ( Tree (..) )
 import qualified Data.Tree as Tree
@@ -22,7 +24,7 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Data.Maybe
 import           Kore.Step.Strategy
-                 ( ExecutionGraph (..), Strategy )
+                 ( ExecutionGraph (..), Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
 
 {-| Convert an ExecutionGraph to a Tree, for the sake
@@ -31,13 +33,13 @@ If the ExecutionGraph has a confluence at any point,
 all nodes downstream of it will be duplicated.
 From the point of view of these unit tests this behavior is correct.
 -}
-toTree :: ExecutionGraph config -> Tree config
+toTree :: ExecutionGraph config rule -> Tree config
 toTree (ExecutionGraph root graph _) = Tree.unfoldTree findChildren root
   where
     findChildren node =
         ( fromJust $ Graph.lab graph node
         , map snd $ filter ((node==) . fst) edges)
-    edges = map (\(a,b,()) -> (a,b)) $ Graph.labEdges graph
+    edges = map (\(a,b,_) -> (a,b)) $ Graph.labEdges graph
 
 data Prim
     = Const Natural
@@ -81,12 +83,10 @@ instance Arbitrary prim => Arbitrary (Strategy prim) where
             Strategy.Stuck -> []
             Strategy.Continue -> []
 
-transitionPrim :: Prim -> Natural -> Identity [Natural]
-transitionPrim =
-    \case
-        Const n -> \_ -> pure [n]
-        Succ -> \n -> pure [succ n]
-        Throw -> \_ -> pure []
+transitionPrim :: Prim -> Natural -> TransitionT () Identity Natural
+transitionPrim (Const n) = \_ -> pure n
+transitionPrim Succ      = \n -> pure (succ n)
+transitionPrim Throw     = \_ -> empty
 
 apply :: Prim -> Strategy Prim
 apply = Strategy.apply
@@ -124,7 +124,7 @@ unlimited = Unlimited
 runStrategy
     :: [Strategy Prim]
     -> Natural
-    -> ExecutionGraph Natural
+    -> ExecutionGraph Natural ()
 runStrategy strategy z =
     let
         Identity rs = Strategy.runStrategy transitionPrim strategy z
@@ -233,7 +233,7 @@ prop_stepLimit i =
 -- | Enumerate values from zero to @n@, then get stuck.
 enumerate
     :: Natural  -- ^ @n@
-    -> ExecutionGraph Natural
+    -> ExecutionGraph Natural ()
 enumerate n = runStrategy (Limit.replicate (Limit n) succ_) 0
 
 prop_pickLongest :: Integer -> Property
