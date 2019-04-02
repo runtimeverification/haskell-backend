@@ -39,7 +39,7 @@ one consequence of the above is that `[w]φ = φ ∨ (○[w]φ ∧ •⊤)`
 Problem Description
 -------------------
 
-Given a set of all-path reachability claims, of the form `∀x.φ(x) → ∃z.[w]ψ(x,z)`,
+Given a set of all-path reachability claims, of the form `∀x.φ(x) → [w]∃z.ψ(x,z)`,
 we are trying to prove all of them together.
 
 
@@ -50,15 +50,15 @@ Algorithms
 
 ### Algorithm `proveAllPath`
 
-__Input:__ claims `∀x₁.φ₁ → ∃z₁.[w]ψ₁`, `∀x₂.φ₂ → ∃z₂.[w]ψ₂`, …, `∀xₙ.φₙ → ∃zₙ.[w]ψₙ`
+__Input:__ claims `∀x₁.φ₁ → [w]∃z₁.ψ₁`, `∀x₂.φ₂ → [w]∃z₂.ψ₂`, …, `∀xₙ.φₙ → [w]∃zₙ.ψₙ`
 
 __Output:__ Proved or Unproved
 
-* For each claim `∀x.φ → ∃z.[w]ψ`
-    * Let `Goals := { ∀x.φ → ∃z.[w]ψ }`
+* For each claim `∀x.φ → [w]∃z.ψ`
+    * Let `Goals := { ∀x.φ → [w]∃z.ψ }`
     * While `Goals` is not empty:
-        * Remove `goal` of the form `∀x.φ → ∃z.[w]ψ` from `Goals`
-        * Let `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → ∃z.[w]ψ`
+        * Extract and remove `goal` of the form `∀x.φ → [w]∃z.ψ` from `Goals`
+        * Let `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → [w]∃z.ψ`
         * If `goalᵣₑₘ` is trivialy valid (i.e., if `φ ∧ ¬∃z.⌈φ ∧ ψ⌉ ≡ ⊥`)
             * continue to the next goal
         * If not the first while iteration for this claim:
@@ -75,28 +75,28 @@ __Output:__ Proved or Unproved
 
 __Input:__: goal and set of claims/axioms
 
-* goal: `∀x.φ → ∃z.[w]ψ`
+* goal: `∀x.φ → [w]∃z.ψ`
 * Either claims or axioms:
-    * claims `∀x₁.φ₁ → ∃z₁.[w]ψ₁`, `∀x₂.φ₂ → ∃z₂.[w]ψ₂`, …, `∀xₙ.φₙ → ∃zₙ.[w]ψₙ`
-    * axioms `∀x₁.φ₁ → ∃z₁.•ψ₁`, `∀x₂.φ₂ → ∃z₂.•ψ₂`, …, `∀xₙ.φₙ → ∃zₙ.•ψₙ`
+    * claims `∀x₁.φ₁ → [w]∃z₁.ψ₁`, `∀x₂.φ₂ → [w]∃z₂.ψ₂`, …, `∀xₙ.φₙ → [w]∃zₙ.ψₙ`
+    * axioms `∀x₁.φ₁ → •∃z₁.ψ₁`, `∀x₂.φ₂ → •∃z₂.ψ₂`, …, `∀xₙ.φₙ → •∃zₙ.ψₙ`
     * we will not consider the form, but just the patterns and variables involved
 
 __Output:__ `(Goals, goalᵣₑₘ)`
 
-* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → ∃z.[w]ψ`
-* Let `Goals := { ∀x∪z₁.∃x₁.(ψ₁ ∧ ⌈φ∧φ₁⌉) → ∃z.[w]ψ, … , ∀x∪zₙ.∃xₙ.(ψₙ ∧ ⌈φ∧φₙ⌉) → ∃z.[w]ψ }`
+* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]∃z.ψ`
+* Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ∧φ₁⌉) → [w]∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φ∧φₙ⌉) → [w]∃z.ψ }`
 
 ### Algorithm `deriveSeq`
 
 __Input:__: goal and set of claims
 
-* goal: `∀x.φ → ∃z.[w]ψ`
-* claims `∀x₁.φ₁ → ∃z₁.[w]ψ₁`, `∀x₂.φ₂ → ∃z₂.[w]ψ₂`, …, `∀xₙ.φₙ → ∃zₙ.[w]ψₙ`
+* goal: `∀x.φ → [w]∃z.ψ`
+* claims `∀x₁.φ₁ → [w]∃z₁.ψ₁`, `∀x₂.φ₂ → [w]∃z₂.ψ₂`, …, `∀xₙ.φₙ → [w]∃zₙ.ψₙ`
 
 __Output:__ `(Goals, goalᵣₑₘ)`
 
-* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → ∃z.[w]ψ`
-* Let `Goals := { ∀x∪z₁.∃x₁.(ψ₁ ∧ ⌈φ₁ʳᵉᵐ ∧φ₁⌉) → ∃z.[w]ψ, … , ∀x∪zₙ.∃xₙ.(ψₙ ∧ ⌈φₙʳᵉᵐ φ∧φₙ⌉) → ∃z.[w]ψ }`
+* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]∃z.ψ`
+* Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ₁ʳᵉᵐ ∧φ₁⌉) → [w]∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φₙʳᵉᵐ φ∧φₙ⌉) → [w]∃z.ψ }`
 
 where `φ₁ʳᵉᵐ := φ` and
 ```
@@ -107,18 +107,14 @@ where `φ₁ʳᵉᵐ := φ` and
 Explanation
 -----------
 
-Say we want to prove `∀x.φ → ∃z.[w]ψ`.
+Say we want to prove `∀x.φ → [w]∃z.ψ`.
 
-Unrolling `[w]ψ` we obtain `∀x.φ → ∃z.(ψ ∨ (○[w]ψ ∧ •⊤))`, or, equivalentely:
-```
-∀x.φ → (∃z.ψ) ∨ (∃z.○[w]ψ ∧ •⊤))
-```
-
+Unrolling `[w]ψ` we obtain `∀x.φ → (∃z.ψ) ∨ (○[w]∃z.ψ ∧ •⊤)`.
 
 Moving `∃z.ψ` to the left of the implication, we get the equivalent
 
 ```
-∀x. (φ ∧ ¬∃z.ψ) →  (∃z.○[w]ψ) ∧ •⊤
+∀x. (φ ∧ ¬∃z.ψ) →  ○[w](∃z.ψ) ∧ •⊤
 ```
 
 Let `φᵣₑₘ` be `φ ∧ ¬∃z.ψ`. This step eliminates the cases in which `∃z.ψ` holds now.
@@ -162,13 +158,13 @@ We have a chioce whether to apply circularities sequentially or in parallel.
 #### Applying claims sequentially
 
 ```
-∀x.φ → ∃z.[w]ψ                                            is equivalent to
-∀x.φ ∧ (∃xᵢ.φᵢ ∨ ¬∃xᵢ.φᵢ) → ∃z.[w]ψ                       which is equivalent to
-∀x.(φ ∧ ∃xᵢ.φᵢ) ∨ (φ ∧ ¬∃xᵢ.φᵢ) → ∃z.[w]ψ                 which is equivalent to
-∀x.((φ ∧ ∃xᵢ.φᵢ) → [w]ψ) ∧ ∀x. ((φ ∧ ¬∃xᵢ.φᵢ) → ∃z.[w]ψ)  (1)
+∀x.φ → [w]∃z.ψ                                              is equivalent to
+∀x.φ ∧ (∃xᵢ.φᵢ ∨ ¬∃xᵢ.φᵢ) → [w]∃z.ψ                         which is equivalent to
+∀x.(φ ∧ ∃xᵢ.φᵢ) ∨ (φ ∧ ¬∃xᵢ.φᵢ) → [w]∃z.ψ                   which is equivalent to
+∀x.((φ ∧ ∃xᵢ.φᵢ) → [w]∃z.ψ) ∧ ∀x. ((φ ∧ ¬∃xᵢ.φᵢ) → [w]∃z.ψ) (1)
 ```
 
-Note that the remainder `∀x.φ ∧ ¬∃xᵢ.φᵢ → ∃z.[w]ψ` can be rewritten as
+Note that the remainder `∀x.φ ∧ ¬∃xᵢ.φᵢ → [w]∃z.ψ` can be rewritten as
 `∀x.φ ∧ ¬∃xᵢ.⌈φ'∧φᵢ⌉ → [w]ψ`, as detailed above.
 
 __Note:__ If there are multiple claims which could apply on the same concrete
@@ -186,9 +182,9 @@ to do it only once for all claims:
 
 ```
 ∀x.φ → ∃z.[q]ψ
-∀x.φ ∧ (∃x₁.φ₁ ∨ … ∨ ∃x₁.φₙ ∨ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ) → ∃z.[w]ψ  
-∀x.(φ ∧ ∃x₁.φ₁) ∨ … ∨ (φ' ∧ ∃xₙ.φₙ) ∨ (φ' ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → ∃z.[w]ψ
-(∀x.φ ∧ ∃x₁.φ₁ → ∃z.[w]ψ)  ∧ … (∀x.φ ∧ ∃xₙ.φₙ → ∃z.[w]ψ) ∧ (∀x.(φ ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → ∃z.[w]ψ)
+∀x.φ ∧ (∃x₁.φ₁ ∨ … ∨ ∃x₁.φₙ ∨ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ) → [w]∃z.ψ  
+∀x.(φ ∧ ∃x₁.φ₁) ∨ … ∨ (φ' ∧ ∃xₙ.φₙ) ∨ (φ' ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → [w]∃z.ψ
+(∀x.φ ∧ ∃x₁.φ₁ → [w]∃z.ψ)  ∧ … (∀x.φ ∧ ∃xₙ.φₙ → [w]∃z.ψ) ∧ (∀x.(φ ∧ (¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ)) → [w]∃z.ψ)
 ```
 
 Note that the remainder can be rewritten as:
@@ -205,11 +201,11 @@ from one derivation to the next.
 
 #### Using a claim to advance the corresponding goal
 
-Say we want to use the `∀xᵢ.φᵢ → ∃zᵢ.[w]ψᵢ` claim.
+Say we want to use the `∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ` claim.
 Note that `φ ∧ ∃xᵢ.φᵢ` is equivalent to `∃xᵢ.φ ∧ φᵢ`, which is further equivalent to
 `∃xᵢ.φᵢ ∧ ⌈φ ∧ φᵢ⌉`.
 Instantiating the axiom, we obtain:
-`∃xᵢ.φᵢ ∧ ⌈φ ∧ φᵢ⌉ → ∃xᵢ.∃zᵢ.[w]ψᵢ ∧ ⌈φ ∧ φᵢ⌉`
+`∃xᵢ.φᵢ ∧ ⌈φ ∧ φᵢ⌉ → ∃xᵢ.[w]∃zᵢ.ψᵢ ∧ ⌈φ ∧ φᵢ⌉`
 
 Hence it is sound to replace the first conjunct in (1) by `∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]ψ`
 because the "`→ [w]`" relation is transitive, and if the implication holds for all 
@@ -233,7 +229,7 @@ If we have such a `φ'`, then it is sound to replace the goal by `∀x.φ' →  
 because
 
 ```
-∀x.φ' → ∃z.[w]ψ   implies that
+∀x.φ' → [w]∃z.ψ   implies that
 ∀x.○φ' → ∃z.○[w]ψ  and using transity with ∀x.φ → ○φ' it implies that
 ∀x.φ → ∃z.○[w]ψ
 ```
@@ -257,8 +253,8 @@ That `φ'` can be chosen like this is a consequence of the __STEP__ axiom:
 P -> o ((∃y₁.⌈P ∧ α₁⌉ ∧ ∃z₁.β₁) ∨ … ∨ (∃yₙ.⌈P ∧ αₙ⌉ ∧ ∃zₙ.βₙ))      (STEP)
 ```
 
-Note that then it is sound to replace the goal `∀x.φ → ∃z.[w]ψ` with the conjunction of goals 
+Note that then it is sound to replace the goal `∀x.φ → [w]∃z.ψ` with the conjunction of goals 
 ```
-(∀x∪z₁.β₁ ∧ ∃y₁.⌈φ' ∧ α₁⌉ → ∃z.[w]ψ) ∧ … ∧ (∀x∪zₙ.βₙ ∧ ∃yₙ.⌈φ' ∧ αₙ⌉ → ∃z.[w]ψ)
+(∀x∪z₁.β₁ ∧ ∃y₁.⌈φ' ∧ α₁⌉ → [w]∃z.ψ) ∧ … ∧ (∀x∪zₙ.βₙ ∧ ∃yₙ.⌈φ' ∧ αₙ⌉ → [w]∃z.ψ)
 ```
 
