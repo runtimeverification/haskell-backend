@@ -16,6 +16,7 @@ module Kore.Step.Step
     , Results (..)
     , Result (..)
     , unifyRule
+    , unwrapRule
     , applyUnifiedRule
     , applyRule
     , applyRules
@@ -70,6 +71,7 @@ import           Kore.Step.Representation.PredicateSubstitution
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
+import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
@@ -157,6 +159,13 @@ unwrapStepErrorVariables
     -> ExceptT (StepError level                  variable ) m a
 unwrapStepErrorVariables =
     withExceptT (mapStepErrorVariables Target.unwrapVariable)
+
+{- | Unwrap the variables in a 'RulePattern'.
+ -}
+unwrapRule
+    :: Ord (variable level)
+    => RulePattern level (Target variable) -> RulePattern level variable
+unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}

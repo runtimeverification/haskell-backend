@@ -54,7 +54,6 @@ import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
-import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -67,7 +66,6 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
-import qualified Kore.Variables.Target as Target
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -319,7 +317,7 @@ transitionRule
                     rewriteResults = fmap withProof . transition <$> results
                     transition result' = do
                         let rule =
-                                Rule.mapVariables Target.unwrapVariable
+                                Step.unwrapRule
                                 $ Predicated.term $ Step.unifiedRule result'
                         Transition.addRule (RewriteRule rule)
                         return (RewritePattern $ Step.result result')
