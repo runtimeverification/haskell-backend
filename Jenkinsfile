@@ -43,6 +43,7 @@ pipeline {
           }
         }
         stage('KEVM Integration') {
+          when { not { changeRequest() } }
           steps {
             ansiColor('xterm') {
               sh '''
