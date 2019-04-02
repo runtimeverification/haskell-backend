@@ -108,9 +108,9 @@ label =
 
 labelAdd :: Parser ReplCommand
 labelAdd = do
-    label <- string "label" *> space *> string "+" *> some alphaNumChar <* space
+    lbl <- string "label" *> space *> string "+" *> some alphaNumChar <* space
     node  <- optional decimal <* space
-    return $ LabelAdd label node
+    return $ LabelAdd lbl node
 
 labelDel :: Parser ReplCommand
 labelDel =
