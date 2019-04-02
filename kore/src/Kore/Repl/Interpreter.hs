@@ -36,6 +36,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.List.Extra
                  ( groupSort )
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( catMaybes )
 import           Data.Sequence
@@ -103,6 +104,9 @@ replInterpreter =
         ShowRule   mc     -> showRule mc       $> True
         ShowPrecBranch mn -> showPrecBranch mn $> True
         ShowChildren mn   -> showChildren mn   $> True
+        Label ms          -> label ms          $> True
+        LabelAdd l mn     -> labelAdd l mn     $> True
+        LabelDel l        -> labelDel l        $> True
         Exit              -> pure                 False
 
 showUsage :: MonadIO m => m ()
@@ -143,9 +147,10 @@ prove index = do
             let
                 graph@Strategy.ExecutionGraph { root }
                     = emptyExecutionGraph claim
-            lensGraph .= graph
-            lensClaim .= claim
-            lensNode  .= root
+            lensGraph  .= graph
+            lensClaim  .= claim
+            lensNode   .= root
+            lensLabels .= Map.empty
             putStrLn' "Execution Graph initiated"
 
 showGraph
@@ -283,6 +288,49 @@ showChildren mnode = do
     if node' `elem` Graph.nodes graph
        then putStrLn' $ show (Graph.suc graph node')
        else putStrLn' "Invalid node!"
+
+label :: Maybe String -> StateT (ReplState level) Simplifier ()
+label =
+    \case
+        Nothing -> showLabels
+        Just lbl -> gotoLabel lbl
+  where
+    showLabels :: StateT (ReplState level) Simplifier ()
+    showLabels = do
+        labels <- Lens.use lensLabels
+        if null labels
+           then putStrLn' "No labels are set."
+           else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
+
+    gotoLabel :: String -> StateT (ReplState level) Simplifier ()
+    gotoLabel l = do
+        labels <- Lens.use lensLabels
+        selectNode $ maybe (-1) id (Map.lookup l labels)
+
+    acc :: String -> Graph.Node -> String -> String
+    acc key node res =
+        res <> "\n  " <> key <> ": " <> (show node)
+
+labelAdd :: String -> Maybe Int -> StateT (ReplState level) Simplifier ()
+labelAdd lbl mn = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    let node' = maybe node id mn
+    labels <- Lens.use lensLabels
+    if lbl `Map.notMember` labels && node' `elem` Graph.nodes graph
+       then do
+           lensLabels .= Map.insert lbl node' labels
+           putStrLn' "Label added."
+       else putStrLn' "Label already exists or the node isn't in the graph."
+
+labelDel :: String -> StateT (ReplState level) Simplifier ()
+labelDel lbl = do
+    labels <- Lens.use lensLabels
+    if lbl `Map.member` labels
+       then do
+           lensLabels .= Map.delete lbl labels
+           putStrLn' "Removed label."
+       else putStrLn' "Label doesn't exist."
 
 printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
