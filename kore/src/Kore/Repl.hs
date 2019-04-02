@@ -22,6 +22,8 @@ import           Control.Monad.Extra
                  ( whileM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
+import           Control.Monad.RWS.Strict
+                 ( RWST )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT )
 import           Control.Monad.State.Strict
@@ -89,7 +91,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     repl0 :: StateT (ReplState level) Simplifier Bool
     repl0 = do
         command <- maybe ShowUsage id . parseMaybe commandParser <$> prompt
-        replInterpreter command
+        replInterpreter putStrLn command
 
     state :: ReplState level
     state =
@@ -111,14 +113,18 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     firstClaimExecutionGraph :: ExecutionGraph level
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
-    stepper0 :: StateT (ReplState level) Simplifier Bool
-    stepper0 = do
-        ReplState { claims , axioms , graph , claim , node } <- get
+    stepper0
+        :: Claim level
+        -> [Claim level]
+        -> [Axiom level]
+        -> ExecutionGraph level
+        -> Graph.Node
+        -> Simplifier (ExecutionGraph level, Bool)
+    stepper0 claim claims axioms graph node = do
         if Graph.outdeg (Strategy.graph graph) node == 0
             then do
                 graph' <-
-                    lift
-                        . catchInterruptWithDefault graph
+                        catchInterruptWithDefault graph
                         $ verifyClaimStep
                             tools
                             simplifier
@@ -129,9 +135,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                             axioms
                             graph
                             node
-                lensGraph .= graph'
-                pure True
-            else pure False
+                pure (graph', True)
+            else pure (graph, False)
 
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =

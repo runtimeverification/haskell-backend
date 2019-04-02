@@ -10,13 +10,16 @@ module Kore.Repl.Parser
     ( commandParser
     ) where
 
-import Control.Applicative
-       ( many )
-import Text.Megaparsec
-       ( Parsec, manyTill, noneOf, option, optional, (<|>) )
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
-       ( charLiteral, decimal )
+import           Control.Applicative
+                 ( many )
+import qualified Data.Foldable as Foldable
+import           Data.Functor
+                 ( void, ($>) )
+import           Text.Megaparsec
+                 ( MonadParsec, Parsec, Token, Tokens, chunk, eof, manyTill,
+                 noneOf, option, optional, some, try, (<|>) )
+import qualified Text.Megaparsec.Char as Char
+import qualified Text.Megaparsec.Char.Lexer as L
 
 import Kore.Repl.Data
        ( ReplCommand (..) )
@@ -28,76 +31,86 @@ type Parser = Parsec String String
 -- maybe ShowUsage id . Text.Megaparsec.parseMaybe commandParser
 -- @
 commandParser :: Parser ReplCommand
-commandParser =
-    help
-    <|> showClaim
-    <|> showAxiom
-    <|> prove
-    <|> showGraph
-    <|> proveSteps
-    <|> selectNode
-    <|> showConfig
-    <|> omitCell
-    <|> showLeafs
-    <|> showPrecBranch
-    <|> showChildren
-    <|> redirect
-    <|> exit
+commandParser = do
+    cmd <- commandParser0
+    (eof $> cmd) <|> (redirect cmd)
+
+commandParser0 :: Parser ReplCommand
+commandParser0 =
+    Foldable.asum
+        [ help
+        , showClaim
+        , showAxiom
+        , prove
+        , showGraph
+        , proveSteps
+        , selectNode
+        , showConfig
+        , omitCell
+        , showLeafs
+        , showPrecBranch
+        , showChildren
+        , exit
+        ]
 
 help :: Parser ReplCommand
-help = Help <$ (string "help" *> space)
+help = const Help <$$> literal "help"
 
 showClaim :: Parser ReplCommand
-showClaim = fmap ShowClaim $ string "claim" *> space *> decimal <* space
+showClaim = ShowClaim <$$> literal "claim" *> decimal
 
 showAxiom :: Parser ReplCommand
-showAxiom = fmap ShowAxiom $ string "axiom" *> space *> decimal <* space
+showAxiom = ShowAxiom <$$> literal "axiom" *> decimal
 
 prove :: Parser ReplCommand
-prove = fmap Prove $ string "prove" *> space *> decimal <* space
+prove = Prove <$$> literal "prove" *> decimal
 
 showGraph :: Parser ReplCommand
-showGraph = ShowGraph <$ (string "graph" *> space)
+showGraph = const ShowGraph <$$> literal "graph"
 
 proveSteps :: Parser ReplCommand
-proveSteps =
-    fmap ProveSteps $ string "step" *> space *> option 1 decimal <* space
+proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* Char.space
 
 selectNode :: Parser ReplCommand
-selectNode =
-    fmap SelectNode $ string "select" *> space *> decimal <* space
+selectNode = SelectNode <$$> literal "select" *> decimal
 
 showConfig :: Parser ReplCommand
-showConfig =
-    fmap ShowConfig $ string "config" *> space *> optional decimal <* space
+showConfig = ShowConfig <$$> literal "config" *> maybeDecimal
 
 omitCell :: Parser ReplCommand
-omitCell =
-    fmap (OmitCell . toMaybe)
-        $ string "omit" *> space *> many (noneOf [' ']) <* space
-  where
-    toMaybe :: String -> Maybe String
-    toMaybe =
-        \case
-            ""  -> Nothing
-            str -> Just str
+omitCell = OmitCell <$$> literal "omit" *> maybeString
 
 showLeafs :: Parser ReplCommand
-showLeafs = ShowLeafs <$ (string "leafs" *> space)
+showLeafs = const ShowLeafs <$$> literal "leafs"
 
 showPrecBranch :: Parser ReplCommand
-showPrecBranch =
-    fmap ShowPrecBranch $ string "prec-branch" *> space *> optional decimal <* space
+showPrecBranch = ShowPrecBranch <$$> literal "prec-branch" *> maybeDecimal
 
 showChildren :: Parser ReplCommand
-showChildren =
-    fmap ShowChildren $ string "children" *> space *> optional decimal <* space
+showChildren = ShowChildren <$$> literal "children" *> maybeDecimal
 
-redirect :: Parser ReplCommand
-redirect = Redirect <$> commandParser <*>
-    (space *> string "|" *> space *> manyTill charLiteral space)
+redirect :: ReplCommand -> Parser ReplCommand
+redirect cmd = Redirect cmd <$$> literal ">" *> string
 
 exit :: Parser ReplCommand
-exit = Exit <$ (string "exit" *> space)
+exit = const Exit <$$> literal "exit"
 
--- TODO(Vladimir): lots of duplication here, do some cleanup.
+infixr 1 <$$>
+
+(<$$>) :: (a -> ReplCommand) -> Parser a -> Parser ReplCommand
+(<$$>) = fmap
+
+literal :: String -> Parser ()
+literal str = void $ Char.string str <* Char.space
+
+decimal :: Parser Int
+decimal = L.decimal <* Char.space
+
+maybeDecimal :: Parser (Maybe Int)
+maybeDecimal = optional decimal
+
+string :: Parser String
+string = some Char.alphaNumChar
+
+maybeString :: Parser (Maybe String)
+maybeString = optional string

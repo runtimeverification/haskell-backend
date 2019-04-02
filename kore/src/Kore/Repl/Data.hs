@@ -112,7 +112,13 @@ data ReplState level = ReplState
     -- ^ Currently selected node in the graph; initialized with node = root
     , omit    :: [String]
     -- ^ The omit list, initially empty
-    , stepper :: StateT (ReplState level) Simplifier Bool
+    , stepper
+          :: Claim level
+          -> [Claim level]
+          -> [Axiom level]
+          -> ExecutionGraph level
+          -> Graph.Node
+          -> Simplifier (ExecutionGraph level, Bool)
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     }
 

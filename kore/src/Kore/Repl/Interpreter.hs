@@ -21,8 +21,10 @@ import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
+import           Control.Monad.RWS.Strict
+                 ( MonadWriter, RWST, get, lift, runRWST, tell )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT )
+                 ( MonadState, StateT (..), evalStateT )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
@@ -75,39 +77,48 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unparser
                  ( unparseToString )
 
+type ReplM level a = RWST () String (ReplState level) Simplifier a
+
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
     :: forall level
     .  MetaOrObject level
-    => ReplCommand
+    => (String -> IO ())
+    -> ReplCommand
     -> StateT (ReplState level) Simplifier Bool
-replInterpreter =
-    \case
-        ShowUsage         -> showUsage         $> True
-        Help              -> help              $> True
-        ShowClaim c       -> showClaim c       $> True
-        ShowAxiom a       -> showAxiom a       $> True
-        Prove i           -> prove i           $> True
-        ShowGraph         -> showGraph         $> True
-        ProveSteps n      -> proveSteps n      $> True
-        SelectNode i      -> selectNode i      $> True
-        ShowConfig mc     -> showConfig mc     $> True
-        OmitCell c        -> omitCell c        $> True
-        ShowLeafs         -> showLeafs         $> True
-        ShowPrecBranch mn -> showPrecBranch mn $> True
-        ShowChildren mn   -> showChildren mn   $> True
-        Exit              -> pure                 False
+replInterpreter output cmd =
+    StateT $ \st -> do
+        let rwst = case cmd of
+                    ShowUsage         -> showUsage         $> True
+                    Help              -> help              $> True
+                    ShowClaim c       -> showClaim c       $> True
+                    ShowAxiom a       -> showAxiom a       $> True
+                    Prove i           -> prove i           $> True
+                    ShowGraph         -> showGraph         $> True
+                    ProveSteps n      -> proveSteps n      $> True
+                    SelectNode i      -> selectNode i      $> True
+                    ShowConfig mc     -> showConfig mc     $> True
+                    OmitCell c        -> omitCell c        $> True
+                    ShowLeafs         -> showLeafs         $> True
+                    ShowPrecBranch mn -> showPrecBranch mn $> True
+                    ShowChildren mn   -> showChildren mn   $> True
+                    Redirect cmd file -> redirect cmd file $> True
+                    Exit              -> pure                 False
+        (exit, st', w) <- runRWST rwst () st
+        liftIO $ output w
+        pure (exit, st')
 
-showUsage :: MonadIO m => m ()
+showUsage :: MonadWriter String m => m ()
 showUsage =
     putStrLn' "Could not parse command, try using 'help'."
 
-help :: MonadIO m => m ()
+help :: MonadWriter String m => m ()
 help = putStrLn' helpText
 
 showClaim
     :: MonadIO m
     => MonadState (ReplState level) m
+    => MonadWriter String m
     => Int
     -> m ()
 showClaim index = do
@@ -117,6 +128,7 @@ showClaim index = do
 showAxiom
     :: MonadIO m
     => MonadState (ReplState level) m
+    => MonadWriter String m
     => Int
     -> m ()
 showAxiom index = do
@@ -126,6 +138,7 @@ showAxiom index = do
 prove
     :: MonadIO m
     => MonadState (ReplState level) m
+    => MonadWriter String m
     => Int
     -> m ()
 prove index = do
@@ -149,7 +162,7 @@ showGraph = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     liftIO $ showDotGraph graph
 
-proveSteps :: Int -> StateT (ReplState level) Simplifier ()
+proveSteps :: Int -> ReplM level ()
 proveSteps n = do
     result <- loopM performStepNoBranching (n, Success)
     case result of
@@ -161,7 +174,7 @@ proveSteps n = do
                 <> " step(s) due to "
                 <> show res
 
-selectNode :: Int -> StateT (ReplState level) Simplifier ()
+selectNode :: Int -> ReplM level ()
 selectNode i = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     if i `elem` Graph.nodes graph
@@ -171,7 +184,7 @@ selectNode i = do
 showConfig
     :: MetaOrObject level
     => Maybe Int
-    -> StateT (ReplState level) Simplifier ()
+    -> ReplM level ()
 showConfig configNode = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     node <- Lens.use lensNode
@@ -187,16 +200,16 @@ showConfig configNode = do
                 $ node'
         else putStrLn' "Invalid node!"
 
-omitCell :: Maybe String -> StateT (ReplState level) Simplifier ()
+omitCell :: Maybe String -> ReplM level ()
 omitCell =
     \case
         Nothing  -> showCells
         Just str -> addOrRemove str
   where
-    showCells :: StateT (ReplState level) Simplifier ()
+    showCells :: ReplM level ()
     showCells = Lens.use lensOmit >>= traverse_ putStrLn'
 
-    addOrRemove :: String -> StateT (ReplState level) Simplifier ()
+    addOrRemove :: String -> ReplM level ()
     addOrRemove str = lensOmit %= toggle str
 
     toggle :: String -> [String] -> [String]
@@ -209,7 +222,7 @@ data NodeStates = StuckNode | UnevaluatedNode
 
 showLeafs
     :: MetaOrObject level
-    => StateT (ReplState level) Simplifier ()
+    => ReplM level ()
 showLeafs = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     let nodes = Graph.nodes graph
@@ -234,7 +247,7 @@ showLeafs = do
 
 showPrecBranch
     :: Maybe Int
-    -> StateT (ReplState level) Simplifier ()
+    -> ReplM level ()
 showPrecBranch mnode = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     node <- Lens.use lensNode
@@ -250,7 +263,7 @@ showPrecBranch mnode = do
 
 showChildren
     :: Maybe Int
-    -> StateT (ReplState level) Simplifier ()
+    -> ReplM level ()
 showChildren mnode = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     node <- Lens.use lensNode
@@ -259,7 +272,22 @@ showChildren mnode = do
        then putStrLn' $ show (Graph.suc graph node')
        else putStrLn' "Invalid node!"
 
-printRewriteRule :: MonadIO m => RewriteRule level Variable -> m ()
+redirect
+    :: forall level
+    .  MetaOrObject level
+    => ReplCommand
+    -> FilePath
+    -> ReplM level ()
+redirect cmd path = do
+    st <- get
+    res <- lift $ evalStateT (replInterpreter redirectToFile cmd) st
+    putStrLn' "File created."
+    pure ()
+  where
+    redirectToFile :: String -> IO ()
+    redirectToFile = writeFile path
+
+printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
     putStrLn' $ unparseToString rule
     putStrLn'
@@ -269,16 +297,15 @@ printRewriteRule rule = do
         $ rule
 
 performSingleStep
-    :: StateT (ReplState level) Simplifier StepResult
+    :: ReplM level StepResult
 performSingleStep = do
-    f <- Lens.use lensStepper
-    node <- Lens.use lensNode
-    res <- f
+    ReplState { claims , axioms , graph , claim , node, stepper } <- get
+    (graph'@Strategy.ExecutionGraph { graph = gr }, res) <- lift $ stepper claim claims axioms graph node
     if res
         then do
-            Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+            lensGraph .= graph'
             let
-                context = Graph.context graph node
+                context = Graph.context gr node
             case Graph.suc' context of
                 [] -> pure NoChildNodes
                 [configNo] -> do
@@ -295,13 +322,7 @@ performSingleStep = do
 performStepNoBranching
     :: (Int, StepResult)
     -- ^ (current step, last result)
-    -> StateT
-        (ReplState level)
-        Simplifier
-            (Either
-                    (Int, StepResult)
-                    (Int, StepResult)
-            )
+    -> ReplM level (Either (Int, StepResult) (Int, StepResult))
 performStepNoBranching (0, res) =
     pure $ Right (0, res)
 performStepNoBranching (n, Success) = do
@@ -347,11 +368,11 @@ extractSourceAndLocation
     (RewriteRule (RulePattern{ Axiom.attributes })) =
         Attribute.sourceLocation attributes
 
-printNotFound :: MonadIO m => m ()
+printNotFound :: MonadWriter String m => m ()
 printNotFound = putStrLn' "Variable or index not found"
 
-putStrLn' :: MonadIO m => String -> m ()
-putStrLn' = liftIO . putStrLn
+putStrLn' :: MonadWriter String m => String -> m ()
+putStrLn' = tell
 
 showDotGraph :: Graph gr => gr nl el -> IO ()
 showDotGraph =
