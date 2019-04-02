@@ -46,7 +46,7 @@ pipeline {
           when {
             anyOf {
               not { changeRequest() }
-              changelog '^\\[kevm-integration\\].*$'
+              changelog '^.*\\[kevm-integration\\].*$'
             }
           }
           steps {
