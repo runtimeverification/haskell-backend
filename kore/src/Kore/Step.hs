@@ -58,8 +58,6 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import           Kore.Step.Step
-                 ( OrStepResult (..) )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
@@ -149,8 +147,9 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , unparse config
                     , "Un-implemented unification case; aborting execution."
                     ]
-            Right OrStepResult { rewrittenPattern = results } ->
-                (Foldable.asum . fmap pure) (withProof <$> results)
+            Right Step.Results { results } ->
+                (Foldable.asum . fmap pure)
+                    (withProof . Step.result <$> results)
               where
                 withProof result' = (result', proof)
 

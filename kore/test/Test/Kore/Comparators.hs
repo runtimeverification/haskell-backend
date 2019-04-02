@@ -1242,12 +1242,12 @@ instance
       =
         [ EqWrap
             "results = "
-            (results expected)
-            (results actual)
+            (AttemptedAxiomResults.results expected)
+            (AttemptedAxiomResults.results actual)
         , EqWrap
             "remainders = "
-            (remainders expected)
-            (remainders actual)
+            (AttemptedAxiomResults.remainders expected)
+            (AttemptedAxiomResults.remainders actual)
         ]
     structConstructorName _ = "AttemptedAxiomResults"
 
