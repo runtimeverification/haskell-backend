@@ -33,11 +33,13 @@ import           Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
+import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 import           Data.Semigroup
                  ( Semigroup (..) )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import           GHC.Generics as GHC
 
 import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
@@ -395,6 +397,13 @@ data Result variable =
         { unifiedRule :: !(UnifiedRule (Target variable))
         , result      :: !(ExpandedPattern Object variable)
         }
+    deriving GHC.Generic
+
+deriving instance Eq (variable Object) => Eq (Result variable)
+
+deriving instance Ord (variable Object) => Ord (Result variable)
+
+deriving instance Show (variable Object) => Show (Result variable)
 
 {- | The results of applying many rules.
 
@@ -407,6 +416,27 @@ data Results variable =
         { results :: !(MultiOr (Result variable))
         , remainders :: !(MultiOr (ExpandedPattern Object variable))
         }
+    deriving GHC.Generic
+
+deriving instance Eq (variable Object) => Eq (Results variable)
+
+deriving instance Ord (variable Object) => Ord (Results variable)
+
+deriving instance Show (variable Object) => Show (Results variable)
+
+instance Semigroup (Results variable) where
+    (<>) results1 results2 =
+        Results
+            { results = Function.on (<>) results results1 results2
+            , remainders = Function.on (<>) remainders results1 results2
+            }
+
+instance Monoid (Results variable) where
+    mempty = Results { results = empty, remainders = empty }
+    mappend = (<>)
+
+withoutRemainders :: Results variable -> Results variable
+withoutRemainders results = results { remainders = empty }
 
 {- | Fully apply a single rule to the initial configuration.
 
