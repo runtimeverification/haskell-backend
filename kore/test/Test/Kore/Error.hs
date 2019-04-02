@@ -5,20 +5,37 @@ License     : NCSA
 module Test.Kore.Error where
 
 import Test.Tasty
--- import Test.Tasty.HUnit
--- import Test.Terse
+import Test.Terse
 
 import Data.Void
        ( Void )
 import Kore.Error
+       ( Error, assertRight, koreError, printError )
 
-type DontCare = Void
+{-
+   Considerable code uses an `Either (Error a) b` type.
+   To simplify code, we use concrete types and `mkLeft`
+   and `mkRight` helpers.
+-}
+
 type Wrapper = Either (Error DontCare) String
+type DontCare = Void
+
+
 
 test_assertRight :: TestTree
 test_assertRight =
     testGroup "assertRight"
-        [ -- assertRight (Right "wrapped" :: Wrapper) `equals_` "wrapped"
+        [ run (mkRight "expected") `equals_` "expected"
+        , run (mkLeft   someError) `throws_` (printError someError)
         ]
+      where
+        run = assertRight
+        someError = koreError "the error message"
 
--- The above test depends on Tom's PR test for tomorrow.
+
+mkRight :: String -> Wrapper
+mkRight = Right
+
+mkLeft :: Error DontCare -> Wrapper
+mkLeft = Left
