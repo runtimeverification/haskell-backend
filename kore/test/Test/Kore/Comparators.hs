@@ -26,8 +26,10 @@ import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Kore
 import           Kore.AST.Pure
+import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Domain.Builtin
+import           Kore.Error
 import           Kore.OnePath.Step
                  ( StrategyPattern )
 import           Kore.OnePath.Step as StrategyPattern
@@ -1677,3 +1679,71 @@ instance EqualWithExplanation Attribute.Label where
 instance WrapperEqualWithExplanation Attribute.Label where
     wrapperConstructorName _ = "Label"
     wrapperField = Function.on (EqWrap "unLabel = ") Attribute.unLabel
+
+-- For: Alias
+
+instance
+    MetaOrObject level
+    => EqualWithExplanation (Alias level)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    MetaOrObject level
+    => StructEqualWithExplanation (Alias level)
+  where
+    structConstructorName _ = "Alias"
+    structFieldsWithNames expect actual =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "aliasConstructor = ") aliasConstructor
+            , Function.on (EqWrap "aliasParams = ") aliasParams
+            ]
+
+-- For: SortVariable
+
+instance
+    MetaOrObject level
+    => EqualWithExplanation (SortVariable level)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    MetaOrObject level
+    => WrapperEqualWithExplanation (SortVariable level)
+  where
+    wrapperField = Function.on (EqWrap "getSortVariable = ") getSortVariable
+    wrapperConstructorName _ = "SortVariable"
+
+-- For: Error
+
+instance
+    EqualWithExplanation (Error a)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    StructEqualWithExplanation (Error a)
+  where
+    structFieldsWithNames (Error expectedContext expectedMessage)
+                          (Error actualContext   actualMessage) =
+        [ EqWrap "errorMessage = " expectedMessage actualMessage
+        , EqWrap "errorContext = " expectedContext actualContext
+        ]
+    structConstructorName _ = "Error"
+
+-- For∷ Attributes
+
+instance
+    EqualWithExplanation Attributes
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    WrapperEqualWithExplanation Attributes
+  where
+    wrapperField = Function.on (EqWrap "getAttributes = ") getAttributes
+    wrapperConstructorName _ = "Attributes"
