@@ -303,32 +303,19 @@ transitionRule
                 ]
             Right OrStepResult { rewrittenPattern, remainder } -> do
                 let
-                    combinedProof :: StepProof level Variable
-                    combinedProof = proof
+                    withProof :: forall x. x -> (x, StepProof level Variable)
+                    withProof x = (x, proof)
 
-                    rewriteResults
-                        ::  [   ( CommonStrategyPattern level
+                    rewriteResults, remainderResults
+                        ::  MultiOr.MultiOr
+                                ( CommonStrategyPattern level
                                 , StepProof level Variable
                                 )
-                            ]
                     rewriteResults =
-                        map
-                            (\ p -> (RewritePattern p, combinedProof))
-                            (MultiOr.extractPatterns rewrittenPattern)
+                        withProof . RewritePattern <$> rewrittenPattern
+                    remainderResults = withProof . Stuck <$> remainder
 
-                    remainderResults
-                        ::  [   ( CommonStrategyPattern level
-                                , StepProof level Variable
-                                )
-                            ]
-                    remainderResults =
-                        map
-                            (\ p -> (Stuck p, combinedProof))
-                            (MultiOr.extractPatterns remainder)
-
-                if null rewriteResults
-                    then return (Bottom, combinedProof) <|> Foldable.asum (pure <$> remainderResults)
-                    else (Foldable.asum . map pure) (rewriteResults ++ remainderResults)
+                (Foldable.asum . fmap pure) (rewriteResults <> remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
