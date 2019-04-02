@@ -43,7 +43,11 @@ pipeline {
           }
         }
         stage('KEVM Integration') {
-          when { not { changeRequest() } }
+          when {
+            anyOf { not { changeRequest() }
+              changelog '^\\[kevm-integration\\].*$'
+            }
+          }
           steps {
             ansiColor('xterm') {
               sh '''
