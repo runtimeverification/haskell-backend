@@ -64,13 +64,11 @@ data ReplCommand
     -- ^ Show the first preceding branch
     | ShowChildren !(Maybe Int)
     -- ^ Show direct children of node
-    | ShowLabels
-    -- ^ Show all node labels
-    | SetLabel !String !Int
+    | Label !(Maybe String)
+    -- ^ Show all node labels or jump to a label
+    | LabelAdd !String !(Maybe Int)
     -- ^ Add a label to a node
-    | GotoLabel !String
-    -- ^ Jump to a label
-    | RemoveLabel !String
+    | LabelDel !String
     -- ^ Remove a label
     | Exit
     -- ^ Exit the repl.
@@ -98,10 +96,11 @@ helpText =
                              \(defaults to current node)\n\
     \children [n]            shows direct children of node\n\
                              \(defaults to current node)\n\
-    \labels                  shows all node labels\n\
-    \set-label <l> <n>       add a new label for a node\n\
-    \goto-label <l>          jump to a label\n\
-    \remove-label <l>        remove a label\n\
+    \label                   shows all node labels\n\
+    \label <l>               jump to a label\n\
+    \label <+l> [n]          add a new label for a node\n\
+                             \(defaults to current node)\n\
+    \label <-l>              remove a label\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.

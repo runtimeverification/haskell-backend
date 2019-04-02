@@ -24,11 +24,8 @@ test_replParser =
     , precBranchTests  `tests` "prec-branch"
     , childrenTests    `tests` "children"
     , exitTests        `tests` "exit"
-    , showLabelsTests  `tests` "labels"
-    , setLabelTests    `tests` "set-label"
-    , gotoLabelTests   `tests` "goto-label"
-    , removeLabelTests `tests` "remove-label"
     , omitTests        `tests` "omit"
+    , labelTests       `tests` "label"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -188,77 +185,32 @@ childrenTests =
                                  \expecting end of input, integer, or white space\n"
     ]
 
-showLabelsTests :: [ParserTest ReplCommand]
-showLabelsTests =
-    [ "labels"  `parsesTo` ShowLabels
-    , "labels " `parsesTo` ShowLabels
+labelTests :: [ParserTest ReplCommand]
+labelTests =
+    [ "label"          `parsesTo` Label Nothing
+    , "label "         `parsesTo` Label Nothing
+    , "label label"    `parsesTo` Label (Just "label")
+    , "label 1ab31"    `parsesTo` Label (Just "1ab31")
+    , "label +label"   `parsesTo` LabelAdd "label" Nothing
+    , "label +1ab31"   `parsesTo` LabelAdd "1ab31" Nothing
+    , "label +label 5" `parsesTo` LabelAdd "label" (Just 5)
+    , "label +1ab31 5" `parsesTo` LabelAdd "1ab31" (Just 5)
+    , "label -label"   `parsesTo` LabelDel "label"
+    , "label -1ab31"   `parsesTo` LabelDel "1ab31"
+    , "label +-"       `failsWith` "<test-string>:1:7:\n\
+                                    \  |\n\
+                                    \1 | label +-\n\
+                                    \  |       ^\n\
+                                    \unexpected '+'\n\
+                                    \expecting alphanumeric character, end of input, or white space\n"
+    , "label +label -5" `failsWith` "<test-string>:1:14:\n\
+                                     \  |\n\
+                                     \1 | label +label -5\n\
+                                     \  |              ^\n\
+                                     \unexpected '-'\n\
+                                     \expecting end of input, integer, or white space\n"
     ]
 
-setLabelTests :: [ParserTest ReplCommand]
-setLabelTests =
-    [ "set-label l 5"      `parsesTo` SetLabel "l" 5
-    , "set-label label 5"  `parsesTo` SetLabel "label" 5
-    , "set-label 1ab31 5"  `parsesTo` SetLabel "1ab31" 5
-    , "set-label 1ab31 5 " `parsesTo` SetLabel "1ab31" 5
-    , "set-label 5"        `failsWith` "<test-string>:1:12:\n\
-                                        \  |\n\
-                                        \1 | set-label 5\n\
-                                        \  |            ^\n\
-                                        \unexpected end of input\n\
-                                        \expecting alphanumeric character, integer, or white space\n"
-    , "set-label 5 "       `failsWith` "<test-string>:1:13:\n\
-                                        \  |\n\
-                                        \1 | set-label 5 \n\
-                                        \  |             ^\n\
-                                        \unexpected end of input\n\
-                                        \expecting integer or white space\n"
-    , "set-label label -5" `failsWith` "<test-string>:1:17:\n\
-                                        \  |\n\
-                                        \1 | set-label label -5\n\
-                                        \  |                 ^\n\
-                                        \unexpected '-'\n\
-                                        \expecting integer or white space\n"
-    ]
-
-gotoLabelTests :: [ParserTest ReplCommand]
-gotoLabelTests =
-    [ "goto-label l"      `parsesTo` GotoLabel "l"
-    , "goto-label label"  `parsesTo` GotoLabel "label"
-    , "goto-label 1ab31"  `parsesTo` GotoLabel "1ab31"
-    , "goto-label 1ab31 " `parsesTo` GotoLabel "1ab31"
-    , "goto-label"        `failsWith` "<test-string>:1:11:\n\
-                                       \  |\n\
-                                       \1 | goto-label\n\
-                                       \  |           ^\n\
-                                       \unexpected end of input\n\
-                                       \expecting alphanumeric character or white space\n"
-    , "goto-label "       `failsWith` "<test-string>:1:12:\n\
-                                       \  |\n\
-                                       \1 | goto-label \n\
-                                       \  |            ^\n\
-                                       \unexpected end of input\n\
-                                       \expecting alphanumeric character or white space\n"
-    ]
-
-removeLabelTests :: [ParserTest ReplCommand]
-removeLabelTests =
-    [ "remove-label l"      `parsesTo` RemoveLabel "l"
-    , "remove-label label"  `parsesTo` RemoveLabel "label"
-    , "remove-label 1ab31"  `parsesTo` RemoveLabel "1ab31"
-    , "remove-label 1ab31 " `parsesTo` RemoveLabel "1ab31"
-    , "remove-label"        `failsWith` "<test-string>:1:13:\n\
-                                         \  |\n\
-                                         \1 | remove-label\n\
-                                         \  |             ^\n\
-                                         \unexpected end of input\n\
-                                         \expecting alphanumeric character or white space\n"
-    , "remove-label "       `failsWith` "<test-string>:1:14:\n\
-                                         \  |\n\
-                                         \1 | remove-label \n\
-                                         \  |              ^\n\
-                                         \unexpected end of input\n\
-                                         \expecting alphanumeric character or white space\n"
-    ]
 exitTests :: [ParserTest ReplCommand]
 exitTests =
     [ "exit"  `parsesTo` Exit

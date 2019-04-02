@@ -13,7 +13,7 @@ module Kore.Repl.Parser
 import Control.Applicative
        ( many )
 import Text.Megaparsec
-       ( Parsec, noneOf, option, optional, some, (<|>) )
+       ( Parsec, noneOf, option, optional, some, try, (<|>) )
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
        ( decimal )
@@ -41,10 +41,9 @@ commandParser =
     <|> showLeafs
     <|> showPrecBranch
     <|> showChildren
-    <|> showLabels
-    <|> setLabel
-    <|> gotoLabel
-    <|> removeLabel
+    <|> try labelAdd
+    <|> try labelDel
+    <|> label
     <|> exit
 
 help :: Parser ReplCommand
@@ -96,23 +95,26 @@ showChildren :: Parser ReplCommand
 showChildren =
     fmap ShowChildren $ string "children" *> space *> optional decimal <* space
 
-showLabels :: Parser ReplCommand
-showLabels =
-    ShowLabels <$ (string "labels" *> space)
+label :: Parser ReplCommand
+label =
+    fmap (Label . toMaybe)
+        $ string "label" *> space *> many alphaNumChar <* space
+  where
+    toMaybe :: String -> Maybe String
+    toMaybe =
+        \case
+            "" -> Nothing
+            str -> Just str
 
-setLabel :: Parser ReplCommand
-setLabel = do
-    label <- string "set-label" *> space *> some alphaNumChar <* space
-    node  <- decimal <* space
-    return $ SetLabel label node
+labelAdd :: Parser ReplCommand
+labelAdd = do
+    label <- string "label" *> space *> string "+" *> some alphaNumChar <* space
+    node  <- optional decimal <* space
+    return $ LabelAdd label node
 
-gotoLabel :: Parser ReplCommand
-gotoLabel =
-    fmap GotoLabel $ string "goto-label" *> space *> some alphaNumChar <* space
-
-removeLabel :: Parser ReplCommand
-removeLabel =
-    fmap RemoveLabel $ string "remove-label" *> space *> some alphaNumChar <* space
+labelDel :: Parser ReplCommand
+labelDel =
+    fmap LabelDel $ string "label" *> space *> string "-" *> some alphaNumChar <* space
 
 exit :: Parser ReplCommand
 exit = Exit <$ (string "exit" *> space)

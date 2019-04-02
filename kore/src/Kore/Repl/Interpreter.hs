@@ -97,10 +97,9 @@ replInterpreter =
         ShowLeafs         -> showLeafs         $> True
         ShowPrecBranch mn -> showPrecBranch mn $> True
         ShowChildren mn   -> showChildren mn   $> True
-        ShowLabels        -> showLabels        $> True
-        SetLabel l n      -> setLabel l n      $> True
-        GotoLabel l       -> gotoLabel l       $> True
-        RemoveLabel l     -> removeLabel l     $> True
+        Label ms          -> label ms          $> True
+        LabelAdd l mn     -> labelAdd l mn     $> True
+        LabelDel l        -> labelDel l        $> True
         Exit              -> pure                 False
 
 showUsage :: MonadIO m => m ()
@@ -265,37 +264,42 @@ showChildren mnode = do
        then putStrLn' $ show (Graph.suc graph node')
        else putStrLn' "Invalid node!"
 
-showLabels :: StateT (ReplState level) Simplifier ()
-showLabels = do
-    labels <- Lens.use lensLabels
-    if null labels
-       then putStrLn' "No labels are set."
-       else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
+label :: Maybe String -> StateT (ReplState level) Simplifier ()
+label =
+    \case
+        Nothing -> showLabels
+        Just label -> gotoLabel label
   where
+    showLabels :: StateT (ReplState level) Simplifier ()
+    showLabels = do
+        labels <- Lens.use lensLabels
+        if null labels
+           then putStrLn' "No labels are set."
+           else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
+
+    gotoLabel :: String -> StateT (ReplState level) Simplifier ()
+    gotoLabel l = do
+        labels <- Lens.use lensLabels
+        selectNode $ maybe (-1) id (Map.lookup l labels)
+
     acc :: String -> Graph.Node -> String -> String
     acc key node res =
         res <> "\n  " <> key <> ": " <> (show node)
 
-setLabel
-    :: String
-    -> Int
-    -> StateT (ReplState level) Simplifier ()
-setLabel label node = do
+labelAdd :: String -> Maybe Int -> StateT (ReplState level) Simplifier ()
+labelAdd label mn = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    let node' = maybe node id mn
     labels <- Lens.use lensLabels
-    if label `Map.notMember` labels && node `elem` Graph.nodes graph
+    if label `Map.notMember` labels && node' `elem` Graph.nodes graph
        then do
-           lensLabels .= Map.insert label node labels
+           lensLabels .= Map.insert label node' labels
            putStrLn' "Label added."
        else putStrLn' "Label already exists or the node isn't in the graph."
 
-gotoLabel :: String -> StateT (ReplState level) Simplifier ()
-gotoLabel label = do
-    labels <- Lens.use lensLabels
-    selectNode $ maybe (-1) id (Map.lookup label labels)
-
-removeLabel :: String -> StateT (ReplState level) Simplifier ()
-removeLabel label = do
+labelDel :: String -> StateT (ReplState level) Simplifier ()
+labelDel label = do
     labels <- Lens.use lensLabels
     if label `Map.member` labels
        then do
