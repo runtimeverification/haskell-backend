@@ -784,21 +784,14 @@ instance EqualWithExplanation (Concrete level) where
     compareWithExplanation = \case {}
     printWithExplanation = \case {}
 
-instance StructEqualWithExplanation (Id level)
-    where
-      structFieldsWithNames
-          expected@(Id _ _)
-          actual@(Id _ _)
-        = [ EqWrap
-              "getId = "
-              (EWEString $ getIdForError expected)
-              (EWEString $ getIdForError actual)
-          , EqWrap
-              "idLocation = "
-              (EWEString "")
-              (EWEString "")
-          ]
-      structConstructorName _ = "Id"
+instance StructEqualWithExplanation (Id level) where
+    structFieldsWithNames expected@(Id _ _) actual@(Id _ _) =
+        map (\f -> f expected actual)
+            [ Function.on (EqWrap "getId = ") getIdForError
+            , Function.on (EqWrap "idLocation = ") (const ())
+            ]
+    structConstructorName _ = "Id"
+
 instance EqualWithExplanation (Id level)
   where
     compareWithExplanation = structCompareWithExplanation
