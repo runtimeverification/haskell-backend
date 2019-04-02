@@ -1,0 +1,6 @@
+// This should be provable as there is only one axiom.
+module ALL-PATH-B-SPEC
+  rule 
+    <k> a => b </k>
+  [claim, all-path]
+endmodule
