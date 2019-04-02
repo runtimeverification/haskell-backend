@@ -45,7 +45,7 @@ pipeline {
         stage('KEVM Integration') {
           when {
             anyOf {
-              not { changeRequest() }
+              branch 'master'
               changelog '^.*\\[kevm-integration\\].*$'
             }
           }
