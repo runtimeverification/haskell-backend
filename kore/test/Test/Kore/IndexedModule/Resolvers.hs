@@ -314,7 +314,7 @@ test_resolver_undefined_messages =
         ]
       where
         produces_ resolver formatter =
-            forRightOf_ (run resolver) (checkWith formatter)
+            checkLeftOf_ (run resolver) (checkWith formatter)
         run resolver =
             resolver testIndexedModule (testId "#anyOldId" :: Id Object)
         checkWith formatter =
@@ -325,19 +325,19 @@ test_resolver_undefined_messages =
 -- do testcase nesting?
 
 assertError_ :: [String] -> String -> Error a -> Assertion
-assertError_ actualContext actualError expected =
-    do
-        assertEqual "" expectedContext actualContext
-        assertEqual "" expectedError actualError
-    where
-        Error { errorContext = expectedContext
-              , errorError = expectedError
-              } = expected
+assertError_ actualContext actualError expected
+  = do
+        assertEqual "errorContext" expectedContext  actualContext
+        assertEqual "errorError"  expectedError  actualError
+  where
+    Error { errorContext = expectedContext
+          , errorError = expectedError
+          } = expected
 
 
 
-forRightOf_ :: Show r => Either l r -> (l -> Assertion) -> TestTree
-forRightOf_ actual testBody =
+checkLeftOf_ :: Show r => Either l r -> (l -> Assertion) -> TestTree
+checkLeftOf_ actual testBody =
     testCase "" $
         case actual of
             Left l ->
