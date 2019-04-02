@@ -44,7 +44,8 @@ pipeline {
         }
         stage('KEVM Integration') {
           when {
-            anyOf { not { changeRequest() }
+            anyOf {
+              not { changeRequest() }
               changelog '^\\[kevm-integration\\].*$'
             }
           }
