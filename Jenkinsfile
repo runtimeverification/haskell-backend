@@ -59,6 +59,13 @@ pipeline {
               '''
             }
           }
+          post {
+            failure {
+              slackSend color: 'bad'                                                \
+                      , channel: '#haskell-backend'                                 \
+                      , message: "KEVM Integration Tests Failure: ${env.BUILD_URL}"
+            }
+          }
         }
       }
     }
