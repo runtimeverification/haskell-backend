@@ -39,6 +39,7 @@ commandParser =
     <|> showConfig
     <|> omitCell
     <|> showLeafs
+    <|> showRule
     <|> showPrecBranch
     <|> showChildren
     <|> exit
@@ -83,6 +84,10 @@ omitCell =
 
 showLeafs :: Parser ReplCommand
 showLeafs = ShowLeafs <$ (string "leafs" *> space)
+
+showRule :: Parser ReplCommand
+showRule =
+    fmap ShowRule $ string "rule" *> space *> optional decimal <* space
 
 showPrecBranch :: Parser ReplCommand
 showPrecBranch =

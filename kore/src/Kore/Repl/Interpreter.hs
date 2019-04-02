@@ -17,6 +17,8 @@ import           Control.Lens
                  ( (%=), (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
+import           Control.Monad
+                 ( join )
 import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
@@ -36,9 +38,13 @@ import           Data.List.Extra
                  ( groupSort )
 import           Data.Maybe
                  ( catMaybes )
+import           Data.Sequence
+                 ( Seq )
 import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
+import           GHC.Exts
+                 ( toList )
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SymbolOrAlias (..),
@@ -46,7 +52,7 @@ import           Kore.AST.Common
 import qualified Kore.AST.Identifier as Identifier
                  ( Id (..) )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
+                 ( MetaOrObject, Object )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -94,6 +100,7 @@ replInterpreter =
         ShowConfig mc     -> showConfig mc     $> True
         OmitCell c        -> omitCell c        $> True
         ShowLeafs         -> showLeafs         $> True
+        ShowRule   mc     -> showRule mc       $> True
         ShowPrecBranch mn -> showPrecBranch mn $> True
         ShowChildren mn   -> showChildren mn   $> True
         Exit              -> pure                 False
@@ -125,7 +132,7 @@ showAxiom index = do
 
 prove
     :: MonadIO m
-    => MonadState (ReplState level) m
+    => MonadState (ReplState Object) m
     => Int
     -> m ()
 prove index = do
@@ -231,6 +238,24 @@ showLeafs = do
 
     showPair :: (NodeStates, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
+
+showRule
+    :: MetaOrObject level
+    => Maybe Int
+    -> StateT (ReplState level) Simplifier ()
+showRule configNode = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    let node' = maybe node id configNode
+    if node' `elem` Graph.nodes graph
+        then do
+            putStrLn' $ "Rule for node " <> show node' <> " is:"
+            putStrLn'
+                . unparseNodeLabels
+                . Graph.inn'
+                . Graph.context graph
+                $ node'
+        else putStrLn' "Invalid node!"
 
 showPrecBranch
     :: Maybe Int
@@ -340,6 +365,18 @@ unparseStrategy omitList =
            . Identifier.getId
            . symbolOrAliasConstructor
 
+unparseNodeLabels
+    :: [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
+    -> String
+unparseNodeLabels =
+    join
+    . fmap unparseToString
+    . join
+    . fmap (toList . third)
+  where
+    third :: (a, b, c) -> c
+    third (_, _, c) = c
+
 extractSourceAndLocation
     :: RewriteRule level Variable
     -> SourceLocation
@@ -371,9 +408,7 @@ unClaim Claim { rule } = rule
 unAxiom :: Axiom level -> RewriteRule level Variable
 unAxiom (Axiom rule) = rule
 
-emptyExecutionGraph
-    :: Claim level
-    -> Strategy.ExecutionGraph (CommonStrategyPattern level)
+emptyExecutionGraph :: Claim Object -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
 
 extractConfig
