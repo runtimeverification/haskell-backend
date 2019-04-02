@@ -47,6 +47,7 @@ commandParser0 =
         , showConfig
         , omitCell
         , showLeafs
+        , showRule
         , showPrecBranch
         , showChildren
         , try labelAdd
@@ -85,6 +86,9 @@ omitCell = OmitCell <$$> literal "omit" *> maybeString
 showLeafs :: Parser ReplCommand
 showLeafs = const ShowLeafs <$$> literal "leafs"
 
+showRule :: Parser ReplCommand
+showRule = ShowRule <$$> literal "rule" *> maybeDecimal
+
 showPrecBranch :: Parser ReplCommand
 showPrecBranch = ShowPrecBranch <$$> literal "prec-branch" *> maybeDecimal
 
@@ -110,7 +114,7 @@ redirect cmd = Redirect cmd <$$> literal ">" *> string
 infixr 2 <$$>
 infixr 1 <**>
 
- -- | These are just low-precedence versions of the original operators used for
+-- | These are just low-precedence versions of the original operators used for
 -- convenience in this module.
 (<$$>) :: Functor f => (a -> b) -> f a -> f b
 (<$$>) = (<$>)

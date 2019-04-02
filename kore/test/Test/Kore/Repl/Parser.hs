@@ -12,21 +12,21 @@ import Test.Kore.Parser
 
 test_replParser :: [TestTree]
 test_replParser =
-    [ helpTests       `tests` "help"
-    , claimTests      `tests` "claim"
-    , axiomTests      `tests` "axiom"
-    , proveTests      `tests` "prove"
-    , graphTests      `tests` "graph"
-    , stepTests       `tests` "step"
-    , selectTests     `tests` "select"
-    , configTests     `tests` "config"
-    , omitTests       `tests` "omit"
-    , leafsTests      `tests` "leafs"
-    , precBranchTests `tests` "prec-branch"
-    , childrenTests   `tests` "children"
-    , exitTests       `tests` "exit"
-    , redirectTests   `tests` "redirect"
+    [ helpTests        `tests` "help"
+    , claimTests       `tests` "claim"
+    , axiomTests       `tests` "axiom"
+    , proveTests       `tests` "prove"
+    , graphTests       `tests` "graph"
+    , stepTests        `tests` "step"
+    , selectTests      `tests` "select"
+    , configTests      `tests` "config"
+    , leafsTests       `tests` "leafs"
+    , precBranchTests  `tests` "prec-branch"
+    , childrenTests    `tests` "children"
+    , exitTests        `tests` "exit"
+    , omitTests        `tests` "omit"
     , labelTests       `tests` "label"
+    , redirectTests    `tests` "redirect"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree

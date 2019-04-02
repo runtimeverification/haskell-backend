@@ -107,7 +107,7 @@ searchGraph
     :: Config  -- ^ Search options
     -> (config -> MaybeT Simplifier substitution)
         -- ^ Matching criterion
-    -> Strategy.ExecutionGraph config
+    -> Strategy.ExecutionGraph config rule
         -- ^ Execution tree
     -> Simplifier [substitution]
 searchGraph Config { searchType, bound } match executionGraph = do

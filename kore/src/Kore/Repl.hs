@@ -104,16 +104,16 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     firstClaim :: Claim level
     firstClaim = maybe (error "No claims found") id $ listToMaybe claims'
 
-    firstClaimExecutionGraph :: ExecutionGraph level
+    firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
         :: Claim level
         -> [Claim level]
         -> [Axiom level]
-        -> ExecutionGraph level
+        -> ExecutionGraph
         -> Graph.Node
-        -> Simplifier (ExecutionGraph level, Bool)
+        -> Simplifier (ExecutionGraph, Bool)
     stepper0 claim claims axioms graph node = do
         if Graph.outdeg (Strategy.graph graph) node == 0
             then do
