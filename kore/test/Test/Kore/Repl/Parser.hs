@@ -12,19 +12,20 @@ import Test.Kore.Parser
 
 test_replParser :: [TestTree]
 test_replParser =
-    [ helpTests       `tests` "help"
-    , claimTests      `tests` "claim"
-    , axiomTests      `tests` "axiom"
-    , proveTests      `tests` "prove"
-    , graphTests      `tests` "graph"
-    , stepTests       `tests` "step"
-    , selectTests     `tests` "select"
-    , configTests     `tests` "config"
-    , omitTests       `tests` "omit"
-    , leafsTests      `tests` "leafs"
-    , precBranchTests `tests` "prec-branch"
-    , childrenTests   `tests` "children"
-    , exitTests       `tests` "exit"
+    [ helpTests        `tests` "help"
+    , claimTests       `tests` "claim"
+    , axiomTests       `tests` "axiom"
+    , proveTests       `tests` "prove"
+    , graphTests       `tests` "graph"
+    , stepTests        `tests` "step"
+    , selectTests      `tests` "select"
+    , configTests      `tests` "config"
+    , leafsTests       `tests` "leafs"
+    , precBranchTests  `tests` "prec-branch"
+    , childrenTests    `tests` "children"
+    , exitTests        `tests` "exit"
+    , omitTests        `tests` "omit"
+    , labelTests       `tests` "label"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -182,6 +183,32 @@ childrenTests =
                                  \  |          ^\n\
                                  \unexpected '-'\n\
                                  \expecting end of input, integer, or white space\n"
+    ]
+
+labelTests :: [ParserTest ReplCommand]
+labelTests =
+    [ "label"          `parsesTo` Label Nothing
+    , "label "         `parsesTo` Label Nothing
+    , "label label"    `parsesTo` Label (Just "label")
+    , "label 1ab31"    `parsesTo` Label (Just "1ab31")
+    , "label +label"   `parsesTo` LabelAdd "label" Nothing
+    , "label +1ab31"   `parsesTo` LabelAdd "1ab31" Nothing
+    , "label +label 5" `parsesTo` LabelAdd "label" (Just 5)
+    , "label +1ab31 5" `parsesTo` LabelAdd "1ab31" (Just 5)
+    , "label -label"   `parsesTo` LabelDel "label"
+    , "label -1ab31"   `parsesTo` LabelDel "1ab31"
+    , "label +-"       `failsWith` "<test-string>:1:7:\n\
+                                    \  |\n\
+                                    \1 | label +-\n\
+                                    \  |       ^\n\
+                                    \unexpected '+'\n\
+                                    \expecting alphanumeric character, end of input, or white space\n"
+    , "label +label -5" `failsWith` "<test-string>:1:14:\n\
+                                     \  |\n\
+                                     \1 | label +label -5\n\
+                                     \  |              ^\n\
+                                     \unexpected '-'\n\
+                                     \expecting end of input, integer, or white space\n"
     ]
 
 exitTests :: [ParserTest ReplCommand]
