@@ -220,8 +220,7 @@ data ExecutionGraph config rule = ExecutionGraph
 -- 'pickLongest' fast it turns out to be useful to keep it around.
 data ConfigNode config rule = ConfigNode
     { config :: config
-    , nodeId :: Int
-    , parents :: [(Seq rule, Int)]
+    , parents :: [(Seq rule, Graph.Node)]
     -- ^ The predecessor configurations in the execution graph and the sequence
     -- of rules applied from the parent configuration to the present
     -- configuration.
@@ -231,12 +230,14 @@ data ConfigNode config rule = ConfigNode
 insNode
     :: ConfigNode config rule
     -> Gr config (Seq rule)
-    -> Gr config (Seq rule)
-insNode configNode =
+    -> (Graph.Node, Gr config (Seq rule))
+insNode configNode graph =
     Graph.insEdges newEdges
-    . Graph.insNode newNode
+    $ Graph.insNode newNode
+    $ graph
   where
-    ConfigNode { nodeId, config } = configNode
+    nodeId = (succ . snd) (Graph.nodeRange graph)
+    ConfigNode { config } = configNode
     newNode = (nodeId, config)
     ConfigNode { parents } = configNode
     newEdges = do
@@ -281,13 +282,12 @@ executionHistoryStep transit prim exe@ExecutionGraph { graph } node
     nodeIsNotLeaf = Graph.outdeg graph node > 0
 
     mkChildNode
-        :: (Graph.Node, (config, Seq rule))
+        :: (config, Seq rule)
         -- ^ Child node identifier and configuration
         -> ConfigNode config rule
-    mkChildNode (nodeId', (config, rules)) =
+    mkChildNode (config, rules) =
         ConfigNode
             { config
-            , nodeId = nodeId'
             , parents = [(rules, node)]
             }
 
@@ -302,18 +302,11 @@ emptyExecutionGraph
     => config
     -> ExecutionGraph config rule
 emptyExecutionGraph config =
-    ExecutionGraph
-        { root = 0
-        , graph = insNode configNode Graph.empty
-        }
+    ExecutionGraph { root, graph }
   where
+    (root, graph) = insNode configNode Graph.empty
     configNode :: ConfigNode config rule
-    configNode =
-        ConfigNode
-            { config
-            , nodeId = 0 :: Int
-            , parents = []
-            }
+    configNode = ConfigNode { config, parents = [] }
 
 {- | Execute a 'Strategy'.
 
@@ -366,17 +359,18 @@ constructExecutionGraph transit instrs config0 = do
                 let
                     max'  = succ . snd . Graph.nodeRange $ graph
                     nodes = mkChildNode <$> zip [max' ..] configs
-                    todo' = todo ++ (nodeId <$> nodes)
+                    (graph', todo') =
+                        State.runState (Foldable.foldlM (State.state . insNode) nodes) graph
+                    todo' = todo ++ _
                 return (todo', Foldable.foldr insNode graph nodes)
       where
         mkChildNode
-            :: (Graph.Node, (config, Seq rule))
+            :: (config, Seq rule)
             -- ^ Child node identifier and configuration
             -> ConfigNode config rule
-        mkChildNode (nodeId', (config, rules)) =
+        mkChildNode (config, rules) =
             ConfigNode
                 { config
-                , nodeId = nodeId'
                 , parents = [(rules, node)]
                 }
 
