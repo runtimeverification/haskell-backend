@@ -11,13 +11,12 @@ module Kore.Repl.Parser
     ) where
 
 import           Control.Applicative
-                 ( many )
+                 ( some, (<|>) )
 import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
 import           Text.Megaparsec
-                 ( MonadParsec, Parsec, Token, Tokens, chunk, eof, manyTill,
-                 noneOf, option, optional, some, try, (<|>) )
+                 ( Parsec, eof, option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -50,6 +49,9 @@ commandParser0 =
         , showLeafs
         , showPrecBranch
         , showChildren
+        , try labelAdd
+        , try labelDel
+        , label
         , exit
         ]
 
@@ -89,17 +91,33 @@ showPrecBranch = ShowPrecBranch <$$> literal "prec-branch" *> maybeDecimal
 showChildren :: Parser ReplCommand
 showChildren = ShowChildren <$$> literal "children" *> maybeDecimal
 
-redirect :: ReplCommand -> Parser ReplCommand
-redirect cmd = Redirect cmd <$$> literal ">" *> string
+label :: Parser ReplCommand
+label = Label <$$> literal "label" *> maybeString
+
+labelAdd :: Parser ReplCommand
+labelAdd =
+    LabelAdd <$$> literal "label" *> literal "+" *> string <**> maybeDecimal
+
+labelDel :: Parser ReplCommand
+labelDel = LabelDel <$$> literal "label" *> literal "-" *> string
 
 exit :: Parser ReplCommand
 exit = const Exit <$$> literal "exit"
 
-infixr 1 <$$>
+redirect :: ReplCommand -> Parser ReplCommand
+redirect cmd = Redirect cmd <$$> literal ">" *> string
 
- -- | This is only a low-precedence fmap used to make the parser functions nicer.
-(<$$>) :: (a -> ReplCommand) -> Parser a -> Parser ReplCommand
-(<$$>) = fmap
+infixr 2 <$$>
+infixr 1 <**>
+
+ -- | These are just low-precedence versions of the original operators used for
+-- convenience in this module.
+(<$$>) :: Functor f => (a -> b) -> f a -> f b
+(<$$>) = (<$>)
+
+(<**>) :: Applicative f => f (a -> b) -> f a -> f b
+(<**>) = (<*>)
+
 
 literal :: String -> Parser ()
 literal str = void $ Char.string str <* Char.space

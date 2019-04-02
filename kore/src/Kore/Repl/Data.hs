@@ -15,14 +15,14 @@ module Kore.Repl.Data
     , ReplState (..)
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
-    , lensOmit
+    , lensLabels, lensOmit
     ) where
 
 import qualified Control.Lens.TH.Rules as Lens
-import           Control.Monad.State.Strict
-                 ( StateT )
 import qualified Data.Graph.Inductive.Graph as Graph
 
+import           Data.Map.Strict
+                 ( Map )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern )
 import           Kore.OnePath.Verification
@@ -62,6 +62,12 @@ data ReplCommand
     -- ^ Show the first preceding branch
     | ShowChildren !(Maybe Int)
     -- ^ Show direct children of node
+    | Label !(Maybe String)
+    -- ^ Show all node labels or jump to a label
+    | LabelAdd !String !(Maybe Int)
+    -- ^ Add a label to a node
+    | LabelDel !String
+    -- ^ Remove a label
     | Redirect ReplCommand FilePath
     -- ^ prints the output of the inner command to the file.
     | Exit
@@ -90,7 +96,12 @@ helpText =
                              \(defaults to current node)\n\
     \children [n]            shows direct children of node\n\
                              \(defaults to current node)\n\
-    \exit                    exits the repl\n\
+    \label                   shows all node labels\n\
+    \label <l>               jump to a label\n\
+    \label <+l> [n]          add a new label for a node\n\
+                             \(defaults to current node)\n\
+    \label <-l>              remove a label\n\
+    \exit                    exits the repl\
     \\n\
     \Available modifiers:\n\
     \<command> > file        prints the output of 'command' to file\n"
@@ -120,6 +131,8 @@ data ReplState level = ReplState
           -> Graph.Node
           -> Simplifier (ExecutionGraph level, Bool)
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
+    , labels  :: Map String Graph.Node
+    -- ^ Map from labels to nodes
     }
 
 Lens.makeLenses ''ReplState

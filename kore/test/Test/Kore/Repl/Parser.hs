@@ -26,6 +26,7 @@ test_replParser =
     , childrenTests   `tests` "children"
     , exitTests       `tests` "exit"
     , redirectTests   `tests` "redirect"
+    , labelTests       `tests` "label"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -128,6 +129,22 @@ childrenTests =
     , "children "   `parsesTo_` ShowChildren Nothing
     , "children 5"  `parsesTo_` ShowChildren (Just 5)
     , "children -5" `fails`     "no negative numbers"
+    ]
+
+labelTests :: [ParserTest ReplCommand]
+labelTests =
+    [ "label"           `parsesTo_` Label Nothing
+    , "label "          `parsesTo_` Label Nothing
+    , "label label"     `parsesTo_` Label (Just "label")
+    , "label 1ab31"     `parsesTo_` Label (Just "1ab31")
+    , "label +label"    `parsesTo_` LabelAdd "label" Nothing
+    , "label +1ab31"    `parsesTo_` LabelAdd "1ab31" Nothing
+    , "label +label 5"  `parsesTo_` LabelAdd "label" (Just 5)
+    , "label +1ab31 5"  `parsesTo_` LabelAdd "1ab31" (Just 5)
+    , "label -label"    `parsesTo_` LabelDel "label"
+    , "label -1ab31"    `parsesTo_` LabelDel "1ab31"
+    , "label +-"        `fails`     "can't both add and remove"
+    , "label +label -5" `fails`     "no negative numbers"
     ]
 
 exitTests :: [ParserTest ReplCommand]

@@ -12,8 +12,6 @@ module Kore.Repl
 
 import           Control.Exception
                  ( AsyncException (UserInterrupt) )
-import           Control.Lens
-                 ( (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad.Catch
@@ -22,15 +20,10 @@ import           Control.Monad.Extra
                  ( whileM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
-import           Control.Monad.RWS.Strict
-                 ( RWST )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT )
-import           Control.Monad.State.Strict
-                 ( evalStateT, get )
-import           Control.Monad.State.Strict
-                 ( lift )
+                 ( MonadState, StateT, evalStateT )
 import qualified Data.Graph.Inductive.Graph as Graph
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( listToMaybe )
 import           System.IO
@@ -105,6 +98,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             -- the frontend via '--omit-labels'.
             , omit    = []
             , stepper = stepper0
+            , labels  = Map.empty
             }
 
     firstClaim :: Claim level

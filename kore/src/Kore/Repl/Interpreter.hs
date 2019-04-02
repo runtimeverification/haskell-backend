@@ -36,6 +36,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.List.Extra
                  ( groupSort )
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( catMaybes )
 import qualified Data.Text as Text
@@ -106,7 +107,10 @@ replInterpreter output cmd =
                     ShowLeafs         -> showLeafs         $> True
                     ShowPrecBranch mn -> showPrecBranch mn $> True
                     ShowChildren mn   -> showChildren mn   $> True
-                    Redirect cmd file -> redirect cmd file $> True
+                    Label ms          -> label ms          $> True
+                    LabelAdd l mn     -> labelAdd l mn     $> True
+                    LabelDel l        -> labelDel l        $> True
+                    Redirect inn file -> redirect inn file $> True
                     Exit              -> pure                 False
         (exit, st', w) <- runRWST rwst () st
         liftIO $ output w
@@ -153,9 +157,10 @@ prove index = do
             let
                 graph@Strategy.ExecutionGraph { root }
                     = emptyExecutionGraph claim
-            lensGraph .= graph
-            lensClaim .= claim
-            lensNode  .= root
+            lensGraph  .= graph
+            lensClaim  .= claim
+            lensNode   .= root
+            lensLabels .= Map.empty
             putStrLn' "Execution Graph initiated"
 
 showGraph
@@ -178,7 +183,11 @@ proveSteps n = do
                 <> " step(s) due to "
                 <> show res
 
-selectNode :: Int -> ReplM level ()
+selectNode
+    :: MonadState (ReplState level) m
+    => MonadWriter String m
+    => Int
+    -> m ()
 selectNode i = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     if i `elem` Graph.nodes graph
@@ -284,12 +293,71 @@ redirect
     -> ReplM level ()
 redirect cmd path = do
     st <- get
-    res <- lift $ evalStateT (replInterpreter redirectToFile cmd) st
+    _ <- lift $ evalStateT (replInterpreter redirectToFile cmd) st
     putStrLn' "File created."
     pure ()
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
+
+label
+    :: forall level m
+    .  MonadState (ReplState level) m
+    => MonadWriter String m
+    => Maybe String
+    -> m ()
+label =
+    \case
+        Nothing -> showLabels
+        Just lbl -> gotoLabel lbl
+  where
+    showLabels :: m ()
+    showLabels = do
+        labels <- Lens.use lensLabels
+        if null labels
+           then putStrLn' "No labels are set."
+           else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
+
+    gotoLabel :: String -> m ()
+    gotoLabel l = do
+        labels <- Lens.use lensLabels
+        selectNode $ maybe (-1) id (Map.lookup l labels)
+
+    acc :: String -> Graph.Node -> String -> String
+    acc key node res =
+        res <> "\n  " <> key <> ": " <> (show node)
+
+labelAdd
+    :: forall level m
+    .  MonadState (ReplState level) m
+    => MonadWriter String m
+    => String
+    -> Maybe Int
+    -> m ()
+labelAdd lbl mn = do
+    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    let node' = maybe node id mn
+    labels <- Lens.use lensLabels
+    if lbl `Map.notMember` labels && node' `elem` Graph.nodes graph
+       then do
+           lensLabels .= Map.insert lbl node' labels
+           putStrLn' "Label added."
+       else putStrLn' "Label already exists or the node isn't in the graph."
+
+labelDel
+    :: forall level m
+    .  MonadState (ReplState level) m
+    => MonadWriter String m
+    => String
+    -> m ()
+labelDel lbl = do
+    labels <- Lens.use lensLabels
+    if lbl `Map.member` labels
+       then do
+           lensLabels .= Map.delete lbl labels
+           putStrLn' "Removed label."
+       else putStrLn' "Label doesn't exist."
 
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
