@@ -47,7 +47,7 @@ test-k: $(foreach test, $(k_tests), tests/$(test).test) \
 
 test-prove: $(foreach test, $(prove_tests), provable/$(test).kprove)
 
-test-unprove: $(foreach test, $(not_prove_tests), notprovable/$(test).knotprove)
+#test-unprove: $(foreach test, $(not_prove_tests), notprovable/$(test).knotprove)
 
 golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
 
