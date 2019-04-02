@@ -19,8 +19,6 @@ module Kore.Repl.Data
     ) where
 
 import qualified Control.Lens.TH.Rules as Lens
-import           Control.Monad.State.Strict
-                 ( StateT )
 import qualified Data.Graph.Inductive.Graph as Graph
 
 import           Data.Map.Strict
@@ -78,6 +76,8 @@ data ReplCommand
     -- ^ Add a label to a node
     | LabelDel !String
     -- ^ Remove a label
+    | Redirect ReplCommand FilePath
+    -- ^ prints the output of the inner command to the file.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -111,7 +111,10 @@ helpText =
     \label <+l> [n]          add a new label for a node\n\
                              \(defaults to current node)\n\
     \label <-l>              remove a label\n\
-    \exit                    exits the repl"
+    \exit                    exits the repl\
+    \\n\
+    \Available modifiers:\n\
+    \<command> > file        prints the output of 'command' to file\n"
 
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
@@ -133,7 +136,13 @@ data ReplState level = ReplState
     -- ^ Currently selected node in the graph; initialized with node = root
     , omit    :: [String]
     -- ^ The omit list, initially empty
-    , stepper :: StateT (ReplState level) Simplifier Bool
+    , stepper
+          :: Claim level
+          -> [Claim level]
+          -> [Axiom level]
+          -> ExecutionGraph
+          -> Graph.Node
+          -> Simplifier (ExecutionGraph, Bool)
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , labels  :: Map String Graph.Node
     -- ^ Map from labels to nodes
