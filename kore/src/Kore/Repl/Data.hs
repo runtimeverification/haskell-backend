@@ -15,7 +15,7 @@ module Kore.Repl.Data
     , ReplState (..)
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
-    , lensOmit
+    , lensLabels, lensOmit
     ) where
 
 import qualified Control.Lens.TH.Rules as Lens
@@ -23,12 +23,20 @@ import           Control.Monad.State.Strict
                  ( StateT )
 import qualified Data.Graph.Inductive.Graph as Graph
 
+import           Data.Map.Strict
+                 ( Map )
+import           Kore.AST.Common
+                 ( Variable )
+import           Kore.AST.MetaOrObject
+                 ( Object )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim (..) )
+import           Kore.Step.Rule
+                 ( RewriteRule )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
@@ -58,10 +66,18 @@ data ReplCommand
     -- ^ Adds or removes cell to omit list, or shows current omit list.
     | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
+    | ShowRule !(Maybe Int)
+    -- ^ Show the rule(s) that got us to this configuration.
     | ShowPrecBranch !(Maybe Int)
     -- ^ Show the first preceding branch
     | ShowChildren !(Maybe Int)
     -- ^ Show direct children of node
+    | Label !(Maybe String)
+    -- ^ Show all node labels or jump to a label
+    | LabelAdd !String !(Maybe Int)
+    -- ^ Add a label to a node
+    | LabelDel !String
+    -- ^ Remove a label
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -84,14 +100,24 @@ helpText =
     \omit [cell]             adds or removes cell to omit list\
                              \(defaults to showing the omit list)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
+    \rule [n]                shows the rule for node 'n'\
+                             \(defaults to current node)\n\
     \prec-branch [n]         shows first preceding branch\n\
                              \(defaults to current node)\n\
     \children [n]            shows direct children of node\n\
                              \(defaults to current node)\n\
+    \label                   shows all node labels\n\
+    \label <l>               jump to a label\n\
+    \label <+l> [n]          add a new label for a node\n\
+                             \(defaults to current node)\n\
+    \label <-l>              remove a label\n\
     \exit                    exits the repl"
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph level = Strategy.ExecutionGraph (CommonStrategyPattern level)
+type ExecutionGraph =
+    Strategy.ExecutionGraph
+        (CommonStrategyPattern Object)
+        (RewriteRule Object Variable)
 
 -- | State for the rep.
 data ReplState level = ReplState
@@ -101,7 +127,7 @@ data ReplState level = ReplState
     -- ^ List of claims to be proven
     , claim   :: Claim level
     -- ^ Currently focused claim in the repl
-    , graph   :: ExecutionGraph level
+    , graph   :: ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node    :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -109,6 +135,8 @@ data ReplState level = ReplState
     -- ^ The omit list, initially empty
     , stepper :: StateT (ReplState level) Simplifier Bool
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
+    , labels  :: Map String Graph.Node
+    -- ^ Map from labels to nodes
     }
 
 Lens.makeLenses ''ReplState
