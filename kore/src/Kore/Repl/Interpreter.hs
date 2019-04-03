@@ -107,6 +107,7 @@ replInterpreter output cmd =
                     Prove i           -> prove i           $> True
                     ShowGraph         -> showGraph         $> True
                     ProveSteps n      -> proveSteps n      $> True
+                    ProveStepsF n     -> proveStepsF n     $> True
                     SelectNode i      -> selectNode i      $> True
                     ShowConfig mc     -> showConfig mc     $> True
                     OmitCell c        -> omitCell c        $> True
@@ -190,6 +191,9 @@ proveSteps n = do
                 <> show (n - done - 1)
                 <> " step(s) due to "
                 <> show res
+
+proveStepsF :: Int -> ReplM level ()
+proveStepsF n = return ()
 
 selectNode
     :: MonadState (ReplState level) m
