@@ -19,6 +19,7 @@ cd $EVM_SEMANTICS
 
 # Use the K Nightly build from the Kore integration tests.
 rm -rf .build/k/k-distribution/target/release/k
+mkdir -p .build/k/k-distribution/target/release
 ln -s $TOP/.build/k .build/k/k-distribution/target/release
 
 [[ "$OPAM_SETUP_SKIP" != "false" ]] || ./.build/k/k-distribution/src/main/scripts/bin/k-configure-opam-dev
