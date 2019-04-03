@@ -53,18 +53,17 @@ import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
-                 ( RewriteRule )
+                 ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import           Kore.Step.Step
-                 ( OrStepResult (OrStepResult) )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
 
@@ -301,34 +300,31 @@ transitionRule
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]
-            Right OrStepResult { rewrittenPattern, remainder } -> do
+            Right Step.Results { results, remainders } -> do
                 let
-                    combinedProof :: StepProof level Variable
-                    combinedProof = proof
+                    withProof :: forall x. x -> (x, StepProof level Variable)
+                    withProof x = (x, proof)
 
-                    rewriteResults
-                        ::  [   ( CommonStrategyPattern level
-                                , StepProof level Variable
+                    rewriteResults, remainderResults
+                        ::  MultiOr.MultiOr
+                                (TransitionT
+                                    (RewriteRule level Variable)
+                                    Simplifier
+                                    ( CommonStrategyPattern level
+                                    , StepProof level Variable
+                                    )
                                 )
-                            ]
-                    rewriteResults =
-                        map
-                            (\ p -> (RewritePattern p, combinedProof))
-                            (MultiOr.extractPatterns rewrittenPattern)
-
-                    remainderResults
-                        ::  [   ( CommonStrategyPattern level
-                                , StepProof level Variable
-                                )
-                            ]
+                    rewriteResults = fmap withProof . transition <$> results
+                    transition result' = do
+                        let rule =
+                                Step.unwrapRule
+                                $ Predicated.term $ Step.unifiedRule result'
+                        Transition.addRule (RewriteRule rule)
+                        return (RewritePattern $ Step.result result')
                     remainderResults =
-                        map
-                            (\ p -> (Stuck p, combinedProof))
-                            (MultiOr.extractPatterns remainder)
+                        pure . withProof . Stuck <$> remainders
 
-                if null rewriteResults
-                    then return (Bottom, combinedProof) <|> Foldable.asum (pure <$> remainderResults)
-                    else (Foldable.asum . map pure) (rewriteResults ++ remainderResults)
+                Foldable.asum (rewriteResults <> remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
