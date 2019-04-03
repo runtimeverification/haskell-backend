@@ -33,7 +33,19 @@ defined by:
 [w]φ := νX.φ ∨ (○X ∧ •⊤)
 ```
 
-one consequence of the above is that `[w]φ = φ ∨ (○[w]φ ∧ •⊤)`
+one consequence of the above is that `[w]φ = φ ∨ (○[w]φ ∧ •⊤)`.
+
+Given this definition of weak always, an all-path reachability claim
+```
+∀x.φ(x) → [w]∃z.ψ(x,z)
+```
+basically states that if `φ(x)` holds for a configuration `γ`, then
+the following _recursive_ property `P` holds for `γ`:
+* there exists `z` such that `ψ(x,z)` holds for `γ`
+* or
+    * `γ` is not stuck (`γ → • T`) and
+    * `P` holds for all configurations `γ'` in which `γ` can transition
+
 
 
 Problem Description
@@ -70,6 +82,10 @@ __Output:__ Proved or Unproved
             * Return `Unprovable`
         * Let `Goals := Goals ∪ Goals' ∪ Goals''`
 * Return `Provable`
+
+__Note:__ Since the derivation process can continue indefinitely, one could add
+a bound on the total number of (levels of) expansions attempted before
+returning `Unprovable`.
 
 ### Algorithm `derivePar`
 
@@ -211,15 +227,17 @@ we can deduce that `∀x.φ ∧ ∃xᵢ.φᵢ → [w]∃z.ψ`.
 This would allow us to replace goal `∀x.φ ∧ ∃xᵢ.φᵢ → [w]∃z.ψ`
 with goal '∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]ψ'.
 
+TODO (traiansf): prove that the above inference rule is sound
+
 ### Applying axioms
 
-We're back now to `∀x.φ →  (∃z.○[w]ψ) ∧ •⊤`, which is equivalent to 
-`(∀x.φ →  ○[w]ψ) ∧ (∀x.φ →  •⊤)`
+We're back now to `∀x.φ →  (○[w]∃z.ψ) ∧ •⊤`, which is equivalent to
+`(∀x.φ →  ○[w]∃z.ψ) ∧ (∀x.φ →  •⊤)`
 
 Therefore we need to check two things:
 
 1. That `φ` is not stuck
-1. That `∀x.φ →  ○[w]ψ`
+1. That `∀x.φ →  ○[w]∃z.ψ`
 
 Assume `∀xᵢ.φᵢ →  •∃zᵢ.ψᵢ, 1 ≤ i ≤ n`  are all the one-step axioms
 in the definition.
@@ -230,7 +248,7 @@ Using the same reasoning as in when applying all claims in parallel,
 (∀x.φ ∧ ∃x₁.φ₁ → α) ∧ … ∧ (∀x.φ ∧ ∃xₙ.φₙ → α) ∧ (∀x.φ ∧ ¬∃x₁.φ₁ ∧ … ∧ ¬∃xₙ.φₙ → α)
 ```
 
-Now, for the first thing to check, take `α := ⊤`.  
+Now, for the first thing to check, take `α := •⊤`.
 Since all but the last conjunct are guaranteed to hold
 (because of the rewrite axioms), `φ` is stuck if the remainder after attempting
 to apply all axioms (i.e., the lhs of the last conjunct) is not equivalent to `⊥`.
@@ -244,10 +262,12 @@ P -> o ((∃x₁.⌈P ∧ φ₁⌉ ∧ ∃z₁.ψ₁) ∨ … ∨ (∃xₙ.⌈P 
 
 we can derive
 ```
-∀x.φ →  ○[w]ψ
+∀x.φ →  ○[w]∃z.ψ
 ```
 
-This would allow us to replace the goal `∀x.φ →  ○[w]ψ` with the set of goals
+This would allow us to replace the goal `∀x.φ →  ○[w]∃z.ψ` with the set of goals
 ```
 { ∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]∃z.ψ : 1 ≤ i ≤ n }
 ```
+
+TODO (traiansf): prove that the above inference rule is sound
