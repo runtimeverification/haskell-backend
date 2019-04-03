@@ -13,6 +13,8 @@ module Kore.Step.Simplification.And
     , simplifyEvaluated
     ) where
 
+import           Control.Applicative
+                 ( Alternative (empty) )
 import qualified Control.Monad.Trans as Monad.Trans
 import           Data.List
                  ( foldl1', nub )
@@ -31,7 +33,7 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom, isBottom, isTop )
+                 ( isBottom, isTop )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -219,12 +221,9 @@ makeEvaluate
     -> BranchT Simplifier (ExpandedPattern level variable)
 makeEvaluate
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
-  | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second =
-    return ExpandedPattern.bottom
-  | ExpandedPattern.isTop first =
-    return second
-  | ExpandedPattern.isTop second =
-    return first
+  | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second = empty
+  | ExpandedPattern.isTop first = return second
+  | ExpandedPattern.isTop second = return first
   | otherwise =
     makeEvaluateNonBool
         tools
