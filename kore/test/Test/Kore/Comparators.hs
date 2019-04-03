@@ -26,8 +26,10 @@ import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Kore
 import           Kore.AST.Pure
+import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Domain.Builtin
+import           Kore.Error
 import           Kore.OnePath.Step
                  ( StrategyPattern )
 import           Kore.OnePath.Step as StrategyPattern
@@ -52,9 +54,6 @@ import           Kore.Step.Rule
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
-import           Kore.Step.Step
-import qualified Kore.Step.Step as OrStepResult
-                 ( OrStepResult (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -784,21 +783,14 @@ instance EqualWithExplanation (Concrete level) where
     compareWithExplanation = \case {}
     printWithExplanation = \case {}
 
-instance StructEqualWithExplanation (Id level)
-    where
-      structFieldsWithNames
-          expected@(Id _ _)
-          actual@(Id _ _)
-        = [ EqWrap
-              "getId = "
-              (EWEString $ getIdForError expected)
-              (EWEString $ getIdForError actual)
-          , EqWrap
-              "idLocation = "
-              (EWEString "")
-              (EWEString "")
-          ]
-      structConstructorName _ = "Id"
+instance StructEqualWithExplanation (Id level) where
+    structFieldsWithNames expected@(Id _ _) actual@(Id _ _) =
+        map (\f -> f expected actual)
+            [ Function.on (EqWrap "getId = ") getIdForError
+            , Function.on (EqWrap "idLocation = ") (const ())
+            ]
+    structConstructorName _ = "Id"
+
 instance EqualWithExplanation (Id level)
   where
     compareWithExplanation = structCompareWithExplanation
@@ -1249,12 +1241,12 @@ instance
       =
         [ EqWrap
             "results = "
-            (results expected)
-            (results actual)
+            (AttemptedAxiomResults.results expected)
+            (AttemptedAxiomResults.results actual)
         , EqWrap
             "remainders = "
-            (remainders expected)
-            (remainders actual)
+            (AttemptedAxiomResults.remainders expected)
+            (AttemptedAxiomResults.remainders actual)
         ]
     structConstructorName _ = "AttemptedAxiomResults"
 
@@ -1409,39 +1401,6 @@ instance
     => EqualWithExplanation (Unified a)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation (variable level)
-    , EqualWithExplanation (StepPattern level variable)
-    )
-    => StructEqualWithExplanation (OrStepResult level variable)
-  where
-    structFieldsWithNames
-        expected@(OrStepResult _ _)
-        actual@(OrStepResult _ _)
-      = [ EqWrap
-            "rewrittenPattern = "
-            (OrStepResult.rewrittenPattern expected)
-            (OrStepResult.rewrittenPattern actual)
-        , EqWrap
-            "remainder = "
-            (OrStepResult.remainder expected)
-            (OrStepResult.remainder actual)
-        ]
-    structConstructorName _ = "OrStepResult"
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation (variable level)
-    , EqualWithExplanation (StepPattern level variable)
-    )
-    => EqualWithExplanation (OrStepResult level variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
@@ -1684,3 +1643,71 @@ instance EqualWithExplanation Attribute.Label where
 instance WrapperEqualWithExplanation Attribute.Label where
     wrapperConstructorName _ = "Label"
     wrapperField = Function.on (EqWrap "unLabel = ") Attribute.unLabel
+
+-- For: Alias
+
+instance
+    MetaOrObject level
+    => EqualWithExplanation (Alias level)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    MetaOrObject level
+    => StructEqualWithExplanation (Alias level)
+  where
+    structConstructorName _ = "Alias"
+    structFieldsWithNames expect actual =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "aliasConstructor = ") aliasConstructor
+            , Function.on (EqWrap "aliasParams = ") aliasParams
+            ]
+
+-- For: SortVariable
+
+instance
+    MetaOrObject level
+    => EqualWithExplanation (SortVariable level)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    MetaOrObject level
+    => WrapperEqualWithExplanation (SortVariable level)
+  where
+    wrapperField = Function.on (EqWrap "getSortVariable = ") getSortVariable
+    wrapperConstructorName _ = "SortVariable"
+
+-- For: Error
+
+instance
+    EqualWithExplanation (Error a)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    StructEqualWithExplanation (Error a)
+  where
+    structFieldsWithNames (Error expectedContext expectedMessage)
+                          (Error actualContext   actualMessage) =
+        [ EqWrap "errorMessage = " expectedMessage actualMessage
+        , EqWrap "errorContext = " expectedContext actualContext
+        ]
+    structConstructorName _ = "Error"
+
+-- For∷ Attributes
+
+instance
+    EqualWithExplanation Attributes
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    WrapperEqualWithExplanation Attributes
+  where
+    wrapperField = Function.on (EqWrap "getAttributes = ") getAttributes
+    wrapperConstructorName _ = "Attributes"

@@ -1,9 +1,9 @@
-module Test.Kore.IndexedModule.Resolvers (test_resolvers) where
+module Test.Kore.IndexedModule.Resolvers
+where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+-- import Test.Terse
 
 import           Data.Default
 import qualified Data.Map as Map
@@ -23,6 +23,7 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
+import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Step.Pattern hiding
@@ -263,22 +264,6 @@ test_resolvers =
             ))
             (resolveAlias testIndexedModule (testId "#b" :: Id Meta))
         )
-    , testCase "symbol error"
-        (assertEqual ""
-            (Left Error
-                { errorContext = ["(<test data>)"]
-                , errorError = "Symbol '#b' not defined."}
-            )
-            (resolveSymbol testIndexedModule (testId "#b" :: Id Meta))
-        )
-    , testCase "alias error"
-        (assertEqual ""
-            (Left Error
-                { errorContext = ["(<test data>)"]
-                , errorError = "Alias '#a' not defined."}
-            )
-            (resolveAlias testIndexedModule (testId "#a" :: Id Meta))
-        )
     , testCase "sort error"
         (assertEqual ""
             (Left Error
@@ -314,3 +299,48 @@ test_resolvers =
     SortActualSort charMetaSortActual = charMetaSort
     charMetaId :: Id Meta
     charMetaId = sortActualName charMetaSortActual
+
+
+test_resolver_undefined_messages :: TestTree
+test_resolver_undefined_messages =
+    testGroup "each resolver has a standard failure message"
+        [ resolveAlias `produces_` Error.noAlias
+        , resolveSymbol `produces_` Error.noSymbol
+        -- , resolveSort `produces_` Error.noSort
+        -- ^^^ TODO: The above cannot be done until `resolveSort`
+        -- is changed to be consistent with the other error
+        -- messages, which has to wait until a number of
+        -- other tests are fixed.
+        ]
+      where
+        produces_ resolver formatter =
+            checkLeftOf_ (run resolver) (checkWith formatter)
+        run resolver =
+            resolver testIndexedModule (testId "#anyOldId" :: Id Object)
+        checkWith formatter =
+            assertError_ ["(<test data>)"] $ formatter "#anyOldId"
+
+-- TODO: Find out how to compose functions like the following
+-- out of Test.Terse primitives. Is there a clean way to
+-- do testcase nesting?
+
+assertError_ :: [String] -> String -> Error a -> Assertion
+assertError_ actualContext actualError expected
+  = do
+        assertEqual "errorContext" expectedContext  actualContext
+        assertEqual "errorError"  expectedError  actualError
+  where
+    Error { errorContext = expectedContext
+          , errorError = expectedError
+          } = expected
+
+
+
+checkLeftOf_ :: Show r => Either l r -> (l -> Assertion) -> TestTree
+checkLeftOf_ actual testBody =
+    testCase "" $
+        case actual of
+            Left l ->
+                testBody l
+            Right unexpected ->
+                assertFailure ("Unexpected Right " <> show unexpected)

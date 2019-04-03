@@ -27,6 +27,7 @@ module Kore.Step
 
 import           Control.Monad.Except
                  ( runExceptT )
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Stack
@@ -42,7 +43,6 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.Logger as Log
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Proof
@@ -58,11 +58,10 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import           Kore.Step.Step
-                 ( OrStepResult (..) )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
 
@@ -104,7 +103,8 @@ transitionRule
     -> Prim (RewriteRule level Variable)
     -> (CommonExpandedPattern level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier [(CommonExpandedPattern level, StepProof level Variable)]
+    -> TransitionT (RewriteRule level Variable) Simplifier
+        (CommonExpandedPattern level, StepProof level Variable)
 transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
@@ -113,7 +113,8 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     transitionSimplify (config, proof) =
         do
             (configs, _) <-
-                ExpandedPattern.simplify
+                Monad.Trans.lift
+                $ ExpandedPattern.simplify
                     tools
                     substitutionSimplifier
                     simplifier
@@ -123,10 +124,12 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 prove config' = (config', proof)
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
-            return (prove <$> Foldable.toList nonEmptyConfigs)
+            (Foldable.asum . fmap pure) (prove <$> nonEmptyConfigs)
     transitionRewrite rule (config, proof) = do
+        Transition.addRule rule
         result <-
-            runExceptT
+            Monad.Trans.lift
+            $ runExceptT
             $ Step.applyRewriteRules
                 tools
                 substitutionSimplifier
@@ -144,9 +147,9 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , unparse config
                     , "Un-implemented unification case; aborting execution."
                     ]
-            Right OrStepResult { rewrittenPattern = results } ->
-                Log.withLogScope "transitionRule" $
-                    return $ withProof <$> Foldable.toList results
+            Right Step.Results { results } ->
+                (Foldable.asum . fmap pure)
+                    (withProof . Step.result <$> results)
               where
                 withProof result' = (result', proof)
 
