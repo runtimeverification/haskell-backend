@@ -22,11 +22,6 @@ rm -rf .build/k
 mkdir -p .build/k/k-distribution/target/release
 ln -s $TOP/.build/k .build/k/k-distribution/target/release
 
-git add .build/k
-ci_git commit --message '!!! .build/k: integration testing haskell backend'
-
-make clean
-git submodule update --init --recursive
 [[ "$OPAM_SETUP_SKIP" != "false" ]] || ./.build/k/k-distribution/src/main/scripts/bin/k-configure-opam-dev
 
 make build-haskell -B
