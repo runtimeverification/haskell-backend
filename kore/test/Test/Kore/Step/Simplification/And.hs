@@ -451,12 +451,12 @@ evaluatePatterns first second =
     $ evalSimplifier emptyLogger
     $ gather
     $ makeEvaluate
-            mockMetadataTools
-            (Mock.substitutionSimplifier mockMetadataTools)
-            (Simplifier.create mockMetadataTools Map.empty)
-            Map.empty
-            first
-            second
+        mockMetadataTools
+        (Mock.substitutionSimplifier mockMetadataTools)
+        (Simplifier.create mockMetadataTools Map.empty)
+        Map.empty
+        first
+        second
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
