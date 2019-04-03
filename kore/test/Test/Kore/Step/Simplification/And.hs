@@ -319,7 +319,7 @@ test_andSimplification =
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
     , testCase "And-Or distribution" $ do
         let expect =
-                MultiOr.make
+                MultiOr
                     [ Predicated
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
