@@ -1,21 +1,23 @@
 module Test.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier
     ( test_patternVerifier
+    , test_verifyBinder
     ) where
 
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( HasCallStack )
 
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Set as Set
 
 import           Kore.AST.AstWithLocation
-import           Kore.AST.Kore
+import           Kore.AST.Kore as Kore
 import           Kore.AST.Pure
+import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
+import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -24,8 +26,10 @@ import           Kore.MetaML.AST
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
 
-import Test.Kore
-import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
+import           Test.Kore
+import           Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
+import qualified Test.Kore.Builtin.Builtin as Builtin
+import qualified Test.Kore.Builtin.Definition as Builtin
 
 data PatternRestrict
     = NeedsInternalDefinitions
@@ -722,6 +726,40 @@ test_patternVerifier =
             }
       where
         SortName name = boolSortName
+
+test_verifyBinder :: [TestTree]
+test_verifyBinder =
+    [ testVerifyExists
+    , testVerifyForall
+    ]
+  where
+    context =
+        PatternVerifier.Context
+            { declaredVariables = PatternVerifier.emptyDeclaredVariables
+            , declaredSortVariables = Set.empty
+            , indexedModule = Builtin.indexedModule
+            , builtinDomainValueVerifiers = mempty
+            }
+    testVerifyBinder name expect =
+        testCase name $ do
+            let
+                original = Kore.eraseAnnotations $ patternPureToKore expect
+                verifier = verifyStandalonePattern Nothing original
+                Right actual =
+                    annotationKoreToPure . patternKoreToPure
+                    <$> runPatternVerifier context verifier
+            assertEqual "" expect actual
+            assertEqual "" (extract expect) (extract actual)
+    testVerifyExists =
+        testVerifyBinder "verifyExists" expect
+      where
+        x = varS "x" Builtin.intSort
+        expect = mkExists x (mkVar x)
+    testVerifyForall =
+        testVerifyBinder "verifyForall" expect
+      where
+        x = varS "x" Builtin.intSort
+        expect = mkForall x (mkVar x)
 
 dummyVariableAndSentences
     :: NamePrefix

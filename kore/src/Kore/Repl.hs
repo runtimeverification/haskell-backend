@@ -12,8 +12,6 @@ module Kore.Repl
 
 import           Control.Exception
                  ( AsyncException (UserInterrupt) )
-import           Control.Lens
-                 ( (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad.Catch
@@ -23,12 +21,9 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT )
-import           Control.Monad.State.Strict
-                 ( evalStateT, get )
-import           Control.Monad.State.Strict
-                 ( lift )
+                 ( MonadState, StateT, evalStateT )
 import qualified Data.Graph.Inductive.Graph as Graph
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( listToMaybe )
 import           System.IO
@@ -89,7 +84,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     repl0 :: StateT (ReplState level) Simplifier Bool
     repl0 = do
         command <- maybe ShowUsage id . parseMaybe commandParser <$> prompt
-        replInterpreter command
+        replInterpreter putStrLn command
 
     state :: ReplState level
     state =
@@ -99,23 +94,31 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
+            -- TODO(Vladimir): should initialize this to the value obtained from
+            -- the frontend via '--omit-labels'.
+            , omit    = []
             , stepper = stepper0
+            , labels  = Map.empty
             }
 
     firstClaim :: Claim level
     firstClaim = maybe (error "No claims found") id $ listToMaybe claims'
 
-    firstClaimExecutionGraph :: ExecutionGraph level
+    firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
-    stepper0 :: StateT (ReplState level) Simplifier Bool
-    stepper0 = do
-        ReplState { claims , axioms , graph , claim , node } <- get
+    stepper0
+        :: Claim level
+        -> [Claim level]
+        -> [Axiom level]
+        -> ExecutionGraph
+        -> Graph.Node
+        -> Simplifier (ExecutionGraph, Bool)
+    stepper0 claim claims axioms graph node = do
         if Graph.outdeg (Strategy.graph graph) node == 0
             then do
                 graph' <-
-                    lift
-                        . catchInterruptWithDefault graph
+                        catchInterruptWithDefault graph
                         $ verifyClaimStep
                             tools
                             simplifier
@@ -126,9 +129,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                             axioms
                             graph
                             node
-                lensGraph .= graph'
-                pure True
-            else pure False
+                pure (graph', True)
+            else pure (graph, False)
 
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =
