@@ -1,4 +1,4 @@
-include $(CURDIR)/../../../working/include.mk
+include $(CURDIR)/../../../../working/include.mk
 
 KOMPILED = path-kompiled
 DEFINITION = $(KOMPILED)/definition.kore

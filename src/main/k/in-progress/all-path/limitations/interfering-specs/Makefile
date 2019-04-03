@@ -1,4 +1,4 @@
-include $(CURDIR)/../../../working/include.mk
+include $(CURDIR)/../../../../working/include.mk
 
 KOMPILED = path-kompiled
 DEFINITION = $(KOMPILED)/definition.kore
@@ -33,10 +33,11 @@ $(DEFINITION): path.k
 
 all_tests := $(k_tests)
 k_tests := 
-not_prove_tests :=
+not_prove_tests := \
+	all-path-a-c-b-d-spec
 prove_tests := \
-	all-path-b-spec \
-	all-path-c-spec \
+	all-path-a-c-spec \
+	all-path-b-d-spec \
 
 test: $(foreach test, $(all_tests), tests/$(test).test)
 
