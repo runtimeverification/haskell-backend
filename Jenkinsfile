@@ -46,7 +46,10 @@ pipeline {
           when {
             anyOf {
               branch 'master'
-              changelog '^.*\\[kevm-integration\\].*$'
+              expression {
+                TAGGED_KEVM_INTEGRATION = sh(returnStdout: true, script: './scripts/should-run-kevm-integration.sh [kevm-integration]').trim()
+                return TAGGED_KEVM_INTEGRATION == 'true'
+              }
             }
           }
           steps {
