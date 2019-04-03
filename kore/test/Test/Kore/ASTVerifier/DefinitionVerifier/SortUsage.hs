@@ -18,6 +18,8 @@ import Kore.AST.Valid
        ( mkTop )
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
+import Kore.IndexedModule.Error
+       ( noSortOld )
 import Kore.Step.Pattern
 
 import Test.Kore
@@ -92,7 +94,7 @@ test_sortUsage =
                 ]
             }
         )
-        (ExpectedErrorMessage "Sort 's' not declared.")
+        (ExpectedErrorMessage $ noSortOld "s")
         (ErrorStack ["sort 's' (<test data>)", "(<test data>)"])
         (TestedSort (simpleSort (SortName "s")))
         (NamePrefix "#internal")
@@ -167,7 +169,7 @@ test_sortUsage =
             , testConfigurationCaseBasedConfiguration = []
             }
         )
-        (ExpectedErrorMessage "Sort '#s' not declared.")
+        (ExpectedErrorMessage $ noSortOld "#s")
         (ErrorStack ["sort '#s' (<test data>)", "(<test data>)"])
         (TestedSort (simpleSort (SortName "#s")))
         (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))

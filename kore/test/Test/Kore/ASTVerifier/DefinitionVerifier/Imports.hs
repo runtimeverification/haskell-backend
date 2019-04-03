@@ -13,6 +13,8 @@ import Kore.AST.Sentence
 import Kore.AST.Valid
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
+import Kore.IndexedModule.Error
+       ( noSortOld )
 import Kore.Step.Pattern
 
 import Test.Kore
@@ -159,7 +161,7 @@ sortVisibilityTests :: [TestTree]
 sortVisibilityTests =
     [ nameReferenceTests
         "Sort visibility in sorts"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "axiom declaration"
             , "\\top (<test data>)"
@@ -173,7 +175,7 @@ sortVisibilityTests =
         (SupportingSentences sortReferenceInSortSupportingSentences)
     , nameReferenceTests
         "Sort visibility in top pattern"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "axiom declaration"
             , "\\top (<test data>)"
@@ -186,7 +188,7 @@ sortVisibilityTests =
         (SupportingSentences [])
     , nameReferenceTests
         "Sort visibility in exists pattern"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "axiom declaration"
             , "\\exists 'var' (<test data>)"
@@ -199,7 +201,7 @@ sortVisibilityTests =
         (SupportingSentences [])
     , nameReferenceTests
         "Sort visibility in and pattern"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "axiom declaration"
             , "\\and (<test data>)"
@@ -212,7 +214,7 @@ sortVisibilityTests =
         (SupportingSentences [])
     , nameReferenceTests
         "Sort visibility in next pattern"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "axiom declaration"
             , "\\next (<test data>)"
@@ -225,7 +227,7 @@ sortVisibilityTests =
         (SupportingSentences [])
     , nameReferenceTests
         "Sort visibility in pattern in pattern"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "axiom declaration"
             , "\\next (<test data>)"
@@ -240,7 +242,7 @@ sortVisibilityTests =
             sortReferenceInPatternInPatternSupportingSentences)
     , nameReferenceTests
         "Sort visibility in symbol declaration - return sort"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "symbol 'symbol1' declaration (<test data>)"
             , "sort 'sort1' (<test data>)"
@@ -252,7 +254,7 @@ sortVisibilityTests =
         (SupportingSentences [])
     , nameReferenceTests
         "Sort visibility in symbol declaration - operand sort"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "symbol 'symbol1' declaration (<test data>)"
             , "sort 'sort1' (<test data>)"
@@ -265,7 +267,7 @@ sortVisibilityTests =
             sortReferenceInSentenceSymbolSortsSupportSentences)
     , nameReferenceTests
         "Sort visibility in alias declaration - return sort"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "alias 'alias1' declaration (<test data>)"
             , "sort 'sort1' (<test data>)"
@@ -277,7 +279,7 @@ sortVisibilityTests =
         (SupportingSentences [])
     , nameReferenceTests
         "Sort visibility in alias declaration - operand sort"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "alias 'alias1' declaration (<test data>)"
             , "sort 'sort1' (<test data>)"
@@ -290,7 +292,7 @@ sortVisibilityTests =
             sortReferenceInSentenceAliasSortsSupportSentences)
     , nameReferenceTests
         "Sort visibility in application patterns"
-        (ExpectedErrorMessage "Sort 'sort1' not declared.")
+        (ExpectedErrorMessage $ noSortOld "sort1")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'symbol2' (<test data>)"
