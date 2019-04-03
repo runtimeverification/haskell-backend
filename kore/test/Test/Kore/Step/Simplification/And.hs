@@ -19,7 +19,6 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom, top )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (MultiOr) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -302,7 +301,6 @@ test_andSimplification =
             assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "different constructors" $ do
-            let expect = ExpandedPattern.bottom
             actual <-
                 evaluatePatterns
                     Predicated
@@ -315,7 +313,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqualWithExplanation "" (MultiOr []) actual
         ]
 
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
