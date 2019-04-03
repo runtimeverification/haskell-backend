@@ -298,7 +298,7 @@ test_resolver_undefined_messages =
     testGroup "each resolver has a standard failure message"
         [ resolveAlias `produces_` Error.noAlias
         , resolveSymbol `produces_` Error.noSymbol
-        , resolveSort `produces_` Error.noSortOld
+        , resolveSort `produces_` Error.noSort
         ]
       where
         produces_ resolver formatter =

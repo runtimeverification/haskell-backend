@@ -19,7 +19,7 @@ import Kore.AST.Valid
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 import Kore.IndexedModule.Error
-       ( noSortOld )
+       ( noSort )
 import Kore.Step.Pattern
 
 import Test.Kore
@@ -94,7 +94,7 @@ test_sortUsage =
                 ]
             }
         )
-        (ExpectedErrorMessage $ noSortOld "s")
+        (ExpectedErrorMessage $ noSort "s")
         (ErrorStack ["sort 's' (<test data>)", "(<test data>)"])
         (TestedSort (simpleSort (SortName "s")))
         (NamePrefix "#internal")
@@ -169,7 +169,7 @@ test_sortUsage =
             , testConfigurationCaseBasedConfiguration = []
             }
         )
-        (ExpectedErrorMessage $ noSortOld "#s")
+        (ExpectedErrorMessage $ noSort "#s")
         (ErrorStack ["sort '#s' (<test data>)", "(<test data>)"])
         (TestedSort (simpleSort (SortName "#s")))
         (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))

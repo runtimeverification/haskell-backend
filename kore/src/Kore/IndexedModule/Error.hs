@@ -5,7 +5,6 @@ License     : NCSA
 
 module Kore.IndexedModule.Error
     ( noSort
-    , noSortOld
     , noHead
     , noAlias
     , noSymbol
@@ -17,11 +16,6 @@ import Kore.AST.Kore
 noSort :: MetaOrObject level => Id level -> String
 noSort sortId =
     notDefined "Sort" $ getIdForError sortId
-
--- | A message declaring that a Sort is undefined
-noSortOld :: MetaOrObject level => Id level -> String
-noSortOld sortId =
-    "Sort '" ++ getIdForError sortId ++  "' not declared."
 
 -- | A message declaring that a Head is undefined
 noHead :: MetaOrObject level => SymbolOrAlias level -> String

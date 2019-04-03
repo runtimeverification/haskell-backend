@@ -23,7 +23,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error
-                 ( noSortOld )
+                 ( noSort )
 import           Kore.MetaML.AST
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
@@ -111,7 +111,7 @@ test_patternVerifier =
         -- at least in some cases.
         NeedsInternalDefinitions
     , failureTestsForObjectPattern "Object pattern - sort not defined"
-        (ExpectedErrorMessage $ noSortOld "ObjectSort")
+        (ExpectedErrorMessage $ noSort "ObjectSort")
         (ErrorStack
             [ "\\exists 'ObjectVariable' (<test data>)"
             , "\\exists 'ObjectVariable' (<test data>)"
@@ -204,7 +204,7 @@ test_patternVerifier =
         [objectSortSentence, anotherSortSentence]
         NeedsInternalDefinitions
     , failureTestsForMetaPattern "Meta pattern - sort not defined"
-        (ExpectedErrorMessage $ noSortOld "#InvalidMetaSort")
+        (ExpectedErrorMessage $ noSort "#InvalidMetaSort")
         (ErrorStack
             [ "\\exists '#MetaVariable' (<test data>)"
             , "sort '#InvalidMetaSort' (<test data>)"

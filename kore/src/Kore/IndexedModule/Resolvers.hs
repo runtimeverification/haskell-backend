@@ -53,7 +53,7 @@ import           Kore.ASTHelpers
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.Error
-                 ( noAlias, noHead, noSort, noSymbol, noSortOld )
+                 ( noAlias, noHead, noSort, noSymbol )
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), getIndexedSentence,
                  indexedModulesInScope )
@@ -242,7 +242,7 @@ resolveSort
 resolveSort m sortId =
     case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
         Nothing ->
-            koreFailWithLocations [sortId] $ noSortOld sortId
+            koreFailWithLocations [sortId] $ noSort sortId
         Just sortDescription ->
             return sortDescription
 
