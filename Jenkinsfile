@@ -30,6 +30,11 @@ pipeline {
           '''
         }
       }
+      post {
+        always {
+          junit 'kore/test-results.xml'
+        }
+      }
     }
     stage('K Integration Tests') {
       steps {
@@ -64,11 +69,6 @@ pipeline {
                   , message: "KEVM Integration Tests Failure: ${env.BUILD_URL}"
         }
       }
-    }
-  }
-  post {
-    always {
-      junit 'kore/test-results.xml'
     }
   }
 }
