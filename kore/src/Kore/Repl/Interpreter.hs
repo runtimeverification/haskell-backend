@@ -400,6 +400,7 @@ performSingleStep
     :: ReplM level StepResult
 performSingleStep = do
     ReplState { claims , axioms , graph , claim , node, stepper } <- get
+    -- lensNode .= loop (loopCond graph) node
     (graph'@Strategy.ExecutionGraph { graph = gr }, res) <- lift $ stepper claim claims axioms graph node
     if res
         then do
@@ -413,6 +414,10 @@ performSingleStep = do
                     pure Success
                 neighbors -> pure (Branch neighbors)
         else pure NodeAlreadyEvaluated
+  where
+      loopCond gph n = if length (Graph.suc gph n) == 1
+                          then Left $ head (Graph.suc gph n)
+                          else Right $ n
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
