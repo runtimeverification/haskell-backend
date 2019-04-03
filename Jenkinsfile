@@ -4,6 +4,9 @@ pipeline {
       additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
     }
   }
+  options {
+    ansiColor('xterm')
+  }
   stages {
     stage('Init title') {
       when { changeRequest() }
@@ -15,20 +18,16 @@ pipeline {
     }
     stage('Check') {
       steps {
-        ansiColor('xterm') {
-          sh '''
-            ./scripts/check.sh
-          '''
-        }
+        sh '''
+          ./scripts/check.sh
+        '''
       }
     }
     stage('Build/Unit Test') {
       steps {
-        ansiColor('xterm') {
-          sh '''
-            ./scripts/build.sh
-          '''
-        }
+        sh '''
+          ./scripts/build.sh
+        '''
       }
       post {
         always {
@@ -38,11 +37,9 @@ pipeline {
     }
     stage('K Integration Tests') {
       steps {
-        ansiColor('xterm') {
-          sh '''
-            ./scripts/ktest.sh
-          '''
-        }
+        sh '''
+          ./scripts/ktest.sh
+        '''
       }
     }
     stage('KEVM Integration Tests') {
@@ -56,11 +53,9 @@ pipeline {
         }
       }
       steps {
-        ansiColor('xterm') {
-          sh '''
-            ./scripts/kevm-integration.sh
-          '''
-        }
+        sh '''
+          ./scripts/kevm-integration.sh
+        '''
       }
       post {
         failure {
