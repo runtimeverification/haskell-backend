@@ -70,7 +70,7 @@ data RulePattern level variable = RulePattern
     , ensures :: !(Predicate level variable)
     , attributes :: !Attribute.Axiom
     }
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 instance Unparse (variable level) => Pretty (RulePattern level variable) where
     pretty rulePattern@(RulePattern _ _ _ _ _) =

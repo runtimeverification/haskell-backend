@@ -12,9 +12,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Data.Functor.Identity
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.Tree
-                 ( Tree (..) )
-import qualified Data.Tree as Tree
+import qualified Data.Sequence as Seq
 import           Numeric.Natural
 import           Prelude hiding
                  ( and, const, or, seq )
@@ -22,30 +20,16 @@ import           Prelude hiding
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Data.Maybe
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..), Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-
-{-| Convert an ExecutionGraph to a Tree, for the sake
-of keeping the old Tree-based unit tests.
-If the ExecutionGraph has a confluence at any point,
-all nodes downstream of it will be duplicated.
-From the point of view of these unit tests this behavior is correct.
--}
-toTree :: ExecutionGraph config rule -> Tree config
-toTree (ExecutionGraph root graph _) = Tree.unfoldTree findChildren root
-  where
-    findChildren node =
-        ( fromJust $ Graph.lab graph node
-        , map snd $ filter ((node==) . fst) edges)
-    edges = map (\(a,b,_) -> (a,b)) $ Graph.labEdges graph
+import qualified Kore.Step.Transition as Transition
 
 data Prim
     = Const Natural
     | Succ
     | Throw
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 instance Arbitrary Prim where
     arbitrary = do
@@ -83,10 +67,13 @@ instance Arbitrary prim => Arbitrary (Strategy prim) where
             Strategy.Stuck -> []
             Strategy.Continue -> []
 
-transitionPrim :: Prim -> Natural -> TransitionT () Identity Natural
-transitionPrim (Const n) = \_ -> pure n
-transitionPrim Succ      = \n -> pure (succ n)
-transitionPrim Throw     = \_ -> empty
+transitionPrim :: Prim -> Natural -> TransitionT Prim Identity Natural
+transitionPrim rule n = do
+    Transition.addRule rule
+    case rule of
+        Const i -> pure i
+        Succ    -> pure (succ n)
+        Throw   -> empty
 
 apply :: Prim -> Strategy Prim
 apply = Strategy.apply
@@ -124,7 +111,7 @@ unlimited = Unlimited
 runStrategy
     :: [Strategy Prim]
     -> Natural
-    -> ExecutionGraph Natural ()
+    -> ExecutionGraph Natural Prim
 runStrategy strategy z =
     let
         Identity rs = Strategy.runStrategy transitionPrim strategy z
@@ -170,70 +157,83 @@ prop_OrStuckIdentity a n =
 prop_Stuck :: Natural -> Property
 prop_Stuck n =
     let
-        expect = Node n []
-        actual = runStrategy [stuck] n
+        expect = Graph.mkGraph [(0, n)] []
+        actual = Strategy.graph $ runStrategy [stuck] n
     in
-        expect === toTree actual
+        expect === actual
 
 prop_Continue :: Natural -> Property
 prop_Continue n =
     let
-        expect = Node n [ Node n [] ]
-        actual = runStrategy [continue] n
+        expect =
+            Graph.mkGraph
+                [ (0, n) , (1, n) ]
+                [ (0, 1, Seq.empty) ]
+        actual = Strategy.graph $ runStrategy [continue] n
     in
-        expect === toTree actual
+        expect === actual
 
 test_And :: [TestTree]
 test_And =
-    [
-        let
-            expect = Node 0 [ Node 1 [] ]
-            strategy = [and stuck (const 1)]
-            actual = toTree $ runStrategy strategy 0
-        in
-            testCase "Stuck on left" (expect @=? actual)
-    ,
-        let
-            expect = Node 0 [ Node 1 [] ]
-            strategy = [and (const 1) stuck]
-            actual = toTree $ runStrategy strategy 0
-        in
-            testCase "Stuck on right" (expect @=? actual)
-    ]
+    let
+        expect =
+            Graph.mkGraph
+                [ (0, 0) , (1, 1) ]
+                [ (0, 1, Seq.fromList [Const 1]) ]
+    in
+        [ testCase "Stuck on left" $ do
+            let
+                strategy = [and stuck (const 1)]
+                actual = Strategy.graph $ runStrategy strategy 0
+            expect @=? actual
+        , testCase "Stuck on right" $ do
+            let
+                strategy = [and (const 1) stuck]
+                actual = Strategy.graph $ runStrategy strategy 0
+            expect @=? actual
+        ]
 
 test_Or :: [TestTree]
 test_Or =
-    [
-        let
-            expect = Node 0 [ Node 1 [] ]
-            strategy = [or throw (const 1)]
-            actual = toTree $ runStrategy strategy 0
-        in
-            testCase "Throw on left" (expect @=? actual)
-    ,
-        let
-            expect = Node 0 [ Node 1 [] ]
-            strategy = [or (const 1) throw]
-            actual = toTree $ runStrategy strategy 0
-        in
-            testCase "Throw on right" (expect @=? actual)
-    ]
+    let
+        expect =
+            Graph.mkGraph
+                [ (0, 0) , (1, 1) ]
+                [ (0, 1, Seq.fromList [Const 1]) ]
+    in
+        [ testCase "Throw on left" $ do
+            let
+                strategy = [or throw (const 1)]
+                actual = Strategy.graph $ runStrategy strategy 0
+            expect @=? actual
+        , testCase "Throw on right" $ do
+            let
+                strategy = [or (const 1) throw]
+                actual = Strategy.graph $ runStrategy strategy 0
+            expect @=? actual
+        ]
 
 
 prop_stepLimit :: Integer -> Property
 prop_stepLimit i =
-    (i >= 0) ==> (expect === toTree actual)
+    (i >= 0) ==> (expect === actual)
   where
     n = fromInteger i
-    level m = singleton . Node m
-    [expect] = foldr level [] [0..n]
-    actual = enumerate n
-    singleton x = [x]
+    expect =
+        Graph.mkGraph nodes edges
+      where
+        nodes = do
+            j <- [0..n]
+            return (fromIntegral j, j)
+        edges = do
+            (j, _) <- init nodes
+            return (j, j + 1, Seq.singleton Succ)
+    actual = Strategy.graph $ enumerate n
 
 -- | Enumerate values from zero to @n@, then get stuck.
 enumerate
     :: Natural  -- ^ @n@
-    -> ExecutionGraph Natural ()
+    -> ExecutionGraph Natural Prim
 enumerate n = runStrategy (Limit.replicate (Limit n) succ_) 0
 
 prop_pickLongest :: Integer -> Property
