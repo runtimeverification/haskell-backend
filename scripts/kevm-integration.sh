@@ -4,6 +4,7 @@ set -exuo pipefail
 
 TOP=${TOP:-$(git rev-parse --show-toplevel)}
 EVM_SEMANTICS=$TOP/evm-semantics
+OPAM_SETUP_SKIP="${OPAM_SETUP_SKIP:-false}"
 
 mkdir -p $(dirname $EVM_SEMANTICS)
 
@@ -30,6 +31,7 @@ ci_git commit --message '!!! .build/k: integration testing haskell backend'
 
 make clean
 git submodule update --init --recursive
+[[ "$OPAM_SETUP_SKIP" != "false" ]] || ./.build/k/k-distribution/src/main/scripts/bin/k-configure-opam-dev
 
 make haskell-deps  -B
 make build-haskell -B
