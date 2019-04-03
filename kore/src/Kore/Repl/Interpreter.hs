@@ -402,7 +402,7 @@ performSingleStep = do
     ReplState { claims , axioms , graph , claim , node , stepper } <- get
     let leaf = loop (loopCond . Strategy.graph $ graph) node
     lensNode .= leaf
-    (graph'@Strategy.ExecutionGraph { graph = gr }, res) <-
+    (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
         lift $ stepper claim claims axioms graph leaf
     lensGraph .= graph'
     let context = Graph.context gr leaf
@@ -415,7 +415,7 @@ performSingleStep = do
   where
       loopCond gph n = case Graph.suc gph n of
                          [x] -> Left x
-                         xs  -> Right n
+                         _   -> Right n
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
