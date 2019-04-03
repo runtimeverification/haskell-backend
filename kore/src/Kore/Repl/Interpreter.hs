@@ -496,8 +496,7 @@ showDotGraph =
         . Graph.graphToDot Graph.nonClusteredParams
 
 data StepResult
-    = NodeAlreadyEvaluated
-    | NoChildNodes
+    = NoChildNodes
     | Branch [Graph.Node]
     | Success
     deriving Show
