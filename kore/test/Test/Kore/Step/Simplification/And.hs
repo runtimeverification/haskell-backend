@@ -200,12 +200,6 @@ test_andSimplification =
             assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "And substitutions - failure" $ do
-            let expect =
-                    Predicated
-                        { term = mkTop_
-                        , predicate = makeFalsePredicate
-                        , substitution = mempty
-                        }
             actual <-
                 evaluatePatterns
                     Predicated
@@ -226,7 +220,7 @@ test_andSimplification =
                                 )
                             ]
                         }
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqualWithExplanation "" (MultiOr []) actual
             {-
             TODO(virgil): Uncomment this after substitution merge can handle
             function equality.
