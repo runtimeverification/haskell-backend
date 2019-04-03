@@ -233,22 +233,24 @@ data ChildNode config rule = ChildNode
 insChildNode
     :: ChildNode config rule
     -> State (Gr config (Seq rule)) Graph.Node
-insChildNode configNode = do
-    graph <- State.get
-    let
-        nodeId = (succ . snd) (Graph.nodeRange graph)
-        ChildNode { config } = configNode
-        newNode = (nodeId, config)
-        ChildNode { parents } = configNode
-        newEdges = do
-            (edge, parentNodeId) <- parents
-            return (parentNodeId, nodeId, edge)
-        graph' =
-            Graph.insEdges newEdges
-            $ Graph.insNode newNode
-            $ graph
-    State.put graph'
-    return nodeId
+insChildNode configNode =
+    State.state insChildNodeWorker
+  where
+    ChildNode { config } = configNode
+    ChildNode { parents } = configNode
+    insChildNodeWorker graph =
+        let
+            node' = (succ . snd) (Graph.nodeRange graph)
+            lnode = (node', config)
+            ledges = do
+                (edge, node) <- parents
+                return (node, node', edge)
+            graph' =
+                Graph.insEdges ledges
+                $ Graph.insNode lnode
+                $ graph
+        in
+            (node', graph')
 
 -- | Perform a single step in the execution starting from the selected node in
 -- the graph and returning the resulting graph. Note that this does *NOT* do
