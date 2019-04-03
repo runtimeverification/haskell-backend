@@ -400,13 +400,12 @@ performSingleStep
     :: ReplM level StepResult
 performSingleStep = do
     ReplState { claims , axioms , graph , claim , node , stepper } <- get
-    let
-        leaf = loop (loopCond . Strategy.graph $ graph) node
+    let leaf = loop (loopCond . Strategy.graph $ graph) node
     lensNode .= leaf
-    (graph'@Strategy.ExecutionGraph { graph = gr }, res) <- lift $ stepper claim claims axioms graph leaf
+    (graph'@Strategy.ExecutionGraph { graph = gr }, res) <-
+        lift $ stepper claim claims axioms graph leaf
     lensGraph .= graph'
-    let
-        context = Graph.context gr leaf
+    let context = Graph.context gr leaf
     case Graph.suc' context of
       [] -> pure NoChildNodes
       [configNo] -> do
@@ -414,9 +413,9 @@ performSingleStep = do
           pure Success
       neighbors -> pure (Branch neighbors)
   where
-      loopCond gph n = if length (Graph.suc gph n) == 1
-                          then Left $ head (Graph.suc gph n)
-                          else Right $ n
+      loopCond gph n = case Graph.suc gph n of
+                         [x] -> Left x
+                         xs  -> Right n
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
