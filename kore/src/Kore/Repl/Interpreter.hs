@@ -288,8 +288,7 @@ showRule configNode = do
     if node' `elem` Graph.nodes graph
         then do
             putStrLn' $ "Rule for node " <> show node' <> " is:"
-            putStrLn'
-                . unparseNodeLabels
+            unparseNodeLabels
                 . Graph.inn'
                 . Graph.context graph
                 $ node'
@@ -346,8 +345,7 @@ tryAxiomClaim eac = do
     ReplState { axioms, claims, claim, graph, node, stepper } <- get
     let meac' = bimap singleton singleton <$> resolve axioms claims eac
     if isRight eac && node == 0
-        then
-            tell "Cannot apply co-inductive claim as the first step"
+        then tell "Cannot apply co-inductive claim as the first step"
         else case meac' of
             Nothing -> tell "Could not find axiom or claim"
             Just eac' -> do
@@ -521,11 +519,11 @@ unparseStrategy omitList =
            . symbolOrAliasConstructor
 
 unparseNodeLabels
-    :: [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
-    -> String
+    :: MonadWriter String m
+    => [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
+    -> m ()
 unparseNodeLabels =
-    join
-    . fmap unparseToString
+    traverse_ printRewriteRule
     . join
     . fmap (toList . third)
   where
@@ -543,7 +541,7 @@ printNotFound :: MonadWriter String m => m ()
 printNotFound = putStrLn' "Variable or index not found"
 
 putStrLn' :: MonadWriter String m => String -> m ()
-putStrLn' = tell
+putStrLn' str = tell $ str <> "\n"
 
 showDotGraph :: Graph gr => gr nl el -> IO ()
 showDotGraph =
