@@ -12,7 +12,7 @@ import Kore.Step.Strategy ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
 @
 -}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 module Kore.Step.Strategy
     ( -- * Strategies
       Strategy (..)
@@ -40,23 +40,27 @@ module Kore.Step.Strategy
     , assert
     , executionHistoryStep
     , emptyExecutionGraph
+    , module Kore.Step.Transition
     ) where
 
-import           Data.Foldable
-                 ( asum )
-import           Data.Function
-                 ( on )
+import           Control.Applicative
+                 ( Alternative (empty, (<|>)) )
+import           Control.Monad
+                 ( (>=>) )
+import           Control.Monad.State.Strict
+                 ( State )
+import qualified Control.Monad.State.Strict as State
+import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
 import           Data.Hashable
-import           Data.List
-                 ( find, groupBy )
+import qualified Data.List as List
 import           Data.Maybe
 import           Prelude hiding
                  ( all, and, any, or, replicate, seq, sequence )
 
-import Kore.Debug
+import Kore.Step.Transition
 
 assert :: Bool -> a -> a
 assert b a = if b then a else error "assertion failed"
@@ -208,78 +212,45 @@ seq a continue === a
 continue :: Strategy prim
 continue = Continue
 
-data ExecutionGraph config = ExecutionGraph
+data ExecutionGraph config rule = ExecutionGraph
     { root :: Graph.Node
-    , graph :: Gr config ()
-    , history :: [[ConfigNode config]]
+    , graph :: Gr config (Seq rule)
     }
     deriving(Eq, Show)
 
 -- | A temporary data structure used to construct the 'ExecutionGraph'.
 -- Well, it was intended to be temporary, but for the purpose of making
 -- 'pickLongest' fast it turns out to be useful to keep it around.
-data ConfigNode config = ConfigNode
+data ChildNode config rule = ChildNode
     { config :: config
-    , timestep :: Int
-    -- ^'timestep' represents the time at which a configuration was generated
-    -- during execution. Identical configurations occuring at different times
-    -- are considered different for the purposes of this algorithm.
-    , nodeId :: Int
-    -- ^ 'nodeId' is the hash of 'config' and 'timestep'.
-    , parents :: [Int]
-    -- ^ a list of Ids of predecessor configurations in the execution graph.
+    , parents :: [(Seq rule, Graph.Node)]
+    -- ^ The predecessor configurations in the execution graph and the sequence
+    -- of rules applied from the parent configuration to the present
+    -- configuration.
     }
     deriving (Eq, Show, Functor)
 
-constructExecutionHistory
-    :: forall m config instr . (Monad m, Hashable config, Show config)
-    => (instr -> config -> m [config])
-    -> [instr]
-    -> config
-    -> m [[ConfigNode config]]
-constructExecutionHistory transit instrs0 config0 =
-    (pool0:) <$> step instrs0 pool0
-
+insChildNode
+    :: ChildNode config rule
+    -> State (Gr config (Seq rule)) Graph.Node
+insChildNode configNode =
+    State.state insChildNodeWorker
   where
-
-    pool0 :: [ConfigNode config]
-    pool0 = [ConfigNode config0 0 (hash (config0, 0 :: Int)) []]
-
-    step :: [instr] -> [ConfigNode config] -> m [[ConfigNode config]]
-    step [] _pool =
-        traceNonErrorMonad D_Step [ debugArg "lastStep" True ]
-        $ pure []
-    step (instr : instrs) pool =
-        traceNonErrorMonad D_Step [ debugArg "lastStep" False ]
-        $ do
-            newPool <-
-                mergeDuplicates . concat <$> mapM (getChildNodes instr) pool
-            if null newPool
-                then pure []
-                else (newPool :) <$> step instrs newPool
-
-    getChildNodes :: instr -> ConfigNode config -> m [ConfigNode config]
-    getChildNodes instr (ConfigNode config timestep node _) = do
-        children <- transit instr config
-        pure
-            [ ConfigNode
-                child
-                (timestep+1)
-                (hash (child, timestep+1))
-                [node]
-            | child <- children ]
-
-    mergeDuplicates :: [ConfigNode config] -> [ConfigNode config]
-    mergeDuplicates = map mergeDuplicates0 . groupBy ((==) `on` nodeId)
-
-    mergeDuplicates0 :: [ConfigNode config] -> ConfigNode config
-    mergeDuplicates0 nodes@(node : _) = ConfigNode
-        (config node)
-        (timestep node)
-        (nodeId node)
-        (concat $ map parents nodes)
-    mergeDuplicates0 _ = error "The impossible happened"
-
+    ChildNode { config } = configNode
+    ChildNode { parents } = configNode
+    insChildNodeWorker graph =
+        let
+            node' = (succ . snd) (Graph.nodeRange graph)
+            lnode = (node', config)
+            ledges = do
+                (edge, node) <- parents
+                return (node, node', edge)
+            graph' =
+                Graph.insEdges ledges
+                $ Graph.insNode lnode
+                $ graph
+        in
+            (node', graph')
 
 -- | Perform a single step in the execution starting from the selected node in
 -- the graph and returning the resulting graph. Note that this does *NOT* do
@@ -289,47 +260,47 @@ constructExecutionHistory transit instrs0 config0 =
 -- Using simple ID's for nodes will likely be changed in the future in order to
 -- allow merging of states, loop detection, etc.
 executionHistoryStep
-    :: forall m config prim
+    :: forall m config rule prim
     .  Monad m
     => Hashable config
     => Show config
-    => (prim -> config -> m [config])
-    -- ^ state stepper
+    => (prim -> config -> TransitionT rule m config)
+    -- ^ Transition rule
     -> Strategy prim
     -- ^ Primitive strategy
-    -> ExecutionGraph config
+    -> ExecutionGraph config rule
     -- ^ execution graph so far
     -> Graph.Node
     -- ^ current "selected" node
-    -> m (ExecutionGraph config)
+    -> m (ExecutionGraph config rule)
     -- ^ graph with one more step executed for the selected node
-executionHistoryStep transit prim ExecutionGraph { graph, history } node
+executionHistoryStep transit prim exe@ExecutionGraph { graph } node
   | nodeIsNotLeaf = error "Node has already been evaluated"
-  | otherwise = case configNode0 of
-        Nothing -> error "ExecutionGraph not setup properly; node does not exist"
-        Just configNode@ConfigNode { config } -> do
-            configs <- transitionRule transit prim config
+  | otherwise =
+    case Graph.lab graph node of
+        Nothing -> error "Node does not exist"
+        Just config -> do
+            configs <- runTransitionT (transitionRule transit prim config)
             let
-                max     = succ . snd . Graph.nodeRange $ graph
-                nodes   = mkConfigNodes configNode <$> zip [max ..] configs
-            pure . toGraph $ history ++ [nodes]
+                nodes  = mkChildNode <$> configs
+                graph' =
+                    State.execState
+                        (Foldable.traverse_ insChildNode nodes)
+                        graph
+            pure $ exe { graph = graph' }
   where
     nodeIsNotLeaf :: Bool
     nodeIsNotLeaf = Graph.outdeg graph node > 0
 
-    configNode0 :: Maybe (ConfigNode config)
-    configNode0 = asum $ find ((== node) . nodeId) <$> history
-
-    mkConfigNodes
-        :: ConfigNode config
-        -> (Graph.Node, config)
-        -> ConfigNode config
-    mkConfigNodes ConfigNode { timestep, nodeId } (node, config) =
-        ConfigNode
-            config
-            (timestep + 1)
-            node
-            [nodeId]
+    mkChildNode
+        :: (config, Seq rule)
+        -- ^ Child node identifier and configuration
+        -> ChildNode config rule
+    mkChildNode (config, rules) =
+        ChildNode
+            { config
+            , parents = [(rules, node)]
+            }
 
 -- | Create a default/empty execution graph for the provided configuration. Note
 -- that the ID of the root node is NOT a hash but rather just '0'.
@@ -337,14 +308,15 @@ executionHistoryStep transit prim ExecutionGraph { graph, history } node
 -- Using simple ID's for nodes will likely be changed in the future in order to
 -- allow merging of states, loop detection, etc.
 emptyExecutionGraph
-    :: forall config
+    :: forall config rule
     .  Hashable config
     => config
-    -> ExecutionGraph config
-emptyExecutionGraph config = toGraph [[configNode]]
-  where
-    configNode :: ConfigNode config
-    configNode = ConfigNode config 0 (0 :: Int) []
+    -> ExecutionGraph config rule
+emptyExecutionGraph config =
+    ExecutionGraph
+        { root = 0
+        , graph = Graph.insNode (0, config) Graph.empty
+        }
 
 {- | Execute a 'Strategy'.
 
@@ -362,46 +334,62 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
   -}
 
 constructExecutionGraph
-    :: forall m config instr . (Monad m, Hashable config, Show config)
-    => (instr -> config -> m [config])
+    :: forall m config rule instr
+    .  (Monad m, Hashable config, Show config, Show rule)
+    => (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> config
-    -> m (ExecutionGraph config)
-constructExecutionGraph transit instrs0 config0 =
-    toGraph <$> constructExecutionHistory transit instrs0 config0
-
--- | @toGraph@ is a helper function for 'constructExecutionGraph'.
--- It takes a list of timesteps @history@
--- (where @history !! 3@ represents all configurations at time t = 3)
--- and converts it to a directed graph, in which two configurations
--- @a@ and @b@ have an edge @a -> b@ if @b@ follows from
--- @a@ in one step in whatever execution strategy was used.
--- Note this is NOT the same as @b@ following from @a@ with
--- the application of exactly one axiom.
-toGraph :: [[ConfigNode config]] -> ExecutionGraph config
-toGraph history = ExecutionGraph
-    (fst $ head vertices)
-    (Graph.mkGraph vertices edges)
-    history
+    -> m (ExecutionGraph config rule)
+constructExecutionGraph transit instrs config0 = do
+    finalGraph <- constructExecutionGraph1 ([root], initialGraph) instrs
+    return exe { graph = finalGraph }
   where
-    allConfigNodes = concat history
-    vertices = map
-        (\(ConfigNode config _ node _) -> (node, config))
-        allConfigNodes
-    edges = concatMap
-        (\(ConfigNode _ _ node parents) -> map (\p -> (p, node, ())) parents)
-        allConfigNodes
+    exe@ExecutionGraph { root, graph = initialGraph } =
+        emptyExecutionGraph config0
+
+    constructExecutionGraph1
+        :: ([Graph.Node], Gr config (Seq rule))
+        -> [instr]
+        -> m (Gr config (Seq rule))
+    constructExecutionGraph1 ([], graph) _ = return graph
+    constructExecutionGraph1 (_, graph) [] = return graph
+    constructExecutionGraph1 (todo, graph) (instr : instrs') = do
+        (todo', graph') <-
+            Foldable.foldlM
+                (constructExecutionGraph2 instr)
+                ([], graph)
+                todo
+        constructExecutionGraph1 (todo', graph') instrs'
+
+    constructExecutionGraph2 instr (todo, graph) node =
+        case Graph.lab graph node of
+            Nothing -> error "Node does not exist"
+            Just config -> do
+                configs <- runTransitionT (transit instr config)
+                let
+                    nodes = mkChildNode <$> configs
+                    (todo', graph') =
+                        State.runState (traverse insChildNode nodes) graph
+                return (todo ++ todo', graph')
+      where
+        mkChildNode
+            :: (config, Seq rule)
+            -- ^ Child node identifier and configuration
+            -> ChildNode config rule
+        mkChildNode (config, rules) =
+            ChildNode
+                { config
+                , parents = [(rules, node)]
+                }
 
 {- | Transition rule for running a 'Strategy'.
 
  -}
 transitionRule
     :: Monad m
-    => (prim -> config -> m [config])
+    => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
-    -> Strategy prim
-    -> config
-    -> m [config]
+    -> (Strategy prim -> config -> TransitionT rule m config)
 transitionRule applyPrim = transitionRule0
   where
     transitionRule0 =
@@ -414,32 +402,28 @@ transitionRule applyPrim = transitionRule0
             Stuck -> transitionStuck
 
     -- End execution.
-    transitionStuck _ = return []
+    transitionStuck _ = empty
 
-    transitionContinue config = return [config]
+    transitionContinue result = return result
 
     -- Apply the instructions in sequence.
-    transitionSeq instr1 instr2 config0 = do
-        configs1 <- transitionRule0 instr1 config0
-        concat <$> mapM (transitionRule0 instr2) configs1
+    transitionSeq instr1 instr2 =
+        transitionRule0 instr1 >=> transitionRule0 instr2
 
     -- Attempt both instructions, i.e. create a branch for each.
     transitionAnd instr1 instr2 config =
-        (++)
-            <$> transitionRule0 instr1 config
-            <*> transitionRule0 instr2 config
+        transitionRule0 instr1 config <|> transitionRule0 instr2 config
 
     -- Attempt the first instruction. Fall back to the second if it is
     -- unsuccessful.
-    transitionOr instr1 instr2 config =
-        transitionRule0 instr1 config >>=
-            \case
-                [] -> transitionRule0 instr2 config
-                configs -> return configs
+    transitionOr instr1 instr2 config = do
+        results <- tryTransitionT (transitionRule0 instr1 config)
+        case results of
+            [] -> transitionRule0 instr2 config
+            _  -> scatter results
 
     -- Apply a primitive rule. Throw an exception if the rule is not successful.
-    transitionApply prim config =
-        applyPrim prim config
+    transitionApply = applyPrim
 
 {- | Execute a 'Strategy'.
 
@@ -456,31 +440,46 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
  -}
 
 runStrategy
-    :: forall m prim config . (Monad m, Show config, Hashable config)
-    => (prim -> config -> m [config])
+    :: forall m prim rule config
+    .  (Monad m, Show config, Show rule, Hashable config)
+    => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
     -- ^ Strategies
     -> config
     -- ^ Initial configuration
-    -> m (ExecutionGraph config)
+    -> m (ExecutionGraph config rule)
 runStrategy applyPrim instrs0 config0 =
     constructExecutionGraph (transitionRule applyPrim) instrs0 config0
 
-{- | Pick the longest-running branch from a 'Tree'.
+{- | Construct the step-wise execution history of an 'ExecutionGraph'.
 
-  See also: 'runStrategy'
+The step-wise execution history is the list of configurations at each time step.
 
  -}
+history :: ExecutionGraph config rule -> [[config]]
+history ExecutionGraph { root, graph } =
+    List.unfoldr history1 [root]
+  where
+    history1 []    = Nothing
+    history1 nodes = Just (labs, concatMap (Graph.suc graph) nodes)
+      where
+        -- Node labels at this level. Using fromJust is safe because these
+        -- nodes were just retrieved from the graph; if they have suddenly
+        -- disappeared, something has gone tragically wrong.
+        labs = fromJust . Graph.lab graph <$> nodes
 
-pickLongest :: ExecutionGraph config -> config
-pickLongest ExecutionGraph { history } =
-    config $ head $ last $ history
+{- | Pick the longest-running branch from a 'Tree'.
+
+See also: 'runStrategy'
+
+ -}
+pickLongest :: ExecutionGraph config rule -> config
+pickLongest exeGraph = head $ last $ history exeGraph
 
 {- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
  -}
-
-pickFinal :: ExecutionGraph config -> [config]
+pickFinal :: ExecutionGraph config rule -> [config]
 pickFinal ExecutionGraph { graph } =
     map (fromJust . Graph.lab graph) $
     filter isFinal $
@@ -489,8 +488,7 @@ pickFinal ExecutionGraph { graph } =
 
 {- | Return all configurations reachable in one step.
  -}
-
-pickOne :: ExecutionGraph config -> [config]
+pickOne :: ExecutionGraph config rule -> [config]
 pickOne ExecutionGraph { root, graph } =
     map (fromJust . Graph.lab graph) $
     Graph.neighbors graph root
@@ -498,13 +496,13 @@ pickOne ExecutionGraph { root, graph } =
 {- | Return all reachable configurations.
  -}
 
-pickStar :: ExecutionGraph config -> [config]
+pickStar :: ExecutionGraph config rule -> [config]
 pickStar ExecutionGraph { graph } = map snd $ Graph.labNodes graph
 
 {- | Return all configurations reachable after at least one step.
  -}
 
-pickPlus :: ExecutionGraph config -> [config]
+pickPlus :: ExecutionGraph config rule -> [config]
 pickPlus ExecutionGraph { root, graph } =
     map snd $
     filter ((/= root) . fst) $

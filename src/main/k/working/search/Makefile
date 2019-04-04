@@ -1,85 +1,60 @@
+DEFINITION_NAME := search
+
 include $(CURDIR)/../include.mk
 
-KOMPILED := search-kompiled
-DEFINITION := $(KOMPILED)/definition.kore
-
-$(DEFINITION): search.k
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module SEARCH
-
-%.star.output: %.search $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all
-
-%.plus.output: %.search $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps
-
-%.one.output: %.search $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step
-
-%.final.output: %.search $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
-
-%.star.unreachable.output: %.search $(DEFINITION) $(KORE_EXEC)
+%.search.star.unreachable.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all --pattern '<k> unreachable </k>'
 
-%.plus.unreachable.output: %.search $(DEFINITION) $(KORE_EXEC)
+%.search.plus.unreachable.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps --pattern '<k> unreachable </k>'
 
-%.one.unreachable.output: %.search $(DEFINITION) $(KORE_EXEC)
+%.search.one.unreachable.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step --pattern '<k> unreachable </k>'
 
-%.final.unreachable.output: %.search $(DEFINITION) $(KORE_EXEC)
+%.search.final.unreachable.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final --pattern '<k> unreachable </k>'
 
-%.star.initial.output: %.search $(DEFINITION) $(KORE_EXEC)
+%.search.star.initial.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all --pattern '<k> initial </k>'
 
-%.plus.initial.output: %.search $(DEFINITION) $(KORE_EXEC)
+%.search.plus.initial.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-or-more-steps --pattern '<k> initial </k>'
 
-%.one.initial.output: %.search $(DEFINITION) $(KORE_EXEC)
+%.search.one.initial.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step --pattern '<k> initial </k>'
 
-%.final.initial.output: %.search $(DEFINITION) $(KORE_EXEC)
+%.search.final.initial.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final --pattern '<k> initial </k>'
-
-%.krun: %.search $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $<
-
-%.test: %.output
-	diff -u $<.golden $<
-
-%.output.golden: %.output
-	mv $< $<.golden
 
 test: test-k
 
 test-k: \
-	tests/initial.star.test \
-	tests/initial.plus.test \
-	tests/initial.one.test \
-	tests/initial.final.test \
-	tests/initial.star.unreachable.test \
-	tests/initial.plus.unreachable.test \
-	tests/initial.one.unreachable.test \
-	tests/initial.final.unreachable.test \
-	tests/initial.star.initial.test \
-	tests/initial.plus.initial.test \
-	tests/initial.one.initial.test \
-	tests/initial.final.initial.test
+	tests/initial.search.star.test \
+	tests/initial.search.plus.test \
+	tests/initial.search.one.test \
+	tests/initial.search.final.test \
+	tests/initial.search.star.unreachable.test \
+	tests/initial.search.plus.unreachable.test \
+	tests/initial.search.one.unreachable.test \
+	tests/initial.search.final.unreachable.test \
+	tests/initial.search.star.initial.test \
+	tests/initial.search.plus.initial.test \
+	tests/initial.search.one.initial.test \
+	tests/initial.search.final.initial.test
 
 golden: \
-	tests/initial.star.output.golden \
-	tests/initial.plus.output.golden \
-	tests/initial.one.output.golden \
-	tests/initial.final.output.golden \
-	tests/initial.star.unreachable.output.golden \
-	tests/initial.plus.unreachable.output.golden \
-	tests/initial.one.unreachable.output.golden \
-	tests/initial.final.unreachable.output.golden \
-	tests/initial.star.initial.output.golden \
-	tests/initial.plus.initial.output.golden \
-	tests/initial.one.initial.output.golden \
-	tests/initial.final.initial.output.golden
+	tests/initial.search.star.output.golden \
+	tests/initial.search.plus.output.golden \
+	tests/initial.search.one.output.golden \
+	tests/initial.search.final.output.golden \
+	tests/initial.search.star.unreachable.output.golden \
+	tests/initial.search.plus.unreachable.output.golden \
+	tests/initial.search.one.unreachable.output.golden \
+	tests/initial.search.final.unreachable.output.golden \
+	tests/initial.search.star.initial.output.golden \
+	tests/initial.search.plus.initial.output.golden \
+	tests/initial.search.one.initial.output.golden \
+	tests/initial.search.final.initial.output.golden
 
 clean:
 	rm -rf $(KOMPILED) tests/*.output

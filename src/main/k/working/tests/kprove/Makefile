@@ -1,29 +1,6 @@
+DEFINITION_NAME := imp
+
 include $(CURDIR)/../../include.mk
-
-KOMPILED := imp-kompiled
-DEFINITION := $(KOMPILED)/definition.kore
-
-$(DEFINITION): imp.k $(KOMPILE)
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module IMP
-
-%.krun: %.imp $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $<
-
-%.kprove: %.k $(DEFINITION) $(KORE_EXEC)
-	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
-
-%.output: %.k $(DEFINITION) $(KORE_EXEC)
-	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $< --output-file $@
-
-%.search.final.output: %.imp $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
-		$(foreach pat, $(wildcard $*.search.pattern), --pattern "$$(cat $(pat))")
-
-%.test: %.output
-	diff -u $<.golden $<
-
-%.output.golden: %.output
-	mv $< $<.golden
 
 prove_tests := \
 	sum-spec

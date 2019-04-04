@@ -19,10 +19,12 @@ module Kore.OnePath.Step
     , strategyPattern
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import           Control.Monad.Except
                  ( runExceptT )
-import           Data.Foldable
-                 ( toList )
+import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Foldable as Foldable
 import           Data.Hashable
 import           Data.Semigroup
                  ( (<>) )
@@ -51,18 +53,17 @@ import qualified Kore.Step.Representation.ExpandedPattern as Predicated
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
-                 ( RewriteRule )
+                 ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import           Kore.Step.Step
-                 ( OrStepResult (OrStepResult) )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
-                 ( Strategy )
+                 ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
 
@@ -215,11 +216,8 @@ transitionRule
     -> Prim (CommonExpandedPattern level) (RewriteRule level Variable)
     -> (CommonStrategyPattern  level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> Simplifier
-        [   ( CommonStrategyPattern level
-            , StepProof level Variable
-            )
-        ]
+    -> TransitionT (RewriteRule level Variable) Simplifier
+        (CommonStrategyPattern level, StepProof level Variable)
 transitionRule
     tools
     substitutionSimplifier
@@ -241,12 +239,13 @@ transitionRule
         applySimplify RewritePattern (config, proof)
     transitionSimplify (Stuck config, proof) =
         applySimplify Stuck (config, proof)
-    transitionSimplify c@(Bottom, _) = return [c]
+    transitionSimplify c@(Bottom, _) = return c
 
     applySimplify wrapper (config, proof) =
         do
             (configs, proof') <-
-                ExpandedPattern.simplify
+                Monad.Trans.lift
+                $ ExpandedPattern.simplify
                     tools
                     substitutionSimplifier
                     simplifier
@@ -258,21 +257,16 @@ transitionRule
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
             if null nonEmptyConfigs
-                then return [(Bottom, proof'')]
-                else return (prove <$> map wrapper (toList nonEmptyConfigs))
+                then return (Bottom, proof'')
+                else Foldable.asum (pure . prove <$> map wrapper (Foldable.toList nonEmptyConfigs))
 
     transitionApplyWithRemainders
         :: [RewriteRule level Variable]
-        ->  ( CommonStrategyPattern level
-            , StepProof level Variable
-            )
-        -> Simplifier
-            [   ( CommonStrategyPattern level
-                , StepProof level Variable
-                )
-            ]
-    transitionApplyWithRemainders _ c@(Bottom, _) = return [c]
-    transitionApplyWithRemainders _ c@(Stuck _, _) = return [c]
+        -> (CommonStrategyPattern level, StepProof level Variable)
+        -> TransitionT (RewriteRule level Variable) Simplifier
+            (CommonStrategyPattern level, StepProof level Variable)
+    transitionApplyWithRemainders _ c@(Bottom, _) = return c
+    transitionApplyWithRemainders _ c@(Stuck _, _) = return c
     transitionApplyWithRemainders
         rules
         (RewritePattern config, proof)
@@ -280,19 +274,15 @@ transitionRule
 
     transitionMultiApplyWithRemainders
         :: [RewriteRule level Variable]
-        ->  ( CommonExpandedPattern level
-            , StepProof level Variable
-            )
-        -> Simplifier
-            [   ( CommonStrategyPattern level
-                , StepProof level Variable
-                )
-            ]
+        -> (CommonExpandedPattern level, StepProof level Variable)
+        -> TransitionT (RewriteRule level Variable) Simplifier
+            (CommonStrategyPattern level, StepProof level Variable)
     transitionMultiApplyWithRemainders _ (config, _)
-        | ExpandedPattern.isBottom config = return []
+        | ExpandedPattern.isBottom config = empty
     transitionMultiApplyWithRemainders rules (config, proof) = do
         result <-
-            runExceptT
+            Monad.Trans.lift
+            $ runExceptT
             $ Step.sequenceRewriteRules
                 tools
                 substitutionSimplifier
@@ -310,47 +300,41 @@ transitionRule
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]
-            Right OrStepResult { rewrittenPattern, remainder } -> do
+            Right Step.Results { results, remainders } -> do
                 let
-                    combinedProof :: StepProof level Variable
-                    combinedProof = proof
+                    withProof :: forall x. x -> (x, StepProof level Variable)
+                    withProof x = (x, proof)
 
-                    rewriteResults
-                        ::  [   ( CommonStrategyPattern level
-                                , StepProof level Variable
+                    rewriteResults, remainderResults
+                        ::  MultiOr.MultiOr
+                                (TransitionT
+                                    (RewriteRule level Variable)
+                                    Simplifier
+                                    ( CommonStrategyPattern level
+                                    , StepProof level Variable
+                                    )
                                 )
-                            ]
-                    rewriteResults =
-                        map
-                            (\ p -> (RewritePattern p, combinedProof))
-                            (MultiOr.extractPatterns rewrittenPattern)
-
-                    remainderResults
-                        ::  [   ( CommonStrategyPattern level
-                                , StepProof level Variable
-                                )
-                            ]
+                    rewriteResults = fmap withProof . transition <$> results
+                    transition result' = do
+                        let rule =
+                                Step.unwrapRule
+                                $ Predicated.term $ Step.unifiedRule result'
+                        Transition.addRule (RewriteRule rule)
+                        return (RewritePattern $ Step.result result')
                     remainderResults =
-                        map
-                            (\ p -> (Stuck p, combinedProof))
-                            (MultiOr.extractPatterns remainder)
+                        pure . withProof . Stuck <$> remainders
 
-                if null rewriteResults
-                    then return ((Bottom, combinedProof) : remainderResults)
-                    else return (rewriteResults ++ remainderResults)
+                Foldable.asum (rewriteResults <> remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
         ->  ( CommonStrategyPattern level
             , StepProof level Variable
             )
-        -> Simplifier
-            [   ( CommonStrategyPattern level
-                , StepProof level Variable
-                )
-            ]
-    transitionRemoveDestination _ (Bottom, _) = return []
-    transitionRemoveDestination _ (Stuck _, _) = return []
+        -> TransitionT (RewriteRule level Variable) Simplifier
+            (CommonStrategyPattern level, StepProof level Variable)
+    transitionRemoveDestination _ (Bottom, _) = empty
+    transitionRemoveDestination _ (Stuck _, _) = empty
     transitionRemoveDestination
         destination
         (RewritePattern patt@Predicated{term, predicate, substitution}, proof1)
@@ -372,7 +356,8 @@ transitionRule
             resultTerm = mkAnd term removalPatt
             result = Predicated {term = resultTerm, predicate, substitution}
         (orResult, proof) <-
-            ExpandedPattern.simplify
+            Monad.Trans.lift
+            $ ExpandedPattern.simplify
                 tools
                 substitutionSimplifier
                 simplifier
@@ -389,8 +374,8 @@ transitionRule
                     )
                     (MultiOr.extractPatterns orResult)
         if null patternsWithProofs
-            then return [(Bottom, finalProof)]
-            else return patternsWithProofs
+            then return (Bottom, finalProof)
+            else Foldable.asum (pure <$> patternsWithProofs)
 
     mkMultipleExists vars phi =
         foldl (\patt v -> mkExists v patt) phi vars
