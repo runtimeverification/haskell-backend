@@ -122,6 +122,7 @@ helpText =
     \label <+l> [n]          add a new label for a node\n\
                              \(defaults to current node)\n\
     \label <-l>              remove a label\n\
+    \try <a|c><num>          attempts <a>xiom or <c>laim at index <num>.\n\
     \exit                    exits the repl\
     \\n\
     \Available modifiers:\n\

@@ -11,8 +11,6 @@ module Kore.Repl.Interpreter
     , emptyExecutionGraph
     ) where
 
-import           Control.Applicative
-                 ( (<|>) )
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
 import           Control.Error.Safe
@@ -339,6 +337,7 @@ redirect cmd path = do
 tryAxiomClaim
     :: forall level
     .  MetaOrObject level
+    => level ~ Object
     => Either AxiomIndex ClaimIndex
     -> ReplM level ()
 tryAxiomClaim eac = do
@@ -358,16 +357,20 @@ tryAxiomClaim eac = do
                         node
                 if res
                     then do
-                        lensGraph .= graph'
                         let
                             context = Graph.context gr node
                         case Graph.suc' context of
-                            [] -> pure ()
-                            [configNo] -> do
-                                lensNode .= configNo
-                                pure ()
-                            neighbors -> pure ()
-                    else pure ()
+                            [] -> tell "Could not find any child nodes."
+                            [node'] -> do
+                                case Graph.lab' $ Graph.context gr node' of
+                                    Stuck _ -> tell "Could not unify."
+                                    _ -> do
+                                        lensGraph .= graph'
+                                        lensNode .= node'
+                                        tell "Unification succsessful."
+                            _ ->
+                                lensGraph .= graph'
+                    else tell "Node is already evaluated"
   where
     resolve
         :: [Axiom level]

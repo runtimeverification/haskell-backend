@@ -26,6 +26,7 @@ test_replParser =
     , exitTests        `tests` "exit"
     , omitTests        `tests` "omit"
     , labelTests       `tests` "label"
+    , tryTests         `tests` "try"
     , redirectTests    `tests` "redirect"
     ]
 
@@ -146,6 +147,22 @@ labelTests =
     , "label +-"        `fails`     "can't both add and remove"
     , "label +label -5" `fails`     "no negative numbers"
     ]
+
+tryTests :: [ParserTest ReplCommand]
+tryTests =
+    [ "try a5"  `parsesTo_` tryAxiom 5
+    , "try c5"  `parsesTo_` tryClaim 5
+    , "try"     `fails`     "empty try"
+    , "try 5"   `fails`     "need to specify axiom or claim"
+    , "try a 5" `fails`     "can't separate specifier and id"
+    , "try a"   `fails`     "must specify identifier"
+    ]
+  where
+    tryAxiom :: Int -> ReplCommand
+    tryAxiom = Try . Left . AxiomIndex
+
+    tryClaim :: Int -> ReplCommand
+    tryClaim = Try . Right . ClaimIndex
 
 exitTests :: [ParserTest ReplCommand]
 exitTests =
