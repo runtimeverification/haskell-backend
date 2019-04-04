@@ -455,20 +455,23 @@ printRewriteRule rule = do
 performSingleStep
     :: ReplM level StepResult
 performSingleStep = do
-    ReplState { claims , axioms , graph , claim , node, stepper } <- get
-    (graph'@Strategy.ExecutionGraph { graph = gr }, res) <- lift $ stepper claim claims axioms graph node
-    if res
-        then do
-            lensGraph .= graph'
-            let
-                context = Graph.context gr node
-            case Graph.suc' context of
-                [] -> pure NoChildNodes
-                [configNo] -> do
-                    lensNode .= configNo
-                    pure Success
-                neighbors -> pure (Branch neighbors)
-        else pure NodeAlreadyEvaluated
+    ReplState { claims , axioms , graph , claim , node , stepper } <- get
+    let leaf = loop (loopCond . Strategy.graph $ graph) node
+    lensNode .= leaf
+    (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
+        lift $ stepper claim claims axioms graph leaf
+    lensGraph .= graph'
+    let context = Graph.context gr leaf
+    case Graph.suc' context of
+      [] -> pure NoChildNodes
+      [configNo] -> do
+          lensNode .= configNo
+          pure Success
+      neighbors -> pure (Branch neighbors)
+  where
+      loopCond gph n = case Graph.suc gph n of
+                         [x] -> Left x
+                         _   -> Right n
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -548,8 +551,7 @@ showDotGraph =
         . Graph.graphToDot Graph.nonClusteredParams
 
 data StepResult
-    = NodeAlreadyEvaluated
-    | NoChildNodes
+    = NoChildNodes
     | Branch [Graph.Node]
     | Success
     deriving Show
