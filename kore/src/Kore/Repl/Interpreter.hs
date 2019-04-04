@@ -400,7 +400,8 @@ performSingleStep
     :: ReplM level StepResult
 performSingleStep = do
     ReplState { claims , axioms , graph , claim , node, stepper } <- get
-    (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <- lift $ stepper claim claims axioms graph node
+    (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
+        lift $ stepper claim claims axioms graph node
     lensGraph .= graph'
     let context = Graph.context gr node
     case Graph.suc' context of
