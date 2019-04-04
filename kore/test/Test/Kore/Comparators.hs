@@ -54,9 +54,6 @@ import           Kore.Step.Rule
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
-import           Kore.Step.Step
-import qualified Kore.Step.Step as OrStepResult
-                 ( OrStepResult (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -1244,12 +1241,12 @@ instance
       =
         [ EqWrap
             "results = "
-            (results expected)
-            (results actual)
+            (AttemptedAxiomResults.results expected)
+            (AttemptedAxiomResults.results actual)
         , EqWrap
             "remainders = "
-            (remainders expected)
-            (remainders actual)
+            (AttemptedAxiomResults.remainders expected)
+            (AttemptedAxiomResults.remainders actual)
         ]
     structConstructorName _ = "AttemptedAxiomResults"
 
@@ -1404,39 +1401,6 @@ instance
     => EqualWithExplanation (Unified a)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation (variable level)
-    , EqualWithExplanation (StepPattern level variable)
-    )
-    => StructEqualWithExplanation (OrStepResult level variable)
-  where
-    structFieldsWithNames
-        expected@(OrStepResult _ _)
-        actual@(OrStepResult _ _)
-      = [ EqWrap
-            "rewrittenPattern = "
-            (OrStepResult.rewrittenPattern expected)
-            (OrStepResult.rewrittenPattern actual)
-        , EqWrap
-            "remainder = "
-            (OrStepResult.remainder expected)
-            (OrStepResult.remainder actual)
-        ]
-    structConstructorName _ = "OrStepResult"
-
-instance
-    ( Show level, Show (variable level)
-    , Eq level, Eq (variable level)
-    , EqualWithExplanation (variable level)
-    , EqualWithExplanation (StepPattern level variable)
-    )
-    => EqualWithExplanation (OrStepResult level variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
