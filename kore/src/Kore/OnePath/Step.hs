@@ -52,7 +52,6 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Representation.Predicated as Predicated
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
@@ -344,13 +343,12 @@ transitionRule
             destinationPatt = ExpandedPattern.toMLPattern destination
             pattPatt = ExpandedPattern.toMLPattern patt
             removal =
-                PredicateSubstitution.fromPredicate
-                $ Predicate.makeNotPredicate
+                Predicate.makeNotPredicate
                 $ makeMultipleExists extraVars
                 $ Predicate.makeCeilPredicate
                 $ mkAnd destinationPatt pattPatt
             result =
-                patt `Predicated.andCondition` removal
+                patt `Predicated.andPredicate` removal
         (orResult, proof) <-
             Monad.Trans.lift
             $ ExpandedPattern.simplify
