@@ -11,8 +11,12 @@ module Kore.Repl.Interpreter
     , emptyExecutionGraph
     ) where
 
+import           Control.Applicative
+                 ( (<|>) )
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
+import           Control.Error.Safe
+                 ( atZ )
 import           Control.Lens
                  ( (%=), (.=) )
 import qualified Control.Lens as Lens hiding
@@ -27,6 +31,10 @@ import           Control.Monad.RWS.Strict
                  ( MonadWriter, RWST, get, lift, runRWST, tell )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), evalStateT )
+import           Data.Bifunctor
+                 ( bimap )
+import           Data.Either
+                 ( isRight )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
@@ -118,6 +126,7 @@ replInterpreter output cmd =
                     LabelAdd l mn     -> labelAdd l mn     $> True
                     LabelDel l        -> labelDel l        $> True
                     Redirect inn file -> redirect inn file $> True
+                    Try ac            -> tryAxiomClaim ac  $> True
                     Exit              -> pure                 False
         (exit, st', w) <- runRWST rwst () st
         liftIO $ output w
@@ -327,6 +336,53 @@ redirect cmd path = do
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
+
+tryAxiomClaim
+    :: forall level
+    .  MetaOrObject level
+    => Either AxiomIndex ClaimIndex
+    -> ReplM level ()
+tryAxiomClaim eac = do
+    ReplState { axioms, claims, claim, graph, node, stepper } <- get
+    let meac' = bimap singleton singleton <$> resolve axioms claims eac
+    if isRight eac && node == 0
+        then
+            tell "Cannot apply co-inductive claim as the first step"
+        else case meac' of
+            Nothing -> tell "Could not find axiom or claim"
+            Just eac' -> do
+                (graph'@Strategy.ExecutionGraph { graph = gr }, res) <-
+                    lift $ stepper
+                        claim
+                        (either (const claims) id eac')
+                        (either id (const axioms) eac')
+                        graph
+                        node
+                if res
+                    then do
+                        lensGraph .= graph'
+                        let
+                            context = Graph.context gr node
+                        case Graph.suc' context of
+                            [] -> pure ()
+                            [configNo] -> do
+                                lensNode .= configNo
+                                pure ()
+                            neighbors -> pure ()
+                    else pure ()
+  where
+    resolve
+        :: [Axiom level]
+        -> [Claim level]
+        -> Either AxiomIndex ClaimIndex
+        -> Maybe (Either (Axiom level) (Claim level))
+    resolve axioms claims =
+        \case
+            Left  (AxiomIndex aid) -> Left  <$> axioms `atZ` aid
+            Right (ClaimIndex cid) -> Right <$> claims `atZ` cid
+
+    singleton :: a -> [a]
+    singleton a = [a]
 
 label
     :: forall level m

@@ -12,6 +12,7 @@ module Kore.Repl.Data
     ( ReplCommand (..)
     , helpText
     , ExecutionGraph
+    , AxiomIndex (..), ClaimIndex (..)
     , ReplState (..)
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
@@ -38,6 +39,14 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
+
+newtype AxiomIndex = AxiomIndex
+    { unAxiomIndex :: Int
+    } deriving (Eq, Show)
+
+newtype ClaimIndex = ClaimIndex
+    { unClaimIndex :: Int
+    } deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
@@ -78,6 +87,8 @@ data ReplCommand
     -- ^ Remove a label
     | Redirect ReplCommand FilePath
     -- ^ prints the output of the inner command to the file.
+    | Try !(Either AxiomIndex ClaimIndex)
+    -- ^ Attempt to apply axiom or claim to current node.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
