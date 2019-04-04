@@ -154,7 +154,7 @@ data ReplState level = ReplState
           -> [Axiom level]
           -> ExecutionGraph
           -> Graph.Node
-          -> Simplifier (ExecutionGraph, Bool)
+          -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , labels  :: Map String Graph.Node
     -- ^ Map from labels to nodes

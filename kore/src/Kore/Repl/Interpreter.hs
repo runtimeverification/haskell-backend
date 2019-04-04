@@ -31,8 +31,6 @@ import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), evalStateT )
 import           Data.Bifunctor
                  ( bimap )
-import           Data.Either
-                 ( isRight )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
@@ -342,45 +340,51 @@ tryAxiomClaim
     -> ReplM level ()
 tryAxiomClaim eac = do
     ReplState { axioms, claims, claim, graph, node, stepper } <- get
-    let meac' = bimap singleton singleton <$> resolve axioms claims eac
-    if isRight eac && node == 0
-        then tell "Cannot apply co-inductive claim as the first step"
-        else case meac' of
-            Nothing -> tell "Could not find axiom or claim"
-            Just eac' -> do
-                (graph'@Strategy.ExecutionGraph { graph = gr }, res) <-
-                    lift $ stepper
-                        claim
-                        (either (const claims) id eac')
-                        (either id (const axioms) eac')
-                        graph
-                        node
-                if res
-                    then do
-                        let
-                            context = Graph.context gr node
-                        case Graph.suc' context of
-                            [] -> tell "Could not find any child nodes."
-                            [node'] -> do
-                                case Graph.lab' $ Graph.context gr node' of
-                                    Stuck _ -> tell "Could not unify."
-                                    _ -> do
-                                        lensGraph .= graph'
-                                        lensNode .= node'
-                                        tell "Unification succsessful."
-                            _ ->
-                                lensGraph .= graph'
-                    else tell "Node is already evaluated"
+    case getAxiomOrClaim axioms claims node of
+        Nothing ->
+            tell "Could not find axiom or claim,\
+                 \or attempt to use claim as first step"
+        Just eac' -> do
+            if Graph.outdeg (Strategy.graph graph) node == 0
+                then do
+                    graph'@Strategy.ExecutionGraph { graph = gr } <-
+                        lift $ stepper
+                            claim
+                            (either (const claims) id eac')
+                            (either id (const axioms) eac')
+                            graph
+                            node
+                    case Graph.suc' $ Graph.context gr node of
+                        [] -> tell "Could not find any child nodes."
+                        [node'] -> do
+                            case Graph.lab' $ Graph.context gr node' of
+                                Stuck _ -> tell "Could not unify."
+                                _ -> do
+                                    lensGraph .= graph'
+                                    lensNode .= node'
+                                    tell "Unification succsessful."
+                        _ -> lensGraph .= graph'
+                else tell "Node is already evaluated"
   where
+    getAxiomOrClaim
+        :: [Axiom level]
+        -> [Claim level]
+        -> Graph.Node
+        -> Maybe (Either [Axiom level] [Claim level])
+    getAxiomOrClaim axioms claims node =
+        bimap singleton singleton <$> resolve axioms claims node
+
     resolve
         :: [Axiom level]
         -> [Claim level]
-        -> Either AxiomIndex ClaimIndex
+        -> Graph.Node
         -> Maybe (Either (Axiom level) (Claim level))
-    resolve axioms claims =
-        \case
+    resolve axioms claims node =
+        case eac of
             Left  (AxiomIndex aid) -> Left  <$> axioms `atZ` aid
-            Right (ClaimIndex cid) -> Right <$> claims `atZ` cid
+            Right (ClaimIndex cid)
+              | node == 0 -> Nothing
+              | otherwise -> Right <$> claims `atZ` cid
 
     singleton :: a -> [a]
     singleton a = [a]
@@ -457,7 +461,7 @@ performSingleStep
     :: ReplM level StepResult
 performSingleStep = do
     ReplState { claims , axioms , graph , claim , node, stepper } <- get
-    (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
+    graph'@Strategy.ExecutionGraph { graph = gr }  <-
         lift $ stepper claim claims axioms graph node
     lensGraph .= graph'
     let context = Graph.context gr node
