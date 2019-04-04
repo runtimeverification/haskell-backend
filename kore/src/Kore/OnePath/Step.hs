@@ -33,7 +33,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
 
 import           Kore.AST.Common
-                 ( Variable (..) )
+                 ( SortedVariable, Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -41,6 +41,8 @@ import           Kore.Attribute.Symbol
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Predicate.Predicate
+                 ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
@@ -48,7 +50,7 @@ import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Proof as Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern )
+                 ( CommonExpandedPattern, ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Representation.Predicated as Predicated
@@ -337,18 +339,8 @@ transitionRule
     transitionRemoveDestination _ (Stuck _, _) = empty
     transitionRemoveDestination destination (RewritePattern patt, proof1) = do
         let
-            pattVars = ExpandedPattern.freeVariables patt
-            destinationVars = ExpandedPattern.freeVariables destination
-            extraVars = Set.difference destinationVars pattVars
-            destinationPatt = ExpandedPattern.toMLPattern destination
-            pattPatt = ExpandedPattern.toMLPattern patt
-            removal =
-                Predicate.makeNotPredicate
-                $ makeMultipleExists extraVars
-                $ Predicate.makeCeilPredicate
-                $ mkAnd destinationPatt pattPatt
-            result =
-                patt `Predicated.andPredicate` removal
+            removal = removalPredicate destination patt
+            result = patt `Predicated.andPredicate` removal
         (orResult, proof) <-
             Monad.Trans.lift
             $ ExpandedPattern.simplify
@@ -371,8 +363,36 @@ transitionRule
             then return (Bottom, finalProof)
             else Foldable.asum (pure <$> patternsWithProofs)
 
-    makeMultipleExists vars phi =
-        foldr Predicate.makeExistsPredicate phi vars
+{- | The predicate to remove the destination from the present configuration.
+ -}
+removalPredicate
+    ::  ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => ExpandedPattern Object variable
+    -- ^ Destination
+    -> ExpandedPattern Object variable
+    -- ^ Current configuration
+    -> Predicate Object variable
+removalPredicate destination config =
+    let
+        -- The variables of the destination that are missing from the
+        -- configuration. These are the variables which should be existentially
+        -- quantified in the removal predicate.
+        extraVariables =
+            Set.difference
+                (ExpandedPattern.freeVariables destination)
+                (ExpandedPattern.freeVariables config)
+        quantifyPredicate = Predicate.makeMultipleExists extraVariables
+    in
+        Predicate.makeNotPredicate
+        $ quantifyPredicate
+        $ Predicate.makeCeilPredicate
+        $ mkAnd
+            (ExpandedPattern.toStepPattern destination)
+            (ExpandedPattern.toStepPattern config)
 
 
 {-| A strategy for doing the first step of a one-path verification.
