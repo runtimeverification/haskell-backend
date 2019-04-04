@@ -1,1 +1,41 @@
-#False
+    {
+      Result
+    #Equals
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          r |-> 0
+          x |-> 'Ques'I
+          y |-> 'Ques'I0
+        </state>
+      </T>
+    }
+  #And
+    {
+      false
+    #Equals
+      'Ques'I <=Int 'Ques'I0
+    }
+#Or
+    {
+      Result
+    #Equals
+      <T>
+        <k>
+          .
+        </k>
+        <state>
+          r |-> 0
+          x |-> 'Ques'I
+          y |-> 'Ques'I0
+        </state>
+      </T>
+    }
+  #And
+    {
+      true
+    #Equals
+      'Ques'I <=Int 'Ques'I0
+    }
