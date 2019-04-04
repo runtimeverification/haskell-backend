@@ -58,7 +58,6 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
 import           Kore.Step.Representation.Predicated
@@ -732,13 +731,20 @@ sequenceRules
         -- ^ initial configuration
         -> MultiOr (Result variable)
         -- ^ disjunction of results
-        -> MultiOr (ExpandedPattern Object variable)
-    remainingAfter config results =
+        -> ExceptT (StepError Object variable) Simplifier
+            (MultiOr (ExpandedPattern Object variable))
+    remainingAfter config results = do
         let remainder =
-                PredicateSubstitution.fromPredicate
-                $ Remainder.remainder
+                Remainder.remainder
                 $ Predicated.withoutTerm . unifiedRule <$> results
-        in MultiOr.make [config `Predicated.andCondition` remainder]
+        gather $ applyRemainder' config remainder
+
+    applyRemainder' =
+        applyRemainder
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
 
     sequenceRules1
         :: Results variable
@@ -760,9 +766,10 @@ sequenceRules
                 unificationProcedure
                 config
                 rule
+        remainders <- remainingAfter config results
         return Results
             { results
-            , remainders = remainingAfter config results
+            , remainders
             }
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
