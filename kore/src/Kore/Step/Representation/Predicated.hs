@@ -10,7 +10,6 @@ module Kore.Step.Representation.Predicated
     , withCondition
     , andCondition
     , Kore.Step.Representation.Predicated.freeVariables
-    , substitutionToPredicate
     , toPredicate
     , Kore.Step.Representation.Predicated.mapVariables
     ) where
@@ -27,7 +26,9 @@ import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Pure
-import           Kore.Predicate.Predicate as Predicate
+import           Kore.Predicate.Predicate
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -88,7 +89,7 @@ instance
     mempty =
         Predicated
             { term = mempty
-            , predicate = makeTruePredicate
+            , predicate = Predicate.makeTruePredicate
             , substitution = mempty
             }
     {-# INLINE mempty #-}
@@ -104,11 +105,17 @@ instance
     ) =>
     Applicative (Predicated level variable)
   where
-    pure a = Predicated a makeTruePredicate mempty
+    pure term =
+        Predicated
+            { term
+            , predicate = Predicate.makeTruePredicate
+            , substitution = mempty
+            }
+
     (<*>) predicated1 predicated2 =
         Predicated
             { term = f a
-            , predicate = makeAndPredicate predicate1 predicate2
+            , predicate = Predicate.makeAndPredicate predicate1 predicate2
             , substitution = substitution1 <> substitution2
             }
       where
@@ -143,7 +150,7 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse $ substitutionToPredicate substitution)
+                    (unparse $ Predicate.fromSubstitution substitution)
                 )
             )
       where
@@ -222,9 +229,9 @@ toPredicate
     => Predicated level variable term
     -> Predicate level variable
 toPredicate Predicated { predicate, substitution } =
-    makeAndPredicate
+    Predicate.makeAndPredicate
         predicate
-        (substitutionToPredicate substitution)
+        (Predicate.fromSubstitution substitution)
 
 {- | Transform all variables (free and quantified) in a 'Predicated' term.
 
