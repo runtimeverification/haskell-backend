@@ -1,22 +1,6 @@
+DEFINITION_NAME := itetest
+
 include $(CURDIR)/../../include.mk
-
-KOMPILED := itetest-kompiled
-DEFINITION := $(KOMPILED)/definition.kore
-
-$(DEFINITION): itetest.k
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module ITETEST
-
-%.output: %.itetest $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-
-%.krun: %.itetest $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $<
-
-%.test: %.output
-	diff -u $<.golden $<
-
-%.output.golden: %.output
-	mv $< $<.golden
 
 test: tests/1.test
 
