@@ -18,7 +18,7 @@ import           Control.Lens
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( join )
+                 ( foldM, join )
 import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
@@ -193,7 +193,12 @@ proveSteps n = do
                 <> show res
 
 proveStepsF :: Int -> ReplM level ()
-proveStepsF n = return ()
+proveStepsF n = do
+    graph <- Lens.use lensGraph
+    node <- Lens.use lensNode
+    graph' <- (recursiveForcedStep n graph node)
+    lensGraph .= graph'
+    return ()
 
 selectNode
     :: MonadState (ReplState level) m
@@ -414,6 +419,22 @@ performSingleStep = do
           lensNode .= configNo
           pure Success
       neighbors -> pure (Branch neighbors)
+
+recursiveForcedStep
+    :: Int
+    -> ExecutionGraph
+    -> Graph.Node
+    -> ReplM level ExecutionGraph
+recursiveForcedStep n graph node =
+    if n == 0
+       then return graph
+       else do
+           ReplState { claims , axioms , graph , claim , node, stepper } <- get
+           (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
+               lift $ stepper claim claims axioms graph node
+           case (Graph.suc gr node) of
+             [] -> return graph'
+             xs -> foldM (recursiveForcedStep (n-1)) graph' xs
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
