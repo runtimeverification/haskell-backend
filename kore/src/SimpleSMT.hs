@@ -491,20 +491,19 @@ declareDatatypes
   -> IO ()
 declareDatatypes proc datatypes =
   ackCommand proc $
-    -- (declare-datatypes () ((S C (D (a Int)))))
+    -- (declare-datatypes ((δ1 k1) · · · (δn kn)) (d1 · · · dn))
+    -- where δs are datatype names, ks are number of arguments
+    -- and if ki is 0, then di is of the form ((CName CArgs) ..)
     fun "declare-datatypes"
-      [ List []
-      , List $ map datatypeRepresentation datatypes
+      [ List $ map typeRepresentation datatypes
+      , List $ map dataConstructorsRepresentation datatypes
       ]
  where
-  datatypeRepresentation (t, [], cs) =
-    List
-      ( Atom t
-      : [ constructorRepresentation c
-        | c <- cs
-        ]
-      )
-  datatypeRepresentation _ = error "Unimplemented"
+  typeRepresentation (t, args, _) =
+    List [ Atom t, (Atom . Text.pack . show . length) args ]
+  dataConstructorsRepresentation (_, [], cs) =
+    List $ map constructorRepresentation cs
+  dataConstructorsRepresentation _ = error "Unimplemented"
   constructorRepresentation (constructorName, []) = Atom constructorName
   constructorRepresentation (constructorName, constructorArgs) =
     List
@@ -519,43 +518,7 @@ declareDatatype ::
   [Text] {- ^ sort parameters -} ->
   [(Text, [(Text, SExpr)])] {- ^ constructors -} ->
   IO ()
-declareDatatype proc t [] cs =
-  ackCommand proc $
-    -- (declare-datatypes () ((S C (D (a Int)))))
-    fun "declare-datatypes"
-      [ List []
-      , List
-        [List
-          ( Atom t
-          : [ constructorRepresentation c
-            | c <- cs
-            ]
-          )
-        ]
-      ]
- where
-  constructorRepresentation (constructorName, []) = Atom constructorName
-  constructorRepresentation (constructorName, constructorArgs) =
-    List
-      ( Atom constructorName
-      : [ List [Atom s, argTy] | (s, argTy) <- constructorArgs ]
-      )
-{-
-    fun "declare-datatype" $
-      [ Atom t
-      , List [ List (Atom c : [ List [Atom s, argTy] | (s, argTy) <- args]) | (c, args) <- cs ]
-      ]
-      -}
-declareDatatype proc t ps cs =
-  ackCommand proc $
-    fun "declare-datatype" $
-      [ Atom t
-      , fun "par" $
-          [ List (map Atom ps)
-          , List [ List (Atom c : [ List [Atom s, argTy] | (s, argTy) <- args]) | (c, args) <- cs ]
-          ]
-      ]
-
+declareDatatype proc t ps cs = declareDatatypes proc [(t, ps, cs)]
 
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
 -- For convenience, returns the defined name as a constant expression.

@@ -8,14 +8,14 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 
 module Kore.Step.SMT.Encoder (encodeName) where
 
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as Text
+import Data.Text
+       ( Text )
 
 {-| Encodes a name in order to remove special characters and to
 prevent conflicts with SMT builtins.
 -}
 encodeName :: Text -> Text
 encodeName name =
-    "HB_"  -- HB = Haskell backend
-    <> Text.replace "'" "Apst" name
+    "|HB_" <> name <> "|"
+    -- `HB` = Haskell backend
+    -- `|` is used to allow special characters like `'`

@@ -13,6 +13,8 @@ module Kore.Step.SMT.Sorts
 
 import           Control.Monad
                  ( zipWithM )
+import           Data.Either
+                 ( partitionEithers )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( mapMaybe )
@@ -188,16 +190,13 @@ declareSorts indexedModule = do
             Map.elems (recursiveIndexedModuleSortDescriptions indexedModule)
 
         (declarationsWithoutNoJunk, declarationsWithNoJunk) =
-            foldr splitDeclarationsWorker ([], []) sortDeclarations
+            partitionEithers (map splitDeclarationsWorker sortDeclarations)
           where
             splitDeclarationsWorker
                 (attribute, sentence@SentenceSort {sentenceSortName})
-                (withoutNoJunk, withNoJunk)
               = case Map.lookup (getId sentenceSortName) nameToSMTDataType of
-                Nothing ->
-                    ((attribute, sentence) : withoutNoJunk, withNoJunk)
-                Just noJunk ->
-                    (withoutNoJunk, (attribute, sentence, noJunk) : withNoJunk)
+                Nothing -> Left (attribute, sentence)
+                Just noJunk -> Right (attribute, sentence, noJunk)
 
     mapM_
         declareSortWithoutNoJunkAxiom
@@ -291,7 +290,7 @@ declareSortsWithNoJunkAxioms sorts =
     constructorToSmt
         SMTConstructor { name, argumentSorts }
       = do
-        args <- zipWithM (constructorArgToSMT encodedName) [1..] argumentSorts
+        args <- zipWithM (constructorArgToSMT name) [1..] argumentSorts
         return (encodedName, args)
       where
         encodedName = encodeName name
@@ -300,7 +299,7 @@ declareSortsWithNoJunkAxioms sorts =
         :: Text -> Int -> Sort Object -> Maybe (Text, SMT.SExpr)
     constructorArgToSMT constrName index constrSort = do
         translatedSort <- translateSort constrSort
-        return (constrName <> pack (show index), translatedSort)
+        return (encodeName (constrName <> pack (show index)), translatedSort)
 
 parseNoJunkAxioms
     :: IndexedModule
