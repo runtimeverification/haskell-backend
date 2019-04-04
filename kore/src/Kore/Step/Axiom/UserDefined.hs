@@ -45,10 +45,8 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier (..) )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
-                 ( OrStepResult, UnificationProcedure (..) )
+                 ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
-import qualified Kore.Step.Step as OrStepResult
-                 ( OrStepResult (..) )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -133,13 +131,11 @@ equalityRuleEvaluator
         return config'
 
     simplifyResults
-        :: OrStepResult Object variable
+        :: Step.Results variable
         -> Simplifier (AttemptedAxiomResults Object variable)
     simplifyResults stepResults = do
         results <-
             simplifyOrOfExpandedPattern
-            $ OrStepResult.rewrittenPattern stepResults
-        remainders <-
-            simplifyOrOfExpandedPattern
-            $ OrStepResult.remainder stepResults
+            $ Step.result <$> Step.results stepResults
+        remainders <- simplifyOrOfExpandedPattern $ Step.remainders stepResults
         return AttemptedAxiomResults { results, remainders }

@@ -1,4 +1,4 @@
-module TEST
+module SMT-LEMMA
   imports DOMAINS
   syntax KItem ::= delayed(KItem) [strict]
   syntax KResult ::= Int
