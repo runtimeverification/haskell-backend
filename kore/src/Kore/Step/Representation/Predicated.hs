@@ -9,6 +9,7 @@ module Kore.Step.Representation.Predicated
     , withoutTerm
     , withCondition
     , andCondition
+    , fromPredicate
     , Kore.Step.Representation.Predicated.freeVariables
     , toPredicate
     , Kore.Step.Representation.Predicated.mapVariables
@@ -185,6 +186,17 @@ andCondition
     -> Predicated Object variable ()
     -> Predicated Object variable term
 andCondition = (<*)
+
+{- | Construct a 'Predicated' holding the given 'Predicate'.
+
+The result has an empty 'Substitution'.
+
+ -}
+fromPredicate
+    :: Predicate level variable
+    -> Predicated level variable ()
+fromPredicate predicate =
+    Predicated { term = (), predicate, substitution = mempty }
 
 {- | Extract the set of free variables from a 'Predicated' term.
 
