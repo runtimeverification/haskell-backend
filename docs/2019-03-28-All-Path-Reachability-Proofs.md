@@ -68,7 +68,7 @@ Given this definition of weak always, an all-path reachability claim
 ∀x.φ(x) → [w]∃z.ψ(x,z)
 ```
 basically states that if `φ(x)` holds for a configuration `γ`, for some `x`,
-then `P(γ)`, where `P(G)` is recursively defined on configurations as:
+then `P(γ)` holds, where `P(G)` is recursively defined on configurations as:
 * there exists `z` such that `ψ(x,z)` holds for `G`
 * or
     * `G` is not stuck (`G → • T`) and
