@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
+    , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
     ) where
@@ -91,6 +92,66 @@ definitionEvaluation
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (evaluateWithDefinitionAxioms rules)
+
+{- | Creates an evaluator for a function all the rules that define it.
+
+The function is not applied (@totalDefinitionEvaluation@ returns
+'AttemptedAxiom.NotApplicable') if the supplied rules do not match the entire
+input.
+
+See also: 'definitionEvaluation'
+
+-}
+totalDefinitionEvaluation
+    :: forall level
+    .  [EqualityRule level Variable]
+    -> BuiltinAndAxiomSimplifier level
+totalDefinitionEvaluation rules =
+    BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
+  where
+    totalDefinitionEvaluationWorker
+        ::  forall variable
+        .   ( FreshVariable variable
+            , MetaOrObject level
+            , Ord (variable level)
+            , OrdMetaOrObject variable
+            , SortedVariable variable
+            , Show (variable level)
+            , Show (variable Object)
+            , Unparse (variable level)
+            , ShowMetaOrObject variable
+            )
+        => MetadataTools level StepperAttributes
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier level
+        -> BuiltinAndAxiomSimplifierMap level
+        -> StepPattern level variable
+        -> Simplifier
+            ( AttemptedAxiom level variable
+            , SimplificationProof level
+            )
+    totalDefinitionEvaluationWorker
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        term
+      = do
+        (result, proof) <- evaluate
+        case result of
+            AttemptedAxiom.Applied axiomResults
+              | (not . null) (AttemptedAxiomResults.remainders axiomResults) ->
+                return (AttemptedAxiom.NotApplicable, proof)
+            _ -> return (result, proof)
+      where
+        evaluate =
+            evaluateWithDefinitionAxioms
+                rules
+                tools
+                predicateSimplifier
+                termSimplifier
+                axiomSimplifiers
+                term
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
