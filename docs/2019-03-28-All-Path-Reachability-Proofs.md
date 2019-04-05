@@ -5,6 +5,8 @@ This document details All-Path Reachability without solving the
 most-general-unifier (MGU) problem.
 MGU will be detailed in a separate document.
 
+_Prepared by Traian Șerbănuță, Virgil Șerbănuță, Xiaohong Chen._
+
 Background
 ----------
 
@@ -19,6 +21,32 @@ one element and `p` is a predicate.
 _Extended constructor patterns_ will be those extended function-like patterns
 for which `t` is a functional term, composed out of constructor-like symbols
 and variables.
+
+
+__Note:__
+Whenever `φ` is a function-like pattern,
+```
+φ ∧ ∃z.ψ = φ ∧ ∃z.⌈φ ∧ ψ⌉
+```
+and
+```
+φ ∧ ¬∃z.ψ = φ ∧ ¬∃z.⌈φ ∧ ψ⌉
+```
+
+In this document we prefer the formulations on the right because they are of the
+form pattern and predicate.
+
+Moreover, suppose all free variables in the above formulae are from `x`,
+we will assume that the unification condition `⌈φ ∧ ψ⌉` can always be
+computed to be of the form `z = t ∧  p`, where
+
+* `t`s are functional patterns with no free variables from `z`
+    * i.e., [t / z] is a substitution.
+* `p` is a predicate over `x ∪ z`
+
+Under this assumption, `∃z.⌈φ ∧ ψ⌉` can be rewritten without the existential
+quantification, as `p[t/z]`, i.e., `p` in which all ocurrences of the variables
+from `z` are substituted with the corresponding term in `t`.
 
 
 Definitions
@@ -87,20 +115,31 @@ __Note:__ Since the derivation process can continue indefinitely, one could add
 a bound on the total number of (levels of) expansions attempted before
 returning `Unprovable`.
 
+__Note__: If the unfication condition `⌈φ ∧ ψ⌉ = (z=t)∧ p`
+with `t` functional, `p` predicate, and `t` free of `z`.
+Then `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → [w]∃z.ψ`
+is equivalent to `∀x.φ ∧ ¬pᵢ[tᵢ/xᵢ] → [w]∃z.ψ`.
+
 ### Algorithm `derivePar`
 
-__Input:__: goal and set of claims/axioms
+__Input:__: goal `∀x.φ → [w]∃z.ψ` and set of tuples { (xᵢ,φᵢ,zᵢ,ψᵢ) : 1 ≤ i ≤ n }` representing either
 
-* goal: `∀x.φ → [w]∃z.ψ`
-* Either claims or axioms:
-    * claims `∀x₁.φ₁ → [w]∃z₁.ψ₁`, `∀x₂.φ₂ → [w]∃z₂.ψ₂`, …, `∀xₙ.φₙ → [w]∃zₙ.ψₙ`
-    * axioms `∀x₁.φ₁ → •∃z₁.ψ₁`, `∀x₂.φ₂ → •∃z₂.ψ₂`, …, `∀xₙ.φₙ → •∃zₙ.ψₙ`
-    * we will not consider the form, but just the patterns and variables involved
+* claims `{ ∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`, or
+* axioms `{ ∀xᵢ.φᵢ → •∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`
 
 __Output:__ `(Goals, goalᵣₑₘ)`
 
 * Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]∃z.ψ`
 * Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ∧φ₁⌉) → [w]∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φ∧φₙ⌉) → [w]∃z.ψ }`
+
+__Note__: `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → [w]∃z.ψ` is obtained from
+`∀x.(∃xᵢ.(∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉) → [w]∃z.ψ`
+
+__Note__: If the unfication condition `⌈φ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ`
+with `tᵢ` functional, `pᵢ` predicate, and `tᵢ` free of `xi`.
+Then the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → [w]∃z.ψ`
+is equivalent to `∀x∪zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → [w]∃z.ψ`.
+
 
 ### Algorithm `deriveSeq`
 
@@ -112,12 +151,26 @@ __Input:__: goal and set of claims
 __Output:__ `(Goals, goalᵣₑₘ)`
 
 * Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]∃z.ψ`
-* Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ₁ʳᵉᵐ ∧φ₁⌉) → [w]∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φₙʳᵉᵐ φ∧φₙ⌉) → [w]∃z.ψ }`
+* Let `Goals := { ∀x∪z₁.(∃x₁.ψ₁ ∧ ⌈φ₁ʳᵉᵐ∧φ₁⌉) → [w]∃z.ψ, … , ∀x∪zₙ.(∃xₙ.ψₙ ∧ ⌈φₙʳᵉᵐ∧φₙ⌉) → [w]∃z.ψ }`
 
 where `φ₁ʳᵉᵐ := φ` and
 ```
 φᵢ₊₁ʳᵉᵐ := φᵢʳᵉᵐ ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉ = φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉
 ```
+
+__Note__: If the unification condition `⌈φᵢʳᵉᵐ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ`
+with `tᵢ` functional, `pᵢ` predicate, and `tᵢ` free of `xi`.
+Then the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → [w]∃z.ψ`
+is equivalent to `∀x∪zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → [w]∃z.ψ`.
+
+Similarly `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁.⌈φ∧φ₁⌉ ∧ …  ∧ ¬∃xₙ.⌈φ∧φₙ⌉) → [w]∃z.ψ`
+is equivalent to ∀x.(φ ∧ ⋀ⱼ ¬pⱼ[tⱼ/xⱼ]) → [w]∃z.ψ`
+where `j` ranges over the set `{ i : 1 ≤ i ≤ n, φ unifies with φᵢ }`.
+
+__Note__: If `φ` does not unify with `φᵢ`, then `⌈φ∧φᵢ⌉ = ⊥`, hence
+the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → [w]∃z.ψ` is equivalent to
+`∀x.⊥ → [w]∃z.ψ` which can be discharged immediately. Also, in the
+remainder `¬∃x₁.⌈φ∧φ₁⌉ = ⊤` so the conjunct can be removed.
 
 
 Explanation
@@ -136,19 +189,6 @@ Moving `∃z.ψ` to the left of the implication, we get the equivalent
 Let `φᵣₑₘ` be `φ ∧ ¬∃z.ψ`. This step eliminates the cases in which `∃z.ψ` holds now.
 
 If `φᵣₑₘ` is equivalent to `⊥`, then the implication holds and we are done.
-
-### Simplifying `φ(x) ∧ ¬∃y.ψ(x,y)` where y does not appear in `φ(x)`
-
-This process is detailed in
-[Configuration Splitting Simplification](2018-11-08-Configuration-Splitting-Simplification.md).
-
-Note: the process is quite similar to unification, and the result is either
-`φ(X)`, if `φ(X)` and `ψ(X, Y)` are not unifiable, or
-`φ(X) ∧ p(X)`, where `p(X)` is the negation of the predicate of `ψ(X, Y)`
-on which the unifying substitution of `φ(X)` and `ψ(X, Y)` was applied, if
-the two are unifiable.
-
-Formally, the algorithm simplifies `φ(x) ∧ ¬∃y.ψ(x,y)` to `φ(x) ∧ ¬∃y.⌈φ(x) ∧ ψ(x,y)⌉`
 
 ### Applying circularities
 
@@ -181,7 +221,7 @@ We have a chioce whether to apply circularities sequentially or in parallel.
 ```
 
 Note that the remainder `∀x.φ ∧ ¬∃xᵢ.φᵢ → [w]∃z.ψ` can be rewritten as
-`∀x.φ ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉ → [w]ψ`, as detailed above.
+`∀x.φ ∧ ¬∃xᵢ.⌈φ∧φᵢ⌉ → [w]∃z.ψ`, as detailed above.
 
 __Note:__ If there are multiple claims which could apply on the same concrete
 instance of a configuration, then applying them sequentially would reduce
@@ -225,9 +265,30 @@ We want to prove that from
 we can deduce that `∀x.φ ∧ ∃xᵢ.φᵢ → [w]∃z.ψ`.
 
 This would allow us to replace goal `∀x.φ ∧ ∃xᵢ.φᵢ → [w]∃z.ψ`
-with goal '∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]ψ'.
+with goal '∀x∪zᵢ.∃xᵢ.ψᵢ ∧ ⌈φ ∧ φᵢ⌉ → [w]ψ'.
 
-TODO (traiansf): prove that the above inference rule is sound
+_Proof:_
+
+The main step of our proof is to prove
+`φ ∧ ∃xᵢ.φᵢ → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ ∧ φᵢ⌉)`
+from `∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ`.
+
+Assume `⌈φ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ` with `tᵢ` functional, `pᵢ` predicate, and
+`tᵢ` free of `xi`.
+
+Then,
+```
+φᵢ[tᵢ/xᵢ] → [w]∃zᵢ.ψᵢ[tᵢ/xᵢ]                              // by axiom ∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ instanțiated to xᵢ = tᵢ
+φᵢ[tᵢ/xᵢ] ∧ p[tᵢ/xᵢ] → ([w]∃zᵢ.ψᵢ[tᵢ/xᵢ]) ∧ p[tᵢ/xᵢ]      // framing
+φᵢ[tᵢ/xᵢ] ∧ p[tᵢ/xᵢ] → [w]((∃zᵢ.ψᵢ[tᵢ/xᵢ]) ∧ p[tᵢ/xᵢ])    // predicate properties
+∃xᵢ.φᵢ ∧ xᵢ=tᵢ ∧ p → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ xᵢ=tᵢ ∧ p)        // substitution properties
+∃xᵢ.φᵢ ∧ ⌈φ∧φᵢ⌉ → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)              // definition of ⌈φ∧φᵢ⌉
+φ ∧ ∃xᵢ.(φᵢ ∧ ⌈φ∧φᵢ⌉) → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)        // Strengthening
+φ ∧ ∃xᵢ.⌈φ ∧ φᵢ ∧ ⌈φ∧φᵢ⌉⌉) → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)   // φ is functional
+φ ∧ ∃xᵢ.(⌈φ∧φᵢ⌉ ∧ ⌈φ∧φᵢ⌉) → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)    // predicate properties
+φ ∧ ∃xᵢ.⌈φ∧φᵢ⌉ → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)               // idempotency
+φ ∧ ∃xᵢ.φᵢ → [w]∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)                   // φ is functional
+```
 
 ### Applying axioms
 
@@ -255,7 +316,7 @@ to apply all axioms (i.e., the lhs of the last conjunct) is not equivalent to `�
 
 We want to prove that from
 ```
-(∀x∪z₁.ψ₁ ∧ ∃x₁.⌈φ ∧ φ₁⌉ → [w]∃z.ψ) ∧ … ∧ (∀x∪zₙ.ψₙ ∧ ∃xₙ.⌈φ ∧ φₙ⌉ → [w]∃z.ψ)
+(∀x∪z₁.∃x₁.ψ₁ ∧ ⌈φ ∧ φ₁⌉ → [w]∃z.ψ) ∧ … ∧ (∀x∪zₙ.∃xₙ.ψₙ ∧ ⌈φ ∧ φₙ⌉ → [w]∃z.ψ)
 P -> o ((∃x₁.⌈P ∧ φ₁⌉ ∧ ∃z₁.ψ₁) ∨ … ∨ (∃xₙ.⌈P ∧ φₙ⌉ ∧ ∃zₙ.ψₙ))      (STEP)
 ∀xᵢ.φᵢ →  •∃zᵢ.ψᵢ, 1 ≤ i ≤ n
 ```
@@ -267,7 +328,19 @@ we can derive
 
 This would allow us to replace the goal `∀x.φ →  ○[w]∃z.ψ` with the set of goals
 ```
-{ ∀x∪zᵢ.ψᵢ ∧ ∃xᵢ.⌈φ ∧ φᵢ⌉ → [w]∃z.ψ : 1 ≤ i ≤ n }
+{ ∀x∪zᵢ.∃xᵢ.ψᵢ ∧ ⌈φ ∧ φᵢ⌉ → [w]∃z.ψ : 1 ≤ i ≤ n }
 ```
 
-TODO (traiansf): prove that the above inference rule is sound
+_Proof:_
+
+Apply `(STEP)` on `φ`, and we obtain that
+```
+φ → o ⋁ᵢ ∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ
+```
+And our proof goal becomes:
+```
+o ∨_i ∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → ○[w]∃z.ψ
+∨_i ∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → [w]∃z.ψ  // framing on ○
+∃xᵢ.⌈φ ∧ φᵢ⌉ ∧ ∃zᵢ.ψᵢ → [w]∃z.ψ  for all i
+```
+
