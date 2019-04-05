@@ -26,7 +26,10 @@ test_replParser =
     , exitTests        `tests` "exit"
     , omitTests        `tests` "omit"
     , labelTests       `tests` "label"
+    , tryTests         `tests` "try"
     , redirectTests    `tests` "redirect"
+    , ruleTests        `tests` "rule"
+    , stepfTests       `tests` "stepf"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -82,6 +85,15 @@ stepTests =
     , "step 5"  `parsesTo_` ProveSteps 5
     , "step 5 " `parsesTo_` ProveSteps 5
     , "step -5" `fails`     "no negative numbers"
+    ]
+
+stepfTests :: [ParserTest ReplCommand]
+stepfTests =
+    [ "stepf"    `parsesTo_` ProveStepsF 1
+    , "stepf "   `parsesTo_` ProveStepsF 1
+    , "stepf 5"  `parsesTo_` ProveStepsF 5
+    , "stepf 5 " `parsesTo_` ProveStepsF 5
+    , "stepf -5" `fails`     "no negative numbers"
     ]
 
 selectTests :: [ParserTest ReplCommand]
@@ -147,6 +159,22 @@ labelTests =
     , "label +label -5" `fails`     "no negative numbers"
     ]
 
+tryTests :: [ParserTest ReplCommand]
+tryTests =
+    [ "try a5"  `parsesTo_` tryAxiom 5
+    , "try c5"  `parsesTo_` tryClaim 5
+    , "try"     `fails`     "empty try"
+    , "try 5"   `fails`     "need to specify axiom or claim"
+    , "try a 5" `fails`     "can't separate specifier and id"
+    , "try a"   `fails`     "must specify identifier"
+    ]
+  where
+    tryAxiom :: Int -> ReplCommand
+    tryAxiom = Try . Left . AxiomIndex
+
+    tryClaim :: Int -> ReplCommand
+    tryClaim = Try . Right . ClaimIndex
+
 exitTests :: [ParserTest ReplCommand]
 exitTests =
     [ "exit"  `parsesTo_` Exit
@@ -159,4 +187,13 @@ redirectTests =
     , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "claim 3 > cf"    `parsesTo_` Redirect (ShowClaim 3)         "cf"
+    ]
+
+ruleTests :: [ParserTest ReplCommand]
+ruleTests =
+    [ "rule"    `parsesTo_` ShowRule Nothing
+    , "rule "   `parsesTo_` ShowRule Nothing
+    , "rule 5"  `parsesTo_` ShowRule (Just 5)
+    , "rule 5 " `parsesTo_` ShowRule (Just 5)
+    , "rule -5" `fails`     "no negative numbers"
     ]
