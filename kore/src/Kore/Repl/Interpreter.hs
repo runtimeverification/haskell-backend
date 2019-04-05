@@ -196,7 +196,7 @@ proveStepsF :: Int -> ReplM level ()
 proveStepsF n = do
     graph  <- Lens.use lensGraph
     node   <- Lens.use lensNode
-    graph' <- (recursiveForcedStep n graph node)
+    graph' <- recursiveForcedStep n graph node
     lensGraph .= graph'
     lensNode  .= (snd $ Graph.nodeRange . Strategy.graph $ graph')
 
@@ -432,8 +432,8 @@ recursiveForcedStep n graph node
       (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
           lift $ stepper claim claims axioms graph node
       case (Graph.suc gr node) of
-        [] -> return graph'
-        xs -> foldM (recursiveForcedStep $ n-1) graph' xs
+          [] -> return graph'
+          xs -> foldM (recursiveForcedStep $ n-1) graph' xs
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
