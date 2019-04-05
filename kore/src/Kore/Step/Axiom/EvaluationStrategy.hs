@@ -359,6 +359,9 @@ evaluateWithDefinitionAxioms
     patt
   = do
     let
+        -- TODO (thomas.tuegel): Take an 'ExpandedPattern' as input so that its
+        -- conditions can be used to remove remainder branches and evaluate more
+        -- functions.
         expanded :: ExpandedPattern level variable
         expanded = ExpandedPattern.fromPurePattern patt
 
