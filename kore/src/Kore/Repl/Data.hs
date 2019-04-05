@@ -55,7 +55,9 @@ data ReplCommand
     | ShowGraph
     -- ^ Show the current execution graph.
     | ProveSteps !Int
-    -- ^ Do n proof steps from curent node.
+    -- ^ Do n proof steps from current node.
+    | ProveStepsF !Int
+    -- ^ Do n proof steps (through branchings) from the current node.
     | SelectNode !Int
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe Int)
@@ -67,17 +69,17 @@ data ReplCommand
     | ShowRule !(Maybe Int)
     -- ^ Show the rule(s) that got us to this configuration.
     | ShowPrecBranch !(Maybe Int)
-    -- ^ Show the first preceding branch
+    -- ^ Show the first preceding branch.
     | ShowChildren !(Maybe Int)
-    -- ^ Show direct children of node
+    -- ^ Show direct children of node.
     | Label !(Maybe String)
-    -- ^ Show all node labels or jump to a label
+    -- ^ Show all node labels or jump to a label.
     | LabelAdd !String !(Maybe Int)
-    -- ^ Add a label to a node
+    -- ^ Add a label to a node.
     | LabelDel !String
-    -- ^ Remove a label
+    -- ^ Remove a label.
     | Redirect ReplCommand FilePath
-    -- ^ prints the output of the inner command to the file.
+    -- ^ Prints the output of the inner command to the file.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -94,6 +96,9 @@ helpText =
     \graph                   shows the current proof graph\n\
     \step [n]                attempts to run 'n' proof steps at\
                              \the current node (n=1 by default)\n\
+    \stepf [n]               attempts to run 'n' proof steps at\
+                             \the current node, stepping through\
+                             \branchings (n=1 by default)\n\
     \select <n>              select node id 'n' from the graph\n\
     \config [n]              shows the config for node 'n'\
                              \(defaults to current node)\n\
