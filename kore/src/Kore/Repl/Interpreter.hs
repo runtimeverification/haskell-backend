@@ -426,7 +426,7 @@ recursiveForcedStep
     -> Graph.Node
     -> ReplM level ExecutionGraph
 recursiveForcedStep n graph node
-  | n == 0 = return graph
+  | n == 0    = return graph
   | otherwise = do
       ReplState { claims , axioms , claim , stepper } <- get
       (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
