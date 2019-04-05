@@ -199,7 +199,6 @@ proveStepsF n = do
     graph' <- (recursiveForcedStep n graph node)
     lensGraph .= graph'
     lensNode  .= (snd $ Graph.nodeRange . Strategy.graph $ graph')
-    return ()
 
 selectNode
     :: MonadState (ReplState level) m
@@ -426,16 +425,15 @@ recursiveForcedStep
     -> ExecutionGraph
     -> Graph.Node
     -> ReplM level ExecutionGraph
-recursiveForcedStep n graph node =
-    if n == 0
-       then return graph
-       else do
-           ReplState { claims , axioms , claim , stepper } <- get
-           (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
-               lift $ stepper claim claims axioms graph node
-           case (Graph.suc gr node) of
-             [] -> return graph'
-             xs -> foldM (recursiveForcedStep $ n-1) graph' xs
+recursiveForcedStep n graph node
+  | n == 0 = return graph
+  | otherwise = do
+      ReplState { claims , axioms , claim , stepper } <- get
+      (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
+          lift $ stepper claim claims axioms graph node
+      case (Graph.suc gr node) of
+        [] -> return graph'
+        xs -> foldM (recursiveForcedStep $ n-1) graph' xs
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
