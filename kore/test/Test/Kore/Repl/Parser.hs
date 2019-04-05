@@ -27,6 +27,7 @@ test_replParser =
     , omitTests        `tests` "omit"
     , labelTests       `tests` "label"
     , redirectTests    `tests` "redirect"
+    , ruleTests        `tests` "rule"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -159,4 +160,13 @@ redirectTests =
     , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "claim 3 > cf"    `parsesTo_` Redirect (ShowClaim 3)         "cf"
+    ]
+
+ruleTests :: [ParserTest ReplCommand]
+ruleTests =
+    [ "rule"    `parsesTo_` ShowRule Nothing
+    , "rule "   `parsesTo_` ShowRule Nothing
+    , "rule 5"  `parsesTo_` ShowRule (Just 5)
+    , "rule 5 " `parsesTo_` ShowRule (Just 5)
+    , "rule -5" `fails`     "no negative numbers"
     ]
