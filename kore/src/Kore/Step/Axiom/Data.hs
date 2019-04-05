@@ -14,6 +14,7 @@ module Kore.Step.Axiom.Data
     , AttemptedAxiomResults (..)
     , CommonAttemptedAxiom
     , hasRemainders
+    , exceptNotApplicable
     , applicationAxiomSimplifier
     , notApplicableAxiomEvaluator
     , purePatternAxiomEvaluator
@@ -23,6 +24,8 @@ import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
 import           Control.DeepSeq
                  ( NFData )
+import           Control.Monad.Except
+                 ( ExceptT, runExceptT )
 import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
@@ -173,6 +176,17 @@ A 'NotApplicable' result is not considered to have remainders.
 hasRemainders :: AttemptedAxiom level variable -> Bool
 hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
 hasRemainders NotApplicable = False
+
+{- | Return a 'NotApplicable' result for a failing 'ExceptT' action.
+ -}
+exceptNotApplicable
+    :: Functor m
+    => ExceptT e m (AttemptedAxiom level variable, SimplificationProof level)
+    ->           m (AttemptedAxiom level variable, SimplificationProof level)
+exceptNotApplicable =
+    fmap (either (const notApplicable) id) . runExceptT
+  where
+    notApplicable = (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator
