@@ -8,12 +8,13 @@ See "Kore.Step" for the high-level strategy-based interface.
  -}
 
 module Kore.Step.Step
-    ( OrStepResult (..)
-    , RulePattern
+    ( RulePattern
     , UnificationProcedure (..)
-    --
     , UnifiedRule
+    , Results (..)
+    , Result (..)
     , unifyRule
+    , unwrapRule
     , applyUnifiedRule
     , applyRule
     , applyRules
@@ -31,11 +32,13 @@ import           Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
+import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 import           Data.Semigroup
                  ( Semigroup (..) )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import           GHC.Generics as GHC
 
 import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
@@ -55,9 +58,8 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
+                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Representation.Predicated
                  ( Predicated (Predicated) )
 import qualified Kore.Step.Representation.Predicated as Predicated
@@ -66,6 +68,7 @@ import           Kore.Step.Representation.PredicateSubstitution
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
+import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
@@ -79,44 +82,6 @@ import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
-
-{-| The result of applying an axiom to a pattern, as an Or.
-
-Contains the rewritten pattern (if any) and the unrewritten part of the
-original pattern.
--}
-data OrStepResult level variable =
-    OrStepResult
-        { rewrittenPattern :: !(OrOfExpandedPattern level variable)
-        -- ^ The result of rewritting the pattern
-        , remainder :: !(OrOfExpandedPattern level variable)
-        -- ^ The unrewritten part of the original pattern
-        }
-    deriving (Eq, Show)
-
-instance Semigroup (OrStepResult level variable) where
-    (<>)
-        OrStepResult
-            { rewrittenPattern = rewrittenPattern1
-            , remainder = remainder1
-            }
-        OrStepResult
-            { rewrittenPattern = rewrittenPattern2
-            , remainder = remainder2
-            }
-      =
-        OrStepResult
-            { rewrittenPattern = rewrittenPattern1 <> rewrittenPattern2
-            , remainder = remainder1 <> remainder2
-            }
-    {-# INLINE (<>) #-}
-
-instance Monoid (OrStepResult level variable) where
-    mappend = (<>)
-    {-# INLINE mappend #-}
-
-    mempty = OrStepResult { rewrittenPattern = mempty, remainder = mempty }
-    {-# INLINE mempty #-}
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
@@ -147,12 +112,75 @@ newtype UnificationProcedure level =
             )
         )
 
+{- | A @UnifiedRule@ has been renamed and unified with a configuration.
+
+The rule's 'RulePattern.requires' clause is combined with the unification
+solution and the renamed rule is wrapped with the combined condition.
+
+ -}
+type UnifiedRule variable =
+    Predicated Object variable (RulePattern Object variable)
+
+-- | The result of applying a single rule.
+data Result variable =
+    Result
+        { unifiedRule :: !(UnifiedRule (Target variable))
+        , result      :: !(ExpandedPattern Object variable)
+        }
+    deriving GHC.Generic
+
+deriving instance Eq (variable Object) => Eq (Result variable)
+
+deriving instance Ord (variable Object) => Ord (Result variable)
+
+deriving instance Show (variable Object) => Show (Result variable)
+
+{- | The results of applying many rules.
+
+The rules may be applied in sequence or in parallel and the 'remainders' vary
+accordingly.
+
+ -}
+data Results variable =
+    Results
+        { results :: !(MultiOr (Result variable))
+        , remainders :: !(MultiOr (ExpandedPattern Object variable))
+        }
+    deriving GHC.Generic
+
+deriving instance Eq (variable Object) => Eq (Results variable)
+
+deriving instance Ord (variable Object) => Ord (Results variable)
+
+deriving instance Show (variable Object) => Show (Results variable)
+
+instance Semigroup (Results variable) where
+    (<>) results1 results2 =
+        Results
+            { results = Function.on (<>) results results1 results2
+            , remainders = Function.on (<>) remainders results1 results2
+            }
+
+instance Monoid (Results variable) where
+    mempty = Results { results = empty, remainders = empty }
+    mappend = (<>)
+
+withoutRemainders :: Results variable -> Results variable
+withoutRemainders results = results { remainders = empty }
+
 unwrapStepErrorVariables
     :: Functor m
     => ExceptT (StepError level (Target variable)) m a
     -> ExceptT (StepError level                  variable ) m a
 unwrapStepErrorVariables =
     withExceptT (mapStepErrorVariables Target.unwrapVariable)
+
+{- | Unwrap the variables in a 'RulePattern'.
+ -}
+unwrapRule
+    :: Ord (variable level)
+    => RulePattern level (Target variable) -> RulePattern level variable
+unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
@@ -180,15 +208,6 @@ liftFromUnification
     => BranchT (ExceptT (UnificationOrSubstitutionError level variable) m) a
     -> BranchT (ExceptT (StepError level variable                     ) m) a
 liftFromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
-
-{- | A @UnifiedRule@ has been renamed and unified with a configuration.
-
-The rule's 'RulePattern.requires' clause is combined with the unification
-solution and the renamed rule is wrapped with the combined condition.
-
- -}
-type UnifiedRule variable =
-    Predicated Object variable (RulePattern Object variable)
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -386,12 +405,6 @@ toConfigurationVariables
     => ExpandedPattern level variable
     -> ExpandedPattern level (Target variable)
 toConfigurationVariables = ExpandedPattern.mapVariables Target.NonTarget
-
-data Result variable =
-    Result
-        { unifiedRule :: !(UnifiedRule (Target variable))
-        , result      :: !(ExpandedPattern Object variable)
-        }
 
 {- | Fully apply a single rule to the initial configuration.
 
@@ -599,8 +612,7 @@ applyRules
     -- ^ Rewrite rules
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
-    -> ExceptT (StepError Object variable) Simplifier
-        (OrStepResult Object variable)
+    -> ExceptT (StepError Object variable) Simplifier (Results variable)
 applyRules
     metadataTools
     predicateSimplifier
@@ -613,11 +625,10 @@ applyRules
   = do
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications = Predicated.withoutTerm . unifiedRule <$> results
-    remainder <- gather $ do
+    remainders <- gather $ do
         remainder <- scatter (Remainder.remainders unifications)
         applyRemainder' initial remainder
-    let rewrittenPattern = result <$> results
-    return OrStepResult { rewrittenPattern, remainder }
+    return Results { results, remainders }
   where
     applyRule' =
         applyRule
@@ -659,8 +670,7 @@ applyRewriteRules
     -- ^ Rewrite rules
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
-    -> ExceptT (StepError Object variable) Simplifier
-        (OrStepResult Object variable)
+    -> ExceptT (StepError Object variable) Simplifier (Results variable)
 applyRewriteRules
     metadataTools
     predicateSimplifier
@@ -703,8 +713,7 @@ sequenceRules
     -- ^ Configuration being rewritten
     -> [RulePattern Object variable]
     -- ^ Rewrite rules
-    -> ExceptT (StepError Object variable) Simplifier
-        (OrStepResult Object variable)
+    -> ExceptT (StepError Object variable) Simplifier (Results variable)
 sequenceRules
     metadataTools
     predicateSimplifier
@@ -713,7 +722,7 @@ sequenceRules
     unificationProcedure
     initialConfig
   =
-    Foldable.foldlM sequenceRules1 mempty { remainder = pure initialConfig }
+    Foldable.foldlM sequenceRules1 mempty { remainders = pure initialConfig }
   where
     -- The single remainder of the input configuration after rewriting to
     -- produce the disjunction of results.
@@ -722,22 +731,28 @@ sequenceRules
         -- ^ initial configuration
         -> MultiOr (Result variable)
         -- ^ disjunction of results
-        -> OrOfExpandedPattern Object variable
-    remainingAfter config results =
+        -> ExceptT (StepError Object variable) Simplifier
+            (MultiOr (ExpandedPattern Object variable))
+    remainingAfter config results = do
         let remainder =
-                PredicateSubstitution.fromPredicate
-                $ Remainder.remainder
+                Remainder.remainder
                 $ Predicated.withoutTerm . unifiedRule <$> results
-        in MultiOr.make [config `Predicated.andCondition` remainder]
+        gather $ applyRemainder' config remainder
+
+    applyRemainder' =
+        applyRemainder
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
 
     sequenceRules1
-        :: OrStepResult Object variable
+        :: Results variable
         -> RulePattern Object variable
-        -> ExceptT (StepError Object variable) Simplifier
-            (OrStepResult Object variable)
+        -> ExceptT (StepError Object variable) Simplifier (Results variable)
     sequenceRules1 results rule = do
-        results' <- traverse (applyRule' rule) (remainder results)
-        return (results { remainder = empty } <> Foldable.fold results')
+        results' <- traverse (applyRule' rule) (remainders results)
+        return (withoutRemainders results <> Foldable.fold results')
 
     -- Apply rule to produce a pair of the rewritten patterns and
     -- single remainder configuration.
@@ -751,9 +766,10 @@ sequenceRules
                 unificationProcedure
                 config
                 rule
-        return OrStepResult
-            { rewrittenPattern = MultiOr.filterOr (result <$> results)
-            , remainder = remainingAfter config results
+        remainders <- remainingAfter config results
+        return Results
+            { results
+            , remainders
             }
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -781,8 +797,7 @@ sequenceRewriteRules
     -- ^ Configuration being rewritten
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules
-    -> ExceptT (StepError Object variable) Simplifier
-        (OrStepResult Object variable)
+    -> ExceptT (StepError Object variable) Simplifier (Results variable)
 sequenceRewriteRules
     metadataTools
     predicateSimplifier

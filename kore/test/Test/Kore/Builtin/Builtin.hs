@@ -55,8 +55,6 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
-import           Kore.Step.Step
-                 ( OrStepResult (..) )
 import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
@@ -231,7 +229,7 @@ runStep
         )
 runStep configuration axiom = do
     result <- runStepResult configuration axiom
-    return (discardRemainders <$> result)
+    return (extractResults <$> result)
 
 runStepResult
     :: CommonExpandedPattern Object
@@ -241,7 +239,7 @@ runStepResult
     -> IO
         (Either
             (StepError Object Variable)
-            (OrStepResult Object Variable)
+            (Step.Results Variable)
         )
 runStepResult configuration axiom =
     runSMT
@@ -272,12 +270,12 @@ runStepWith
         )
 runStepWith solver configuration axiom = do
     result <- runStepResultWith solver configuration axiom
-    return (discardRemainders <$> result)
+    return (extractResults <$> result)
 
-discardRemainders
-    :: OrStepResult Object Variable
+extractResults
+    :: Step.Results Variable
     -> MultiOr (CommonExpandedPattern Object)
-discardRemainders OrStepResult { rewrittenPattern } = rewrittenPattern
+extractResults Step.Results { results } = Step.result <$> results
 
 runStepResultWith
     :: MVar Solver
@@ -288,7 +286,7 @@ runStepResultWith
     -> IO
         (Either
             (StepError Object Variable)
-            (OrStepResult Object Variable)
+            (Step.Results Variable)
         )
 runStepResultWith solver configuration axiom =
     let smt =

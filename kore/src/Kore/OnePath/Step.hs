@@ -33,7 +33,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
 
 import           Kore.AST.Common
-                 ( Variable (..) )
+                 ( SortedVariable, Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -41,30 +41,31 @@ import           Kore.Attribute.Symbol
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import           Kore.Predicate.Predicate
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Proof as Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (Predicated) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
-                 ( Predicated (..) )
+                 ( CommonExpandedPattern, ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Rule
-                 ( RewriteRule )
+                 ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
-import           Kore.Step.Step
-                 ( OrStepResult (OrStepResult) )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import           Kore.Unparser
 
@@ -301,34 +302,31 @@ transitionRule
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]
-            Right OrStepResult { rewrittenPattern, remainder } -> do
+            Right Step.Results { results, remainders } -> do
                 let
-                    combinedProof :: StepProof level Variable
-                    combinedProof = proof
+                    withProof :: forall x. x -> (x, StepProof level Variable)
+                    withProof x = (x, proof)
 
-                    rewriteResults
-                        ::  [   ( CommonStrategyPattern level
-                                , StepProof level Variable
+                    rewriteResults, remainderResults
+                        ::  MultiOr.MultiOr
+                                (TransitionT
+                                    (RewriteRule level Variable)
+                                    Simplifier
+                                    ( CommonStrategyPattern level
+                                    , StepProof level Variable
+                                    )
                                 )
-                            ]
-                    rewriteResults =
-                        map
-                            (\ p -> (RewritePattern p, combinedProof))
-                            (MultiOr.extractPatterns rewrittenPattern)
-
-                    remainderResults
-                        ::  [   ( CommonStrategyPattern level
-                                , StepProof level Variable
-                                )
-                            ]
+                    rewriteResults = fmap withProof . transition <$> results
+                    transition result' = do
+                        let rule =
+                                Step.unwrapRule
+                                $ Predicated.term $ Step.unifiedRule result'
+                        Transition.addRule (RewriteRule rule)
+                        return (RewritePattern $ Step.result result')
                     remainderResults =
-                        map
-                            (\ p -> (Stuck p, combinedProof))
-                            (MultiOr.extractPatterns remainder)
+                        pure . withProof . Stuck <$> remainders
 
-                if null rewriteResults
-                    then return (Bottom, combinedProof) <|> Foldable.asum (pure <$> remainderResults)
-                    else (Foldable.asum . map pure) (rewriteResults ++ remainderResults)
+                Foldable.asum (rewriteResults <> remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
@@ -339,26 +337,10 @@ transitionRule
             (CommonStrategyPattern level, StepProof level Variable)
     transitionRemoveDestination _ (Bottom, _) = empty
     transitionRemoveDestination _ (Stuck _, _) = empty
-    transitionRemoveDestination
-        destination
-        (RewritePattern patt@Predicated{term, predicate, substitution}, proof1)
-      = do
+    transitionRemoveDestination destination (RewritePattern patt, proof1) = do
         let
-            pattVars = ExpandedPattern.freeVariables patt
-            destinationVars = ExpandedPattern.freeVariables destination
-            extraVars = Set.difference destinationVars pattVars
-            destinationPatt = ExpandedPattern.toMLPattern destination
-            pattPatt = ExpandedPattern.toMLPattern patt
-            removalPatt =
-                mkNot
-                    (mkMultipleExists
-                        extraVars
-                        (mkCeil_
-                            (mkAnd destinationPatt pattPatt)
-                        )
-                    )
-            resultTerm = mkAnd term removalPatt
-            result = Predicated {term = resultTerm, predicate, substitution}
+            removal = removalPredicate destination patt
+            result = patt `Predicated.andPredicate` removal
         (orResult, proof) <-
             Monad.Trans.lift
             $ ExpandedPattern.simplify
@@ -381,8 +363,36 @@ transitionRule
             then return (Bottom, finalProof)
             else Foldable.asum (pure <$> patternsWithProofs)
 
-    mkMultipleExists vars phi =
-        foldl (\patt v -> mkExists v patt) phi vars
+{- | The predicate to remove the destination from the present configuration.
+ -}
+removalPredicate
+    ::  ( Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => ExpandedPattern Object variable
+    -- ^ Destination
+    -> ExpandedPattern Object variable
+    -- ^ Current configuration
+    -> Predicate Object variable
+removalPredicate destination config =
+    let
+        -- The variables of the destination that are missing from the
+        -- configuration. These are the variables which should be existentially
+        -- quantified in the removal predicate.
+        extraVariables =
+            Set.difference
+                (ExpandedPattern.freeVariables destination)
+                (ExpandedPattern.freeVariables config)
+        quantifyPredicate = Predicate.makeMultipleExists extraVariables
+    in
+        Predicate.makeNotPredicate
+        $ quantifyPredicate
+        $ Predicate.makeCeilPredicate
+        $ mkAnd
+            (ExpandedPattern.toStepPattern destination)
+            (ExpandedPattern.toStepPattern config)
 
 
 {-| A strategy for doing the first step of a one-path verification.

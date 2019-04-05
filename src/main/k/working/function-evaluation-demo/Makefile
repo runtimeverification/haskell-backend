@@ -1,22 +1,6 @@
+DEFINITION_NAME := demo
+
 include $(CURDIR)/../include.mk
-
-KOMPILED = demo-kompiled
-DEFINITION = $(KOMPILED)/definition.kore
-
-$(DEFINITION): demo.k
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module DEMO
-
-%.output: %.demo $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-
-%.krun: %.demo $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $<
-
-%.test: %.output
-	diff -u $<.golden $<
-
-%.output.golden: %.output
-	mv $< $<.golden
 
 test: tests/Nat.test tests/NatList.test tests/Truth.test
 

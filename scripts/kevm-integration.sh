@@ -17,23 +17,13 @@ git clone --recurse-submodules 'https://github.com/kframework/evm-semantics' $EV
 
 cd $EVM_SEMANTICS
 
-(   cd .build/k
-    (   cd haskell-backend/src/main/native/haskell-backend
-        git fetch $TOP
-        git checkout FETCH_HEAD
-    )
-    git add haskell-backend/src/main/native/haskell-backend
-    ci_git commit --message '!!! haskell-backend/src/main/native/haskell-backend: integration testing haskell backend'
-)
+# Use the K Nightly build from the Kore integration tests.
+rm -rf .build/k/k-distribution/target/release/k
+mkdir -p .build/k/k-distribution/target/release
+ln -s $TOP/.build/k .build/k/k-distribution/target/release
 
-git add .build/k
-ci_git commit --message '!!! .build/k: integration testing haskell backend'
-
-make clean
-git submodule update --init --recursive
 [[ "$OPAM_SETUP_SKIP" != "false" ]] || ./.build/k/k-distribution/src/main/scripts/bin/k-configure-opam-dev
 
-make haskell-deps  -B
 make build-haskell -B
 (   cd .build/k/haskell-backend/src/main/native/haskell-backend
     git log --max-count 1
