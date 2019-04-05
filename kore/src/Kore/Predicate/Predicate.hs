@@ -21,6 +21,7 @@ module Kore.Predicate.Predicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeExistsPredicate
+    , makeMultipleExists
     , makeForallPredicate
     , makeFalsePredicate
     , makeFloorPredicate
@@ -382,6 +383,21 @@ makeExistsPredicate _ p@PredicateFalse = p
 makeExistsPredicate _ t@PredicateTrue = t
 makeExistsPredicate v (GenericPredicate p) =
     GenericPredicate $ mkExists v p
+
+{- | Existentially-quantify the given variables over the predicate.
+ -}
+makeMultipleExists
+    ::  ( Foldable f
+        , SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        )
+    => f (variable Object)
+    -> Predicate Object variable
+    -> Predicate Object variable
+makeMultipleExists vars phi =
+    foldr makeExistsPredicate phi vars
 
 {-| Universal quantification for the given variable in the given predicate.
 -}
