@@ -13,6 +13,8 @@ module Kore.Repl.Interpreter
 
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
+import           Control.Error.Safe
+                 ( atZ )
 import           Control.Lens
                  ( (%=), (.=) )
 import qualified Control.Lens as Lens hiding
@@ -27,6 +29,8 @@ import           Control.Monad.RWS.Strict
                  ( MonadWriter, RWST, get, lift, runRWST, tell )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), evalStateT )
+import           Data.Bifunctor
+                 ( bimap )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
@@ -119,6 +123,7 @@ replInterpreter output cmd =
                     LabelAdd l mn     -> labelAdd l mn     $> True
                     LabelDel l        -> labelDel l        $> True
                     Redirect inn file -> redirect inn file $> True
+                    Try ac            -> tryAxiomClaim ac  $> True
                     Exit              -> pure                 False
         (exit, st', w) <- runRWST rwst () st
         liftIO $ output w
@@ -288,8 +293,7 @@ showRule configNode = do
     if node' `elem` Graph.nodes graph
         then do
             putStrLn' $ "Rule for node " <> show node' <> " is:"
-            putStrLn'
-                . unparseNodeLabels
+            unparseNodeLabels
                 . Graph.inn'
                 . Graph.context graph
                 $ node'
@@ -336,6 +340,63 @@ redirect cmd path = do
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
+
+tryAxiomClaim
+    :: forall level
+    .  MetaOrObject level
+    => level ~ Object
+    => Either AxiomIndex ClaimIndex
+    -> ReplM level ()
+tryAxiomClaim eac = do
+    ReplState { axioms, claims, claim, graph, node, stepper } <- get
+    case getAxiomOrClaim axioms claims node of
+        Nothing ->
+            tell "Could not find axiom or claim,\
+                 \or attempt to use claim as first step"
+        Just eac' -> do
+            if Graph.outdeg (Strategy.graph graph) node == 0
+                then do
+                    graph'@Strategy.ExecutionGraph { graph = gr } <-
+                        lift $ stepper
+                            claim
+                            (either (const claims) id eac')
+                            (either id (const axioms) eac')
+                            graph
+                            node
+                    case Graph.suc' $ Graph.context gr node of
+                        [] -> tell "Could not find any child nodes."
+                        [node'] -> do
+                            case Graph.lab' $ Graph.context gr node' of
+                                Stuck _ -> tell "Could not unify."
+                                _ -> do
+                                    lensGraph .= graph'
+                                    lensNode .= node'
+                                    tell "Unification succsessful."
+                        _ -> lensGraph .= graph'
+                else tell "Node is already evaluated"
+  where
+    getAxiomOrClaim
+        :: [Axiom level]
+        -> [Claim level]
+        -> Graph.Node
+        -> Maybe (Either [Axiom level] [Claim level])
+    getAxiomOrClaim axioms claims node =
+        bimap singleton singleton <$> resolve axioms claims node
+
+    resolve
+        :: [Axiom level]
+        -> [Claim level]
+        -> Graph.Node
+        -> Maybe (Either (Axiom level) (Claim level))
+    resolve axioms claims node =
+        case eac of
+            Left  (AxiomIndex aid) -> Left  <$> axioms `atZ` aid
+            Right (ClaimIndex cid)
+              | node == 0 -> Nothing
+              | otherwise -> Right <$> claims `atZ` cid
+
+    singleton :: a -> [a]
+    singleton a = [a]
 
 label
     :: forall level m
@@ -409,7 +470,7 @@ performSingleStep
     :: ReplM level StepResult
 performSingleStep = do
     ReplState { claims , axioms , graph , claim , node, stepper } <- get
-    (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
+    graph'@Strategy.ExecutionGraph { graph = gr }  <-
         lift $ stepper claim claims axioms graph node
     lensGraph .= graph'
     let context = Graph.context gr node
@@ -429,7 +490,7 @@ recursiveForcedStep n graph node
   | n == 0    = return graph
   | otherwise = do
       ReplState { claims , axioms , claim , stepper } <- get
-      (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
+      graph'@Strategy.ExecutionGraph { graph = gr } <-
           lift $ stepper claim claims axioms graph node
       case (Graph.suc gr node) of
           [] -> return graph'
@@ -483,11 +544,11 @@ unparseStrategy omitList =
            . symbolOrAliasConstructor
 
 unparseNodeLabels
-    :: [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
-    -> String
+    :: MonadWriter String m
+    => [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
+    -> m ()
 unparseNodeLabels =
-    join
-    . fmap unparseToString
+    traverse_ printRewriteRule
     . join
     . fmap (toList . third)
   where
@@ -505,7 +566,7 @@ printNotFound :: MonadWriter String m => m ()
 printNotFound = putStrLn' "Variable or index not found"
 
 putStrLn' :: MonadWriter String m => String -> m ()
-putStrLn' = tell
+putStrLn' str = tell $ str <> "\n"
 
 showDotGraph :: Graph gr => gr nl el -> IO ()
 showDotGraph =

@@ -12,6 +12,7 @@ module Kore.Repl.Data
     ( ReplCommand (..)
     , helpText
     , ExecutionGraph
+    , AxiomIndex (..), ClaimIndex (..)
     , ReplState (..)
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
@@ -38,6 +39,14 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
+
+newtype AxiomIndex = AxiomIndex
+    { unAxiomIndex :: Int
+    } deriving (Eq, Show)
+
+newtype ClaimIndex = ClaimIndex
+    { unClaimIndex :: Int
+    } deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
@@ -80,6 +89,8 @@ data ReplCommand
     -- ^ Remove a label.
     | Redirect ReplCommand FilePath
     -- ^ Prints the output of the inner command to the file.
+    | Try !(Either AxiomIndex ClaimIndex)
+    -- ^ Attempt to apply axiom or claim to current node.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -116,6 +127,7 @@ helpText =
     \label <+l> [n]          add a new label for a node\n\
                              \(defaults to current node)\n\
     \label <-l>              remove a label\n\
+    \try <a|c><num>          attempts <a>xiom or <c>laim at index <num>.\n\
     \exit                    exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -147,7 +159,7 @@ data ReplState level = ReplState
           -> [Axiom level]
           -> ExecutionGraph
           -> Graph.Node
-          -> Simplifier (ExecutionGraph, Bool)
+          -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , labels  :: Map String Graph.Node
     -- ^ Map from labels to nodes
