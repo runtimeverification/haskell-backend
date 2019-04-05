@@ -12,7 +12,7 @@ module Kore.Step.Representation.PredicateSubstitution
     , topPredicate
     , bottomPredicate
     , fromPurePattern
-    , fromPredicate
+    , Predicated.fromPredicate
     , toPredicate
     , freeVariables
     , Kore.Step.Representation.PredicateSubstitution.mapVariables
@@ -66,17 +66,6 @@ topPredicate = top
 
 bottomPredicate :: MetaOrObject level => PredicateSubstitution level variable
 bottomPredicate = bottom
-
-{- | Construct a 'PredicateSubstitution' from the given 'Predicate'.
-
-The result has an empty 'Substitution'.
-
- -}
-fromPredicate
-    :: Predicate level variable
-    -> PredicateSubstitution level variable
-fromPredicate predicate =
-    Predicated { term = (), predicate, substitution = mempty }
 
 {- | Extract the set of free variables from a predicate and substitution.
 

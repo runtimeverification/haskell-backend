@@ -17,6 +17,7 @@ module Kore.Step.Representation.ExpandedPattern
     , Kore.Step.Representation.ExpandedPattern.mapVariables
     , substitutionToPredicate
     , toMLPattern
+    , toStepPattern
     , top
     , topOf
     , Kore.Step.Representation.ExpandedPattern.fromPurePattern
@@ -127,9 +128,15 @@ allVariables
             Set.empty
             sub
 
-{-|'toMLPattern' converts an ExpandedPattern to a StepPattern.
--}
-toMLPattern
+{- | Convert an 'ExpandedPattern' to an ordinary 'StepPattern'.
+
+Conversion relies on the interpretation of 'ExpandedPattern' as a conjunction of
+patterns. Conversion erases the distinction between terms, predicates, and
+substitutions; this function should be used with care where that distinction is
+important.
+
+ -}
+toStepPattern
     ::  forall level variable.
         ( MetaOrObject level
         , SortedVariable variable
@@ -139,7 +146,7 @@ toMLPattern
         , HasCallStack
         )
     => ExpandedPattern level variable -> StepPattern level variable
-toMLPattern
+toStepPattern
     Predicated { term, predicate, substitution }
   =
     simpleAnd
@@ -163,6 +170,18 @@ toMLPattern
                     _ -> mkAnd pattern' (Predicate.fromPredicate patternSort predicate')
       where
         Valid { patternSort } = valid
+
+toMLPattern
+    ::  forall level variable.
+        ( MetaOrObject level
+        , SortedVariable variable
+        , Ord (variable level)
+        , Show (variable level)
+        , Unparse (variable level)
+        , HasCallStack
+        )
+    => ExpandedPattern level variable -> StepPattern level variable
+toMLPattern = toStepPattern
 
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.

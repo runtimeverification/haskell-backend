@@ -20,7 +20,7 @@ import           Control.Lens
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( join )
+                 ( foldM, join )
 import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
@@ -111,6 +111,7 @@ replInterpreter output cmd =
                     Prove i           -> prove i           $> True
                     ShowGraph         -> showGraph         $> True
                     ProveSteps n      -> proveSteps n      $> True
+                    ProveStepsF n     -> proveStepsF n     $> True
                     SelectNode i      -> selectNode i      $> True
                     ShowConfig mc     -> showConfig mc     $> True
                     OmitCell c        -> omitCell c        $> True
@@ -195,6 +196,14 @@ proveSteps n = do
                 <> show (n - done - 1)
                 <> " step(s) due to "
                 <> show res
+
+proveStepsF :: Int -> ReplM level ()
+proveStepsF n = do
+    graph  <- Lens.use lensGraph
+    node   <- Lens.use lensNode
+    graph' <- recursiveForcedStep n graph node
+    lensGraph .= graph'
+    lensNode  .= (snd $ Graph.nodeRange . Strategy.graph $ graph')
 
 selectNode
     :: MonadState (ReplState level) m
@@ -471,6 +480,21 @@ performSingleStep = do
           lensNode .= configNo
           pure Success
       neighbors -> pure (Branch neighbors)
+
+recursiveForcedStep
+    :: Int
+    -> ExecutionGraph
+    -> Graph.Node
+    -> ReplM level ExecutionGraph
+recursiveForcedStep n graph node
+  | n == 0    = return graph
+  | otherwise = do
+      ReplState { claims , axioms , claim , stepper } <- get
+      graph'@Strategy.ExecutionGraph { graph = gr } <-
+          lift $ stepper claim claims axioms graph node
+      case (Graph.suc gr node) of
+          [] -> return graph'
+          xs -> foldM (recursiveForcedStep $ n-1) graph' xs
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done

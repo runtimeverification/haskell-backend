@@ -42,6 +42,7 @@ commandParser0 =
         , showAxiom
         , prove
         , showGraph
+        , try proveStepsF
         , proveSteps
         , selectNode
         , showConfig
@@ -74,6 +75,9 @@ showGraph = const ShowGraph <$$> literal "graph"
 
 proveSteps :: Parser ReplCommand
 proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* Char.space
+
+proveStepsF :: Parser ReplCommand
+proveStepsF = ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* Char.space
 
 selectNode :: Parser ReplCommand
 selectNode = SelectNode <$$> literal "select" *> decimal
