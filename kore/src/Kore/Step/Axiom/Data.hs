@@ -13,6 +13,7 @@ module Kore.Step.Axiom.Data
     , AttemptedAxiom (..)
     , AttemptedAxiomResults (..)
     , CommonAttemptedAxiom
+    , hasRemainders
     , applicationAxiomSimplifier
     , notApplicableAxiomEvaluator
     , purePatternAxiomEvaluator
@@ -163,6 +164,15 @@ instance (NFData (variable level))
 following the same pattern as the other `Common*` types.
 -}
 type CommonAttemptedAxiom level = AttemptedAxiom level Variable
+
+{- | Does the 'AttemptedAxiom' have remainders?
+
+A 'NotApplicable' result is not considered to have remainders.
+
+ -}
+hasRemainders :: AttemptedAxiom level variable -> Bool
+hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
+hasRemainders NotApplicable = False
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator

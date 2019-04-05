@@ -42,7 +42,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
+                 ( AttemptedAxiom (..), hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import           Kore.Step.Pattern
@@ -138,11 +138,9 @@ totalDefinitionEvaluation rules =
         term
       = do
         (result, proof) <- evaluate
-        case result of
-            AttemptedAxiom.Applied axiomResults
-              | (not . null) (AttemptedAxiomResults.remainders axiomResults) ->
-                return (AttemptedAxiom.NotApplicable, proof)
-            _ -> return (result, proof)
+        if AttemptedAxiom.hasRemainders result
+            then return (AttemptedAxiom.NotApplicable, proof)
+            else return (result, proof)
       where
         evaluate =
             evaluateWithDefinitionAxioms
