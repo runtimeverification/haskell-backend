@@ -17,7 +17,6 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
-import           Control.Monad.Trans.Except
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
@@ -42,7 +41,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..), hasRemainders )
+                 ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import           Kore.Step.Pattern
@@ -52,7 +51,7 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make )
+                 ( extractPatterns )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse )
 import           Kore.Step.Rule
@@ -357,7 +356,8 @@ evaluateWithDefinitionAxioms
     simplifier
     axiomIdToSimplifier
     patt
-  = do
+  =
+    AttemptedAxiom.exceptNotApplicable $ do
     let
         -- TODO (thomas.tuegel): Take an 'ExpandedPattern' as input so that its
         -- conditions can be used to remove remainder branches and evaluate more
@@ -368,9 +368,8 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    resultOrError <-
-        runExceptT
-        $ Step.sequenceRules
+    result <-
+        Step.sequenceRules
             tools
             substitutionSimplifier
             simplifier
@@ -379,13 +378,7 @@ evaluateWithDefinitionAxioms
             expanded
             (map unwrapEqualityRule definitionRules)
 
-    let Step.Results { results, remainders } =
-            case resultOrError of
-                Right result -> result
-                Left _ -> Step.Results
-                    { Step.results = mempty
-                    , Step.remainders = MultiOr.make [expanded]
-                    }
+    let Step.Results { results, remainders } = result
     return
         ( AttemptedAxiom.Applied AttemptedAxiomResults
             { results = Step.result <$> results
