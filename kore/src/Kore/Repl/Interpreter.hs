@@ -198,6 +198,7 @@ proveStepsF n = do
     node <- Lens.use lensNode
     graph' <- (recursiveForcedStep n graph node)
     lensGraph .= graph'
+    lensNode .= (snd $ Graph.nodeRange . Strategy.graph $ graph')
     return ()
 
 selectNode
@@ -429,7 +430,7 @@ recursiveForcedStep n graph node =
     if n == 0
        then return graph
        else do
-           ReplState { claims , axioms , graph , claim , node, stepper } <- get
+           ReplState { claims , axioms , claim , stepper } <- get
            (graph'@Strategy.ExecutionGraph { graph = gr }, _ ) <-
                lift $ stepper claim claims axioms graph node
            case (Graph.suc gr node) of
