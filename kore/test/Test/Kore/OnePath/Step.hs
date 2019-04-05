@@ -94,7 +94,7 @@ test_onePathStrategy =
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            Bottom
+            Goal
             _actual
 
         -- Target: d
@@ -130,7 +130,7 @@ test_onePathStrategy =
             , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            Bottom
+            Goal
             _actual
 
         -- Target: e
@@ -250,7 +250,7 @@ test_onePathStrategy =
                         )
                 , substitution = mempty
                 }
-            , Bottom
+            , Goal
             ]
             [ _actual1
             , _actual2
@@ -294,7 +294,7 @@ test_onePathStrategy =
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                 }
-            , Stuck Predicated
+            , Remainder Predicated
                 { term = Mock.functionalConstr11 (mkVar Mock.x)
                 , predicate =
                     makeAndPredicate
@@ -342,7 +342,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqualWithExplanation ""
-            [ Stuck Predicated
+            [ Remainder Predicated
                 { term = Mock.functionalConstr10 Mock.b
                 , predicate =
                     makeNotPredicate
@@ -351,7 +351,7 @@ test_onePathStrategy =
                             $ Mock.f Mock.b
                 , substitution = mempty
                 }
-            , Bottom
+            , Goal
             ]
             [ _actual1
             , _actual2
@@ -379,7 +379,7 @@ test_onePathStrategy =
                     )
                 ]
         assertEqualWithExplanation ""
-            Bottom
+            Goal
             _actual
     ]
   where

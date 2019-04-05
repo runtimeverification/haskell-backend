@@ -112,11 +112,13 @@ if x then phi else psi
 with these rules
 
 @
-if true then x else y => x
-if false then phi else psi
+if true  then u else v => u
+if false then u else v => v
 @
 
 there would be two 'RewritePattern's, @phi and x=true@ and @psi and x=false@.
+If only the first rule was present, the results would be a 'RewritePattern' with
+@phi and x=true@ and a 'Remainder' with @psi and not x=true@.
 
 When rewriting the same pattern with an rule that does not match, e.g.
 
@@ -124,16 +126,17 @@ When rewriting the same pattern with an rule that does not match, e.g.
 x + y => x +Int y
 @
 
-then the rewrite result should be 'Bottom'.
+then rewriting produces no children.
+
 -}
 data StrategyPattern patt
     = RewritePattern !patt
     -- ^ Pattern on which a normal 'Rewrite' can be applied. Also used
     -- for the start patterns.
-    | Stuck !patt
+    | Remainder !patt
     -- ^ Pattern which can't be rewritten anymore.
-    | Bottom
-    -- ^ special representation for a bottom rewriting/simplification result.
+    | Goal
+    -- ^ Special representation for @\\bottom@ after the implication check.
     -- This is needed when bottom results are expected and we want to
     -- differentiate between them and stuck results.
   deriving (Show, Eq, Ord, Generic)
@@ -151,8 +154,8 @@ strategyPattern
 strategyPattern f g x =
     \case
         RewritePattern patt -> f patt
-        Stuck patt -> g patt
-        Bottom -> x
+        Remainder patt -> g patt
+        Goal -> x
 
 -- | A 'StrategyPattern' instantiated to 'CommonExpandedPattern' for convenience.
 type CommonStrategyPattern level = StrategyPattern (CommonExpandedPattern level)
@@ -239,9 +242,9 @@ transitionRule
   where
     transitionSimplify (RewritePattern config, proof) =
         applySimplify RewritePattern (config, proof)
-    transitionSimplify (Stuck config, proof) =
-        applySimplify Stuck (config, proof)
-    transitionSimplify c@(Bottom, _) = return c
+    transitionSimplify (Remainder config, proof) =
+        applySimplify Remainder (config, proof)
+    transitionSimplify c@(Goal, _) = return c
 
     applySimplify wrapper (config, proof) =
         do
@@ -259,7 +262,7 @@ transitionRule
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
             if null nonEmptyConfigs
-                then return (Bottom, proof'')
+                then return (Goal, proof'')
                 else Foldable.asum (pure . prove <$> map wrapper (Foldable.toList nonEmptyConfigs))
 
     transitionApplyWithRemainders
@@ -267,8 +270,8 @@ transitionRule
         -> (CommonStrategyPattern level, StepProof level Variable)
         -> TransitionT (RewriteRule level Variable) Simplifier
             (CommonStrategyPattern level, StepProof level Variable)
-    transitionApplyWithRemainders _ c@(Bottom, _) = return c
-    transitionApplyWithRemainders _ c@(Stuck _, _) = return c
+    transitionApplyWithRemainders _ c@(Goal, _) = return c
+    transitionApplyWithRemainders _ c@(Remainder _, _) = return c
     transitionApplyWithRemainders
         rules
         (RewritePattern config, proof)
@@ -324,7 +327,7 @@ transitionRule
                         Transition.addRule (RewriteRule rule)
                         return (RewritePattern $ Step.result result')
                     remainderResults =
-                        pure . withProof . Stuck <$> remainders
+                        pure . withProof . Remainder <$> remainders
 
                 Foldable.asum (rewriteResults <> remainderResults)
 
@@ -335,8 +338,8 @@ transitionRule
             )
         -> TransitionT (RewriteRule level Variable) Simplifier
             (CommonStrategyPattern level, StepProof level Variable)
-    transitionRemoveDestination _ (Bottom, _) = empty
-    transitionRemoveDestination _ (Stuck _, _) = empty
+    transitionRemoveDestination _ (Goal, _) = empty
+    transitionRemoveDestination _ (Remainder _, _) = empty
     transitionRemoveDestination destination (RewritePattern patt, proof1) = do
         let
             removal = removalPredicate destination patt
@@ -360,7 +363,7 @@ transitionRule
                     )
                     (MultiOr.extractPatterns orResult)
         if null patternsWithProofs
-            then return (Bottom, finalProof)
+            then return (Goal, finalProof)
             else Foldable.asum (pure <$> patternsWithProofs)
 
 {- | The predicate to remove the destination from the present configuration.
