@@ -264,14 +264,6 @@ test_resolvers =
             ))
             (resolveAlias testIndexedModule (testId "#b" :: Id Meta))
         )
-    , testCase "sort error"
-        (assertEqual ""
-            (Left Error
-                { errorContext = ["(<test data>)"]
-                , errorError = "Sort '#a' not declared."}
-            )
-            (resolveSort testIndexedModule (testId "#a" :: Id Meta))
-        )
     , testCase "symbol getHeadApplicationSorts"
         (assertEqual ""
             ApplicationSorts
@@ -306,11 +298,7 @@ test_resolver_undefined_messages =
     testGroup "each resolver has a standard failure message"
         [ resolveAlias `produces_` Error.noAlias
         , resolveSymbol `produces_` Error.noSymbol
-        -- , resolveSort `produces_` Error.noSort
-        -- ^^^ TODO: The above cannot be done until `resolveSort`
-        -- is changed to be consistent with the other error
-        -- messages, which has to wait until a number of
-        -- other tests are fixed.
+        , resolveSort `produces_` Error.noSort
         ]
       where
         produces_ resolver formatter =

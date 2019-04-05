@@ -27,6 +27,8 @@ test_replParser =
     , omitTests        `tests` "omit"
     , labelTests       `tests` "label"
     , redirectTests    `tests` "redirect"
+    , ruleTests        `tests` "rule"
+    , stepfTests       `tests` "stepf"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -82,6 +84,15 @@ stepTests =
     , "step 5"  `parsesTo_` ProveSteps 5
     , "step 5 " `parsesTo_` ProveSteps 5
     , "step -5" `fails`     "no negative numbers"
+    ]
+
+stepfTests :: [ParserTest ReplCommand]
+stepfTests =
+    [ "stepf"    `parsesTo_` ProveStepsF 1
+    , "stepf "   `parsesTo_` ProveStepsF 1
+    , "stepf 5"  `parsesTo_` ProveStepsF 5
+    , "stepf 5 " `parsesTo_` ProveStepsF 5
+    , "stepf -5" `fails`     "no negative numbers"
     ]
 
 selectTests :: [ParserTest ReplCommand]
@@ -159,4 +170,13 @@ redirectTests =
     , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "claim 3 > cf"    `parsesTo_` Redirect (ShowClaim 3)         "cf"
+    ]
+
+ruleTests :: [ParserTest ReplCommand]
+ruleTests =
+    [ "rule"    `parsesTo_` ShowRule Nothing
+    , "rule "   `parsesTo_` ShowRule Nothing
+    , "rule 5"  `parsesTo_` ShowRule (Just 5)
+    , "rule 5 " `parsesTo_` ShowRule (Just 5)
+    , "rule -5" `fails`     "no negative numbers"
     ]
