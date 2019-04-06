@@ -501,18 +501,14 @@ test_twoCase =
         -- Start pattern: f(V1)
         -- Expected: h(V1)
         do
-            actual <- run $ fun "#f" ["v1"]
-            check expectTwoSteps actual
+            let input = fun "#f" ["v1"]
+            let expected = fun "#h" ["v1"]
+            run input >>= check expected
 
-check :: EqualWithExplanation a => (a, b1) -> (a, b2) -> IO ()
-check (expected, _) (actual, _) =
-    assertEqualWithExplanation "" expected actual
+check :: CommonStepPattern Meta -> (ExpandedPattern Meta Variable, StepProof Meta Variable) -> IO ()
+check expected (actual, _ignoredProof) =
+    assertEqualWithExplanation "" (predicatedTrivially expected) actual
 
-expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectTwoSteps =
-    ( predicatedTrivially $ fun "#h" ["v1"]
-    , mempty
-    )
 
 run :: StepPattern Meta Variable
     -> IO (CommonExpandedPattern Meta, StepProof Meta Variable)
