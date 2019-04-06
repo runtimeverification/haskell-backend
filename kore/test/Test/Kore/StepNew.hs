@@ -499,32 +499,33 @@ test_twoCase =
         -- Axiom: g(X1) => h(X1)
         -- Start pattern: f(V1)
         -- Expected: h(V1)
-    startPattern `produces` expected $ "One step leads to another"
+    (startPattern, axioms) `produce` expected $ "Two successive steps"
       where
-        startPattern = fun "#f" ["v1"]
-        expected = fun "#h" ["v1"]
+        startPattern = fun "f" ["v1"]
+        axioms =
+            [ fun "f" ["x1"] `implies` fun "g" ["x1"]
+            , fun "g" ["x1"] `implies` fun "h" ["x1"]
+            ]
+        expected =     fun "h" ["v1"]
 
-
-
-
-produces :: StepPattern Meta Variable -> CommonStepPattern Meta -> TestName -> TestTree
-produces input expected testName =
+produce :: (StepPattern Meta Variable, [RewriteRule Meta Variable]) -> CommonStepPattern Meta -> TestName -> TestTree
+produce (input, axioms) expected testName =
     testCase testName $
-        takeAllSteps input >>= check expected
+        takeAllSteps (input, axioms) >>= check expected
 
 check :: CommonStepPattern Meta -> (ExpandedPattern Meta Variable, StepProof Meta Variable) -> IO ()
 check expected (actual, _ignoredProof) =
     assertEqualWithExplanation "" (predicatedTrivially expected) actual
 
 takeAllSteps
-    :: StepPattern Meta Variable
+    :: (StepPattern Meta Variable, [RewriteRule Meta Variable])
     -> IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-takeAllSteps input =
+takeAllSteps (input, axioms) =
     runSteps
         mockMetadataTools
         Unlimited
         (predicatedTrivially input)
-        axiomsSimpleStrategy
+        axioms
 
 
 predicatedTrivially :: term -> Predicated Object variable term
@@ -551,3 +552,16 @@ var :: Functor domain =>
     -> PurePattern Meta domain Variable (Valid (Variable Meta) Meta)
 var name =
     mkVar $ (Variable (testId name) mempty) patternMetaSort
+
+implies
+    :: StepPattern Object variable
+    -> StepPattern Object variable
+    -> RewriteRule Object variable
+implies left right =
+    RewriteRule $ RulePattern
+        { left
+        , right
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
