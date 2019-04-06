@@ -500,10 +500,16 @@ test_twoCase =
         -- Axiom: g(X1) => h(X1)
         -- Start pattern: f(V1)
         -- Expected: h(V1)
-        do
-            let input = fun "#f" ["v1"]
-            let expected = fun "#h" ["v1"]
-            run input >>= check expected
+        let
+            input = fun "#f" ["v1"]
+            expected = fun "#h" ["v1"]
+        in
+            input `produces` expected
+
+
+produces :: StepPattern Meta Variable -> CommonStepPattern Meta -> IO ()
+produces input expected =
+    run input >>= check expected
 
 check :: CommonStepPattern Meta -> (ExpandedPattern Meta Variable, StepProof Meta Variable) -> IO ()
 check expected (actual, _ignoredProof) =
