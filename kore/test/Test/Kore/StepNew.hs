@@ -495,30 +495,31 @@ runSteps metadataTools stepLimit configuration axioms =
 -----------
 test_twoCase :: TestTree
 test_twoCase =
-    testCase "Runs two steps" $
         -- Axiom: f(X1) => g(X1)
         -- Axiom: g(X1) => h(X1)
         -- Start pattern: f(V1)
         -- Expected: h(V1)
-        let
-            input = fun "#f" ["v1"]
-            expected = fun "#h" ["v1"]
-        in
-            input `produces` expected
+    startPattern `produces` expected $ "One step leads to another"
+      where
+        startPattern = fun "#f" ["v1"]
+        expected = fun "#h" ["v1"]
 
 
-produces :: StepPattern Meta Variable -> CommonStepPattern Meta -> IO ()
-produces input expected =
-    run input >>= check expected
+
+
+produces :: StepPattern Meta Variable -> CommonStepPattern Meta -> TestName -> TestTree
+produces input expected testName =
+    testCase testName $
+        takeAllSteps input >>= check expected
 
 check :: CommonStepPattern Meta -> (ExpandedPattern Meta Variable, StepProof Meta Variable) -> IO ()
 check expected (actual, _ignoredProof) =
     assertEqualWithExplanation "" (predicatedTrivially expected) actual
 
-
-run :: StepPattern Meta Variable
+takeAllSteps
+    :: StepPattern Meta Variable
     -> IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-run input =
+takeAllSteps input =
     runSteps
         mockMetadataTools
         Unlimited
