@@ -495,23 +495,39 @@ runSteps metadataTools stepLimit configuration axioms =
 -----------
 test_twoCase :: TestTree
 test_twoCase =
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: h(V1)
     (startPattern, axioms) `produce` expected $ "Two successive steps"
       where
-        startPattern = fun "f" ["v1"]
+        startPattern =
+              fun "f" ["v1"]
         axioms =
             [ fun "f" ["x1"] `implies` fun "g" ["x1"]
             , fun "g" ["x1"] `implies` fun "h" ["x1"]
             ]
-        expected =     fun "h" ["v1"]
+        expected =                     fun "h" ["v1"]
+
+test_twoCaseAlternate :: TestTree
+test_twoCaseAlternate =
+    stepUnlimited                              "Two successive steps"
+        ( fun "f" ["v1"])
+        [ fun "f" ["x1"] `implies` fun "g" ["x1"]
+        , fun "g" ["x1"] `implies` fun "h" ["x1"]
+        ]
+        (                          fun "h" ["v1"])
+
 
 produce :: (StepPattern Meta Variable, [RewriteRule Meta Variable]) -> CommonStepPattern Meta -> TestName -> TestTree
 produce (input, axioms) expected testName =
     testCase testName $
         takeAllSteps (input, axioms) >>= check expected
+
+stepUnlimited :: TestName
+    -> StepPattern Meta Variable
+    -> [RewriteRule Meta Variable]
+    -> CommonStepPattern Meta
+    -> TestTree
+stepUnlimited testName input axioms expected =
+    produce (input, axioms) expected testName
+
 
 check :: CommonStepPattern Meta -> (ExpandedPattern Meta Variable, StepProof Meta Variable) -> IO ()
 check expected (actual, _ignoredProof) =
