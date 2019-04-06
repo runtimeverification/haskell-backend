@@ -507,7 +507,7 @@ test_twoCase =
         -- Start pattern: f(V1)
         -- Expected: h(V1)
         do
-            actual <- actualTwoSteps
+            actual <- run $ fun "#f" ["v1"]
             check expectTwoSteps actual
 
 check :: EqualWithExplanation a => (a, b1) -> (a, b2) -> IO ()
@@ -520,13 +520,13 @@ expectTwoSteps =
     , mempty
     )
 
-run :: CommonExpandedPattern Meta
+run :: StepPattern Meta Variable
     -> IO (CommonExpandedPattern Meta, StepProof Meta Variable)
 run input =
     runSteps
         mockMetadataTools
         Unlimited
-        input
+        (triviallyConditioned input)
         axiomsSimpleStrategy
 
 
