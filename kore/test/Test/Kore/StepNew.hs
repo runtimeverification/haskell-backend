@@ -516,7 +516,7 @@ check (expected, _) (actual, _) =
 
 expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
 expectTwoSteps =
-    ( triviallyConditioned $ fun "#h" ["v1"]
+    ( predicatedTrivially $ fun "#h" ["v1"]
     , mempty
     )
 
@@ -526,7 +526,7 @@ run input =
     runSteps
         mockMetadataTools
         Unlimited
-        (triviallyConditioned input)
+        (predicatedTrivially input)
         axiomsSimpleStrategy
 
 
@@ -535,11 +535,11 @@ actualTwoSteps =
     runSteps
         mockMetadataTools
         Unlimited
-        (triviallyConditioned $ fun "#f" ["v1"])
+        (predicatedTrivially $ fun "#f" ["v1"])
         axiomsSimpleStrategy
 
-triviallyConditioned :: term -> Predicated Object variable term
-triviallyConditioned term =
+predicatedTrivially :: term -> Predicated Object variable term
+predicatedTrivially term =
     Predicated
         { term = term
         , predicate = makeTruePredicate
