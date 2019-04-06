@@ -501,7 +501,7 @@ test_twoCase =
               fun "f" ["v1"]
         axioms =
             [ fun "f" ["x1"] `implies` fun "g" ["x1"]
-            , fun "g" ["x1"] `implies` fun "h" ["x1"]
+            , fun "g" ["x2"] `implies` fun "h" ["x2"]
             ]
         expected =                     fun "h" ["v1"]
 
