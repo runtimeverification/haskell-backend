@@ -216,12 +216,6 @@ test_simpleStrategy =
         -- Start pattern: f(V1)
         -- Expected: g(V1)
         (assertEqualWithExplanation "" expectOneStep =<< actualOneStep)
-    , testCase "Runs two steps"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: h(V1)
-        (assertEqualWithExplanation "" expectTwoSteps =<< actualTwoSteps)
     , testCase "Obeys step limit"
         -- Axiom: f(X1) => g(X1)
         -- Axiom: g(X1) => h(X1)
@@ -529,14 +523,6 @@ run input =
         (predicatedTrivially input)
         axiomsSimpleStrategy
 
-
-actualTwoSteps :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualTwoSteps =
-    runSteps
-        mockMetadataTools
-        Unlimited
-        (predicatedTrivially $ fun "#f" ["v1"])
-        axiomsSimpleStrategy
 
 predicatedTrivially :: term -> Predicated Object variable term
 predicatedTrivially term =
