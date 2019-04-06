@@ -495,7 +495,7 @@ runSteps metadataTools stepLimit configuration axioms =
 -----------
 test_twoCase :: TestTree
 test_twoCase =
-    (startPattern, axioms) `produce` expected $ "Two successive steps"
+    (startPattern, axioms) `stepUntil` expected $ "Two successive steps"
       where
         startPattern =
               fun "f" ["v1"]
@@ -515,8 +515,8 @@ test_twoCaseAlternate =
         (                          fun "h" ["v1"])
 
 
-produce :: (StepPattern Meta Variable, [RewriteRule Meta Variable]) -> CommonStepPattern Meta -> TestName -> TestTree
-produce (input, axioms) expected testName =
+stepUntil :: (StepPattern Meta Variable, [RewriteRule Meta Variable]) -> CommonStepPattern Meta -> TestName -> TestTree
+stepUntil (input, axioms) expected testName =
     testCase testName $
         takeAllSteps (input, axioms) >>= check expected
 
@@ -526,7 +526,7 @@ stepUnlimited :: TestName
     -> CommonStepPattern Meta
     -> TestTree
 stepUnlimited testName input axioms expected =
-    produce (input, axioms) expected testName
+    stepUntil (input, axioms) expected testName
 
 
 check :: CommonStepPattern Meta -> (ExpandedPattern Meta Variable, StepProof Meta Variable) -> IO ()
