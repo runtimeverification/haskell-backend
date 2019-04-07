@@ -1,8 +1,5 @@
 module Test.Kore.Step
-    ( test_simpleStrategy
-    , test_stepStrategy
-    , test_unificationError
-    ) where
+where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -15,6 +12,8 @@ import qualified Data.Set as Set
 
 import           Data.Limit
                  ( Limit (..) )
+import           Data.Text
+                 ( Text )
 import qualified Data.Limit as Limit
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -520,3 +519,86 @@ runSteps metadataTools stepLimit configuration axioms =
         (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty
+
+
+----------
+------------  Working toward replacing much of the above
+-----------
+test_fullScenarios :: TestTree
+test_fullScenarios =
+    testGroup "full scenarios"
+        [ stepUnlimited                              "Two successive steps"
+            ( Start $ fun "f" ["v1"])
+            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
+            , Axiom $ fun "g" ["x1"] `rewritesTo` fun "h" ["x1"]
+            ]
+            ( Expect $                            fun "h" ["v1"])
+        ]
+
+
+stepUnlimited :: TestName -> Start -> [Axiom] -> Expect -> TestTree
+stepUnlimited testName start axioms expected =
+    stepTestCase (start, axioms) expected testName
+
+stepTestCase :: (Start, [Axiom]) -> Expect -> TestName -> TestTree
+stepTestCase (start, axioms) expected testName =
+    testCase testName $
+        takeAllSteps (start, axioms) >>= check expected
+
+takeAllSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
+takeAllSteps (Start start, axioms) =
+    runSteps
+        mockMetadataTools
+        Unlimited
+        (predicatedTrivially start)
+        (unwrap <$> axioms)
+      where
+        unwrap (Axiom a) = a
+
+predicatedTrivially :: term -> Predicated Object variable term
+predicatedTrivially term =
+    Predicated
+        { term = term
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
+
+check :: Expect -> (Actual, Proof) -> IO ()
+check (Expect expected) (actual, _ignoredProof) =
+    assertEqualWithExplanation "" (predicatedTrivially expected) actual
+
+
+
+fun :: Text -> [Text] -> TestPattern
+fun name arguments =
+    mkApp patternMetaSort symbol $ fmap var arguments
+  where
+    symbol = SymbolOrAlias
+        { symbolOrAliasConstructor = Id name AstLocationTest
+        , symbolOrAliasParams = []
+        }
+
+var :: Text -> TestPattern
+var name =
+    mkVar $ (Variable (testId name) mempty) patternMetaSort
+
+rewritesTo
+    :: StepPattern Object variable
+    -> StepPattern Object variable
+    -> RewriteRule Object variable
+rewritesTo left right =
+    RewriteRule $ RulePattern
+        { left
+        , right
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+
+type TestPattern = CommonStepPattern Meta
+newtype Start = Start TestPattern
+newtype Axiom = Axiom (RewriteRule Meta Variable)
+type Actual = ExpandedPattern Meta Variable
+newtype Expect = Expect TestPattern
+type Proof = StepProof Meta Variable
