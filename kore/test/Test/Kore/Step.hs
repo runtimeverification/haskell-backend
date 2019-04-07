@@ -12,9 +12,9 @@ import qualified Data.Set as Set
 
 import           Data.Limit
                  ( Limit (..) )
+import qualified Data.Limit as Limit
 import           Data.Text
                  ( Text )
-import qualified Data.Limit as Limit
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
