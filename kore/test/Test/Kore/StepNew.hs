@@ -493,21 +493,16 @@ runSteps metadataTools stepLimit configuration axioms =
 ----------
 ------------
 -----------
-type TestPattern = CommonStepPattern Meta
-newtype Start = Start TestPattern
-newtype Axiom = Axiom (RewriteRule Meta Variable)
-type Actual = ExpandedPattern Meta Variable
-newtype Expect = Expect TestPattern
-type Proof = StepProof Meta Variable
-
-test_twoCaseAlternate :: TestTree
-test_twoCaseAlternate =
-    stepUnlimited                              "Two successive steps"
-        ( Start $ fun "f" ["v1"])
-        [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
-        , Axiom $ fun "g" ["x1"] `rewritesTo` fun "h" ["x1"]
+test_fullScenarios :: TestTree
+test_fullScenarios =
+    testGroup "full scenarios"
+        [ stepUnlimited                              "Two successive steps"
+            ( Start $ fun "f" ["v1"])
+            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
+            , Axiom $ fun "g" ["x1"] `rewritesTo` fun "h" ["x1"]
+            ]
+            ( Expect $                            fun "h" ["v1"])
         ]
-        ( Expect $                            fun "h" ["v1"])
 
 
 stepUnlimited :: TestName -> Start -> [Axiom] -> Expect -> TestTree
@@ -568,3 +563,13 @@ rewritesTo left right =
         , ensures = makeTruePredicate
         , attributes = def
         }
+
+
+type TestPattern = CommonStepPattern Meta
+newtype Start = Start TestPattern
+newtype Axiom = Axiom (RewriteRule Meta Variable)
+type Actual = ExpandedPattern Meta Variable
+newtype Expect = Expect TestPattern
+type Proof = StepProof Meta Variable
+
+        
