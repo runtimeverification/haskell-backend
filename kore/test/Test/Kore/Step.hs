@@ -217,12 +217,6 @@ test_simpleStrategy =
         -- Start pattern: f(V1)
         -- Expected: g(V1)
         (assertEqualWithExplanation "" expectOneStep =<< actualOneStep)
-    , testCase "Runs two steps"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: h(V1)
-        (assertEqualWithExplanation "" expectTwoSteps =<< actualTwoSteps)
     , testCase "Obeys step limit"
         -- Axiom: f(X1) => g(X1)
         -- Axiom: g(X1) => h(X1)
@@ -284,29 +278,6 @@ actualOneStep =
             , attributes = def
             }
         ]
-
-expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectTwoSteps =
-    ( Predicated
-        { term = metaH (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualTwoSteps :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualTwoSteps =
-    runSteps
-        mockMetadataTools
-        Unlimited
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
-
 
 expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
 expectZeroStepLimit =
