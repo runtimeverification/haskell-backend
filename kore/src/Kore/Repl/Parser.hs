@@ -21,7 +21,7 @@ import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Kore.Repl.Data
-       ( ReplCommand (..) )
+       ( AxiomIndex (..), ClaimIndex (..), ReplCommand (..) )
 
 type Parser = Parsec String String
 
@@ -42,6 +42,7 @@ commandParser0 =
         , showAxiom
         , prove
         , showGraph
+        , try proveStepsF
         , proveSteps
         , selectNode
         , showConfig
@@ -53,6 +54,7 @@ commandParser0 =
         , try labelAdd
         , try labelDel
         , label
+        , tryAxiomClaim
         , exit
         ]
 
@@ -73,6 +75,9 @@ showGraph = const ShowGraph <$$> literal "graph"
 
 proveSteps :: Parser ReplCommand
 proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* Char.space
+
+proveStepsF :: Parser ReplCommand
+proveStepsF = ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* Char.space
 
 selectNode :: Parser ReplCommand
 selectNode = SelectNode <$$> literal "select" *> decimal
@@ -107,6 +112,16 @@ labelDel = LabelDel <$$> literal "label" *> literal "-" *> string
 
 exit :: Parser ReplCommand
 exit = const Exit <$$> literal "exit"
+
+tryAxiomClaim :: Parser ReplCommand
+tryAxiomClaim =
+    Try <$$> literal "try" *> (Left <$> axiomIndex <|> Right <$> claimIndex)
+
+axiomIndex :: Parser AxiomIndex
+axiomIndex = AxiomIndex <$$> Char.string "a" *> decimal
+
+claimIndex :: Parser ClaimIndex
+claimIndex = ClaimIndex <$$> Char.string "c" *> decimal
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd = Redirect cmd <$$> literal ">" *> string

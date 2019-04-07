@@ -12,6 +12,7 @@ module Kore.Repl.Data
     ( ReplCommand (..)
     , helpText
     , ExecutionGraph
+    , AxiomIndex (..), ClaimIndex (..)
     , ReplState (..)
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
@@ -39,6 +40,14 @@ import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
 
+newtype AxiomIndex = AxiomIndex
+    { unAxiomIndex :: Int
+    } deriving (Eq, Show)
+
+newtype ClaimIndex = ClaimIndex
+    { unClaimIndex :: Int
+    } deriving (Eq, Show)
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -55,7 +64,9 @@ data ReplCommand
     | ShowGraph
     -- ^ Show the current execution graph.
     | ProveSteps !Int
-    -- ^ Do n proof steps from curent node.
+    -- ^ Do n proof steps from current node.
+    | ProveStepsF !Int
+    -- ^ Do n proof steps (through branchings) from the current node.
     | SelectNode !Int
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe Int)
@@ -67,17 +78,19 @@ data ReplCommand
     | ShowRule !(Maybe Int)
     -- ^ Show the rule(s) that got us to this configuration.
     | ShowPrecBranch !(Maybe Int)
-    -- ^ Show the first preceding branch
+    -- ^ Show the first preceding branch.
     | ShowChildren !(Maybe Int)
-    -- ^ Show direct children of node
+    -- ^ Show direct children of node.
     | Label !(Maybe String)
-    -- ^ Show all node labels or jump to a label
+    -- ^ Show all node labels or jump to a label.
     | LabelAdd !String !(Maybe Int)
-    -- ^ Add a label to a node
+    -- ^ Add a label to a node.
     | LabelDel !String
-    -- ^ Remove a label
+    -- ^ Remove a label.
     | Redirect ReplCommand FilePath
-    -- ^ prints the output of the inner command to the file.
+    -- ^ Prints the output of the inner command to the file.
+    | Try !(Either AxiomIndex ClaimIndex)
+    -- ^ Attempt to apply axiom or claim to current node.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -94,6 +107,9 @@ helpText =
     \graph                   shows the current proof graph\n\
     \step [n]                attempts to run 'n' proof steps at\
                              \the current node (n=1 by default)\n\
+    \stepf [n]               attempts to run 'n' proof steps at\
+                             \the current node, stepping through\
+                             \branchings (n=1 by default)\n\
     \select <n>              select node id 'n' from the graph\n\
     \config [n]              shows the config for node 'n'\
                              \(defaults to current node)\n\
@@ -111,6 +127,7 @@ helpText =
     \label <+l> [n]          add a new label for a node\n\
                              \(defaults to current node)\n\
     \label <-l>              remove a label\n\
+    \try <a|c><num>          attempts <a>xiom or <c>laim at index <num>.\n\
     \exit                    exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -142,7 +159,7 @@ data ReplState level = ReplState
           -> [Axiom level]
           -> ExecutionGraph
           -> Graph.Node
-          -> Simplifier (ExecutionGraph, Bool)
+          -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , labels  :: Map String Graph.Node
     -- ^ Map from labels to nodes
