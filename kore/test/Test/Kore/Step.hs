@@ -210,90 +210,6 @@ test_stepStrategy =
         (assertEqualWithExplanation "" expectFailCycle =<< actualFailCycle)
     ]
 
-test_simpleStrategy :: [TestTree]
-test_simpleStrategy =
-    [ testCase "Runs one step"
-        -- Axiom: f(X1) => g(X1)
-        -- Start pattern: f(V1)
-        -- Expected: g(V1)
-        (assertEqualWithExplanation "" expectOneStep =<< actualOneStep)
-    , testCase "0 step limit"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: f(V1)
-        (assertEqualWithExplanation "" expectZeroStepLimit
-            =<< actualZeroStepLimit)
-    ]
-
-axiomsSimpleStrategy :: [RewriteRule Meta Variable]
-axiomsSimpleStrategy =
-    [ RewriteRule $ RulePattern
-        { left = metaF (mkVar $ x1 patternMetaSort)
-        , right = metaG (mkVar $ x1 patternMetaSort)
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-    , RewriteRule $ RulePattern
-        { left = metaG (mkVar $ x1 patternMetaSort)
-        , right = metaH (mkVar $ x1 patternMetaSort)
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-    ]
-
-expectOneStep :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectOneStep =
-    ( Predicated
-        { term = metaG (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualOneStep :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualOneStep =
-    runSteps
-        mockMetadataTools
-        Unlimited
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        [ RewriteRule $ RulePattern
-            { left = metaF (mkVar $ x1 patternMetaSort)
-            , right = metaG (mkVar $ x1 patternMetaSort)
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
-        ]
-
-expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectZeroStepLimit =
-        ( Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        , mempty
-        )
-
-actualZeroStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualZeroStepLimit =
-    runSteps
-        mockMetadataTools
-        (Limit 0)
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
 
 test_unificationError :: TestTree
 test_unificationError =
@@ -477,6 +393,8 @@ test_fullScenarios =
             ]
             ( Expect $                            fun "h" ["v1"])
 
+            -- Note: deleted one-step case
+
         , step 1                                     "Limit stops second step"
             ( Start $ fun "f" ["v1"])
             [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
@@ -484,7 +402,20 @@ test_fullScenarios =
             ]
             ( Expect $                            fun "g" ["v1"])
 
+        , step 0                                    "Can prevent any steps"
+            ( Start $ fun "f" ["v1"])
+            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "unused" ["x1"]
+            ]
+            ( Expect $                            fun "f" ["v1"])
 
+        -- Note: added the following case
+
+        , step 2                                    "Step limit allows completion"
+            ( Start $ fun "f" ["v1"])
+            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
+            , Axiom $ fun "g" ["x2"] `rewritesTo` fun "h" ["x2"]
+            ]
+            ( Expect $                            fun "h" ["v1"])
         ]
 
 
