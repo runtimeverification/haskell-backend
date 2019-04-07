@@ -402,7 +402,7 @@ test_fullScenarios =
             ]
             ( Expect $                            fun "g" ["v1"])
 
-        , step 0                                    "Can prevent any steps"
+        , step 0                                    "Can prevent any steps at all"
             ( Start $ fun "f" ["v1"])
             [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "unused" ["x1"]
             ]
@@ -421,13 +421,13 @@ test_fullScenarios =
 
             {- API -}
 
-stepUnlimited :: TestName -> Start -> [Axiom] -> Expect -> TestTree
-stepUnlimited testName start axioms expected =
-    stepTestCase Unlimited (start, axioms) expected testName
-
 step :: Natural -> TestName -> Start -> [Axiom] -> Expect -> TestTree
 step limit testName start axioms expected =
     stepTestCase (Limit limit) (start, axioms) expected testName
+
+stepUnlimited :: TestName -> Start -> [Axiom] -> Expect -> TestTree
+stepUnlimited testName start axioms expected =
+    stepTestCase Unlimited     (start, axioms) expected testName
 
 
 -- API Helpers
@@ -435,8 +435,10 @@ step limit testName start axioms expected =
 stepTestCase :: StepCount -> (Start, [Axiom]) -> Expect -> TestName -> TestTree
 stepTestCase stepCount (start, axioms) expected testName =
     testCase testName $
-        takeCountSteps stepCount (start, axioms) >>= check expected
+        takeCountSteps stepCount (start, axioms) >>= compareTo expected
 
+-- Functions like this might turn into `where` functions once
+-- the remaining tests have been converted.
 takeCountSteps :: StepCount -> (Start, [Axiom]) -> IO (Actual, Proof)
 takeCountSteps stepCount (Start start, axioms) =
     runSteps
@@ -447,6 +449,8 @@ takeCountSteps stepCount (Start start, axioms) =
       where
         unwrap (Axiom a) = a
 
+-- Are these abstractions that should pulled into the non-test code?
+-- The name is bad, surely.
 predicatedTrivially :: term -> Predicated Object variable term
 predicatedTrivially term =
     Predicated
@@ -455,27 +459,31 @@ predicatedTrivially term =
         , substitution = mempty
         }
 
-check :: Expect -> (Actual, Proof) -> IO ()
-check (Expect expected) (actual, _ignoredProof) =
+compareTo :: Expect -> (Actual, Proof) -> IO ()
+compareTo (Expect expected) (actual, _ignoredProof) =
     assertEqualWithExplanation "" (predicatedTrivially expected) actual
 
 -- Builders
 
+-- | Create a function pattern from a function name and list of argnames.
 fun :: Text -> [Text] -> TestPattern
 fun name arguments =
     mkApp patternMetaSort symbol $ fmap var arguments
   where
-    symbol = SymbolOrAlias
+    symbol = SymbolOrAlias -- can this be more abstact?
         { symbolOrAliasConstructor = Id name AstLocationTest
         , symbolOrAliasParams = []
         }
 
+-- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
 var name =
     mkVar $ (Variable (testId name) mempty) patternMetaSort
+    -- can the above be more abstract?
+
 
 rewritesTo
-    :: StepPattern Object variable
+    :: StepPattern Object variable -- Why can't this be a TestPattern?
     -> StepPattern Object variable
     -> RewriteRule Object variable
 rewritesTo left right =
@@ -487,10 +495,11 @@ rewritesTo left right =
         , attributes = def
         }
 
-type StepCount = Limit Natural
 type TestPattern = CommonStepPattern Meta
 newtype Start = Start TestPattern
 newtype Axiom = Axiom (RewriteRule Meta Variable)
-type Actual = ExpandedPattern Meta Variable
 newtype Expect = Expect TestPattern
+
+type Actual = ExpandedPattern Meta Variable
 type Proof = StepProof Meta Variable
+type StepCount = Limit Natural
