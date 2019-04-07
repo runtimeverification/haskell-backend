@@ -493,56 +493,41 @@ runSteps metadataTools stepLimit configuration axioms =
 ----------
 ------------
 -----------
-test_twoCase :: TestTree
-test_twoCase =
-    (startPattern, axioms) `stepUntil` expected $ "Two successive steps"
-      where
-        startPattern =
-              fun "f" ["v1"]
-        axioms =
-            [ fun "f" ["x1"] `implies` fun "g" ["x1"]
-            , fun "g" ["x2"] `implies` fun "h" ["x2"]
-            ]
-        expected =                     fun "h" ["v1"]
+type TestPattern = CommonStepPattern Meta
+newtype Start = Start TestPattern
+newtype Axiom = Axiom (RewriteRule Meta Variable)
+type Actual = ExpandedPattern Meta Variable
+newtype Expect = Expect TestPattern
+type Proof = StepProof Meta Variable
 
 test_twoCaseAlternate :: TestTree
 test_twoCaseAlternate =
     stepUnlimited                              "Two successive steps"
-        ( fun "f" ["v1"])
-        [ fun "f" ["x1"] `implies` fun "g" ["x1"]
-        , fun "g" ["x1"] `implies` fun "h" ["x1"]
+        ( Start $ fun "f" ["v1"])
+        [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
+        , Axiom $ fun "g" ["x1"] `rewritesTo` fun "h" ["x1"]
         ]
-        (                          fun "h" ["v1"])
+        ( Expect $                            fun "h" ["v1"])
 
 
-stepUntil :: (StepPattern Meta Variable, [RewriteRule Meta Variable]) -> CommonStepPattern Meta -> TestName -> TestTree
-stepUntil (input, axioms) expected testName =
+stepUnlimited :: TestName -> Start -> [Axiom] -> Expect -> TestTree
+stepUnlimited testName start axioms expected =
+    stepTestCase (start, axioms) expected testName
+
+stepTestCase :: (Start, [Axiom]) -> Expect -> TestName -> TestTree
+stepTestCase (start, axioms) expected testName =
     testCase testName $
-        takeAllSteps (input, axioms) >>= check expected
+        takeAllSteps (start, axioms) >>= check expected
 
-stepUnlimited :: TestName
-    -> StepPattern Meta Variable
-    -> [RewriteRule Meta Variable]
-    -> CommonStepPattern Meta
-    -> TestTree
-stepUnlimited testName input axioms expected =
-    stepUntil (input, axioms) expected testName
-
-
-check :: CommonStepPattern Meta -> (ExpandedPattern Meta Variable, StepProof Meta Variable) -> IO ()
-check expected (actual, _ignoredProof) =
-    assertEqualWithExplanation "" (predicatedTrivially expected) actual
-
-takeAllSteps
-    :: (StepPattern Meta Variable, [RewriteRule Meta Variable])
-    -> IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-takeAllSteps (input, axioms) =
+takeAllSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
+takeAllSteps (Start start, axioms) =
     runSteps
         mockMetadataTools
         Unlimited
-        (predicatedTrivially input)
-        axioms
-
+        (predicatedTrivially start)
+        (unwrap <$> axioms)
+      where
+        unwrap (Axiom a) = a
 
 predicatedTrivially :: term -> Predicated Object variable term
 predicatedTrivially term =
@@ -552,7 +537,13 @@ predicatedTrivially term =
         , substitution = mempty
         }
 
-fun :: Text -> [Text] -> CommonStepPattern Meta
+check :: Expect -> (Actual, Proof) -> IO ()
+check (Expect expected) (actual, _ignoredProof) =
+    assertEqualWithExplanation "" (predicatedTrivially expected) actual
+
+
+
+fun :: Text -> [Text] -> TestPattern
 fun name arguments =
     mkApp patternMetaSort symbol $ fmap var arguments
   where
@@ -561,19 +552,15 @@ fun name arguments =
         , symbolOrAliasParams = []
         }
 
-
-
-var :: Functor domain =>
-    Text
-    -> PurePattern Meta domain Variable (Valid (Variable Meta) Meta)
+var :: Text -> TestPattern
 var name =
     mkVar $ (Variable (testId name) mempty) patternMetaSort
 
-implies
+rewritesTo
     :: StepPattern Object variable
     -> StepPattern Object variable
     -> RewriteRule Object variable
-implies left right =
+rewritesTo left right =
     RewriteRule $ RulePattern
         { left
         , right
