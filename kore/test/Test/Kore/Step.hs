@@ -217,12 +217,6 @@ test_simpleStrategy =
         -- Start pattern: f(V1)
         -- Expected: g(V1)
         (assertEqualWithExplanation "" expectOneStep =<< actualOneStep)
-    , testCase "Obeys step limit"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: g(V1)
-        (assertEqualWithExplanation "" expectStepLimit =<< actualStepLimit)
     , testCase "0 step limit"
         -- Axiom: f(X1) => g(X1)
         -- Axiom: g(X1) => h(X1)
@@ -294,28 +288,6 @@ actualZeroStepLimit =
     runSteps
         mockMetadataTools
         (Limit 0)
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
-
-expectStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectStepLimit =
-    ( Predicated
-        { term = metaG (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualStepLimit =
-    runSteps
-        mockMetadataTools
-        (Limit 1)
         Predicated
             { term = metaF (mkVar $ v1 patternMetaSort)
             , predicate = makeTruePredicate
@@ -501,26 +473,44 @@ test_fullScenarios =
         [ stepUnlimited                              "Two successive steps"
             ( Start $ fun "f" ["v1"])
             [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
-            , Axiom $ fun "g" ["x1"] `rewritesTo` fun "h" ["x1"]
+            , Axiom $ fun "g" ["x2"] `rewritesTo` fun "h" ["x2"]
             ]
             ( Expect $                            fun "h" ["v1"])
+
+        , step 1                                     "Limit stops second step"
+            ( Start $ fun "f" ["v1"])
+            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
+            , Axiom $ fun "g" ["x2"] `rewritesTo` fun "unused" ["x2"]
+            ]
+            ( Expect $                            fun "g" ["v1"])
+
+
         ]
 
 
+            {- API -}
+
 stepUnlimited :: TestName -> Start -> [Axiom] -> Expect -> TestTree
 stepUnlimited testName start axioms expected =
-    stepTestCase (start, axioms) expected testName
+    stepTestCase Unlimited (start, axioms) expected testName
 
-stepTestCase :: (Start, [Axiom]) -> Expect -> TestName -> TestTree
-stepTestCase (start, axioms) expected testName =
+step :: Natural -> TestName -> Start -> [Axiom] -> Expect -> TestTree
+step limit testName start axioms expected =
+    stepTestCase (Limit limit) (start, axioms) expected testName
+
+
+-- API Helpers
+
+stepTestCase :: StepCount -> (Start, [Axiom]) -> Expect -> TestName -> TestTree
+stepTestCase stepCount (start, axioms) expected testName =
     testCase testName $
-        takeAllSteps (start, axioms) >>= check expected
+        takeCountSteps stepCount (start, axioms) >>= check expected
 
-takeAllSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
-takeAllSteps (Start start, axioms) =
+takeCountSteps :: StepCount -> (Start, [Axiom]) -> IO (Actual, Proof)
+takeCountSteps stepCount (Start start, axioms) =
     runSteps
         mockMetadataTools
-        Unlimited
+        stepCount
         (predicatedTrivially start)
         (unwrap <$> axioms)
       where
@@ -538,7 +528,7 @@ check :: Expect -> (Actual, Proof) -> IO ()
 check (Expect expected) (actual, _ignoredProof) =
     assertEqualWithExplanation "" (predicatedTrivially expected) actual
 
-
+-- Builders
 
 fun :: Text -> [Text] -> TestPattern
 fun name arguments =
@@ -566,7 +556,7 @@ rewritesTo left right =
         , attributes = def
         }
 
-
+type StepCount = Limit Natural
 type TestPattern = CommonStepPattern Meta
 newtype Start = Start TestPattern
 newtype Axiom = Axiom (RewriteRule Meta Variable)
