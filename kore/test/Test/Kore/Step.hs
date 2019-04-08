@@ -198,12 +198,12 @@ test_stepStrategy =
         -- Expected: V1
         -- Expected: implies(V1, V1)
         (assertEqualWithExplanation "" expectTwoAxioms =<< actualTwoAxioms)
-    , testCase "Fails to apply a simple axiom"
+    , testCase "Fails to apply a simple axiom"      --- unification failure
         -- Axiom: sigma(X1, X1) => X1
         -- Start pattern: sigma(f(A1), g(B1))
         -- Expected: empty result list
         (assertEqualWithExplanation "" expectFailSimple =<< actualFailSimple)
-    , testCase "Fails to apply a simple axiom due to cycle."
+    , testCase "Fails to apply a simple axiom due to cycle."  -- unification error constructor based vs
         -- Axiom: sigma(f(X1), X1) => X1
         -- Start pattern: sigma(A1, A1)
         -- Expected: empty result list
@@ -383,9 +383,10 @@ runSteps metadataTools stepLimit configuration axioms =
 ----------
 ------------  Working toward replacing much of the above
 -----------
+
 test_fullScenarios :: TestTree
 test_fullScenarios =
-    testGroup "full scenarios"
+    testGroup "rewrite rules for constructor applied to lists of variables"
         [ stepUnlimited                              "Two successive steps"
             ( Start $ fun "f" ["v1"])
             [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
@@ -421,18 +422,24 @@ test_fullScenarios =
 
             {- API -}
 
-step :: Natural -> TestName -> Start -> [Axiom] -> Expect -> TestTree
+step
+    :: HasCallStack
+    => Natural -> TestName -> Start -> [Axiom] -> Expect -> TestTree
 step limit testName start axioms expected =
     stepTestCase (Limit limit) (start, axioms) expected testName
 
-stepUnlimited :: TestName -> Start -> [Axiom] -> Expect -> TestTree
+stepUnlimited
+    :: HasCallStack
+    => TestName -> Start -> [Axiom] -> Expect -> TestTree
 stepUnlimited testName start axioms expected =
     stepTestCase Unlimited     (start, axioms) expected testName
 
 
 -- API Helpers
 
-stepTestCase :: StepCount -> (Start, [Axiom]) -> Expect -> TestName -> TestTree
+stepTestCase
+    :: HasCallStack
+    => StepCount -> (Start, [Axiom]) -> Expect -> TestName -> TestTree
 stepTestCase stepCount (start, axioms) expected testName =
     testCase testName $
         takeCountSteps stepCount (start, axioms) >>= compareTo expected
@@ -444,24 +451,26 @@ takeCountSteps stepCount (Start start, axioms) =
     runSteps
         mockMetadataTools
         stepCount
-        (predicatedTrivially start)
+        (pure start)
         (unwrap <$> axioms)
       where
-        unwrap (Axiom a) = a
+        unwrap (Axiom a) = a    -- coerce?
 
 -- Are these abstractions that should pulled into the non-test code?
 -- The name is bad, surely.
-predicatedTrivially :: term -> Predicated Object variable term
-predicatedTrivially term =
+predicatedTrivially :: term -> Predicated Object variable term   --
+predicatedTrivially term =  -- pure
     Predicated
         { term = term
         , predicate = makeTruePredicate
         , substitution = mempty
         }
 
-compareTo :: Expect -> (Actual, Proof) -> IO ()
+compareTo
+    :: HasCallStack
+    => Expect -> (Actual, Proof) -> IO ()
 compareTo (Expect expected) (actual, _ignoredProof) =
-    assertEqualWithExplanation "" (predicatedTrivially expected) actual
+    assertEqualWithExplanation "" (pure expected) actual
 
 -- Builders
 
