@@ -384,40 +384,45 @@ runSteps metadataTools stepLimit configuration axioms =
 ------------  Working toward replacing much of the above
 -----------
 
-test_fullScenarios :: TestTree
-test_fullScenarios =
-    testGroup "rewrite rules for constructor applied to lists of variables"
-        [ stepUnlimited                              "Two successive steps"
-            ( Start $ fun "f" ["v1"])
-            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
-            , Axiom $ fun "g" ["x2"] `rewritesTo` fun "h" ["x2"]
-            ]
-            ( Expect $                            fun "h" ["v1"])
 
-            -- Note: deleted one-step case
-
-        , step 1                                     "Limit stops second step"
-            ( Start $ fun "f" ["v1"])
-            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
-            , Axiom $ fun "g" ["x2"] `rewritesTo` fun "unused" ["x2"]
-            ]
-            ( Expect $                            fun "g" ["v1"])
-
-        , step 0                                    "Can prevent any steps at all"
-            ( Start $ fun "f" ["v1"])
-            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "unused" ["x1"]
-            ]
-            ( Expect $                            fun "f" ["v1"])
-
-        -- Note: added the following case
-
-        , step 2                                    "Step limit allows completion"
-            ( Start $ fun "f" ["v1"])
-            [ Axiom $ fun "f" ["x1"] `rewritesTo` fun "g" ["x1"]
-            , Axiom $ fun "g" ["x2"] `rewritesTo` fun "h" ["x2"]
-            ]
-            ( Expect $                            fun "h" ["v1"])
+test_rewriteConstructorApplication :: TestTree
+test_rewriteConstructorApplication =
+    stepUnlimited                              "rewrite: constructor application"
+        ( Start $ pat "c1" ["var"])
+        [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "c2" ["x1"]
+        , Axiom $ pat "c2" ["x2"] `rewritesTo` pat "c3" ["x2"]
         ]
+        ( Expect $                             pat "c3" ["var"])
+      where
+        pat = applyConstructorToVariables
+
+test_stepLimits :: TestTree
+test_stepLimits =
+    -- Note: This tests stepping. The use of constructor application
+    -- patterns is arbitrary.
+    testGroup "step limits"
+        [ step 1                                     "Limit stops second step"
+            ( Start $ pat "c1" ["var"])
+            [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "c2" ["x1"]
+            , Axiom $ pat "c2" ["x2"] `rewritesTo` pat "unused" ["x2"]
+            ]
+            ( Expect $                             pat "c2" ["var"])
+
+        , step 0                                     "Can prevent any steps at all"
+            ( Start $ pat "c1" ["var"])
+            [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "unused" ["x1"]
+            ]
+            ( Expect $                             pat "c1" ["var"])
+
+        , step 2                                     "Step limit allows all steps"
+            ( Start $ pat "c1" ["var"])
+            [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "c2" ["x1"]
+            , Axiom $ pat "c2" ["x2"] `rewritesTo` pat "c3" ["x2"]
+            ]
+            ( Expect $                             pat "c3" ["var"])
+        ]
+          where
+            pat = applyConstructorToVariables
 
 
             {- API -}
@@ -465,8 +470,8 @@ compareTo (Expect expected) (actual, _ignoredProof) =
 -- Builders
 
 -- | Create a function pattern from a function name and list of argnames.
-fun :: Text -> [Text] -> TestPattern
-fun name arguments =
+applyConstructorToVariables :: Text -> [Text] -> TestPattern
+applyConstructorToVariables name arguments =
     mkApp patternMetaSort symbol $ fmap var arguments
   where
     symbol = SymbolOrAlias -- can this be more abstact?
