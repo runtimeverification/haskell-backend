@@ -12,7 +12,6 @@ import qualified Data.Set as Set
 
 import           Data.Limit
                  ( Limit (..) )
-import qualified Data.Limit as Limit
 import           Data.Text
                  ( Text )
 import           Kore.AST.Pure
@@ -358,12 +357,11 @@ runSteps
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> Limit Natural
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [RewriteRule level Variable]
     -> IO (CommonExpandedPattern level, StepProof level Variable)
-runSteps metadataTools stepLimit configuration axioms =
+runSteps metadataTools configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
@@ -374,7 +372,7 @@ runSteps metadataTools stepLimit configuration axioms =
             simplifier
             Map.empty
         )
-        (Limit.replicate stepLimit $ allRewrites axioms)
+        (repeat $ allRewrites axioms)
         (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty
@@ -387,7 +385,7 @@ runSteps metadataTools stepLimit configuration axioms =
 
 test_rewriteConstructorApplication :: TestTree
 test_rewriteConstructorApplication =
-    stepUnlimited                              "rewrite: constructor application"
+    applyStrategy                              "rewrite: constructor application"
         ( Start $ pat "c1" ["var"])
         [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "c2" ["x1"]
         , Axiom $ pat "c2" ["x2"] `rewritesTo` pat "c3" ["x2"]
@@ -396,66 +394,28 @@ test_rewriteConstructorApplication =
       where
         pat = applyConstructorToVariables
 
-test_stepLimits :: TestTree
-test_stepLimits =
-    -- Note: This tests stepping. The use of constructor application
-    -- patterns is arbitrary.
-    testGroup "step limits"
-        [ step 1                                     "Limit stops second step"
-            ( Start $ pat "c1" ["var"])
-            [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "c2" ["x1"]
-            , Axiom $ pat "c2" ["x2"] `rewritesTo` pat "unused" ["x2"]
-            ]
-            ( Expect $                             pat "c2" ["var"])
-
-        , step 0                                     "Can prevent any steps at all"
-            ( Start $ pat "c1" ["var"])
-            [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "unused" ["x1"]
-            ]
-            ( Expect $                             pat "c1" ["var"])
-
-        , step 2                                     "Step limit allows all steps"
-            ( Start $ pat "c1" ["var"])
-            [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "c2" ["x1"]
-            , Axiom $ pat "c2" ["x2"] `rewritesTo` pat "c3" ["x2"]
-            ]
-            ( Expect $                             pat "c3" ["var"])
-        ]
-          where
-            pat = applyConstructorToVariables
-
-
             {- API -}
 
-step
-    :: HasCallStack
-    => Natural -> TestName -> Start -> [Axiom] -> Expect -> TestTree
-step limit testName start axioms expected =
-    stepTestCase (Limit limit) (start, axioms) expected testName
-
-stepUnlimited
+applyStrategy
     :: HasCallStack
     => TestName -> Start -> [Axiom] -> Expect -> TestTree
-stepUnlimited testName start axioms expected =
-    stepTestCase Unlimited     (start, axioms) expected testName
+applyStrategy testName start axioms expected =
+    strategyTestCase (start, axioms) expected testName
 
 
 -- API Helpers
 
-stepTestCase
+strategyTestCase
     :: HasCallStack
-    => StepCount -> (Start, [Axiom]) -> Expect -> TestName -> TestTree
-stepTestCase stepCount (start, axioms) expected testName =
+    => (Start, [Axiom]) -> Expect -> TestName -> TestTree
+strategyTestCase (start, axioms) expected testName =
     testCase testName $
-        takeCountSteps stepCount (start, axioms) >>= compareTo expected
+        takeSteps (start, axioms) >>= compareTo expected
 
--- Functions like this might turn into `where` functions once
--- the remaining tests have been converted.
-takeCountSteps :: StepCount -> (Start, [Axiom]) -> IO (Actual, Proof)
-takeCountSteps stepCount (Start start, axioms) =
+takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
+takeSteps (Start start, axioms) =
     runSteps
         mockMetadataTools
-        stepCount
         (pure start)
         (unwrap <$> axioms)
       where
