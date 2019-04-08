@@ -34,6 +34,8 @@ module Kore.IndexedModule.IndexedModule
     , indexedModulesInScope
     , toVerifiedPureModule
     , toVerifiedPureDefinition
+    , recursiveIndexedModuleSortDescriptions
+    , recursiveIndexedModuleAxioms
     ) where
 
 import           Control.DeepSeq
@@ -122,6 +124,40 @@ data IndexedModule param pat declAtts axiomAtts =
     }
     deriving (Generic, Show)
 
+recursiveIndexedModuleSortDescriptions
+    :: forall param pat declAtts axiomAtts
+    .  IndexedModule param pat declAtts axiomAtts
+    -> Map.Map (Id Object) (Attribute.Sort, SentenceSort Object pat)
+recursiveIndexedModuleSortDescriptions =
+    recursiveIndexedModuleStuff indexedModuleSortDescriptions
+
+recursiveIndexedModuleAxioms
+    :: forall param pat declAtts axiomAtts
+    .  IndexedModule param pat declAtts axiomAtts
+    -> [(axiomAtts, SentenceAxiom param pat)]
+recursiveIndexedModuleAxioms = recursiveIndexedModuleStuff indexedModuleAxioms
+
+recursiveIndexedModuleStuff
+    :: forall param pat declAtts axiomAtts stuff
+    .  (Monoid stuff)
+    => (IndexedModule param pat declAtts axiomAtts -> stuff)
+    -> IndexedModule param pat declAtts axiomAtts
+    -> stuff
+recursiveIndexedModuleStuff stuffExtractor m =
+    Foldable.fold
+        (stuffExtractor m : subModuleStuffs)
+  where
+    subModuleStuffs :: [stuff]
+    subModuleStuffs =
+        map subModuleStuff (indexedModuleImports m)
+    subModuleStuff
+        ::  ( declAtts
+            , Attributes
+            , IndexedModule param pat declAtts axiomAtts
+            )
+        -> stuff
+    subModuleStuff (_, _, subMod) =
+        recursiveIndexedModuleStuff stuffExtractor subMod
 
 -- |Strip module of its parsed attributes, replacing them with 'Attribute.Null'
 makeIndexedModuleAttributesNull
