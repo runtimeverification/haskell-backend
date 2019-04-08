@@ -382,6 +382,16 @@ runSteps metadataTools configuration axioms =
 ------------  Working toward replacing much of the above
 -----------
 
+-- test_rewriteVariable :: TestTree
+-- test_rewriteVariable =
+--     testGroup "variable rewriting"
+--     [ applyStrategy                  "identity rewrite"
+--         (Start $ var "var")
+--         [Axiom $ var "x" `rewritesTo` var "x"]
+--         (Expect $ var "var")
+--     ]
+
+
 
 test_rewriteConstructorApplication :: TestTree
 test_rewriteConstructorApplication =
