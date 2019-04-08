@@ -489,6 +489,75 @@ declareDatatypes
         )
       ]
   -> IO ()
+declareDatatypes proc datatypes = do
+    mapM_ declareDatatypeSort datatypes
+    mapM_ declareConstructors datatypes
+    mapM_ ((assert proc) . noJunkAxiom) datatypes
+  where
+    declareDatatypeSort (name, args, _constructors) =
+        declareSort proc name (length args)
+
+    declareConstructors (sortName, [], constructors) =
+        mapM_ (declareConstructor sortName) constructors
+    declareConstructors (name, args, constructors) = (error . unlines)
+        [ "Not implemented."
+        , "name = " ++ show name
+        , "args = " ++ show args
+        , "constructors = " ++ show constructors
+        ]
+
+    declareConstructor sortName (constructorName, constructorArgs) =
+        declareFun
+            proc
+            constructorName
+            (map argType constructorArgs)
+            (Atom sortName)
+    argType (_argName, argSort) = argSort
+
+    noJunkAxiom (name, [], constructors) =
+        forallQ
+            [List [Atom "x", Atom name]]
+            (orMany (map (builtWithConstructor "x") constructors))
+    noJunkAxiom (name, args, constructors) = (error . unlines)
+        [ "Not implemented."
+        , "name = " ++ show name
+        , "args = " ++ show args
+        , "constructors = " ++ show constructors
+        ]
+
+    builtWithConstructor variable (name, []) =
+        eq (Atom variable) (Atom name)
+    builtWithConstructor variable (name, args) =
+        existsQ
+            (map mkQuantifier args)
+            (eq (Atom variable) (fun name (map mkArg args)))
+      where
+        mkArg (varName, _varType) = Atom varName
+        mkQuantifier :: (Text, SExpr) -> SExpr
+        mkQuantifier (varName, varType) =
+            List [Atom varName, varType]
+  -- TODO(virgil): Currently using the code below to declare datatypes crashes
+  -- z3 when testing that things can't be built out of them, e.g. things like
+  -- (declare-datatypes ()
+  --   (
+  --       (HB_S
+  --           HB_C
+  --           (HB_D (HB_D1 HB_T))
+  --       )
+  --       (HB_T HB_E )
+  --   )
+  -- )
+  -- (declare-fun x () HB_S )
+  -- (assert (not (= x HB_C ) ) )
+  -- (assert (not (= x (HB_D HB_E ) ) ) )
+  -- (check-sat )
+  -- will crash z3.
+  --
+  -- This was fixed, see https://github.com/Z3Prover/z3/issues/2217
+  -- We should switch to the proper way of declaring datatypes below
+  -- whenever we think we can ask people to use a version of z3 that
+  -- supports them.
+{-
 declareDatatypes proc datatypes =
   ackCommand proc $
     -- (declare-datatypes ((δ1 k1) · · · (δn kn)) (d1 · · · dn))
@@ -510,6 +579,7 @@ declareDatatypes proc datatypes =
       ( Atom constructorName
       : [ List [Atom s, argTy] | (s, argTy) <- constructorArgs ]
       )
+-}
 
 -- | Declare an ADT using the format introduced in SmtLib 2.6.
 declareDatatype ::
@@ -975,6 +1045,13 @@ store x y z = fun "store" [x,y,z]
 forallQ :: [SExpr] -> SExpr -> SExpr
 forallQ variables expression =
     fun "forall" [List variables, expression]
+
+-- | Quantifiers: exists
+--
+-- Each variable is an (variable-name variable-type) sexpression.
+existsQ :: [SExpr] -> SExpr -> SExpr
+existsQ variables expression =
+    fun "exists" [List variables, expression]
 
 --------------------------------------------------------------------------------
 -- Attributes
