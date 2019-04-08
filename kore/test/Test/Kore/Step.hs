@@ -456,16 +456,6 @@ takeCountSteps stepCount (Start start, axioms) =
       where
         unwrap (Axiom a) = a    -- coerce?
 
--- Are these abstractions that should pulled into the non-test code?
--- The name is bad, surely.
-predicatedTrivially :: term -> Predicated Object variable term   --
-predicatedTrivially term =  -- pure
-    Predicated
-        { term = term
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-
 compareTo
     :: HasCallStack
     => Expect -> (Actual, Proof) -> IO ()
