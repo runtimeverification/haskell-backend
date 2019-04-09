@@ -135,7 +135,7 @@ totalDefinitionEvaluation rules =
         axiomSimplifiers
         term
       = do
-        (result, proof) <- evaluate
+        (result, proof) <- evaluate term
         if AttemptedAxiom.hasRemainders result
             then return (AttemptedAxiom.NotApplicable, proof)
             else return (result, proof)
@@ -147,7 +147,6 @@ totalDefinitionEvaluation rules =
                 predicateSimplifier
                 termSimplifier
                 axiomSimplifiers
-                term
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
