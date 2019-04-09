@@ -15,9 +15,19 @@ data ProofState pattern'
     | GoalRemLHS pattern'
     | Proven
 
+{- | Extract the unproven part of a 'ProofState'.
+
+Returns 'Nothing' if there is no remaining unproven part.
+
+ -}
+extractUnproven :: ProofState pattern' -> Maybe pattern'
+extractUnproven (GoalLHS t)    = Just t
+extractUnproven (GoalRemLHS t) = Just t
+extractUnproven Proven         = Nothing
+
 {- | The final nodes of an execution graph which were not proven.
 
-See also: 'Strategy.pickFinal'
+See also: 'Strategy.pickFinal', 'extractUnproven'
 
  -}
 unprovenNodes
@@ -25,9 +35,5 @@ unprovenNodes
     -> MultiOr.MultiOr pattern'
 unprovenNodes executionGraph =
     MultiOr.MultiOr
-    $ mapMaybe getUnprovenNode
+    $ mapMaybe extractUnproven
     $ Strategy.pickFinal executionGraph
-  where
-    getUnprovenNode (GoalLHS t)    = Just t
-    getUnprovenNode (GoalRemLHS t) = Just t
-    getUnprovenNode Proven         = Nothing
