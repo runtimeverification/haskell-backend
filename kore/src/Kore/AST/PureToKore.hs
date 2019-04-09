@@ -144,7 +144,9 @@ sentencePureToKore (SentenceHookSentence (SentenceHookedSort mss)) =
     { sentenceSortName = sentenceSortName mss
     , sentenceSortParameters = sentenceSortParameters mss
     }
-sentencePureToKore (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a b c d))) =
+sentencePureToKore
+    (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a b c d)))
+  =
     constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol) $ SentenceSymbol a b c d
 
 aliasSentencePureToKore
