@@ -313,13 +313,38 @@ test_unifyFramingVariable =
             (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
         )
 
-selectPatternGen :: Monad m => PropertyT m (CommonStepPattern Object)
-selectPatternGen = do
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `SetItem(absInt(X:Int)) Rest:Set`, or
+-- `Rest:Set SetItem(absInt(X:Int))`, respectively.
+selectFunctionPatternGen
+    :: Monad m
+    => ([CommonStepPattern Object] -> [CommonStepPattern Object])
+    -> PropertyT m (CommonStepPattern Object)
+selectFunctionPatternGen permutation = do
+    elementVar <- forAll (standaloneGen $ variableGen intSort)
+    frameVar <- forAll (standaloneGen $ variableGen setSort)
+    Monad.when (variableName elementVar == variableName frameVar) discard
+    let element = mkApp intSort absIntSymbol  [mkVar elementVar]
+        singleton =  mkApp setSort elementSetSymbol [ element ]
+        framedSet = mkApp setSort concatSetSymbol
+                    $ permutation [singleton, mkVar frameVar]
+    return framedSet
+
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
+selectPatternGen
+    :: Monad m
+    => ([CommonStepPattern Object] -> [CommonStepPattern Object])
+    -> PropertyT m (CommonStepPattern Object)
+selectPatternGen permutation = do
     elementVar <- forAll (standaloneGen $ variableGen intSort)
     frameVar <- forAll (standaloneGen $ variableGen setSort)
     Monad.when (variableName elementVar == variableName frameVar) discard
     let element = mkApp setSort elementSetSymbol [mkVar elementVar]
-        framedSet = mkApp setSort concatSetSymbol [element, mkVar frameVar]
+        framedSet = mkApp setSort concatSetSymbol
+                    $ permutation [element, mkVar frameVar]
     return framedSet
 
 test_unifySelectFromEmpty :: TestTree
@@ -328,11 +353,25 @@ test_unifySelectFromEmpty =
         "unify an empty set with a selection pattern"
         (do
             let concreteSet = Set.empty
-            patFramedSet <- selectPatternGen
+            patFramedSet <- selectPatternGen id
+            revPatFramedSet <- selectPatternGen reverse
+            fnPatFramedSet <- selectFunctionPatternGen id
+            revFnPatFramedSet <- selectFunctionPatternGen reverse
             let
                 patConcreteSet = asPattern concreteSet
                 expect = ExpandedPattern.bottom
+            --                          Set.empty /\ SetItem(X:Int) Rest:Set
             (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
+            (===) expect =<< evaluate (mkAnd patFramedSet patConcreteSet)
+            --                          Set.empty /\ Rest:Set SetItem(X:Int)
+            (===) expect =<< evaluate (mkAnd patConcreteSet revPatFramedSet)
+            (===) expect =<< evaluate (mkAnd revPatFramedSet patConcreteSet)
+            --                  Set.empty /\ SetItem(absInt(X:Int)) Rest:Set
+            (===) expect =<< evaluate (mkAnd patConcreteSet fnPatFramedSet)
+            (===) expect =<< evaluate (mkAnd fnPatFramedSet patConcreteSet)
+            --                  Set.empty /\ Rest:Set SetItem(absInt(X:Int))
+            (===) expect =<< evaluate (mkAnd patConcreteSet revFnPatFramedSet)
+            (===) expect =<< evaluate (mkAnd revFnPatFramedSet patConcreteSet)
         )
 
 {- | Unify a concrete Set with symbolic-keyed Set.
