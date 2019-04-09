@@ -234,14 +234,7 @@ verifyClaim
         transitionRule'
         strategy
         ( startPattern, mempty )
-    let
-        finalNodes = pickFinal executionGraph
-        remainingNodes =
-            MultiOr.make $ mapMaybe getRemainingNode (fst <$> finalNodes)
-          where
-            getRemainingNode (StrategyPattern.RewritePattern p) = Just p
-            getRemainingNode (StrategyPattern.Stuck          p) = Just p
-            getRemainingNode StrategyPattern.Bottom             = Nothing
+    let remainingNodes = unprovenNodes executionGraph
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
@@ -255,6 +248,19 @@ verifyClaim
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
+
+-- | Find all final nodes of the execution graph that did not reach the goal
+unprovenNodes
+    :: ExecutionGraph (StrategyPattern.StrategyPattern term, b) rule
+    -> MultiOr.MultiOr term
+unprovenNodes executionGraph =
+    MultiOr.MultiOr
+    $ mapMaybe getRemainingNode
+    $ fst <$> pickFinal executionGraph
+  where
+    getRemainingNode (StrategyPattern.RewritePattern p) = Just p
+    getRemainingNode (StrategyPattern.Stuck          p) = Just p
+    getRemainingNode StrategyPattern.Bottom             = Nothing
 
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
