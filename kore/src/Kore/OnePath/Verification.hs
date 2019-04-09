@@ -79,9 +79,11 @@ import           Numeric.Natural
 
 {- NOTE: Non-deterministic semantics
 
-The current implementation of one-path verification assumes that the definition
-semantics is deterministic, that is: at most one rule may apply to any
-configuration. As a result, given the non-deterministic definition
+The current implementation of one-path verification assumes that the proof goal
+is deterministic, that is: the proof goal would not be discharged during at a
+non-confluent state in the execution of a non-deterministic semantics. (Often
+this means that the definition is simply deterministic.) As a result, given the
+non-deterministic definition
 
 > module ABC
 >   import DOMAINS
