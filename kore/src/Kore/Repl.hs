@@ -113,24 +113,22 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         -> [Axiom level]
         -> ExecutionGraph
         -> Graph.Node
-        -> Simplifier (ExecutionGraph, Bool)
+        -> Simplifier ExecutionGraph
     stepper0 claim claims axioms graph node = do
         if Graph.outdeg (Strategy.graph graph) node == 0
-            then do
-                graph' <-
-                        catchInterruptWithDefault graph
-                        $ verifyClaimStep
-                            tools
-                            simplifier
-                            predicateSimplifier
-                            axiomToIdSimplifier
-                            claim
-                            claims
-                            axioms
-                            graph
-                            node
-                pure (graph', True)
-            else pure (graph, False)
+            then
+                catchInterruptWithDefault graph
+                $ verifyClaimStep
+                    tools
+                    simplifier
+                    predicateSimplifier
+                    axiomToIdSimplifier
+                    claim
+                    claims
+                    axioms
+                    graph
+                    node
+            else pure graph
 
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =
