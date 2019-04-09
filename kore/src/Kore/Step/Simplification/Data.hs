@@ -37,6 +37,7 @@ import           Control.Monad.Morph
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
+import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT (..), runExceptT )
 import           Data.Hashable
@@ -56,12 +57,13 @@ import           Kore.Logger
                  ( LogMessage )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution )
+                 ( ExpandedPattern, PredicateSubstitution )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
+import qualified Kore.Step.Representation.Predicated as Predicated
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -322,10 +324,7 @@ newtype StepPatternSimplifier level =
         => PredicateSubstitutionSimplifier level
         -> StepPattern level variable
         -> PredicateSubstitution level variable
-        -> Simplifier
-            ( OrOfExpandedPattern level variable
-            , SimplificationProof level
-            )
+        -> BranchT Simplifier (ExpandedPattern level variable)
         )
 
 {- | Use a 'StepPatternSimplifier' to simplify a pattern.
@@ -349,11 +348,14 @@ simplifyTerm
     (StepPatternSimplifier simplify)
     predicateSimplifier
     stepPattern
-  =
-    simplify
-        predicateSimplifier
-        stepPattern
-        PredicateSubstitution.top
+  = do
+    results <-
+        gather $ simplify
+            predicateSimplifier
+            stepPattern
+            PredicateSubstitution.top
+    return (results, SimplificationProof)
+
 
 {- | Use a 'StepPatternSimplifier' to simplify a pattern subject to conditions.
  -}
@@ -369,10 +371,7 @@ simplifyConditionalTerm
     -> PredicateSubstitutionSimplifier Object
     -> StepPattern Object variable
     -> PredicateSubstitution Object variable
-    -> Simplifier
-        ( OrOfExpandedPattern Object variable
-        , SimplificationProof Object
-        )
+    -> BranchT Simplifier (ExpandedPattern Object variable)
 simplifyConditionalTerm (StepPatternSimplifier simplify) = simplify
 
 {- | Construct a 'StepPatternSimplifier'.
@@ -407,16 +406,17 @@ stepPatternSimplifier simplifier =
         => PredicateSubstitutionSimplifier Object
         -> StepPattern Object variable
         -> PredicateSubstitution Object variable
-        -> Simplifier
-            ( OrOfExpandedPattern Object variable
-            , SimplificationProof Object
-            )
+        -> BranchT Simplifier (ExpandedPattern Object variable)
     stepPatternSimplifierWorker
         predicateSimplifier
         stepPattern
-        _initialCondition
-      =
-        simplifier predicateSimplifier stepPattern
+        initialCondition
+      = do
+        (results, _) <-
+            Monad.Trans.lift
+            $ simplifier predicateSimplifier stepPattern
+        result <- scatter results
+        return (result `Predicated.andCondition` initialCondition)
 
 {-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies
 'PredicateSubstitution's. The minimal requirement from this function is
