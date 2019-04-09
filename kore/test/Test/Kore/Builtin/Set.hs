@@ -313,6 +313,28 @@ test_unifyFramingVariable =
             (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
         )
 
+selectPatternGen :: Monad m => PropertyT m (CommonStepPattern Object)
+selectPatternGen = do
+    elementVar <- forAll (standaloneGen $ variableGen intSort)
+    frameVar <- forAll (standaloneGen $ variableGen setSort)
+    Monad.when (variableName elementVar == variableName frameVar) discard
+    let element = mkApp setSort elementSetSymbol [mkVar elementVar]
+        framedSet = mkApp setSort concatSetSymbol [element, mkVar frameVar]
+    return framedSet
+
+test_unifySelectFromEmpty :: TestTree
+test_unifySelectFromEmpty =
+    testPropertyWithSolver
+        "unify an empty set with a selection pattern"
+        (do
+            let concreteSet = Set.empty
+            patFramedSet <- selectPatternGen
+            let
+                patConcreteSet = asPattern concreteSet
+                expect = ExpandedPattern.bottom
+            (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
+        )
+
 {- | Unify a concrete Set with symbolic-keyed Set.
 
 @

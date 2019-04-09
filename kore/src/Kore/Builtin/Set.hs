@@ -567,6 +567,26 @@ unifyEquals
                     unifyEqualsFramed builtin1 builtin2 x
                 [x@(Var_ _), DV_ _ (Domain.BuiltinSet builtin2)] ->
                     unifyEqualsFramed builtin1 builtin2 x
+                [(App_ symbol3 args3), x@(Var_ _)]
+                  | isSymbolElement hookTools symbol3 ->
+                    (case args3 of
+                        [ key3 ] ->
+                            -- The key is not concrete yet, or SET.element would
+                            -- have evaluated to a domain value.
+                            unifyEqualsSelect builtin1 symbol3 key3 x
+                        _ ->
+                            Builtin.wrongArity "SET.element"
+                    )
+                [x@(Var_ _), (App_ symbol3 args3)]
+                  | isSymbolElement hookTools symbol3 ->
+                    (case args3 of
+                        [ key3 ] ->
+                            -- The key is not concrete yet, or SET.element would
+                            -- have evaluated to a domain value.
+                            unifyEqualsSelect builtin1 symbol3 key3 x
+                        _ ->
+                            Builtin.wrongArity "SET.element"
+                    )
                 _ ->
                     Builtin.unifyEqualsUnsolved
                         simplificationType
@@ -641,6 +661,20 @@ unifyEquals
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
         Domain.InternalSet { builtinSetChild = set2 } = builtin2
+
+    -- | Unify one concrete set with a select pattern (x:elem s:set)
+    unifyEqualsSelect
+        :: level ~ Object
+        => Domain.InternalSet  -- ^ concrete set
+        -> SymbolOrAlias level  -- ^ 'element' symbol
+        -> p  -- ^ key
+        -> StepPattern level variable  -- ^ framing variable
+        -> (err Simplifier) (expanded, proof)
+    unifyEqualsSelect builtin1 _ _ _
+      | set1 == Set.empty = return (ExpandedPattern.bottom, SimplificationProof)
+      | otherwise = error "Don't know how to handle this, yet"
+      where
+        Domain.InternalSet { builtinSetChild = set1 } = builtin1
 
     unifyEqualsElement
         :: level ~ Object
