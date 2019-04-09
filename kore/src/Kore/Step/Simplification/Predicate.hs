@@ -47,16 +47,17 @@ simplifyPartial
     -> BranchT Simplifier (PredicateSubstitution level variable)
 simplifyPartial
     substitutionSimplifier
-    (StepPatternSimplifier simplifier)
+    termSimplifier
     predicate
   = do
     (patternOr, _proof) <-
         Monad.Trans.lift
-        $ simplifier substitutionSimplifier (unwrapPredicate predicate)
+        $ simplifyTerm' (unwrapPredicate predicate)
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
     -- for \bottom because patternOr is an OrOfExpandedPattern.
     scatter (eraseTerm <$> patternOr)
   where
+    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
     eraseTerm predicated@Predicated { term }
       | Top_ _ <- term = predicated { term = () }
       | otherwise =

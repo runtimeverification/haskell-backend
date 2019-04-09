@@ -17,7 +17,9 @@ module Kore.Step.Simplification.Data
     , gatherAll
     , scatter
     , PredicateSubstitutionSimplifier (..)
-    , StepPatternSimplifier (..)
+    , StepPatternSimplifier
+    , stepPatternSimplifier
+    , simplifyTerm
     , SimplificationProof (..)
     , SimplificationType (..)
     , Environment (..)
@@ -322,6 +324,45 @@ newtype StepPatternSimplifier level =
             , SimplificationProof level
             )
         )
+
+{- | Use a 'StepPatternSimplifier' to simplify a pattern.
+ -}
+simplifyTerm
+    :: forall variable
+    .   ( FreshVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => StepPatternSimplifier Object
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPattern Object variable
+    -> Simplifier
+        ( OrOfExpandedPattern Object variable
+        , SimplificationProof Object
+        )
+simplifyTerm (StepPatternSimplifier simplify) = simplify
+
+{- | Construct a 'StepPatternSimplifier'.
+ -}
+stepPatternSimplifier
+    ::  ( forall variable
+        .   ( FreshVariable variable
+            , Ord (variable Object)
+            , Show (variable Object)
+            , Unparse (variable Object)
+            , SortedVariable variable
+            )
+        => PredicateSubstitutionSimplifier Object
+        -> StepPattern Object variable
+        -> Simplifier
+            ( OrOfExpandedPattern Object variable
+            , SimplificationProof Object
+            )
+        )
+    -> StepPatternSimplifier Object
+stepPatternSimplifier = StepPatternSimplifier
 
 {-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies
 'PredicateSubstitution's. The minimal requirement from this function is

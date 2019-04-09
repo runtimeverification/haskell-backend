@@ -42,7 +42,7 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..) )
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )

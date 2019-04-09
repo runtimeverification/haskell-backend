@@ -181,9 +181,9 @@ testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 evaluators :: BuiltinAndAxiomSimplifierMap Object
 evaluators = Builtin.koreEvaluators verifiedModule
 
-stepSimplifier :: StepPatternSimplifier level
+stepSimplifier :: StepPatternSimplifier Object
 stepSimplifier =
-    StepPatternSimplifier
+    stepPatternSimplifier
         (\_ p ->
             return
                 ( MultiOr.make

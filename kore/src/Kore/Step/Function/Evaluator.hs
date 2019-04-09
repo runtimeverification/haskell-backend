@@ -51,8 +51,8 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..),
-                 StepPatternSimplifier )
+                 Simplifier, StepPatternSimplifier, StepPatternSimplifier,
+                 simplifyTerm )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -374,7 +374,7 @@ reevaluateFunctions
 reevaluateFunctions
     tools
     substitutionSimplifier
-    wrappedSimplifier@(StepPatternSimplifier simplifier)
+    termSimplifier
     axiomIdToEvaluator
     Predicated
         { term   = rewrittenPattern
@@ -382,13 +382,12 @@ reevaluateFunctions
         , substitution = rewrittenSubstitution
         }
   = do
-    (pattOr , _proof) <-
-        simplifier substitutionSimplifier rewrittenPattern
+    (pattOr , _proof) <- simplifyTerm' rewrittenPattern
     (mergedPatt, _proof) <-
         OrOfExpandedPattern.mergeWithPredicateSubstitution
             tools
             substitutionSimplifier
-            wrappedSimplifier
+            termSimplifier
             axiomIdToEvaluator
             Predicated
                 { term = ()
@@ -401,11 +400,13 @@ reevaluateFunctions
             (ExpandedPattern.simplifyPredicate
                 tools
                 substitutionSimplifier
-                wrappedSimplifier
+                termSimplifier
                 axiomIdToEvaluator
             )
             mergedPatt
     return evaluatedPatt
+  where
+    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
