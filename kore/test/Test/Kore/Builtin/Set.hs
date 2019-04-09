@@ -313,6 +313,67 @@ test_unifyFramingVariable =
             (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
         )
 
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `SetItem(absInt(X:Int)) Rest:Set`, or
+-- `Rest:Set SetItem(absInt(X:Int))`, respectively.
+selectFunctionPatternGen
+    :: Monad m
+    => ([CommonStepPattern Object] -> [CommonStepPattern Object])
+    -> PropertyT m (CommonStepPattern Object)
+selectFunctionPatternGen permutation = do
+    elementVar <- forAll (standaloneGen $ variableGen intSort)
+    frameVar <- forAll (standaloneGen $ variableGen setSort)
+    Monad.when (variableName elementVar == variableName frameVar) discard
+    let element = mkApp intSort absIntSymbol  [mkVar elementVar]
+        singleton =  mkApp setSort elementSetSymbol [ element ]
+        framedSet = mkApp setSort concatSetSymbol
+                    $ permutation [singleton, mkVar frameVar]
+    return framedSet
+
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
+selectPatternGen
+    :: Monad m
+    => ([CommonStepPattern Object] -> [CommonStepPattern Object])
+    -> PropertyT m (CommonStepPattern Object)
+selectPatternGen permutation = do
+    elementVar <- forAll (standaloneGen $ variableGen intSort)
+    frameVar <- forAll (standaloneGen $ variableGen setSort)
+    Monad.when (variableName elementVar == variableName frameVar) discard
+    let element = mkApp setSort elementSetSymbol [mkVar elementVar]
+        framedSet = mkApp setSort concatSetSymbol
+                    $ permutation [element, mkVar frameVar]
+    return framedSet
+
+test_unifySelectFromEmpty :: TestTree
+test_unifySelectFromEmpty =
+    testPropertyWithSolver
+        "unify an empty set with a selection pattern"
+        (do
+            patFramedSet <- selectPatternGen id
+            revPatFramedSet <- selectPatternGen reverse
+            fnPatFramedSet <- selectFunctionPatternGen id
+            revFnPatFramedSet <- selectFunctionPatternGen reverse
+            -- Set.empty /\ SetItem(X:Int) Rest:Set
+            patEmptySet `doesNotUnifyWith` patFramedSet
+            patFramedSet `doesNotUnifyWith` patEmptySet
+            -- Set.empty /\ Rest:Set SetItem(X:Int)
+            patEmptySet `doesNotUnifyWith` revPatFramedSet
+            revPatFramedSet `doesNotUnifyWith` patEmptySet
+            -- Set.empty /\ SetItem(absInt(X:Int)) Rest:Set
+            patEmptySet `doesNotUnifyWith` fnPatFramedSet
+            fnPatFramedSet `doesNotUnifyWith` patEmptySet
+            -- Set.empty /\ Rest:Set SetItem(absInt(X:Int))
+            patEmptySet `doesNotUnifyWith` revFnPatFramedSet
+            revFnPatFramedSet `doesNotUnifyWith` patEmptySet
+        )
+  where
+    patEmptySet = asPattern Set.empty
+    doesNotUnifyWith pat1 pat2 =
+            (===) ExpandedPattern.bottom =<< evaluate (mkAnd pat1 pat2)
+
 {- | Unify a concrete Set with symbolic-keyed Set.
 
 @
