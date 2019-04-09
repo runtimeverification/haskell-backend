@@ -86,6 +86,7 @@ data Axiom =
     , constructor :: !Constructor
     -- ^ Shows that this is one of the constructor axioms
     -- (e.g. no confusion, no junk)
+    -- , identifier :: !RuleIndex
     } deriving (Eq, Ord, Show, Generic)
 
 instance NFData Axiom

@@ -41,10 +41,10 @@ import           Data.Graph.Inductive.Graph
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.List.Extra
-                 ( groupSort )
+                 ( elemIndex, groupSort )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( catMaybes )
+                 ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
@@ -288,6 +288,7 @@ showRule
     -> m ()
 showRule configNode = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    ReplState { axioms, claims } <- get
     node <- Lens.use lensNode
     let node' = maybe node id configNode
     if node' `elem` Graph.nodes graph
@@ -297,6 +298,21 @@ showRule configNode = do
                 . Graph.inn'
                 . Graph.context graph
                 $ node'
+            let mrule = getRewriteRuleFromLabel
+                            . Graph.inn'
+                            . Graph.context graph
+                            $ node'
+            x <- return $ axioms !! 2
+            y <- return $ axioms !! 2
+            putStrLn' . show $ unAxiom x == unAxiom y
+            case mrule of
+                (Just rule) -> do
+                    putStrLn' . show $ fmap (\x -> getRightPattern x == (getRightPattern . unRewriteRule) rule) (fmap (unRewriteRule . unAxiom) axioms)
+                    putStrLn' . show $ fmap (\x -> getRightPattern x == (getRightPattern . unRewriteRule) rule) (fmap (unRewriteRule . unClaim) claims)
+                    -- putStrLn' . show $ elemIndex rule (fmap unClaim claims)
+                    -- putStrLn' . show $ elemIndex rule (fmap unAxiom axioms)
+                Nothing ->
+                    return ()
         else putStrLn' "Invalid node!"
 
 showPrecBranch
@@ -371,7 +387,7 @@ tryAxiomClaim eac = do
                                 _ -> do
                                     lensGraph .= graph'
                                     lensNode .= node'
-                                    tell "Unification succsessful."
+                                    tell "Unification successful."
                         _ -> lensGraph .= graph'
                 else tell "Node is already evaluated"
   where
@@ -459,7 +475,7 @@ labelDel lbl = do
 
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
-    putStrLn' $ unparseToString rule
+    putStrLn' $ show rule
     putStrLn'
         . show
         . pretty
@@ -555,6 +571,17 @@ unparseNodeLabels =
     third :: (a, b, c) -> c
     third (_, _, c) = c
 
+getRewriteRuleFromLabel
+    :: [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
+    -> Maybe (RewriteRule Object Variable)
+getRewriteRuleFromLabel =
+    listToMaybe
+    . join
+    . fmap (toList . third)
+  where
+      third :: (a, b, c) -> c
+      third (_, _, c) = c
+
 extractSourceAndLocation
     :: RewriteRule level Variable
     -> SourceLocation
@@ -581,6 +608,24 @@ data StepResult
 
 unClaim :: forall level. Claim level -> RewriteRule level Variable
 unClaim Claim { rule } = rule
+
+unRewriteRule
+    :: forall level.
+    RewriteRule level Variable
+    -> RulePattern level Variable
+unRewriteRule RewriteRule { getRewriteRule } = getRewriteRule
+
+getLeftPattern
+    :: forall level.
+    RulePattern level Variable
+    -> StepPattern level Variable
+getLeftPattern RulePattern { left } = left
+
+getRightPattern
+    :: forall level.
+    RulePattern level Variable
+    -> StepPattern level Variable
+getRightPattern RulePattern { right } = right
 
 unAxiom :: Axiom level -> RewriteRule level Variable
 unAxiom (Axiom rule) = rule
