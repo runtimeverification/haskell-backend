@@ -44,7 +44,7 @@ import           Kore.OnePath.Step
                  ( CommonStrategyPattern, Prim, onePathFirstStep,
                  onePathFollowupStep )
 import qualified Kore.OnePath.Step as StrategyPattern
-                 ( StrategyPattern (..) )
+                 ( StrategyPattern (..), extractUnproven )
 import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
 import           Kore.Step.Axiom.Data
@@ -255,12 +255,8 @@ unprovenNodes
     -> MultiOr.MultiOr term
 unprovenNodes executionGraph =
     MultiOr.MultiOr
-    $ mapMaybe getRemainingNode
+    $ mapMaybe StrategyPattern.extractUnproven
     $ fst <$> pickFinal executionGraph
-  where
-    getRemainingNode (StrategyPattern.RewritePattern p) = Just p
-    getRemainingNode (StrategyPattern.Stuck          p) = Just p
-    getRemainingNode StrategyPattern.Bottom             = Nothing
 
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
