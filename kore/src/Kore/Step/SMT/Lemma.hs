@@ -30,13 +30,13 @@ import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.SmtLemma
 import           Kore.Attribute.Smtlib
-import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
+import qualified Kore.Step.SMT.Sorts as Sorts
 import           Kore.Step.SMT.Translate
 import           Kore.Unparser
 import           SMT
@@ -62,30 +62,10 @@ declareSMTLemmas
             Attribute.Axiom
     -> m ()
 declareSMTLemmas m = SMT.liftSMT $ do
-    mapM_ declareSort (indexedModuleSortDescriptions m)
+    Sorts.declareSorts m
     mapM_ declareSymbol (indexedModuleSymbolSentences m)
     mapM_ declareRule (indexedModuleAxioms m)
   where
-    declareSort
-        :: (Given (MetadataTools Object StepperAttributes))
-        => ( Attribute.Sort
-           , SentenceSort
-                Object
-                (KorePattern
-                    Domain.Builtin
-                    Variable
-                    (Unified (Valid (Unified Variable)))
-                )
-           )
-        -> SMT ()
-    declareSort (atts, _) =
-        case getSmtlib of
-            Just (SMT.List (SMT.Atom name : sortArgs)) -> do
-                _ <- SMT.declareSort name (length sortArgs)
-                pure ()
-            _ -> pure ()
-      where
-        Attribute.Sort { smtlib = Smtlib { getSmtlib } } = atts
     declareSymbol
         :: (Given (MetadataTools Object StepperAttributes))
         => ( StepperAttributes
@@ -151,22 +131,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
         :: Given (MetadataTools Object StepperAttributes)
         => Sort Object
         -> MaybeT SMT SExpr
-    translateSort sort@(SortActualSort (SortActual _ children))
-      | Just "INT.Int"   <- getHook = return (SMT.Atom "Int")
-      | Just "BOOL.Bool" <- getHook = return (SMT.Atom "Bool")
-      | otherwise =
-        case getSmtlib of
-            Just sExpr -> do
-                children' <- mapM translateSort children
-                pure $ applySExpr sExpr children'
-            Nothing -> mzero
-      where
-        tools :: MetadataTools Object StepperAttributes
-        tools = given
-        attrs = sortAttributes tools sort
-        Attribute.Sort { hook = Hook { getHook } } = attrs
-        Attribute.Sort { smtlib = Smtlib { getSmtlib } } = attrs
-    translateSort _ = mzero
+    translateSort sort = MaybeT $ return (Sorts.translateSort sort)
 
 getRight :: Alternative m => Either a b -> m b
 getRight (Right a) = pure a
