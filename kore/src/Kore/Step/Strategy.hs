@@ -31,6 +31,8 @@ module Kore.Step.Strategy
       -- * Running strategies
     , constructExecutionGraph
     , ExecutionGraph(..)
+    , insNode
+    , insEdge
     , runStrategy
     , pickLongest
     , pickFinal
@@ -229,6 +231,31 @@ data ChildNode config rule = ChildNode
     -- configuration.
     }
     deriving (Eq, Show, Functor)
+
+{- | Insert a node into the execution graph.
+
+The 'Graph.Node' index must not already exist in the graph.
+
+ -}
+insNode
+    :: (Graph.Node, config)
+    -> ExecutionGraph config rule
+    -> ExecutionGraph config rule
+insNode lnode exe@ExecutionGraph { graph } =
+    exe { graph = Graph.insNode lnode graph }
+
+{- | Insert an unlabeled edge into the execution graph.
+
+The source and target 'Graph.Node' indices must already exist in the graph.
+
+ -}
+insEdge
+    :: (Graph.Node, Graph.Node)
+    -- ^ (source, target) of the edge
+    -> ExecutionGraph config rule
+    -> ExecutionGraph config rule
+insEdge (fromNode, toNode) exe@ExecutionGraph { graph } =
+    exe { graph = Graph.insEdge (fromNode, toNode, mempty) graph }
 
 insChildNode
     :: ChildNode config rule

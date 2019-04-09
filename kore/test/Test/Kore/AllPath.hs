@@ -1,7 +1,6 @@
 module Test.Kore.AllPath where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
 import           Data.Function
@@ -24,15 +23,13 @@ insNode
     :: (Gr.Node, AllPath.ProofState Integer)
     -> ExecutionGraph
     -> ExecutionGraph
-insNode lnode Strategy.ExecutionGraph { root, graph } =
-    Strategy.ExecutionGraph { root, graph = Gr.insNode lnode graph }
+insNode = Strategy.insNode
 
 insEdge
     :: (Gr.Node, Gr.Node)
     -> ExecutionGraph
     -> ExecutionGraph
-insEdge (fromNode, toNode) Strategy.ExecutionGraph { root, graph } =
-    Strategy.ExecutionGraph { root, graph = Gr.insEdge (fromNode, toNode, mempty) graph }
+insEdge = Strategy.insEdge
 
 test_unprovenNodes :: [TestTree]
 test_unprovenNodes =
