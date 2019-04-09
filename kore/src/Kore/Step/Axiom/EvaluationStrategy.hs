@@ -359,9 +359,8 @@ evaluateWithDefinitionAxioms
   =
     AttemptedAxiom.exceptNotApplicable $ do
     let
-        -- TODO (thomas.tuegel): Take an 'ExpandedPattern' as input so that its
-        -- conditions can be used to remove remainder branches and evaluate more
-        -- functions.
+        -- TODO (thomas.tuegel): Figure out how to get the initial conditions
+        -- and apply them here, to remove remainder branches sooner.
         expanded :: ExpandedPattern level variable
         expanded = ExpandedPattern.fromPurePattern patt
 
