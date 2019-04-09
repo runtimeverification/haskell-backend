@@ -91,7 +91,7 @@ definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (evaluateWithDefinitionAxioms rules)
 
-{- | Creates an evaluator for a function all the rules that define it.
+{- | Creates an evaluator for a function from all the rules that define it.
 
 The function is not applied (@totalDefinitionEvaluation@ returns
 'AttemptedAxiom.NotApplicable') if the supplied rules do not match the entire
