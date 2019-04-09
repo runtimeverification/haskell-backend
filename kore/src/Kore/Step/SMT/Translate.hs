@@ -37,21 +37,22 @@ import           Data.Reflection
 import           Kore.AST.Kore
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
-import           Kore.Attribute.Smthook
 import           Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Symbol
-import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
+import           Kore.Step.SMT.Symbols
+                 ( SymbolTranslation (SymbolTranslation), translateSymbol )
+import qualified Kore.Step.SMT.Symbols as SymbolTranslation
+                 ( SymbolTranslation (..) )
+import           Kore.Unparser
 import           SMT
                  ( SExpr (..), SMT )
 import qualified SMT
-
-import Kore.Unparser
 
 -- ----------------------------------------------------------------
 -- Predicate translation
@@ -214,23 +215,14 @@ translatePredicate translateUninterpreted predicate =
             { applicationSymbolOrAlias
             , applicationChildren
             }
-      = case
-            getSmtlib (symAttributes smtlibTools applicationSymbolOrAlias)
-            <|>
-            getSmthook (symAttributes smthookTools applicationSymbolOrAlias)
-        of
+      = case translateSymbol applicationSymbolOrAlias of
             Nothing -> empty
-            Just sExpr -> shortenSExpr <$>
-                applySExpr sExpr
+            Just SymbolTranslation {name} -> shortenSExpr <$>
+                applySExpr (SMT.Atom name)
                     <$> zipWithM translatePattern
                         applicationChildrenSorts
                         applicationChildren
       where
-        smtlibTools :: MetadataTools Object Smtlib
-        smtlibTools = StepperAttributes.smtlib <$> given
-        smthookTools :: MetadataTools Object Smthook
-        smthookTools = StepperAttributes.smthook <$> given
-
         applicationChildrenSorts = getSort <$> applicationChildren
 
     translatePattern

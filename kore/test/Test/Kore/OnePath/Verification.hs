@@ -363,6 +363,7 @@ test_onePathVerification =
             Mock.headTypeMapping
             Mock.sortAttributesMapping
             Mock.subsorts
+            Mock.headSortsMapping
 
 simpleAxiom
     :: MetaOrObject level

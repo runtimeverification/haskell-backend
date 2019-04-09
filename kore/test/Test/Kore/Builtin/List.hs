@@ -189,6 +189,7 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
+        Mock.headSortsMapping
 
 mockHookTools :: MetadataTools Object Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
