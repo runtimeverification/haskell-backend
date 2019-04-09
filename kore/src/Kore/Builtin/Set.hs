@@ -599,6 +599,7 @@ unifyEquals
         empty
       where
         -- Unify one concrete set with a select pattern (x:elem s:set)
+        -- Note that x can be a proper symbolic pattern (not just a variable)
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
             :: Domain.InternalSet  -- ^ concrete set

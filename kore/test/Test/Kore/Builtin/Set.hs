@@ -352,27 +352,27 @@ test_unifySelectFromEmpty =
     testPropertyWithSolver
         "unify an empty set with a selection pattern"
         (do
-            let concreteSet = Set.empty
             patFramedSet <- selectPatternGen id
             revPatFramedSet <- selectPatternGen reverse
             fnPatFramedSet <- selectFunctionPatternGen id
             revFnPatFramedSet <- selectFunctionPatternGen reverse
-            let
-                patConcreteSet = asPattern concreteSet
-                expect = ExpandedPattern.bottom
-            --                          Set.empty /\ SetItem(X:Int) Rest:Set
-            (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
-            (===) expect =<< evaluate (mkAnd patFramedSet patConcreteSet)
-            --                          Set.empty /\ Rest:Set SetItem(X:Int)
-            (===) expect =<< evaluate (mkAnd patConcreteSet revPatFramedSet)
-            (===) expect =<< evaluate (mkAnd revPatFramedSet patConcreteSet)
-            --                  Set.empty /\ SetItem(absInt(X:Int)) Rest:Set
-            (===) expect =<< evaluate (mkAnd patConcreteSet fnPatFramedSet)
-            (===) expect =<< evaluate (mkAnd fnPatFramedSet patConcreteSet)
-            --                  Set.empty /\ Rest:Set SetItem(absInt(X:Int))
-            (===) expect =<< evaluate (mkAnd patConcreteSet revFnPatFramedSet)
-            (===) expect =<< evaluate (mkAnd revFnPatFramedSet patConcreteSet)
+            -- Set.empty /\ SetItem(X:Int) Rest:Set
+            patEmptySet `doesNotUnifyWith` patFramedSet
+            patFramedSet `doesNotUnifyWith` patEmptySet
+            -- Set.empty /\ Rest:Set SetItem(X:Int)
+            patEmptySet `doesNotUnifyWith` revPatFramedSet
+            revPatFramedSet `doesNotUnifyWith` patEmptySet
+            -- Set.empty /\ SetItem(absInt(X:Int)) Rest:Set
+            patEmptySet `doesNotUnifyWith` fnPatFramedSet
+            fnPatFramedSet `doesNotUnifyWith` patEmptySet
+            -- Set.empty /\ Rest:Set SetItem(absInt(X:Int))
+            patEmptySet `doesNotUnifyWith` revFnPatFramedSet
+            revFnPatFramedSet `doesNotUnifyWith` patEmptySet
         )
+  where
+    patEmptySet = asPattern Set.empty
+    doesNotUnifyWith pat1 pat2 =
+            (===) ExpandedPattern.bottom =<< evaluate (mkAnd pat1 pat2)
 
 {- | Unify a concrete Set with symbolic-keyed Set.
 
