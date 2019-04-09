@@ -63,7 +63,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( sourceLocation )
+                 ( Axiom (..), sourceLocation )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..),
                  strategyPattern )
@@ -626,6 +626,12 @@ getRightPattern
     RulePattern level Variable
     -> StepPattern level Variable
 getRightPattern RulePattern { right } = right
+
+getAttributes
+    :: forall level.
+    RulePattern level Variable
+    -> Attribute.Axiom
+getAttributes RulePattern { attributes } = attributes
 
 unAxiom :: Axiom level -> RewriteRule level Variable
 unAxiom (Axiom rule) = rule

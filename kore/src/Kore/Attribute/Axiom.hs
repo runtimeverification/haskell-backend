@@ -25,6 +25,7 @@ module Kore.Attribute.Axiom
     , lensLabel, Label (..)
     , lensSourceLocation, SourceLocation (..)
     , lensConstructor, Constructor (..)
+    , lensIdentifier, RuleIndex (..)
     ) where
 
 import           Control.DeepSeq
