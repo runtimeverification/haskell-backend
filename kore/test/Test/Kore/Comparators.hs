@@ -1414,12 +1414,9 @@ instance
         (StrategyPattern.RewritePattern p1) (StrategyPattern.RewritePattern p2)
       =
         SumConstructorSameWithArguments (EqWrap "RewritePattern" p1 p2)
-    sumConstructorPair
-        (StrategyPattern.Remainder p1)
-        (StrategyPattern.Remainder p2)
-      =
+    sumConstructorPair (StrategyPattern.Stuck p1) (StrategyPattern.Stuck p2) =
         SumConstructorSameWithArguments (EqWrap "Stuck" p1 p2)
-    sumConstructorPair StrategyPattern.Goal StrategyPattern.Goal =
+    sumConstructorPair StrategyPattern.Bottom StrategyPattern.Bottom =
         SumConstructorSameNoArguments
     sumConstructorPair p1 p2 =
         SumConstructorDifferent

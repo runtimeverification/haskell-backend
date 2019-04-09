@@ -274,8 +274,8 @@ verifyClaim
             MultiOr.make $ mapMaybe getRemainingNode (fst <$> finalNodes)
           where
             getRemainingNode (StrategyPattern.RewritePattern p) = Just p
-            getRemainingNode (StrategyPattern.Remainder      p) = Just p
-            getRemainingNode StrategyPattern.Goal               = Nothing
+            getRemainingNode (StrategyPattern.Stuck          p) = Just p
+            getRemainingNode StrategyPattern.Bottom             = Nothing
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
