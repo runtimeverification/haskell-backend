@@ -309,8 +309,7 @@ executionHistoryStep transit prim exe@ExecutionGraph { graph } node
 -- allow merging of states, loop detection, etc.
 emptyExecutionGraph
     :: forall config rule
-    .  Hashable config
-    => config
+    .  config
     -> ExecutionGraph config rule
 emptyExecutionGraph config =
     ExecutionGraph
