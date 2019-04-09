@@ -38,24 +38,24 @@ test_unprovenNodes =
         `satisfies_`
         Foldable.null
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.GoalLHS 1))
+        (emptyExecutionGraph (AllPath.Goal 1))
         `satisfies_`
         (not . Foldable.null)
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.GoalLHS 1))
+        (emptyExecutionGraph (AllPath.Goal 1))
         `equals`
         (MultiOr.MultiOr [1])
         $  "returns single unproven node"
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.GoalLHS 0)
-            & insNode (1, AllPath.GoalLHS 1)
+        (emptyExecutionGraph (AllPath.Goal 0)
+            & insNode (1, AllPath.Goal 1)
             & insNode (2, AllPath.Proven)
         )
         `equals_`
         (MultiOr.MultiOr [0, 1])
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.GoalLHS 0)
-            & insNode (1, AllPath.GoalLHS 1)
+        (emptyExecutionGraph (AllPath.Goal 0)
+            & insNode (1, AllPath.Goal 1)
             & insEdge (0, 1)
             & insNode (2, AllPath.Proven)
             & insEdge (0, 2)
@@ -63,10 +63,10 @@ test_unprovenNodes =
         `equals_`
         (MultiOr.MultiOr [1])
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.GoalLHS 0)
-            & insNode (1, AllPath.GoalLHS 1)
+        (emptyExecutionGraph (AllPath.Goal 0)
+            & insNode (1, AllPath.Goal 1)
             & insEdge (0, 1)
-            & insNode (2, AllPath.GoalLHS 2)
+            & insNode (2, AllPath.Goal 2)
             & insEdge (1, 2)
             & insNode (3, AllPath.Proven)
             & insEdge (2, 3)
@@ -74,8 +74,8 @@ test_unprovenNodes =
         `equals_`
         (MultiOr.MultiOr [])
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.GoalLHS 0)
-            & insNode (1, AllPath.GoalRemLHS 1)
+        (emptyExecutionGraph (AllPath.Goal 0)
+            & insNode (1, AllPath.GoalRem 1)
             & insEdge (0, 1)
             & insNode (2, AllPath.Proven)
             & insEdge (0, 2)
