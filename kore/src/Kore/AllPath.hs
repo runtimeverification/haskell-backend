@@ -19,6 +19,7 @@ data ProofState goal
     -- ^ The indicated goal remains after rewriting.
     | Proven
     -- ^ The parent goal was proven.
+    deriving (Eq, Show)
 
 {- | Extract the unproven goals of a 'ProofState'.
 

@@ -22,6 +22,7 @@ import           Data.Functor.Identity
 import           Numeric.Natural
                  ( Natural )
 
+import qualified Kore.AllPath as AllPath
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Kore
@@ -1711,3 +1712,17 @@ instance
   where
     wrapperField = Function.on (EqWrap "getAttributes = ") getAttributes
     wrapperConstructorName _ = "Attributes"
+
+instance (EqualWithExplanation goal, Show goal) => EqualWithExplanation (AllPath.ProofState goal) where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance (EqualWithExplanation goal, Show goal) => SumEqualWithExplanation (AllPath.ProofState goal) where
+    sumConstructorPair AllPath.Proven          AllPath.Proven          =
+        SumConstructorSameNoArguments
+    sumConstructorPair (AllPath.Goal goal1)    (AllPath.Goal goal2)    =
+        SumConstructorSameWithArguments (EqWrap "Goal" goal1 goal2)
+    sumConstructorPair (AllPath.GoalRem goal1) (AllPath.GoalRem goal2) =
+        SumConstructorSameWithArguments (EqWrap "GoalRem" goal1 goal2)
+    sumConstructorPair expect           actual           =
+        SumConstructorDifferent (show expect) (show actual)
