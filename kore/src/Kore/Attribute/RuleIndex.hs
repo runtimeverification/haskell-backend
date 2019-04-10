@@ -11,12 +11,11 @@ module Kore.Attribute.RuleIndex
     , ruleIndexId, ruleIndexSymbol, ruleIndexAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
+import Control.DeepSeq
+       ( NFData )
+import Data.Default
+import GHC.Generics
+       ( Generic )
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Parser
@@ -56,10 +55,9 @@ ruleIndexAttribute =
 
 instance ParseAttributes RuleIndex where
     parseAttribute =
-        withApplication $ \params args RuleIndex { getRuleIndex } -> do
+        withApplication $ \params args _ -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
             return RuleIndex { getRuleIndex = Nothing }
       where
         withApplication = Parser.withApplication ruleIndexId
-        failDuplicate = Parser.failDuplicate ruleIndexId

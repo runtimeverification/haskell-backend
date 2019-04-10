@@ -41,7 +41,7 @@ import           Data.Graph.Inductive.Graph
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.List.Extra
-                 ( elemIndex, groupSort )
+                 ( groupSort )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( catMaybes, listToMaybe )
@@ -290,7 +290,7 @@ showRule
     -> m ()
 showRule configNode = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    ReplState { axioms, claims } <- get
+    ReplState { axioms } <- get
     node <- Lens.use lensNode
     let node' = maybe node id configNode
     if node' `elem` Graph.nodes graph
@@ -320,10 +320,10 @@ showRule configNode = do
         else putStrLn' "Invalid node!"
   where
     axiomOrClaim :: Int -> Int -> String
-    axiomOrClaim len id =
-        if id < len
-            then "Rule is axiom " <> show id
-            else "Rule is claim " <> show (id - len)
+    axiomOrClaim len iden =
+        if iden < len
+            then "Rule is axiom " <> show iden
+            else "Rule is claim " <> show (iden - len)
 
 
 showPrecBranch
