@@ -91,51 +91,64 @@ test_unprovenNodes =
         (MultiOr.MultiOr [1])
     ]
 
-transitionRule
-    :: AllPath.Prim ()
-    -> AllPath.ProofState (Integer, Integer)
-    -> [(AllPath.ProofState (Integer, Integer), Seq ())]
+{- | @Goal@ is a simple goal for unit testing.
+
+The goal is a pair of integers. It is considered proven when the left-hand side
+and the right-hand side are equal. The destination is removed by subtraction.
+
+ -}
+type Goal = (Integer, Integer)
+
+type ProofState = AllPath.ProofState Goal
+
+type Prim = AllPath.Prim ()
+
+-- | The destination-removal rule for our unit test goal.
+removeDestination :: Monad m => Goal -> m Goal
+removeDestination (src, dst) = return (src - dst, dst)
+
+-- | The goal is trivially valid when the members are equal.
+checkGoal :: Monad m => Goal -> m Bool
+checkGoal (src, dst) = return (src == dst)
+
+-- | 'AllPath.transitionRule' instantiated with our unit test rules.
+transitionRule :: Prim -> ProofState -> [(ProofState, Seq ())]
 transitionRule prim state =
     (runIdentity . runTransitionT)
         (AllPath.transitionRule removeDestination checkGoal prim state)
-  where
-    removeDestination (src, dst) = return (src - dst, dst)
-    checkGoal (src, dst) = return (src == dst)
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
     [ run AllPath.Proven           `satisfies_` Foldable.null
-    , run (AllPath.Goal    (2, 1)) `equals_`    [(AllPath.Goal (2, 1), mempty)]
-    , run (AllPath.GoalRem (2, 1)) `equals_`    [(AllPath.GoalRem (2, 1), mempty)]
+    , unmodified (AllPath.Goal    (2, 1))
+    , unmodified (AllPath.GoalRem (2, 1))
     ]
   where
     run = transitionRule AllPath.CheckProven
+    unmodified :: HasCallStack => ProofState -> TestTree
+    unmodified state = run state `equals_` [(state, mempty)]
 
 test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
-    [ run AllPath.Proven        `equals_` [(AllPath.Proven,    mempty)]
+    [ unmodified AllPath.Proven
     , run (AllPath.Goal (2, 1)) `equals` [(AllPath.GoalRem (1, 1), mempty)]  $ "removes destination from goal"
     , run (AllPath.GoalRem (2, 1))   `satisfies` Foldable.null  $  "gets stuck on remainder"
     ]
   where
     run = transitionRule AllPath.RemoveDestination
+    unmodified :: HasCallStack => ProofState -> TestTree
+    unmodified state = run state `equals_` [(state, mempty)]
 
 test_transitionRule_TriviallyValid :: [TestTree]
 test_transitionRule_TriviallyValid =
-    [ staysTheSame AllPath.Proven
-    , staysTheSame (AllPath.Goal    (2, 1))
-    , staysTheSame (AllPath.GoalRem (2, 1))
+    [ unmodified AllPath.Proven
+    , unmodified (AllPath.Goal    (2, 1))
+    , unmodified (AllPath.GoalRem (2, 1))
     , becomesProven (AllPath.GoalRem (1, 1))
     ]
   where
     run = transitionRule AllPath.TriviallyValid
-    staysTheSame
-        :: HasCallStack
-        => AllPath.ProofState (Integer, Integer)
-        -> TestTree
-    staysTheSame state = run state `equals_` [(state, mempty)]
-    becomesProven
-        :: HasCallStack
-        => AllPath.ProofState (Integer, Integer)
-        -> TestTree
+    unmodified :: HasCallStack => ProofState -> TestTree
+    unmodified state = run state `equals_` [(state, mempty)]
+    becomesProven :: HasCallStack => ProofState -> TestTree
     becomesProven state = run state `equals_` [(AllPath.Proven, mempty)]
