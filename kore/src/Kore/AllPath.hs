@@ -52,8 +52,16 @@ data Prim rule
 
 transitionRule
     :: Monad m
-    => Prim rule
+    => (goal -> Strategy.TransitionT rule m goal)
+    -- ^ Remove destination from goal
+    -> Prim rule
     -> ProofState goal
     -> Strategy.TransitionT rule m (ProofState goal)
-transitionRule CheckProven Proven = empty
-transitionRule _ state            = return state
+transitionRule removeDestination = transitionRuleWorker
+  where
+    transitionRuleWorker CheckProven Proven = empty
+    transitionRuleWorker CheckProven state  = return state
+
+    transitionRuleWorker RemoveDestination Proven      = return Proven
+    transitionRuleWorker RemoveDestination (GoalRem _) = empty
+    transitionRuleWorker RemoveDestination (Goal g)    = GoalRem <$> removeDestination g

@@ -91,24 +91,28 @@ test_unprovenNodes =
 
 transitionRule
     :: AllPath.Prim ()
-    -> AllPath.ProofState Integer
-    -> [(AllPath.ProofState Integer, Seq ())]
+    -> AllPath.ProofState (Integer, Integer)
+    -> [(AllPath.ProofState (Integer, Integer), Seq ())]
 transitionRule prim state =
     (runIdentity . runTransitionT)
-        (AllPath.transitionRule prim state)
+        (AllPath.transitionRule removeDestination prim state)
+  where
+    removeDestination (src, dst) = return (src - dst, dst)
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
-    [ run AllPath.Proven      `satisfies_` Foldable.null
-    , run (AllPath.Goal 1   ) `equals_`    [(AllPath.Goal 1, mempty)]
-    , run (AllPath.GoalRem 1) `equals_`    [(AllPath.GoalRem 1, mempty)]
+    [ run AllPath.Proven           `satisfies_` Foldable.null
+    , run (AllPath.Goal    (2, 1)) `equals_`    [(AllPath.Goal (2, 1), mempty)]
+    , run (AllPath.GoalRem (2, 1)) `equals_`    [(AllPath.GoalRem (2, 1), mempty)]
     ]
   where
     run = transitionRule AllPath.CheckProven
 
 test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
-    [ run AllPath.Proven `equals_` [(AllPath.Proven, mempty)]
+    [ run AllPath.Proven        `equals_` [(AllPath.Proven,    mempty)]
+    , run (AllPath.Goal (2, 1)) `equals` [(AllPath.GoalRem (1, 1), mempty)]  $ "removes destination from goal"
+    , run (AllPath.GoalRem (2, 1))   `satisfies` Foldable.null  $  "gets stuck on remainder"
     ]
   where
     run = transitionRule AllPath.RemoveDestination
