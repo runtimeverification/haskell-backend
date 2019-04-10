@@ -108,14 +108,14 @@ removeDestination :: Monad m => Goal -> m Goal
 removeDestination (src, dst) = return (src - dst, dst)
 
 -- | The goal is trivially valid when the members are equal.
-checkGoal :: Monad m => Goal -> m Bool
-checkGoal (src, dst) = return (src == dst)
+triviallyValid :: Goal -> Bool
+triviallyValid (src, dst) = src == dst
 
 -- | 'AllPath.transitionRule' instantiated with our unit test rules.
 transitionRule :: Prim -> ProofState -> [(ProofState, Seq ())]
 transitionRule prim state =
     (runIdentity . runTransitionT)
-        (AllPath.transitionRule removeDestination checkGoal prim state)
+        (AllPath.transitionRule removeDestination triviallyValid prim state)
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =

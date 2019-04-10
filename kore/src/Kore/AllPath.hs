@@ -57,12 +57,12 @@ transitionRule
     :: Monad m
     => (goal -> Strategy.TransitionT rule m goal)
     -- ^ Remove destination from goal
-    -> (goal -> m Bool)
-    -- ^ Check goal
+    -> (goal -> Bool)
+    -- ^ Check if the goal is trivially valid
     -> Prim rule
     -> ProofState goal
     -> Strategy.TransitionT rule m (ProofState goal)
-transitionRule removeDestination checkGoal = transitionRuleWorker
+transitionRule removeDestination triviallyValid = transitionRuleWorker
   where
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRem (GoalRem _) = empty
@@ -70,8 +70,7 @@ transitionRule removeDestination checkGoal = transitionRuleWorker
     transitionRuleWorker RemoveDestination (Goal g) =
         GoalRem <$> removeDestination g
 
-    transitionRuleWorker TriviallyValid state@(GoalRem g) = do
-        valid <- Monad.Trans.lift (checkGoal g)
-        if valid then return Proven else return state
+    transitionRuleWorker TriviallyValid (GoalRem g)
+      | triviallyValid g = return Proven
 
     transitionRuleWorker _ state = return state
