@@ -97,18 +97,18 @@ transitionRule prim state =
     (runIdentity . runTransitionT)
         (AllPath.transitionRule prim state)
 
-test_transitionRule :: [TestTree]
-test_transitionRule =
-    [ transitionRule AllPath.CheckProven AllPath.Proven
-        `satisfies_`
-        Foldable.null
-    , transitionRule AllPath.CheckProven (AllPath.Goal 1)
-        `equals_`
-        [(AllPath.Goal 1, mempty)]
-    , transitionRule AllPath.CheckProven (AllPath.GoalRem 1)
-        `equals_`
-        [(AllPath.GoalRem 1, mempty)]
-    , transitionRule AllPath.RemoveDestination AllPath.Proven
-        `equals_`
-        [(AllPath.Proven, mempty)]
+test_transitionRule_CheckProven :: [TestTree]
+test_transitionRule_CheckProven =
+    [ run AllPath.Proven      `satisfies_` Foldable.null
+    , run (AllPath.Goal 1   ) `equals_`    [(AllPath.Goal 1, mempty)]
+    , run (AllPath.GoalRem 1) `equals_`    [(AllPath.GoalRem 1, mempty)]
     ]
+  where
+    run = transitionRule AllPath.CheckProven
+
+test_transitionRule_RemoveDestination :: [TestTree]
+test_transitionRule_RemoveDestination =
+    [ run AllPath.Proven `equals_` [(AllPath.Proven, mempty)]
+    ]
+  where
+    run = transitionRule AllPath.RemoveDestination
