@@ -328,6 +328,9 @@ newtype StepPatternSimplifier level =
         )
 
 {- | Use a 'StepPatternSimplifier' to simplify a pattern.
+
+The pattern is considered as an isolated term without extra initial conditions.
+
  -}
 simplifyTerm
     :: forall variable
@@ -374,7 +377,11 @@ simplifyConditionalTerm
     -> BranchT Simplifier (ExpandedPattern Object variable)
 simplifyConditionalTerm (StepPatternSimplifier simplify) = simplify
 
-{- | Construct a 'StepPatternSimplifier'.
+{- | Construct a 'StepPatternSimplifier' from a term simplifier.
+
+The constructed simplifier does not consider the initial condition during
+simplification, but only attaches it unmodified to the final result.
+
  -}
 stepPatternSimplifier
     ::  ( forall variable
