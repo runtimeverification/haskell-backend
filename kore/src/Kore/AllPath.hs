@@ -4,10 +4,11 @@ License     : NCSA
 -}
 module Kore.AllPath where
 
-import Control.Applicative
-       ( Alternative (..) )
-import Data.Maybe
-       ( mapMaybe )
+import           Control.Applicative
+                 ( Alternative (..) )
+import qualified Control.Monad.Trans as Monad.Trans
+import           Data.Maybe
+                 ( mapMaybe )
 
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Strategy as Strategy
@@ -49,15 +50,18 @@ unprovenNodes executionGraph =
 data Prim rule
     = CheckProven
     | RemoveDestination
+    | TriviallyValid
 
 transitionRule
     :: Monad m
     => (goal -> Strategy.TransitionT rule m goal)
     -- ^ Remove destination from goal
+    -> (goal -> m Bool)
+    -- ^ Check goal
     -> Prim rule
     -> ProofState goal
     -> Strategy.TransitionT rule m (ProofState goal)
-transitionRule removeDestination = transitionRuleWorker
+transitionRule removeDestination checkGoal = transitionRuleWorker
   where
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckProven state  = return state
@@ -65,3 +69,8 @@ transitionRule removeDestination = transitionRuleWorker
     transitionRuleWorker RemoveDestination Proven      = return Proven
     transitionRuleWorker RemoveDestination (GoalRem _) = empty
     transitionRuleWorker RemoveDestination (Goal g)    = GoalRem <$> removeDestination g
+
+    transitionRuleWorker TriviallyValid state@(GoalRem g) = do
+        valid <- Monad.Trans.lift (checkGoal g)
+        if valid then return Proven else return state
+    transitionRuleWorker TriviallyValid state = return state

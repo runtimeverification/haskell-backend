@@ -95,9 +95,10 @@ transitionRule
     -> [(AllPath.ProofState (Integer, Integer), Seq ())]
 transitionRule prim state =
     (runIdentity . runTransitionT)
-        (AllPath.transitionRule removeDestination prim state)
+        (AllPath.transitionRule removeDestination checkGoal prim state)
   where
     removeDestination (src, dst) = return (src - dst, dst)
+    checkGoal (src, _) = return (src == 0)
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
@@ -116,3 +117,13 @@ test_transitionRule_RemoveDestination =
     ]
   where
     run = transitionRule AllPath.RemoveDestination
+
+test_transitionRule_TriviallyValid :: [TestTree]
+test_transitionRule_TriviallyValid =
+    [ run AllPath.Proven           `equals_` [(AllPath.Proven,    mempty)]
+    , run (AllPath.Goal    (2, 1)) `equals_` [(AllPath.Goal    (2, 1), mempty)]
+    , run (AllPath.GoalRem (0, 1)) `equals_` [(AllPath.Proven, mempty)]
+    , run (AllPath.GoalRem (2, 1)) `equals_` [(AllPath.GoalRem (2, 1), mempty)]
+    ]
+  where
+    run = transitionRule AllPath.TriviallyValid
