@@ -10,13 +10,13 @@ Portability : portable
 module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
+    , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
     ) where
 
 import           Control.Monad
                  ( when )
-import           Control.Monad.Trans.Except
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
@@ -41,7 +41,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
+                 ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import           Kore.Step.Pattern
@@ -51,7 +51,7 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make )
+                 ( extractPatterns )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse )
 import           Kore.Step.Rule
@@ -60,7 +60,6 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier (..) )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -91,6 +90,63 @@ definitionEvaluation
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (evaluateWithDefinitionAxioms rules)
+
+{- | Creates an evaluator for a function from all the rules that define it.
+
+The function is not applied (@totalDefinitionEvaluation@ returns
+'AttemptedAxiom.NotApplicable') if the supplied rules do not match the entire
+input.
+
+See also: 'definitionEvaluation'
+
+-}
+totalDefinitionEvaluation
+    :: forall level
+    .  [EqualityRule level Variable]
+    -> BuiltinAndAxiomSimplifier level
+totalDefinitionEvaluation rules =
+    BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
+  where
+    totalDefinitionEvaluationWorker
+        ::  forall variable
+        .   ( FreshVariable variable
+            , MetaOrObject level
+            , Ord (variable level)
+            , OrdMetaOrObject variable
+            , SortedVariable variable
+            , Show (variable level)
+            , Show (variable Object)
+            , Unparse (variable level)
+            , ShowMetaOrObject variable
+            )
+        => MetadataTools level StepperAttributes
+        -> PredicateSubstitutionSimplifier level
+        -> StepPatternSimplifier level
+        -> BuiltinAndAxiomSimplifierMap level
+        -> StepPattern level variable
+        -> Simplifier
+            ( AttemptedAxiom level variable
+            , SimplificationProof level
+            )
+    totalDefinitionEvaluationWorker
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        term
+      = do
+        (result, proof) <- evaluate term
+        if AttemptedAxiom.hasRemainders result
+            then return (AttemptedAxiom.NotApplicable, proof)
+            else return (result, proof)
+      where
+        evaluate =
+            evaluateWithDefinitionAxioms
+                rules
+                tools
+                predicateSimplifier
+                termSimplifier
+                axiomSimplifiers
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
@@ -299,17 +355,19 @@ evaluateWithDefinitionAxioms
     simplifier
     axiomIdToSimplifier
     patt
-  = do
+  =
+    AttemptedAxiom.exceptNotApplicable $ do
     let
+        -- TODO (thomas.tuegel): Figure out how to get the initial conditions
+        -- and apply them here, to remove remainder branches sooner.
         expanded :: ExpandedPattern level variable
         expanded = ExpandedPattern.fromPurePattern patt
 
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    resultOrError <-
-        runExceptT
-        $ Step.sequenceRules
+    result <-
+        Step.sequenceRules
             tools
             substitutionSimplifier
             simplifier
@@ -318,37 +376,11 @@ evaluateWithDefinitionAxioms
             expanded
             (map unwrapEqualityRule definitionRules)
 
-    let Step.Results { results, remainders } =
-            case resultOrError of
-                Right result -> result
-                Left _ -> Step.Results
-                    { Step.results = mempty
-                    , Step.remainders = MultiOr.make [expanded]
-                    }
-    let
-        remainderResults :: [ExpandedPattern level variable]
-        remainderResults = MultiOr.extractPatterns remainders
-
-        simplifyPredicate
-            :: ExpandedPattern level variable
-            -> Simplifier
-                (ExpandedPattern level variable, SimplificationProof level)
-        simplifyPredicate =
-            ExpandedPattern.simplifyPredicate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-
-    simplifiedRemainderList <- mapM simplifyPredicate remainderResults
-    let
-        simplifiedRemainderResults :: [ExpandedPattern level variable]
-        (simplifiedRemainderResults, _proofs) =
-            unzip simplifiedRemainderList
+    let Step.Results { results, remainders } = result
     return
         ( AttemptedAxiom.Applied AttemptedAxiomResults
             { results = Step.result <$> results
-            , remainders = MultiOr.make simplifiedRemainderResults
+            , remainders = remainders
             }
         , SimplificationProof
         )
