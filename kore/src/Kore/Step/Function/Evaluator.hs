@@ -51,8 +51,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, StepPatternSimplifier,
-                 simplifyTerm )
+                 Simplifier, StepPatternSimplifier, simplifyTerm )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Unparser
 import           Kore.Variables.Fresh
