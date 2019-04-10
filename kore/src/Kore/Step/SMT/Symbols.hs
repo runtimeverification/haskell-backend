@@ -81,6 +81,10 @@ data SymbolTranslation =
 
 Returns nothing for unsupporteds symbols (e.g. not constructor, not smtlib,
 not smthook).
+
+Note that it's not enough to call `translateName` to check whether a symbol
+was/can be declared since it only checks that the symbol itself is declarable,
+but it does not check that the symbol's sort is declarable.
 -}
 translateSymbol
     :: Given (MetadataTools Object Attribute.Symbol)

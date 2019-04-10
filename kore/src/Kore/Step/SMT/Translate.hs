@@ -216,7 +216,7 @@ translatePredicate translateUninterpreted predicate =
             , applicationChildren
             }
       = case translateSymbol applicationSymbolOrAlias of
-            Nothing -> empty
+            Nothing -> empty  -- The symbol was not declared, give up.
             Just SymbolTranslation {name} -> shortenSExpr <$>
                 applySExpr (SMT.Atom name)
                     <$> zipWithM translatePattern
