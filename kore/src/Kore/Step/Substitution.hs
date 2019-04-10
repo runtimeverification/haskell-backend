@@ -14,7 +14,6 @@ module Kore.Step.Substitution
     , createPredicatesAndSubstitutionsMergerExcept
     , mergePredicatesAndSubstitutions
     , mergePredicatesAndSubstitutionsExcept
-    , normalizePredicatedSubstitution
     , normalize
     , normalizeExcept
     ) where
@@ -294,54 +293,6 @@ mergePredicatesAndSubstitutionsExcept
             }
         , EmptyUnificationProof
         )
-
-normalizePredicatedSubstitution
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , SortedVariable variable
-        , FreshVariable variable
-        )
-    => MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -> Predicated level variable a
-    -> Simplifier
-        ( Predicated level variable a
-        , UnificationProof level variable
-        )
-normalizePredicatedSubstitution
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    Predicated { term, predicate, substitution }
-  = do
-    x <- runExceptT $
-            normalizeSubstitutionAfterMerge
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                Predicated { term = (), predicate, substitution }
-    return $ case x of
-        Left _ ->
-            ( Predicated
-                { term
-                , predicate =
-                    makeAndPredicate
-                        predicate
-                        (substitutionToPredicate substitution)
-                , substitution = mempty
-                }
-            , EmptyUnificationProof
-            )
-        Right (Predicated { predicate = p, substitution = s }, _) ->
-            (Predicated term p s, EmptyUnificationProof)
 
 {-| Creates a 'PredicateSubstitutionMerger' that returns errors on unifications it
 can't handle.
