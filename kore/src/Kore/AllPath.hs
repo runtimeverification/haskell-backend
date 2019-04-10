@@ -76,9 +76,8 @@ transitionRule removeDestination checkGoal = transitionRuleWorker
 
     transitionRuleWorker RemoveDestination state =
         case state of
-            Proven    -> return Proven
-            GoalRem _ -> empty
             Goal    g -> GoalRem <$> removeDestination g
+            _         -> return state
 
     transitionRuleWorker TriviallyValid state =
         case state of

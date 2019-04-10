@@ -119,7 +119,7 @@ transitionRule prim state =
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
-    [ run AllPath.Proven           `satisfies_` Foldable.null
+    [ done AllPath.Proven
     , unmodified (AllPath.Goal    (2, 1))
     , unmodified (AllPath.GoalRem (2, 1))
     ]
@@ -127,6 +127,8 @@ test_transitionRule_CheckProven =
     run = transitionRule AllPath.CheckProven
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
+    done :: HasCallStack => ProofState -> TestTree
+    done state = run state `satisfies_` Foldable.null
 
 test_transitionRule_CheckGoalRem :: [TestTree]
 test_transitionRule_CheckGoalRem =
@@ -139,13 +141,13 @@ test_transitionRule_CheckGoalRem =
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ProofState -> TestTree
-    done state = run state `equals_` []
+    done state = run state `satisfies_` Foldable.null
 
 test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
     [ unmodified AllPath.Proven
+    , unmodified (AllPath.GoalRem (2, 1))
     , run (AllPath.Goal (2, 1)) `equals` [(AllPath.GoalRem (1, 1), mempty)]  $ "removes destination from goal"
-    , run (AllPath.GoalRem (2, 1))   `satisfies` Foldable.null  $  "gets stuck on remainder"
     ]
   where
     run = transitionRule AllPath.RemoveDestination
