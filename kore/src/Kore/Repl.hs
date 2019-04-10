@@ -94,7 +94,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     state =
         ReplState
             { axioms  = fmap addIndex (zip axioms' [0..(length axioms')])
-            , claims  = claims'
+            , claims  = fmap addIndexClaim (zip claims' [0..(length claims')] )
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
@@ -108,9 +108,19 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     addIndex :: (Axiom level, Int) -> Axiom level
     addIndex (ax, n) = g (mapAttribute n (getAttribute ax)) ax
 
+    addIndexClaim :: (Claim level, Int) -> Claim level
+    addIndexClaim (cl, n) = gclaim (mapAttribute n (getAttributeClaim cl)) cl
+
     g :: Attribute.Axiom -> Axiom level -> Axiom level
     g att (Axiom (Rule.RewriteRule rp)) =
         Axiom . Rule.RewriteRule $ rp { Rule.attributes = att }
+
+    gclaim :: Attribute.Axiom -> Claim level -> Claim level
+    gclaim att (Claim (Rule.RewriteRule rp) att') =
+        Claim (Rule.RewriteRule rp { Rule.attributes = att }) att'
+
+    getAttributeClaim :: Claim level -> Attribute.Axiom
+    getAttributeClaim = Rule.attributes . Rule.getRewriteRule . rule
 
     getAttribute :: Axiom level -> Attribute.Axiom
     getAttribute = Rule.attributes . Rule.getRewriteRule . unAxiom

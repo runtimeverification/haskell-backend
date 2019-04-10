@@ -64,6 +64,7 @@ import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), sourceLocation )
+import           Kore.Attribute.RuleIndex
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..),
                  strategyPattern )
@@ -80,6 +81,7 @@ import           Kore.Step.Rule
                  ( RewriteRule (..) )
 import           Kore.Step.Rule
                  ( RulePattern (..) )
+import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
                  ( attributes )
 import           Kore.Step.Simplification.Data
@@ -293,26 +295,31 @@ showRule configNode = do
     let node' = maybe node id configNode
     if node' `elem` Graph.nodes graph
         then do
-            putStrLn' $ "Rule for node " <> show node' <> " is:"
-            unparseNodeLabels
-                . Graph.inn'
-                . Graph.context graph
-                $ node'
+           -- putStrLn' $ "Rule for node " <> show node' <> " is:"
+           -- unparseNodeLabels
+           --     . Graph.inn'
+           --     . Graph.context graph
+           --     $ node'
             let mrule = getRewriteRuleFromLabel
                             . Graph.inn'
                             . Graph.context graph
                             $ node'
-            x <- return $ axioms !! 2
-            y <- return $ axioms !! 2
-            putStrLn' . show $ unAxiom x == unAxiom y
             case mrule of
                 (Just rule) -> do
-                    putStrLn' . show $ fmap (\x -> getRightPattern x == (getRightPattern . unRewriteRule) rule) (fmap (unRewriteRule . unAxiom) axioms)
-                    putStrLn' . show $ fmap (\x -> getRightPattern x == (getRightPattern . unRewriteRule) rule) (fmap (unRewriteRule . unClaim) claims)
-                    -- putStrLn' . show $ elemIndex rule (fmap unClaim claims)
-                    -- putStrLn' . show $ elemIndex rule (fmap unAxiom axioms)
+                    let mid = getRuleIndex
+                                . Attribute.identifier
+                                . Rule.attributes
+                                . Rule.getRewriteRule
+                                $ rule
+                    case mid of
+                        (Just id) -> do
+                            if id < (length axioms)
+                               then putStrLn' $ "Axiom " <> show id
+                               else putStrLn' $ "Claim " <> show (id - (length axioms))
+                        Nothing -> do
+                            putStrLn' "Error: identifier attribute wasn't initialized"
                 Nothing ->
-                    return ()
+                    putStrLn' "No rule was applied."
         else putStrLn' "Invalid node!"
 
 showPrecBranch
@@ -375,8 +382,8 @@ tryAxiomClaim eac = do
                     graph'@Strategy.ExecutionGraph { graph = gr } <-
                         lift $ stepper
                             claim
-                            (either (const claims) id eac')
-                            (either id (const axioms) eac')
+                            (either (const []) id eac')
+                            (either id (const []) eac')
                             graph
                             node
                     case Graph.suc' $ Graph.context gr node of
@@ -475,7 +482,7 @@ labelDel lbl = do
 
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
-    putStrLn' $ show rule
+    putStrLn' $ unparseToString rule
     putStrLn'
         . show
         . pretty
