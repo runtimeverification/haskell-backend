@@ -48,11 +48,12 @@ unprovenNodes executionGraph =
 
 data Prim rule
     = CheckProven
+    | RemoveDestination
 
 transitionRule
     :: Monad m
     => Prim rule
     -> ProofState goal
     -> Strategy.TransitionT rule m (ProofState goal)
-transitionRule _ Proven = empty
-transitionRule _ state  = return state
+transitionRule CheckProven Proven = empty
+transitionRule _ state            = return state

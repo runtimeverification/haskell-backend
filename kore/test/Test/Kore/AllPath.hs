@@ -108,4 +108,7 @@ test_transitionRule =
     , transitionRule AllPath.CheckProven (AllPath.GoalRem 1)
         `equals_`
         [(AllPath.GoalRem 1, mempty)]
+    , transitionRule AllPath.RemoveDestination AllPath.Proven
+        `equals_`
+        [(AllPath.Proven, mempty)]
     ]
