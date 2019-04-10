@@ -9,6 +9,8 @@ import           Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
 import           Data.Sequence
                  ( Seq )
+import           GHC.Stack
+                 ( HasCallStack )
 
 import qualified Kore.AllPath as AllPath
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -98,7 +100,7 @@ transitionRule prim state =
         (AllPath.transitionRule removeDestination checkGoal prim state)
   where
     removeDestination (src, dst) = return (src - dst, dst)
-    checkGoal (src, _) = return (src == 0)
+    checkGoal (src, dst) = return (src == dst)
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
@@ -120,10 +122,20 @@ test_transitionRule_RemoveDestination =
 
 test_transitionRule_TriviallyValid :: [TestTree]
 test_transitionRule_TriviallyValid =
-    [ run AllPath.Proven           `equals_` [(AllPath.Proven,    mempty)]
-    , run (AllPath.Goal    (2, 1)) `equals_` [(AllPath.Goal    (2, 1), mempty)]
-    , run (AllPath.GoalRem (0, 1)) `equals_` [(AllPath.Proven, mempty)]
-    , run (AllPath.GoalRem (2, 1)) `equals_` [(AllPath.GoalRem (2, 1), mempty)]
+    [ staysTheSame AllPath.Proven
+    , staysTheSame (AllPath.Goal    (2, 1))
+    , staysTheSame (AllPath.GoalRem (2, 1))
+    , becomesProven (AllPath.GoalRem (1, 1))
     ]
   where
     run = transitionRule AllPath.TriviallyValid
+    staysTheSame
+        :: HasCallStack
+        => AllPath.ProofState (Integer, Integer)
+        -> TestTree
+    staysTheSame state = run state `equals_` [(state, mempty)]
+    becomesProven
+        :: HasCallStack
+        => AllPath.ProofState (Integer, Integer)
+        -> TestTree
+    becomesProven state = run state `equals_` [(AllPath.Proven, mempty)]
