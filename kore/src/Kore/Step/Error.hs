@@ -17,8 +17,12 @@ module Kore.Step.Error
 import           Data.Bifunctor
                  ( first )
 import qualified Data.Set as Set
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Unification.Error
+import Kore.Unparser
 
 {-| 'StepError' represents the various error cases encountered while executing
 a single step.
@@ -31,6 +35,14 @@ data StepError level variable
     | StepErrorUnsupportedSymbolic
     -- ^ Error from an unsupported symbolic rule application.
     deriving (Show, Eq)
+
+instance
+    Unparse (variable level) =>
+    Pretty (StepError level variable)
+  where
+    pretty (StepErrorUnification  err) = Pretty.pretty err
+    pretty (StepErrorSubstitution err) = Pretty.pretty err
+    pretty StepErrorUnsupportedSymbolic = "Unsupported symbolic rule"
 
 {-| 'substitutionErrorVariables' extracts all variables in a
 'SubstitutionError' as a set.

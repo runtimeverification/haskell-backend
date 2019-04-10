@@ -297,9 +297,10 @@ transitionRule
                 config
                 rules
         case result of
-            Left _ ->
+            Left err ->
                 (error . show . Pretty.vsep)
                 [ "Not implemented error:"
+                , Pretty.indent 4 (Pretty.pretty err)
                 , "while applying a \\rewrite axiom to the pattern:"
                 , Pretty.indent 4 (unparse config)
                 ,   "We decided to end the execution because we don't \
