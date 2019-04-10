@@ -4,11 +4,10 @@ License     : NCSA
 -}
 module Kore.AllPath where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import qualified Control.Monad.Trans as Monad.Trans
-import           Data.Maybe
-                 ( mapMaybe )
+import Control.Applicative
+       ( Alternative (..) )
+import Data.Maybe
+       ( mapMaybe )
 
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Strategy as Strategy
@@ -47,9 +46,13 @@ unprovenNodes executionGraph =
     $ mapMaybe extractUnproven
     $ Strategy.pickFinal executionGraph
 
+{- | The primitive transitions of the all-path reachability proof strategy.
+ -}
 data Prim rule
     = CheckProven
+    -- ^ End execution on this branch if the state is 'Proven'.
     | CheckGoalRem
+    -- ^ End execution on this branch if the state is 'GoalRem'.
     | RemoveDestination
     | TriviallyValid
 
