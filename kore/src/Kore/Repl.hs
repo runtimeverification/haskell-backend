@@ -32,6 +32,7 @@ import           System.IO
 import           Text.Megaparsec
                  ( parseMaybe )
 
+import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -93,8 +94,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     state :: ReplState level
     state =
         ReplState
-            { axioms  = fmap addIndex (zip axioms' [0..(length axioms')])
-            , claims  = fmap addIndexClaim (zip claims' [(length axioms')..(length claims')] )
+            { axioms  = fmap Axiom (fmap addIndex (zip (fmap unAxiom axioms') [0..(length axioms')]))
+            , claims  = map (\(x, y) -> Claim x y) (zip (fmap addIndex (zip (fmap rule claims') [(length axioms')..(length claims')] )) (fmap attributes claims'))
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
@@ -105,27 +106,21 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , labels  = Map.empty
             }
 
-    addIndex :: (Axiom level, Int) -> Axiom level
-    addIndex (ax, n) =
-        modifyAttribute (mapAttribute n (getAttribute ax)) ax
+    addIndex
+        :: (Rule.RewriteRule level Variable, Int)
+        -> Rule.RewriteRule level Variable
+    addIndex (rw, n) =
+        modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
-    addIndexClaim :: (Claim level, Int) -> Claim level
-    addIndexClaim (cl, n) =
-        modifyAttributeClaim (mapAttribute n (getAttributeClaim cl)) cl
+    modifyAttribute
+        :: Attribute.Axiom
+        -> Rule.RewriteRule level Variable
+        -> Rule.RewriteRule level Variable
+    modifyAttribute att (Rule.RewriteRule rp) =
+        Rule.RewriteRule $ rp { Rule.attributes = att }
 
-    modifyAttribute :: Attribute.Axiom -> Axiom level -> Axiom level
-    modifyAttribute att (Axiom (Rule.RewriteRule rp)) =
-        Axiom . Rule.RewriteRule $ rp { Rule.attributes = att }
-
-    modifyAttributeClaim :: Attribute.Axiom -> Claim level -> Claim level
-    modifyAttributeClaim att (Claim (Rule.RewriteRule rp) att') =
-        Claim (Rule.RewriteRule rp { Rule.attributes = att }) att'
-
-    getAttribute :: Axiom level -> Attribute.Axiom
-    getAttribute = Rule.attributes . Rule.getRewriteRule . unAxiom
-
-    getAttributeClaim :: Claim level -> Attribute.Axiom
-    getAttributeClaim = Rule.attributes . Rule.getRewriteRule . rule
+    getAttribute :: Rule.RewriteRule level Variable -> Attribute.Axiom
+    getAttribute = Rule.attributes . Rule.getRewriteRule
 
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
     mapAttribute n attr =
