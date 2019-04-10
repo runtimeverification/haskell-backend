@@ -64,24 +64,14 @@ transitionRule
     -> Strategy.TransitionT rule m (ProofState goal)
 transitionRule removeDestination checkGoal = transitionRuleWorker
   where
-    transitionRuleWorker CheckProven state =
-        case state of
-            Proven -> empty
-            _      -> return state
+    transitionRuleWorker CheckProven Proven = empty
+    transitionRuleWorker CheckGoalRem (GoalRem _) = empty
 
-    transitionRuleWorker CheckGoalRem state =
-        case state of
-            GoalRem _ -> empty
-            _         -> return state
+    transitionRuleWorker RemoveDestination (Goal g) =
+        GoalRem <$> removeDestination g
 
-    transitionRuleWorker RemoveDestination state =
-        case state of
-            Goal    g -> GoalRem <$> removeDestination g
-            _         -> return state
+    transitionRuleWorker TriviallyValid state@(GoalRem g) = do
+        valid <- Monad.Trans.lift (checkGoal g)
+        if valid then return Proven else return state
 
-    transitionRuleWorker TriviallyValid state =
-        case state of
-            GoalRem g -> do
-                valid <- Monad.Trans.lift (checkGoal g)
-                if valid then return Proven else return state
-            _         -> return state
+    transitionRuleWorker _ state = return state
