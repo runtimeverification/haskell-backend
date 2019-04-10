@@ -17,9 +17,11 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
+import qualified Data.Foldable as Foldable
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Common
                  ( SortedVariable (..), Variable )
@@ -64,7 +66,7 @@ import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
 import           Kore.Unparser
-                 ( Unparse, unparseToString )
+                 ( Unparse, unparse, unparseToString )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -310,10 +312,16 @@ applyFirstSimplifierThatWorks
                     --
                     -- Until we have a clear example that this can actually
                     -- happen, we throw an error.
-                    ((error . unlines)
+                    ((error . show . Pretty.vsep)
                         [ "Unexpected simplification result with remainder:"
-                        , "  input: " ++ unparseToString patt
-                        , "  result: " ++ show applicationResult
+                        , Pretty.indent 2 "input:"
+                        , Pretty.indent 4 (unparse patt)
+                        , Pretty.indent 2 "results:"
+                        , (Pretty.indent 4 . Pretty.vsep)
+                            (unparse <$> Foldable.toList orResults)
+                        , Pretty.indent 2 "remainders:"
+                        , (Pretty.indent 4 . Pretty.vsep)
+                            (unparse <$> Foldable.toList orRemainders)
                         ]
                     )
                 return (applicationResult, SimplificationProof)
