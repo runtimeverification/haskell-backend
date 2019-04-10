@@ -94,7 +94,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     state =
         ReplState
             { axioms  = fmap addIndex (zip axioms' [0..(length axioms')])
-            , claims  = fmap addIndexClaim (zip claims' [0..(length claims')] )
+            , claims  = fmap addIndexClaim (zip claims' [(length axioms')..(length claims')] )
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
@@ -106,31 +106,33 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             }
 
     addIndex :: (Axiom level, Int) -> Axiom level
-    addIndex (ax, n) = g (mapAttribute n (getAttribute ax)) ax
+    addIndex (ax, n) =
+        modifyAttribute (mapAttribute n (getAttribute ax)) ax
 
     addIndexClaim :: (Claim level, Int) -> Claim level
-    addIndexClaim (cl, n) = gclaim (mapAttribute n (getAttributeClaim cl)) cl
+    addIndexClaim (cl, n) =
+        modifyAttributeClaim (mapAttribute n (getAttributeClaim cl)) cl
 
-    g :: Attribute.Axiom -> Axiom level -> Axiom level
-    g att (Axiom (Rule.RewriteRule rp)) =
+    modifyAttribute :: Attribute.Axiom -> Axiom level -> Axiom level
+    modifyAttribute att (Axiom (Rule.RewriteRule rp)) =
         Axiom . Rule.RewriteRule $ rp { Rule.attributes = att }
 
-    gclaim :: Attribute.Axiom -> Claim level -> Claim level
-    gclaim att (Claim (Rule.RewriteRule rp) att') =
+    modifyAttributeClaim :: Attribute.Axiom -> Claim level -> Claim level
+    modifyAttributeClaim att (Claim (Rule.RewriteRule rp) att') =
         Claim (Rule.RewriteRule rp { Rule.attributes = att }) att'
-
-    getAttributeClaim :: Claim level -> Attribute.Axiom
-    getAttributeClaim = Rule.attributes . Rule.getRewriteRule . rule
 
     getAttribute :: Axiom level -> Attribute.Axiom
     getAttribute = Rule.attributes . Rule.getRewriteRule . unAxiom
 
+    getAttributeClaim :: Claim level -> Attribute.Axiom
+    getAttributeClaim = Rule.attributes . Rule.getRewriteRule . rule
+
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
     mapAttribute n attr =
-        Lens.over Attribute.lensIdentifier (f n) attr
+        Lens.over Attribute.lensIdentifier (makeRuleIndex n) attr
 
-    f :: Int -> RuleIndex -> RuleIndex
-    f n _ = RuleIndex (Just n)
+    makeRuleIndex :: Int -> RuleIndex -> RuleIndex
+    makeRuleIndex n _ = RuleIndex (Just n)
 
     firstClaim :: Claim level
     firstClaim = maybe (error "No claims found") id $ listToMaybe claims'

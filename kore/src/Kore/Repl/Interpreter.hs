@@ -295,11 +295,11 @@ showRule configNode = do
     let node' = maybe node id configNode
     if node' `elem` Graph.nodes graph
         then do
-           -- putStrLn' $ "Rule for node " <> show node' <> " is:"
-           -- unparseNodeLabels
-           --     . Graph.inn'
-           --     . Graph.context graph
-           --     $ node'
+            putStrLn' $ "Rule for node " <> show node' <> " is:"
+            unparseNodeLabels
+                . Graph.inn'
+                . Graph.context graph
+                $ node'
             let mrule = getRewriteRuleFromLabel
                             . Graph.inn'
                             . Graph.context graph
@@ -311,16 +311,20 @@ showRule configNode = do
                                 . Rule.attributes
                                 . Rule.getRewriteRule
                                 $ rule
-                    case mid of
-                        (Just id) -> do
-                            if id < (length axioms)
-                               then putStrLn' $ "Axiom " <> show id
-                               else putStrLn' $ "Claim " <> show (id - (length axioms))
-                        Nothing -> do
-                            putStrLn' "Error: identifier attribute wasn't initialized"
+                    putStrLn' $ maybe
+                        "Error: identifier attribute wasn't initialized."
+                        (axiomOrClaim (length axioms))
+                        mid
                 Nothing ->
                     putStrLn' "No rule was applied."
         else putStrLn' "Invalid node!"
+  where
+    axiomOrClaim :: Int -> Int -> String
+    axiomOrClaim len id =
+        if id < len
+            then "Rule is axiom " <> show id
+            else "Rule is claim " <> show (id - len)
+
 
 showPrecBranch
     :: Maybe Int
@@ -615,30 +619,6 @@ data StepResult
 
 unClaim :: forall level. Claim level -> RewriteRule level Variable
 unClaim Claim { rule } = rule
-
-unRewriteRule
-    :: forall level.
-    RewriteRule level Variable
-    -> RulePattern level Variable
-unRewriteRule RewriteRule { getRewriteRule } = getRewriteRule
-
-getLeftPattern
-    :: forall level.
-    RulePattern level Variable
-    -> StepPattern level Variable
-getLeftPattern RulePattern { left } = left
-
-getRightPattern
-    :: forall level.
-    RulePattern level Variable
-    -> StepPattern level Variable
-getRightPattern RulePattern { right } = right
-
-getAttributes
-    :: forall level.
-    RulePattern level Variable
-    -> Attribute.Axiom
-getAttributes RulePattern { attributes } = attributes
 
 emptyExecutionGraph :: Claim Object -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
