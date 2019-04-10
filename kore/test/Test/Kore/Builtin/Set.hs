@@ -317,35 +317,49 @@ test_unifyFramingVariable =
 -- @id@ or @reverse@, produces a pattern of the form
 -- `SetItem(absInt(X:Int)) Rest:Set`, or
 -- `Rest:Set SetItem(absInt(X:Int))`, respectively.
+selectFunctionPattern
+    :: Variable Object          -- ^element variable
+    -> Variable Object          -- ^set variable
+    -> (forall a . [a] -> [a])  -- ^scrambling function
+    -> CommonStepPattern Object
+selectFunctionPattern elementVar frameVar permutation  =
+    mkApp setSort concatSetSymbol $ permutation [singleton, mkVar frameVar]
+  where
+    element = mkApp intSort absIntSymbol  [mkVar elementVar]
+    singleton = mkApp setSort elementSetSymbol [ element ]
+
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
+selectPattern
+    :: Variable Object          -- ^element variable
+    -> Variable Object          -- ^set variable
+    -> (forall a . [a] -> [a])  -- ^scrambling function
+    -> CommonStepPattern Object
+selectPattern elementVar frameVar permutation  =
+    mkApp setSort concatSetSymbol $ permutation [element, mkVar frameVar]
+  where
+    element = mkApp setSort elementSetSymbol [mkVar elementVar]
+
 selectFunctionPatternGen
     :: Monad m
-    => ([CommonStepPattern Object] -> [CommonStepPattern Object])
+    => (forall a . [a] -> [a])  -- ^scrambling function
     -> PropertyT m (CommonStepPattern Object)
 selectFunctionPatternGen permutation = do
     elementVar <- forAll (standaloneGen $ variableGen intSort)
     frameVar <- forAll (standaloneGen $ variableGen setSort)
     Monad.when (variableName elementVar == variableName frameVar) discard
-    let element = mkApp intSort absIntSymbol  [mkVar elementVar]
-        singleton =  mkApp setSort elementSetSymbol [ element ]
-        framedSet = mkApp setSort concatSetSymbol
-                    $ permutation [singleton, mkVar frameVar]
-    return framedSet
+    return $ selectFunctionPattern elementVar frameVar permutation
 
--- Given a function to scramble the arguments to concat, i.e.,
--- @id@ or @reverse@, produces a pattern of the form
--- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
 selectPatternGen
     :: Monad m
-    => ([CommonStepPattern Object] -> [CommonStepPattern Object])
+    => (forall a . [a] -> [a])
     -> PropertyT m (CommonStepPattern Object)
 selectPatternGen permutation = do
     elementVar <- forAll (standaloneGen $ variableGen intSort)
     frameVar <- forAll (standaloneGen $ variableGen setSort)
     Monad.when (variableName elementVar == variableName frameVar) discard
-    let element = mkApp setSort elementSetSymbol [mkVar elementVar]
-        framedSet = mkApp setSort concatSetSymbol
-                    $ permutation [element, mkVar frameVar]
-    return framedSet
+    return $ selectPattern elementVar frameVar permutation
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
