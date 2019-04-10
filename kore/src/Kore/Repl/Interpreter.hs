@@ -633,9 +633,6 @@ getAttributes
     -> Attribute.Axiom
 getAttributes RulePattern { attributes } = attributes
 
-unAxiom :: Axiom level -> RewriteRule level Variable
-unAxiom (Axiom rule) = rule
-
 emptyExecutionGraph :: Claim Object -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
 

@@ -26,6 +26,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( listToMaybe )
+import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
@@ -33,6 +34,7 @@ import           Text.Megaparsec
 
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -43,11 +45,13 @@ import           Kore.OnePath.Verification
                  ( Axiom )
 import           Kore.OnePath.Verification
                  ( Claim )
+import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import           Kore.Step.Simplification.Data
@@ -89,7 +93,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     state :: ReplState level
     state =
         ReplState
-            { axioms  = axioms'
+            { axioms  = fmap addIndex (zip axioms' [0..(length axioms')])
             , claims  = claims'
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
@@ -100,6 +104,23 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , stepper = stepper0
             , labels  = Map.empty
             }
+
+    addIndex :: (Axiom level, Int) -> Axiom level
+    addIndex (ax, n) = g (mapAttribute n (getAttribute ax)) ax
+
+    g :: Attribute.Axiom -> Axiom level -> Axiom level
+    g att (Axiom (Rule.RewriteRule rp)) =
+        Axiom . Rule.RewriteRule $ rp { Rule.attributes = att }
+
+    getAttribute :: Axiom level -> Attribute.Axiom
+    getAttribute = Rule.attributes . Rule.getRewriteRule . unAxiom
+
+    mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
+    mapAttribute n attr =
+        Lens.over Attribute.lensIdentifier (f n) attr
+
+    f :: Int -> RuleIndex -> RuleIndex
+    f n _ = RuleIndex (Just n)
 
     firstClaim :: Claim level
     firstClaim = maybe (error "No claims found") id $ listToMaybe claims'

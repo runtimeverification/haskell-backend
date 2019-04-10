@@ -91,7 +91,9 @@ isTrusted Claim { attributes = Attribute.Axiom { trusted } }=
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
-newtype Axiom level = Axiom (RewriteRule level Variable)
+newtype Axiom level = Axiom
+    { unAxiom :: RewriteRule level Variable
+    }
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
