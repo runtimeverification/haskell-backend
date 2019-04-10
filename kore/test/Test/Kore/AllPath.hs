@@ -5,11 +5,16 @@ import Test.Tasty
 import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( (&) )
+import           Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
+import           Data.Sequence
+                 ( Seq )
 
 import qualified Kore.AllPath as AllPath
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.Transition
+                 ( runTransitionT )
 
 import Test.Kore.Comparators ()
 import Test.Terse
@@ -82,4 +87,25 @@ test_unprovenNodes =
         )
         `equals_`
         (MultiOr.MultiOr [1])
+    ]
+
+transitionRule
+    :: AllPath.Prim ()
+    -> AllPath.ProofState Integer
+    -> [(AllPath.ProofState Integer, Seq ())]
+transitionRule prim state =
+    (runIdentity . runTransitionT)
+        (AllPath.transitionRule prim state)
+
+test_transitionRule :: [TestTree]
+test_transitionRule =
+    [ transitionRule AllPath.CheckProven AllPath.Proven
+        `satisfies_`
+        Foldable.null
+    , transitionRule AllPath.CheckProven (AllPath.Goal 1)
+        `equals_`
+        [(AllPath.Goal 1, mempty)]
+    , transitionRule AllPath.CheckProven (AllPath.GoalRem 1)
+        `equals_`
+        [(AllPath.GoalRem 1, mempty)]
     ]

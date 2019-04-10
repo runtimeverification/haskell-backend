@@ -4,6 +4,8 @@ License     : NCSA
 -}
 module Kore.AllPath where
 
+import Control.Applicative
+       ( Alternative (..) )
 import Data.Maybe
        ( mapMaybe )
 
@@ -43,3 +45,14 @@ unprovenNodes executionGraph =
     MultiOr.MultiOr
     $ mapMaybe extractUnproven
     $ Strategy.pickFinal executionGraph
+
+data Prim rule
+    = CheckProven
+
+transitionRule
+    :: Monad m
+    => Prim rule
+    -> ProofState goal
+    -> Strategy.TransitionT rule m (ProofState goal)
+transitionRule _ Proven = empty
+transitionRule _ state  = return state
