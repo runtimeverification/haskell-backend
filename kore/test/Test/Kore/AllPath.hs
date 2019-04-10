@@ -128,6 +128,19 @@ test_transitionRule_CheckProven =
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
 
+test_transitionRule_CheckGoalRem :: [TestTree]
+test_transitionRule_CheckGoalRem =
+    [ unmodified AllPath.Proven
+    , unmodified (AllPath.Goal    (2, 1))
+    , done       (AllPath.GoalRem undefined)
+    ]
+  where
+    run = transitionRule AllPath.CheckGoalRem
+    unmodified :: HasCallStack => ProofState -> TestTree
+    unmodified state = run state `equals_` [(state, mempty)]
+    done :: HasCallStack => ProofState -> TestTree
+    done state = run state `equals_` []
+
 test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
     [ unmodified AllPath.Proven

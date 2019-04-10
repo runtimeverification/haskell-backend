@@ -49,6 +49,7 @@ unprovenNodes executionGraph =
 
 data Prim rule
     = CheckProven
+    | CheckGoalRem
     | RemoveDestination
     | TriviallyValid
 
@@ -63,14 +64,25 @@ transitionRule
     -> Strategy.TransitionT rule m (ProofState goal)
 transitionRule removeDestination checkGoal = transitionRuleWorker
   where
-    transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckProven state  = return state
+    transitionRuleWorker CheckProven state =
+        case state of
+            Proven -> empty
+            _      -> return state
 
-    transitionRuleWorker RemoveDestination Proven      = return Proven
-    transitionRuleWorker RemoveDestination (GoalRem _) = empty
-    transitionRuleWorker RemoveDestination (Goal g)    = GoalRem <$> removeDestination g
+    transitionRuleWorker CheckGoalRem state =
+        case state of
+            GoalRem _ -> empty
+            _         -> return state
 
-    transitionRuleWorker TriviallyValid state@(GoalRem g) = do
-        valid <- Monad.Trans.lift (checkGoal g)
-        if valid then return Proven else return state
-    transitionRuleWorker TriviallyValid state = return state
+    transitionRuleWorker RemoveDestination state =
+        case state of
+            Proven    -> return Proven
+            GoalRem _ -> empty
+            Goal    g -> GoalRem <$> removeDestination g
+
+    transitionRuleWorker TriviallyValid state =
+        case state of
+            GoalRem g -> do
+                valid <- Monad.Trans.lift (checkGoal g)
+                if valid then return Proven else return state
+            _         -> return state
