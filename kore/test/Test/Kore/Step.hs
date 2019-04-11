@@ -7,6 +7,10 @@ import Test.Tasty.HUnit
 import qualified Control.Exception as Exception
 import           Data.Default
                  ( def )
+import           Data.Function
+                 ( (&) )
+import           Data.Functor
+                 ( (<&>) )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -37,6 +41,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import qualified Kore.Step.Strategy as Strategy
 import qualified SMT
 
 import           Test.Kore
@@ -95,36 +100,37 @@ applyStrategy testName start axioms expected =
 
 takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
 takeSteps (Start start, wrappedAxioms) =
-    run
-        (pure start)
-        (unwrap <$> wrappedAxioms)
+    makeExecutionGraph start (unwrap <$> wrappedAxioms)
+    & evalSimplifier emptyLogger
+    & SMT.runSMT SMT.defaultConfig
+    <&> pickLongest
+
   where
+    makeExecutionGraph configuration axioms =
+        Strategy.runStrategy
+            transition
+            (repeat $ allRewrites axioms)
+            (pure configuration, mempty)
+
     metadataTools = mockMetadataTools
     simplifier = Simplifier.create metadataTools Map.empty
     substitutionSimplifier =
         Mock.substitutionSimplifier metadataTools
+    transition =
+        transitionRule
+            metadataTools
+            substitutionSimplifier
+            simplifier
+            Map.empty
 
 
     unwrap (Axiom a) = a
-    run
-        :: MetaOrObject level
-        => CommonExpandedPattern level
-        -- ^left-hand-side of unification
-        -> [RewriteRule level Variable]
-        -> IO (CommonExpandedPattern level, StepProof level Variable)
-    run configuration axioms =
-        (<$>) pickLongest
-        $ SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
-        $ runStrategy
-            (transitionRule
-                metadataTools
-                substitutionSimplifier
-                simplifier
-                Map.empty
-            )
-            (repeat $ allRewrites axioms)
-            (configuration, mempty)
+    -- run
+        -- :: MetaOrObject level
+        -- => CommonExpandedPattern level
+        -- -- ^left-hand-side of unification
+        -- -> [RewriteRule level Variable]
+        -- -> IO (CommonExpandedPattern level, StepProof level Variable)
 
 
 
