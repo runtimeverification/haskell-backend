@@ -119,8 +119,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     addIndexesToClaims axs cls =
         fmap (\(x, y) -> Claim x y)
             (zip (fmap addIndex
-                    (zip (fmap rule cls)
-                         [(length axs)..(length cls)] ))
+                       (zip (fmap rule cls)
+                            [(length axs)..(length cls)] ))
                  (fmap attributes cls))
 
     addIndex
