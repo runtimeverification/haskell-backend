@@ -88,14 +88,16 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, sortAttributes )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Representation.PredicateSubstitution
+                 ( erasePredicatedTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), SimplificationType, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 SimplificationType, Simplifier, StepPatternSimplifier )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError (..) )
 import           Kore.Unparser
@@ -529,9 +531,9 @@ unifyEquals
 unifyEquals
     simplificationType
     tools
-    _
-    _
-    _
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     unifyEqualsChildren
   =
     unifyEquals0
@@ -602,16 +604,48 @@ unifyEquals
         -- Note that x can be a proper symbolic pattern (not just a variable)
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
-            :: Domain.InternalSet  -- ^ concrete set
-            -> SymbolOrAlias Object  -- ^ 'element' symbol
-            -> p  -- ^ key
-            -> StepPattern Object variable  -- ^ framing variable
+            :: Domain.InternalSet   -- ^ concrete set
+            -> SymbolOrAlias Object -- ^ 'element' symbol
+            -> p                    -- ^ key
+            -> p                    -- ^ framing variable
             -> (err Simplifier) (expanded, proof)
-        unifyEqualsSelect builtin1' _ _ _
-          | set1 == Set.empty = return (ExpandedPattern.bottom, SimplificationProof)
-          | otherwise = Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+        unifyEqualsSelect builtin1' _ key2 set2
+          | set1 == Set.empty =
+            return (ExpandedPattern.bottom, SimplificationProof)
+          | otherwise = case Set.toList set1 of
+            [fromConcreteStepPattern -> key1] ->
+                Reflection.give tools $ do
+                    (elemUnifier, _proof) <-
+                        unifyEqualsChildren key1 key2
+                    (setUnifier, _proof) <-
+                        unifyEqualsChildren set2
+                            $ asInternal tools sort1 Set.empty
+                    let elemCondition = erasePredicatedTerm elemUnifier
+                        setCondition = erasePredicatedTerm setUnifier
+                        dv1Expanded = pure dv1
+                    (dv1WithElemCondition, _proof) <- Monad.Trans.lift $
+                        ExpandedPattern.mergeWithPredicateSubstitution
+                            tools
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
+                            elemCondition
+                            dv1Expanded
+                    (dv1WithCondition, _proof) <- Monad.Trans.lift $
+                        ExpandedPattern.mergeWithPredicateSubstitution
+                            tools
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
+                            setCondition
+                            dv1WithElemCondition
+                    return (dv1WithCondition, SimplificationProof)
+            _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
-            Domain.InternalSet { builtinSetChild = set1 } = builtin1'
+            Domain.InternalSet
+                { builtinSetChild = set1
+                , builtinSetSort = sort1
+                } = builtin1'
 
     unifyEquals0 app_@(App_ _ _) dv_@(DV_ _ _) = unifyEquals0 dv_ app_
 

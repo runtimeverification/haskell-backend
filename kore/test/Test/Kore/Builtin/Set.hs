@@ -1,5 +1,7 @@
 module Test.Kore.Builtin.Set where
 
+import           GHC.Stack
+                 ( HasCallStack )
 import           Hedgehog hiding
                  ( property )
 import qualified Hedgehog.Gen as Gen
@@ -37,6 +39,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import qualified Kore.Unification.Substitution as Substitution
+import qualified SMT
 
 
 import           Test.Kore
@@ -388,20 +391,32 @@ test_unifySelectFromSingleton =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (elementVar, elemStepPattern)
-                                , (setVar, asInternal Set.empty)
+                                [ (setVar, asInternal Set.empty)
+                                , (elementVar, elemStepPattern)
                                 ]
                         }
-                unifiesWith pat1 pat2 =
-                    (===) expect =<< evaluate (mkAnd pat1 pat2)
             -- { 5 } /\ SetItem(X:Int) Rest:Set
-            singleton `unifiesWith` selectPat
-            selectPat `unifiesWith` singleton
+            (singleton `unifiesWith` selectPat) expect
+            (selectPat `unifiesWith` singleton) expect
             -- { 5 } /\ Rest:Set SetItem(X:Int)
-            singleton `unifiesWith` selectPatRev
-            selectPatRev `unifiesWith` singleton
+            (singleton `unifiesWith` selectPatRev) expect
+            (selectPatRev `unifiesWith` singleton) expect
         )
 
+
+-- use as (pat1 `unifiesWith` pat2) expect
+unifiesWith
+    :: HasCallStack
+    => CommonStepPattern Object
+    -> CommonStepPattern Object
+    -> CommonExpandedPattern Object
+    -> PropertyT SMT.SMT ()
+unifiesWith pat1 pat2 Predicated { term, predicate, substitution } = do
+    Predicated { term = uTerm, predicate = uPred, substitution = uSubst } <-
+        evaluate (mkAnd pat1 pat2)
+    term === uTerm
+    predicate === uPred
+    Substitution.toMap substitution === Substitution.toMap uSubst
 
 {- | Unify a concrete Set with symbolic-keyed Set.
 
