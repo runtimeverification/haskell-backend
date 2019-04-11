@@ -95,13 +95,14 @@ applyStrategy testName start axioms expected =
     testCase testName $
         takeSteps (start, axioms) >>= compareTo expected
 
--- Types
+        {- Types used in this file -}
 
 type RewriteRule' variable = RewriteRule Object variable
 type StepPattern' variable = StepPattern Object variable
 type CommonStepPattern' = CommonStepPattern Object
 type ExpandedPattern' variable = ExpandedPattern Object variable
 type CommonExpandedPattern' = CommonExpandedPattern Object
+type Sort' = Sort Object
 
 type StepProof' variable = StepProof Object variable
 
@@ -114,8 +115,7 @@ type Actual = ExpandedPattern' Variable
 type Proof = StepProof' Variable
 
 
-
--- API Helpers
+        {- API Helpers -}
 
 takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
 takeSteps (Start start, wrappedAxioms) =
@@ -138,7 +138,10 @@ compareTo
 compareTo (Expect expected) (actual, _ignoredProof) =
     assertEqualWithExplanation "" (pure expected) actual
 
--- Builders
+-- Useful constant values
+
+anySort :: Sort'
+anySort = sort "irrelevant"
 
 mockTransitionRule
     :: Prim (RewriteRule' Variable)
@@ -159,10 +162,12 @@ mockTransitionRule =
     substitutionSimplifier =
         Mock.substitutionSimplifier metadataTools
 
+-- Builders
+
 -- | Create a function pattern from a function name and list of argnames.
 applyConstructorToVariables :: Text -> [Text] -> TestPattern
 applyConstructorToVariables name arguments =
-    mkApp patternMetaSort symbol $ fmap var arguments
+    mkApp anySort symbol $ fmap var arguments
   where
       symbol = SymbolOrAlias -- can this be more abstact?
         { symbolOrAliasConstructor = Id name AstLocationTest
@@ -172,9 +177,15 @@ applyConstructorToVariables name arguments =
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
 var name =
-    mkVar $ (Variable (testId name) mempty) patternMetaSort
+    mkVar $ (Variable (testId name) mempty) anySort
 -- can the above be more abstract?
 
+sort :: Text -> Sort'
+sort name =
+    SortActualSort $ SortActual
+      { sortActualName = Id name AstLocationTest
+      , sortActualSorts = []
+      }
 
 rewritesTo
     :: StepPattern' variable
