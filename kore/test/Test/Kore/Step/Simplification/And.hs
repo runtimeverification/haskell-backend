@@ -19,7 +19,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom, top )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr (MultiOr) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -27,7 +28,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.And
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( evalSimplifier, gather )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Unification.Substitution as Substitution
@@ -75,16 +76,16 @@ test_andSimplification =
 
     , testCase "And with partial booleans" $ do
         assertEqualWithExplanation "false term and something = false"
-            ExpandedPattern.bottom
+            mempty
             =<< evaluatePatterns bottomTerm fOfXExpanded
         assertEqualWithExplanation "something and false term = false"
-            ExpandedPattern.bottom
+            mempty
             =<< evaluatePatterns fOfXExpanded bottomTerm
         assertEqualWithExplanation "false predicate and something = false"
-            ExpandedPattern.bottom
+            mempty
             =<< evaluatePatterns falsePredicate fOfXExpanded
         assertEqualWithExplanation "something and false predicate = false"
-            ExpandedPattern.bottom
+            mempty
             =<< evaluatePatterns fOfXExpanded falsePredicate
 
     , testGroup "And with normal patterns"
@@ -96,7 +97,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "And function terms" $ do
             let expect =
@@ -106,7 +107,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "And predicates" $ do
             let expect =
@@ -130,7 +131,7 @@ test_andSimplification =
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "And substitutions - simple" $ do
             let expect =
@@ -152,7 +153,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap [(Mock.z, gOfX)]
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "And substitutions - multiple terms" $ do
             let
@@ -173,7 +174,7 @@ test_andSimplification =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "And substitutions - separate predicate" $ do
             let
@@ -195,15 +196,9 @@ test_andSimplification =
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, gOfX)]
                     }
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "And substitutions - failure" $ do
-            let expect =
-                    Predicated
-                        { term = mkTop_
-                        , predicate = makeFalsePredicate
-                        , substitution = mempty
-                        }
             actual <-
                 evaluatePatterns
                     Predicated
@@ -224,7 +219,7 @@ test_andSimplification =
                                 )
                             ]
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr []) actual
             {-
             TODO(virgil): Uncomment this after substitution merge can handle
             function equality.
@@ -269,7 +264,7 @@ test_andSimplification =
                             [(Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns yExpanded fOfXExpanded
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "term-variable" $ do
             let expect =
@@ -280,7 +275,7 @@ test_andSimplification =
                             [(Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns fOfXExpanded yExpanded
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
         ]
 
     , testGroup "constructor and"
@@ -303,10 +298,9 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr [expect]) actual
 
         , testCase "different constructors" $ do
-            let expect = ExpandedPattern.bottom
             actual <-
                 evaluatePatterns
                     Predicated
@@ -319,13 +313,13 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqualWithExplanation "" (MultiOr []) actual
         ]
 
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
     , testCase "And-Or distribution" $ do
         let expect =
-                MultiOr.make
+                MultiOr
                     [ Predicated
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
@@ -443,18 +437,18 @@ evaluate patt =
 evaluatePatterns
     :: CommonExpandedPattern Object
     -> CommonExpandedPattern Object
-    -> IO (CommonExpandedPattern Object)
+    -> IO (CommonOrOfExpandedPattern Object)
 evaluatePatterns first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
+    $ gather
     $ makeEvaluate
-            mockMetadataTools
-            (Mock.substitutionSimplifier mockMetadataTools)
-            (Simplifier.create mockMetadataTools Map.empty)
-            Map.empty
-            first
-            second
+        mockMetadataTools
+        (Mock.substitutionSimplifier mockMetadataTools)
+        (Simplifier.create mockMetadataTools Map.empty)
+        Map.empty
+        first
+        second
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
 mockMetadataTools =
