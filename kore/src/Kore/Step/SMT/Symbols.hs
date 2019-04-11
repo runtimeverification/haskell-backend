@@ -147,6 +147,26 @@ translateAlreadyDefinedName symbol@SymbolOrAlias { symbolOrAliasConstructor } =
 
     Attribute.Symbol { smthook = Attribute.Smthook { getSmthook } } = attrs
 
+-- | Is the given symbol pre-defined for SMT?
+isAlreadyDefined
+    :: Given (MetadataTools Object Attribute.Symbol)
+    => SymbolOrAlias Object
+    -> Bool
+isAlreadyDefined symbol =
+    case getSmthook of
+        Just _ -> True
+        _      -> False
+  where
+    tools :: MetadataTools Object Attribute.Symbol
+    tools = given
+
+    MetadataTools { symAttributes } = tools
+
+    attrs :: Attribute.Symbol
+    attrs = symAttributes symbol
+
+    Attribute.Symbol { smthook = Attribute.Smthook { getSmthook } } = attrs
+
 translateName
     :: Given (MetadataTools Object Attribute.Symbol)
     => SymbolOrAlias Object
@@ -215,14 +235,15 @@ declareSymbol
             Sentence.Symbol { symbolConstructor, symbolParams }
         }
     )
-  = case translateSymbol symbol of
-        Nothing -> return ()
-        Just SymbolTranslation { name, inputSorts, resultSort } ->
-            case translateAlreadyDefinedName symbol of
-                Just _ -> return ()
-                Nothing -> SMT.declareFun_ name inputSorts resultSort
+  | not (isAlreadyDefined symbol)
+  , Just translation <- translateSymbol symbol
+  = declareUndefinedSymbol translation
+  | otherwise
+  = return ()
   where
     symbol = SymbolOrAlias
         { symbolOrAliasConstructor = symbolConstructor
         , symbolOrAliasParams      = map SortVariableSort symbolParams
         }
+    declareUndefinedSymbol SymbolTranslation { name, inputSorts, resultSort } =
+        SMT.declareFun_ name inputSorts resultSort
