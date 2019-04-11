@@ -14,11 +14,6 @@ import Data.Default
 import GHC.Generics
        ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
-
 {- | This attribute is used in the REPL for tagging
     and uniquely identifiying axioms and claims.
  -}
