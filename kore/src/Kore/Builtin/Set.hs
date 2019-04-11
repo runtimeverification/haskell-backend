@@ -88,13 +88,10 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools, sortAttributes )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( erasePredicatedTerm )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  SimplificationType, Simplifier, StepPatternSimplifier )
@@ -531,9 +528,9 @@ unifyEquals
 unifyEquals
     simplificationType
     tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _
+    _
+    _
     unifyEqualsChildren
   =
     unifyEquals0
@@ -620,26 +617,11 @@ unifyEquals
                     (setUnifier, _proof) <-
                         unifyEqualsChildren set2
                             $ asInternal tools sort1 Set.empty
-                    let elemCondition = erasePredicatedTerm elemUnifier
-                        setCondition = erasePredicatedTerm setUnifier
-                        dv1Expanded = pure dv1
-                    (dv1WithElemCondition, _proof) <- Monad.Trans.lift $
-                        ExpandedPattern.mergeWithPredicateSubstitution
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
-                            elemCondition
-                            dv1Expanded
-                    (dv1WithCondition, _proof) <- Monad.Trans.lift $
-                        ExpandedPattern.mergeWithPredicateSubstitution
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
-                            setCondition
-                            dv1WithElemCondition
-                    return (dv1WithCondition, SimplificationProof)
+                    -- Return the concrete set, but capture any predicates and
+                    -- substitutions from unifying the element
+                    -- and framing variable.
+                    let result = pure dv1 <* elemUnifier <* setUnifier
+                    return (result, SimplificationProof)
             _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
             Domain.InternalSet
