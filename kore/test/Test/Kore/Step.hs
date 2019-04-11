@@ -44,6 +44,118 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Tasty.HUnit.Extensions
 
+{-
+    Tests of running a strategy by checking if the expected
+    endpoint of the rewrites is achieved.
+
+    These tests are concise examples of common situations.
+    They are more integration tests than unit tests.
+-}
+
+test_constructorRewriting :: TestTree
+test_constructorRewriting =
+    applyStrategy                              "a constructor appied to a var"
+        ( Start $ cons "c1" ["var"])
+        [ Axiom $ cons "c1" ["x1"] `rewritesTo` cons "c2" ["x1"]
+        , Axiom $ cons "c2" ["x2"] `rewritesTo` cons "c3" ["x2"]
+        ]
+        ( Expect $                              cons "c3" ["var"])
+      where
+        cons = applyConstructorToVariables
+
+
+test_ruleThatDoesn'tApply :: TestTree
+test_ruleThatDoesn'tApply =
+    applyStrategy                              "unused rewrite rule"
+        ( Start $ cons "c1"     ["var"])
+        [ Axiom $ cons "c1"     ["x1"] `rewritesTo`  cons "c2" ["x1"]
+        , Axiom $ cons "unused" ["x2"] `rewritesTo`  var "x2"
+        ]
+        ( Expect $                              cons "c2" ["var"])
+      where
+        cons = applyConstructorToVariables
+
+{-
+  Needed: Conversion of tests below into more specific tests of
+  individual Kore.Step functions.
+-}
+
+
+        {- Test API -}
+
+applyStrategy
+    :: HasCallStack
+    => TestName -> Start -> [Axiom] -> Expect -> TestTree
+applyStrategy testName start axioms expected =
+    testCase testName $
+        takeSteps (start, axioms) >>= compareTo expected
+
+
+-- API Helpers
+
+takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
+takeSteps (Start start, axioms) =
+    runSteps
+        mockMetadataTools
+        (pure start)
+        (unwrap <$> axioms)
+  where
+    unwrap (Axiom a) = a
+
+compareTo
+    :: HasCallStack
+    => Expect -> (Actual, Proof) -> IO ()
+compareTo (Expect expected) (actual, _ignoredProof) =
+    assertEqualWithExplanation "" (pure expected) actual
+
+-- Builders
+
+-- | Create a function pattern from a function name and list of argnames.
+applyConstructorToVariables :: Text -> [Text] -> TestPattern
+applyConstructorToVariables name arguments =
+    mkApp patternMetaSort symbol $ fmap var arguments
+  where
+      symbol = SymbolOrAlias -- can this be more abstact?
+        { symbolOrAliasConstructor = Id name AstLocationTest
+        , symbolOrAliasParams = []
+        }
+
+-- | Do the busywork of converting a name into a variable pattern.
+var :: Text -> TestPattern
+var name =
+    mkVar $ (Variable (testId name) mempty) patternMetaSort
+-- can the above be more abstract?
+
+
+rewritesTo
+    :: StepPattern Object variable -- Why can't this be a TestPattern?
+    -> StepPattern Object variable
+    -> RewriteRule Object variable
+rewritesTo left right =
+    RewriteRule $ RulePattern
+        { left
+        , right
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+type TestPattern = CommonStepPattern Meta
+newtype Start = Start TestPattern
+newtype Axiom = Axiom (RewriteRule Meta Variable)
+newtype Expect = Expect TestPattern
+
+type Actual = ExpandedPattern Meta Variable
+type Proof = StepProof Meta Variable
+type StepCount = Limit Natural
+
+
+{-
+
+    The following tests are old and should eventually be rewritten.
+
+-}
+
 v1, a1, b1, x1 :: Sort Meta -> Variable Meta
 v1 = Variable (testId "#v1") mempty
 a1 = Variable (testId "#a1") mempty
@@ -376,104 +488,3 @@ runSteps metadataTools configuration axioms =
         (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty
-
-
-----------
-------------  Working toward replacing much of the above
------------
-
--- test_rewriteVariable :: TestTree
--- test_rewriteVariable =
---     testGroup "variable rewriting"
---     [ applyStrategy                  "identity rewrite"
---         (Start $ var "var")
---         [Axiom $ var "x" `rewritesTo` var "x"]
---         (Expect $ var "var")
---     ]
-
-
-
-test_rewriteConstructorApplication :: TestTree
-test_rewriteConstructorApplication =
-    applyStrategy                              "rewrite: constructor application"
-        ( Start $ pat "c1" ["var"])
-        [ Axiom $ pat "c1" ["x1"] `rewritesTo` pat "c2" ["x1"]
-        , Axiom $ pat "c2" ["x2"] `rewritesTo` pat "c3" ["x2"]
-        ]
-        ( Expect $                             pat "c3" ["var"])
-      where
-        pat = applyConstructorToVariables
-
-            {- API -}
-
-applyStrategy
-    :: HasCallStack
-    => TestName -> Start -> [Axiom] -> Expect -> TestTree
-applyStrategy testName start axioms expected =
-    strategyTestCase (start, axioms) expected testName
-
-
--- API Helpers
-
-strategyTestCase
-    :: HasCallStack
-    => (Start, [Axiom]) -> Expect -> TestName -> TestTree
-strategyTestCase (start, axioms) expected testName =
-    testCase testName $
-        takeSteps (start, axioms) >>= compareTo expected
-
-takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
-takeSteps (Start start, axioms) =
-    runSteps
-        mockMetadataTools
-        (pure start)
-        (unwrap <$> axioms)
-      where
-        unwrap (Axiom a) = a    -- coerce?
-
-compareTo
-    :: HasCallStack
-    => Expect -> (Actual, Proof) -> IO ()
-compareTo (Expect expected) (actual, _ignoredProof) =
-    assertEqualWithExplanation "" (pure expected) actual
-
--- Builders
-
--- | Create a function pattern from a function name and list of argnames.
-applyConstructorToVariables :: Text -> [Text] -> TestPattern
-applyConstructorToVariables name arguments =
-    mkApp patternMetaSort symbol $ fmap var arguments
-  where
-    symbol = SymbolOrAlias -- can this be more abstact?
-        { symbolOrAliasConstructor = Id name AstLocationTest
-        , symbolOrAliasParams = []
-        }
-
--- | Do the busywork of converting a name into a variable pattern.
-var :: Text -> TestPattern
-var name =
-    mkVar $ (Variable (testId name) mempty) patternMetaSort
-    -- can the above be more abstract?
-
-
-rewritesTo
-    :: StepPattern Object variable -- Why can't this be a TestPattern?
-    -> StepPattern Object variable
-    -> RewriteRule Object variable
-rewritesTo left right =
-    RewriteRule $ RulePattern
-        { left
-        , right
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-
-type TestPattern = CommonStepPattern Meta
-newtype Start = Start TestPattern
-newtype Axiom = Axiom (RewriteRule Meta Variable)
-newtype Expect = Expect TestPattern
-
-type Actual = ExpandedPattern Meta Variable
-type Proof = StepProof Meta Variable
-type StepCount = Limit Natural
