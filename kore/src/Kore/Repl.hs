@@ -95,7 +95,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     state =
         ReplState
             { axioms  = addIndexesToAxioms axioms'
-            , claims  = addIndexesToClaims axioms' claims'
+            , claims  = addIndexesToClaims (length axioms') claims'
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
@@ -113,14 +113,14 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         fmap (Axiom . addIndex) (zip (fmap unAxiom axs) [0..(length axs)])
 
     addIndexesToClaims
-        :: [Axiom level]
+        :: Int
         -> [Claim level]
         -> [Claim level]
-    addIndexesToClaims axs cls =
+    addIndexesToClaims len cls =
         fmap (\(x, y) -> Claim x y)
             (zip (fmap addIndex
                        (zip (fmap rule cls)
-                            [(length axs)..(length cls)] ))
+                            [len..(length cls)] ))
                  (fmap attributes cls))
 
     addIndex

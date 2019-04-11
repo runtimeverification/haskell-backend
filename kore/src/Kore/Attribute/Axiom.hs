@@ -132,4 +132,3 @@ instance ParseAttributes Axiom where
         Monad.>=> lensLabel (parseAttribute attr)
         Monad.>=> lensSourceLocation (parseAttribute attr)
         Monad.>=> lensConstructor (parseAttribute attr)
-        Monad.>=> lensIdentifier (parseAttribute attr)

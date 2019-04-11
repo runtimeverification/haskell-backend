@@ -289,8 +289,7 @@ showRule
     => Maybe Int
     -> m ()
 showRule configNode = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    ReplState { axioms } <- get
+    ReplState { axioms, graph = Strategy.ExecutionGraph { graph } } <- get
     node <- Lens.use lensNode
     let node' = maybe node id configNode
     if node' `elem` Graph.nodes graph
@@ -305,7 +304,7 @@ showRule configNode = do
                             . Graph.context graph
                             $ node'
             case mrule of
-                (Just rule) -> do
+                Just rule -> do
                     let mid = getRuleIndex
                                 . Attribute.identifier
                                 . Rule.attributes
@@ -320,10 +319,9 @@ showRule configNode = do
         else putStrLn' "Invalid node!"
   where
     axiomOrClaim :: Int -> Int -> String
-    axiomOrClaim len iden =
-        if iden < len
-            then "Rule is axiom " <> show iden
-            else "Rule is claim " <> show (iden - len)
+    axiomOrClaim len iden
+      | iden < len = "Rule is axiom " <> show iden
+      | otherwise  = "Rule is claim " <> show (iden - len)
 
 
 showPrecBranch
