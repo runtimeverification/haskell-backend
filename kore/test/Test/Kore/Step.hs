@@ -39,7 +39,9 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Simplifier )
+import           Kore.Step.Simplification.Data as Simplification
+
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import qualified SMT
@@ -101,37 +103,36 @@ applyStrategy testName start axioms expected =
 takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
 takeSteps (Start start, wrappedAxioms) =
     makeExecutionGraph start (unwrap <$> wrappedAxioms)
-    & evalSimplifier emptyLogger
+    & Simplification.evalSimplifier emptyLogger
     & SMT.runSMT SMT.defaultConfig
     <&> pickLongest
 
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
-            transition
+            mockTransitionRule
             (repeat $ allRewrites axioms)
             (pure configuration, mempty)
+    unwrap (Axiom a) = a
 
+mockTransitionRule ::
+    Prim (RewriteRule Meta Variable)
+    -> (CommonExpandedPattern Meta, StepProof Meta Variable)
+    -> Strategy.TransitionT
+            (RewriteRule Meta Variable)
+            Simplifier
+            (CommonExpandedPattern Meta, StepProof Meta Variable)
+mockTransitionRule =
+    transitionRule
+        metadataTools
+        substitutionSimplifier
+        simplifier
+        Map.empty
+  where
     metadataTools = mockMetadataTools
     simplifier = Simplifier.create metadataTools Map.empty
     substitutionSimplifier =
         Mock.substitutionSimplifier metadataTools
-    transition =
-        transitionRule
-            metadataTools
-            substitutionSimplifier
-            simplifier
-            Map.empty
-
-
-    unwrap (Axiom a) = a
-    -- run
-        -- :: MetaOrObject level
-        -- => CommonExpandedPattern level
-        -- -- ^left-hand-side of unification
-        -- -> [RewriteRule level Variable]
-        -- -> IO (CommonExpandedPattern level, StepProof level Variable)
-
 
 
 compareTo
@@ -484,7 +485,7 @@ runStep
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ Simplification.evalSimplifier emptyLogger
     $ runStrategy
         (transitionRule
             metadataTools
@@ -508,7 +509,7 @@ runSteps
 runSteps metadataTools configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ Simplification.evalSimplifier emptyLogger
     $ runStrategy
         (transitionRule
             metadataTools
