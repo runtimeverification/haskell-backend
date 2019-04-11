@@ -38,6 +38,7 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import qualified Kore.Unification.Substitution as Substitution
 
+
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
@@ -322,8 +323,8 @@ selectFunctionPattern
     -> Variable Object          -- ^set variable
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> CommonStepPattern Object
-selectFunctionPattern elementVar frameVar permutation  =
-    mkApp setSort concatSetSymbol $ permutation [singleton, mkVar frameVar]
+selectFunctionPattern elementVar setVar permutation  =
+    mkApp setSort concatSetSymbol $ permutation [singleton, mkVar setVar]
   where
     element = mkApp intSort absIntSymbol  [mkVar elementVar]
     singleton = mkApp setSort elementSetSymbol [ element ]
@@ -336,57 +337,71 @@ selectPattern
     -> Variable Object          -- ^set variable
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> CommonStepPattern Object
-selectPattern elementVar frameVar permutation  =
-    mkApp setSort concatSetSymbol $ permutation [element, mkVar frameVar]
+selectPattern elementVar setVar permutation  =
+    mkApp setSort concatSetSymbol $ permutation [element, mkVar setVar]
   where
     element = mkApp setSort elementSetSymbol [mkVar elementVar]
 
-selectFunctionPatternGen
-    :: Monad m
-    => (forall a . [a] -> [a])  -- ^scrambling function
-    -> PropertyT m (CommonStepPattern Object)
-selectFunctionPatternGen permutation = do
-    elementVar <- forAll (standaloneGen $ variableGen intSort)
-    frameVar <- forAll (standaloneGen $ variableGen setSort)
-    Monad.when (variableName elementVar == variableName frameVar) discard
-    return $ selectFunctionPattern elementVar frameVar permutation
-
-selectPatternGen
-    :: Monad m
-    => (forall a . [a] -> [a])
-    -> PropertyT m (CommonStepPattern Object)
-selectPatternGen permutation = do
-    elementVar <- forAll (standaloneGen $ variableGen intSort)
-    frameVar <- forAll (standaloneGen $ variableGen setSort)
-    Monad.when (variableName elementVar == variableName frameVar) discard
-    return $ selectPattern elementVar frameVar permutation
-
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
-    testPropertyWithSolver
-        "unify an empty set with a selection pattern"
-        (do
-            patFramedSet <- selectPatternGen id
-            revPatFramedSet <- selectPatternGen reverse
-            fnPatFramedSet <- selectFunctionPatternGen id
-            revFnPatFramedSet <- selectFunctionPatternGen reverse
-            -- Set.empty /\ SetItem(X:Int) Rest:Set
-            patEmptySet `doesNotUnifyWith` patFramedSet
-            patFramedSet `doesNotUnifyWith` patEmptySet
-            -- Set.empty /\ Rest:Set SetItem(X:Int)
-            patEmptySet `doesNotUnifyWith` revPatFramedSet
-            revPatFramedSet `doesNotUnifyWith` patEmptySet
-            -- Set.empty /\ SetItem(absInt(X:Int)) Rest:Set
-            patEmptySet `doesNotUnifyWith` fnPatFramedSet
-            fnPatFramedSet `doesNotUnifyWith` patEmptySet
-            -- Set.empty /\ Rest:Set SetItem(absInt(X:Int))
-            patEmptySet `doesNotUnifyWith` revFnPatFramedSet
-            revFnPatFramedSet `doesNotUnifyWith` patEmptySet
-        )
+    testPropertyWithSolver "unify an empty set with a selection pattern" $ do
+        elementVar <- forAll (standaloneGen $ variableGen intSort)
+        setVar <- forAll (standaloneGen $ variableGen setSort)
+        Monad.when (variableName elementVar == variableName setVar) discard
+        let selectPat       = selectPattern elementVar setVar id
+            selectPatRev    = selectPattern elementVar setVar reverse
+            fnSelectPat     = selectFunctionPattern elementVar setVar id
+            fnSelectPatRev  = selectFunctionPattern elementVar setVar reverse
+        -- Set.empty /\ SetItem(X:Int) Rest:Set
+        emptySet `doesNotUnifyWith` selectPat
+        selectPat `doesNotUnifyWith` emptySet
+        -- Set.empty /\ Rest:Set SetItem(X:Int)
+        emptySet `doesNotUnifyWith` selectPatRev
+        selectPatRev `doesNotUnifyWith` emptySet
+        -- Set.empty /\ SetItem(absInt(X:Int)) Rest:Set
+        emptySet `doesNotUnifyWith` fnSelectPat
+        fnSelectPat `doesNotUnifyWith` emptySet
+        -- Set.empty /\ Rest:Set SetItem(absInt(X:Int))
+        emptySet `doesNotUnifyWith` fnSelectPatRev
+        fnSelectPatRev `doesNotUnifyWith` emptySet
   where
-    patEmptySet = asPattern Set.empty
+    emptySet = asPattern Set.empty
     doesNotUnifyWith pat1 pat2 =
             (===) ExpandedPattern.bottom =<< evaluate (mkAnd pat1 pat2)
+
+test_unifySelectFromSingleton :: TestTree
+test_unifySelectFromSingleton =
+    testPropertyWithSolver
+        "unify a singleton set with a variable selection pattern"
+        (do
+            concreteElem <- forAll genConcreteIntegerPattern
+            elementVar <- forAll (standaloneGen $ variableGen intSort)
+            setVar <- forAll (standaloneGen $ variableGen setSort)
+            Monad.when (variableName elementVar == variableName setVar) discard
+            let selectPat       = selectPattern elementVar setVar id
+                selectPatRev    = selectPattern elementVar setVar reverse
+                singleton       = asInternal (Set.singleton concreteElem)
+                elemStepPattern = fromConcreteStepPattern concreteElem
+                expect =
+                    Predicated
+                        { term = singleton
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (elementVar, elemStepPattern)
+                                , (setVar, asInternal Set.empty)
+                                ]
+                        }
+                unifiesWith pat1 pat2 =
+                    (===) expect =<< evaluate (mkAnd pat1 pat2)
+            -- { 5 } /\ SetItem(X:Int) Rest:Set
+            singleton `unifiesWith` selectPat
+            selectPat `unifiesWith` singleton
+            -- { 5 } /\ Rest:Set SetItem(X:Int)
+            singleton `unifiesWith` selectPatRev
+            selectPatRev `unifiesWith` singleton
+        )
+
 
 {- | Unify a concrete Set with symbolic-keyed Set.
 
