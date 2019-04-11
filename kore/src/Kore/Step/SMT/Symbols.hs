@@ -12,6 +12,8 @@ module Kore.Step.SMT.Symbols
     , translateSymbol
     ) where
 
+import Control.Applicative
+       ( (<|>) )
 import Data.Reflection
        ( Given, given )
 import Data.Text
@@ -62,8 +64,6 @@ import           Kore.Sort
 import           Kore.Step.SMT.Encoder
                  ( encodeName )
 import qualified Kore.Step.SMT.Sorts as Sorts
-import           Kore.Unparser
-                 ( unparseToString )
 import qualified SMT
 
 {-| The information about a symbol that is needed for representing it to
@@ -107,45 +107,14 @@ translateSymbol symbol = do
 
     MetadataTools { applicationSorts } = tools
 
-nameFromSExpression :: SMT.SExpr -> Text
-nameFromSExpression (SMT.Atom name) = name
-nameFromSExpression (SMT.List (SMT.Atom name : _)) = name
-nameFromSExpression e =
+nameFromSExpr :: SMT.SExpr -> Text
+nameFromSExpr (SMT.Atom name) = name
+nameFromSExpr (SMT.List (SMT.Atom name : _)) = name
+nameFromSExpr e =
     (error . unlines)
         [ "Cannot extract name from s-expression."
         , "expression=" ++ SMT.showSExpr e
         ]
-
-translateAlreadyDefinedName
-    :: Given (MetadataTools Object Attribute.Symbol)
-    => SymbolOrAlias Object
-    -> Maybe Text
-translateAlreadyDefinedName symbol@SymbolOrAlias { symbolOrAliasConstructor } =
-    case (isConstructor, getSmthook) of
-        (True, Just _) ->
-            (error . unlines)
-                [ "Cannot handle constructors with smthook attributes "
-                , "(ambiguous names)"
-                , "symbol=" ++ unparseToString symbol
-                ]
-        (True, Nothing) ->
-            Just $ encodeName (getId symbolOrAliasConstructor)
-        (False, Just sExpr) -> Just $ nameFromSExpression sExpr
-        (False, Nothing) -> Nothing
-  where
-    tools :: MetadataTools Object Attribute.Symbol
-    tools = given
-
-    MetadataTools { symAttributes } = tools
-
-    attrs :: Attribute.Symbol
-    attrs = symAttributes symbol
-
-    Attribute.Symbol
-        { constructor = Attribute.Constructor { isConstructor } }
-      = attrs
-
-    Attribute.Symbol { smthook = Attribute.Smthook { getSmthook } } = attrs
 
 -- | Is the given symbol pre-defined for SMT?
 isAlreadyDefined
@@ -167,20 +136,33 @@ isAlreadyDefined symbol =
 
     Attribute.Symbol { smthook = Attribute.Smthook { getSmthook } } = attrs
 
+-- | Default encoding of constructor symbol identifiers.
+encodeConstructor :: Attribute.Symbol -> SymbolOrAlias Object -> Maybe Text
+encodeConstructor attrs SymbolOrAlias { symbolOrAliasConstructor }
+  | isConstructor = (Just . encodeName) (getId symbolOrAliasConstructor)
+  | otherwise     = Nothing
+  where
+    Attribute.Constructor { isConstructor } = Attribute.Symbol.constructor attrs
+
+{- | Get the SMT identifier for the given symbol.
+
+The identifier is the first of the following, if present:
+
+1. The name from the @smthook@ attribute.
+2. The name from the @smtlib@ attribute.
+3. If the symbol is a constructor, the default encoding.
+
+If none are present, the symbol is not translated.
+
+See also: 'nameFromSExpr', 'encodeConstructor'
+
+ -}
 translateName
     :: Given (MetadataTools Object Attribute.Symbol)
     => SymbolOrAlias Object
     -> Maybe Text
 translateName symbol =
-    case (translateAlreadyDefinedName symbol, getSmtlib) of
-        (Just _, Just _) ->
-            (error . unlines)
-                [ "Cannot handle constructors with multiple names."
-                , "symbol=" ++ unparseToString symbol
-                ]
-        (name@(Just _), Nothing) -> name
-        (Nothing, Just sExpr) -> Just $ nameFromSExpression sExpr
-        (Nothing, Nothing) -> Nothing
+    smthookName <|> smtlibName <|> encodeConstructor attrs symbol
   where
     tools :: MetadataTools Object Attribute.Symbol
     tools = given
@@ -191,6 +173,10 @@ translateName symbol =
     attrs = symAttributes symbol
 
     Attribute.Symbol { smtlib = Attribute.Smtlib { getSmtlib } } = attrs
+    smtlibName = nameFromSExpr <$> getSmtlib
+
+    Attribute.Symbol { smthook = Attribute.Smthook { getSmthook } } = attrs
+    smthookName = nameFromSExpr <$> getSmthook
 
 {-| Declares symbols for the SMT.
 
