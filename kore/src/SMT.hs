@@ -21,6 +21,7 @@ module SMT
     , declareDatatype
     , declareDatatypes
     , declareFun
+    , declareFun_
     , declareSort
     , assert
     , check
@@ -45,6 +46,7 @@ module SMT
     ) where
 
 import           Control.Concurrent.MVar
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Identity as Identity
@@ -226,6 +228,11 @@ declareFun :: MonadSMT m => Text -> [SExpr] -> SExpr -> m SExpr
 declareFun name inputTypes outputType =
     liftSMT $ withSolver $ \solver ->
         SimpleSMT.declareFun solver name inputTypes outputType
+
+-- | Declares a function symbol to SMT, returning ().
+declareFun_ :: MonadSMT m => Text -> [SExpr] -> SExpr -> m ()
+declareFun_ name inputTypes outputType =
+    Monad.void $ declareFun name inputTypes outputType
 
 -- | Declares a sort to SMT. Its arity is the # of sort parameters.
 declareSort :: MonadSMT m => Text -> Int -> m SExpr

@@ -112,11 +112,13 @@ if x then phi else psi
 with these rules
 
 @
-if true then x else y => x
-if false then phi else psi
+if true  then u else v => u
+if false then u else v => v
 @
 
 there would be two 'RewritePattern's, @phi and x=true@ and @psi and x=false@.
+If only the first rule was present, the results would be a 'RewritePattern' with
+@phi and x=true@ and a 'Remainder' with @psi and not x=true@.
 
 When rewriting the same pattern with an rule that does not match, e.g.
 
@@ -124,7 +126,8 @@ When rewriting the same pattern with an rule that does not match, e.g.
 x + y => x +Int y
 @
 
-then the rewrite result should be 'Bottom'.
+then rewriting produces no children.
+
 -}
 data StrategyPattern patt
     = RewritePattern !patt

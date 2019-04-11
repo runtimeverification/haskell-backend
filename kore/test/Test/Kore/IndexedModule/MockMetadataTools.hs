@@ -17,6 +17,8 @@ import           GHC.Stack
 
 import           Kore.AST.Common
                  ( SymbolOrAlias (..) )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts )
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
@@ -36,8 +38,9 @@ makeMetadataTools
     -> [(SymbolOrAlias level, HeadType)]
     -> [(Sort level, Attribute.Sort)]
     -> [(Sort level, Sort level)]
+    -> [(SymbolOrAlias level, ApplicationSorts level)]
     -> MetadataTools level StepperAttributes
-makeMetadataTools attr headTypes sortTypes isSubsortOf =
+makeMetadataTools attr headTypes sortTypes isSubsortOf sorts =
     MetadataTools
         { symAttributes = attributesFunction attr
         , symbolOrAliasType = headTypeFunction headTypes
@@ -48,6 +51,7 @@ makeMetadataTools attr headTypes sortTypes isSubsortOf =
         , isSubsortOf = \first second -> (first, second) `elem` isSubsortOf
         , subsorts = \sort ->
             Set.fromList . fmap snd . filter ((==) sort . fst) $ isSubsortOf
+        , applicationSorts = caseBasedFunction sorts
         }
 
 attributesFunction

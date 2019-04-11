@@ -322,7 +322,8 @@ mockMetadataTools =
         Mock.attributesMapping
         Mock.headTypeMapping
         Mock.sortAttributesMapping
-        []
+        Mock.subsorts
+        Mock.headSortsMapping
 
 merge
     :: [(Variable Object, StepPattern Object Variable)]

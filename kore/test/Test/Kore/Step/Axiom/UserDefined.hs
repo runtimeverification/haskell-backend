@@ -247,6 +247,7 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
+        Mock.headSortsMapping
 
 evaluateWithAxiom
     :: forall level . MetaOrObject level

@@ -25,6 +25,7 @@ module Kore.Attribute.Axiom
     , lensLabel, Label (..)
     , lensSourceLocation, SourceLocation (..)
     , lensConstructor, Constructor (..)
+    , lensIdentifier, RuleIndex (..)
     ) where
 
 import           Control.DeepSeq
@@ -48,6 +49,7 @@ import           Kore.Attribute.Overload
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import           Kore.Attribute.ProductionID
+import           Kore.Attribute.RuleIndex
 import           Kore.Attribute.Simplification
 import           Kore.Attribute.SmtLemma
 import           Kore.Attribute.SourceLocation
@@ -86,6 +88,8 @@ data Axiom =
     , constructor :: !Constructor
     -- ^ Shows that this is one of the constructor axioms
     -- (e.g. no confusion, no junk)
+    , identifier :: !RuleIndex
+    -- ^ Used to identify an axiom in the repl.
     } deriving (Eq, Ord, Show, Generic)
 
 instance NFData Axiom
@@ -109,6 +113,7 @@ instance Default Axiom where
             , label = def
             , sourceLocation = def
             , constructor = def
+            , identifier = def
             }
 
 instance ParseAttributes Axiom where
