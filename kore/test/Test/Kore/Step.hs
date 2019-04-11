@@ -94,13 +94,39 @@ applyStrategy testName start axioms expected =
 -- API Helpers
 
 takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
-takeSteps (Start start, axioms) =
-    runSteps
-        mockMetadataTools
+takeSteps (Start start, wrappedAxioms) =
+    run
         (pure start)
-        (unwrap <$> axioms)
+        (unwrap <$> wrappedAxioms)
   where
+    metadataTools = mockMetadataTools
+    simplifier = Simplifier.create metadataTools Map.empty
+    substitutionSimplifier =
+        Mock.substitutionSimplifier metadataTools
+
+
     unwrap (Axiom a) = a
+    run
+        :: MetaOrObject level
+        => CommonExpandedPattern level
+        -- ^left-hand-side of unification
+        -> [RewriteRule level Variable]
+        -> IO (CommonExpandedPattern level, StepProof level Variable)
+    run configuration axioms =
+        (<$>) pickLongest
+        $ SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier emptyLogger
+        $ runStrategy
+            (transitionRule
+                metadataTools
+                substitutionSimplifier
+                simplifier
+                Map.empty
+            )
+            (repeat $ allRewrites axioms)
+            (configuration, mempty)
+
+
 
 compareTo
     :: HasCallStack
