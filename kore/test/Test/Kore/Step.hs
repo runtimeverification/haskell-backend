@@ -417,6 +417,7 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const def
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
+    , applicationSorts = undefined
     }
 
 sigmaSymbol :: SymbolOrAlias Meta

@@ -390,6 +390,7 @@ test_onePathStrategy =
             Mock.headTypeMapping
             Mock.sortAttributesMapping
             Mock.subsorts
+            Mock.headSortsMapping
 
 simpleRewrite
     :: MetaOrObject level

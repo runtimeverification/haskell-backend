@@ -85,7 +85,9 @@ verifyAndIndexDefinition
     => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> KoreDefinition
-    -> Either (Error VerifyError) (Map.Map ModuleName (VerifiedModule declAtts axiomAtts))
+    -> Either
+        (Error VerifyError)
+        (Map.Map ModuleName (VerifiedModule declAtts axiomAtts))
 verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase

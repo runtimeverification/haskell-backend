@@ -45,6 +45,7 @@ module SimpleSMT
     , declareFun
     , declareSort
     , declareDatatype
+    , declareDatatypes
     , define
     , defineFun
     , assert
@@ -136,6 +137,9 @@ module SimpleSMT
     -- ** Arrays
     , select
     , store
+
+    -- Quantifiers
+    , forallQ
     ) where
 
 import           Control.Applicative
@@ -190,6 +194,8 @@ import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as Lexer
 import           Text.Read
                  ( readMaybe )
+
+import Kore.Debug
 
 -- | Results of checking for satisfiability.
 data Result = Sat         -- ^ The assertions are satisfiable
@@ -339,9 +345,11 @@ newSolver exe opts mbLog = do
             info ("[recv] " <> Text.Lazy.fromStrict resp)
             readSExpr resp
 
-        command c = do
-            send c
-            recv
+        command c =
+            traceNonErrorMonad D_SMT_command [debugArg "c" (showSExpr c)]
+            $ do
+              send c
+              recv
 
         stop = do
             send (List [Atom "exit"])
@@ -471,6 +479,108 @@ declareSort proc f n = do
     ackCommandIgnoreErr proc $ fun "declare-sort" [ Atom f, (Atom . Text.pack . show) n]
     pure (const f)
 
+-- | Declare a set of ADTs
+declareDatatypes
+  :: Solver
+  ->  [
+        ( Text  -- datatype name
+        , [Text]  -- sort parameters
+        , [(Text, [(Text, SExpr)])]  --constructors
+        )
+      ]
+  -> IO ()
+declareDatatypes proc datatypes = do
+    mapM_ declareDatatypeSort datatypes
+    mapM_ declareConstructors datatypes
+    mapM_ ((assert proc) . noJunkAxiom) datatypes
+  where
+    declareDatatypeSort (name, args, _constructors) =
+        declareSort proc name (length args)
+
+    declareConstructors (sortName, [], constructors) =
+        mapM_ (declareConstructor sortName) constructors
+    declareConstructors (name, args, constructors) = (error . unlines)
+        [ "Not implemented."
+        , "name = " ++ show name
+        , "args = " ++ show args
+        , "constructors = " ++ show constructors
+        ]
+
+    declareConstructor sortName (constructorName, constructorArgs) =
+        declareFun
+            proc
+            constructorName
+            (map argType constructorArgs)
+            (Atom sortName)
+    argType (_argName, argSort) = argSort
+
+    noJunkAxiom (name, [], constructors) =
+        forallQ
+            [List [Atom "x", Atom name]]
+            (orMany (map (builtWithConstructor "x") constructors))
+    noJunkAxiom (name, args, constructors) = (error . unlines)
+        [ "Not implemented."
+        , "name = " ++ show name
+        , "args = " ++ show args
+        , "constructors = " ++ show constructors
+        ]
+
+    builtWithConstructor variable (name, []) =
+        eq (Atom variable) (Atom name)
+    builtWithConstructor variable (name, args) =
+        existsQ
+            (map mkQuantifier args)
+            (eq (Atom variable) (fun name (map mkArg args)))
+      where
+        mkArg (varName, _varType) = Atom varName
+        mkQuantifier :: (Text, SExpr) -> SExpr
+        mkQuantifier (varName, varType) =
+            List [Atom varName, varType]
+  -- TODO(virgil): Currently using the code below to declare datatypes crashes
+  -- z3 when testing that things can't be built out of them, e.g. things like
+  -- (declare-datatypes ()
+  --   (
+  --       (HB_S
+  --           HB_C
+  --           (HB_D (HB_D1 HB_T))
+  --       )
+  --       (HB_T HB_E )
+  --   )
+  -- )
+  -- (declare-fun x () HB_S )
+  -- (assert (not (= x HB_C ) ) )
+  -- (assert (not (= x (HB_D HB_E ) ) ) )
+  -- (check-sat )
+  -- will crash z3.
+  --
+  -- This was fixed, see https://github.com/Z3Prover/z3/issues/2217
+  -- We should switch to the proper way of declaring datatypes below
+  -- whenever we think we can ask people to use a version of z3 that
+  -- supports them.
+{-
+declareDatatypes proc datatypes =
+  ackCommand proc $
+    -- (declare-datatypes ((δ1 k1) · · · (δn kn)) (d1 · · · dn))
+    -- where δs are datatype names, ks are number of arguments
+    -- and if ki is 0, then di is of the form ((CName CArgs) ..)
+    fun "declare-datatypes"
+      [ List $ map typeRepresentation datatypes
+      , List $ map dataConstructorsRepresentation datatypes
+      ]
+ where
+  typeRepresentation (t, args, _) =
+    List [ Atom t, (Atom . Text.pack . show . length) args ]
+  dataConstructorsRepresentation (_, [], cs) =
+    List $ map constructorRepresentation cs
+  dataConstructorsRepresentation _ = error "Unimplemented"
+  constructorRepresentation (constructorName, []) = Atom constructorName
+  constructorRepresentation (constructorName, constructorArgs) =
+    List
+      ( Atom constructorName
+      : [ List [Atom s, argTy] | (s, argTy) <- constructorArgs ]
+      )
+-}
+
 -- | Declare an ADT using the format introduced in SmtLib 2.6.
 declareDatatype ::
   Solver ->
@@ -478,22 +588,7 @@ declareDatatype ::
   [Text] {- ^ sort parameters -} ->
   [(Text, [(Text, SExpr)])] {- ^ constructors -} ->
   IO ()
-declareDatatype proc t [] cs =
-  ackCommand proc $
-    fun "declare-datatype" $
-      [ Atom t
-      , List [ List (Atom c : [ List [Atom s, argTy] | (s, argTy) <- args]) | (c, args) <- cs ]
-      ]
-declareDatatype proc t ps cs =
-  ackCommand proc $
-    fun "declare-datatype" $
-      [ Atom t
-      , fun "par" $
-          [ List (map Atom ps)
-          , List [ List (Atom c : [ List [Atom s, argTy] | (s, argTy) <- args]) | (c, args) <- cs ]
-          ]
-      ]
-
+declareDatatype proc t ps cs = declareDatatypes proc [(t, ps, cs)]
 
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
 -- For convenience, returns the defined name as a constant expression.
@@ -944,6 +1039,19 @@ store :: SExpr {- ^ array -}     ->
          SExpr
 store x y z = fun "store" [x,y,z]
 
+-- | Quantifiers: forall
+--
+-- Each variable is an (variable-name variable-type) sexpression.
+forallQ :: [SExpr] -> SExpr -> SExpr
+forallQ variables expression =
+    fun "forall" [List variables, expression]
+
+-- | Quantifiers: exists
+--
+-- Each variable is an (variable-name variable-type) sexpression.
+existsQ :: [SExpr] -> SExpr -> SExpr
+existsQ variables expression =
+    fun "exists" [List variables, expression]
 
 --------------------------------------------------------------------------------
 -- Attributes

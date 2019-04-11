@@ -77,6 +77,40 @@ import qualified Kore.TopBottom as TopBottom
 import           Numeric.Natural
                  ( Natural )
 
+{- NOTE: Non-deterministic semantics
+
+The current implementation of one-path verification assumes that the proof goal
+is deterministic, that is: the proof goal would not be discharged during at a
+non-confluent state in the execution of a non-deterministic semantics. (Often
+this means that the definition is simply deterministic.) As a result, given the
+non-deterministic definition
+
+> module ABC
+>   import DOMAINS
+>   syntax S ::= "a" | "b" | "c"
+>   rule [ab]: a => b
+>   rule [ac]: a => c
+> endmodule
+
+this claim would be provable,
+
+> rule a => b [claim]
+
+but this claim would **not** be provable,
+
+> rule a => c [claim]
+
+because the algorithm would first apply semantic rule [ab], which prevents rule
+[ac] from being used.
+
+We decided to assume that the definition is deterministic because one-path
+verification is mainly used only for deterministic semantics and the assumption
+simplifies the implementation. However, this assumption is not an essential
+feature of the algorithm. You should not rely on this assumption elsewhere. This
+decision is subject to change without notice.
+
+ -}
+
 {- | Wrapper for a rewrite rule that should be used as a claim.
 -}
 data Claim level = Claim
@@ -91,7 +125,9 @@ isTrusted Claim { attributes = Attribute.Axiom { trusted } }=
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
-newtype Axiom level = Axiom (RewriteRule level Variable)
+newtype Axiom level = Axiom
+    { unAxiom :: RewriteRule level Variable
+    }
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).

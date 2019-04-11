@@ -211,6 +211,7 @@ runNormalizeSubstitutionObject substitution =
             Mock.headTypeMapping
             Mock.sortAttributesMapping
             Mock.subsorts
+            Mock.headSortsMapping
 
 mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 mockMetadataTools = MetadataTools
@@ -219,4 +220,5 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const Default.def
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
+    , applicationSorts = undefined
     }

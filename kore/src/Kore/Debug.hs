@@ -87,6 +87,7 @@ data DebugPlace
     | D_Step
     | D_Function_evaluatePattern
     | D_SMT_refutePredicate
+    | D_SMT_command
   deriving (Eq, Ord, Show)
 
 data DebugArg = DebugArg { name :: !String, value :: !String }
@@ -122,19 +123,24 @@ enabledPlaces = onePathWithFunctionNames
 enabledPlaces :: Map DebugPlace DebugResult
 enabledPlaces = Map.empty
 
+smt :: Map DebugPlace DebugResult
+smt =
+    Map.insert D_SMT_command DebugResult
+      Map.empty
+
 onePathWithFunctionNames :: Map DebugPlace DebugResult
 onePathWithFunctionNames =
     Map.insert D_Function_evaluatePattern DebugNoResult
     $ Map.insert D_OnePath_verifyClaim DebugNoResult
     $ Map.insert D_OnePath_Step_transitionRule DebugResult
     $ Map.insert D_SMT_refutePredicate DebugResult
-    $ Map.empty
+      Map.empty
 
 executionWithFunctionNames :: Map DebugPlace DebugResult
 executionWithFunctionNames =
     Map.insert D_Function_evaluatePattern DebugNoResult
     $ Map.insert D_Step DebugNoResult
-    $ Map.empty
+      Map.empty
 
 traceWhenEnabled
     :: DebugPlace -> (DebugResult -> a -> a) -> (a -> a)

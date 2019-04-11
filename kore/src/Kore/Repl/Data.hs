@@ -102,30 +102,30 @@ helpText =
     \help                    shows this help message\n\
     \claim <n>               shows the nth claim\n\
     \axiom <n>               shows the nth axiom\n\
-    \prove <n>               initializez proof mode for the nth \
+    \prove <n>               initializes proof mode for the nth \
                              \claim\n\
     \graph                   shows the current proof graph\n\
     \step [n]                attempts to run 'n' proof steps at\
                              \the current node (n=1 by default)\n\
     \stepf [n]               attempts to run 'n' proof steps at\
-                             \the current node, stepping through\
-                             \branchings (n=1 by default)\n\
+                             \ the current node, stepping through\
+                             \ branchings (n=1 by default)\n\
     \select <n>              select node id 'n' from the graph\n\
     \config [n]              shows the config for node 'n'\
-                             \(defaults to current node)\n\
+                             \ (defaults to current node)\n\
     \omit [cell]             adds or removes cell to omit list\
-                             \(defaults to showing the omit list)\n\
+                             \ (defaults to showing the omit list)\n\
     \leafs                   shows unevaluated or stuck leafs\n\
     \rule [n]                shows the rule for node 'n'\
-                             \(defaults to current node)\n\
-    \prec-branch [n]         shows first preceding branch\n\
-                             \(defaults to current node)\n\
-    \children [n]            shows direct children of node\n\
-                             \(defaults to current node)\n\
+                             \ (defaults to current node)\n\
+    \prec-branch [n]         shows first preceding branch\
+                             \ (defaults to current node)\n\
+    \children [n]            shows direct children of node\
+                             \ (defaults to current node)\n\
     \label                   shows all node labels\n\
     \label <l>               jump to a label\n\
-    \label <+l> [n]          add a new label for a node\n\
-                             \(defaults to current node)\n\
+    \label <+l> [n]          add a new label for a node\
+                             \ (defaults to current node)\n\
     \label <-l>              remove a label\n\
     \try <a|c><num>          attempts <a>xiom or <c>laim at index <num>.\n\
     \exit                    exits the repl\

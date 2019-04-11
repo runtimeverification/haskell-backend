@@ -18,7 +18,10 @@ module SMT
     , Result (..)
     , escapeId
     , declare
+    , declareDatatype
+    , declareDatatypes
     , declareFun
+    , declareFun_
     , declareSort
     , assert
     , check
@@ -27,18 +30,23 @@ module SMT
     , inNewScope
     -- * Expressions
     , SExpr (..)
+    , SimpleSMT.showSExpr
     , SimpleSMT.tBool
     , SimpleSMT.tInt
     , SimpleSMT.and
     , SimpleSMT.bool
     , SimpleSMT.eq
+    , SimpleSMT.lt
+    , SimpleSMT.gt
     , SimpleSMT.implies
     , SimpleSMT.int
     , SimpleSMT.not
     , SimpleSMT.or
+    , SimpleSMT.forallQ
     ) where
 
 import           Control.Concurrent.MVar
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Identity as Identity
@@ -221,11 +229,44 @@ declareFun name inputTypes outputType =
     liftSMT $ withSolver $ \solver ->
         SimpleSMT.declareFun solver name inputTypes outputType
 
+-- | Declares a function symbol to SMT, returning ().
+declareFun_ :: MonadSMT m => Text -> [SExpr] -> SExpr -> m ()
+declareFun_ name inputTypes outputType =
+    Monad.void $ declareFun name inputTypes outputType
+
 -- | Declares a sort to SMT. Its arity is the # of sort parameters.
 declareSort :: MonadSMT m => Text -> Int -> m SExpr
 declareSort name arity =
     liftSMT $ withSolver $ \solver ->
         SimpleSMT.declareSort solver name arity
+
+-- | Declares a constructor-based sort to SMT.
+declareDatatype
+    :: MonadSMT m
+    => Text
+    -- ^ Sort name
+    -> [Text]
+    -- ^ Sort arguments
+    -> [(Text, [(Text, SExpr)])]
+    -- ^ Constructors: name (argName argType)
+    -> m ()
+declareDatatype name arguments constructors =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.declareDatatype solver name arguments constructors
+
+-- | Declares a constructor-based sort to SMT.
+declareDatatypes
+    :: MonadSMT m
+    =>  [   ( Text  -- Sort name
+            , [Text]  -- Sort arguments
+            , [(Text, [(Text, SExpr)])]  -- Constructors: name (argName argType)
+            )
+        ]
+    -- ^ Constructors: name (argName argType)
+    -> m ()
+declareDatatypes datatypes =
+    liftSMT $ withSolver $ \solver ->
+        SimpleSMT.declareDatatypes solver datatypes
 
 -- | Assume a fact.
 assert :: MonadSMT m => SExpr -> m ()
