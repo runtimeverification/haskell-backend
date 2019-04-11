@@ -567,6 +567,12 @@ unifyEquals
                     unifyEqualsFramed builtin1 builtin2 x
                 [x@(Var_ _), DV_ _ (Domain.BuiltinSet builtin2)] ->
                     unifyEqualsFramed builtin1 builtin2 x
+                [(App_ symbol3 [ key3 ]), x@(Var_ _)]
+                  | isSymbolElement hookTools symbol3 ->
+                        unifyEqualsSelect builtin1 symbol3 key3 x
+                [x@(Var_ _), (App_ symbol3 [ key3 ])]
+                  | isSymbolElement hookTools symbol3 ->
+                        unifyEqualsSelect builtin1 symbol3 key3 x
                 _ ->
                     Builtin.unifyEqualsUnsolved
                         simplificationType
@@ -591,6 +597,21 @@ unifyEquals
         -- The same applies to the similar places in Map and List, but not
         -- to the empty result a few lines below.
         empty
+      where
+        -- Unify one concrete set with a select pattern (x:elem s:set)
+        -- Note that x can be a proper symbolic pattern (not just a variable)
+        -- TODO(traiansf): move it from where once the otherwise is not needed
+        unifyEqualsSelect
+            :: Domain.InternalSet  -- ^ concrete set
+            -> SymbolOrAlias Object  -- ^ 'element' symbol
+            -> p  -- ^ key
+            -> StepPattern Object variable  -- ^ framing variable
+            -> (err Simplifier) (expanded, proof)
+        unifyEqualsSelect builtin1' _ _ _
+          | set1 == Set.empty = return (ExpandedPattern.bottom, SimplificationProof)
+          | otherwise = Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+          where
+            Domain.InternalSet { builtinSetChild = set1 } = builtin1'
 
     unifyEquals0 app_@(App_ _ _) dv_@(DV_ _ _) = unifyEquals0 dv_ app_
 

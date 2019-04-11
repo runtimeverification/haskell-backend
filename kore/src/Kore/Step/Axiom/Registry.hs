@@ -34,8 +34,8 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifier (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
-                 ( definitionEvaluation, firstFullEvaluation,
-                 simplifierWithFallback )
+                 ( firstFullEvaluation, simplifierWithFallback,
+                 totalDefinitionEvaluation )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -158,7 +158,7 @@ axiomPatternsToEvaluators =
         definitionEvaluator =
             if null evaluations
                 then Nothing
-                else Just (definitionEvaluation evaluations)
+                else Just (totalDefinitionEvaluation evaluations)
 
 {- | Return the evaluator corresponding to the 'AxiomPattern'.
 

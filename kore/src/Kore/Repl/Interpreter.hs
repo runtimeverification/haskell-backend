@@ -391,14 +391,11 @@ tryAxiomClaim eac = do
                             graph
                             node
                     case Graph.suc' $ Graph.context gr node of
-                        [] -> tell "Could not find any child nodes."
+                        [] -> tell "Could not unify."
                         [node'] -> do
-                            case Graph.lab' $ Graph.context gr node' of
-                                Stuck _ -> tell "Could not unify."
-                                _ -> do
-                                    lensGraph .= graph'
-                                    lensNode .= node'
-                                    tell "Unification successful."
+                            lensGraph .= graph'
+                            lensNode .= node'
+                            tell "Unification succsessful."
                         _ -> lensGraph .= graph'
                 else tell "Node is already evaluated"
   where
