@@ -80,11 +80,6 @@ test_ruleThatDoesn'tApply =
       where
         cons = applyConstructorToVariables
 
-{-
-  Needed: Conversion of tests below into more specific tests of
-  individual Kore.Step functions.
--}
-
 
         {- Test API -}
 
@@ -94,25 +89,6 @@ applyStrategy
 applyStrategy testName start axioms expected =
     testCase testName $
         takeSteps (start, axioms) >>= compareTo expected
-
-        {- Types used in this file -}
-
-type RewriteRule' variable = RewriteRule Object variable
-type StepPattern' variable = StepPattern Object variable
-type CommonStepPattern' = CommonStepPattern Object
-type ExpandedPattern' variable = ExpandedPattern Object variable
-type CommonExpandedPattern' = CommonExpandedPattern Object
-type Sort' = Sort Object
-
-type StepProof' variable = StepProof Object variable
-
-type TestPattern = CommonStepPattern'
-newtype Start = Start TestPattern
-newtype Axiom = Axiom (RewriteRule' Variable)
-newtype Expect = Expect TestPattern
-
-type Actual = ExpandedPattern' Variable
-type Proof = StepProof' Variable
 
 
         {- API Helpers -}
@@ -138,6 +114,29 @@ compareTo
 compareTo (Expect expected) (actual, _ignoredProof) =
     assertEqualWithExplanation "" (pure expected) actual
 
+
+    {- Types used in this file -}
+
+-- Isolate knowledge of `Object` in anticipation of its removal.
+-- Should these go in some common location?
+type RewriteRule' variable = RewriteRule Object variable
+type StepPattern' variable = StepPattern Object variable
+type CommonStepPattern' = CommonStepPattern Object
+type ExpandedPattern' variable = ExpandedPattern Object variable
+type CommonExpandedPattern' = CommonExpandedPattern Object
+type Sort' = Sort Object
+type StepProof' variable = StepProof Object variable
+
+-- Test types
+type TestPattern = CommonStepPattern'
+newtype Start = Start TestPattern
+newtype Axiom = Axiom (RewriteRule' Variable)
+newtype Expect = Expect TestPattern
+
+type Actual = ExpandedPattern' Variable
+type Proof = StepProof' Variable
+
+
 -- Useful constant values
 
 anySort :: Sort'
@@ -162,7 +161,7 @@ mockTransitionRule =
     substitutionSimplifier =
         Mock.substitutionSimplifier metadataTools
 
--- Builders
+-- Builders -- should these find a better home?
 
 -- | Create a function pattern from a function name and list of argnames.
 applyConstructorToVariables :: Text -> [Text] -> TestPattern
@@ -205,6 +204,8 @@ rewritesTo left right =
 
     The following tests are old and should eventually be rewritten.
 
+    They should perhaps be rewritten to use individual Kore.Step functions
+    like `rewriteStep`.
 -}
 
 v1, a1, b1, x1 :: Sort Meta -> Variable Meta
