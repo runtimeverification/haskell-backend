@@ -14,8 +14,6 @@ import           Data.Functor
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Data.Limit
-                 ( Limit (..) )
 import           Data.Text
                  ( Text )
 import           Kore.AST.Pure
@@ -97,6 +95,25 @@ applyStrategy testName start axioms expected =
     testCase testName $
         takeSteps (start, axioms) >>= compareTo expected
 
+-- Types
+
+type RewriteRule' variable = RewriteRule Object variable
+type StepPattern' variable = StepPattern Object variable
+type CommonStepPattern' = CommonStepPattern Object
+type ExpandedPattern' variable = ExpandedPattern Object variable
+type CommonExpandedPattern' = CommonExpandedPattern Object
+
+type StepProof' variable = StepProof Object variable
+
+type TestPattern = CommonStepPattern'
+newtype Start = Start TestPattern
+newtype Axiom = Axiom (RewriteRule' Variable)
+newtype Expect = Expect TestPattern
+
+type Actual = ExpandedPattern' Variable
+type Proof = StepProof' Variable
+
+
 
 -- API Helpers
 
@@ -115,13 +132,21 @@ takeSteps (Start start, wrappedAxioms) =
             (pure configuration, mempty)
     unwrap (Axiom a) = a
 
-mockTransitionRule ::
-    Prim (RewriteRule Meta Variable)
-    -> (CommonExpandedPattern Meta, StepProof Meta Variable)
+compareTo
+    :: HasCallStack
+    => Expect -> (Actual, Proof) -> IO ()
+compareTo (Expect expected) (actual, _ignoredProof) =
+    assertEqualWithExplanation "" (pure expected) actual
+
+-- Builders
+
+mockTransitionRule
+    :: Prim (RewriteRule' Variable)
+    -> (CommonExpandedPattern', StepProof' Variable)
     -> Strategy.TransitionT
-            (RewriteRule Meta Variable)
+            (RewriteRule' Variable)
             Simplifier
-            (CommonExpandedPattern Meta, StepProof Meta Variable)
+            (CommonExpandedPattern', StepProof' Variable)
 mockTransitionRule =
     transitionRule
         metadataTools
@@ -133,15 +158,6 @@ mockTransitionRule =
     simplifier = Simplifier.create metadataTools Map.empty
     substitutionSimplifier =
         Mock.substitutionSimplifier metadataTools
-
-
-compareTo
-    :: HasCallStack
-    => Expect -> (Actual, Proof) -> IO ()
-compareTo (Expect expected) (actual, _ignoredProof) =
-    assertEqualWithExplanation "" (pure expected) actual
-
--- Builders
 
 -- | Create a function pattern from a function name and list of argnames.
 applyConstructorToVariables :: Text -> [Text] -> TestPattern
@@ -161,9 +177,9 @@ var name =
 
 
 rewritesTo
-    :: StepPattern Object variable -- Why can't this be a TestPattern?
-    -> StepPattern Object variable
-    -> RewriteRule Object variable
+    :: StepPattern' variable
+    -> StepPattern' variable
+    -> RewriteRule' variable
 rewritesTo left right =
     RewriteRule $ RulePattern
         { left
@@ -172,15 +188,6 @@ rewritesTo left right =
         , ensures = makeTruePredicate
         , attributes = def
         }
-
-type TestPattern = CommonStepPattern Meta
-newtype Start = Start TestPattern
-newtype Axiom = Axiom (RewriteRule Meta Variable)
-newtype Expect = Expect TestPattern
-
-type Actual = ExpandedPattern Meta Variable
-type Proof = StepProof Meta Variable
-type StepCount = Limit Natural
 
 
 {-
