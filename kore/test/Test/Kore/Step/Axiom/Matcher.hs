@@ -874,9 +874,10 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
+        Mock.headSortsMapping
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
+mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] [] []
 
 matchDefinition
     :: forall level . ( MetaOrObject level )

@@ -457,3 +457,4 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
+        Mock.headSortsMapping
