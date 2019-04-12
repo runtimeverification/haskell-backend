@@ -167,7 +167,7 @@ applyConstructorToVariables name arguments =
     mkApp anySort symbol $ fmap var arguments
   where
       symbol = SymbolOrAlias -- can this be more abstact?
-        { symbolOrAliasConstructor = Id name AstLocationTest
+        { symbolOrAliasConstructor = testId name
         , symbolOrAliasParams = []
         }
 
@@ -180,14 +180,11 @@ var name =
 sort :: Text -> Sort'
 sort name =
     SortActualSort $ SortActual
-      { sortActualName = Id name AstLocationTest
+      { sortActualName = testId name
       , sortActualSorts = []
       }
 
-rewritesTo
-    :: StepPattern' variable
-    -> StepPattern' variable
-    -> RewriteRule' variable
+rewritesTo :: TestPattern -> TestPattern -> RewriteRule' Variable
 rewritesTo left right =
     RewriteRule $ RulePattern
         { left
