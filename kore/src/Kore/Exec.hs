@@ -75,7 +75,7 @@ import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubs
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
                  RulePattern (RulePattern), extractRewriteAxioms,
-                 extractRewriteClaims )
+                 extractRewriteClaims, getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Search
@@ -276,7 +276,15 @@ proveWithRepl definitionModule specModule = do
         claims
 
 makeClaim :: (Attribute.Axiom, Rewrite) -> Claim Object
-makeClaim (attributes, rule) = Claim { rule , attributes }
+makeClaim (attributes, rule) =
+    Claim
+    . RewriteRule
+    $ RulePattern { attributes = attributes
+                  , left = (left . getRewriteRule $ rule)
+                  , right = (right . getRewriteRule $ rule)
+                  , requires = (requires . getRewriteRule $ rule)
+                  , ensures = (ensures . getRewriteRule $ rule)
+                  }
 
 simplifyRuleOnSecond
     :: MetadataTools Object StepperAttributes

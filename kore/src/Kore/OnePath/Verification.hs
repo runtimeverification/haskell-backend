@@ -37,6 +37,7 @@ import           Kore.AST.MetaOrObject
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
+import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
@@ -61,7 +62,8 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern),
+                 getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -115,13 +117,16 @@ decision is subject to change without notice.
 -}
 data Claim level = Claim
     { rule :: !(RewriteRule level Variable)
-    , attributes :: !Attribute.Axiom
     }
 
 -- | Is the 'Claim' trusted?
 isTrusted :: Claim level -> Bool
-isTrusted Claim { attributes = Attribute.Axiom { trusted } }=
-    Attribute.isTrusted trusted
+isTrusted =
+    Trusted.isTrusted
+    . Attribute.trusted
+    . RulePattern.attributes
+    . getRewriteRule
+    . rule
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
