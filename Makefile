@@ -41,9 +41,9 @@ test: test-kore test-k
 
 test-kore: $(STACK_LOCAL_HPC_ROOT)
 
-$(STACK_LOCAL_HPC_ROOT): STACK := $(STACK_TEST)
 $(STACK_LOCAL_HPC_ROOT):
-	$(STACK_BUILD) $(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) \
+	$(STACK_TEST) $(STACK_BUILD) \
+		$(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) \
 		--test --bench --no-run-benchmarks \
 		--ta --xml=test-results.xml
 
