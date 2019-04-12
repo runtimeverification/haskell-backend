@@ -117,7 +117,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         -> [Claim level]
         -> [Claim level]
     addIndexesToClaims len cls =
-        fmap (Claim . addIndex) (zip (fmap rule cls) [len..(length cls)])
+        fmap (Claim . addIndex) (zip (fmap unClaim cls) [len..(length cls)])
 
     addIndex
         :: (Rule.RewriteRule level Variable, Int)

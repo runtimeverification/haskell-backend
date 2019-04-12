@@ -435,7 +435,7 @@ runVerification
         (Mock.substitutionSimplifier metadataTools)
         Map.empty
         (OnePath.defaultStrategy claims axioms)
-        ( map (\c -> (Claim.rule c, stepLimit))
+        ( map (\c -> (Claim.unClaim c, stepLimit))
         . filter (not . Claim.isTrusted)
         $ claims)
   where

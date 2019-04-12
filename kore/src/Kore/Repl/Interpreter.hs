@@ -644,9 +644,6 @@ data StepResult
     | Success
     deriving Show
 
-unClaim :: forall level. Claim level -> RewriteRule level Variable
-unClaim Claim { rule } = rule
-
 emptyExecutionGraph :: Claim Object -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
 

@@ -116,7 +116,7 @@ decision is subject to change without notice.
 {- | Wrapper for a rewrite rule that should be used as a claim.
 -}
 newtype Claim level = Claim
-    { rule :: RewriteRule level Variable
+    { unClaim :: RewriteRule level Variable
     }
 
 -- | Is the 'Claim' trusted?
@@ -126,7 +126,7 @@ isTrusted =
     . Attribute.trusted
     . RulePattern.attributes
     . getRewriteRule
-    . rule
+    . unClaim
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
@@ -225,7 +225,7 @@ defaultStrategy
       where
         unwrap (Axiom a) = a
     coinductiveRewrites :: [RewriteRule level Variable]
-    coinductiveRewrites = map rule claims
+    coinductiveRewrites = map unClaim claims
 
 verifyClaim
     :: forall level . (MetaOrObject level)
@@ -354,7 +354,7 @@ verifyClaimStep
         | isRoot =
               onePathFirstStep targetPattern rewrites
         | otherwise =
-              onePathFollowupStep targetPattern (rule <$> claims) rewrites
+              onePathFollowupStep targetPattern (unClaim <$> claims) rewrites
 
     rewrites :: [RewriteRule level Variable]
     rewrites = coerce <$> axioms
@@ -364,7 +364,7 @@ verifyClaimStep
         ExpandedPattern.fromPurePattern
             . right
             . coerce
-            . rule
+            . unClaim
             $ target
 
     isRoot :: Bool

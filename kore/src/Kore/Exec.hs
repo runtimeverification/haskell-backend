@@ -295,7 +295,7 @@ simplifyRuleOnSecond tools (atts, rule) = do
     return (atts, rule')
 
 extractUntrustedClaims :: [Claim Object] -> [Rewrite]
-extractUntrustedClaims = map Claim.rule . filter (not . Claim.isTrusted)
+extractUntrustedClaims = map Claim.unClaim . filter (not . Claim.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.
 execute
