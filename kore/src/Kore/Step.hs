@@ -25,9 +25,8 @@ module Kore.Step
     , runStrategy
     ) where
 
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Kore.Unification.Unify as Monad.Unify
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Stack
@@ -129,7 +128,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
         Transition.addRule rule
         result <-
             Monad.Trans.lift
-            $ runExceptT
+            $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
                 tools
                 substitutionSimplifier

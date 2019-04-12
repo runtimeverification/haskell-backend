@@ -21,9 +21,8 @@ module Kore.OnePath.Step
 
 import           Control.Applicative
                  ( Alternative (..) )
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Kore.Unification.Unify as Monad.Unify
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
 import           Data.Semigroup
@@ -287,7 +286,7 @@ transitionRule
     transitionMultiApplyWithRemainders rules (config, proof) = do
         result <-
             Monad.Trans.lift
-            $ runExceptT
+            $ Monad.Unify.runUnifier
             $ Step.sequenceRewriteRules
                 tools
                 substitutionSimplifier

@@ -41,7 +41,7 @@ module Kore.Builtin.List
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( ExceptT, MaybeT )
+                 ( MaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -83,8 +83,8 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError (..) )
+import           Kore.Unification.Unify
+                 ( MonadUnify )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -402,26 +402,26 @@ isSymbolUnit = Builtin.isSymbol unitKey
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable m err p expanded proof.
+    :: forall level variable unifier unifierM p expanded proof.
         ( OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , Ord (variable level)
         , Show (variable level)
         , Unparse (variable level)
         , SortedVariable variable
-        , Monad m
         , MetaOrObject level
         , FreshVariable variable
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
-        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
+        , unifier ~ unifierM variable
+        , MonadUnify unifierM
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
-    -> (p -> p -> (err m) (expanded, proof))
-    -> (p -> p -> MaybeT (err m) (expanded, proof))
+    -> (p -> p -> unifier (expanded, proof))
+    -> (p -> p -> MaybeT unifier (expanded, proof))
 unifyEquals
     simplificationType
     tools
@@ -444,7 +444,7 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT (err m) (expanded, proof)
+        -> MaybeT unifier (expanded, proof)
 
     unifyEquals0 dv1@(DV_ _ (Domain.BuiltinList builtin1)) =
         \case
@@ -484,7 +484,7 @@ unifyEquals
         :: (level ~ Object)
         => Domain.InternalList p
         -> Domain.InternalList p
-        -> (err m) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2
       | Seq.length list1 /= Seq.length list2 =
         return (ExpandedPattern.bottom, SimplificationProof)
@@ -507,7 +507,7 @@ unifyEquals
         => Domain.InternalList p
         -> Domain.InternalList p
         -> p
-        -> (err m) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsFramedRight
         builtin1
         builtin2
@@ -541,7 +541,7 @@ unifyEquals
         => Domain.InternalList p
         -> p
         -> Domain.InternalList p
-        -> (err m) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsFramedLeft
         builtin1
         frame2

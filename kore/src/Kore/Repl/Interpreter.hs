@@ -376,7 +376,7 @@ tryAxiomClaim eac = do
     ReplState { axioms, claims, claim, graph, node, stepper } <- get
     case getAxiomOrClaim axioms claims node of
         Nothing ->
-            tell "Could not find axiom or claim,\
+            putStrLn' "Could not find axiom or claim,\
                  \or attempt to use claim as first step"
         Just eac' -> do
             if Graph.outdeg (Strategy.graph graph) node == 0
@@ -388,15 +388,47 @@ tryAxiomClaim eac = do
                             (either id (const []) eac')
                             graph
                             node
+-- | After trying to apply an axiom/claim, there are three possible cases:
+--     - If there are no resulting nodes then the rule
+--     couldn't be applied.
+--     - If there is a single resulting node then the rule
+--     was applied successfully.
+--     - If there are more than one resulting nodes then
+--     the rule was applied successfully but it wasn't sufficient.
+--     If a remainder exists after applying a set of axioms
+--     the current unification algorithm considers this
+--     remainder to be Stuck. In this case, though, since only one
+--     rule of the set is applied we must consider the
+--     possibility that another axiom may be further applied
+--     successfully on the resulting remainder, so as a workaround
+--     we will change the state of these nodes from Stuck to
+--     RewritePattern to allow further applications.
+--     If indeed no other axiom can be applied on the remainder,
+--     then a single step command will identify it as being Stuck.
                     case Graph.suc' $ Graph.context gr node of
-                        [] -> tell "Could not unify."
+                        [] -> putStrLn' "Could not unify."
                         [node'] -> do
                             lensGraph .= graph'
                             lensNode .= node'
-                            tell "Unification succsessful."
-                        _ -> lensGraph .= graph'
-                else tell "Node is already evaluated"
+                            putStrLn' "Unification successful."
+                        xs -> do
+                            lensGraph .=
+                                Strategy.ExecutionGraph
+                                    (Strategy.root graph')
+                                    (tryAgainOnNodes xs gr)
+                            putStrLn' "Unification successful."
+                else putStrLn' "Node is already evaluated"
   where
+    tryAgainOnNodes ns gph =
+        Graph.gmap (stuckToRewrite ns) gph
+
+    stuckToRewrite xs ct@(to, n, lab, from)
+        | n `elem` xs =
+            case lab of
+                Stuck patt -> (to, n, RewritePattern patt, from)
+                _ -> ct
+        | otherwise = ct
+
     getAxiomOrClaim
         :: [Axiom level]
         -> [Claim level]
