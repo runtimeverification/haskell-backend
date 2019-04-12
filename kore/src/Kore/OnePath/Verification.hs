@@ -115,8 +115,8 @@ decision is subject to change without notice.
 
 {- | Wrapper for a rewrite rule that should be used as a claim.
 -}
-data Claim level = Claim
-    { rule :: !(RewriteRule level Variable)
+newtype Claim level = Claim
+    { rule :: RewriteRule level Variable
     }
 
 -- | Is the 'Claim' trusted?
