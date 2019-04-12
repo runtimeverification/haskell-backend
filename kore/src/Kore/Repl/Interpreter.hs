@@ -393,27 +393,23 @@ tryAxiomClaim eac = do
                         [node'] -> do
                             lensGraph .= graph'
                             lensNode .= node'
-                            tell "Unification succsessful."
-                        xs -> lensGraph .=
-                            Strategy.ExecutionGraph
-                                (Strategy.root graph')
-                                (func xs gr)
+                            tell "Unification successful."
+                        xs -> do
+                            lensGraph .=
+                                Strategy.ExecutionGraph
+                                    (Strategy.root graph')
+                                    (tryAgainOnNodes xs gr)
+                            tell "Unification successful."
                 else tell "Node is already evaluated"
   where
-   -- func
-   --     :: [Int]
-   --     -> Strategy.ExecutionGraph
-   --            (CommonStrategyPattern Object)
-   --            (RewriteRule Object Variable)
-   --     -> Strategy.ExecutionGraph
-   --            (CommonStrategyPattern Object)
-   --            (RewriteRule Object Variable)
-    func ns gph = Graph.gmap (g ns) gph
+    tryAgainOnNodes ns gph =
+        Graph.gmap (stuckToRewrite ns) gph
 
-    g xs (to, n, lab, from)
-        | n `elem` xs = case lab of
-                          Stuck patt -> (to, n, RewritePattern patt, from)
-                          _ -> (to, n, lab, from)
+    stuckToRewrite xs (to, n, lab, from)
+        | n `elem` xs =
+            case lab of
+                Stuck patt -> (to, n, RewritePattern patt, from)
+                _ -> (to, n, lab, from)
         | otherwise = (to, n, lab, from)
 
     getAxiomOrClaim
