@@ -26,7 +26,6 @@ module Kore.Step
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans
-import qualified Kore.Unification.Unify as Monad.Unify
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Stack
@@ -62,6 +61,7 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
