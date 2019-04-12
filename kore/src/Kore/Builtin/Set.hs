@@ -47,6 +47,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( ExceptT, MaybeT )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -612,11 +613,26 @@ unifyEquals
           | otherwise = case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->
                 Reflection.give tools $ do
+                    let emptySetPat = asInternal tools sort1 Set.empty
                     (elemUnifier, _proof) <-
                         unifyEqualsChildren key1 key2
+                    -- when subunification problems fail, halt execution
+                    Monad.when (term elemUnifier /= key1)
+                        $ error
+                            (  "Expecting unification to succeed"
+                            ++ show key1 ++ "\n /= \n"
+                            ++ show (term elemUnifier)
+                            )
                     (setUnifier, _proof) <-
                         unifyEqualsChildren set2
                             $ asInternal tools sort1 Set.empty
+                    -- when subunification problems fail, halt execution
+                    Monad.when (term setUnifier /= emptySetPat)
+                        $ error
+                            (  "Expecting unification to succeed"
+                            ++ show emptySetPat ++ "\n /= \n"
+                            ++ show (term setUnifier)
+                            )
                     -- Return the concrete set, but capture any predicates and
                     -- substitutions from unifying the element
                     -- and framing variable.
