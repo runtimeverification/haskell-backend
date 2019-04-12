@@ -217,6 +217,7 @@ tools = MetadataTools
     , sortAttributes = undefined
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
+    , applicationSorts = undefined
     }
 
 unificationProblem

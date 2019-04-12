@@ -26,8 +26,6 @@ module Kore.Step.Simplification.Data
     , Environment (..)
     ) where
 
-import           Colog
-                 ( HasLog (..), LogAction (..) )
 import           Control.Applicative
 import           Control.Concurrent.MVar
                  ( MVar )
@@ -38,8 +36,6 @@ import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Except
-                 ( ExceptT (..), runExceptT )
 import           Data.Hashable
                  ( Hashable )
 import           Data.Typeable
@@ -54,7 +50,6 @@ import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
-                 ( LogMessage )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
@@ -132,6 +127,8 @@ newtype BranchT m a =
 deriving instance MonadReader r m => MonadReader r (BranchT m)
 
 deriving instance MonadState s m => MonadState s (BranchT m)
+
+deriving instance WithLog msg m => WithLog msg (BranchT m)
 
 instance MonadSMT m => MonadSMT (BranchT m) where
     liftSMT = lift . liftSMT
@@ -231,35 +228,9 @@ instance MonadReader Environment Simplifier where
     local :: (Environment -> Environment) -> Simplifier a -> Simplifier a
     local f s = Simplifier $ local f $ getSimplifier s
 
-instance HasLog Environment LogMessage Simplifier where
-    getLogAction
-        :: Environment -> LogAction Simplifier LogMessage
-    getLogAction = logger
-
-    setLogAction
-        :: LogAction Simplifier LogMessage -> Environment -> Environment
-    setLogAction l env = env { logger = l }
-
-instance HasLog Environment LogMessage (ExceptT e Simplifier) where
-    getLogAction
-        :: Environment -> LogAction (ExceptT e Simplifier) LogMessage
-    getLogAction =
-        (\f -> LogAction (\str -> ExceptT $ pure <$> f str))
-            . unLogAction . logger
-
-    setLogAction
-        :: LogAction (ExceptT e Simplifier) LogMessage
-        -> Environment
-        -> Environment
-    setLogAction l = setLogAction l'
-        where
-            action :: LogMessage -> ExceptT e Simplifier ()
-            action = unLogAction l
-
-            l' :: LogAction Simplifier LogMessage
-            l' = LogAction $ \msg -> do
-                res <- runExceptT (action msg)
-                return $ either (const ()) id res
+instance WithLog LogMessage Simplifier where
+    askLogAction = asks logger
+    withLog f = local (\env -> env { logger = f (logger env) })
 
 {- | Run a simplification, returning the results along all branches.
  -}

@@ -110,7 +110,7 @@ mkListDomainValue children =
         }
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
-mockMetadataTools = Mock.makeMetadataTools [] [] [] []
+mockMetadataTools = Mock.makeMetadataTools [] [] [] [] []
 
 evaluate
     :: (MetaOrObject Object)

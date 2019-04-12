@@ -333,6 +333,7 @@ test_applicationSimplification =
             Mock.headTypeMapping
             Mock.sortAttributesMapping
             Mock.subsorts
+            Mock.headSortsMapping
 
     noSimplification
         ::  [   ( StepPattern level Variable

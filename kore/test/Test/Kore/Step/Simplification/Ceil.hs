@@ -469,6 +469,7 @@ test_ceilSimplification =
             Mock.headTypeMapping
             Mock.sortAttributesMapping
             Mock.subsorts
+            Mock.headSortsMapping
     asConcrete p =
         let Just r = asConcreteStepPattern p in r
 
