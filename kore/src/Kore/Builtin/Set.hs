@@ -616,23 +616,13 @@ unifyEquals
                     let emptySetPat = asInternal tools sort1 Set.empty
                     (elemUnifier, _proof) <-
                         unifyEqualsChildren key1 key2
-                    -- when subunification problems fail, halt execution
-                    Monad.when (term elemUnifier /= key1)
-                        $ error
-                            (  "Expecting unification to succeed"
-                            ++ show key1 ++ "\n /= \n"
-                            ++ show (term elemUnifier)
-                            )
+                    -- when subunification problem fails, halt execution
+                    errorIfNotUnifying elemUnifier key1
                     (setUnifier, _proof) <-
                         unifyEqualsChildren set2
                             $ asInternal tools sort1 Set.empty
-                    -- when subunification problems fail, halt execution
-                    Monad.when (term setUnifier /= emptySetPat)
-                        $ error
-                            (  "Expecting unification to succeed"
-                            ++ show emptySetPat ++ "\n /= \n"
-                            ++ show (term setUnifier)
-                            )
+                    -- when subunification problem fails, halt execution
+                    errorIfNotUnifying setUnifier emptySetPat
                     -- Return the concrete set, but capture any predicates and
                     -- substitutions from unifying the element
                     -- and framing variable.
@@ -716,3 +706,22 @@ unifyEquals
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
+
+-- Check whether the term part of an expanded pattern
+-- is identical to the expected term and error if not.
+errorIfNotUnifying
+    ::  ( Monad m
+        , ShowMetaOrObject variable
+        , EqMetaOrObject variable
+        )
+    => ExpandedPattern Object variable
+    -> StepPattern Object variable
+    -> m ()
+errorIfNotUnifying unifiedExpandedPattern expected =
+    Monad.when (term unifiedExpandedPattern /= expected)
+        $ error
+            (  "Expecting unification to succeed"
+            ++ show expected ++ "\n /= \n"
+            ++ show (term unifiedExpandedPattern)
+            )
+
