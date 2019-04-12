@@ -7,10 +7,6 @@ import Test.Tasty.HUnit
 import qualified Control.Exception as Exception
 import           Data.Default
                  ( def )
-import           Data.Function
-                 ( (&) )
-import           Data.Functor
-                 ( (<&>) )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -57,6 +53,9 @@ import           Test.Tasty.HUnit.Extensions
     They are more integration tests than unit tests.
 -}
 
+-- DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER
+-- The names of constructors ("c1", etc.) must match those in
+-- `mockMetadataTools. `
 test_constructorRewriting :: TestTree
 test_constructorRewriting =
     applyStrategy                              "a constructor appied to a var"
@@ -95,18 +94,16 @@ applyStrategy testName start axioms expected =
 
 takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
 takeSteps (Start start, wrappedAxioms) =
-    makeExecutionGraph start (unwrap <$> wrappedAxioms)
-    & Simplification.evalSimplifier emptyLogger
-    & SMT.runSMT SMT.defaultConfig
-    <&> pickLongest
-
+    (<$>) pickLongest
+    $ SMT.runSMT SMT.defaultConfig
+    $ Simplification.evalSimplifier emptyLogger
+    $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
             mockTransitionRule
             (repeat $ allRewrites axioms)
             (pure configuration, mempty)
-    unwrap (Axiom a) = a
 
 compareTo
     :: HasCallStack
@@ -130,7 +127,8 @@ type StepProof' variable = StepProof Object variable
 -- Test types
 type TestPattern = CommonStepPattern'
 newtype Start = Start TestPattern
-newtype Axiom = Axiom (RewriteRule' Variable)
+newtype Axiom = Axiom
+    { unAxiom :: RewriteRule' Variable }
 newtype Expect = Expect TestPattern
 
 type Actual = ExpandedPattern' Variable
