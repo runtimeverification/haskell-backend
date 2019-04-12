@@ -67,6 +67,7 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
+        Mock.headSortsMapping
 
 evalUnifier
     :: BranchT (ExceptT e Simplifier) a

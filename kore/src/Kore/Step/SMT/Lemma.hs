@@ -19,7 +19,6 @@ import           Control.Error
 import qualified Control.Monad.Counter as Counter
 import           Control.Monad.Except
 import qualified Control.Monad.State as State
-import           Control.Monad.Trans.Maybe
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
@@ -29,7 +28,6 @@ import           Kore.AST.Kore
 import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.SmtLemma
-import           Kore.Attribute.Smtlib
 import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
@@ -37,6 +35,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
 import qualified Kore.Step.SMT.Sorts as Sorts
+import qualified Kore.Step.SMT.Symbols as Symbols
 import           Kore.Step.SMT.Translate
 import           Kore.Unparser
 import           SMT
@@ -46,8 +45,8 @@ import qualified SMT
 -- | Given an indexed module, `declareSMTLemmas` translates all
 -- rewrite rules marked with the smt-lemma attribute into the
 -- smt2 standard, and sends them to the current SMT solver.
--- it assumes all symbols in all smt-lemma rules have been
--- declared in the smt prelude.
+-- It assumes that all symbols in all smt-lemma rules either have been
+-- declared in the smt prelude or they have an smtlib attribute.
 declareSMTLemmas
     :: forall m param dom .
         ( MonadSMT m
@@ -63,39 +62,9 @@ declareSMTLemmas
     -> m ()
 declareSMTLemmas m = SMT.liftSMT $ do
     Sorts.declareSorts m
-    mapM_ declareSymbol (indexedModuleSymbolSentences m)
+    Symbols.declareSymbols m
     mapM_ declareRule (indexedModuleAxioms m)
   where
-    declareSymbol
-        :: (Given (MetadataTools Object StepperAttributes))
-        => ( StepperAttributes
-           , SentenceSymbol
-                Object
-                (KorePattern
-                    Domain.Builtin
-                    Variable
-                    (Unified (Valid (Unified Variable)))
-                )
-           )
-        -> SMT (Maybe ())
-    declareSymbol (atts, symDeclaration) = runMaybeT $
-        case getSmtlib $ smtlib atts of
-            Just sExpr
-              | SMT.Atom name <- sExpr -> declareSymbolWorker name
-              | (SMT.List (SMT.Atom name : _)) <- sExpr ->
-                declareSymbolWorker name
-            _ -> pure ()
-      where
-        declareSymbolWorker name = do
-            inputSorts <-
-                mapM
-                    translateSort
-                    (sentenceSymbolSorts symDeclaration)
-            resultSort <-
-                translateSort
-                    (sentenceSymbolResultSort symDeclaration)
-            _ <- SMT.declareFun name inputSorts resultSort
-            pure ()
     declareRule
         :: forall sortParam . (Given (MetadataTools Object StepperAttributes))
         => ( Attribute.Axiom
@@ -126,12 +95,6 @@ declareSMTLemmas m = SMT.liftSMT $ do
             [ SMT.List [sexpr, t] | (sexpr, t) <- Map.elems vars ]
         , lemma
         ]
-
-    translateSort
-        :: Given (MetadataTools Object StepperAttributes)
-        => Sort Object
-        -> MaybeT SMT SExpr
-    translateSort sort = MaybeT $ return (Sorts.translateSort sort)
 
 getRight :: Alternative m => Either a b -> m b
 getRight (Right a) = pure a

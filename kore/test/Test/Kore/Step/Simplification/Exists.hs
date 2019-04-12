@@ -250,6 +250,7 @@ test_existsSimplification =
             Mock.headTypeMapping
             Mock.sortAttributesMapping
             Mock.subsorts
+            Mock.headSortsMapping
 
 makeExists
     :: Ord (variable Object)

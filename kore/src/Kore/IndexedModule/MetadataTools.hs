@@ -24,6 +24,8 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
+import           Kore.ASTHelpers
+                 ( ApplicationSorts )
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Subsort
 import           Kore.IndexedModule.IndexedModule
@@ -44,6 +46,7 @@ data MetadataTools level attributes = MetadataTools
        including when @a@ equals @b@. -}
     , subsorts :: Sort level -> Set (Sort level)
     -- ^ get the subsorts for a sort
+    , applicationSorts :: SymbolOrAlias level -> ApplicationSorts level
     }
   deriving Functor
 
@@ -64,6 +67,7 @@ extractMetadataTools m =
     , sortAttributes = getSortAttributes m
     , isSubsortOf = checkSubsort
     , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
+    , applicationSorts = getHeadApplicationSorts m
     }
   where
     subsortTable :: Map (Sort Object) [Sort Object]
