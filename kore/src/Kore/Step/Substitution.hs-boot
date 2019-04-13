@@ -1,8 +1,5 @@
 module Kore.Step.Substitution where
 
-import Control.Monad.Except
-       ( ExceptT )
-
 import Kore.AST.Common
        ( SortedVariable )
 import Kore.AST.MetaOrObject
@@ -17,36 +14,36 @@ import Kore.Step.Axiom.Data
 import Kore.Step.Representation.ExpandedPattern
        ( PredicateSubstitution )
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, Simplifier, StepPatternSimplifier )
+       ( PredicateSubstitutionSimplifier, StepPatternSimplifier )
 import Kore.Unification.Data
        ( UnificationProof )
-import Kore.Unification.Error
-       ( UnificationOrSubstitutionError )
 import Kore.Unification.Substitution
        ( Substitution )
+import Kore.Unification.Unify
+       ( MonadUnify )
 import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
 
 mergePredicatesAndSubstitutionsExcept
-    :: ( Show (variable level)
-       , SortedVariable variable
-       , MetaOrObject level
-       , Ord (variable level)
-       , Unparse (variable level)
-       , OrdMetaOrObject variable
-       , ShowMetaOrObject variable
-       , FreshVariable variable
-       )
+    ::  ( Show (variable level)
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
+        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> [Predicate level variable]
     -> [Substitution level variable]
-    -> ExceptT
-        ( UnificationOrSubstitutionError level variable )
-        Simplifier
+    -> unifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )

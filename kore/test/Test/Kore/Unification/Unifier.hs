@@ -10,8 +10,6 @@ import Test.Tasty.HUnit.Extensions
 
 import           Control.Exception
                  ( ErrorCall (ErrorCall), catch, evaluate )
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Function
                  ( on )
@@ -59,6 +57,7 @@ import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.UnifierImpl
+import qualified Kore.Unification.Unify as Monad.Unify
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -270,7 +269,7 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
     Right (subst', proof') <-
         runSMT
         $ evalSimplifier emptyLogger
-        $ runExceptT
+        $ Monad.Unify.runUnifier
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
@@ -299,7 +298,7 @@ andSimplifyFailure term1 term2 err = do
     actual <-
         runSMT
         $ evalSimplifier emptyLogger
-        $ runExceptT
+        $ Monad.Unify.runUnifier
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
@@ -324,7 +323,7 @@ andSimplifyException message term1 term2 exceptionMessage =
             var <-
                 runSMT
                 $ evalSimplifier emptyLogger
-                $ runExceptT
+                $ Monad.Unify.runUnifier
                 $ simplifyAnds
                     tools
                     (Mock.substitutionSimplifier tools)
@@ -357,7 +356,7 @@ unificationProcedureSuccess
         Right (results, proof') <-
             runSMT
             $ evalSimplifier emptyLogger
-            $ runExceptT
+            $ Monad.Unify.runUnifier
             $ unificationProcedure
                 tools
                 (Mock.substitutionSimplifier tools)
