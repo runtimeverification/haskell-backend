@@ -44,10 +44,11 @@ import           Data.List.Extra
                  ( groupSort )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( catMaybes, listToMaybe )
+                 ( catMaybes, fromJust, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
+import qualified Data.Text.Lazy as LT
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
 import           GHC.Exts
@@ -185,7 +186,8 @@ showGraph
     => m ()
 showGraph = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    liftIO $ showDotGraph graph
+    axioms <- Lens.use lensAxioms
+    liftIO $ showDotGraph (length axioms) graph
 
 proveSteps :: Int -> ReplM level ()
 proveSteps n = do
@@ -317,12 +319,11 @@ showRule configNode = do
                 Nothing ->
                     putStrLn' "No rule was applied."
         else putStrLn' "Invalid node!"
-  where
-    axiomOrClaim :: Int -> Int -> String
-    axiomOrClaim len iden
-      | iden < len = "Rule is axiom " <> show iden
-      | otherwise  = "Rule is claim " <> show (iden - len)
 
+axiomOrClaim :: Int -> Int -> String
+axiomOrClaim len iden
+  | iden < len = "Axiom " <> show iden
+  | otherwise  = "Claim " <> show (iden - len)
 
 showPrecBranch
     :: Maybe Int
@@ -633,10 +634,26 @@ printNotFound = putStrLn' "Variable or index not found"
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"
 
-showDotGraph :: Graph gr => gr nl el -> IO ()
-showDotGraph =
+showDotGraph :: Int -> GraphType -> IO ()
+showDotGraph len =
     (flip Graph.runGraphvizCanvas') Graph.Xlib
-        . Graph.graphToDot Graph.nonClusteredParams
+        . Graph.graphToDot params
+  where
+    params = Graph.nonClusteredParams
+        { Graph.fmtEdge = \(_, _, l) ->
+            [Graph.textLabel (ruleIndex len l)]
+        }
+    ruleIndex len label =
+        case listToMaybe . toList $ label of
+            Nothing -> "Done"
+            Just rule -> LT.pack
+                      . (axiomOrClaim len)
+                      . fromJust
+                      . getRuleIndex
+                      . Attribute.identifier
+                      . Rule.attributes
+                      . Rule.getRewriteRule
+                      $ rule
 
 data StepResult
     = NoChildNodes

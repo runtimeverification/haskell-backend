@@ -14,6 +14,7 @@ module Kore.Repl.Data
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
     , ReplState (..)
+    , GraphType
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
     , lensLabels, lensOmit
@@ -22,8 +23,12 @@ module Kore.Repl.Data
 import qualified Control.Lens.TH.Rules as Lens
 import qualified Data.Graph.Inductive.Graph as Graph
 
+import           Data.Graph.Inductive.PatriciaTree
+                 ( Gr )
 import           Data.Map.Strict
                  ( Map )
+import           Data.Sequence
+                 ( Seq )
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
@@ -138,6 +143,9 @@ type ExecutionGraph =
     Strategy.ExecutionGraph
         (CommonStrategyPattern Object)
         (RewriteRule Object Variable)
+
+type GraphType =
+    Gr (CommonStrategyPattern Object) (Seq (RewriteRule Object Variable))
 
 -- | State for the rep.
 data ReplState level = ReplState
