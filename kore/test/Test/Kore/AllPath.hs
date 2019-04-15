@@ -97,7 +97,7 @@ test_unprovenNodes =
     ]
 
 -- | Simple program configurations for unit testing.
-data K = A | B | C | Bot
+data K = BorC | A | B | C | D | E | F | Bot
     deriving (Eq, Ord, Show)
 
 instance EqualWithExplanation K where
@@ -110,17 +110,67 @@ type ProofState = AllPath.ProofState Goal
 
 type Rule = (K, K)
 
-ruleAB, ruleBC :: Rule
+ruleAC :: Rule
+ruleAC = (A, C)
+
+cyclicRule :: [Rule]
+cyclicRule = [(A, A)]
+
+ruleAB, ruleAF :: Rule
 ruleAB = (A, B)
+ruleAF = (A, F)
+
+ruleBC, ruleBD, ruleBF :: Rule
 ruleBC = (B, C)
+ruleBD = (B, D)
+ruleBF = (B, F)
+
+ruleCD, ruleCF :: Rule
+ruleCD = (C, D)
+ruleCF = (C, F)
+
+ruleDE :: Rule
+ruleDE = (D, E)
+
+ruleEF :: Rule
+ruleEF = (E, F)
+
+noRules :: [Rule]
+noRules = []
+
+oneRule :: [Rule]
+oneRule = [ruleAB]
+
+concurrentRules :: [Rule]
+concurrentRules = [ ruleAB, ruleAC ]
+
+differentLengthPaths :: [Rule]
+differentLengthPaths =
+    [ ruleAB
+    , ruleAF
+    , ruleBC
+    , ruleBD
+    , ruleBF
+    , ruleCD
+    , ruleCF
+    , ruleDE
+    , ruleEF
+    ]
 
 type Prim = AllPath.Prim Rule
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination :: Monad m => Goal -> m Goal
-removeDestination (src, dst)
-   | src == dst = return (Bot, dst)
-   | otherwise  = return (src, dst)
+removeDestination (src, dst) =
+    return (src', dst)
+  where
+    src'
+      | dst == src = Bot
+      | BorC <- dst, B    <- src = Bot
+      | BorC <- dst, C    <- src = Bot
+      | B    <- dst, BorC <- src = C
+      | C    <- dst, BorC <- src = B
+      | otherwise  = src
 
 -- | The goal is trivially valid when the members are equal.
 triviallyValid :: Goal -> Bool
@@ -227,7 +277,7 @@ test_transitionRule_DerivePar =
   where
     run rules = runTransitionRule (AllPath.DerivePar rules)
     unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run [ruleAB] state `equals_` [(state, mempty)]
+    unmodified state = run oneRule state `equals_` [(state, mempty)]
     transits
         :: HasCallStack
         => ProofState
@@ -241,71 +291,54 @@ test_transitionRule_DerivePar =
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
-    [ proves "only axiom"
-        [ ]
-        [ ruleAB ]
-        (A, B)
-    , proves "same claim and axiom"
-        [ ]
-        [ ruleAB ]
-        (A, B)
-    , proves "axiom and then claim"
-        [ ruleBC ]
-        [ ruleAB ]
-        (A, C)
-    , disproves "no claims or axioms"
-        [ ]
-        [ ]
-        (A, B)
-        [(A, B)]
-    , disproves "claim without axioms"
-        [ ]
-        [ ]
-        (A, B)
-        [(A, B)]
-    , disproves "irrelevant axiom and claim"
-        [ ]
-        [ ruleBC ]
-        (A, B)
-        [(A, B)]
+    [ proves    noRules (A, A) "identity"
+    , disproves noRules (A, B) "no claims or axioms" [(A, B)]
+
+    , proves    oneRule (A, B   ) "only axiom"
+    , proves    oneRule (A, BorC) "disjoint goal"
+    , disproves oneRule (A, C   ) "partial progess toward goal" [(B, C)]
+
+    , proves    cyclicRule (A, B) "cyclic rule"
+    , proves    cyclicRule (A, C) "cyclic rule"
+
+    , proves    concurrentRules (A, BorC) "concurrent rules"
+    , disproves concurrentRules (A, B   ) "concurrent rules" [(C, B)]
+
+    , proves    differentLengthPaths (A, F) "paths of different length"
     ]
   where
-    run claims axioms goal =
+    run axioms goal =
         runIdentity
         $ Strategy.runStrategy
             transitionRule
-            (AllPath.strategy (goal : claims) axioms)
+            (AllPath.strategy [goal] axioms)
             (AllPath.Goal goal)
     disproves
         :: HasCallStack
-        => String
-        -- ^ Message
-        -> [Rule]
-        -- ^ Claims
-        -> [Rule]
+        => [Rule]
         -- ^ Axioms
         -> Goal
         -- ^ Proof goal
+        -> String
+        -- ^ Message
         -> [Goal]
         -- ^ Unproven goals
         -> TestTree
-    disproves message claims axioms goal unproven =
+    disproves axioms goal message unproven =
         equals
-            (Foldable.toList $ AllPath.unprovenNodes $ run claims axioms goal)
+            (Foldable.toList $ AllPath.unprovenNodes $ run axioms goal)
             unproven
             ("disproves goal with " <> message)
     proves
         :: HasCallStack
-        => String
-        -> [Rule]
-        -- ^ Claims
-        -> [Rule]
+        => [Rule]
         -- ^ Axioms
         -> Goal
         -- ^ Proof goal
+        -> String
         -> TestTree
-    proves message claims axioms goal =
+    proves axioms goal message =
         satisfies
-            (run claims axioms goal)
+            (run axioms goal)
             AllPath.proven
             ("proves goal with " <> message)
