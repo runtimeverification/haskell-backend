@@ -388,7 +388,7 @@ tryAxiomClaim eac = do
                             (either id (const []) eac')
                             graph
                             node
-{- |
+{-
     After trying to apply an axiom/claim, there are three possible cases:
     - If there are no resulting nodes then the rule
     couldn't be applied.
