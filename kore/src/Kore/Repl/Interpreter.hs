@@ -395,23 +395,25 @@ tryAxiomClaim eac = do
                             (either id (const []) eac')
                             graph
                             node
---  After trying to apply an axiom/claim, there are three possible cases:
---     - If there are no resulting nodes then the rule
---     couldn't be applied.
---     - If there is a single resulting node then the rule
---     was applied successfully.
---     - If there are more than one resulting nodes then
---     the rule was applied successfully but it wasn't sufficient.
---     If a remainder exists after applying a set of axioms
---     the current unification algorithm considers this
---     remainder to be Stuck. In this case, though, since only one
---     rule of the set is applied we must consider the
---     possibility that another axiom may be further applied
---     successfully on the resulting remainder, so as a workaround
---     we will change the state of these nodes from Stuck to
---     RewritePattern to allow further applications.
---     If indeed no other axiom can be applied on the remainder,
---     then a single step command will identify it as being Stuck.
+{-
+    After trying to apply an axiom/claim, there are three possible cases:
+    - If there are no resulting nodes then the rule
+    couldn't be applied.
+    - If there is a single resulting node then the rule
+    was applied successfully.
+    - If there are more than one resulting nodes then
+    the rule was applied successfully but it wasn't sufficient.
+    If a remainder exists after applying a set of axioms
+    the current unification algorithm considers this
+    remainder to be Stuck. In this case, though, since only one
+    rule of the set is applied we must consider the
+    possibility that another axiom may be further applied
+    successfully on the resulting remainder, so as a workaround
+    we will change the state of these nodes from Stuck to
+    RewritePattern to allow further applications.
+    If indeed no other axiom can be applied on the remainder,
+    then a single step command will identify it as being Stuck.
+-}
                     case Graph.suc' $ Graph.context gr node of
                         [] -> putStrLn' "Could not unify."
                         [node'] -> do
