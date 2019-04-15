@@ -47,6 +47,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -614,11 +615,16 @@ unifyEquals
           | otherwise = case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->
                 Reflection.give tools $ do
+                    let emptySetPat = asInternal tools sort1 Set.empty
                     (elemUnifier, _proof) <-
                         unifyEqualsChildren key1 key2
+                    -- when subunification problem fails, halt execution
+                    errorIfNotUnifying elemUnifier key1
                     (setUnifier, _proof) <-
                         unifyEqualsChildren set2
                             $ asInternal tools sort1 Set.empty
+                    -- when subunification problem fails, halt execution
+                    errorIfNotUnifying setUnifier emptySetPat
                     -- Return the concrete set, but capture any predicates and
                     -- substitutions from unifying the element
                     -- and framing variable.
@@ -702,3 +708,22 @@ unifyEquals
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
+
+-- Check whether the term part of an expanded pattern
+-- is identical to the expected term and error if not.
+errorIfNotUnifying
+    ::  ( Monad m
+        , ShowMetaOrObject variable
+        , EqMetaOrObject variable
+        )
+    => ExpandedPattern Object variable
+    -> StepPattern Object variable
+    -> m ()
+errorIfNotUnifying unifiedExpandedPattern expected =
+    Monad.when (term unifiedExpandedPattern /= expected)
+        $ error
+            (  "Expecting unification to succeed"
+            ++ show expected ++ "\n /= \n"
+            ++ show (term unifiedExpandedPattern)
+            )
+

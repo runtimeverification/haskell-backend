@@ -781,7 +781,8 @@ intModule =
             , binarySymbolDecl mulIntSymbol
                 [hookAttribute "INT.mul", smthookAttribute "*"]
             , unarySymbolDecl absIntSymbol
-                [hookAttribute "INT.abs", smtlibAttribute "int_abs"]
+                [ hookAttribute "INT.abs", smtlibAttribute "int_abs"
+                , functionalAttribute]
             , binarySymbolDecl tdivIntSymbol
                 [hookAttribute "INT.tdiv", smthookAttribute "div"]
             , binarySymbolDecl tmodIntSymbol
