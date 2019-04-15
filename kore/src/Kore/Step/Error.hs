@@ -8,6 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 
 module Kore.Step.Error
     ( StepError (..)
+    , isUnsupportedSymbolic
     , mapStepErrorVariables
     , stepErrorVariables
     , unificationToStepError
@@ -44,6 +45,10 @@ instance
     pretty (StepErrorSubstitution err) = Pretty.pretty err
     pretty (StepErrorUnsupportedSymbolic err) =
         Pretty.vsep ["Unsupported symbolic rule:", Pretty.unAnnotate err]
+
+isUnsupportedSymbolic :: StepError level variable -> Bool
+isUnsupportedSymbolic (StepErrorUnsupportedSymbolic _) = True
+isUnsupportedSymbolic _                                = False
 
 {-| 'substitutionErrorVariables' extracts all variables in a
 'SubstitutionError' as a set.

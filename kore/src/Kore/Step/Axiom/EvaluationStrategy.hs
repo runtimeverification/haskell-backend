@@ -66,7 +66,7 @@ import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
 import           Kore.Unparser
-                 ( Unparse, unparse, unparseToString )
+                 ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 

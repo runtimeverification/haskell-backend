@@ -868,9 +868,9 @@ instance (Show (variable level), EqualWithExplanation (variable level))
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-    sumConstructorPair StepErrorUnsupportedSymbolic StepErrorUnsupportedSymbolic =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@StepErrorUnsupportedSymbolic a2 =
+    sumConstructorPair (StepErrorUnsupportedSymbolic a1) (StepErrorUnsupportedSymbolic a2) =
+        SumConstructorSameWithArguments (EqWrap "StepErrorUnsupportedSymbolic" (show a1) (show a2))
+    sumConstructorPair a1@(StepErrorUnsupportedSymbolic _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 

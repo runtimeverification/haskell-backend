@@ -41,10 +41,13 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics as GHC
 
 import           Kore.AST.Pure
+import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Logger as Log
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -454,7 +457,12 @@ applyRule
             unifiedRule <- unifyRule' initial' rule'
             let initialCondition = Predicated.withoutTerm initial'
             final <- applyUnifiedRule' initialCondition unifiedRule
-            result <- checkSubstitutionCoverage initial' unifiedRule final
+            result <-
+                checkSubstitutionCoverage
+                    metadataTools
+                    initial'
+                    unifiedRule
+                    final
             return Result { unifiedRule, result }
   where
     unifyRule' =
@@ -540,7 +548,8 @@ checkSubstitutionCoverage
         , Show    (variable level)
         , Unparse (variable level)
         )
-    => ExpandedPattern level (Target variable)
+    => MetadataTools level StepperAttributes
+    -> ExpandedPattern level (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
@@ -548,8 +557,8 @@ checkSubstitutionCoverage
     -- ^ Configuration after applying rule
     -> BranchT (ExceptT (StepError level (Target variable)) m)
         (ExpandedPattern level variable)
-checkSubstitutionCoverage initial unified final
-  | isCoveringSubstitution = return (unwrapConfiguration final)
+checkSubstitutionCoverage tools initial unified final
+  | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
   | isSymbolic =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule, but this was not unexpected because the initial
@@ -594,11 +603,18 @@ checkSubstitutionCoverage initial unified final
       where
         RulePattern { left = leftAxiom } = axiom
     Predicated { substitution } = final
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    subst = Substitution.toMap substitution
+    substitutionVariables = Map.keysSet subst
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
-    isSymbolic =
-        Foldable.any Target.isNonTarget substitutionVariables
+    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+    isAcceptable = all isValidSymbolic (Map.toList subst)
+    isValidSymbolic (x, t)
+      | Target.isTarget x = True
+      | Valid.App_ symbolOrAlias _ <- t =
+        (Attribute.Symbol.isConstructor . Attribute.Symbol.constructor)
+            (MetadataTools.symAttributes tools symbolOrAlias)
+      | otherwise = False
 
 {- | Apply the given rules to the initial configuration in parallel.
 

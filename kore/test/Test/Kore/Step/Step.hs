@@ -128,7 +128,7 @@ test_applyUnifiedRule =
             initial = PredicateSubstitution.bottom
             expect = Right mempty
         actual <- applyUnifiedRule initial unifiedRule
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
         let unifiedRule =
@@ -148,7 +148,7 @@ test_applyUnifiedRule =
             initial = PredicateSubstitution.top
             expect = Right (MultiOr [ right axiom <$ initial ])
         actual <- applyUnifiedRule initial unifiedRule
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "combine initial and rule conditions" $ do
         let unifiedRule =
@@ -200,7 +200,7 @@ test_applyUnifiedRule =
                 $ Predicate.makeNotPredicate predicate
             expect = Right mempty
         actual <- applyUnifiedRule initial unifiedRule
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     ]
 
@@ -1232,9 +1232,29 @@ test_sequenceMatchingRules :: [TestTree]
 test_sequenceMatchingRules =
     [ testCase "functional10(x) and functional10(sigma(x, y)) => a" $ do
         let
-            expect = StepErrorUnsupportedSymbolic
             initialTerm = Mock.functional10 (mkVar Mock.x)
             initial = pure initialTerm
-        Left actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
-        assertEqualWithExplanation "" expect actual
+            x' = nextVariable Mock.x
+            sigma = Mock.sigma (mkVar x') (mkVar Mock.y)
+            results =
+                MultiOr
+                    [ Predicated
+                        { term = Mock.a
+                        , predicate = Predicate.makeTruePredicate
+                        , substitution = Substitution.wrap [(Mock.x, sigma)]
+                        }
+                    ]
+            remainders =
+                MultiOr
+                    [ initial
+                        { predicate =
+                            Predicate.makeNotPredicate
+                            $ Predicate.makeExistsPredicate x'
+                            $ Predicate.makeExistsPredicate Mock.y
+                            $ Predicate.makeEqualsPredicate (mkVar Mock.x) sigma
+                        }
+                    ]
+        Right actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
+        checkResults results actual
+        checkRemainders remainders actual
     ]
