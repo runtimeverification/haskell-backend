@@ -17,7 +17,10 @@ module Kore.Step.Simplification.Data
     , gatherAll
     , scatter
     , PredicateSubstitutionSimplifier (..)
-    , StepPatternSimplifier (..)
+    , StepPatternSimplifier
+    , stepPatternSimplifier
+    , simplifyTerm
+    , simplifyConditionalTerm
     , SimplificationProof (..)
     , SimplificationType (..)
     , Environment (..)
@@ -32,6 +35,7 @@ import           Control.Monad.Morph
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
+import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Hashable
                  ( Hashable )
 import           Data.Typeable
@@ -48,12 +52,14 @@ import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution )
+                 ( ExpandedPattern, PredicateSubstitution )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
+import qualified Kore.Step.Representation.Predicated as Predicated
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
@@ -288,11 +294,107 @@ newtype StepPatternSimplifier level =
             )
         => PredicateSubstitutionSimplifier level
         -> StepPattern level variable
+        -> PredicateSubstitution level variable
+        -> BranchT Simplifier (ExpandedPattern level variable)
+        )
+
+{- | Use a 'StepPatternSimplifier' to simplify a pattern.
+
+The pattern is considered as an isolated term without extra initial conditions.
+
+ -}
+simplifyTerm
+    :: forall variable
+    .   ( FreshVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => StepPatternSimplifier Object
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPattern Object variable
+    -> Simplifier
+        ( OrOfExpandedPattern Object variable
+        , SimplificationProof Object
+        )
+simplifyTerm
+    (StepPatternSimplifier simplify)
+    predicateSimplifier
+    stepPattern
+  = do
+    results <-
+        gather $ simplify
+            predicateSimplifier
+            stepPattern
+            PredicateSubstitution.top
+    return (results, SimplificationProof)
+
+
+{- | Use a 'StepPatternSimplifier' to simplify a pattern subject to conditions.
+ -}
+simplifyConditionalTerm
+    :: forall variable
+    .   ( FreshVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => StepPatternSimplifier Object
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPattern Object variable
+    -> PredicateSubstitution Object variable
+    -> BranchT Simplifier (ExpandedPattern Object variable)
+simplifyConditionalTerm (StepPatternSimplifier simplify) = simplify
+
+{- | Construct a 'StepPatternSimplifier' from a term simplifier.
+
+The constructed simplifier does not consider the initial condition during
+simplification, but only attaches it unmodified to the final result.
+
+ -}
+stepPatternSimplifier
+    ::  ( forall variable
+        .   ( FreshVariable variable
+            , Ord (variable Object)
+            , Show (variable Object)
+            , Unparse (variable Object)
+            , SortedVariable variable
+            )
+        => PredicateSubstitutionSimplifier Object
+        -> StepPattern Object variable
         -> Simplifier
-            ( OrOfExpandedPattern level variable
-            , SimplificationProof level
+            ( OrOfExpandedPattern Object variable
+            , SimplificationProof Object
             )
         )
+    -> StepPatternSimplifier Object
+stepPatternSimplifier simplifier =
+    StepPatternSimplifier stepPatternSimplifierWorker
+  where
+    stepPatternSimplifierWorker
+        :: forall variable
+        .   ( FreshVariable variable
+            , Ord (variable Object)
+            , Show (variable Object)
+            , Unparse (variable Object)
+            , SortedVariable variable
+            )
+        => PredicateSubstitutionSimplifier Object
+        -> StepPattern Object variable
+        -> PredicateSubstitution Object variable
+        -> BranchT Simplifier (ExpandedPattern Object variable)
+    stepPatternSimplifierWorker
+        predicateSimplifier
+        stepPattern
+        initialCondition
+      = do
+        (results, _) <-
+            Monad.Trans.lift
+            $ simplifier predicateSimplifier stepPattern
+        result <- scatter results
+        return (result `Predicated.andCondition` initialCondition)
 
 {-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies
 'PredicateSubstitution's. The minimal requirement from this function is

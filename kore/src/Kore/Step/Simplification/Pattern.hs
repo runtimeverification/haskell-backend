@@ -39,7 +39,8 @@ import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..) )
+                 Simplifier, StepPatternSimplifier, simplifyTerm,
+                 stepPatternSimplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -136,7 +137,7 @@ simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
         axiomIdToEvaluator
         (fromPurePattern patt)
   where
-    simplifier = StepPatternSimplifier
+    simplifier = stepPatternSimplifier
         (simplifyToOr tools axiomIdToEvaluator)
 
 simplifyInternal
@@ -162,11 +163,11 @@ simplifyInternal
 simplifyInternal
     tools
     substitutionSimplifier
-    simplifier@(StepPatternSimplifier unwrappedSimplifier)
+    simplifier
     axiomIdToEvaluator
     (valid :< patt)
   = do
-    halfSimplified <- traverse (unwrappedSimplifier substitutionSimplifier) patt
+    halfSimplified <- traverse simplifyTerm' patt
     -- TODO: Remove fst
     case fmap fst halfSimplified of
         AndPattern p ->
@@ -208,3 +209,5 @@ simplifyInternal
         CharLiteralPattern p -> return $ CharLiteral.simplify p
         TopPattern p -> return $ Top.simplify p
         VariablePattern p -> return $ Variable.simplify p
+  where
+    simplifyTerm' = simplifyTerm simplifier substitutionSimplifier
