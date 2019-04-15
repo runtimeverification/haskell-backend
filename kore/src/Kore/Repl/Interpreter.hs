@@ -36,8 +36,6 @@ import           Data.Foldable
 import           Data.Functor
                  ( ($>) )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Graph.Inductive.Graph
-                 ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.List.Extra
@@ -183,10 +181,14 @@ prove index = do
 showGraph
     :: MonadIO m
     => MonadState (ReplState level) m
+    => MonadWriter String m
     => m ()
 showGraph = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     axioms <- Lens.use lensAxioms
+    putStrLn' "If an edge is labeled as Simpl/RD it means that\
+              \ either the next node was reached using the SMT\
+              \ solver or it was reached through the Remove Destination step."
     liftIO $ showDotGraph (length axioms) graph
 
 proveSteps :: Int -> ReplM level ()
@@ -643,11 +645,11 @@ showDotGraph len =
         { Graph.fmtEdge = \(_, _, l) ->
             [Graph.textLabel (ruleIndex len l)]
         }
-    ruleIndex len label =
-        case listToMaybe . toList $ label of
-            Nothing -> "Done"
+    ruleIndex lth lbl =
+        case listToMaybe . toList $ lbl of
+            Nothing -> "Simpl/RD"
             Just rule -> LT.pack
-                      . (axiomOrClaim len)
+                      . (axiomOrClaim lth)
                       . fromJust
                       . getRuleIndex
                       . Attribute.identifier
