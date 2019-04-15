@@ -9,6 +9,7 @@ import           Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
 import           Data.Sequence
                  ( Seq )
+import qualified Data.Sequence as Seq
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -184,11 +185,22 @@ test_transitionRule_DerivePar :: [TestTree]
 test_transitionRule_DerivePar =
     [ unmodified AllPath.Proven
     , unmodified (AllPath.Goal    (2, 1))
-    , becomes    (AllPath.GoalRem (2, 1)) _
+    , transits
+        (AllPath.GoalRem (2, 1))
+        [ (AllPath.Goal    (0, 1), Seq.singleton rule)
+        , (AllPath.GoalRem (2, 1), mempty)
+        ]
     ]
   where
-    run = transitionRule (AllPath.DerivePar [Divide 3])
+    rule = Divide 3
+    run = transitionRule (AllPath.DerivePar [rule])
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
-    becomes :: HasCallStack => ProofState -> TestTree
-    becomes state = equals_ (run state)
+    transits
+        :: HasCallStack
+        => ProofState
+        -- ^ initial state
+        -> [(ProofState, Seq Rule)]
+        -- ^ transitions
+        -> TestTree
+    transits state = equals_ (run state)
