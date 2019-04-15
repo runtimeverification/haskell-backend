@@ -361,7 +361,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 constructExecutionGraph
     :: forall m config rule instr
-    .  (Monad m, Hashable config, Show config, Show rule)
+    .  (Monad m, Show config, Show rule)
     => (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> config
@@ -467,7 +467,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 runStrategy
     :: forall m prim rule config
-    .  (Monad m, Show config, Show rule, Hashable config)
+    .  (Monad m, Show config, Show rule)
     => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
