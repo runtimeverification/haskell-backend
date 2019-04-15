@@ -55,6 +55,7 @@ data Prim rule
     -- ^ End execution on this branch if the state is 'GoalRem'.
     | RemoveDestination
     | TriviallyValid
+    | DerivePar [rule]
 
 transitionRule
     :: Monad m
