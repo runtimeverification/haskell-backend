@@ -137,17 +137,20 @@ derivePar rules (src, dst) = Foldable.asum (deriveParWorker <$> rules)
             goalRem = pure (AllPath.GoalRem (r, dst))
         goal <|> goalRem
 
+runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
+runTransitionRule prim state =
+    (runIdentity . runTransitionT) (transitionRule prim state)
+
 -- | 'AllPath.transitionRule' instantiated with our unit test rules.
-transitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
-transitionRule prim state =
-    (runIdentity . runTransitionT)
-        (AllPath.transitionRule
-            removeDestination
-            triviallyValid
-            derivePar
-            prim
-            state
-        )
+transitionRule
+    :: Prim
+    -> ProofState
+    -> Strategy.TransitionT Rule Identity ProofState
+transitionRule =
+    AllPath.transitionRule
+        removeDestination
+        triviallyValid
+        derivePar
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
@@ -156,7 +159,7 @@ test_transitionRule_CheckProven =
     , unmodified (AllPath.GoalRem (2, 1))
     ]
   where
-    run = transitionRule AllPath.CheckProven
+    run = runTransitionRule AllPath.CheckProven
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ProofState -> TestTree
@@ -169,7 +172,7 @@ test_transitionRule_CheckGoalRem =
     , done       (AllPath.GoalRem undefined)
     ]
   where
-    run = transitionRule AllPath.CheckGoalRem
+    run = runTransitionRule AllPath.CheckGoalRem
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ProofState -> TestTree
@@ -182,7 +185,7 @@ test_transitionRule_RemoveDestination =
     , run (AllPath.Goal (2, 1)) `equals` [(AllPath.GoalRem (1, 1), mempty)]  $ "removes destination from goal"
     ]
   where
-    run = transitionRule AllPath.RemoveDestination
+    run = runTransitionRule AllPath.RemoveDestination
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
 
@@ -194,7 +197,7 @@ test_transitionRule_TriviallyValid =
     , becomesProven (AllPath.GoalRem (1, 1))
     ]
   where
-    run = transitionRule AllPath.TriviallyValid
+    run = runTransitionRule AllPath.TriviallyValid
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     becomesProven :: HasCallStack => ProofState -> TestTree
@@ -222,7 +225,7 @@ test_transitionRule_DerivePar =
   where
     rule2 = Divide 2
     rule3 = Divide 3
-    run rules = transitionRule (AllPath.DerivePar rules)
+    run rules = runTransitionRule (AllPath.DerivePar rules)
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run [rule3] state `equals_` [(state, mempty)]
     transits
@@ -238,10 +241,19 @@ test_transitionRule_DerivePar =
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
-    []
+    [ proves
+        [ Divide 2 ]
+        [ Divide 2 ]
+        (2, 0)
+    , disproves
+        [ Divide 3 ]
+        [ Divide 3 ]
+        (2, 0)
+    ]
   where
-    run claims axioms =
-        Strategy.runStrategy
+    run claims axioms goal =
+        runIdentity
+        $ Strategy.runStrategy
             transitionRule
             (AllPath.strategy claims axioms)
             (AllPath.Goal goal)

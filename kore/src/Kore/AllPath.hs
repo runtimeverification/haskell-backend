@@ -11,6 +11,8 @@ import           Data.Maybe
                  ( mapMaybe )
 
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Strategy
+                 ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
 
 {- | The state of the all-path reachability proof strategy for @goal@.
@@ -89,3 +91,21 @@ transitionRule removeDestination triviallyValid derivePar = transitionRuleWorker
         derivePar rules g
 
     transitionRuleWorker _ state = return state
+
+strategy
+    :: [rule]
+    -- ^ Claims
+    -> [rule]
+    -- ^ Axioms
+    -> [Strategy (Prim rule)]
+strategy _claims _axioms =
+    firstStep : repeat nextStep
+  where
+    firstStep =
+        Strategy.sequence
+            [
+            ]
+    nextStep =
+        Strategy.sequence
+            [
+            ]
