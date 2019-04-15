@@ -241,50 +241,46 @@ test_transitionRule_DerivePar =
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
-    [ proves
+    [ proves "only axiom"
         [ ]
         [ ruleAB ]
         (A, B)
-        "proves goal with only axiom"
-    , proves
-        [ ruleAB ]
+    , proves "same claim and axiom"
+        [ ]
         [ ruleAB ]
         (A, B)
-        "proves goal with same claim and axiom"
-    , proves
+    , proves "axiom and then claim"
         [ ruleBC ]
         [ ruleAB ]
         (A, C)
-        "proves goal with axiom and then claim"
-    , disproves
+    , disproves "no claims or axioms"
         [ ]
         [ ]
         (A, B)
         [(A, B)]
-        "disproves goal with no claims or axioms"
-    , disproves
-        [ ruleAB ]
+    , disproves "claim without axioms"
+        [ ]
         [ ]
         (A, B)
         [(A, B)]
-        "disproves goal with no axioms"
-    , disproves
-        [ ruleBC ]
+    , disproves "irrelevant axiom and claim"
+        [ ]
         [ ruleBC ]
         (A, B)
         [(A, B)]
-        "disproves goal with irrelevant axiom and claim"
     ]
   where
     run claims axioms goal =
         runIdentity
         $ Strategy.runStrategy
             transitionRule
-            (AllPath.strategy claims axioms)
+            (AllPath.strategy (goal : claims) axioms)
             (AllPath.Goal goal)
     disproves
         :: HasCallStack
-        => [Rule]
+        => String
+        -- ^ Message
+        -> [Rule]
         -- ^ Claims
         -> [Rule]
         -- ^ Axioms
@@ -292,23 +288,24 @@ test_runStrategy =
         -- ^ Proof goal
         -> [Goal]
         -- ^ Unproven goals
-        -> String
         -> TestTree
-    disproves claims axioms goal unproven =
+    disproves message claims axioms goal unproven =
         equals
             (Foldable.toList $ AllPath.unprovenNodes $ run claims axioms goal)
             unproven
+            ("disproves goal with " <> message)
     proves
         :: HasCallStack
-        => [Rule]
+        => String
+        -> [Rule]
         -- ^ Claims
         -> [Rule]
         -- ^ Axioms
         -> Goal
         -- ^ Proof goal
-        -> String
         -> TestTree
-    proves claims axioms goal =
+    proves message claims axioms goal =
         satisfies
             (run claims axioms goal)
             AllPath.proven
+            ("proves goal with " <> message)
