@@ -242,13 +242,33 @@ test_transitionRule_DerivePar =
 test_runStrategy :: [TestTree]
 test_runStrategy =
     [ proves
+        [ ]
+        [ Divide 2 ]
+        (2, 1)
+        "proves goal with only axiom"
+    , proves
         [ Divide 2 ]
         [ Divide 2 ]
-        (2, 0)
+        (2, 1)
+        "proves goal with claim and axiom"
+    , disproves
+        [ ]
+        [ ]
+        (2, 1)
+        [(2, 1)]
+        "disproves goal with no claims or axioms"
+    , disproves
+        [ Divide 2 ]
+        [ ]
+        (2, 1)
+        [(2, 1)]
+        "disproves goal with no axioms"
     , disproves
         [ Divide 3 ]
         [ Divide 3 ]
-        (2, 0)
+        (2, 1)
+        [(2, 1)]
+        "disproves goal with relatively prime axiom and claim"
     ]
   where
     run claims axioms goal =
@@ -257,11 +277,21 @@ test_runStrategy =
             transitionRule
             (AllPath.strategy claims axioms)
             (AllPath.Goal goal)
-    disproves claims axioms goal =
-        satisfies_
-            (run claims axioms goal)
-            (not . AllPath.proven)
+    disproves
+        :: HasCallStack
+        => [Rule]
+        -> [Rule]
+        -> Goal
+        -> [Goal]
+        -- ^ unproven goals
+        -> String
+        -> TestTree
+    disproves claims axioms goal unproven =
+        equals
+            (Foldable.toList $ AllPath.unprovenNodes $ run claims axioms goal)
+            unproven
+    proves :: HasCallStack => [Rule] -> [Rule] -> Goal -> String -> TestTree
     proves claims axioms goal =
-        satisfies_
+        satisfies
             (run claims axioms goal)
             AllPath.proven

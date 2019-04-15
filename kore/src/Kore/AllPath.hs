@@ -98,14 +98,25 @@ strategy
     -> [rule]
     -- ^ Axioms
     -> [Strategy (Prim rule)]
-strategy _claims _axioms =
+strategy claims axioms =
     firstStep : repeat nextStep
   where
     firstStep =
-        Strategy.sequence
-            [
+        (Strategy.sequence . map Strategy.apply)
+            [ CheckProven
+            , CheckGoalRem
+            , RemoveDestination
+            , TriviallyValid
+            , DerivePar axioms
+            , TriviallyValid
             ]
     nextStep =
-        Strategy.sequence
-            [
+        (Strategy.sequence . map Strategy.apply)
+            [ CheckProven
+            , CheckGoalRem
+            , RemoveDestination
+            , TriviallyValid
+            , DerivePar claims
+            , DerivePar axioms
+            , TriviallyValid
             ]
