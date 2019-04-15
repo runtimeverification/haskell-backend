@@ -48,7 +48,7 @@ KORE_EXEC_OPTS =
 KORE_REPL = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-repl
 
 $(KORE_EXEC):
-	$(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-exec
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-exec
 
 $(KORE_REPL):
-	$(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-repl
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-repl

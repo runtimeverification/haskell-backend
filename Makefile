@@ -4,7 +4,7 @@ include include.mk
         test test-kore test-k
 
 kore:
-	$(STACK_BUILD) $(STACK_BUILD_OPTS)
+	$(STACK) $(STACK_BUILD) $(STACK_BUILD_OPTS)
 
 kore-exec: $(KORE_EXEC)
 
