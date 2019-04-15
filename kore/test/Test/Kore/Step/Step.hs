@@ -10,8 +10,6 @@ module Test.Kore.Step.Step
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
 import           Data.Default as Default
                  ( def )
 import qualified Data.Foldable as Foldable
@@ -25,7 +23,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Axiom.Matcher as Matcher
-import           Kore.Step.Error
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import           Kore.Step.Representation.MultiOr
@@ -44,11 +41,15 @@ import           Kore.Step.Step hiding
                  applyUnifiedRule, sequenceRewriteRules, unifyRule )
 import qualified Kore.Step.Step as Step
 import           Kore.Unification.Error
-                 ( SubstitutionError (..) )
+                 ( SubstitutionError (..),
+                 UnificationOrSubstitutionError (..) )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationError (..) )
+import           Kore.Unification.Unify
+                 ( Unifier )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Variables.Fresh
                  ( nextVariable )
 import qualified SMT
@@ -70,12 +71,12 @@ mockMetadataTools =
         Mock.headSortsMapping
 
 evalUnifier
-    :: BranchT (ExceptT e Simplifier) a
-    -> IO (Either e (MultiOr a))
+    :: BranchT (Unifier Variable) a
+    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr a))
 evalUnifier =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger
-    . runExceptT
+    . Monad.Unify.runUnifier
     . gather
 
 applyUnifiedRule
@@ -83,7 +84,7 @@ applyUnifiedRule
     -> UnifiedRule Variable
     -> IO
         (Either
-            (StepError Object Variable)
+            (UnificationOrSubstitutionError Object Variable)
             (MultiOr (ExpandedPattern Object Variable))
         )
 applyUnifiedRule initial unifiedRule =
@@ -209,7 +210,7 @@ unifyRule
     -> RulePattern Object Variable
     -> IO
         (Either
-            (StepError Object Variable)
+            (UnificationOrSubstitutionError Object Variable)
             (MultiOr (Predicated Object Variable (RulePattern Object Variable)))
         )
 unifyRule initial rule =
@@ -294,7 +295,7 @@ applyRewriteRule_
     -- ^ Rewrite rule
     -> IO
         (Either
-            (StepError Object Variable)
+            (UnificationOrSubstitutionError Object Variable)
             (MultiOr (ExpandedPattern Object Variable))
         )
 applyRewriteRule_ initial rule = do
@@ -415,7 +416,7 @@ test_applyRewriteRule_ =
                 -- TODO(virgil): This should probably be a normal result with
                 -- b=h(b) in the predicate.
                 Left
-                $ StepErrorSubstitution
+                $ SubstitutionError
                 $ NonCtorCircularVariableDependency [Mock.y]
             initial =
                 Predicated
@@ -433,7 +434,7 @@ test_applyRewriteRule_ =
     -- vs
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
-        let expect = Left $ StepErrorUnification UnsupportedPatterns
+        let expect = Left $ UnificationError UnsupportedPatterns
             initial =
                 pure $ Mock.sigma (mkVar Mock.x) (Mock.plain10 (mkVar Mock.y))
         actual <- applyRewriteRule_ initial axiomSigmaId
@@ -663,11 +664,14 @@ applyRewriteRules
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
-    -> IO (Either (StepError Object Variable) (Step.Results Variable))
+    -> IO
+        (Either
+            (UnificationOrSubstitutionError Object Variable)
+            (Step.Results Variable))
 applyRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ runExceptT
+    $ Monad.Unify.runUnifier
     $ Step.applyRewriteRules
         metadataTools
         predicateSimplifier
@@ -1080,11 +1084,14 @@ sequenceRewriteRules
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
-    -> IO (Either (StepError Object Variable) (Results Variable))
+    -> IO
+        (Either
+             (UnificationOrSubstitutionError Object Variable)
+             (Results Variable))
 sequenceRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ runExceptT
+    $ Monad.Unify.runUnifier
     $ Step.sequenceRewriteRules
         metadataTools
         predicateSimplifier
@@ -1200,11 +1207,14 @@ sequenceMatchingRules
     -- ^ Configuration
     -> [EqualityRule Object Variable]
     -- ^ Rewrite rule
-    -> IO (Either (StepError Object Variable) (Results Variable))
+    -> IO
+        (Either
+            (UnificationOrSubstitutionError Object Variable)
+            (Step.Results Variable))
 sequenceMatchingRules initial rules =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ runExceptT
+    $ Monad.Unify.runUnifier
     $ Step.sequenceRules
         metadataTools
         predicateSimplifier

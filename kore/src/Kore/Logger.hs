@@ -10,6 +10,8 @@ module Kore.Logger
     ( LogMessage (..)
     , Severity (..)
     , Scope (..)
+    , WithLog (..)
+    , LogAction (..)
     , log
     , logDebug
     , logInfo
@@ -17,11 +19,17 @@ module Kore.Logger
     , logError
     , logCritical
     , withLogScope
+    , liftLogAction
+    , hoistLogAction
     ) where
 
 import           Colog
-                 ( WithLog )
-import qualified Colog as Colog
+                 ( LogAction (..) )
+import qualified Control.Monad.Except as Except
+import qualified Control.Monad.Morph as Monad.Morph
+import           Control.Monad.Trans
+                 ( MonadTrans )
+import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.String
@@ -32,6 +40,9 @@ import           GHC.Stack
                  ( CallStack, HasCallStack, callStack )
 import           Prelude hiding
                  ( log )
+
+import ListT
+       ( ListT )
 
 -- | Log level used to describe each log message. It is also used to set the
 -- minimum level to be outputted.
@@ -66,53 +77,93 @@ data LogMessage = LogMessage
     -- ^ call stack of the message, when available
     }
 
+class Monad m => WithLog msg m where
+    -- | Retrieve the 'LogAction' in scope.
+    askLogAction :: m (LogAction m msg)
+
+    -- | Modify the 'LogAction' over the scope of an action.
+    withLog
+        :: forall a
+        .  (forall n. LogAction n msg -> LogAction n msg)
+        -> m a
+        -> m a
+
+-- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
+liftLogAction
+    :: (Monad m, MonadTrans t)
+    => LogAction m msg
+    -> LogAction (t m) msg
+liftLogAction logAction =
+    Colog.LogAction (Monad.Trans.lift . Colog.unLogAction logAction)
+
+-- | Use a natural transform on a 'LogAction'.
+hoistLogAction
+    :: (forall a. m a -> n a)
+    -> LogAction m msg
+    -> LogAction n msg
+hoistLogAction f (LogAction logger) = LogAction $ \msg -> f (logger msg)
+
+instance WithLog msg m => WithLog msg (Except.ExceptT e m) where
+    askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
+    withLog f = Monad.Morph.hoist (withLog f)
+
+instance WithLog msg m => WithLog msg (ListT m) where
+    askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
+    withLog f = Monad.Morph.hoist (withLog f)
+
+-- | Log any message.
+logMsg :: WithLog msg m => msg -> m ()
+logMsg msg = do
+    logAction <- askLogAction
+    Colog.unLogAction logAction msg
+
 -- | Logs a message using given 'Severity'.
 log
-    :: forall env m
-    . (HasCallStack, WithLog env LogMessage m)
+    :: forall m
+    . (HasCallStack, WithLog LogMessage m)
     => Severity
     -- ^ If lower than the minimum severity, the message will not be logged
     -> Text
     -- ^ Message to be logged
     -> m ()
-log s t = Colog.logMsg $ LogMessage t s mempty callStack
+log s t = logMsg $ LogMessage t s mempty callStack
 
 -- | Logs using 'Debug' log level. See 'log'.
 logDebug
-    :: forall env m
-    . (WithLog env LogMessage m)
+    :: forall m
+    . (WithLog LogMessage m)
     => Text
     -> m ()
 logDebug = log Debug
 
 -- | Logs using 'Info' log level. See 'log'.
 logInfo
-    :: forall env m
-    . (WithLog env LogMessage m)
+    :: forall m
+    . (WithLog LogMessage m)
     => Text
     -> m ()
 logInfo = log Info
 
 -- | Logs using 'Warning' log level. See 'log'.
 logWarning
-    :: forall env m
-    . (WithLog env LogMessage m)
+    :: forall m
+    . (WithLog LogMessage m)
     => Text
     -> m ()
 logWarning = log Warning
 
 -- | Logs using 'Error' log level. See 'log'.
 logError
-    :: forall env m
-    . (WithLog env LogMessage m)
+    :: forall m
+    . (WithLog LogMessage m)
     => Text
     -> m ()
 logError = log Error
 
 -- | Logs using 'Critical' log level. See 'log'.
 logCritical
-    :: forall env m
-    . (WithLog env LogMessage m)
+    :: forall m
+    . (WithLog LogMessage m)
     => Text
     -> m ()
 logCritical = log Critical
@@ -121,14 +172,14 @@ logCritical = log Critical
 -- example, if the current scope is "a.b" and 'withLogScope' is called with
 -- "c", then the new scope will be "a.b.c".
 withLogScope
-    :: forall env m a
-    .  WithLog env LogMessage m
+    :: forall m a
+    .  WithLog LogMessage m
     => Scope
     -- ^ new scope
     -> m a
     -- ^ continuation / enclosure for the new scope
     -> m a
-withLogScope newScope = Colog.withLog (contramap appendScope)
+withLogScope newScope = withLog (contramap appendScope)
   where
     appendScope (LogMessage msg sev scope callstack) =
         LogMessage msg sev (newScope : scope) callstack

@@ -19,8 +19,6 @@ import           Control.Error.Util
                  ( just, nothing )
 import           Control.Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Except
-                 ( ExceptT (..) )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
 import qualified Data.Map as Map
@@ -62,18 +60,20 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplificatio
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSubstitutionSimplifier, StepPatternSimplifier )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
 import           Kore.Unification.Error
-                 ( UnificationError (..), UnificationOrSubstitutionError (..) )
+                 ( UnificationError (..) )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
+import           Kore.Unification.Unify
+                 ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -104,6 +104,8 @@ matchAsUnification
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -113,9 +115,7 @@ matchAsUnification
     -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> StepPattern level variable
-    -> ExceptT
-        (UnificationOrSubstitutionError level variable)
-        Simplifier
+    -> unifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
@@ -129,7 +129,7 @@ matchAsUnification
   = do
     result <- runMaybeT matchResult
     case result of
-        Nothing -> throwError (UnificationError UnsupportedPatterns)
+        Nothing -> Monad.Unify.throwUnificationError UnsupportedPatterns
         Just r -> return (r, EmptyUnificationProof)
   where
     matchResult =
@@ -153,6 +153,8 @@ unificationWithAppMatchOnTop
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -162,9 +164,7 @@ unificationWithAppMatchOnTop
     -- ^ Map from axiom IDs to axiom evaluators
     -> StepPattern level variable
     -> StepPattern level variable
-    -> ExceptT
-        (UnificationOrSubstitutionError level variable)
-        Simplifier
+    -> unifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
@@ -191,7 +191,7 @@ unificationWithAppMatchOnTop
                 -- The application heads have the same symbol or alias
                 -- constructor with different parameters,
                 -- but we do not handle unification of symbol parameters.
-                  -> throwError (UnificationError UnsupportedPatterns)
+                  -> Monad.Unify.throwUnificationError UnsupportedPatterns
                 | otherwise
                   -> error
                     (  "Unexpected unequal heads: "
@@ -239,6 +239,8 @@ match
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -250,11 +252,7 @@ match
     -> StepPattern level variable
     -> StepPattern level variable
     -- TODO: Use Result here.
-    -> MaybeT
-        (ExceptT
-            (UnificationOrSubstitutionError level variable)
-            Simplifier
-        )
+    -> MaybeT unifier
         (OrOfPredicateSubstitution level variable)
 match
     tools
@@ -283,7 +281,7 @@ match
         second
 
 matchEqualHeadPatterns
-    ::  forall level variable .
+    ::  forall level variable unifier unifierM .
         ( Show (variable level)
         , SortedVariable variable
         , MetaOrObject level
@@ -294,6 +292,8 @@ matchEqualHeadPatterns
         , Show (variable Meta)
         , Show (variable Object)
         , FreshVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -304,11 +304,7 @@ matchEqualHeadPatterns
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT
-        (ExceptT
-            (UnificationOrSubstitutionError level variable)
-            Simplifier
-        )
+    -> MaybeT unifier
         (OrOfPredicateSubstitution level variable)
 matchEqualHeadPatterns
     tools
@@ -548,17 +544,13 @@ matchEqualHeadPatterns
             then justTop
             else nothing
     justTop
-        :: MaybeT
-            (ExceptT
-                (UnificationOrSubstitutionError level variable)
-                Simplifier
-            )
+        :: MaybeT unifier
             (OrOfPredicateSubstitution level variable)
     justTop = just
         (MultiOr.make [PredicateSubstitution.top])
 
 matchJoin
-    :: forall level variable .
+    :: forall level variable unifier unifierM .
         ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -569,6 +561,8 @@ matchJoin
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -578,11 +572,7 @@ matchJoin
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
     -> [(StepPattern level variable, StepPattern level variable)]
-    -> MaybeT
-        (ExceptT
-            (UnificationOrSubstitutionError level variable)
-            Simplifier
-        )
+    -> MaybeT unifier
         (OrOfPredicateSubstitution level variable)
 matchJoin
     tools
@@ -608,9 +598,7 @@ matchJoin
         crossProduct = MultiOr.fullCrossProduct matched
         merge
             :: [PredicateSubstitution level variable]
-            -> ExceptT
-                (UnificationOrSubstitutionError level variable)
-                Simplifier
+            -> unifier
                 (PredicateSubstitution level variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
@@ -624,7 +612,7 @@ matchJoin
     MultiOr.filterOr <$> traverse (lift . merge) crossProduct
 
 unifyJoin
-    :: forall level variable .
+    :: forall level variable unifier unifierM .
         ( FreshVariable variable
         , MetaOrObject level
         , Ord (variable level)
@@ -635,6 +623,8 @@ unifyJoin
         , Show (variable Meta)
         , Unparse (variable level)
         , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -643,9 +633,7 @@ unifyJoin
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(StepPattern level variable, StepPattern level variable)]
-    -> ExceptT
-        (UnificationOrSubstitutionError level variable)
-        Simplifier
+    -> unifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
@@ -669,9 +657,7 @@ unifyJoin
         crossProduct = MultiOr.fullCrossProduct matched
         merge
             :: [PredicateSubstitution level variable]
-            -> ExceptT
-                (UnificationOrSubstitutionError level variable)
-                Simplifier
+            -> unifier
                 (PredicateSubstitution level variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
@@ -711,7 +697,9 @@ matchVariableFunction
         , ShowMetaOrObject variable
         , SortedVariable variable
         , Unparse (variable level)
-       )
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
+        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
@@ -721,11 +709,7 @@ matchVariableFunction
     -> Map.Map (variable level) (variable level)
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT
-        (ExceptT
-            (UnificationOrSubstitutionError level variable)
-            Simplifier
-        )
+    -> MaybeT unifier
         (OrOfPredicateSubstitution level variable)
 matchVariableFunction
     tools
@@ -738,7 +722,7 @@ matchVariableFunction
   | not (var `Map.member` quantifiedVariables)
     && isFunctionPattern tools second
   = Monad.Trans.lift $ do
-    (ceilOr, _proof) <- Monad.Trans.lift $
+    (ceilOr, _proof) <- Monad.Unify.liftSimplifier $
         Ceil.makeEvaluateTerm
             tools
             substitutionSimplifier

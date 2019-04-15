@@ -16,6 +16,7 @@ module Kore.Unification.Error
     , substitutionErrorVariables
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
+    , mapUnificationOrSubstitutionErrorVariables
     ) where
 
 import qualified Data.Set as Set
@@ -42,10 +43,19 @@ instance
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
-data UnificationError = UnsupportedPatterns deriving (Eq, Show)
+data UnificationError
+    = UnsupportedPatterns
+    | UnsupportedSymbolic (Pretty.Doc ())
+    deriving Show
+
+instance Eq UnificationError where
+    (==) UnsupportedPatterns UnsupportedPatterns = True
+    (==) (UnsupportedSymbolic a) (UnsupportedSymbolic b) = show a == show b
+    (==) _ _ = False
 
 instance Pretty UnificationError where
     pretty UnsupportedPatterns = "Unsupported patterns"
+    pretty (UnsupportedSymbolic err) = Pretty.unAnnotate err
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason level
@@ -104,3 +114,14 @@ unificationToUnifyOrSubError
     :: UnificationError
     -> UnificationOrSubstitutionError level variable
 unificationToUnifyOrSubError = UnificationError
+
+-- | Map variable type of an 'UnificationOrSubstitutionError'.
+mapUnificationOrSubstitutionErrorVariables
+    :: (variableFrom level -> variableTo level)
+    -> UnificationOrSubstitutionError level variableFrom
+    -> UnificationOrSubstitutionError level variableTo
+mapUnificationOrSubstitutionErrorVariables f =
+    \case
+        SubstitutionError sub ->
+            SubstitutionError $ mapSubstitutionErrorVariables f sub
+        UnificationError uni -> UnificationError uni

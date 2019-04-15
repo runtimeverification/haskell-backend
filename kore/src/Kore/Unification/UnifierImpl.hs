@@ -13,8 +13,6 @@ module Kore.Unification.UnifierImpl where
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad
                  ( foldM )
-import           Control.Monad.Except
-                 ( ExceptT (..) )
 import           Data.Function
                  ( on )
 import qualified Data.Functor.Foldable as Recursive
@@ -39,13 +37,14 @@ import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..), Simplifier,
+                 ( PredicateSubstitutionSimplifier (..),
                  StepPatternSimplifier )
 import           Kore.Unification.Data
-import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unification.Unify
+                 ( MonadUnify )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -55,7 +54,6 @@ import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
 import {-# SOURCE #-} Kore.Step.Substitution
        ( mergePredicatesAndSubstitutionsExcept )
 
-{-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
     :: UnificationProof level variable
     -> UnificationProof level variable
@@ -94,7 +92,7 @@ simplifyCombinedItems =
     addContents other proofItems = other : proofItems
 
 simplifyAnds
-    ::  forall level variable unifier.
+    ::  forall level variable unifier unifierM .
         ( MetaOrObject level
         , Eq level
         , Ord (variable level)
@@ -104,15 +102,15 @@ simplifyAnds
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
-        , unifier ~ ExceptT (UnificationOrSubstitutionError level variable)
+        , unifier ~ unifierM variable
+        , MonadUnify unifierM
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> NonEmpty (StepPattern level variable)
-    -> unifier Simplifier
-        (ExpandedPattern level variable, UnificationProof level variable)
+    -> unifier (ExpandedPattern level variable, UnificationProof level variable)
 simplifyAnds
     tools
     substitutionSimplifier
@@ -128,10 +126,7 @@ simplifyAnds
     simplifyAnds'
         :: ExpandedPattern level variable
         -> StepPattern level variable
-        -> ExceptT
-            ( UnificationOrSubstitutionError level variable )
-            Simplifier
-            ( ExpandedPattern level variable )
+        -> unifier (ExpandedPattern level variable)
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
             AndPattern And { andFirst = lhs, andSecond = rhs } ->
@@ -189,16 +184,16 @@ solveGroupedSubstitution
        , ShowMetaOrObject variable
        , SortedVariable variable
        , FreshVariable variable
-       )
+       , MonadUnify unifierM
+       , unifier ~ unifierM variable
+      )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> variable level
     -> NonEmpty (StepPattern level variable)
-    -> ExceptT
-        ( UnificationOrSubstitutionError level variable )
-        Simplifier
+    -> unifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
@@ -237,7 +232,7 @@ solveGroupedSubstitution
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: forall variable level
+    :: forall variable level unifier unifierM
     .   ( MetaOrObject level
         , Eq level
         , Ord (variable level)
@@ -247,15 +242,15 @@ normalizeSubstitutionDuplication
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> Substitution level variable
-    -> ExceptT
-        ( UnificationOrSubstitutionError level variable )
-        Simplifier
+    -> unifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )

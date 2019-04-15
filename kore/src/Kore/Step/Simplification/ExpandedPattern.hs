@@ -34,8 +34,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..),
-                 StepPatternSimplifier )
+                 Simplifier, StepPatternSimplifier, simplifyTerm )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
@@ -67,18 +66,17 @@ simplify
 simplify
     tools
     substitutionSimplifier
-    wrappedSimplifier@(StepPatternSimplifier simplifier)
+    termSimplifier
     axiomIdToSimplifier
     Predicated {term, predicate, substitution}
   = do
-    (simplifiedTerm, _)
-        <- simplifier substitutionSimplifier term
+    (simplifiedTerm, _) <- simplifyTerm' term
     (simplifiedPatt, _) <-
         MultiOr.traverseWithPairs
             (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
                 tools
                 substitutionSimplifier
-                wrappedSimplifier
+                termSimplifier
                 axiomIdToSimplifier
                 Predicated
                     { term = ()
@@ -88,6 +86,8 @@ simplify
             )
             simplifiedTerm
     return (simplifiedPatt, SimplificationProof)
+  where
+    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
 {-| Simplifies the predicate inside an 'ExpandedPattern'.
 -}

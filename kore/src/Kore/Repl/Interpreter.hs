@@ -67,7 +67,10 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.RuleIndex
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..),
+                 StrategyPatternTransformer (StrategyPatternTransformer),
                  strategyPattern )
+import qualified Kore.OnePath.Step as StrategyPatternTransformer
+                 ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -274,7 +277,11 @@ showLeafs = do
   where
     getNodeState graph node =
         maybe Nothing (\x -> Just (x, node))
-        . strategyPattern (const . Just $ UnevaluatedNode) (const . Just $ StuckNode) Nothing
+        . strategyPattern StrategyPatternTransformer
+            { rewriteTransformer = const . Just $ UnevaluatedNode
+            , stuckTransformer = const . Just $ StuckNode
+            , bottomValue = Nothing
+            }
         . Graph.lab'
         . Graph.context graph
         $ node
@@ -376,7 +383,7 @@ tryAxiomClaim eac = do
     ReplState { axioms, claims, claim, graph, node, stepper } <- get
     case getAxiomOrClaim axioms claims node of
         Nothing ->
-            tell "Could not find axiom or claim,\
+            putStrLn' "Could not find axiom or claim,\
                  \or attempt to use claim as first step"
         Just eac' -> do
             if Graph.outdeg (Strategy.graph graph) node == 0
@@ -388,15 +395,49 @@ tryAxiomClaim eac = do
                             (either id (const []) eac')
                             graph
                             node
+{-
+    After trying to apply an axiom/claim, there are three possible cases:
+    - If there are no resulting nodes then the rule
+    couldn't be applied.
+    - If there is a single resulting node then the rule
+    was applied successfully.
+    - If there are more than one resulting nodes then
+    the rule was applied successfully but it wasn't sufficient.
+    If a remainder exists after applying a set of axioms
+    the current unification algorithm considers this
+    remainder to be Stuck. In this case, though, since only one
+    rule of the set is applied we must consider the
+    possibility that another axiom may be further applied
+    successfully on the resulting remainder, so as a workaround
+    we will change the state of these nodes from Stuck to
+    RewritePattern to allow further applications.
+    If indeed no other axiom can be applied on the remainder,
+    then a single step command will identify it as being Stuck.
+-}
                     case Graph.suc' $ Graph.context gr node of
-                        [] -> tell "Could not unify."
+                        [] -> putStrLn' "Could not unify."
                         [node'] -> do
                             lensGraph .= graph'
                             lensNode .= node'
-                            tell "Unification succsessful."
-                        _ -> lensGraph .= graph'
-                else tell "Node is already evaluated"
+                            putStrLn' "Unification successful."
+                        xs -> do
+                            lensGraph .=
+                                Strategy.ExecutionGraph
+                                    (Strategy.root graph')
+                                    (tryAgainOnNodes xs gr)
+                            putStrLn' "Unification successful."
+                else putStrLn' "Node is already evaluated"
   where
+    tryAgainOnNodes ns gph =
+        Graph.gmap (stuckToRewrite ns) gph
+
+    stuckToRewrite xs ct@(to, n, lab, from)
+        | n `elem` xs =
+            case lab of
+                Stuck patt -> (to, n, RewritePattern patt, from)
+                _ -> ct
+        | otherwise = ct
+
     getAxiomOrClaim
         :: [Axiom level]
         -> [Claim level]
@@ -542,10 +583,12 @@ unparseStrategy
     -> CommonStrategyPattern level
     -> String
 unparseStrategy omitList =
-    strategyPattern
-        (\pat -> unparseToString (hide <$> pat))
-        (\pat -> "Stuck: \n" <> unparseToString (hide <$> pat))
-        "Reached bottom"
+    strategyPattern StrategyPatternTransformer
+        { rewriteTransformer = \pat -> unparseToString (hide <$> pat)
+        , stuckTransformer =
+            \pat -> "Stuck: \n" <> unparseToString (hide <$> pat)
+        , bottomValue = "Reached bottom"
+        }
   where
     hide :: StepPattern level Variable -> StepPattern level Variable
     hide =
@@ -611,9 +654,6 @@ data StepResult
     | Branch [Graph.Node]
     | Success
     deriving Show
-
-unClaim :: forall level. Claim level -> RewriteRule level Variable
-unClaim Claim { rule } = rule
 
 emptyExecutionGraph :: Claim Object -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim

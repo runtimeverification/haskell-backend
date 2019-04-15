@@ -28,8 +28,6 @@ module Kore.Step.Step
 
 import           Control.Applicative
                  ( Alternative (..) )
-import           Control.Monad.Except as Monad.Except
-import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
@@ -53,7 +51,6 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Error
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.ExpandedPattern
@@ -78,8 +75,11 @@ import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unification.Data
                  ( UnificationProof )
 import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError )
+                 ( UnificationError (..) )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unification.Unify
+                 ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import           Kore.Variables.Target
@@ -91,7 +91,7 @@ import qualified Kore.Variables.Target as Target
 -- 'stepWithRule'.
 newtype UnificationProcedure level =
     UnificationProcedure
-        ( forall variable
+        ( forall variable unifier unifierM
         .   ( SortedVariable variable
             , Ord (variable level)
             , Show (variable level)
@@ -100,6 +100,8 @@ newtype UnificationProcedure level =
             , ShowMetaOrObject variable
             , MetaOrObject level
             , FreshVariable variable
+            , MonadUnify unifierM
+            , unifier ~ unifierM variable
             )
         => MetadataTools level StepperAttributes
         -> PredicateSubstitutionSimplifier level
@@ -107,9 +109,7 @@ newtype UnificationProcedure level =
         -> BuiltinAndAxiomSimplifierMap level
         -> StepPattern level variable
         -> StepPattern level variable
-        -> ExceptT
-            (UnificationOrSubstitutionError level variable)
-            Simplifier
+        -> unifier
             ( OrOfPredicateSubstitution level variable
             , UnificationProof level variable
             )
@@ -171,13 +171,6 @@ instance Monoid (Results variable) where
 withoutRemainders :: Results variable -> Results variable
 withoutRemainders results = results { remainders = empty }
 
-unwrapStepErrorVariables
-    :: Functor m
-    => ExceptT (StepError level (Target variable)) m a
-    -> ExceptT (StepError level                  variable ) m a
-unwrapStepErrorVariables =
-    withExceptT (mapStepErrorVariables Target.unwrapVariable)
-
 {- | Unwrap the variables in a 'RulePattern'.
  -}
 unwrapRule
@@ -197,21 +190,6 @@ unwrapConfiguration config@Predicated { substitution } =
   where
     substitution' = Substitution.filter Target.isNonTarget substitution
 
-wrapUnificationOrSubstitutionError
-    :: Functor m
-    => ExceptT (UnificationOrSubstitutionError level variable) m a
-    -> ExceptT (StepError                      level variable) m a
-wrapUnificationOrSubstitutionError =
-    withExceptT unificationOrSubstitutionToStepError
-
-{- | Lift an action from the unifier into the stepper.
- -}
-liftFromUnification
-    :: Monad m
-    => BranchT (ExceptT (UnificationOrSubstitutionError level variable) m) a
-    -> BranchT (ExceptT (StepError level variable                     ) m) a
-liftFromUnification = Monad.Morph.hoist wrapUnificationOrSubstitutionError
-
 {- | Attempt to unify a rule with the initial configuration.
 
 The rule variables are renamed to avoid collision with the configuration. The
@@ -226,12 +204,14 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    ::  forall variable
+    ::  forall unifier variable unifierM
     .   ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , FreshVariable  variable
         , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> UnificationProcedure Object
@@ -243,8 +223,7 @@ unifyRule
     -- ^ Initial configuration
     -> RulePattern Object variable
     -- ^ Rule
-    -> BranchT
-        (ExceptT (StepError Object variable) Simplifier)
+    -> BranchT unifier
         (UnifiedRule variable)
 unifyRule
     metadataTools
@@ -255,7 +234,7 @@ unifyRule
 
     initial@Predicated { term = initialTerm }
     rule
-  = liftFromUnification $ do
+  = do
     -- Rename free axiom variables to avoid free variables from the initial
     -- configuration.
     let
@@ -273,6 +252,10 @@ unifyRule
     unification' <- normalize (unification <> requires')
     return (rule' `Predicated.withCondition` unification')
   where
+    unifyPatterns
+        :: StepPattern Object variable
+        -> StepPattern Object variable
+        -> BranchT unifier (Predicated Object variable ())
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
             Monad.Trans.lift
@@ -299,12 +282,14 @@ and normalized.
 
  -}
 applyUnifiedRule
-    ::  forall variable
+    ::  forall unifier variable unifierM
     .   ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , FreshVariable  variable
         , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object
@@ -315,8 +300,7 @@ applyUnifiedRule
     -- ^ Initial conditions
     -> UnifiedRule variable
     -- ^ Non-normalized final configuration
-    -> BranchT
-        (ExceptT (StepError Object variable) Simplifier)
+    -> BranchT unifier
         (ExpandedPattern Object variable)
 applyUnifiedRule
     metadataTools
@@ -326,7 +310,7 @@ applyUnifiedRule
 
     initial
     unifiedRule
-  = liftFromUnification $ do
+  = do
     -- Combine the initial conditions, the unification conditions, and the axiom
     -- ensures clause. The axiom requires clause is included by unifyRule.
     let
@@ -355,12 +339,14 @@ applyUnifiedRule
 
  -}
 applyRemainder
-    ::  forall variable
+    ::  forall unifier variable unifierM
     .   ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , FreshVariable  variable
         , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object
@@ -371,8 +357,7 @@ applyRemainder
     -- ^ Initial configuration
     -> Predicate Object variable
     -- ^ Remainder
-    -> BranchT
-        (ExceptT (StepError Object variable) Simplifier)
+    -> BranchT unifier
         (ExpandedPattern Object variable)
 applyRemainder
     metadataTools
@@ -382,7 +367,7 @@ applyRemainder
 
     initial
     (PredicateSubstitution.fromPredicate -> remainder)
-  = liftFromUnification $ do
+  = do
     let final = initial `Predicated.andCondition` remainder
         finalCondition = Predicated.withoutTerm final
         Predicated { Predicated.term = finalTerm } = final
@@ -421,6 +406,9 @@ applyRule
         , Unparse (variable Object)
         , FreshVariable variable
         , SortedVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object
@@ -434,8 +422,7 @@ applyRule
     -- ^ Configuration being rewritten.
     -> RulePattern Object variable
     -- ^ Rewriting axiom
-    -> ExceptT (StepError Object variable) Simplifier
-        (MultiOr (Result variable))
+    -> unifier (MultiOr (Result variable))
 applyRule
     metadataTools
     predicateSimplifier
@@ -446,7 +433,7 @@ applyRule
     initial
     rule
   = Log.withLogScope "applyRule"
-    $ unwrapStepErrorVariables
+    $ Monad.Unify.mapVariable Target.unwrapVariable
     $ do
         let
             -- Wrap the rule and configuration so that unification prefers to
@@ -491,6 +478,9 @@ applyRewriteRule
         , Unparse (variable Object)
         , FreshVariable variable
         , SortedVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object
@@ -504,8 +494,7 @@ applyRewriteRule
     -- ^ Configuration being rewritten.
     -> RewriteRule Object variable
     -- ^ Rewriting axiom
-    -> ExceptT (StepError Object variable) Simplifier
-        (MultiOr (Result variable))
+    -> unifier (MultiOr (Result variable))
 applyRewriteRule
     metadataTools
     predicateSimplifier
@@ -542,11 +531,12 @@ variables have been instantiated by the substitution.
  -}
 checkSubstitutionCoverage
     ::  ( MetaOrObject level
-        , Monad m
         , SortedVariable variable
         , Ord     (variable level)
         , Show    (variable level)
         , Unparse (variable level)
+        , MonadUnify unifierM
+        , unifier ~ unifierM (Target variable)
         )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern level (Target variable)
@@ -555,7 +545,7 @@ checkSubstitutionCoverage
     -- ^ Unified rule
     -> ExpandedPattern level (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT (ExceptT (StepError level (Target variable)) m)
+    -> BranchT unifier
         (ExpandedPattern level variable)
 checkSubstitutionCoverage tools initial unified final
   | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
@@ -564,8 +554,9 @@ checkSubstitutionCoverage tools initial unified final
     -- of the rule, but this was not unexpected because the initial
     -- configuration was symbolic. This case is not yet supported, but it is not
     -- a fatal error.
-    (Monad.Trans.lift . Monad.Except.throwError)
-    $ StepErrorUnsupportedSymbolic $ Pretty.vsep
+    Monad.Trans.lift
+    $ Monad.Unify.throwUnificationError
+    $ UnsupportedSymbolic $ Pretty.vsep
         [ "While applying axiom:"
         , Pretty.indent 4 (Pretty.pretty axiom)
         , "from the initial configuration:"
@@ -622,12 +613,15 @@ See also: 'applyRewriteRule'
 
  -}
 applyRules
-    ::  forall variable
+    ::  forall unifier variable unifierM
     .   ( Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         , FreshVariable variable
         , SortedVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object
@@ -641,7 +635,7 @@ applyRules
     -- ^ Rewrite rules
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
-    -> ExceptT (StepError Object variable) Simplifier (Results variable)
+    -> unifier (Results variable)
 applyRules
     metadataTools
     predicateSimplifier
@@ -680,12 +674,15 @@ See also: 'applyRewriteRule'
 
  -}
 applyRewriteRules
-    ::  forall variable
+    ::  forall unifier variable unifierM
     .   ( Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         , FreshVariable variable
         , SortedVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object
@@ -699,7 +696,7 @@ applyRewriteRules
     -- ^ Rewrite rules
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
-    -> ExceptT (StepError Object variable) Simplifier (Results variable)
+    -> unifier (Results variable)
 applyRewriteRules
     metadataTools
     predicateSimplifier
@@ -723,12 +720,15 @@ See also: 'applyRewriteRule'
 
  -}
 sequenceRules
-    ::  forall variable
+    ::  forall unifier variable unifierM
     .   ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , FreshVariable  variable
         , SortedVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object
@@ -742,7 +742,7 @@ sequenceRules
     -- ^ Configuration being rewritten
     -> [RulePattern Object variable]
     -- ^ Rewrite rules
-    -> ExceptT (StepError Object variable) Simplifier (Results variable)
+    -> unifier (Results variable)
 sequenceRules
     metadataTools
     predicateSimplifier
@@ -760,8 +760,7 @@ sequenceRules
         -- ^ initial configuration
         -> MultiOr (Result variable)
         -- ^ disjunction of results
-        -> ExceptT (StepError Object variable) Simplifier
-            (MultiOr (ExpandedPattern Object variable))
+        -> unifier (MultiOr (ExpandedPattern Object variable))
     remainingAfter config results = do
         let remainder =
                 Remainder.remainder
@@ -778,7 +777,7 @@ sequenceRules
     sequenceRules1
         :: Results variable
         -> RulePattern Object variable
-        -> ExceptT (StepError Object variable) Simplifier (Results variable)
+        -> unifier(Results variable)
     sequenceRules1 results rule = do
         results' <- traverse (applyRule' rule) (remainders results)
         return (withoutRemainders results <> Foldable.fold results')
@@ -807,12 +806,15 @@ See also: 'applyRewriteRule'
 
  -}
 sequenceRewriteRules
-    ::  forall variable
+    ::  forall unifier variable unifierM
     .   ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
         , FreshVariable  variable
         , SortedVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools Object StepperAttributes
     -> PredicateSubstitutionSimplifier Object
@@ -826,7 +828,7 @@ sequenceRewriteRules
     -- ^ Configuration being rewritten
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules
-    -> ExceptT (StepError Object variable) Simplifier (Results variable)
+    -> unifier (Results variable)
 sequenceRewriteRules
     metadataTools
     predicateSimplifier

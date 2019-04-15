@@ -379,7 +379,7 @@ simpleClaim
     -> CommonStepPattern level
     -> OnePath.Claim level
 simpleClaim left right =
-    OnePath.Claim (simpleRewrite left right) def
+    OnePath.Claim (simpleRewrite left right)
 
 simpleTrustedClaim
     :: MetaOrObject level
@@ -388,8 +388,15 @@ simpleTrustedClaim
     -> OnePath.Claim level
 simpleTrustedClaim left right =
     OnePath.Claim
-        (simpleRewrite left right)
-        def { Attribute.trusted = Attribute.Trusted True }
+    . RewriteRule
+    $ RulePattern
+            { left = left
+            , right = right
+            , requires = makeTruePredicate
+            , ensures = makeTruePredicate
+            , attributes = def
+                { Attribute.trusted = Attribute.Trusted True }
+            }
 
 simpleRewrite
     :: MetaOrObject level
@@ -428,7 +435,7 @@ runVerification
         (Mock.substitutionSimplifier metadataTools)
         Map.empty
         (OnePath.defaultStrategy claims axioms)
-        ( map (\c -> (Claim.rule c, stepLimit))
+        ( map (\c -> (Claim.unClaim c, stepLimit))
         . filter (not . Claim.isTrusted)
         $ claims)
   where

@@ -23,9 +23,11 @@ import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 
+import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -400,6 +402,21 @@ test_unifyAndEqual_Equal =
         let dv = asInternal 0
         actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv
         assertEqual "" top actual
+
+-- | Internal Integer "\and"ed with builtin function applied to variable
+test_unifyAnd_Fn :: TestTree
+test_unifyAnd_Fn =
+    testPropertyWithSolver "unifyAnd BuiltinInteger: Equal" $ do
+        var <- forAll (standaloneGen $ variableGen intSort)
+        let dv = asInternal 2
+            fnPat = mkApp intSort absIntSymbol  [mkVar var]
+            expect =
+                Predicated
+                    { term = dv
+                    , predicate = makeEqualsPredicate dv fnPat
+                    , substitution = mempty
+                    }
+        (===) expect =<< evaluate (mkAnd dv fnPat)
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)

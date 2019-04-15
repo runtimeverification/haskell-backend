@@ -2,6 +2,8 @@ module Test.Kore.Step.MockSimplifiers where
 
 import qualified Data.Map as Map
 
+import           Kore.AST.MetaOrObject
+                 ( Object )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -18,17 +20,17 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (SimplificationProof),
-                 StepPatternSimplifier (StepPatternSimplifier) )
+                 stepPatternSimplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
                  ( create )
 
 substitutionSimplifier
-    :: MetadataTools level StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    :: MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
 substitutionSimplifier tools =
     PredicateSubstitution.create
         tools
-        (StepPatternSimplifier
+        (stepPatternSimplifier
             (\_ p ->
                 return
                     ( MultiOr.make

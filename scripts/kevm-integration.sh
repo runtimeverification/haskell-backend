@@ -7,7 +7,7 @@ EVM_SEMANTICS=$TOP/evm-semantics
 OPAM_SETUP_SKIP="${OPAM_SETUP_SKIP:-false}"
 
 # Prefer to use Kore master
-PATH=$(stack path --local-install-root)/bin"${PATH:-:}$PATH"
+PATH=$(stack path --local-install-root)/bin"${PATH:+:}$PATH"
 export PATH
 rm -f .build/k/bin/kore-*
 
