@@ -109,7 +109,7 @@ helpText =
     \axiom <n>               shows the nth axiom\n\
     \prove <n>               initializes proof mode for the nth \
                              \claim\n\
-    \graph                   shows the current proof graph\n\
+    \graph                   shows the current proof graph (*)\n\
     \step [n]                attempts to run 'n' proof steps at\
                              \the current node (n=1 by default)\n\
     \stepf [n]               attempts to run 'n' proof steps at\
@@ -136,7 +136,11 @@ helpText =
     \exit                    exits the repl\
     \\n\
     \Available modifiers:\n\
-    \<command> > file        prints the output of 'command' to file\n"
+    \<command> > file        prints the output of 'command' to file\n\
+    \\n\
+    \(*) If an edge is labeled as Simpl/RD it means that\
+    \ either the next node was reached using the SMT\
+    \ solver or it was reached through the Remove Destination step."
 
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =

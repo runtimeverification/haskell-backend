@@ -186,9 +186,6 @@ showGraph
 showGraph = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
     axioms <- Lens.use lensAxioms
-    putStrLn' "If an edge is labeled as Simpl/RD it means that\
-              \ either the next node was reached using the SMT\
-              \ solver or it was reached through the Remove Destination step."
     liftIO $ showDotGraph (length axioms) graph
 
 proveSteps :: Int -> ReplM level ()
