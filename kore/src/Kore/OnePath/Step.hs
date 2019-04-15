@@ -279,7 +279,10 @@ transitionRule
                 nonEmptyConfigs = MultiOr.filterOr configs
             if null nonEmptyConfigs
                 then return (Bottom, proof'')
-                else Foldable.asum (pure . prove <$> map wrapper (Foldable.toList nonEmptyConfigs))
+                else Foldable.asum
+                    (   pure . prove
+                    <$> map wrapper (Foldable.toList nonEmptyConfigs)
+                    )
 
     transitionApplyWithRemainders
         :: [RewriteRule level Variable]
