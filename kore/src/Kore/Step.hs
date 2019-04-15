@@ -25,8 +25,6 @@ module Kore.Step
     , runStrategy
     ) where
 
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -63,6 +61,7 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
@@ -129,7 +128,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
         Transition.addRule rule
         result <-
             Monad.Trans.lift
-            $ runExceptT
+            $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
                 tools
                 substitutionSimplifier

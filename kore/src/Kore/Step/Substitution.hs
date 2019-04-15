@@ -19,10 +19,8 @@ module Kore.Step.Substitution
     ) where
 
 import           Control.Monad.Except
-                 ( ExceptT, runExceptT, withExceptT )
+                 ( runExceptT, withExceptT )
 import qualified Control.Monad.Morph as Monad.Morph
-import           Control.Monad.Trans.Class
-                 ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           GHC.Stack
@@ -47,14 +45,16 @@ import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof (EmptyUnificationProof) )
 import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError (..),
-                 substitutionToUnifyOrSubError )
+                 ( substitutionToUnifyOrSubError )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import           Kore.Unification.SubstitutionNormalization
                  ( normalizeSubstitution )
 import           Kore.Unification.UnifierImpl
                  ( normalizeSubstitutionDuplication )
+import           Kore.Unification.Unify
+                 ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -94,6 +94,7 @@ normalize
     results <-
         Monad.Trans.lift
         $ runExceptT
+        $ Monad.Unify.getUnifier
         $ gather
         $ normalizeExcept
             tools
@@ -124,14 +125,15 @@ normalizeExcept
         , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitution level variable
-    -> BranchT
-        (ExceptT (UnificationOrSubstitutionError level variable) Simplifier)
+    -> BranchT unifier
         (PredicateSubstitution level variable)
 normalizeExcept
     tools
@@ -157,7 +159,7 @@ normalizeExcept
                 [predicate, duplicationPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
-    Monad.Morph.hoist Monad.Trans.lift
+    Monad.Morph.hoist Monad.Unify.liftSimplifier
         $ simplifySubstitution Predicated
             { term = ()
             , predicate = mergedPredicate
@@ -174,6 +176,7 @@ normalizeExcept
 
     normalizeSubstitution' =
         Monad.Trans.lift
+        . Monad.Unify.fromExceptT
         . withExceptT substitutionToUnifyOrSubError
         . normalizeSubstitution tools
 
@@ -214,7 +217,7 @@ mergePredicatesAndSubstitutions
     predicates
     substitutions
   = do
-    result <- runExceptT $
+    result <- runExceptT . Monad.Unify.getUnifier $
         mergePredicatesAndSubstitutionsExcept
             tools
             substitutionSimplifier
@@ -242,24 +245,24 @@ mergePredicatesAndSubstitutions
         Right r -> return r
 
 mergePredicatesAndSubstitutionsExcept
-    :: ( Show (variable level)
-       , SortedVariable variable
-       , MetaOrObject level
-       , Ord (variable level)
-       , Unparse (variable level)
-       , OrdMetaOrObject variable
-       , ShowMetaOrObject variable
-       , FreshVariable variable
-       )
+    ::  ( Show (variable level)
+        , SortedVariable variable
+        , MetaOrObject level
+        , Ord (variable level)
+        , Unparse (variable level)
+        , OrdMetaOrObject variable
+        , ShowMetaOrObject variable
+        , FreshVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
+        )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> [Predicate level variable]
     -> [Substitution level variable]
-    -> ExceptT
-        ( UnificationOrSubstitutionError level variable )
-        Simplifier
+    -> unifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
         )
@@ -298,7 +301,7 @@ mergePredicatesAndSubstitutionsExcept
 can't handle.
 -}
 createPredicatesAndSubstitutionsMergerExcept
-    :: forall level variable err .
+    :: forall level variable unifier unifierM .
         ( Show (variable level)
         , Unparse (variable level)
         , SortedVariable variable
@@ -307,13 +310,14 @@ createPredicatesAndSubstitutionsMergerExcept
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable (err Simplifier)
+    -> PredicateSubstitutionMerger level variable unifier
 createPredicatesAndSubstitutionsMergerExcept
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
@@ -322,7 +326,7 @@ createPredicatesAndSubstitutionsMergerExcept
     worker
         :: [Predicate level variable]
         -> [Substitution level variable]
-        -> (err Simplifier) (PredicateSubstitution level variable)
+        -> unifier (PredicateSubstitution level variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutionsExcept
             tools
@@ -376,7 +380,7 @@ unifications it can't handle and whose result is in any monad transformer
 over the base monad.
 -}
 createLiftedPredicatesAndSubstitutionsMerger
-    :: forall level variable t .
+    :: forall level variable unifier unifierM .
         ( Show (variable level)
         , Unparse (variable level)
         , SortedVariable variable
@@ -385,13 +389,14 @@ createLiftedPredicatesAndSubstitutionsMerger
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        , MonadTrans t
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable (t Simplifier)
+    -> PredicateSubstitutionMerger level variable unifier
 createLiftedPredicatesAndSubstitutionsMerger
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
@@ -400,8 +405,8 @@ createLiftedPredicatesAndSubstitutionsMerger
     worker
         :: [Predicate level variable]
         -> [Substitution level variable]
-        -> (t Simplifier) (PredicateSubstitution level variable)
-    worker predicates substitutions = Monad.Trans.lift $ do
+        -> unifier (PredicateSubstitution level variable)
+    worker predicates substitutions = Monad.Unify.liftSimplifier $ do
         (merged, _proof) <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
@@ -421,15 +426,15 @@ normalizeSubstitutionAfterMerge
         , SortedVariable variable
         , FreshVariable variable
         , HasCallStack
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitution level variable
-    -> ExceptT
-          (UnificationOrSubstitutionError level variable)
-          Simplifier
+    -> unifier
           ( PredicateSubstitution level variable
           , UnificationProof level variable
           )
