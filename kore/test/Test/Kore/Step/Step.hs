@@ -696,18 +696,24 @@ applyRewriteRules initial rules =
         UnificationProcedure Unification.unificationProcedure
 
 checkResults
-    :: MultiOr (ExpandedPattern Object Variable)
+    :: HasCallStack
+    => MultiOr (ExpandedPattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkResults expect actual =
-    assertEqualWithExplanation "" expect (Step.result <$> Step.results actual)
+    assertEqualWithExplanation "compare results"
+        expect
+        (Step.result <$> Step.results actual)
 
 checkRemainders
-    :: MultiOr (ExpandedPattern Object Variable)
+    :: HasCallStack
+    => MultiOr (ExpandedPattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkRemainders expect actual =
-    assertEqualWithExplanation "" expect (Step.remainders actual)
+    assertEqualWithExplanation "compare remainders"
+        expect
+        (Step.remainders actual)
 
 test_applyRewriteRules :: [TestTree]
 test_applyRewriteRules =
