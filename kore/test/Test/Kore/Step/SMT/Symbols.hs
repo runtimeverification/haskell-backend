@@ -74,22 +74,6 @@ test_sortDeclaration =
             [ SMT.assert (atom "C" `eq` atom "C")
             ]
         ]
-    , testsForModule "Fails for constructor with smtlib"
-        (indexModule $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with`
-                (symbolDeclaration "C" "S" []
-                    `with` smtlib "C"
-                    `with` constructor
-                )
-        )
-        [ isError
-            [ SMT.assert (atom "C" `eq` atom "C")
-            ]
-        , isError
-            [ SMT.assert (atom (encodeName "C") `eq` atom (encodeName "C"))
-            ]
-        ]
     ]
   where
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
