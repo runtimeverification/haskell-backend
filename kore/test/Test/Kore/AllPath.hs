@@ -285,17 +285,29 @@ test_runStrategy =
     disproves
         :: HasCallStack
         => [Rule]
+        -- ^ Claims
         -> [Rule]
+        -- ^ Axioms
         -> Goal
+        -- ^ Proof goal
         -> [Goal]
-        -- ^ unproven goals
+        -- ^ Unproven goals
         -> String
         -> TestTree
     disproves claims axioms goal unproven =
         equals
             (Foldable.toList $ AllPath.unprovenNodes $ run claims axioms goal)
             unproven
-    proves :: HasCallStack => [Rule] -> [Rule] -> Goal -> String -> TestTree
+    proves
+        :: HasCallStack
+        => [Rule]
+        -- ^ Claims
+        -> [Rule]
+        -- ^ Axioms
+        -> Goal
+        -- ^ Proof goal
+        -> String
+        -> TestTree
     proves claims axioms goal =
         satisfies
             (run claims axioms goal)
