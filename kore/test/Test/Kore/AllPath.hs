@@ -8,6 +8,7 @@ import           Data.Function
                  ( (&) )
 import           Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
+import qualified Data.Maybe as Maybe
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
@@ -95,47 +96,50 @@ test_unprovenNodes =
         (MultiOr.MultiOr [1])
     ]
 
-{- | @Goal@ is a simple goal for unit testing.
+-- | Simple program configurations for unit testing.
+data K = A | B | C | Bot
+    deriving (Eq, Ord, Show)
 
-The goal is a pair of integers. It is considered proven when the left-hand side
-and the right-hand side are equal. The destination is removed by subtraction.
+instance EqualWithExplanation K where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
 
- -}
-type Goal = (Integer, Integer)
+type Goal = (K, K)
 
 type ProofState = AllPath.ProofState Goal
 
-data Rule = Divide Integer
-    deriving (Eq, Ord, Show)
+type Rule = (K, K)
 
-instance EqualWithExplanation Rule where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance SumEqualWithExplanation Rule where
-    sumConstructorPair (Divide a1) (Divide a2) =
-        SumConstructorSameWithArguments (EqWrap "Divide" a1 a2)
+ruleAB, ruleBC :: Rule
+ruleAB = (A, B)
+ruleBC = (B, C)
 
 type Prim = AllPath.Prim Rule
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination :: Monad m => Goal -> m Goal
-removeDestination (src, dst) = return (src - dst, dst)
+removeDestination (src, dst)
+   | src == dst = return (Bot, dst)
+   | otherwise  = return (src, dst)
 
 -- | The goal is trivially valid when the members are equal.
 triviallyValid :: Goal -> Bool
-triviallyValid (src, dst) = src == dst
+triviallyValid (src, _) = src == Bot
 
 derivePar :: [Rule] -> Goal -> Strategy.TransitionT Rule m ProofState
-derivePar rules (src, dst) = Foldable.asum (deriveParWorker <$> rules)
+derivePar rules (src, dst) =
+    goals <|> goalRem
   where
-    deriveParWorker rule@(Divide n) = do
-        let (q, r) = src `quotRem` n
-            goal = do
-                Transition.addRule rule
-                pure (AllPath.Goal (q, dst))
-            goalRem = pure (AllPath.GoalRem (r, dst))
-        goal <|> goalRem
+    goalRem
+      | any Maybe.isJust applied = (pure . AllPath.GoalRem) (Bot, dst)
+      | otherwise = (pure . AllPath.GoalRem) (src, dst)
+    applied = applyRule <$> rules
+    applyRule rule@(from, to)
+      | from == src = Just $ do
+        Transition.addRule rule
+        (pure . AllPath.Goal) (to, dst)
+      | otherwise   = Nothing
+    goals = Foldable.asum (Maybe.fromMaybe empty <$> applied)
 
 runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
 runTransitionRule prim state =
@@ -155,8 +159,8 @@ transitionRule =
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
     [ done AllPath.Proven
-    , unmodified (AllPath.Goal    (2, 1))
-    , unmodified (AllPath.GoalRem (2, 1))
+    , unmodified (AllPath.Goal    (A, B))
+    , unmodified (AllPath.GoalRem (A, B))
     ]
   where
     run = runTransitionRule AllPath.CheckProven
@@ -168,7 +172,7 @@ test_transitionRule_CheckProven =
 test_transitionRule_CheckGoalRem :: [TestTree]
 test_transitionRule_CheckGoalRem =
     [ unmodified AllPath.Proven
-    , unmodified (AllPath.Goal    (2, 1))
+    , unmodified (AllPath.Goal    (A, B))
     , done       (AllPath.GoalRem undefined)
     ]
   where
@@ -181,8 +185,8 @@ test_transitionRule_CheckGoalRem =
 test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
     [ unmodified AllPath.Proven
-    , unmodified (AllPath.GoalRem (2, 1))
-    , run (AllPath.Goal (2, 1)) `equals` [(AllPath.GoalRem (1, 1), mempty)]  $ "removes destination from goal"
+    , unmodified (AllPath.GoalRem (A, B))
+    , run (AllPath.Goal (B, B)) `equals` [(AllPath.GoalRem (Bot, B), mempty)]  $ "removes destination from goal"
     ]
   where
     run = runTransitionRule AllPath.RemoveDestination
@@ -192,9 +196,9 @@ test_transitionRule_RemoveDestination =
 test_transitionRule_TriviallyValid :: [TestTree]
 test_transitionRule_TriviallyValid =
     [ unmodified    AllPath.Proven
-    , unmodified    (AllPath.Goal    (2, 1))
-    , unmodified    (AllPath.GoalRem (2, 1))
-    , becomesProven (AllPath.GoalRem (1, 1))
+    , unmodified    (AllPath.Goal    (A, B))
+    , unmodified    (AllPath.GoalRem (A, B))
+    , becomesProven (AllPath.GoalRem (Bot, B))
     ]
   where
     run = runTransitionRule AllPath.TriviallyValid
@@ -206,28 +210,24 @@ test_transitionRule_TriviallyValid =
 test_transitionRule_DerivePar :: [TestTree]
 test_transitionRule_DerivePar =
     [ unmodified AllPath.Proven
-    , unmodified (AllPath.Goal    (2, 1))
+    , unmodified (AllPath.Goal    (A, B))
     , transits
-        (AllPath.GoalRem (2, 1))
-        [rule3]
-        [ (AllPath.Goal    (0, 1), Seq.singleton rule3)
-        , (AllPath.GoalRem (2, 1), mempty)
+        (AllPath.GoalRem (B, C))
+        [ruleBC]
+        [ (AllPath.Goal    (C, C), Seq.singleton ruleBC)
+        , (AllPath.GoalRem (Bot, C), mempty)
         ]
     , transits
-        (AllPath.GoalRem (2, 1))
-        [rule2, rule3]
-        [ (AllPath.Goal    (1, 1), Seq.singleton rule2)
-        , (AllPath.GoalRem (0, 1), mempty)
-        , (AllPath.Goal    (0, 1), Seq.singleton rule3)
-        , (AllPath.GoalRem (2, 1), mempty)
+        (AllPath.GoalRem (A, B))
+        [ruleAB, ruleBC]
+        [ (AllPath.Goal    (B  , B), Seq.singleton ruleAB)
+        , (AllPath.GoalRem (Bot, B), mempty)
         ]
     ]
   where
-    rule2 = Divide 2
-    rule3 = Divide 3
     run rules = runTransitionRule (AllPath.DerivePar rules)
     unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run [rule3] state `equals_` [(state, mempty)]
+    unmodified state = run [ruleAB] state `equals_` [(state, mempty)]
     transits
         :: HasCallStack
         => ProofState
@@ -243,32 +243,37 @@ test_runStrategy :: [TestTree]
 test_runStrategy =
     [ proves
         [ ]
-        [ Divide 2 ]
-        (2, 1)
+        [ ruleAB ]
+        (A, B)
         "proves goal with only axiom"
     , proves
-        [ Divide 2 ]
-        [ Divide 2 ]
-        (2, 1)
-        "proves goal with claim and axiom"
+        [ ruleAB ]
+        [ ruleAB ]
+        (A, B)
+        "proves goal with same claim and axiom"
+    , proves
+        [ ruleBC ]
+        [ ruleAB ]
+        (A, C)
+        "proves goal with axiom and then claim"
     , disproves
         [ ]
         [ ]
-        (2, 1)
-        [(2, 1)]
+        (A, B)
+        [(A, B)]
         "disproves goal with no claims or axioms"
     , disproves
-        [ Divide 2 ]
+        [ ruleAB ]
         [ ]
-        (2, 1)
-        [(2, 1)]
+        (A, B)
+        [(A, B)]
         "disproves goal with no axioms"
     , disproves
-        [ Divide 3 ]
-        [ Divide 3 ]
-        (2, 1)
-        [(2, 1)]
-        "disproves goal with relatively prime axiom and claim"
+        [ ruleBC ]
+        [ ruleBC ]
+        (A, B)
+        [(A, B)]
+        "disproves goal with irrelevant axiom and claim"
     ]
   where
     run claims axioms goal =
