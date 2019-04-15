@@ -170,8 +170,7 @@ removeDestination (src, dst) =
     return (src', dst)
   where
     src'
-      | dst == src        = Bot
-      | src `matches` dst = Bot
+      | src `matches` dst        = Bot
       | B    <- dst, BorC <- src = C
       | C    <- dst, BorC <- src = B
       | otherwise  = src
