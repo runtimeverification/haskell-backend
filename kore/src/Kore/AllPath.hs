@@ -4,10 +4,11 @@ License     : NCSA
 -}
 module Kore.AllPath where
 
-import Control.Applicative
-       ( Alternative (..) )
-import Data.Maybe
-       ( mapMaybe )
+import           Control.Applicative
+                 ( Alternative (..) )
+import qualified Data.Foldable as Foldable
+import           Data.Maybe
+                 ( mapMaybe )
 
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Strategy as Strategy
@@ -45,6 +46,11 @@ unprovenNodes executionGraph =
     MultiOr.MultiOr
     $ mapMaybe extractUnproven
     $ Strategy.pickFinal executionGraph
+
+{- | Does the 'Strategy.ExecutionGraph' indicate a successful proof?
+ -}
+proven :: Strategy.ExecutionGraph (ProofState goal) rule -> Bool
+proven = Foldable.null . unprovenNodes
 
 {- | The primitive transitions of the all-path reachability proof strategy.
  -}
