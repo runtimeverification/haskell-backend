@@ -63,10 +63,12 @@ transitionRule
     -- ^ Remove destination from goal
     -> (goal -> Bool)
     -- ^ Check if the goal is trivially valid
+    -> ([rule] -> goal -> Strategy.TransitionT rule m (ProofState goal))
+    -- ^ Apply rules in parallel
     -> Prim rule
     -> ProofState goal
     -> Strategy.TransitionT rule m (ProofState goal)
-transitionRule removeDestination triviallyValid = transitionRuleWorker
+transitionRule removeDestination triviallyValid derivePar = transitionRuleWorker
   where
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRem (GoalRem _) = empty
@@ -76,5 +78,8 @@ transitionRule removeDestination triviallyValid = transitionRuleWorker
 
     transitionRuleWorker TriviallyValid (GoalRem g)
       | triviallyValid g = return Proven
+
+    transitionRuleWorker (DerivePar rules) (GoalRem g) =
+        derivePar rules g
 
     transitionRuleWorker _ state = return state

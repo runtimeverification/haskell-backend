@@ -2,6 +2,7 @@ module Test.Kore.AllPath where
 
 import Test.Tasty
 
+import           Control.Applicative
 import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( (&) )
@@ -18,6 +19,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Transition
                  ( runTransitionT )
+import qualified Kore.Step.Transition as Transition
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -124,11 +126,28 @@ removeDestination (src, dst) = return (src - dst, dst)
 triviallyValid :: Goal -> Bool
 triviallyValid (src, dst) = src == dst
 
+derivePar :: [Rule] -> Goal -> Strategy.TransitionT Rule m ProofState
+derivePar rules (src, dst) = Foldable.asum (deriveParWorker <$> rules)
+  where
+    deriveParWorker rule@(Divide n) = do
+        let (q, r) = src `quotRem` n
+            goal = do
+                Transition.addRule rule
+                pure (AllPath.Goal (q, dst))
+            goalRem = pure (AllPath.GoalRem (r, dst))
+        goal <|> goalRem
+
 -- | 'AllPath.transitionRule' instantiated with our unit test rules.
 transitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
 transitionRule prim state =
     (runIdentity . runTransitionT)
-        (AllPath.transitionRule removeDestination triviallyValid prim state)
+        (AllPath.transitionRule
+            removeDestination
+            triviallyValid
+            derivePar
+            prim
+            state
+        )
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
@@ -187,20 +206,32 @@ test_transitionRule_DerivePar =
     , unmodified (AllPath.Goal    (2, 1))
     , transits
         (AllPath.GoalRem (2, 1))
-        [ (AllPath.Goal    (0, 1), Seq.singleton rule)
+        [rule3]
+        [ (AllPath.Goal    (0, 1), Seq.singleton rule3)
+        , (AllPath.GoalRem (2, 1), mempty)
+        ]
+    , transits
+        (AllPath.GoalRem (2, 1))
+        [rule2, rule3]
+        [ (AllPath.Goal    (1, 1), Seq.singleton rule2)
+        , (AllPath.GoalRem (0, 1), mempty)
+        , (AllPath.Goal    (0, 1), Seq.singleton rule3)
         , (AllPath.GoalRem (2, 1), mempty)
         ]
     ]
   where
-    rule = Divide 3
-    run = transitionRule (AllPath.DerivePar [rule])
+    rule2 = Divide 2
+    rule3 = Divide 3
+    run rules = transitionRule (AllPath.DerivePar rules)
     unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run state `equals_` [(state, mempty)]
+    unmodified state = run [rule3] state `equals_` [(state, mempty)]
     transits
         :: HasCallStack
         => ProofState
         -- ^ initial state
+        -> [Rule]
+        -- ^ rules to apply in parallel
         -> [(ProofState, Seq Rule)]
         -- ^ transitions
         -> TestTree
-    transits state = equals_ (run state)
+    transits state rules = equals_ (run rules state)
