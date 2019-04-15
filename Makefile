@@ -20,9 +20,10 @@ docs: haddock
 
 $(STACK_LOCAL_DOC_ROOT)/index.html:
 	$(STACK_HADDOCK) haddock \
-		$(STACK_NO_PROFILE) $(STACK_FAST) --no-haddock-deps 2>&1 \
-		| tee haddock.log; \
-		exit "$${PIPESTATUS[0]}"
+		$(STACK_NO_PROFILE) $(STACK_FAST) --no-haddock-deps \
+		>haddock.log 2>&1 \
+		|| ( cat haddock.log; exit 1; )
+	cat haddock.log
 	if grep -B 2 'Module header' haddock.log; then \
 		echo >&2 "Please fix the missing documentation!"; \
 		exit 1; \
