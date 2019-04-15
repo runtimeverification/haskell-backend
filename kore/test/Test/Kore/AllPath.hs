@@ -19,6 +19,7 @@ import           Kore.Step.Transition
                  ( runTransitionT )
 
 import Test.Kore.Comparators ()
+import Test.Tasty.HUnit.Extensions
 import Test.Terse
 
 type ExecutionGraph = Strategy.ExecutionGraph (AllPath.ProofState Integer) ()
@@ -101,7 +102,18 @@ type Goal = (Integer, Integer)
 
 type ProofState = AllPath.ProofState Goal
 
-type Prim = AllPath.Prim ()
+data Rule = Divide Integer
+    deriving (Eq, Ord, Show)
+
+instance EqualWithExplanation Rule where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance SumEqualWithExplanation Rule where
+    sumConstructorPair (Divide a1) (Divide a2) =
+        SumConstructorSameWithArguments (EqWrap "Divide" a1 a2)
+
+type Prim = AllPath.Prim Rule
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination :: Monad m => Goal -> m Goal
@@ -112,7 +124,7 @@ triviallyValid :: Goal -> Bool
 triviallyValid (src, dst) = src == dst
 
 -- | 'AllPath.transitionRule' instantiated with our unit test rules.
-transitionRule :: Prim -> ProofState -> [(ProofState, Seq ())]
+transitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
 transitionRule prim state =
     (runIdentity . runTransitionT)
         (AllPath.transitionRule removeDestination triviallyValid prim state)
@@ -156,9 +168,9 @@ test_transitionRule_RemoveDestination =
 
 test_transitionRule_TriviallyValid :: [TestTree]
 test_transitionRule_TriviallyValid =
-    [ unmodified AllPath.Proven
-    , unmodified (AllPath.Goal    (2, 1))
-    , unmodified (AllPath.GoalRem (2, 1))
+    [ unmodified    AllPath.Proven
+    , unmodified    (AllPath.Goal    (2, 1))
+    , unmodified    (AllPath.GoalRem (2, 1))
     , becomesProven (AllPath.GoalRem (1, 1))
     ]
   where
@@ -167,3 +179,16 @@ test_transitionRule_TriviallyValid =
     unmodified state = run state `equals_` [(state, mempty)]
     becomesProven :: HasCallStack => ProofState -> TestTree
     becomesProven state = run state `equals_` [(AllPath.Proven, mempty)]
+
+test_transitionRule_DerivePar :: [TestTree]
+test_transitionRule_DerivePar =
+    [ unmodified AllPath.Proven
+    , unmodified (AllPath.Goal    (2, 1))
+    , becomes    (AllPath.GoalRem (2, 1)) _
+    ]
+  where
+    run = transitionRule (AllPath.DerivePar [Divide 3])
+    unmodified :: HasCallStack => ProofState -> TestTree
+    unmodified state = run state `equals_` [(state, mempty)]
+    becomes :: HasCallStack => ProofState -> TestTree
+    becomes state = equals_ (run state)
