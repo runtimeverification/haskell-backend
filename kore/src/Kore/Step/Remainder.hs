@@ -7,11 +7,15 @@ License     : NCSA
 module Kore.Step.Remainder
     ( remainders
     , remainder
+    , quantifyTarget
     ) where
+
+import qualified Debug.Trace
 
 import           Control.Applicative
                  ( Alternative (..) )
 import qualified Data.Foldable as Foldable
+import qualified Data.Set as Set
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -84,11 +88,27 @@ remainder
     => MultiOr (PredicateSubstitution Object (Target variable))
     -> Predicate Object variable
 remainder results =
-    unwrapRemainder
-    $ mkMultiAndPredicate
-    $ mkNotMultiOr conditions
+    mkMultiAndPredicate $ mkNotExists conditions
   where
     conditions = mkMultiAndPredicate . unificationConditions <$> results
+    mkNotExists = mkNotMultiOr . fmap quantifyTarget
+
+-- | Existentially-quantify target (axiom) variables in the 'Predicate'.
+quantifyTarget
+    ::  ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , SortedVariable variable
+        )
+    => Predicate Object (Target variable)
+    -> Predicate Object variable
+quantifyTarget predicate =
+    (\x -> Debug.Trace.traceShow (unparse x) x)
+    $ Predicate.mapVariables Target.unwrapVariable
+    $ Predicate.makeMultipleExists freeNonTargetVariables predicate
+  where
+    freeNonTargetVariables =
+        Set.filter Target.isTarget (Predicate.freeVariables predicate)
 
 {- | Unwrap a remainder predicate.
 
@@ -100,6 +120,13 @@ unwrapRemainder
 unwrapRemainder remainder' =
     Predicate.mapVariables Target.unwrapVariable remainder'
 
+{- | Negate a conjunction of many terms.
+
+@
+  ¬ (φ₁ ∧ φ₂ ∧ ...) = ¬φ₁ ∨ ¬φ₂ ∨ ...
+@
+
+ -}
 mkNotMultiAnd
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
@@ -110,6 +137,13 @@ mkNotMultiAnd
     -> MultiOr  (Predicate Object variable)
 mkNotMultiAnd = MultiOr.make . map Predicate.makeNotPredicate . Foldable.toList
 
+{- | Negate a disjunction of many terms.
+
+@
+  ¬ (φ₁ ∨ φ₂ ∨ ...) = ¬φ₁ ∧ ¬φ₂ ∧ ...
+@
+
+ -}
 mkNotMultiOr
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
