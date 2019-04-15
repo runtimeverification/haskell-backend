@@ -100,6 +100,11 @@ test_unprovenNodes =
 data K = BorC | A | B | C | D | E | F | Bot
     deriving (Eq, Ord, Show)
 
+matches :: K -> K -> Bool
+matches B BorC = True
+matches C BorC = True
+matches a b    = a == b
+
 instance EqualWithExplanation K where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -165,9 +170,8 @@ removeDestination (src, dst) =
     return (src', dst)
   where
     src'
-      | dst == src = Bot
-      | BorC <- dst, B    <- src = Bot
-      | BorC <- dst, C    <- src = Bot
+      | dst == src        = Bot
+      | src `matches` dst = Bot
       | B    <- dst, BorC <- src = C
       | C    <- dst, BorC <- src = B
       | otherwise  = src
@@ -185,7 +189,7 @@ derivePar rules (src, dst) =
       | otherwise = (pure . AllPath.GoalRem) (src, dst)
     applied = applyRule <$> rules
     applyRule rule@(from, to)
-      | from == src = Just $ do
+      | src `matches` from = Just $ do
         Transition.addRule rule
         (pure . AllPath.Goal) (to, dst)
       | otherwise   = Nothing
