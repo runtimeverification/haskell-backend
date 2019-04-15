@@ -26,6 +26,8 @@ module Kore.Step.Step
     , toAxiomVariables
     ) where
 
+import qualified Debug.Trace
+
 import           Control.Applicative
                  ( Alternative (..) )
 import qualified Control.Monad.Trans as Monad.Trans
@@ -357,8 +359,7 @@ applyRemainder
     -- ^ Initial configuration
     -> Predicate Object variable
     -- ^ Remainder
-    -> BranchT unifier
-        (ExpandedPattern Object variable)
+    -> BranchT unifier (ExpandedPattern Object variable)
 applyRemainder
     metadataTools
     predicateSimplifier
@@ -372,7 +373,8 @@ applyRemainder
         finalCondition = Predicated.withoutTerm final
         Predicated { Predicated.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
-    return normalizedCondition { Predicated.term = finalTerm }
+    let normalized = normalizedCondition { Predicated.term = finalTerm }
+    Debug.Trace.traceShow (unparse normalized) $ return normalized
   where
     normalize condition =
         Substitution.normalizeExcept
@@ -545,8 +547,7 @@ checkSubstitutionCoverage
     -- ^ Unified rule
     -> ExpandedPattern level (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier
-        (ExpandedPattern level variable)
+    -> BranchT unifier (ExpandedPattern level variable)
 checkSubstitutionCoverage tools initial unified final
   | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
   | isSymbolic =
@@ -765,7 +766,8 @@ sequenceRules
         let remainder =
                 Remainder.remainder
                 $ Predicated.withoutTerm . unifiedRule <$> results
-        gather $ applyRemainder' config remainder
+        result <- Debug.Trace.traceShow (unparse remainder) gather $ applyRemainder' config remainder
+        Debug.Trace.traceShow (Pretty.vsep $ Foldable.toList $ unparse <$> result) (return result)
 
     applyRemainder' =
         applyRemainder
