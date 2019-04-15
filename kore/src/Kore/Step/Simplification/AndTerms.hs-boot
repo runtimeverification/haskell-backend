@@ -1,8 +1,5 @@
 module Kore.Step.Simplification.AndTerms where
 
-import Control.Error
-       ( ExceptT )
-
 import Kore.AST.Common
        ( SortedVariable )
 import Kore.AST.MetaOrObject
@@ -20,8 +17,8 @@ import Kore.Step.Representation.ExpandedPattern
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
        StepPatternSimplifier )
-import Kore.Unification.Error
-       ( UnificationOrSubstitutionError )
+import Kore.Unification.Unify
+       ( MonadUnify )
 import Kore.Unparser
 import Kore.Variables.Fresh
        ( FreshVariable )
@@ -46,7 +43,7 @@ termAnd
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 
 termUnification
-    :: forall level variable err .
+    :: forall level variable unifier unifierM .
         ( MetaOrObject level
         , FreshVariable variable
         , Ord (variable level)
@@ -55,7 +52,8 @@ termUnification
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , SortedVariable variable
-        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -63,5 +61,4 @@ termUnification
     -> BuiltinAndAxiomSimplifierMap level
     -> StepPattern level variable
     -> StepPattern level variable
-    -> err Simplifier
-        (ExpandedPattern level variable, SimplificationProof level)
+    -> unifier (ExpandedPattern level variable, SimplificationProof level)

@@ -11,6 +11,7 @@ module Kore.OnePath.Step
     ( -- * Primitive strategies
       Prim (..)
     , StrategyPattern (..)
+    , StrategyPatternTransformer (..)
     , CommonStrategyPattern
     , simplify
     , transitionRule
@@ -21,8 +22,6 @@ module Kore.OnePath.Step
 
 import           Control.Applicative
                  ( Alternative (..) )
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
@@ -67,6 +66,7 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
@@ -141,21 +141,26 @@ data StrategyPattern patt
     -- differentiate between them and stuck results.
   deriving (Show, Eq, Ord, Generic)
 
+data StrategyPatternTransformer patt a =
+    StrategyPatternTransformer
+        { rewriteTransformer :: patt -> a
+        , stuckTransformer :: patt -> a
+        , bottomValue :: a
+        }
+
 -- | Catamorphism for 'StrategyPattern'
 strategyPattern
-    :: (patt -> a)
-    -- ^ case for RewritePattern
-    -> (patt -> a)
-    -- ^ case for Stuck
-    -> a
-    -- ^ value for Bottom
+    :: StrategyPatternTransformer patt a
     -> StrategyPattern patt
     -> a
-strategyPattern f g x =
+strategyPattern
+    StrategyPatternTransformer
+        {rewriteTransformer, stuckTransformer, bottomValue}
+  =
     \case
-        RewritePattern patt -> f patt
-        Stuck patt -> g patt
-        Bottom -> x
+        RewritePattern patt -> rewriteTransformer patt
+        Stuck patt -> stuckTransformer patt
+        Bottom -> bottomValue
 
 -- | A 'StrategyPattern' instantiated to 'CommonExpandedPattern' for convenience.
 type CommonStrategyPattern level = StrategyPattern (CommonExpandedPattern level)
@@ -287,7 +292,7 @@ transitionRule
     transitionMultiApplyWithRemainders rules (config, proof) = do
         result <-
             Monad.Trans.lift
-            $ runExceptT
+            $ Monad.Unify.runUnifier
             $ Step.sequenceRewriteRules
                 tools
                 substitutionSimplifier

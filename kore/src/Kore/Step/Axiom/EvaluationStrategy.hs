@@ -63,6 +63,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
@@ -366,8 +367,8 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    result <-
-        Step.sequenceRules
+    result <- Monad.Unify.getUnifier
+        $ Step.sequenceRules
             tools
             substitutionSimplifier
             simplifier

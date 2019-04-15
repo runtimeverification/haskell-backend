@@ -403,7 +403,6 @@ test_unifySelectFromSingleton =
             (selectPatRev `unifiesWith` singleton) expect
         )
 
-
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
     :: HasCallStack
@@ -414,9 +413,40 @@ unifiesWith
 unifiesWith pat1 pat2 Predicated { term, predicate, substitution } = do
     Predicated { term = uTerm, predicate = uPred, substitution = uSubst } <-
         evaluate (mkAnd pat1 pat2)
-    term === uTerm
-    predicate === uPred
     Substitution.toMap substitution === Substitution.toMap uSubst
+    predicate === uPred
+    term === uTerm
+
+test_unifyFnSelectFromSingleton :: TestTree
+test_unifyFnSelectFromSingleton =
+    testPropertyWithSolver
+        "unify a singleton set with a function selection pattern"
+        (do
+            concreteElem <- forAll genConcreteIntegerPattern
+            elementVar <- forAll (standaloneGen $ variableGen intSort)
+            setVar <- forAll (standaloneGen $ variableGen setSort)
+            Monad.when (variableName elementVar == variableName setVar) discard
+            let fnSelectPat    = selectFunctionPattern elementVar setVar id
+                fnSelectPatRev = selectFunctionPattern elementVar setVar reverse
+                singleton      = asInternal (Set.singleton concreteElem)
+                elemStepPatt = fromConcreteStepPattern concreteElem
+                elementVarPatt = mkApp intSort absIntSymbol  [mkVar elementVar]
+                expect =
+                    Predicated
+                        { term = singleton
+                        , predicate =
+                            makeEqualsPredicate elemStepPatt elementVarPatt
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (setVar, asInternal Set.empty) ]
+                        }
+            -- { 5 } /\ SetItem(absInt(X:Int)) Rest:Set
+            (singleton `unifiesWith` fnSelectPat) expect
+            (fnSelectPat `unifiesWith` singleton) expect
+            -- { 5 } /\ Rest:Set SetItem(absInt(X:Int))
+            (singleton `unifiesWith` fnSelectPatRev) expect
+            (fnSelectPatRev `unifiesWith` singleton) expect
+         )
 
 {- | Unify a concrete Set with symbolic-keyed Set.
 
