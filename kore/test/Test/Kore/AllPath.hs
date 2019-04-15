@@ -235,3 +235,21 @@ test_transitionRule_DerivePar =
         -- ^ transitions
         -> TestTree
     transits state rules = equals_ (run rules state)
+
+test_runStrategy :: [TestTree]
+test_runStrategy =
+    []
+  where
+    run claims axioms =
+        Strategy.runStrategy
+            transitionRule
+            (AllPath.strategy claims axioms)
+            (AllPath.Goal goal)
+    disproves claims axioms goal =
+        satisfies_
+            (run claims axioms goal)
+            (not . AllPath.proven)
+    proves claims axioms goal =
+        satisfies_
+            (run claims axioms goal)
+            AllPath.proven
