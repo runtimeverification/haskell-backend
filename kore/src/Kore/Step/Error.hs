@@ -32,6 +32,8 @@ data StepError level variable
     -- ^ Error from a unification sub-step.
     | StepErrorSubstitution (SubstitutionError level variable)
     -- ^ Error from a substitution normalization sub-step.
+    | StepErrorUnsupportedSymbolic (Pretty.Doc ())
+    -- ^ Error from an unsupported symbolic rule application.
     deriving (Show)
 
 instance
@@ -40,6 +42,8 @@ instance
   where
     pretty (StepErrorUnification  err) = Pretty.pretty err
     pretty (StepErrorSubstitution err) = Pretty.pretty err
+    pretty (StepErrorUnsupportedSymbolic err) =
+        Pretty.vsep ["Unsupported symbolic rule:", Pretty.unAnnotate err]
 
 {-| 'substitutionErrorVariables' extracts all variables in a
 'SubstitutionError' as a set.
@@ -49,6 +53,7 @@ stepErrorVariables
     => StepError level variable -> Set.Set (variable level)
 stepErrorVariables (StepErrorUnification _)     = Set.empty
 stepErrorVariables (StepErrorSubstitution a)    = substitutionErrorVariables a
+stepErrorVariables (StepErrorUnsupportedSymbolic _) = Set.empty
 
 {-| 'mapStepErrorVariables' replaces all variables in a 'StepError' using
 the provided mapping.
@@ -60,6 +65,8 @@ mapStepErrorVariables
 mapStepErrorVariables _ (StepErrorUnification a) = StepErrorUnification a
 mapStepErrorVariables mapper (StepErrorSubstitution a) =
     StepErrorSubstitution (mapSubstitutionErrorVariables mapper a)
+mapStepErrorVariables _ (StepErrorUnsupportedSymbolic err) =
+    StepErrorUnsupportedSymbolic err
 
 {-| 'unificationToStepError' converts an action with a 'UnificationError' into
 an action with a 'StepError'.

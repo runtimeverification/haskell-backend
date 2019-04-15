@@ -549,7 +549,25 @@ checkSubstitutionCoverage
     -> BranchT (ExceptT (StepError level (Target variable)) m)
         (ExpandedPattern level variable)
 checkSubstitutionCoverage initial unified final
-  | isSymbolic || isCoveringSubstitution = return (unwrapConfiguration final)
+  | isCoveringSubstitution = return (unwrapConfiguration final)
+  | isSymbolic =
+    -- The substitution does not cover all the variables on the left-hand side
+    -- of the rule, but this was not unexpected because the initial
+    -- configuration was symbolic. This case is not yet supported, but it is not
+    -- a fatal error.
+    (Monad.Trans.lift . Monad.Except.throwError)
+    $ StepErrorUnsupportedSymbolic $ Pretty.vsep
+        [ "While applying axiom:"
+        , Pretty.indent 4 (Pretty.pretty axiom)
+        , "from the initial configuration:"
+        , Pretty.indent 4 (unparse initial)
+        , "Expected unification:"
+        , Pretty.indent 4 (unparse unification)
+        , "to cover all the variables:"
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Set.toAscList leftAxiomVariables)
+        , "in the left-hand side of the axiom."
+        ]
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
@@ -570,6 +588,7 @@ checkSubstitutionCoverage initial unified final
         ]
   where
     Predicated { term = axiom } = unified
+    unification = Predicated.toPredicate (Predicated.withoutTerm unified)
     leftAxiomVariables =
         Pattern.freeVariables leftAxiom
       where
