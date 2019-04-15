@@ -16,6 +16,7 @@ module Kore.Unification.Error
     , substitutionErrorVariables
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
+    , mapUnificationOrSubstitutionErrorVariables
     ) where
 
 import qualified Data.Set as Set
@@ -31,7 +32,10 @@ data UnificationOrSubstitutionError level variable
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
-data UnificationError = UnsupportedPatterns deriving (Eq, Show)
+data UnificationError
+    = UnsupportedPatterns
+    | UnsupportedSymbolic
+    deriving (Eq, Show)
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason level
@@ -80,3 +84,14 @@ unificationToUnifyOrSubError
     :: UnificationError
     -> UnificationOrSubstitutionError level variable
 unificationToUnifyOrSubError = UnificationError
+
+-- | Map variable type of an 'UnificationOrSubstitutionError'.
+mapUnificationOrSubstitutionErrorVariables
+    :: (variableFrom level -> variableTo level)
+    -> UnificationOrSubstitutionError level variableFrom
+    -> UnificationOrSubstitutionError level variableTo
+mapUnificationOrSubstitutionErrorVariables f =
+    \case
+        SubstitutionError sub ->
+            SubstitutionError $ mapSubstitutionErrorVariables f sub
+        UnificationError uni -> UnificationError uni

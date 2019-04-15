@@ -49,7 +49,7 @@ module Kore.Builtin.Map
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( ExceptT, MaybeT )
+                 ( MaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -91,8 +91,8 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError (..) )
+import           Kore.Unification.Unify
+                 ( MonadUnify )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -547,7 +547,7 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
-    :: forall level variable err p expanded proof .
+    :: forall level variable unifierM unifier p expanded proof .
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
         , MetaOrObject level
@@ -557,7 +557,8 @@ unifyEquals
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
-        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
+        , unifier ~ unifierM variable
+        , MonadUnify unifierM
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
@@ -566,8 +567,8 @@ unifyEquals
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> (p -> p -> (err Simplifier) (expanded, proof))
-    -> (p -> p -> MaybeT (err Simplifier) (expanded, proof))
+    -> (p -> p -> unifier (expanded, proof))
+    -> (p -> p -> MaybeT unifier (expanded, proof))
 unifyEquals
     simplificationType
     tools
@@ -596,7 +597,7 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT (err Simplifier) (expanded, proof)
+        -> MaybeT unifier (expanded, proof)
 
     unifyEquals0 dv1@(DV_ _ (Domain.BuiltinMap builtin1)) =
         \case
@@ -654,7 +655,7 @@ unifyEquals
         :: level ~ Object
         => Domain.InternalMap (StepPattern level variable)
         -> Domain.InternalMap (StepPattern level variable)
-        -> (err Simplifier) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2 = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
@@ -689,7 +690,7 @@ unifyEquals
         => Domain.InternalMap (StepPattern Object variable)  -- ^ concrete map
         -> Domain.InternalMap (StepPattern Object variable)  -- ^ framed map
         -> StepPattern Object variable  -- ^ framing variable
-        -> (err Simplifier) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsFramed1 builtin1 builtin2 x = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
@@ -729,7 +730,7 @@ unifyEquals
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> StepPattern Object variable  -- ^ key
         -> StepPattern Object variable  -- ^ value
-        -> (err Simplifier) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsElement builtin1 element' key2 value2 =
         case Map.toList map1 of
             [(fromConcreteStepPattern -> key1, value1)] ->

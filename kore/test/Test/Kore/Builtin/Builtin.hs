@@ -9,8 +9,6 @@ import           Test.Tasty.HUnit
 import           Control.Concurrent.MVar
                  ( MVar )
 import qualified Control.Lens as Lens
-import           Control.Monad.Except
-                 ( runExceptT )
 import           Control.Monad.Reader
                  ( runReaderT )
 import           Data.Function
@@ -42,8 +40,6 @@ import           Kore.Parser.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
-import           Kore.Step.Error
-                 ( StepError )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
@@ -56,7 +52,10 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Step as Step
+import           Kore.Unification.Error
+                 ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparseToString )
 import           SMT
@@ -224,7 +223,7 @@ runStep
     -- ^ axiom
     -> IO
         (Either
-            (StepError Object Variable)
+            (UnificationOrSubstitutionError Object Variable)
             (MultiOr (CommonExpandedPattern Object))
         )
 runStep configuration axiom = do
@@ -238,13 +237,13 @@ runStepResult
     -- ^ axiom
     -> IO
         (Either
-            (StepError Object Variable)
+            (UnificationOrSubstitutionError Object Variable)
             (Step.Results Variable)
         )
 runStepResult configuration axiom =
     runSMT
     $ evalSimplifier emptyLogger
-    $ runExceptT
+    $ Monad.Unify.runUnifier
     $ Step.applyRewriteRules
         testMetadataTools
         testSubstitutionSimplifier
@@ -265,7 +264,7 @@ runStepWith
     -- ^ axiom
     -> IO
         (Either
-            (StepError Object Variable)
+            (UnificationOrSubstitutionError Object Variable)
             (MultiOr (CommonExpandedPattern Object))
         )
 runStepWith solver configuration axiom = do
@@ -285,13 +284,13 @@ runStepResultWith
     -- ^ axiom
     -> IO
         (Either
-            (StepError Object Variable)
+            (UnificationOrSubstitutionError Object Variable)
             (Step.Results Variable)
         )
 runStepResultWith solver configuration axiom =
     let smt =
             evalSimplifier emptyLogger
-            $ runExceptT
+            $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
                 testMetadataTools
                 testSubstitutionSimplifier

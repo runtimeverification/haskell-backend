@@ -41,6 +41,7 @@ import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
                  ( UnificationProof )
+import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
 
 import           Test.Kore
@@ -904,7 +905,7 @@ unificationWithMatch
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
-        $ runExceptT
+        $ Monad.Unify.runUnifier
         $ unificationWithAppMatchOnTop
             tools
             (Mock.substitutionSimplifier tools)
@@ -947,7 +948,7 @@ match tools first second =
             , UnificationProof level Variable
             )
     matchResult =
-        matchAsUnification
+        Monad.Unify.getUnifier $ matchAsUnification
             tools
             (Mock.substitutionSimplifier tools)
             (Simplifier.create tools Map.empty)

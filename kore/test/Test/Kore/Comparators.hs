@@ -43,7 +43,6 @@ import           Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Error
 import           Kore.Step.Pattern
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Proof
@@ -825,6 +824,10 @@ instance SumEqualWithExplanation UnificationError
   where
     sumConstructorPair UnsupportedPatterns UnsupportedPatterns =
         SumConstructorSameNoArguments
+    sumConstructorPair UnsupportedSymbolic UnsupportedSymbolic =
+        SumConstructorSameNoArguments
+    sumConstructorPair a b =
+        SumConstructorDifferent (printWithExplanation a) (printWithExplanation b)
 
 instance EqualWithExplanation UnificationError
   where
@@ -849,33 +852,6 @@ instance (Show (variable level), EqualWithExplanation (variable level))
 
 instance (Show (variable level), EqualWithExplanation (variable level))
     => EqualWithExplanation (SubstitutionError level variable)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance (Show (variable level), EqualWithExplanation (variable level))
-    => SumEqualWithExplanation (StepError level variable)
-  where
-    sumConstructorPair (StepErrorUnification a1) (StepErrorUnification a2) =
-        SumConstructorSameWithArguments (EqWrap "StepErrorUnification" a1 a2)
-    sumConstructorPair a1@(StepErrorUnification _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (StepErrorSubstitution a1) (StepErrorSubstitution a2) =
-        SumConstructorSameWithArguments (EqWrap "StepErrorSubstitution" a1 a2)
-    sumConstructorPair a1@(StepErrorSubstitution _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair StepErrorUnsupportedSymbolic StepErrorUnsupportedSymbolic =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@StepErrorUnsupportedSymbolic a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance (Show (variable level), EqualWithExplanation (variable level))
-    => EqualWithExplanation (StepError level variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

@@ -824,6 +824,7 @@ instance (MetaOrObject level, PrettyPrint (variable level))
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance PrettyPrint UnificationError where
     prettyPrint _ UnsupportedPatterns = "UnsupportedPatterns"
+    prettyPrint _ UnsupportedSymbolic = "UnsupportedSymbolic"
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance MetaOrObject level => PrettyPrint (ClashReason level) where

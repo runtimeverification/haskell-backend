@@ -11,7 +11,7 @@ module Kore.Logger
     , Severity (..)
     , Scope (..)
     , WithLog (..)
-    , LogAction
+    , LogAction (..)
     , log
     , logDebug
     , logInfo
@@ -19,11 +19,12 @@ module Kore.Logger
     , logError
     , logCritical
     , withLogScope
+    , liftLogAction
+    , hoistLogAction
     ) where
 
 import           Colog
-                 ( LogAction )
-import qualified Colog as Colog
+                 ( LogAction (..) )
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Trans
@@ -94,6 +95,13 @@ liftLogAction
     -> LogAction (t m) msg
 liftLogAction logAction =
     Colog.LogAction (Monad.Trans.lift . Colog.unLogAction logAction)
+
+-- | Use a natural transform on a 'LogAction'.
+hoistLogAction
+    :: (forall a. m a -> n a)
+    -> LogAction m msg
+    -> LogAction n msg
+hoistLogAction f (LogAction logger) = LogAction $ \msg -> f (logger msg)
 
 instance WithLog msg m => WithLog msg (Except.ExceptT e m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
