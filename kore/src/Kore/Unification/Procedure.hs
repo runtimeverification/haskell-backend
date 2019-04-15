@@ -11,10 +11,6 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import           Control.Monad.Except
-                 ( ExceptT (..) )
-import qualified Control.Monad.Trans as Monad.Trans
-
 import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
@@ -40,14 +36,14 @@ import           Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSubstitutionSimplifier, StepPatternSimplifier )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
-import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError (..) )
+import           Kore.Unification.Unify
+                 ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -66,6 +62,8 @@ unificationProcedure
         , ShowMetaOrObject variable
         , MetaOrObject level
         , FreshVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
@@ -77,9 +75,7 @@ unificationProcedure
     -> StepPattern level variable
     -- ^left-hand-side of unification
     -> StepPattern level variable
-    -> ExceptT
-        (UnificationOrSubstitutionError level variable)
-        Simplifier
+    -> unifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
         )
@@ -101,7 +97,7 @@ unificationProcedure
     if Predicated.isBottom pat
         then return
             (MultiOr.make [], EmptyUnificationProof)
-        else Monad.Trans.lift $ do
+        else Monad.Unify.liftSimplifier $ do
             (orCeil, _proof) <-
                 Ceil.makeEvaluateTerm
                     tools

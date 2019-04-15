@@ -59,6 +59,7 @@ import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unification.Unifier
                  ( UnificationProof (..) )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -144,7 +145,7 @@ matchWith
     -> MaybeT Simplifier (OrOfPredicateSubstitution level variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-
-        hushT $
+        hushT . Monad.Unify.getUnifier $
             unificationProcedure
                 tools
                 substitutionSimplifier

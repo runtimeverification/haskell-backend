@@ -21,8 +21,6 @@ module Kore.OnePath.Step
 
 import           Control.Applicative
                  ( Alternative (..) )
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
@@ -67,6 +65,7 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
@@ -287,7 +286,7 @@ transitionRule
     transitionMultiApplyWithRemainders rules (config, proof) = do
         result <-
             Monad.Trans.lift
-            $ runExceptT
+            $ Monad.Unify.runUnifier
             $ Step.sequenceRewriteRules
                 tools
                 substitutionSimplifier
