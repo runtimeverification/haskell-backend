@@ -67,7 +67,10 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.RuleIndex
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..),
+                 StrategyPatternTransformer (StrategyPatternTransformer),
                  strategyPattern )
+import qualified Kore.OnePath.Step as StrategyPatternTransformer
+                 ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -274,7 +277,11 @@ showLeafs = do
   where
     getNodeState graph node =
         maybe Nothing (\x -> Just (x, node))
-        . strategyPattern (const . Just $ UnevaluatedNode) (const . Just $ StuckNode) Nothing
+        . strategyPattern StrategyPatternTransformer
+            { rewriteTransformer = const . Just $ UnevaluatedNode
+            , stuckTransformer = const . Just $ StuckNode
+            , bottomValue = Nothing
+            }
         . Graph.lab'
         . Graph.context graph
         $ node
@@ -574,10 +581,12 @@ unparseStrategy
     -> CommonStrategyPattern level
     -> String
 unparseStrategy omitList =
-    strategyPattern
-        (\pat -> unparseToString (hide <$> pat))
-        (\pat -> "Stuck: \n" <> unparseToString (hide <$> pat))
-        "Reached bottom"
+    strategyPattern StrategyPatternTransformer
+        { rewriteTransformer = \pat -> unparseToString (hide <$> pat)
+        , stuckTransformer =
+            \pat -> "Stuck: \n" <> unparseToString (hide <$> pat)
+        , bottomValue = "Reached bottom"
+        }
   where
     hide :: StepPattern level Variable -> StepPattern level Variable
     hide =
