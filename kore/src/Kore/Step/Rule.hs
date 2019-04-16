@@ -26,10 +26,8 @@ module Kore.Step.Rule
     ) where
 
 import           Control.Comonad
-import qualified Data.Foldable as Foldable
 import           Data.Map.Strict
                  ( Map )
-import qualified Data.Map.Strict as Map
 import           Data.Maybe
 import           Data.Set
                  ( Set )
@@ -330,8 +328,8 @@ refreshRulePattern
     => Set (variable level)  -- ^ Variables to avoid
     -> RulePattern level variable
     -> (Map (variable level) (variable level), RulePattern level variable)
-refreshRulePattern avoid0 rulePattern =
-    let (_, rename) = refreshVariables originalFreeVariables
+refreshRulePattern avoid rulePattern =
+    let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
         left' = Pattern.substitute subst left
         right' = Pattern.substitute subst right
@@ -346,21 +344,6 @@ refreshRulePattern avoid0 rulePattern =
   where
     RulePattern { left, right, requires } = rulePattern
     originalFreeVariables = freeVariables rulePattern
-    refreshVariables = Foldable.foldl' refreshOneVariable (avoid0, Map.empty)
-    refreshOneVariable (avoid, rename) var
-      | Just var' <- refreshVariable avoid var =
-        let avoid' =
-                -- Avoid the freshly-generated variable in future renamings.
-                Set.insert var' avoid
-            rename' =
-                -- Record a mapping from the original variable to the
-                -- freshly-generated variable.
-                Map.insert var var' rename
-        in (avoid', rename')
-      | otherwise =
-        -- The variable does not collide with any others, so renaming is not
-        -- necessary.
-        (Set.insert var avoid, rename)
 
 {- | Extract the free variables of a 'RulePattern'.
  -}

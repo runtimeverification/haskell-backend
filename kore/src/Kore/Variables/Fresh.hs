@@ -17,9 +17,14 @@ like "var_v_11".
 -}
 module Kore.Variables.Fresh
     ( FreshVariable (..)
+    , refreshVariables
     , nextVariable
     ) where
 
+import qualified Data.Foldable as Foldable
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -57,6 +62,43 @@ instance FreshVariable Variable where
         pivotMax = variable { variableCounter = Just Sup }
         pivotMin = variable { variableCounter = Nothing }
         fixSort var = var { variableSort = variableSort variable }
+
+{- | Rename one set of variables while avoiding another.
+
+If any of the variables to rename occurs in the set of avoided variables, it
+will be mapped to a fresh name in the result. Every fresh name in the result
+will also be unique among the fresh names.
+
+To use @refreshVariables@ with 'Kore.Step.Pattern.substitute', map the result
+with 'Kore.AST.Valid.mkVar':
+
+@
+'Kore.Step.Pattern.substitute' ('Kore.AST.Valid.mkVar' \<$\> refreshVariables avoid rename) :: 'Kore.Step.Pattern.StepPattern' Object Variable -> 'Kore.Step.Pattern.StepPattern' Object Variable
+@
+
+ -}
+refreshVariables
+    :: FreshVariable variable
+    => Set (variable Object)  -- ^ variables to avoid
+    -> Set (variable Object)  -- ^ variables to rename
+    -> Map (variable Object) (variable Object)
+refreshVariables avoid0 =
+    snd <$> Foldable.foldl' refreshVariablesWorker (avoid0, Map.empty)
+  where
+    refreshVariablesWorker (avoid, rename) var
+      | Just var' <- refreshVariable avoid var =
+        let avoid' =
+                -- Avoid the freshly-generated variable in future renamings.
+                Set.insert var' avoid
+            rename' =
+                -- Record a mapping from the original variable to the
+                -- freshly-generated variable.
+                Map.insert var var' rename
+        in (avoid', rename')
+      | otherwise =
+        -- The variable does not collide with any others, so renaming is not
+        -- necessary.
+        (Set.insert var avoid, rename)
 
 {- | Increase the 'variableCounter' of a 'Variable'
  -}
