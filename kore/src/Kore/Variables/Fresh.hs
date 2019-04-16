@@ -1,20 +1,7 @@
-{-|
-Module      : Kore.Variables.Fresh
-Description : Specify an interface for generating fresh variables
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-Stability   : experimental
-Portability : portable
-
-The syntax of a variable generated from a regular one is
-var_<original-variable-name>_<disambiguating-number>
-As an example, a variable generated from "v" could be called "var_v_10". Note
-that a variable generated from "var_v_10" would NOT be called "var_var_v_10_11",
-it would use the same original variable name "v", so it would look something
-like "var_v_11".
-
--}
+ -}
 module Kore.Variables.Fresh
     ( FreshVariable (..)
     , refreshVariables
