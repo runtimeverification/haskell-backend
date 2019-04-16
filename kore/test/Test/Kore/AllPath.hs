@@ -105,6 +105,13 @@ matches B BorC = True
 matches C BorC = True
 matches a b    = a == b
 
+difference :: K -> K -> K
+difference BorC B = C
+difference BorC C = B
+difference a    b
+  | a `matches` b = Bot
+  | otherwise     = a
+
 instance EqualWithExplanation K where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -115,65 +122,16 @@ type ProofState = AllPath.ProofState Goal
 
 type Rule = (K, K)
 
-ruleAC :: Rule
-ruleAC = (A, C)
-
-cyclicRule :: [Rule]
-cyclicRule = [(A, A)]
-
-ruleAB, ruleAF :: Rule
-ruleAB = (A, B)
-ruleAF = (A, F)
-
-ruleBC, ruleBD, ruleBF :: Rule
-ruleBC = (B, C)
-ruleBD = (B, D)
-ruleBF = (B, F)
-
-ruleCD, ruleCF :: Rule
-ruleCD = (C, D)
-ruleCF = (C, F)
-
-ruleDE :: Rule
-ruleDE = (D, E)
-
-ruleEF :: Rule
-ruleEF = (E, F)
-
-noRules :: [Rule]
-noRules = []
-
-oneRule :: [Rule]
-oneRule = [ruleAB]
-
-concurrentRules :: [Rule]
-concurrentRules = [ ruleAB, ruleAC ]
-
-differentLengthPaths :: [Rule]
-differentLengthPaths =
-    [ ruleAB
-    , ruleAF
-    , ruleBC
-    , ruleBD
-    , ruleBF
-    , ruleCD
-    , ruleCF
-    , ruleDE
-    , ruleEF
-    ]
-
 type Prim = AllPath.Prim Rule
+
+runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
+runTransitionRule prim state =
+    (runIdentity . runTransitionT) (transitionRule prim state)
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination :: Monad m => Goal -> m Goal
 removeDestination (src, dst) =
-    return (src', dst)
-  where
-    src'
-      | src `matches` dst        = Bot
-      | B    <- dst, BorC <- src = C
-      | C    <- dst, BorC <- src = B
-      | otherwise  = src
+    return (difference src dst, dst)
 
 -- | The goal is trivially valid when the members are equal.
 triviallyValid :: Goal -> Bool
@@ -183,20 +141,17 @@ derivePar :: [Rule] -> Goal -> Strategy.TransitionT Rule m ProofState
 derivePar rules (src, dst) =
     goals <|> goalRem
   where
-    goalRem
-      | any Maybe.isJust applied = (pure . AllPath.GoalRem) (Bot, dst)
-      | otherwise = (pure . AllPath.GoalRem) (src, dst)
-    applied = applyRule <$> rules
-    applyRule rule@(from, to)
-      | src `matches` from = Just $ do
+    goal rule@(_, to) = do
         Transition.addRule rule
         (pure . AllPath.Goal) (to, dst)
-      | otherwise   = Nothing
-    goals = Foldable.asum (Maybe.fromMaybe empty <$> applied)
-
-runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
-runTransitionRule prim state =
-    (runIdentity . runTransitionT) (transitionRule prim state)
+    goalRem = do
+        let r = Foldable.foldl' difference src (fst <$> applied)
+        (pure . AllPath.GoalRem) (r, dst)
+    applyRule rule@(from, _)
+      | from `matches` src = Just rule
+      | otherwise = Nothing
+    applied = Maybe.mapMaybe applyRule rules
+    goals = Foldable.asum (goal <$> applied)
 
 -- | 'AllPath.transitionRule' instantiated with our unit test rules.
 transitionRule
@@ -239,12 +194,13 @@ test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
     [ unmodified AllPath.Proven
     , unmodified (AllPath.GoalRem (A, B))
-    , run (AllPath.Goal (B, B)) `equals` [(AllPath.GoalRem (Bot, B), mempty)]  $ "removes destination from goal"
+    , AllPath.Goal (B, B) `becomes` (AllPath.GoalRem (Bot, B), mempty)
     ]
   where
     run = runTransitionRule AllPath.RemoveDestination
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
+    becomes initial final = run initial `equals_` [final]
 
 test_transitionRule_TriviallyValid :: [TestTree]
 test_transitionRule_TriviallyValid =
@@ -264,50 +220,46 @@ test_transitionRule_DerivePar :: [TestTree]
 test_transitionRule_DerivePar =
     [ unmodified AllPath.Proven
     , unmodified (AllPath.Goal    (A, B))
-    , transits
-        (AllPath.GoalRem (B, C))
-        [ruleBC]
-        [ (AllPath.Goal    (C, C), Seq.singleton ruleBC)
+    , [(A, C)]
+        `derives`
+        [ (AllPath.Goal    (C,   C), Seq.singleton (A, C))
         , (AllPath.GoalRem (Bot, C), mempty)
         ]
-    , transits
-        (AllPath.GoalRem (A, B))
-        [ruleAB, ruleBC]
-        [ (AllPath.Goal    (B  , B), Seq.singleton ruleAB)
-        , (AllPath.GoalRem (Bot, B), mempty)
+    , [(A, B), (B, C)]
+        `derives`
+        [ (AllPath.Goal    (B  , C), Seq.singleton (A, B))
+        , (AllPath.GoalRem (Bot, C), mempty)
         ]
     ]
   where
     run rules = runTransitionRule (AllPath.DerivePar rules)
     unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run oneRule state `equals_` [(state, mempty)]
-    transits
+    unmodified state = run [(A, B)] state `equals_` [(state, mempty)]
+    derives
         :: HasCallStack
-        => ProofState
-        -- ^ initial state
-        -> [Rule]
+        => [Rule]
         -- ^ rules to apply in parallel
         -> [(ProofState, Seq Rule)]
         -- ^ transitions
         -> TestTree
-    transits state rules = equals_ (run rules state)
+    derives rules = equals_ (run rules $ AllPath.GoalRem (A, C))
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
-    [ proves    noRules (A, A) "identity"
-    , disproves noRules (A, B) "no claims or axioms" [(A, B)]
+    [ [] `proves`    (A, A)
+    , [] `disproves` (A, B) $ [(A, B)]
 
-    , proves    oneRule (A, B   ) "only axiom"
-    , proves    oneRule (A, BorC) "disjoint goal"
-    , disproves oneRule (A, C   ) "partial progess toward goal" [(B, C)]
+    , [(A, B)] `proves`    (A, B   )
+    , [(A, B)] `proves`    (A, BorC)
+    , [(A, B)] `disproves` (A, C   ) $ [(B, C)]
 
-    , proves    cyclicRule (A, B) "cyclic rule"
-    , proves    cyclicRule (A, C) "cyclic rule"
+    , [(A, A)] `proves` (A, B)
+    , [(A, A)] `proves` (A, C)
 
-    , proves    concurrentRules (A, BorC) "concurrent rules"
-    , disproves concurrentRules (A, B   ) "concurrent rules" [(C, B)]
+    , [(A, B), (A, C)] `proves`    (A, BorC)
+    , [(A, B), (A, C)] `disproves` (A, B   ) $ [(C, B)]
 
-    , proves    differentLengthPaths (A, F) "paths of different length"
+    , differentLengthPaths `proves` (A, F)
     ]
   where
     run axioms goal =
@@ -322,26 +274,37 @@ test_runStrategy =
         -- ^ Axioms
         -> Goal
         -- ^ Proof goal
-        -> String
-        -- ^ Message
         -> [Goal]
         -- ^ Unproven goals
         -> TestTree
-    disproves axioms goal message unproven =
+    disproves axioms goal unproven =
         equals
             (Foldable.toList $ AllPath.unprovenNodes $ run axioms goal)
             unproven
-            ("disproves goal with " <> message)
+            (show axioms ++ " disproves " ++ show goal)
     proves
         :: HasCallStack
         => [Rule]
         -- ^ Axioms
         -> Goal
         -- ^ Proof goal
-        -> String
         -> TestTree
-    proves axioms goal message =
+    proves axioms goal =
         satisfies
             (run axioms goal)
             AllPath.proven
-            ("proves goal with " <> message)
+            (show axioms ++ " proves " ++ show goal)
+
+differentLengthPaths :: [Rule]
+differentLengthPaths =
+    [ -- Length 5 path
+      (A, B), (B, C), (C, D), (D, E), (E, F)
+      -- Length 4 path
+    ,                         (D, F)
+      -- Length 3 path
+    ,                 (C, F)
+      -- Length 2 path
+    ,         (B, F)
+      -- Length 1 path
+    , (A, F)
+    ]
