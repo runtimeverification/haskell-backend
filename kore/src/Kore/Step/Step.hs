@@ -655,9 +655,8 @@ applyRulesInParallel
   = do
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications = Predicated.withoutTerm . unifiedRule <$> results
-    remainders <- gather $ do
-        remainder <- scatter (Remainder.remainders unifications)
-        applyRemainder' initial remainder
+        remainder = Remainder.remainder unifications
+    remainders <- gather $ applyRemainder' initial remainder
     return Results { results, remainders }
   where
     applyRule' =

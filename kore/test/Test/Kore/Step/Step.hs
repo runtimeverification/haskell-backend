@@ -746,14 +746,9 @@ test_applyRewriteRules =
                         { term = initialTerm
                         , predicate =
                             makeNotPredicate
-                            $ makeCeilPredicate Mock.cg
-                        , substitution = mempty
-                        }
-                    , Predicated
-                        { term = initialTerm
-                        , predicate =
-                            makeNotPredicate
-                            $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         , substitution = mempty
                         }
                     ]
@@ -800,18 +795,9 @@ test_applyRewriteRules =
                         , predicate =
                             makeAndPredicate (makeCeilPredicate Mock.cf)
                             $ makeNotPredicate
-                            $ makeCeilPredicate Mock.cg
-                        , substitution = mempty
-                        }
-                    , Predicated
-                        { term =
-                            Mock.functionalConstr20
-                                (mkVar Mock.x)
-                                Mock.cg
-                        , predicate =
-                            makeAndPredicate (makeCeilPredicate Mock.cf)
-                            $ makeNotPredicate
-                            $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         , substitution = mempty
                         }
                     ]
@@ -889,12 +875,10 @@ test_applyRewriteRules =
                 MultiOr
                     [ initial
                         { predicate =
-                            makeNotPredicate (makeCeilPredicate Mock.cg)
-                        }
-                    , initial
-                        { predicate =
                             makeNotPredicate
-                            $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         }
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -922,15 +906,13 @@ test_applyRewriteRules =
         --   rewritten: cg, with (⌈cf⌉ and ⌈cg⌉) and [x=b]
         --   remainder:
         --     constr20(x, cf, cg)
-        --        with ¬(⌈cf⌉ and ⌈cg⌉)
-        --        or   ¬[x=a]
-        --        or   ¬[x=b]
+        --        with ¬(⌈cf⌉ and ⌈cg⌉ and [x=a])
+        --         and ¬(⌈cf⌉ and ⌈cg⌉ and [x=b])
         let
             definedBranches =
                 makeAndPredicate
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
-            undefinedBranches = Predicate.makeNotPredicate definedBranches
             results =
                 MultiOr
                     [ Predicated
@@ -948,36 +930,17 @@ test_applyRewriteRules =
                     ]
             remainders =
                 MultiOr
-                    [ initial { predicate = undefinedBranches }
-                    , initial
-                        { predicate =
-                            Predicate.makeAndPredicate
-                                undefinedBranches
-                                (Predicate.makeNotPredicate
-                                    $ Predicate.makeEqualsPredicate
-                                        (mkVar Mock.x)
-                                        Mock.b
-                                )
-                        }
-                    , initial
+                    [ initial
                         { predicate =
                             Predicate.makeAndPredicate
                                 (Predicate.makeNotPredicate
-                                    $ Predicate.makeEqualsPredicate
-                                        (mkVar Mock.x)
-                                        Mock.a
-                                )
-                                undefinedBranches
-                        }
-                    , initial
-                        { predicate =
-                            Predicate.makeAndPredicate
-                                (Predicate.makeNotPredicate
+                                    $ Predicate.makeAndPredicate definedBranches
                                     $ Predicate.makeEqualsPredicate
                                         (mkVar Mock.x)
                                         Mock.a
                                 )
                                 (Predicate.makeNotPredicate
+                                    $ Predicate.makeAndPredicate definedBranches
                                     $ Predicate.makeEqualsPredicate
                                         (mkVar Mock.x)
                                         Mock.b
@@ -1017,12 +980,10 @@ test_applyRewriteRules =
                 MultiOr
                     [ initial
                         { predicate =
-                            makeNotPredicate (makeCeilPredicate Mock.cg)
-                        }
-                    , initial
-                        { predicate =
                             makeNotPredicate
-                            $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         }
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg

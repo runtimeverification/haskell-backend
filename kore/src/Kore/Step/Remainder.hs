@@ -5,8 +5,7 @@ License     : NCSA
  -}
 
 module Kore.Step.Remainder
-    ( remainders
-    , remainder
+    ( remainder
     , quantifyTarget
     ) where
 
@@ -26,7 +25,6 @@ import           Kore.Step.Representation.MultiAnd
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.Predicated
                  ( Predicated (Predicated) )
 import           Kore.Step.Representation.PredicateSubstitution
@@ -39,42 +37,10 @@ import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
 
-{- | Negate the disjunction of unification solutions to form the /remainders/.
-
-The /remainders/ are the parts of the initial configuration that are not matched
-by any applied rule.
-
-@remainders@ returns a disjunction of predicates; use 'remainder' to construct a
-single remainder predicate.
-
- -}
-remainders
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => MultiOr (PredicateSubstitution Object (Target variable))
-    -> MultiOr (Predicate Object variable)
-remainders =
-    fmap unwrapRemainderVariables
-    . Foldable.foldr negateUnification1 top
-  where
-    top = pure Predicate.makeTruePredicate
-    negateUnification1 unification negations =
-        Predicate.makeAndPredicate
-            <$> mkNotMultiAnd conditions
-            <*> negations
-      where
-        conditions = unificationConditions unification
-
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 
 The /remainder/ is the parts of the initial configuration that is not matched
 by any applied rule.
-
-@remainder@ returns a single predicate; use 'remainders' to construct a a
-disjunction of remainder predicates.
 
  -}
 remainder
@@ -106,32 +72,6 @@ quantifyTarget predicate =
   where
     freeNonTargetVariables =
         Set.filter Target.isTarget (Predicate.freeVariables predicate)
-
-{- | Unwrap a remainder predicate's variables.
- -}
-unwrapRemainderVariables
-    :: (Ord (variable Object), Unparse (variable Object))
-    => Predicate Object (Target variable)
-    -> Predicate Object variable
-unwrapRemainderVariables remainder' =
-    Predicate.mapVariables Target.unwrapVariable remainder'
-
-{- | Negate a conjunction of many terms.
-
-@
-  ¬ (φ₁ ∧ φ₂ ∧ ...) = ¬φ₁ ∨ ¬φ₂ ∨ ...
-@
-
- -}
-mkNotMultiAnd
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
-        , SortedVariable variable
-        )
-    => MultiAnd (Predicate Object variable)
-    -> MultiOr  (Predicate Object variable)
-mkNotMultiAnd = MultiOr.make . map Predicate.makeNotPredicate . Foldable.toList
 
 {- | Negate a disjunction of many terms.
 
