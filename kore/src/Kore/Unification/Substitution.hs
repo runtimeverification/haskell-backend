@@ -12,6 +12,7 @@ module Kore.Unification.Substitution
     ( Substitution
     , unwrap
     , toMap
+    , fromMap
     , wrap
     , modify
     , Kore.Unification.Substitution.mapVariables
@@ -85,6 +86,12 @@ toMap
     => Substitution level variable
     -> Map (variable level) (StepPattern level variable)
 toMap = Map.fromList . unwrap
+
+fromMap
+    :: Ord (variable level)
+    => Map (variable level) (StepPattern level variable)
+    -> Substitution level variable
+fromMap = wrap . Map.toList
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
