@@ -25,6 +25,7 @@ import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
 import qualified Kore.Step.Representation.Predicated as Predicated
@@ -296,38 +297,37 @@ applyRewriteRule_
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (ExpandedPattern Object Variable))
+            [ExpandedPattern Object Variable]
         )
 applyRewriteRule_ initial rule = do
     result <- applyRewriteRules initial [rule]
     return (Foldable.fold . discardRemainders <$> result)
   where
-    discardRemainders = fmap Step.result . Step.results
+    discardRemainders = fmap (Foldable.toList . Step.result) . Step.results
 
 test_applyRewriteRule_ :: [TestTree]
 test_applyRewriteRule_ =
     [ testCase "apply identity axiom" $ do
-        let expect = Right (MultiOr [ initial ])
+        let expect = Right [ initial ]
             initial = pure (mkVar Mock.x)
         actual <- applyRewriteRule_ initial axiomId
         assertEqualWithExplanation "" expect actual
 
     , testCase "apply identity without renaming" $ do
-        let expect = Right (MultiOr [ initial ])
+        let expect = Right [ initial ]
             initial = pure (mkVar Mock.y)
         actual <- applyRewriteRule_ initial axiomId
         assertEqualWithExplanation "" expect actual
 
     , testCase "substitute variable with itself" $ do
-        let expect = Right (MultiOr [ initial { term = mkVar Mock.x } ])
+        let expect = Right [ initial { term = mkVar Mock.x } ]
             initial = pure (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
         actual <- applyRewriteRule_ initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     , testCase "merge configuration patterns" $ do
         let term = Mock.functionalConstr10 (mkVar Mock.y)
-            expect =
-                Right (MultiOr [ initial { term, substitution } ])
+            expect = Right [ initial { term, substitution } ]
               where
                 substitution = Substitution.wrap [ (Mock.x, term) ]
             initial = pure (Mock.sigma (mkVar Mock.x) term)
@@ -336,7 +336,7 @@ test_applyRewriteRule_ =
 
     , testCase "substitution with symbol matching" $ do
         let expect =
-                Right (MultiOr [ initial { term = fz, substitution } ])
+                Right [ initial { term = fz, substitution } ]
               where
                 substitution = Substitution.wrap [ (Mock.y, mkVar Mock.z) ]
             fy = Mock.functionalConstr10 (mkVar Mock.y)
@@ -347,7 +347,7 @@ test_applyRewriteRule_ =
 
     , testCase "merge multiple variables" $ do
         let expect =
-                Right (MultiOr [ initial { term = yy, substitution } ])
+                Right [ initial { term = yy, substitution } ]
               where
                 substitution = Substitution.wrap [ (Mock.x, mkVar Mock.y) ]
             xy = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
@@ -358,7 +358,7 @@ test_applyRewriteRule_ =
         assertEqualWithExplanation "" expect actual
 
     , testCase "rename quantified right variables" $ do
-        let expect = Right (MultiOr [ pure final ])
+        let expect = Right [ pure final ]
             final = mkExists (nextVariable Mock.y) (mkVar Mock.y)
             initial = pure (mkVar Mock.y)
             axiom =
@@ -444,16 +444,17 @@ test_applyRewriteRule_ =
     -- vs
     -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
     , testCase "unify all children" $ do
-        let expect = (Right . MultiOr)
-                [ Predicated
-                    { term = Mock.sigma zz zz
-                    , predicate = makeTruePredicate
-                    , substitution = Substitution.wrap
-                        [ (Mock.x, zz)
-                        , (Mock.y, mkVar Mock.z)
-                        ]
-                    }
-                ]
+        let expect =
+                Right
+                    [ Predicated
+                        { term = Mock.sigma zz zz
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.wrap
+                            [ (Mock.x, zz)
+                            , (Mock.y, mkVar Mock.z)
+                            ]
+                        }
+                    ]
             xx = Mock.sigma (mkVar Mock.x) (mkVar Mock.x)
             yy = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
             zz = Mock.sigma (mkVar Mock.z) (mkVar Mock.z)
@@ -470,7 +471,7 @@ test_applyRewriteRule_ =
         let
             fb = Mock.functional10 (mkVar Mock.y)
             expect =
-                (Right . MultiOr)
+                Right
                     [ Predicated
                         { term = Mock.sigma fb fb
                         , predicate = makeTruePredicate
@@ -491,7 +492,7 @@ test_applyRewriteRule_ =
             fy = Mock.functionalConstr10 (mkVar Mock.y)
             fz = Mock.functionalConstr10 (mkVar Mock.z)
             expect =
-                (Right . MultiOr)
+                Right
                     [ Predicated
                         { term = Mock.sigma fz fz
                         , predicate = makeTruePredicate
@@ -535,7 +536,7 @@ test_applyRewriteRule_ =
     -- a and g(a)=f(a)
     -- Expected: a and g(a)=f(a)
     , testCase "preserve initial condition" $ do
-        let expect = Right (MultiOr [initial])
+        let expect = Right [initial]
             predicate =
                 makeEqualsPredicate
                     (Mock.functional11 Mock.a)
@@ -557,7 +558,7 @@ test_applyRewriteRule_ =
         let
             fb = Mock.functional10 (mkVar Mock.y)
             expect =
-                (Right . MultiOr)
+                Right
                     [ Predicated
                         { term = Mock.sigma fb fb
                         , predicate =
@@ -592,7 +593,7 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional11 (mkVar Mock.x))
                     (Mock.functional10 (mkVar Mock.x))
-            expect = Right (MultiOr [ initial { predicate = ensures } ])
+            expect = Right [ initial { predicate = ensures } ]
             initial = pure (mkVar Mock.x)
             axiom = RewriteRule ruleId { ensures }
         actual <- applyRewriteRule_ initial axiom
@@ -608,10 +609,16 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional11 (mkVar Mock.x))
                     (Mock.functional10 (mkVar Mock.x))
-            expect = Right (MultiOr [ initial { predicate = requires } ])
+            expect = Right [ initial { predicate = requires } ]
             initial = pure (mkVar Mock.x)
             axiom = RewriteRule ruleId { requires }
         actual <- applyRewriteRule_ initial axiom
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "\\rewrite(a, \\bottom)" $ do
+        let expect = Right [ ExpandedPattern.bottomOf Mock.testSort ]
+            initial = pure Mock.a
+        actual <- applyRewriteRule_ initial axiomBottom
         assertEqualWithExplanation "" expect actual
     ]
   where
@@ -624,6 +631,15 @@ test_applyRewriteRule_ =
             , attributes = def
             }
     axiomId = RewriteRule ruleId
+
+    axiomBottom =
+        RewriteRule RulePattern
+            { left = Mock.a
+            , right = mkBottom Mock.testSort
+            , requires = makeTruePredicate
+            , ensures = makeTruePredicate
+            , attributes = def
+            }
 
     axiomSigmaId =
         RewriteRule RulePattern
