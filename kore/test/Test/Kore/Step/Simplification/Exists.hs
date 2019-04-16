@@ -1,5 +1,6 @@
 module Test.Kore.Step.Simplification.Exists
-    ( test_existsSimplification
+    ( test_makeEvaluate
+    , test_simplify
     ) where
 
 import Test.Tasty
@@ -16,10 +17,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
                  makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -41,48 +42,60 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-test_existsSimplification :: [TestTree]
-test_existsSimplification =
-    [ testCase "Exists - or distribution" $ do
-        -- exists(a or b) = exists(a) or exists(b)
-        let expect =
-                MultiOr.make
-                    [ Predicated
-                        { term = mkExists Mock.x something1OfX
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    , Predicated
-                        { term = mkExists Mock.x something2OfX
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-        actual <-
-            evaluate mockMetadataTools
-                (makeExists
-                    Mock.x
-                    [something1OfXExpanded, something2OfXExpanded]
-                )
-        assertEqualWithExplanation "" expect actual
+test_simplify :: [TestTree]
+test_simplify =
+    [ [plain10, plain11] `simplifies` [plain10', plain11']            $ "\\or distribution"
+    , [top]              `simplifies` [top]                           $ "\\top"
+    , []                 `simplifies` []                              $ "\\bottom"
+    , [equals]           `simplifies` [quantifyPredicate equals]      $ "\\equals"
+    , [substForX]        `simplifies` [top]                           $ "discharge substitution"
+    , [substOfX]         `simplifies` [quantifySubstitution substOfX] $ "substitution"
+    ]
+  where
+    top = ExpandedPattern.top
+    plain10 = pure $ Mock.plain10 (mkVar Mock.x)
+    plain11 = pure $ Mock.plain11 (mkVar Mock.x)
+    plain10' = mkExists Mock.x <$> plain10
+    plain11' = mkExists Mock.x <$> plain11
+    equals =
+        (ExpandedPattern.topOf Mock.testSort)
+            { predicate =
+                Predicate.makeEqualsPredicate
+                    (Mock.sigma (mkVar Mock.x) (mkVar Mock.z))
+                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+            }
+    quantifyPredicate predicated@Predicated { predicate } =
+        predicated
+            { predicate = Predicate.makeExistsPredicate Mock.x predicate }
+    quantifySubstitution predicated@Predicated { predicate, substitution } =
+        predicated
+            { predicate =
+                Predicate.makeAndPredicate predicate
+                $ Predicate.makeExistsPredicate Mock.x
+                $ Predicate.fromSubstitution substitution
+            }
+    substForX =
+        (ExpandedPattern.topOf Mock.testSort)
+            { substitution =
+                Substitution.unsafeWrap
+                    [(Mock.x, Mock.sigma (mkVar Mock.y) (mkVar Mock.z))]
+            }
+    substOfX =
+        (ExpandedPattern.topOf Mock.testSort)
+            { substitution =
+                Substitution.unsafeWrap
+                    [(Mock.y, Mock.sigma (mkVar Mock.x) (mkVar Mock.z))]
+            }
+    simplifies original expected message =
+        testCase message $ do
+            actual <- simplify mockMetadataTools (makeExists Mock.x original)
+            assertEqualWithExplanation "expected simplification"
+                (MultiOr.make expected) actual
 
-    , testGroup "Exists - Predicates"
+test_makeEvaluate :: [TestTree]
+test_makeEvaluate =
+    [ testGroup "Exists - Predicates"
         [ testCase "Top" $ do
-            let expect = MultiOr.make [ ExpandedPattern.top ]
-            actual <-
-                evaluate mockMetadataTools
-                    (makeExists
-                        Mock.x
-                        [ExpandedPattern.top]
-                    )
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "Bottom" $ do
-            let expect = MultiOr.make []
-            actual <-evaluate mockMetadataTools (makeExists Mock.x [])
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "Expanded Top" $ do
             let expect = MultiOr.make [ ExpandedPattern.top ]
             actual <-
                 makeEvaluate mockMetadataTools
@@ -90,7 +103,7 @@ test_existsSimplification =
                     (ExpandedPattern.top :: CommonExpandedPattern Object)
             assertEqualWithExplanation "" expect actual
 
-        , testCase "Expanded Bottom" $ do
+        , testCase " Bottom" $ do
             let expect = MultiOr.make []
             actual <-
                 makeEvaluate mockMetadataTools
@@ -232,25 +245,15 @@ test_existsSimplification =
     fOfX = Mock.f (mkVar Mock.x)
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
-    something1OfX = Mock.plain10 (mkVar Mock.x)
-    something2OfX = Mock.plain11 (mkVar Mock.x)
-    something1OfXExpanded = Predicated
-        { term = something1OfX
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    something2OfXExpanded = Predicated
-        { term = something2OfX
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    mockMetadataTools =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            Mock.subsorts
-            Mock.headSortsMapping
+
+mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        Mock.subsorts
+        Mock.headSortsMapping
 
 makeExists
     :: Ord (variable Object)
@@ -271,12 +274,12 @@ testSort =
         , sortActualSorts = []
         }
 
-evaluate
+simplify
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -> Exists level Variable (CommonOrOfExpandedPattern level)
     -> IO (CommonOrOfExpandedPattern level)
-evaluate tools exists =
+simplify tools exists =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
