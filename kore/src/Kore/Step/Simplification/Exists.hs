@@ -24,11 +24,11 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeExistsPredicate, makeTruePredicate,
-                 unwrapPredicate )
+                 ( Predicate, makeExistsPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -48,8 +48,6 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
-import           Kore.Variables.Free
-                 ( freePureVariables )
 import           Kore.Variables.Fresh
 
 
@@ -240,10 +238,9 @@ makeEvaluateNoFreeVarInSubstitution
   =
     (MultiOr.make [simplifiedPattern], SimplificationProof)
   where
-    termHasVariable =
-        Set.member variable (freePureVariables term)
-    predicateHasVariable =
-        Set.member variable (freePureVariables $ unwrapPredicate predicate)
+    hasVariable = Set.member variable
+    termHasVariable = hasVariable (Pattern.freeVariables term)
+    predicateHasVariable = hasVariable (Predicate.freeVariables predicate)
     simplifiedPattern = case (termHasVariable, predicateHasVariable) of
         (False, False) -> patt
         (False, True) ->
