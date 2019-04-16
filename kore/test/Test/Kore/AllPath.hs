@@ -249,6 +249,9 @@ test_runStrategy =
     [ [] `proves`    (A, A)
     , [] `disproves` (A, B) $ [(A, B)]
 
+    , [(A, Bot)] `proves` (A, A)
+    , [(A, Bot)] `proves` (A, B)
+
     , [(A, B)] `proves`    (A, B   )
     , [(A, B)] `proves`    (A, BorC)
     , [(A, B)] `disproves` (A, C   ) $ [(B, C)]
