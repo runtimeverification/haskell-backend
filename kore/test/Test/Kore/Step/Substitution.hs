@@ -63,6 +63,16 @@ test_normalize =
                     (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
         actual <- normalizeExcept expect
         assertEqual "Expected original result" (Right $ MultiOr.MultiOr [expect]) actual
+    , testCase "¬∃ y z. x = σ(y, z)" $ do
+        let expect =
+                PredicateSubstitution.fromPredicate
+                $ Predicate.makeNotPredicate
+                $ Predicate.makeMultipleExists [Mock.y, Mock.z]
+                $ Predicate.makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+        actual <- normalizeExcept expect
+        assertEqual "Expected original result" (Right $ MultiOr.MultiOr [expect]) actual
     ]
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
