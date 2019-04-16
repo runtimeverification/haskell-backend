@@ -309,3 +309,22 @@ splitSubstitutionByVariable
     -> (Maybe term, Map variable term)
 splitSubstitutionByVariable var subst =
     (Map.lookup var subst, Map.delete var subst)
+
+{- | Split the substitution by dependency the given variable.
+
+Returns the terms of the substitution with and without dependency on the given
+variable, respectively.
+
+ -}
+splitSubstitutionByDependency
+    :: Ord (variable level)
+    => variable level
+    -> Map (variable level) (StepPattern level variable)
+    ->  ( Map (variable level) (StepPattern level variable)
+        , Map (variable level) (StepPattern level variable)
+        )
+splitSubstitutionByDependency variable =
+    Map.partition hasVariable
+  where
+    hasVariable term =
+        Set.member variable (Pattern.freeVariables term)
