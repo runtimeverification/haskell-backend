@@ -22,7 +22,7 @@ import Kore.AST.Common
 import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 
-{- | A 'FreshVariable' can be freshened, given a 'Natural' counter.
+{- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
 class Ord (variable Object) => FreshVariable variable where
     {- | Refresh a variable, renaming it avoid the given set.
