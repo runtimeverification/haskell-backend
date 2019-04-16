@@ -24,7 +24,7 @@ import Kore.AST.MetaOrObject
 
 {- | A 'FreshVariable' can be freshened, given a 'Natural' counter.
 -}
-class (forall level. Ord (variable level)) => FreshVariable variable where
+class Ord (variable Object) => FreshVariable variable where
     {- | Refresh a variable, renaming it avoid the given set.
 
     If the given variable occurs in the set, @refreshVariable@ must return
@@ -34,10 +34,9 @@ class (forall level. Ord (variable level)) => FreshVariable variable where
 
      -}
     refreshVariable
-        :: MetaOrObject level
-        => Set (variable level)
-        -> variable level
-        -> Maybe (variable level)
+        :: Set (variable Object)  -- ^ variables to avoid
+        -> variable Object        -- ^ variable to rename
+        -> Maybe (variable Object)
 
 instance FreshVariable Variable where
     refreshVariable avoiding variable = do
