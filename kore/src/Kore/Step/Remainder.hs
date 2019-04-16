@@ -10,8 +10,6 @@ module Kore.Step.Remainder
     , quantifyTarget
     ) where
 
-import qualified Debug.Trace
-
 import           Control.Applicative
                  ( Alternative (..) )
 import qualified Data.Foldable as Foldable
@@ -103,8 +101,7 @@ quantifyTarget
     => Predicate Object (Target variable)
     -> Predicate Object variable
 quantifyTarget predicate =
-    (\x -> Debug.Trace.traceShow (unparse x) x)
-    $ Predicate.mapVariables Target.unwrapVariable
+    Predicate.mapVariables Target.unwrapVariable
     $ Predicate.makeMultipleExists freeNonTargetVariables predicate
   where
     freeNonTargetVariables =

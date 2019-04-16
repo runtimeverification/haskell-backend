@@ -12,9 +12,6 @@ module Kore.Step.Simplification.Exists
     , makeEvaluate
     ) where
 
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Debug.Trace
-
 import           Control.Applicative
                  ( Alternative ((<|>)) )
 import           Data.Map.Strict
@@ -103,18 +100,15 @@ simplify
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    exists@Exists { existsVariable = variable, existsChild = child }
+    Exists { existsVariable = variable, existsChild = child }
   =
-    Debug.Trace.trace (unlines ["Exists.simplify:", show exists])
-    $ do
-    r <- simplifyEvaluated
+    simplifyEvaluated
         tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
         variable
         child
-    Debug.Trace.trace (unlines ["Exists.simplify/result:", show r]) (return r)
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 

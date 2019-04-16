@@ -26,8 +26,6 @@ module Kore.Step.Step
     , toAxiomVariables
     ) where
 
-import qualified Debug.Trace
-
 import           Control.Applicative
                  ( Alternative (..) )
 import qualified Control.Monad.Trans as Monad.Trans
@@ -382,21 +380,13 @@ applyRemainder
         Predicated { Predicated.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
     let normalized = normalizedCondition { Predicated.term = finalTerm }
-    Debug.Trace.traceShow (Pretty.vsep ["normalized:", unparse normalized]) $ return normalized
+    return normalized
   where
-    predicateSimplifier' =
-        PredicateSubstitutionSimplifier $ \predicate ->
-            Debug.Trace.traceShow (Pretty.vsep ["predicateSimplifier:", unparse $ Predicated.withCondition (Valid.mkTop_ :: StepPattern Object variable) predicate])
-            $ getPredicateSubstitutionSimplifier predicateSimplifier predicate
-    patternSimplifier' =
-        stepPatternSimplifier $ \predicateSimplifier'' term ->
-            Debug.Trace.traceShow (Pretty.vsep ["patternSimplifier:", unparse term])
-            $ simplifyTerm patternSimplifier predicateSimplifier'' term
     normalize condition =
         Substitution.normalizeExcept
             metadataTools
-            predicateSimplifier'
-            patternSimplifier'
+            predicateSimplifier
+            patternSimplifier
             axiomSimplifiers
             condition
 
@@ -782,7 +772,7 @@ sequenceRules
         let remainder =
                 Remainder.remainder
                 $ Predicated.withoutTerm . unifiedRule <$> results
-        Debug.Trace.traceShow (Pretty.vsep ["remainder:", unparse remainder]) gather $ applyRemainder' config remainder
+        gather $ applyRemainder' config remainder
 
     applyRemainder' =
         applyRemainder
