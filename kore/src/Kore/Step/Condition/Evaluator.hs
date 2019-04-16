@@ -25,7 +25,7 @@ import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPat
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
-                 StepPatternSimplifier (..) )
+                 StepPatternSimplifier, simplifyTerm )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -60,11 +60,10 @@ evaluate
         (PredicateSubstitution level variable, SimplificationProof level)
 evaluate
     substitutionSimplifier
-    (StepPatternSimplifier simplifier)
+    termSimplifier
     predicate
   = do
-    (simplified, _proof) <-
-        simplifier substitutionSimplifier (unwrapPredicate predicate)
+    (simplified, _proof) <- simplifyTerm' (unwrapPredicate predicate)
     refute <-
         case () of
             _ | OrOfExpandedPattern.isTrue simplified -> return (Just True)
@@ -77,6 +76,8 @@ evaluate
                 _ -> OrOfExpandedPattern.toExpandedPattern simplified
         (subst, _proof) = asPredicateSubstitution simplified'
     return (subst, SimplificationProof)
+  where
+    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
 asPredicateSubstitution
     ::  ( MetaOrObject level

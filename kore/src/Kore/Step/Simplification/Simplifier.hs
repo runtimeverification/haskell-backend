@@ -20,7 +20,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( StepPatternSimplifier (..) )
+                 ( StepPatternSimplifier, stepPatternSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyToOr )
 
@@ -34,5 +34,5 @@ create
     tools
     axiomIdToEvaluator
   =
-    StepPatternSimplifier
+    stepPatternSimplifier
         (Pattern.simplifyToOr tools axiomIdToEvaluator)

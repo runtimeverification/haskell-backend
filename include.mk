@@ -29,9 +29,9 @@ HS_SOURCE_DIRS = $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
 STACK_NO_PROFILE = --no-library-profiling --no-executable-profiling
 STACK_FAST = --fast
 STACK_COVERAGE = --coverage
+STACK_BUILD = build --pedantic
 
 STACK = stack
-STACK_BUILD = $(STACK) build --pedantic
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
@@ -48,7 +48,7 @@ KORE_EXEC_OPTS =
 KORE_REPL = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-repl
 
 $(KORE_EXEC):
-	$(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-exec
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-exec
 
 $(KORE_REPL):
-	$(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-repl
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-repl

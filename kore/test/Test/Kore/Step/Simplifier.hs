@@ -20,7 +20,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..) )
+                 Simplifier, StepPatternSimplifier, stepPatternSimplifier )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -37,7 +37,7 @@ mockSimplifier
         ]
     -> StepPatternSimplifier level
 mockSimplifier values =
-    StepPatternSimplifier
+    stepPatternSimplifier
         ( mockSimplifierHelper
             (\patt -> Predicated
                 { term = patt
@@ -59,7 +59,7 @@ mockPredicateSimplifier
         ]
     -> StepPatternSimplifier level
 mockPredicateSimplifier values =
-    StepPatternSimplifier
+    stepPatternSimplifier
         (mockSimplifierHelper
             (\patt -> Predicated
                 { term = mkTop_

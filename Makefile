@@ -4,7 +4,7 @@ include include.mk
         test test-kore test-k
 
 kore:
-	$(STACK_BUILD) $(STACK_BUILD_OPTS)
+	$(STACK) $(STACK_BUILD) $(STACK_BUILD_OPTS)
 
 kore-exec: $(KORE_EXEC)
 
@@ -18,9 +18,12 @@ k-frontend:
 
 docs: haddock
 
-$(STACK_LOCAL_DOC_ROOT)/index.html: STACK := $(STACK_HADDOCK)
 $(STACK_LOCAL_DOC_ROOT)/index.html:
-	$(STACK) haddock $(STACK_NO_PROFILE) $(STACK_FAST) --no-haddock-deps 2>&1 | tee haddock.log
+	$(STACK_HADDOCK) haddock \
+		$(STACK_NO_PROFILE) $(STACK_FAST) --no-haddock-deps \
+		>haddock.log 2>&1 \
+		|| ( cat haddock.log; exit 1; )
+	cat haddock.log
 	if grep -B 2 'Module header' haddock.log; then \
 		echo >&2 "Please fix the missing documentation!"; \
 		exit 1; \
@@ -39,9 +42,9 @@ test: test-kore test-k
 
 test-kore: $(STACK_LOCAL_HPC_ROOT)
 
-$(STACK_LOCAL_HPC_ROOT): STACK := $(STACK_TEST)
 $(STACK_LOCAL_HPC_ROOT):
-	$(STACK_BUILD) $(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) \
+	$(STACK_TEST) $(STACK_BUILD) \
+		$(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) \
 		--test --bench --no-run-benchmarks \
 		--ta --xml=test-results.xml
 
