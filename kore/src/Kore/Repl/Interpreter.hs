@@ -42,7 +42,7 @@ import           Data.List.Extra
                  ( groupSort )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( catMaybes, fromJust, listToMaybe )
+                 ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
@@ -184,7 +184,6 @@ prove index = do
 showGraph
     :: MonadIO m
     => MonadState (ReplState level) m
-    => MonadWriter String m
     => m ()
 showGraph = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
@@ -657,8 +656,8 @@ showDotGraph len =
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule -> maybe "Unknown " Text.Lazy.pack
-                      $ fmap (axiomOrClaim len)
-                      $ getRuleIndex
+                      . fmap (axiomOrClaim len)
+                      . getRuleIndex
                       . Attribute.identifier
                       . Rule.attributes
                       . Rule.getRewriteRule
