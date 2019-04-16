@@ -95,9 +95,7 @@ nextVariable variable@Variable { variableName, variableCounter } =
         , variableCounter = variableCounter'
         }
   where
-    variableName' =
-        variableName
-            { idLocation = AstLocationGeneratedVariable }
+    variableName' = variableName { idLocation = AstLocationGeneratedVariable }
     variableCounter' =
         case variableCounter of
             Nothing -> Just (Element 0)
