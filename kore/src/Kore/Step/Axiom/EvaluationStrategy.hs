@@ -377,11 +377,10 @@ evaluateWithDefinitionAxioms
             expanded
             (map unwrapEqualityRule definitionRules)
 
-    let Step.Results { results, remainders } = result
     return
         ( AttemptedAxiom.Applied AttemptedAxiomResults
-            { results = Step.result <$> results
-            , remainders = remainders
+            { results = Step.gatherResults result
+            , remainders = Step.remainders result
             }
         , SimplificationProof
         )

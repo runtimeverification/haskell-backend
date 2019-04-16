@@ -146,9 +146,9 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , unparse config
                     , "Un-implemented unification case; aborting execution."
                     ]
-            Right Step.Results { results } ->
+            Right results ->
                 (Foldable.asum . fmap pure)
-                    (withProof . Step.result <$> results)
+                    (withProof <$> Step.gatherResults results)
               where
                 withProof result' = (result', proof)
 

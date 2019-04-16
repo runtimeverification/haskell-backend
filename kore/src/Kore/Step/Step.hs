@@ -13,6 +13,8 @@ module Kore.Step.Step
     , UnifiedRule
     , Results (..)
     , Result (..)
+    , gatherResults
+    , withoutRemainders
     , unifyRule
     , unwrapRule
     , applyUnifiedRule
@@ -34,6 +36,9 @@ import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 import           Data.Semigroup
                  ( Semigroup (..) )
+import           Data.Sequence
+                 ( Seq )
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics as GHC
@@ -55,6 +60,7 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
 import           Kore.Step.Representation.Predicated
@@ -69,8 +75,6 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.TopBottom
-                 ( TopBottom (..) )
 import           Kore.Unification.Data
                  ( UnificationProof )
 import           Kore.Unification.Error
@@ -127,7 +131,7 @@ type UnifiedRule variable =
 data Result variable =
     Result
         { unifiedRule :: !(UnifiedRule (Target variable))
-        , result      :: !(ExpandedPattern Object variable)
+        , result      :: !(MultiOr (ExpandedPattern Object variable))
         }
     deriving GHC.Generic
 
@@ -137,12 +141,6 @@ deriving instance Ord (variable Object) => Ord (Result variable)
 
 deriving instance Show (variable Object) => Show (Result variable)
 
-instance TopBottom (Result variable) where
-    isTop (Result {unifiedRule, result}) =
-        isTop (Predicated.withoutTerm unifiedRule) && isTop result
-    isBottom (Result {unifiedRule, result}) =
-        isBottom (Predicated.withoutTerm unifiedRule) || isBottom result
-
 {- | The results of applying many rules.
 
 The rules may be applied in sequence or in parallel and the 'remainders' vary
@@ -151,7 +149,7 @@ accordingly.
  -}
 data Results variable =
     Results
-        { results :: !(MultiOr (Result variable))
+        { results :: !(Seq (Result variable))
         , remainders :: !(MultiOr (ExpandedPattern Object variable))
         }
     deriving GHC.Generic
@@ -175,6 +173,14 @@ instance Ord (variable Object) => Monoid (Results variable) where
 
 withoutRemainders :: Results variable -> Results variable
 withoutRemainders results = results { remainders = empty }
+
+{- | Gather all the final configurations from the 'Results'.
+ -}
+gatherResults
+    :: Ord (variable Object)
+    => Results variable
+    -> MultiOr (ExpandedPattern Object variable)
+gatherResults = Foldable.fold . fmap result . results
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
@@ -228,8 +234,7 @@ unifyRule
     -- ^ Initial configuration
     -> RulePattern Object variable
     -- ^ Rule
-    -> BranchT unifier
-        (UnifiedRule variable)
+    -> BranchT unifier (UnifiedRule variable)
 unifyRule
     metadataTools
     (UnificationProcedure unificationProcedure)
@@ -305,8 +310,7 @@ applyUnifiedRule
     -- ^ Initial conditions
     -> UnifiedRule variable
     -- ^ Non-normalized final configuration
-    -> BranchT unifier
-        (ExpandedPattern Object variable)
+    -> BranchT unifier (ExpandedPattern Object variable)
 applyUnifiedRule
     metadataTools
     predicateSimplifier
@@ -362,8 +366,7 @@ applyRemainder
     -- ^ Initial configuration
     -> Predicate Object variable
     -- ^ Remainder
-    -> BranchT unifier
-        (ExpandedPattern Object variable)
+    -> BranchT unifier (ExpandedPattern Object variable)
 applyRemainder
     metadataTools
     predicateSimplifier
@@ -427,7 +430,7 @@ applyRule
     -- ^ Configuration being rewritten.
     -> RulePattern Object variable
     -- ^ Rewriting axiom
-    -> unifier (MultiOr (Result variable))
+    -> unifier [Result variable]
 applyRule
     metadataTools
     predicateSimplifier
@@ -445,11 +448,13 @@ applyRule
             -- substitute axiom variables.
             initial' = toConfigurationVariables initial
             rule' = toAxiomVariables rule
-        gather $ do
+        fmap Foldable.toList $ gather $ do
             unifiedRule <- unifyRule' initial' rule'
             let initialCondition = Predicated.withoutTerm initial'
             final <- applyUnifiedRule' initialCondition unifiedRule
-            result <- checkSubstitutionCoverage initial' unifiedRule final
+            result <-
+                Monad.Trans.lift . gather
+                $ checkSubstitutionCoverage initial' unifiedRule final
             return Result { unifiedRule, result }
   where
     unifyRule' =
@@ -494,7 +499,7 @@ applyRewriteRule
     -- ^ Configuration being rewritten.
     -> RewriteRule Object variable
     -- ^ Rewriting axiom
-    -> unifier (MultiOr (Result variable))
+    -> unifier [Result variable]
 applyRewriteRule
     metadataTools
     predicateSimplifier
@@ -544,8 +549,7 @@ checkSubstitutionCoverage
     -- ^ Unified rule
     -> ExpandedPattern level (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier
-        (ExpandedPattern level variable)
+    -> BranchT unifier (ExpandedPattern level variable)
 checkSubstitutionCoverage initial unified final
   | isCoveringSubstitution = return (unwrapConfiguration final)
   | isSymbolic =
@@ -625,11 +629,12 @@ applyRulesInParallel
     initial
   = do
     results <- Foldable.fold <$> traverse applyRule' rules
-    let unifications = Predicated.withoutTerm . unifiedRule <$> results
+    let unifications =
+            MultiOr.make $ Predicated.withoutTerm . unifiedRule <$> results
     remainders <- gather $ do
-        remainder <- scatter (Remainder.remainders unifications)
+        remainder <- scatter (Remainder.remainders $ unifications)
         applyRemainder' initial remainder
-    return Results { results, remainders }
+    return Results { results = Seq.fromList results, remainders }
   where
     applyRule' =
         applyRule
@@ -736,12 +741,13 @@ sequenceRules
     remainingAfter
         :: ExpandedPattern Object variable
         -- ^ initial configuration
-        -> MultiOr (Result variable)
-        -- ^ disjunction of results
+        -> [Result variable]
+        -- ^ results
         -> unifier (MultiOr (ExpandedPattern Object variable))
     remainingAfter config results = do
         let remainder =
                 Remainder.remainder
+                $ MultiOr.make
                 $ Predicated.withoutTerm . unifiedRule <$> results
         gather $ applyRemainder' config remainder
 
@@ -774,7 +780,7 @@ sequenceRules
                 rule
         remainders <- remainingAfter config results
         return Results
-            { results
+            { results = Seq.fromList results
             , remainders
             }
 

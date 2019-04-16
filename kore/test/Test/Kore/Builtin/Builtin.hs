@@ -228,7 +228,7 @@ runStep
         )
 runStep configuration axiom = do
     result <- runStepResult configuration axiom
-    return (extractResults <$> result)
+    return (Step.gatherResults <$> result)
 
 runStepResult
     :: CommonExpandedPattern Object
@@ -269,12 +269,7 @@ runStepWith
         )
 runStepWith solver configuration axiom = do
     result <- runStepResultWith solver configuration axiom
-    return (extractResults <$> result)
-
-extractResults
-    :: Step.Results Variable
-    -> MultiOr (CommonExpandedPattern Object)
-extractResults Step.Results { results } = Step.result <$> results
+    return (Step.gatherResults <$> result)
 
 runStepResultWith
     :: MVar Solver

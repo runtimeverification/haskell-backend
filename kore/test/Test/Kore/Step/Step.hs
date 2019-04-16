@@ -300,7 +300,7 @@ applyRewriteRule_
         )
 applyRewriteRule_ initial rule = do
     result <- applyRewriteRules initial [rule]
-    return (discardRemainders <$> result)
+    return (Foldable.fold . discardRemainders <$> result)
   where
     discardRemainders = fmap Step.result . Step.results
 
@@ -700,14 +700,20 @@ checkResults
     -> Step.Results Variable
     -> Assertion
 checkResults expect actual =
-    assertEqualWithExplanation "" expect (Step.result <$> Step.results actual)
+    assertEqualWithExplanation
+        "Expected results"
+        expect
+        (Step.gatherResults actual)
 
 checkRemainders
     :: MultiOr (ExpandedPattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkRemainders expect actual =
-    assertEqualWithExplanation "" expect (Step.remainders actual)
+    assertEqualWithExplanation
+        "Expected remainders"
+        expect
+        (Step.remainders actual)
 
 test_applyRewriteRules :: [TestTree]
 test_applyRewriteRules =
