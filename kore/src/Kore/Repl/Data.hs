@@ -96,6 +96,8 @@ data ReplCommand
     -- ^ Prints the output of the inner command to the file.
     | Try !(Either AxiomIndex ClaimIndex)
     -- ^ Attempt to apply axiom or claim to current node.
+    | Clear !(Maybe Int)
+    -- ^ Remove child nodes from graph.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -133,6 +135,7 @@ helpText =
                              \ (defaults to current node)\n\
     \label <-l>              remove a label\n\
     \try <a|c><num>          attempts <a>xiom or <c>laim at index <num>.\n\
+    \clear [n]               removes all node children from the proof graph\n\
     \exit                    exits the repl\
     \\n\
     \Available modifiers:\n\

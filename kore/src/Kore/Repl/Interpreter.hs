@@ -128,6 +128,7 @@ replInterpreter output cmd =
                     LabelDel l        -> labelDel l        $> True
                     Redirect inn file -> redirect inn file $> True
                     Try ac            -> tryAxiomClaim ac  $> True
+                    Clear n           -> clear n            $> True
                     Exit              -> pure                 False
         (exit, st', w) <- runRWST rwst () st
         liftIO $ output w
@@ -518,6 +519,34 @@ labelDel lbl = do
            lensLabels .= Map.delete lbl labels
            putStrLn' "Removed label."
        else putStrLn' "Label doesn't exist."
+
+clear
+    :: forall level m
+    .  MonadState (ReplState level) m
+    => MonadWriter String m
+    => Maybe Int
+    -> m ()
+clear mi = do
+    node <- maybe <$> Lens.use lensNode <*> pure id <*> pure mi
+    eg@Strategy.ExecutionGraph { graph = gr } <- Lens.use lensGraph
+    let
+        nodes = collect (next gr) node
+        gr' = Graph.delNodes nodes gr
+        prevNode =
+            maybe 0 id
+                . listToMaybe
+                . fmap fst
+                $ Graph.lpre gr node
+    lensGraph .= eg { Strategy.graph = gr' }
+    lensNode .= prevNode
+    putStrLn' $ "Removed " <> show (length nodes) <> " node(s)."
+
+  where
+    next :: InnerGraph -> Graph.Node -> [Graph.Node]
+    next gr n = fst <$> Graph.lsuc gr n
+
+    collect :: (a -> [a]) -> a -> [a]
+    collect f x = x : [ z | y <- f x, z <- collect f y]
 
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do

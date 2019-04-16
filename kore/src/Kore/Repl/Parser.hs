@@ -55,6 +55,7 @@ commandParser0 =
         , try labelDel
         , label
         , tryAxiomClaim
+        , clear
         , exit
         ]
 
@@ -122,6 +123,9 @@ axiomIndex = AxiomIndex <$$> Char.string "a" *> decimal
 
 claimIndex :: Parser ClaimIndex
 claimIndex = ClaimIndex <$$> Char.string "c" *> decimal
+
+clear :: Parser ReplCommand
+clear = Clear <$$> literal "clear" *> maybeDecimal
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd = Redirect cmd <$$> literal ">" *> string
