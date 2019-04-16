@@ -46,7 +46,7 @@ import           Data.Maybe
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
-import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy as Text.Lazy
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
 import           GHC.Exts
@@ -633,22 +633,21 @@ printNotFound = putStrLn' "Variable or index not found"
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"
 
-showDotGraph :: Int -> GraphType -> IO ()
+showDotGraph :: Int -> InnerGraph-> IO ()
 showDotGraph len =
     (flip Graph.runGraphvizCanvas') Graph.Xlib
         . Graph.graphToDot params
   where
     params = Graph.nonClusteredParams
         { Graph.fmtEdge = \(_, _, l) ->
-            [Graph.textLabel (ruleIndex len l)]
+            [Graph.textLabel (ruleIndex l)]
         }
-    ruleIndex lth lbl =
+    ruleIndex lbl =
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
-            Just rule -> LT.pack
-                      . (axiomOrClaim lth)
-                      . fromJust
-                      . getRuleIndex
+            Just rule -> maybe "Unknown " Text.Lazy.pack
+                      $ fmap (axiomOrClaim len)
+                      $ getRuleIndex
                       . Attribute.identifier
                       . Rule.attributes
                       . Rule.getRewriteRule

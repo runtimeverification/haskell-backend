@@ -14,7 +14,7 @@ module Kore.Repl.Data
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
     , ReplState (..)
-    , GraphType
+    , InnerGraph
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
     , lensLabels, lensOmit
@@ -139,8 +139,8 @@ helpText =
     \<command> > file        prints the output of 'command' to file\n\
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that\
-    \ either the next node was reached using the SMT\
-    \ solver or it was reached through the Remove Destination step."
+    \ either the target node was reached using the SMT solver\
+    \ or it was reached through the Remove Destination step."
 
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
@@ -148,7 +148,7 @@ type ExecutionGraph =
         (CommonStrategyPattern Object)
         (RewriteRule Object Variable)
 
-type GraphType =
+type InnerGraph =
     Gr (CommonStrategyPattern Object) (Seq (RewriteRule Object Variable))
 
 -- | State for the rep.
