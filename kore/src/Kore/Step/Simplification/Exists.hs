@@ -196,16 +196,16 @@ makeEvaluate
     variable
     patt@Predicated { term, predicate, substitution }
   =
-    case localSubstitution of
-        [] ->
+    case boundSubstitution of
+        Nothing ->
             return (makeEvaluateNoFreeVarInSubstitution variable patt)
-        _ -> do
+        Just boundTerm -> do
             (substitutedPat, _proof) <-
                 substituteTermPredicate
                     term
                     predicate
-                    localSubstitutionList
-                    (Substitution.wrap globalSubstitution)
+                    (Map.singleton variable boundTerm)
+                    (Substitution.unsafeWrap $ Map.toList freeSubstitution)
             (result, _proof) <-
                 ExpandedPattern.simplify
                     tools
@@ -215,10 +215,8 @@ makeEvaluate
                     substitutedPat
             return (result , SimplificationProof)
   where
-    (Local localSubstitution, Global globalSubstitution) =
-        splitSubstitutionByVariable variable $ Substitution.unwrap substitution
-    localSubstitutionList =
-        Map.fromList localSubstitution
+    (boundSubstitution, freeSubstitution) =
+        splitSubstitutionByVariable variable $ Substitution.toMap substitution
 
 makeEvaluateNoFreeVarInSubstitution
     ::  ( MetaOrObject level
@@ -298,22 +296,16 @@ substituteTermPredicate term predicate substitution globalSubstitution =
         , SimplificationProof
         )
 
-newtype Local a = Local a
-newtype Global a = Global a
+{- | Split the substitution on the given variable.
 
+Returns the term associated to the variable in the substitution, if any, and the
+remainder of the substitution without the variable.
+
+ -}
 splitSubstitutionByVariable
-    :: Eq (variable level)
-    => variable level
-    -> [(variable level, StepPattern level variable)]
-    ->  ( Local [(variable level, StepPattern level variable)]
-        , Global [(variable level, StepPattern level variable)]
-        )
-splitSubstitutionByVariable _ [] =
-    (Local mempty, Global mempty)
-splitSubstitutionByVariable variable ((var, term) : substs)
-  | var == variable =
-    (Local [(var, term)], Global substs)
-  | otherwise =
-    (local, Global ((var, term) : global))
-  where
-    (local, Global global) = splitSubstitutionByVariable variable substs
+    :: Ord variable
+    => variable
+    -> Map variable term
+    -> (Maybe term, Map variable term)
+splitSubstitutionByVariable var subst =
+    (Map.lookup var subst, Map.delete var subst)
