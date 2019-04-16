@@ -106,7 +106,7 @@ equalityRuleEvaluator
 
     applyRule patt' rule' =
         Monad.Unify.runUnifier $
-        Step.applyRules
+        Step.applyRulesInParallel
             tools
             substitutionSimplifier
             simplifier
