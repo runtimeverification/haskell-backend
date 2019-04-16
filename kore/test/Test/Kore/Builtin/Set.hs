@@ -27,7 +27,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
@@ -560,7 +560,7 @@ test_isBuiltin =
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genConcreteSet)
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -568,8 +568,9 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
-mockHookTools :: MetadataTools Object Hook
+mockHookTools :: SmtMetadataTools Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.

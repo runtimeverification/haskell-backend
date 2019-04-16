@@ -105,7 +105,7 @@ simplifyAnds
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -187,7 +187,7 @@ solveGroupedSubstitution
        , MonadUnify unifierM
        , unifier ~ unifierM variable
       )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -245,7 +245,7 @@ normalizeSubstitutionDuplication
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level

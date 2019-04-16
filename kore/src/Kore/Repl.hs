@@ -44,7 +44,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.OnePath.Verification
@@ -80,7 +80,7 @@ runRepl
     .  MetaOrObject level
     => Unparse (Variable level)
     => Claim claim
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^ tools required for the proof
     -> StepPatternSimplifier level
     -- ^ pattern simplifier

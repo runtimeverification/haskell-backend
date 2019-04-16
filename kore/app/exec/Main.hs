@@ -34,7 +34,8 @@ import           Kore.Error
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
 import           Kore.Parser.Parser
@@ -56,6 +57,8 @@ import           Kore.Unparser
 import qualified SMT
 
 import GlobalMain
+
+import Debug.Trace
 
 {-
 Main module to run kore-exec
@@ -346,13 +349,13 @@ mainWithOptions
                 SMT.runSMT smtConfig
                 $ evalSimplifier logger
                 $ do
+                    traceM "a"
                     give
-                        (extractMetadataTools indexedModule
-                            :: MetadataTools Object StepperAttributes
-                        )
+                        (MetadataTools.build indexedModule)
                         (declareSMTLemmas indexedModule)
                     case proveParameters of
                         Nothing -> do
+                            traceM "a.1"
                             let
                                 purePattern = fromMaybe
                                     (error "Missing: --pattern PATTERN_FILE")
@@ -361,6 +364,7 @@ mainWithOptions
                                 Nothing -> do
                                     pat <-
                                         exec indexedModule strategy' purePattern
+                                    traceM "Here."
                                     exitCode <-
                                         execGetExitCode
                                             indexedModule strategy' pat
@@ -387,6 +391,7 @@ mainWithOptions
                                     indexedModule
                                     specIndexedModule
                 )
+        print (show exitCode)
         let unparsed = (unparse . externalizeFreshVariables) finalPattern
         case outputFileName of
             Nothing ->

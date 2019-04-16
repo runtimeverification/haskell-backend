@@ -15,7 +15,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
@@ -37,7 +37,7 @@ simplify
        , Unparse (variable Object)
        , SortedVariable variable
        )
-    => MetadataTools Object attrs
+    => SmtMetadataTools attrs
     -> Domain.Builtin (OrOfExpandedPattern Object variable)
     -> ( OrOfExpandedPattern Object variable
        , SimplificationProof Object

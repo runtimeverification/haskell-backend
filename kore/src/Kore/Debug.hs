@@ -121,7 +121,7 @@ enabledPlaces = onePathWithFunctionNames
 
 -}
 enabledPlaces :: Map DebugPlace DebugResult
-enabledPlaces = Map.empty
+enabledPlaces = smt --onePathWithFunctionNames -- Map.empty
 
 smt :: Map DebugPlace DebugResult
 smt =

@@ -56,7 +56,9 @@ import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools, extractMetadataTools )
+                 ( SmtMetadataTools )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
@@ -176,7 +178,7 @@ assertSmtTestCase name expected actions prelude solver =
 testsForModule
     :: String
     ->  ( forall m
-        .   ( Given (MetadataTools Object Attribute.Symbol)
+        .   ( Given (SmtMetadataTools Attribute.Symbol)
             , SMT.MonadSMT m
             )
         => VerifiedModule Attribute.Symbol Attribute.Axiom
@@ -190,7 +192,7 @@ testsForModule name functionToTest indexedModule tests =
   where
     prelude = SmtPrelude
         (give tools $ functionToTest indexedModule)
-    tools = extractMetadataTools indexedModule
+    tools = MetadataTools.build indexedModule
 
 constructorAxiom :: Text -> [(Text, [Text])] -> KoreSentence
 constructorAxiom sortName constructors =

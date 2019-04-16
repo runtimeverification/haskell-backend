@@ -16,7 +16,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeInPredicate )
 import           Kore.Step.Axiom.Data
@@ -62,7 +62,7 @@ simplify
         , ShowMetaOrObject variable
         , Unparse (variable level)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -109,7 +109,7 @@ simplifyEvaluatedIn
         , ShowMetaOrObject variable
         , Unparse (variable level)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -181,7 +181,7 @@ makeEvaluateIn
         , ShowMetaOrObject variable
         , Unparse (variable level)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.

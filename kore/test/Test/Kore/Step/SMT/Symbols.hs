@@ -5,8 +5,6 @@ import Test.Tasty
 import Data.Reflection
        ( Given )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -14,16 +12,17 @@ import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
+import qualified Kore.Step.SMT.Declaration.All as Declaration
+                 ( declare )
 import           Kore.Step.SMT.Encoder
                  ( encodeName )
-import           Kore.Step.SMT.Sorts
-                 ( declareSorts )
-import           Kore.Step.SMT.Symbols
+import qualified Kore.Step.SMT.Representation.All as Representation
+                 ( build )
 import qualified SMT
 
 import           Test.Kore.Step.SMT.Builders
-                 ( constructor, emptyModule, indexModule, smtlib,
+                 ( constructor, emptyModule, functional, indexModule, smtlib,
                  sortDeclaration, symbolDeclaration, with )
 import           Test.Kore.Step.SMT.Helpers
                  ( atom, constructorAxiom, eq, gt, isError, isNotSatisfiable,
@@ -58,7 +57,8 @@ test_sortDeclaration =
     , testsForModule "Constructors work (declared with sorts)"
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
-            `with` (symbolDeclaration "C" "S" [] `with` constructor)
+            `with`
+                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
             `with` constructorAxiom "S" [("C", [])]
         )
         [ isSatisfiable
@@ -74,15 +74,30 @@ test_sortDeclaration =
             [ SMT.assert (atom "C" `eq` atom "C")
             ]
         ]
+    , testsForModule "Uses smtlib name for constructor"
+        (indexModule $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with`
+                (symbolDeclaration "C" "S" []
+                    `with` smtlib "C"
+                    `with` constructor
+                )
+        )
+        [ isSatisfiable
+            [ SMT.assert (atom "C" `eq` atom "C")
+            ]
+        , isError
+            [ SMT.assert (atom (encodeName "C") `eq` atom (encodeName "C"))
+            ]
+        ]
     ]
   where
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
     declareSymbolsAndSorts
-        ::  ( Given (MetadataTools Object Attribute.Symbol)
+        ::  ( Given (SmtMetadataTools Attribute.Symbol)
             , SMT.MonadSMT m
             )
         => VerifiedModule Attribute.Symbol Attribute.Axiom
         -> m ()
-    declareSymbolsAndSorts m = do
-        declareSorts m
-        declareSymbols m
+    declareSymbolsAndSorts m =
+        Declaration.declare (Representation.build m)

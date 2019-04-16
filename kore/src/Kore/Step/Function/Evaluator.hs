@@ -28,7 +28,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
@@ -69,7 +69,7 @@ evaluateApplication
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level
@@ -150,7 +150,7 @@ evaluatePattern
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level
@@ -202,7 +202,7 @@ maybeEvaluatePattern
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level
@@ -310,7 +310,7 @@ maybeEvaluatePattern
 
 evaluateSortInjection
     :: (MetaOrObject level, Ord (variable level))
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Application level (StepPattern level variable)
     ->  ( Application level (StepPattern level variable)
         , SimplificationProof level
@@ -359,7 +359,7 @@ reevaluateFunctions
         , ShowMetaOrObject variable
         , FreshVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level
@@ -419,7 +419,7 @@ mergeWithConditionAndSubstitution
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.

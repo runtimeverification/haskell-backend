@@ -16,7 +16,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
@@ -851,7 +851,7 @@ test_equalsSimplification_Patterns =
 
 assertTermEquals
     :: HasCallStack
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonPredicateSubstitution Object
     -> CommonStepPattern Object
     -> CommonStepPattern Object
@@ -860,7 +860,7 @@ assertTermEquals = assertTermEqualsGeneric
 
 assertTermEqualsGeneric
     :: (MetaOrObject level, HasCallStack)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonPredicateSubstitution level
     -> CommonStepPattern level
     -> CommonStepPattern level
@@ -871,7 +871,7 @@ assertTermEqualsGeneric tools expectPure =
 
 assertTermEqualsMulti
     :: HasCallStack
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> [CommonPredicateSubstitution Object]
     -> CommonStepPattern Object
     -> CommonStepPattern Object
@@ -880,7 +880,7 @@ assertTermEqualsMulti = assertTermEqualsMultiGeneric
 
 assertTermEqualsMultiGeneric
     :: (MetaOrObject level, HasCallStack)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> [CommonPredicateSubstitution level]
     -> CommonStepPattern level
     -> CommonStepPattern level
@@ -969,7 +969,7 @@ functionalConstructor2OfA = Mock.functionalConstr11 Mock.a
 plain1OfA :: CommonStepPattern Object
 plain1OfA = Mock.plain10 Mock.a
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -977,9 +977,11 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
-mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] [] []
+mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
+mockMetaMetadataTools =
+    Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
 testSort :: Sort Object
 testSort = Mock.testSort
@@ -992,7 +994,7 @@ testSort2 =
         }
 
 evaluateOr
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> Equals Object (CommonOrOfExpandedPattern Object)
     -> IO (CommonOrOfExpandedPattern Object)
 evaluateOr tools equals =
@@ -1007,7 +1009,7 @@ evaluateOr tools equals =
         equals
 
 evaluate
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> CommonExpandedPattern Object
     -> CommonExpandedPattern Object
     -> IO (CommonOrOfExpandedPattern Object)
@@ -1015,7 +1017,7 @@ evaluate = evaluateGeneric
 
 evaluateGeneric
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonExpandedPattern level
     -> CommonExpandedPattern level
     -> IO (CommonOrOfExpandedPattern level)
@@ -1033,7 +1035,7 @@ evaluateGeneric tools first second =
 
 evaluateTermsGeneric
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (CommonOrOfPredicateSubstitution level)

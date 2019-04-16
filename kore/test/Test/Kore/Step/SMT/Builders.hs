@@ -8,12 +8,15 @@ module Test.Kore.Step.SMT.Builders
     , indexModules
 
     -- Attributes
-    , noJunk
     , constructor
-    , smtlib
+    , functional
     , hook
+    , noJunk
+    , smtlib
     ) where
 
+import           Data.List
+                 ( foldl' )
 import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
@@ -56,6 +59,7 @@ import           Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Constructor as Constructor
+import qualified Kore.Attribute.Functional as Functional
 import qualified Kore.Attribute.Hook as Hook
 import qualified Kore.Attribute.Smtlib as Smtlib
 import qualified Kore.Attribute.Symbol as Attribute
@@ -84,15 +88,24 @@ instance With (Module sentence) Attribute where
         Attribute {getAttribute}
       = m { Module.moduleAttributes = Attributes (getAttribute:as) }
 
+instance With (Module sentence) [Attribute] where
+    with = foldl' with
+
 instance With (Definition sentence) Attribute where
     with
         d@Definition {definitionAttributes = Attributes as}
         Attribute {getAttribute}
       = d { Definition.definitionAttributes = Attributes (getAttribute:as) }
 
+instance With (Definition sentence) [Attribute] where
+    with = foldl' with
+
 instance With (UnifiedSentence variable patt) Attribute where
     (UnifiedObjectSentence s) `with` attribute =
         UnifiedObjectSentence (s `with` attribute)
+
+instance With (UnifiedSentence variable patt) [Attribute] where
+    with = foldl' with
 
 instance With (Sentence level sort patt) Attribute where
     (SentenceAliasSentence s) `with` attribute =
@@ -112,12 +125,18 @@ instance With (Sentence level sort patt) Attribute where
     (SentenceHookSentence (SentenceHookedSymbol s)) `with` attribute =
         SentenceHookSentence (SentenceHookedSymbol (s `with` attribute))
 
+instance With (Sentence level sort patt) [Attribute] where
+    with = foldl' with
+
 instance With (SentenceAlias level patt) Attribute where
     s@SentenceAlias {sentenceAliasAttributes} `with` attribute =
         s
             { SentenceAlias.sentenceAliasAttributes =
                 sentenceAliasAttributes `with` attribute
             }
+
+instance With (SentenceAlias level patt) [Attribute] where
+    with = foldl' with
 
 instance With (SentenceAxiom sort patt) Attribute where
     s@SentenceAxiom {sentenceAxiomAttributes} `with` attribute =
@@ -126,12 +145,18 @@ instance With (SentenceAxiom sort patt) Attribute where
                 sentenceAxiomAttributes `with` attribute
             }
 
+instance With (SentenceAxiom sort patt) [Attribute] where
+    with = foldl' with
+
 instance With (SentenceImport patt) Attribute where
     s@SentenceImport {sentenceImportAttributes} `with` attribute =
         s
             { SentenceImport.sentenceImportAttributes =
                 sentenceImportAttributes `with` attribute
             }
+
+instance With (SentenceImport patt) [Attribute] where
+    with = foldl' with
 
 instance With (SentenceSymbol level patt) Attribute where
     s@SentenceSymbol {sentenceSymbolAttributes} `with` attribute =
@@ -140,6 +165,9 @@ instance With (SentenceSymbol level patt) Attribute where
                 sentenceSymbolAttributes `with` attribute
             }
 
+instance With (SentenceSymbol level patt) [Attribute] where
+    with = foldl' with
+
 instance With (SentenceSort level patt) Attribute where
     s@SentenceSort {sentenceSortAttributes} `with` attribute =
         s
@@ -147,9 +175,15 @@ instance With (SentenceSort level patt) Attribute where
                 sentenceSortAttributes `with` attribute
             }
 
+instance With (SentenceSort level patt) [Attribute] where
+    with = foldl' with
+
 instance With Attributes Attribute where
     (Attributes attributes) `with` Attribute {getAttribute} =
         Attributes (getAttribute:attributes)
+
+instance With Attributes [Attribute] where
+    with = foldl' with
 
 instance With (Module sentence) sentence where
     with
@@ -203,6 +237,9 @@ noJunk = constructor
 
 constructor :: Attribute
 constructor = Attribute Constructor.constructorAttribute
+
+functional :: Attribute
+functional = Attribute Functional.functionalAttribute
 
 smtlib :: Text -> Attribute
 smtlib value = Attribute (Smtlib.smtlibAttribute value)

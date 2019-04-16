@@ -27,7 +27,9 @@ import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), extractMetadataTools )
+                 ( MetadataTools (..), SmtMetadataTools, extractMetadataTools )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.Step.Pattern
 
 import Test.Kore
@@ -117,8 +119,8 @@ testVerifiedModule =
                 (Map.lookup testMainModuleName modulesMap)
         Left err -> error (printError err)
 
-metadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
-metadataTools = extractMetadataTools testVerifiedModule
+metadataTools :: MetaOrObject level => SmtMetadataTools StepperAttributes
+metadataTools = MetadataTools.build testVerifiedModule
 
 test_metadataTools :: [TestTree]
 test_metadataTools =
@@ -195,8 +197,11 @@ testSubsorts =
             DoNotVerifyAttributes
             Builtin.koreVerifiers
             testSubsortDefinition
-    meta :: MetadataTools Object Attribute.Null
-    meta = extractMetadataTools $ moduleIndex Map.! testObjectModuleName
+    meta :: MetadataTools Object () Attribute.Null
+    meta =
+        extractMetadataTools
+            (moduleIndex Map.! testObjectModuleName)
+            (const ())
 
 
 testSubsortDefinition :: KoreDefinition

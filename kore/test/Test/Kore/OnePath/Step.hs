@@ -26,7 +26,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
@@ -383,7 +383,7 @@ test_onePathStrategy =
             _actual
     ]
   where
-    metadataTools :: MetadataTools Object StepperAttributes
+    metadataTools :: SmtMetadataTools StepperAttributes
     metadataTools =
         Mock.makeMetadataTools
             Mock.attributesMapping
@@ -391,6 +391,7 @@ test_onePathStrategy =
             Mock.sortAttributesMapping
             Mock.subsorts
             Mock.headSortsMapping
+            Mock.smtDeclarations
 
 simpleRewrite
     :: MetaOrObject level
@@ -423,7 +424,7 @@ rewriteWithPredicate left right predicate =
 
 runSteps
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     ->  (  ExecutionGraph (CommonStrategyPattern Object)
         -> Maybe (ExecutionGraph b)
@@ -457,7 +458,7 @@ runSteps metadataTools graphFilter picker configuration strategy =
 
 runOnePathSteps
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
     -> CommonExpandedPattern level

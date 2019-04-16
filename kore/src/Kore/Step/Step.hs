@@ -51,7 +51,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import qualified Kore.Logger as Log
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -112,7 +112,7 @@ newtype UnificationProcedure level =
             , MonadUnify unifierM
             , unifier ~ unifierM variable
             )
-        => MetadataTools level StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
@@ -188,7 +188,7 @@ unifyRule
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> UnificationProcedure Object
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
@@ -264,7 +264,7 @@ applyInitialConditions
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
@@ -386,7 +386,7 @@ applyRemainder
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
@@ -448,7 +448,7 @@ applyRule
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
@@ -531,7 +531,7 @@ applyRewriteRule
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
@@ -587,7 +587,7 @@ checkSubstitutionCoverage
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> ExpandedPattern level (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
@@ -681,7 +681,7 @@ applyRulesInParallel
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
@@ -746,7 +746,7 @@ applyRewriteRules
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
@@ -792,7 +792,7 @@ sequenceRules
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
@@ -879,7 +879,7 @@ sequenceRewriteRules
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
