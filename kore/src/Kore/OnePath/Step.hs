@@ -13,6 +13,7 @@ module Kore.OnePath.Step
     , StrategyPattern (..)
     , StrategyPatternTransformer (..)
     , CommonStrategyPattern
+    , extractUnproven
     , simplify
     , transitionRule
     , onePathFirstStep
@@ -140,6 +141,16 @@ data StrategyPattern patt
     -- This is needed when bottom results are expected and we want to
     -- differentiate between them and stuck results.
   deriving (Show, Eq, Ord, Generic)
+
+{- | Extract the unproven part of a 'StrategyPattern'.
+
+Returns 'Nothing' if there is no remaining unproven part.
+
+ -}
+extractUnproven :: StrategyPattern patt -> Maybe patt
+extractUnproven (RewritePattern p) = Just p
+extractUnproven (Stuck          p) = Just p
+extractUnproven Bottom             = Nothing
 
 data StrategyPatternTransformer patt a =
     StrategyPatternTransformer
