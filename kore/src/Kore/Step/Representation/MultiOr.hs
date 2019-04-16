@@ -22,6 +22,7 @@ module Kore.Step.Representation.MultiOr
     , make
     , merge
     , mergeAll
+    , uncheckedMerge
     , singleton
     , traverseWithPairs
     , traverseFlattenWithPairs
@@ -68,12 +69,22 @@ newtype MultiOr child = MultiOr { getMultiOr :: [child] }
         , Generic
         , IsList
         , Monad
-        , Monoid
         , Ord
-        , Semigroup
         , Show
         , Traversable
         )
+
+instance (Ord child, TopBottom child) => Semigroup (MultiOr child) where
+    (MultiOr []) <> b = b
+    a <> (MultiOr []) = a
+    (MultiOr a) <> (MultiOr b) = make (a <> b)
+
+instance (Ord child, TopBottom child) => Monoid (MultiOr child) where
+    mempty = make []
+
+-- TODO(virgil): Remove all uses of this function.
+uncheckedMerge :: MultiOr child -> MultiOr child -> MultiOr child
+uncheckedMerge (MultiOr a) (MultiOr b) = MultiOr (a <> b)
 
 instance NFData child => NFData (MultiOr child)
 

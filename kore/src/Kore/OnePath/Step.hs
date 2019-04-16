@@ -334,7 +334,8 @@ transitionRule
                     remainderResults =
                         pure . withProof . Stuck <$> remainders
 
-                Foldable.asum (rewriteResults <> remainderResults)
+                Foldable.asum
+                    (MultiOr.uncheckedMerge rewriteResults remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
