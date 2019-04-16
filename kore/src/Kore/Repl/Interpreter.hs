@@ -36,8 +36,6 @@ import           Data.Foldable
 import           Data.Functor
                  ( ($>) )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Graph.Inductive.Graph
-                 ( Graph )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.List.Extra
@@ -48,6 +46,7 @@ import           Data.Maybe
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
+import qualified Data.Text.Lazy as Text.Lazy
 import           Data.Text.Prettyprint.Doc
                  ( pretty )
 import           GHC.Exts
@@ -188,7 +187,8 @@ showGraph
     => m ()
 showGraph = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    liftIO $ showDotGraph graph
+    axioms <- Lens.use lensAxioms
+    liftIO $ showDotGraph (length axioms) graph
 
 proveSteps :: Int -> ReplM level ()
 proveSteps n = do
@@ -324,12 +324,11 @@ showRule configNode = do
                 Nothing ->
                     putStrLn' "No rule was applied."
         else putStrLn' "Invalid node!"
-  where
-    axiomOrClaim :: Int -> Int -> String
-    axiomOrClaim len iden
-      | iden < len = "Rule is axiom " <> show iden
-      | otherwise  = "Rule is claim " <> show (iden - len)
 
+axiomOrClaim :: Int -> Int -> String
+axiomOrClaim len iden
+  | iden < len = "Axiom " <> show iden
+  | otherwise  = "Claim " <> show (iden - len)
 
 showPrecBranch
     :: Maybe Int
@@ -644,10 +643,25 @@ printNotFound = putStrLn' "Variable or index not found"
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"
 
-showDotGraph :: Graph gr => gr nl el -> IO ()
-showDotGraph =
+showDotGraph :: Int -> InnerGraph-> IO ()
+showDotGraph len =
     (flip Graph.runGraphvizCanvas') Graph.Xlib
-        . Graph.graphToDot Graph.nonClusteredParams
+        . Graph.graphToDot params
+  where
+    params = Graph.nonClusteredParams
+        { Graph.fmtEdge = \(_, _, l) ->
+            [Graph.textLabel (ruleIndex l)]
+        }
+    ruleIndex lbl =
+        case listToMaybe . toList $ lbl of
+            Nothing -> "Simpl/RD"
+            Just rule -> maybe "Unknown " Text.Lazy.pack
+                      . fmap (axiomOrClaim len)
+                      . getRuleIndex
+                      . Attribute.identifier
+                      . Rule.attributes
+                      . Rule.getRewriteRule
+                      $ rule
 
 data StepResult
     = NoChildNodes
