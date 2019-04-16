@@ -15,6 +15,7 @@ module Kore.Step.Simplification.Exists
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
@@ -24,15 +25,13 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeExistsPredicate, makeTruePredicate )
+                 ( Predicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( toMLPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, traverseFlattenWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -232,44 +231,62 @@ makeEvaluateNoFreeVarInSubstitution
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNoFreeVarInSubstitution
     variable
-    patt@Predicated { term, predicate, substitution }
+    Predicated { term, predicate, substitution }
   =
     (MultiOr.make [simplifiedPattern], SimplificationProof)
   where
-    hasVariable = Set.member variable
-    termHasVariable = hasVariable (Pattern.freeVariables term)
-    predicateHasVariable = hasVariable (Predicate.freeVariables predicate)
-    simplifiedPattern = case (termHasVariable, predicateHasVariable) of
-        (False, False) -> patt
-        (False, True) ->
-            let
-                predicate' = makeExistsPredicate variable predicate
+    hasVariable = Set.member variable . Pattern.freeVariables
+    simplifiedPattern
+      | hasVariable term =
+        Predicated
+            { term =
+                mkExists variable
+                $ Maybe.fromMaybe (mkTop patternSort)
+                $ mkAndMaybe (Just term)
+                $ mkAndMaybe
+                    (fromPredicate <$> predicateWithVariable)
+                    (fromPredicate <$> substitutionWithVariable)
+            , predicate = predicateWithoutVariable
+            , substitution = substitutionWithoutVariable
+            }
+      | otherwise =
+        Predicated
+            { term = term
+            , predicate =
+                Predicate.makeAndPredicate predicateWithoutVariable
+                $ Predicate.makeExistsPredicate variable
+                $ mkAndPredicateMaybe
+                    predicateWithVariable
+                    substitutionWithVariable
+            , substitution = substitutionWithoutVariable
+            }
+      where
+        Valid { patternSort } = extract term
+        fromPredicate = Predicate.fromPredicate patternSort
+        fromSubstitution = Predicate.fromSubstitution
+        (predicateWithVariable, predicateWithoutVariable)
+            | Set.member variable (Predicate.freeVariables predicate) =
+            (Just predicate, makeTruePredicate)
+            | otherwise =
+            (Nothing, predicate)
+        (substitutionWithVariable, substitutionWithoutVariable) =
+            let (with, without) =
+                    splitSubstitutionByDependency variable
+                    $ Substitution.toMap substitution
             in
-                Predicated
-                    { term = term
-                    , predicate = predicate'
-                    , substitution = substitution
-                    }
-        (True, False) ->
-            Predicated
-                { term = mkExists variable term
-                , predicate = predicate
-                , substitution = substitution
-                }
-        (True, True) ->
-            Predicated
-                { term =
-                    mkExists variable
-                        (ExpandedPattern.toMLPattern
-                            Predicated
-                                { term = term
-                                , predicate = predicate
-                                , substitution = mempty
-                                }
-                        )
-                , predicate = makeTruePredicate
-                , substitution = substitution
-                }
+                ( if Map.null with
+                    then Nothing
+                    else Just (fromSubstitution $ Substitution.fromMap with)
+                , Substitution.fromMap without
+                )
+        mkAndMaybe (Just a) (Just b) = Just (mkAnd a b)
+        mkAndMaybe a@(Just _) Nothing  = a
+        mkAndMaybe Nothing  b@(Just _) = b
+        mkAndMaybe Nothing  Nothing  = Nothing
+        mkAndPredicateMaybe (Just a) (Just b) = Predicate.makeAndPredicate a b
+        mkAndPredicateMaybe (Just a) Nothing  = a
+        mkAndPredicateMaybe Nothing  (Just b) = b
+        mkAndPredicateMaybe Nothing  Nothing  = Predicate.makeTruePredicate
 
 substituteTermPredicate
     ::  ( MetaOrObject level
