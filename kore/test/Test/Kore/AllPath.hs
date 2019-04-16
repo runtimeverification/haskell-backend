@@ -26,22 +26,7 @@ import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
 import Test.Terse
 
-type ExecutionGraph = Strategy.ExecutionGraph (AllPath.ProofState Integer) ()
-
-emptyExecutionGraph :: AllPath.ProofState Integer -> ExecutionGraph
-emptyExecutionGraph = Strategy.emptyExecutionGraph
-
-insNode
-    :: (Gr.Node, AllPath.ProofState Integer)
-    -> ExecutionGraph
-    -> ExecutionGraph
-insNode = Strategy.insNode
-
-insEdge
-    :: (Gr.Node, Gr.Node)
-    -> ExecutionGraph
-    -> ExecutionGraph
-insEdge = Strategy.insEdge
+-- * Tests
 
 test_unprovenNodes :: [TestTree]
 test_unprovenNodes =
@@ -50,119 +35,54 @@ test_unprovenNodes =
         `satisfies_`
         Foldable.null
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.Goal 1))
+        (goal 0)
         `satisfies_`
         (not . Foldable.null)
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.Goal 1))
+        (goal 0)
         `equals`
-        (MultiOr.MultiOr [1])
+        (MultiOr.MultiOr [0])
         $  "returns single unproven node"
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.Goal 0)
+        (goal 0
             & insNode (1, AllPath.Goal 1)
             & insNode (2, AllPath.Proven)
         )
         `equals_`
         (MultiOr.MultiOr [0, 1])
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.Goal 0)
-            & insNode (1, AllPath.Goal 1)
-            & insEdge (0, 1)
-            & insNode (2, AllPath.Proven)
-            & insEdge (0, 2)
+        (goal 0
+            & subgoal 0 (1, AllPath.Goal 1)
+            & subgoal 0 (2, AllPath.Proven)
         )
         `equals_`
         (MultiOr.MultiOr [1])
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.Goal 0)
-            & insNode (1, AllPath.Goal 1)
-            & insEdge (0, 1)
-            & insNode (2, AllPath.Goal 2)
-            & insEdge (1, 2)
-            & insNode (3, AllPath.Proven)
-            & insEdge (2, 3)
+        (goal 0
+            & subgoal 0 (1, AllPath.Goal 1)
+            & subgoal 1 (2, AllPath.Goal 2)
+            & subgoal 2 (3, AllPath.Proven)
         )
         `equals_`
         (MultiOr.MultiOr [])
     , AllPath.unprovenNodes
-        (emptyExecutionGraph (AllPath.Goal 0)
-            & insNode (1, AllPath.GoalRem 1)
-            & insEdge (0, 1)
-            & insNode (2, AllPath.Proven)
-            & insEdge (0, 2)
+        (goal 0
+            & subgoal 0 (1, AllPath.GoalRem 1)
+            & subgoal 0 (2, AllPath.Proven)
         )
         `equals_`
         (MultiOr.MultiOr [1])
     ]
-
--- | Simple program configurations for unit testing.
-data K = BorC | A | B | C | D | E | F | Bot
-    deriving (Eq, Ord, Show)
-
-matches :: K -> K -> Bool
-matches B BorC = True
-matches C BorC = True
-matches a b    = a == b
-
-difference :: K -> K -> K
-difference BorC B = C
-difference BorC C = B
-difference a    b
-  | a `matches` b = Bot
-  | otherwise     = a
-
-instance EqualWithExplanation K where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-type Goal = (K, K)
-
-type ProofState = AllPath.ProofState Goal
-
-type Rule = (K, K)
-
-type Prim = AllPath.Prim Rule
-
-runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
-runTransitionRule prim state =
-    (runIdentity . runTransitionT) (transitionRule prim state)
-
--- | The destination-removal rule for our unit test goal.
-removeDestination :: Monad m => Goal -> m Goal
-removeDestination (src, dst) =
-    return (difference src dst, dst)
-
--- | The goal is trivially valid when the members are equal.
-triviallyValid :: Goal -> Bool
-triviallyValid (src, _) = src == Bot
-
-derivePar :: [Rule] -> Goal -> Strategy.TransitionT Rule m ProofState
-derivePar rules (src, dst) =
-    goals <|> goalRem
   where
-    goal rule@(_, to) = do
-        Transition.addRule rule
-        (pure . AllPath.Goal) (to, dst)
-    goalRem = do
-        let r = Foldable.foldl' difference src (fst <$> applied)
-        (pure . AllPath.GoalRem) (r, dst)
-    applyRule rule@(from, _)
-      | from `matches` src = Just rule
-      | otherwise = Nothing
-    applied = Maybe.mapMaybe applyRule rules
-    goals = Foldable.asum (goal <$> applied)
+    goal :: Integer -> ExecutionGraph
+    goal n = emptyExecutionGraph (AllPath.Goal n)
 
--- | 'AllPath.transitionRule' instantiated with our unit test rules.
-transitionRule
-    :: Prim
-    -> ProofState
-    -> Strategy.TransitionT Rule Identity ProofState
-transitionRule =
-    AllPath.transitionRule
-        removeDestination
-        triviallyValid
-        derivePar
+    subgoal
+        :: Gr.Node
+        -> (Gr.Node, AllPath.ProofState Integer)
+        -> ExecutionGraph -> ExecutionGraph
+    subgoal parent node@(child, _) =
+        insEdge (parent, child) . insNode node
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
@@ -297,6 +217,93 @@ test_runStrategy =
             (run axioms goal)
             AllPath.proven
             (show axioms ++ " proves " ++ show goal)
+
+-- * Definitions
+
+type ExecutionGraph = Strategy.ExecutionGraph (AllPath.ProofState Integer) ()
+
+emptyExecutionGraph :: AllPath.ProofState Integer -> ExecutionGraph
+emptyExecutionGraph = Strategy.emptyExecutionGraph
+
+insNode
+    :: (Gr.Node, AllPath.ProofState Integer)
+    -> ExecutionGraph
+    -> ExecutionGraph
+insNode = Strategy.insNode
+
+insEdge
+    :: (Gr.Node, Gr.Node)
+    -> ExecutionGraph
+    -> ExecutionGraph
+insEdge = Strategy.insEdge
+
+-- | Simple program configurations for unit testing.
+data K = BorC | A | B | C | D | E | F | Bot
+    deriving (Eq, Ord, Show)
+
+matches :: K -> K -> Bool
+matches B BorC = True
+matches C BorC = True
+matches a b    = a == b
+
+difference :: K -> K -> K
+difference BorC B = C
+difference BorC C = B
+difference a    b
+  | a `matches` b = Bot
+  | otherwise     = a
+
+instance EqualWithExplanation K where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+type Goal = (K, K)
+
+type ProofState = AllPath.ProofState Goal
+
+type Rule = (K, K)
+
+type Prim = AllPath.Prim Rule
+
+runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq Rule)]
+runTransitionRule prim state =
+    (runIdentity . runTransitionT) (transitionRule prim state)
+
+-- | The destination-removal rule for our unit test goal.
+removeDestination :: Monad m => Goal -> m Goal
+removeDestination (src, dst) =
+    return (difference src dst, dst)
+
+-- | The goal is trivially valid when the members are equal.
+triviallyValid :: Goal -> Bool
+triviallyValid (src, _) = src == Bot
+
+derivePar :: [Rule] -> Goal -> Strategy.TransitionT Rule m ProofState
+derivePar rules (src, dst) =
+    goals <|> goalRem
+  where
+    goal rule@(_, to) = do
+        Transition.addRule rule
+        (pure . AllPath.Goal) (to, dst)
+    goalRem = do
+        let r = Foldable.foldl' difference src (fst <$> applied)
+        (pure . AllPath.GoalRem) (r, dst)
+    applyRule rule@(from, _)
+      | from `matches` src = Just rule
+      | otherwise = Nothing
+    applied = Maybe.mapMaybe applyRule rules
+    goals = Foldable.asum (goal <$> applied)
+
+-- | 'AllPath.transitionRule' instantiated with our unit test rules.
+transitionRule
+    :: Prim
+    -> ProofState
+    -> Strategy.TransitionT Rule Identity ProofState
+transitionRule =
+    AllPath.transitionRule
+        removeDestination
+        triviallyValid
+        derivePar
 
 differentLengthPaths :: [Rule]
 differentLengthPaths =
