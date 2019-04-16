@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Exists
     , makeEvaluate
     ) where
 
+import           Control.Applicative
+                 ( Alternative ((<|>)) )
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -32,12 +34,14 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, traverseFlattenWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue )
+import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -235,58 +239,46 @@ makeEvaluateNoFreeVarInSubstitution
   =
     (MultiOr.make [simplifiedPattern], SimplificationProof)
   where
-    hasVariable = Set.member variable . Pattern.freeVariables
-    simplifiedPattern
-      | hasVariable term =
-        Predicated
-            { term =
-                mkExists variable
-                $ Maybe.fromMaybe (mkTop patternSort)
-                $ mkAndMaybe (Just term)
-                $ mkAndMaybe
-                    (fromPredicate <$> predicateWithVariable)
-                    (fromPredicate <$> substitutionWithVariable)
-            , predicate = predicateWithoutVariable
-            , substitution = substitutionWithoutVariable
-            }
-      | otherwise =
-        Predicated
-            { term = term
-            , predicate =
-                Predicate.makeAndPredicate predicateWithoutVariable
-                $ Predicate.makeExistsPredicate variable
-                $ mkAndPredicateMaybe
-                    predicateWithVariable
-                    substitutionWithVariable
-            , substitution = substitutionWithoutVariable
-            }
+    hasVariable = Set.member variable
+    simplifiedPattern =
+        boundConfiguration `Predicated.andCondition` freeCondition
       where
+        boundConfiguration
+          | hasVariable (Pattern.freeVariables term) =
+            (ExpandedPattern.topOf patternSort)
+                { term =
+                    mkExists variable
+                    $ Maybe.fromMaybe (mkTop patternSort)
+                    $ mkAndMaybe (Just term)
+                    $ Predicate.fromPredicate patternSort <$> boundCondition
+                }
+          | otherwise =
+            (ExpandedPattern.topOf patternSort)
+                { term = term
+                , predicate =
+                    Predicate.makeAndPredicate freePredicate
+                    $ Predicate.makeExistsPredicate variable
+                    $ Maybe.fromMaybe Predicate.makeTruePredicate boundCondition
+                }
         Valid { patternSort } = extract term
-        fromPredicate = Predicate.fromPredicate patternSort
-        fromSubstitution = Predicate.fromSubstitution
-        (predicateWithVariable, predicateWithoutVariable)
-            | Set.member variable (Predicate.freeVariables predicate) =
+        (boundPredicate, freePredicate)
+          | hasVariable (Predicate.freeVariables predicate) =
             (Just predicate, makeTruePredicate)
-            | otherwise =
-            (Nothing, predicate)
-        (substitutionWithVariable, substitutionWithoutVariable) =
-            let (with, without) =
-                    splitSubstitutionByDependency variable
-                    $ Substitution.toMap substitution
-            in
-                ( if Map.null with
-                    then Nothing
-                    else Just (fromSubstitution $ Substitution.fromMap with)
-                , Substitution.fromMap without
-                )
-        mkAndMaybe (Just a) (Just b) = Just (mkAnd a b)
-        mkAndMaybe a@(Just _) Nothing  = a
-        mkAndMaybe Nothing  b@(Just _) = b
-        mkAndMaybe Nothing  Nothing  = Nothing
-        mkAndPredicateMaybe (Just a) (Just b) = Predicate.makeAndPredicate a b
-        mkAndPredicateMaybe (Just a) Nothing  = a
-        mkAndPredicateMaybe Nothing  (Just b) = b
-        mkAndPredicateMaybe Nothing  Nothing  = Predicate.makeTruePredicate
+          | otherwise = (Nothing, predicate)
+        (boundSubstitution, freeSubstitution) =
+            splitSubstitutionByDependency variable substitution
+        boundCondition =
+            mkAndPredicateMaybe boundPredicate
+            $ Predicate.fromSubstitution <$> boundSubstitution
+        freeCondition =
+            Predicated
+                { term = ()
+                , predicate = freePredicate
+                , substitution = freeSubstitution
+                }
+        mkAndMaybe a b = (mkAnd <$> a <*> b) <|> a <|> b
+        mkAndPredicateMaybe a b =
+            (Predicate.makeAndPredicate <$> a <*> b) <|> a <|> b
 
 substituteTermPredicate
     ::  ( MetaOrObject level
@@ -336,12 +328,10 @@ variable, respectively.
 splitSubstitutionByDependency
     :: Ord (variable level)
     => variable level
-    -> Map (variable level) (StepPattern level variable)
-    ->  ( Map (variable level) (StepPattern level variable)
-        , Map (variable level) (StepPattern level variable)
-        )
-splitSubstitutionByDependency variable =
-    Map.partition hasVariable
+    -> Substitution level variable
+    -> (Maybe (Substitution level variable), Substitution level variable)
+splitSubstitutionByDependency variable substitution =
+    (if Substitution.null with then Nothing else Just with, without)
   where
-    hasVariable term =
-        Set.member variable (Pattern.freeVariables term)
+    (with, without) = Substitution.partition hasVariable substitution
+    hasVariable (_, term) = Set.member variable (Pattern.freeVariables term)
