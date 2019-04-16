@@ -12,6 +12,7 @@ module Kore.Unification.Substitution
     ( Substitution
     , unwrap
     , toMap
+    , fromMap
     , wrap
     , modify
     , Kore.Unification.Substitution.mapVariables
@@ -21,12 +22,14 @@ module Kore.Unification.Substitution
     , unsafeWrap
     , Kore.Unification.Substitution.filter
     , Kore.Unification.Substitution.freeVariables
+    , partition
     ) where
 
 import           Control.DeepSeq
                  ( NFData )
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
+import qualified Data.List as List
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -85,6 +88,12 @@ toMap
     => Substitution level variable
     -> Map (variable level) (StepPattern level variable)
 toMap = Map.fromList . unwrap
+
+fromMap
+    :: Ord (variable level)
+    => Map (variable level) (StepPattern level variable)
+    -> Substitution level variable
+fromMap = wrap . Map.toList
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
@@ -154,6 +163,17 @@ filter
     -> Substitution level variable
 filter filtering =
     modify (Prelude.filter (filtering . fst))
+
+partition
+    :: ((variable level, StepPattern level variable) -> Bool)
+    -> Substitution level variable
+    -> (Substitution level variable, Substitution level variable)
+partition criterion (Substitution substitution) =
+    let (true, false) = List.partition criterion substitution
+    in (Substitution true, Substitution false)
+partition criterion (NormalizedSubstitution substitution) =
+    let (true, false) = List.partition criterion substitution
+    in (NormalizedSubstitution true, NormalizedSubstitution false)
 
 {- | Return the free variables of the 'Substitution'.
 

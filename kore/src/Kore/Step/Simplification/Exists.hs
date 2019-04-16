@@ -15,9 +15,12 @@ module Kore.Step.Simplification.Exists
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Debug.Trace
 
+import           Control.Applicative
+                 ( Alternative ((<|>)) )
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
@@ -27,21 +30,21 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeExistsPredicate, makeTruePredicate,
-                 unwrapPredicate )
+                 ( Predicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( toMLPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, traverseFlattenWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue )
+import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -51,8 +54,6 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
-import           Kore.Variables.Free
-                 ( freePureVariables )
 import           Kore.Variables.Fresh
 
 
@@ -204,16 +205,16 @@ makeEvaluate
     variable
     patt@Predicated { term, predicate, substitution }
   =
-    case localSubstitution of
-        [] ->
+    case boundSubstitution of
+        Nothing ->
             return (makeEvaluateNoFreeVarInSubstitution variable patt)
-        _ -> do
+        Just boundTerm -> do
             (substitutedPat, _proof) <-
                 substituteTermPredicate
                     term
                     predicate
-                    localSubstitutionList
-                    (Substitution.wrap globalSubstitution)
+                    (Map.singleton variable boundTerm)
+                    (Substitution.unsafeWrap $ Map.toList freeSubstitution)
             (result, _proof) <-
                 ExpandedPattern.simplify
                     tools
@@ -223,10 +224,8 @@ makeEvaluate
                     substitutedPat
             return (result , SimplificationProof)
   where
-    (Local localSubstitution, Global globalSubstitution) =
-        splitSubstitutionByVariable variable $ Substitution.unwrap substitution
-    localSubstitutionList =
-        Map.fromList localSubstitution
+    (boundSubstitution, freeSubstitution) =
+        splitSubstitutionByVariable variable $ Substitution.toMap substitution
 
 makeEvaluateNoFreeVarInSubstitution
     ::  ( MetaOrObject level
@@ -242,45 +241,50 @@ makeEvaluateNoFreeVarInSubstitution
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNoFreeVarInSubstitution
     variable
-    patt@Predicated { term, predicate, substitution }
+    Predicated { term, predicate, substitution }
   =
     (MultiOr.make [simplifiedPattern], SimplificationProof)
   where
-    termHasVariable =
-        Set.member variable (freePureVariables term)
-    predicateHasVariable =
-        Set.member variable (freePureVariables $ unwrapPredicate predicate)
-    simplifiedPattern = case (termHasVariable, predicateHasVariable) of
-        (False, False) -> patt
-        (False, True) ->
-            let
-                predicate' = makeExistsPredicate variable predicate
-            in
-                Predicated
-                    { term = term
-                    , predicate = predicate'
-                    , substitution = substitution
-                    }
-        (True, False) ->
-            Predicated
-                { term = mkExists variable term
-                , predicate = predicate
-                , substitution = substitution
-                }
-        (True, True) ->
-            Predicated
+    hasVariable = Set.member variable
+    simplifiedPattern =
+        boundConfiguration `Predicated.andCondition` freeCondition
+      where
+        boundConfiguration
+          | hasVariable (Pattern.freeVariables term) =
+            (ExpandedPattern.topOf patternSort)
                 { term =
                     mkExists variable
-                        (ExpandedPattern.toMLPattern
-                            Predicated
-                                { term = term
-                                , predicate = predicate
-                                , substitution = mempty
-                                }
-                        )
-                , predicate = makeTruePredicate
-                , substitution = substitution
+                    $ Maybe.fromMaybe (mkTop patternSort)
+                    $ mkAndMaybe (Just term)
+                    $ Predicate.fromPredicate patternSort <$> boundCondition
                 }
+          | otherwise =
+            (ExpandedPattern.topOf patternSort)
+                { term = term
+                , predicate =
+                    Predicate.makeAndPredicate freePredicate
+                    $ Predicate.makeExistsPredicate variable
+                    $ Maybe.fromMaybe Predicate.makeTruePredicate boundCondition
+                }
+        Valid { patternSort } = extract term
+        (boundPredicate, freePredicate)
+          | hasVariable (Predicate.freeVariables predicate) =
+            (Just predicate, makeTruePredicate)
+          | otherwise = (Nothing, predicate)
+        (boundSubstitution, freeSubstitution) =
+            splitSubstitutionByDependency variable substitution
+        boundCondition =
+            mkAndPredicateMaybe boundPredicate
+            $ Predicate.fromSubstitution <$> boundSubstitution
+        freeCondition =
+            Predicated
+                { term = ()
+                , predicate = freePredicate
+                , substitution = freeSubstitution
+                }
+        mkAndMaybe a b = (mkAnd <$> a <*> b) <|> a <|> b
+        mkAndPredicateMaybe a b =
+            (Predicate.makeAndPredicate <$> a <*> b) <|> a <|> b
 
 substituteTermPredicate
     ::  ( MetaOrObject level
@@ -307,22 +311,33 @@ substituteTermPredicate term predicate substitution globalSubstitution =
         , SimplificationProof
         )
 
-newtype Local a = Local a
-newtype Global a = Global a
+{- | Split the substitution on the given variable.
 
+Returns the term associated to the variable in the substitution, if any, and the
+remainder of the substitution without the variable.
+
+ -}
 splitSubstitutionByVariable
-    :: Eq (variable level)
+    :: Ord variable
+    => variable
+    -> Map variable term
+    -> (Maybe term, Map variable term)
+splitSubstitutionByVariable var subst =
+    (Map.lookup var subst, Map.delete var subst)
+
+{- | Split the substitution by dependency the given variable.
+
+Returns the terms of the substitution with and without dependency on the given
+variable, respectively.
+
+ -}
+splitSubstitutionByDependency
+    :: Ord (variable level)
     => variable level
-    -> [(variable level, StepPattern level variable)]
-    ->  ( Local [(variable level, StepPattern level variable)]
-        , Global [(variable level, StepPattern level variable)]
-        )
-splitSubstitutionByVariable _ [] =
-    (Local mempty, Global mempty)
-splitSubstitutionByVariable variable ((var, term) : substs)
-  | var == variable =
-    (Local [(var, term)], Global substs)
-  | otherwise =
-    (local, Global ((var, term) : global))
+    -> Substitution level variable
+    -> (Maybe (Substitution level variable), Substitution level variable)
+splitSubstitutionByDependency variable substitution =
+    (if Substitution.null with then Nothing else Just with, without)
   where
-    (local, Global global) = splitSubstitutionByVariable variable substs
+    (with, without) = Substitution.partition hasVariable substitution
+    hasVariable (_, term) = Set.member variable (Pattern.freeVariables term)

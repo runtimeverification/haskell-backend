@@ -282,7 +282,7 @@ test_unifyRule =
                     , ensures = makeTruePredicate
                     , attributes = Default.def
                     }
-            expect = Right mempty
+            expect = Right (MultiOr [])
         actual <- unifyRule initial axiom
         assertEqualWithExplanation "" expect actual
     ]

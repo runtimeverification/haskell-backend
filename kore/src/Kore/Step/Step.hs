@@ -17,7 +17,7 @@ module Kore.Step.Step
     , unwrapRule
     , applyUnifiedRule
     , applyRule
-    , applyRules
+    , applyRulesInParallel
     , applyRewriteRule
     , applyRewriteRules
     , sequenceRules
@@ -74,6 +74,8 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 import           Kore.Unification.Data
                  ( UnificationProof )
 import           Kore.Unification.Error
@@ -140,6 +142,12 @@ deriving instance Ord (variable Object) => Ord (Result variable)
 
 deriving instance Show (variable Object) => Show (Result variable)
 
+instance TopBottom (Result variable) where
+    isTop (Result {unifiedRule, result}) =
+        isTop (Predicated.withoutTerm unifiedRule) && isTop result
+    isBottom (Result {unifiedRule, result}) =
+        isBottom (Predicated.withoutTerm unifiedRule) || isBottom result
+
 {- | The results of applying many rules.
 
 The rules may be applied in sequence or in parallel and the 'remainders' vary
@@ -159,14 +167,14 @@ deriving instance Ord (variable Object) => Ord (Results variable)
 
 deriving instance Show (variable Object) => Show (Results variable)
 
-instance Semigroup (Results variable) where
+instance Ord (variable Object) => Semigroup (Results variable) where
     (<>) results1 results2 =
         Results
             { results = Function.on (<>) results results1 results2
             , remainders = Function.on (<>) remainders results1 results2
             }
 
-instance Monoid (Results variable) where
+instance Ord (variable Object) => Monoid (Results variable) where
     mempty = Results { results = empty, remainders = empty }
     mappend = (<>)
 
@@ -621,7 +629,7 @@ checkSubstitutionCoverage tools initial unified final
 See also: 'applyRewriteRule'
 
  -}
-applyRules
+applyRulesInParallel
     ::  forall unifier variable unifierM
     .   ( Ord (variable Object)
         , Show (variable Object)
@@ -645,7 +653,7 @@ applyRules
     -> ExpandedPattern Object variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
-applyRules
+applyRulesInParallel
     metadataTools
     predicateSimplifier
     patternSimplifier
@@ -715,7 +723,7 @@ applyRewriteRules
 
     rewriteRules
   =
-    applyRules
+    applyRulesInParallel
         metadataTools
         predicateSimplifier
         patternSimplifier

@@ -59,7 +59,7 @@ remainders
     => MultiOr (PredicateSubstitution Object (Target variable))
     -> MultiOr (Predicate Object variable)
 remainders =
-    fmap unwrapRemainder
+    fmap unwrapRemainderVariables
     . Foldable.foldr negateUnification1 top
   where
     top = pure Predicate.makeTruePredicate
@@ -110,14 +110,13 @@ quantifyTarget predicate =
     freeNonTargetVariables =
         Set.filter Target.isTarget (Predicate.freeVariables predicate)
 
-{- | Unwrap a remainder predicate.
-
+{- | Unwrap a remainder predicate's variables.
  -}
-unwrapRemainder
+unwrapRemainderVariables
     :: (Ord (variable Object), Unparse (variable Object))
     => Predicate Object (Target variable)
     -> Predicate Object variable
-unwrapRemainder remainder' =
+unwrapRemainderVariables remainder' =
     Predicate.mapVariables Target.unwrapVariable remainder'
 
 {- | Negate a conjunction of many terms.
