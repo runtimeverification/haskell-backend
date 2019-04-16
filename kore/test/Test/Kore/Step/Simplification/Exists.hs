@@ -73,6 +73,7 @@ test_simplify =
                 Predicate.makeAndPredicate predicate
                 $ Predicate.makeExistsPredicate Mock.x
                 $ Predicate.fromSubstitution substitution
+            , substitution = mempty
             }
     substForX =
         (ExpandedPattern.topOf Mock.testSort)
