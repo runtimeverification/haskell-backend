@@ -26,13 +26,16 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( listToMaybe )
+import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
                  ( parseMaybe )
 
+import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -43,11 +46,13 @@ import           Kore.OnePath.Verification
                  ( Axiom )
 import           Kore.OnePath.Verification
                  ( Claim )
+import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import           Kore.Step.Simplification.Data
@@ -89,8 +94,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     state :: ReplState level
     state =
         ReplState
-            { axioms  = axioms'
-            , claims  = claims'
+            { axioms  = addIndexesToAxioms axioms'
+            , claims  = addIndexesToClaims (length axioms') claims'
             , claim   = firstClaim
             , graph   = firstClaimExecutionGraph
             , node    = (Strategy.root firstClaimExecutionGraph)
@@ -100,6 +105,42 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , stepper = stepper0
             , labels  = Map.empty
             }
+
+    addIndexesToAxioms
+        :: [Axiom level]
+        -> [Axiom level]
+    addIndexesToAxioms axs =
+        fmap (Axiom . addIndex) (zip (fmap unAxiom axs) [0..(length axs)])
+
+    addIndexesToClaims
+        :: Int
+        -> [Claim level]
+        -> [Claim level]
+    addIndexesToClaims len cls =
+        fmap (Claim . addIndex) (zip (fmap unClaim cls) [len..(length cls)])
+
+    addIndex
+        :: (Rule.RewriteRule level Variable, Int)
+        -> Rule.RewriteRule level Variable
+    addIndex (rw, n) =
+        modifyAttribute (mapAttribute n (getAttribute rw)) rw
+
+    modifyAttribute
+        :: Attribute.Axiom
+        -> Rule.RewriteRule level Variable
+        -> Rule.RewriteRule level Variable
+    modifyAttribute att (Rule.RewriteRule rp) =
+        Rule.RewriteRule $ rp { Rule.attributes = att }
+
+    getAttribute :: Rule.RewriteRule level Variable -> Attribute.Axiom
+    getAttribute = Rule.attributes . Rule.getRewriteRule
+
+    mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
+    mapAttribute n attr =
+        Lens.over Attribute.lensIdentifier (makeRuleIndex n) attr
+
+    makeRuleIndex :: Int -> RuleIndex -> RuleIndex
+    makeRuleIndex n _ = RuleIndex (Just n)
 
     firstClaim :: Claim level
     firstClaim = maybe (error "No claims found") id $ listToMaybe claims'

@@ -33,6 +33,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Unification.Substitution as Substitution
+import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
 
 import           Test.Kore
@@ -771,9 +772,10 @@ mockMetadataTools =
         Mock.headTypeMapping
         Mock.sortAttributesMapping
         Mock.subsorts
+        Mock.headSortsMapping
 
 mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] []
+mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] [] []
 
 aDomainValue :: CommonStepPattern Object
 aDomainValue =
@@ -819,7 +821,7 @@ unify tools first second =
         -- The unification error is discarded because, for testing purposes, we
         -- are not interested in the /reason/ unification failed. For the tests,
         -- the failure is almost always due to unsupported patterns anyway.
-        Error.hushT $ termUnification
+        MaybeT . fmap Error.hush . Monad.Unify.runUnifier $ termUnification
             tools
             substitutionSimplifier
             (Simplifier.create tools Map.empty)

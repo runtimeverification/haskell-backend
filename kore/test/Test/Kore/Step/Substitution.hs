@@ -8,7 +8,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import           Control.Monad.Except
 import qualified Data.Map as Map
 
 import           Kore.AST.Pure
@@ -35,6 +34,7 @@ import           Kore.Step.Substitution
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
+import qualified Kore.Unification.Unify as Monad.Unify
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -322,7 +322,8 @@ mockMetadataTools =
         Mock.attributesMapping
         Mock.headTypeMapping
         Mock.sortAttributesMapping
-        []
+        Mock.subsorts
+        Mock.headSortsMapping
 
 merge
     :: [(Variable Object, StepPattern Object Variable)]
@@ -335,7 +336,7 @@ merge
 merge s1 s2 =
     runSMT
     $ evalSimplifier emptyLogger
-    $ runExceptT
+    $ Monad.Unify.runUnifier
     $ fmap fst
     $ mergePredicatesAndSubstitutionsExcept
         mockMetadataTools

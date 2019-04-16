@@ -46,7 +46,8 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( ExceptT, MaybeT )
+                 ( MaybeT )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -94,10 +95,10 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), SimplificationType, Simplifier,
+                 SimplificationProof (..), SimplificationType,
                  StepPatternSimplifier )
-import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError (..) )
+import           Kore.Unification.Unify
+                 ( MonadUnify )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -506,7 +507,7 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable err p expanded proof.
+    :: forall level variable unifier unifierM p expanded proof.
         ( OrdMetaOrObject variable, ShowMetaOrObject variable
         , SortedVariable variable
         , Unparse (variable level)
@@ -515,7 +516,8 @@ unifyEquals
         , p ~ StepPattern level variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
-        , err ~ ExceptT (UnificationOrSubstitutionError level variable)
+        , unifier ~ unifierM variable
+        , MonadUnify unifierM
         )
     => SimplificationType
     -> MetadataTools level StepperAttributes
@@ -524,8 +526,8 @@ unifyEquals
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> (p -> p -> (err Simplifier) (expanded, proof))
-    -> (p -> p -> MaybeT (err Simplifier) (expanded, proof))
+    -> (p -> p -> unifier (expanded, proof))
+    -> (p -> p -> MaybeT unifier (expanded, proof))
 unifyEquals
     simplificationType
     tools
@@ -550,7 +552,7 @@ unifyEquals
     unifyEquals0
         :: StepPattern level variable
         -> StepPattern level variable
-        -> MaybeT (err Simplifier) (expanded, proof)
+        -> MaybeT unifier (expanded, proof)
     unifyEquals0
         (DV_ _ (Domain.BuiltinSet builtin1))
         (DV_ _ (Domain.BuiltinSet builtin2))
@@ -602,16 +604,38 @@ unifyEquals
         -- Note that x can be a proper symbolic pattern (not just a variable)
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
-            :: Domain.InternalSet  -- ^ concrete set
-            -> SymbolOrAlias Object  -- ^ 'element' symbol
-            -> p  -- ^ key
-            -> StepPattern Object variable  -- ^ framing variable
-            -> (err Simplifier) (expanded, proof)
-        unifyEqualsSelect builtin1' _ _ _
-          | set1 == Set.empty = return (ExpandedPattern.bottom, SimplificationProof)
-          | otherwise = Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+            :: Domain.InternalSet          -- ^ concrete set
+            -> SymbolOrAlias Object        -- ^ 'element' symbol
+            -> p                           -- ^ key
+            -> StepPattern Object variable -- ^ framing variable
+            -> unifier (expanded, proof)
+        unifyEqualsSelect builtin1' _ key2 set2
+          | set1 == Set.empty =
+            return (ExpandedPattern.bottom, SimplificationProof)
+          | otherwise = case Set.toList set1 of
+            [fromConcreteStepPattern -> key1] ->
+                Reflection.give tools $ do
+                    let emptySetPat = asInternal tools sort1 Set.empty
+                    (elemUnifier, _proof) <-
+                        unifyEqualsChildren key1 key2
+                    -- when subunification problem fails, halt execution
+                    errorIfNotUnifying elemUnifier key1
+                    (setUnifier, _proof) <-
+                        unifyEqualsChildren set2
+                            $ asInternal tools sort1 Set.empty
+                    -- when subunification problem fails, halt execution
+                    errorIfNotUnifying setUnifier emptySetPat
+                    -- Return the concrete set, but capture any predicates and
+                    -- substitutions from unifying the element
+                    -- and framing variable.
+                    let result = pure dv1 <* elemUnifier <* setUnifier
+                    return (result, SimplificationProof)
+            _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
-            Domain.InternalSet { builtinSetChild = set1 } = builtin1'
+            Domain.InternalSet
+                { builtinSetChild = set1
+                , builtinSetSort = sort1
+                } = builtin1'
 
     unifyEquals0 app_@(App_ _ _) dv_@(DV_ _ _) = unifyEquals0 dv_ app_
 
@@ -622,7 +646,7 @@ unifyEquals
         :: level ~ Object
         => Domain.InternalSet
         -> Domain.InternalSet
-        -> (err Simplifier) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2
       | set1 == set2 =
         return (unified, SimplificationProof)
@@ -642,7 +666,7 @@ unifyEquals
         => Domain.InternalSet  -- ^ concrete set
         -> Domain.InternalSet -- ^ framed concrete set
         -> StepPattern level variable  -- ^ framing variable
-        -> (err Simplifier) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsFramed builtin1 builtin2 var
       | Set.isSubsetOf set2 set1 =
         Reflection.give tools $ do
@@ -668,7 +692,7 @@ unifyEquals
         => Domain.InternalSet  -- ^ concrete set
         -> SymbolOrAlias level  -- ^ 'element' symbol
         -> p  -- ^ key
-        -> (err Simplifier) (expanded, proof)
+        -> unifier (expanded, proof)
     unifyEqualsElement builtin1 element' key2 =
         case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->
@@ -684,3 +708,22 @@ unifyEquals
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
+
+-- Check whether the term part of an expanded pattern
+-- is identical to the expected term and error if not.
+errorIfNotUnifying
+    ::  ( Monad m
+        , ShowMetaOrObject variable
+        , EqMetaOrObject variable
+        )
+    => ExpandedPattern Object variable
+    -> StepPattern Object variable
+    -> m ()
+errorIfNotUnifying unifiedExpandedPattern expected =
+    Monad.when (term unifiedExpandedPattern /= expected)
+        $ error
+            (  "Expecting unification to succeed"
+            ++ show expected ++ "\n /= \n"
+            ++ show (term unifiedExpandedPattern)
+            )
+

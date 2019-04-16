@@ -44,7 +44,7 @@ import           Data.List.Extra
                  ( groupSort )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( catMaybes )
+                 ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
@@ -63,10 +63,14 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( sourceLocation )
+                 ( Axiom (..), sourceLocation )
+import           Kore.Attribute.RuleIndex
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..),
+                 StrategyPatternTransformer (StrategyPatternTransformer),
                  strategyPattern )
+import qualified Kore.OnePath.Step as StrategyPatternTransformer
+                 ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -80,6 +84,7 @@ import           Kore.Step.Rule
                  ( RewriteRule (..) )
 import           Kore.Step.Rule
                  ( RulePattern (..) )
+import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
                  ( attributes )
 import           Kore.Step.Simplification.Data
@@ -272,7 +277,11 @@ showLeafs = do
   where
     getNodeState graph node =
         maybe Nothing (\x -> Just (x, node))
-        . strategyPattern (const . Just $ UnevaluatedNode) (const . Just $ StuckNode) Nothing
+        . strategyPattern StrategyPatternTransformer
+            { rewriteTransformer = const . Just $ UnevaluatedNode
+            , stuckTransformer = const . Just $ StuckNode
+            , bottomValue = Nothing
+            }
         . Graph.lab'
         . Graph.context graph
         $ node
@@ -287,7 +296,7 @@ showRule
     => Maybe Int
     -> m ()
 showRule configNode = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    ReplState { axioms, graph = Strategy.ExecutionGraph { graph } } <- get
     node <- Lens.use lensNode
     let node' = maybe node id configNode
     if node' `elem` Graph.nodes graph
@@ -297,7 +306,30 @@ showRule configNode = do
                 . Graph.inn'
                 . Graph.context graph
                 $ node'
+            let mrule = getRewriteRuleFromLabel
+                            . Graph.inn'
+                            . Graph.context graph
+                            $ node'
+            case mrule of
+                Just rule -> do
+                    let mid = getRuleIndex
+                                . Attribute.identifier
+                                . Rule.attributes
+                                . Rule.getRewriteRule
+                                $ rule
+                    putStrLn' $ maybe
+                        "Error: identifier attribute wasn't initialized."
+                        (axiomOrClaim (length axioms))
+                        mid
+                Nothing ->
+                    putStrLn' "No rule was applied."
         else putStrLn' "Invalid node!"
+  where
+    axiomOrClaim :: Int -> Int -> String
+    axiomOrClaim len iden
+      | iden < len = "Rule is axiom " <> show iden
+      | otherwise  = "Rule is claim " <> show (iden - len)
+
 
 showPrecBranch
     :: Maybe Int
@@ -351,7 +383,7 @@ tryAxiomClaim eac = do
     ReplState { axioms, claims, claim, graph, node, stepper } <- get
     case getAxiomOrClaim axioms claims node of
         Nothing ->
-            tell "Could not find axiom or claim,\
+            putStrLn' "Could not find axiom or claim,\
                  \or attempt to use claim as first step"
         Just eac' -> do
             if Graph.outdeg (Strategy.graph graph) node == 0
@@ -359,22 +391,53 @@ tryAxiomClaim eac = do
                     graph'@Strategy.ExecutionGraph { graph = gr } <-
                         lift $ stepper
                             claim
-                            (either (const claims) id eac')
-                            (either id (const axioms) eac')
+                            (either (const []) id eac')
+                            (either id (const []) eac')
                             graph
                             node
+{-
+    After trying to apply an axiom/claim, there are three possible cases:
+    - If there are no resulting nodes then the rule
+    couldn't be applied.
+    - If there is a single resulting node then the rule
+    was applied successfully.
+    - If there are more than one resulting nodes then
+    the rule was applied successfully but it wasn't sufficient.
+    If a remainder exists after applying a set of axioms
+    the current unification algorithm considers this
+    remainder to be Stuck. In this case, though, since only one
+    rule of the set is applied we must consider the
+    possibility that another axiom may be further applied
+    successfully on the resulting remainder, so as a workaround
+    we will change the state of these nodes from Stuck to
+    RewritePattern to allow further applications.
+    If indeed no other axiom can be applied on the remainder,
+    then a single step command will identify it as being Stuck.
+-}
                     case Graph.suc' $ Graph.context gr node of
-                        [] -> tell "Could not find any child nodes."
+                        [] -> putStrLn' "Could not unify."
                         [node'] -> do
-                            case Graph.lab' $ Graph.context gr node' of
-                                Stuck _ -> tell "Could not unify."
-                                _ -> do
-                                    lensGraph .= graph'
-                                    lensNode .= node'
-                                    tell "Unification succsessful."
-                        _ -> lensGraph .= graph'
-                else tell "Node is already evaluated"
+                            lensGraph .= graph'
+                            lensNode .= node'
+                            putStrLn' "Unification successful."
+                        xs -> do
+                            lensGraph .=
+                                Strategy.ExecutionGraph
+                                    (Strategy.root graph')
+                                    (tryAgainOnNodes xs gr)
+                            putStrLn' "Unification successful."
+                else putStrLn' "Node is already evaluated"
   where
+    tryAgainOnNodes ns gph =
+        Graph.gmap (stuckToRewrite ns) gph
+
+    stuckToRewrite xs ct@(to, n, lab, from)
+        | n `elem` xs =
+            case lab of
+                Stuck patt -> (to, n, RewritePattern patt, from)
+                _ -> ct
+        | otherwise = ct
+
     getAxiomOrClaim
         :: [Axiom level]
         -> [Claim level]
@@ -520,10 +583,12 @@ unparseStrategy
     -> CommonStrategyPattern level
     -> String
 unparseStrategy omitList =
-    strategyPattern
-        (\pat -> unparseToString (hide <$> pat))
-        (\pat -> "Stuck: \n" <> unparseToString (hide <$> pat))
-        "Reached bottom"
+    strategyPattern StrategyPatternTransformer
+        { rewriteTransformer = \pat -> unparseToString (hide <$> pat)
+        , stuckTransformer =
+            \pat -> "Stuck: \n" <> unparseToString (hide <$> pat)
+        , bottomValue = "Reached bottom"
+        }
   where
     hide :: StepPattern level Variable -> StepPattern level Variable
     hide =
@@ -555,6 +620,17 @@ unparseNodeLabels =
     third :: (a, b, c) -> c
     third (_, _, c) = c
 
+getRewriteRuleFromLabel
+    :: [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
+    -> Maybe (RewriteRule Object Variable)
+getRewriteRuleFromLabel =
+    listToMaybe
+    . join
+    . fmap (toList . third)
+  where
+      third :: (a, b, c) -> c
+      third (_, _, c) = c
+
 extractSourceAndLocation
     :: RewriteRule level Variable
     -> SourceLocation
@@ -578,12 +654,6 @@ data StepResult
     | Branch [Graph.Node]
     | Success
     deriving Show
-
-unClaim :: forall level. Claim level -> RewriteRule level Variable
-unClaim Claim { rule } = rule
-
-unAxiom :: Axiom level -> RewriteRule level Variable
-unAxiom (Axiom rule) = rule
 
 emptyExecutionGraph :: Claim Object -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim

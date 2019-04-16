@@ -156,6 +156,7 @@ tools =
         symbolOrAliasType
         []
         []
+        []
 
 assertValue :: CommonStepPattern Object -> Assertion
 assertValue purePattern =

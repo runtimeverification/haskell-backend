@@ -1,8 +1,5 @@
 module Test.Kore.Step
-    ( test_simpleStrategy
-    , test_stepStrategy
-    , test_unificationError
-    ) where
+where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -13,9 +10,8 @@ import           Data.Default
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Data.Limit
-                 ( Limit (..) )
-import qualified Data.Limit as Limit
+import           Data.Text
+                 ( Text )
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -37,14 +33,175 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Simplifier )
+import           Kore.Step.Simplification.Data as Simplification
+
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import qualified Kore.Step.Strategy as Strategy
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Tasty.HUnit.Extensions
+
+{-
+    Tests of running a strategy by checking if the expected
+    endpoint of the rewrites is achieved.
+
+    These tests are concise examples of common situations.
+    They are more integration tests than unit tests.
+-}
+
+-- DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER
+-- The names of constructors ("c1", etc.) must match those in
+-- `mockMetadataTools. `
+test_constructorRewriting :: TestTree
+test_constructorRewriting =
+    applyStrategy                              "a constructor appied to a var"
+        ( Start $ cons "c1" ["var"])
+        [ Axiom $ cons "c1" ["x1"] `rewritesTo` cons "c2" ["x1"]
+        , Axiom $ cons "c2" ["x2"] `rewritesTo` cons "c3" ["x2"]
+        ]
+        ( Expect $                              cons "c3" ["var"])
+      where
+        cons = applyConstructorToVariables
+
+
+test_ruleThatDoesn'tApply :: TestTree
+test_ruleThatDoesn'tApply =
+    applyStrategy                              "unused rewrite rule"
+        ( Start $ cons "c1"     ["var"])
+        [ Axiom $ cons "c1"     ["x1"] `rewritesTo`  cons "c2" ["x1"]
+        , Axiom $ cons "unused" ["x2"] `rewritesTo`  var "x2"
+        ]
+        ( Expect $                              cons "c2" ["var"])
+      where
+        cons = applyConstructorToVariables
+
+
+        {- Test API -}
+
+applyStrategy
+    :: HasCallStack
+    => TestName -> Start -> [Axiom] -> Expect -> TestTree
+applyStrategy testName start axioms expected =
+    testCase testName $
+        takeSteps (start, axioms) >>= compareTo expected
+
+
+        {- API Helpers -}
+
+takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
+takeSteps (Start start, wrappedAxioms) =
+    (<$>) pickLongest
+    $ SMT.runSMT SMT.defaultConfig
+    $ Simplification.evalSimplifier emptyLogger
+    $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
+  where
+    makeExecutionGraph configuration axioms =
+        Strategy.runStrategy
+            mockTransitionRule
+            (repeat $ allRewrites axioms)
+            (pure configuration, mempty)
+
+compareTo
+    :: HasCallStack
+    => Expect -> (Actual, Proof) -> IO ()
+compareTo (Expect expected) (actual, _ignoredProof) =
+    assertEqualWithExplanation "" (pure expected) actual
+
+
+    {- Types used in this file -}
+
+-- Isolate knowledge of `Object` in anticipation of its removal.
+-- Should these go in some common location?
+type RewriteRule' variable = RewriteRule Object variable
+type StepPattern' variable = StepPattern Object variable
+type CommonStepPattern' = CommonStepPattern Object
+type ExpandedPattern' variable = ExpandedPattern Object variable
+type CommonExpandedPattern' = CommonExpandedPattern Object
+type Sort' = Sort Object
+type StepProof' variable = StepProof Object variable
+
+-- Test types
+type TestPattern = CommonStepPattern'
+newtype Start = Start TestPattern
+newtype Axiom = Axiom
+    { unAxiom :: RewriteRule' Variable }
+newtype Expect = Expect TestPattern
+
+type Actual = ExpandedPattern' Variable
+type Proof = StepProof' Variable
+
+
+-- Useful constant values
+
+anySort :: Sort'
+anySort = sort "irrelevant"
+
+mockTransitionRule
+    :: Prim (RewriteRule' Variable)
+    -> (CommonExpandedPattern', StepProof' Variable)
+    -> Strategy.TransitionT
+            (RewriteRule' Variable)
+            Simplifier
+            (CommonExpandedPattern', StepProof' Variable)
+mockTransitionRule =
+    transitionRule
+        metadataTools
+        substitutionSimplifier
+        simplifier
+        Map.empty
+  where
+    metadataTools = mockMetadataTools
+    simplifier = Simplifier.create metadataTools Map.empty
+    substitutionSimplifier =
+        Mock.substitutionSimplifier metadataTools
+
+-- Builders -- should these find a better home?
+
+-- | Create a function pattern from a function name and list of argnames.
+applyConstructorToVariables :: Text -> [Text] -> TestPattern
+applyConstructorToVariables name arguments =
+    mkApp anySort symbol $ fmap var arguments
+  where
+      symbol = SymbolOrAlias -- can this be more abstact?
+        { symbolOrAliasConstructor = testId name
+        , symbolOrAliasParams = []
+        }
+
+-- | Do the busywork of converting a name into a variable pattern.
+var :: Text -> TestPattern
+var name =
+    mkVar $ (Variable (testId name) mempty) anySort
+-- can the above be more abstract?
+
+sort :: Text -> Sort'
+sort name =
+    SortActualSort $ SortActual
+      { sortActualName = testId name
+      , sortActualSorts = []
+      }
+
+rewritesTo :: TestPattern -> TestPattern -> RewriteRule' Variable
+rewritesTo left right =
+    RewriteRule $ RulePattern
+        { left
+        , right
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+
+{-
+
+    The following tests are old and should eventually be rewritten.
+
+    They should perhaps be rewritten to use individual Kore.Step functions
+    like `rewriteStep`.
+-}
 
 v1, a1, b1, x1 :: Sort Meta -> Variable Meta
 v1 = Variable (testId "#v1") mempty
@@ -199,159 +356,18 @@ test_stepStrategy =
         -- Expected: V1
         -- Expected: implies(V1, V1)
         (assertEqualWithExplanation "" expectTwoAxioms =<< actualTwoAxioms)
-    , testCase "Fails to apply a simple axiom"
+    , testCase "Fails to apply a simple axiom"      --- unification failure
         -- Axiom: sigma(X1, X1) => X1
         -- Start pattern: sigma(f(A1), g(B1))
         -- Expected: empty result list
         (assertEqualWithExplanation "" expectFailSimple =<< actualFailSimple)
-    , testCase "Fails to apply a simple axiom due to cycle."
+    , testCase "Fails to apply a simple axiom due to cycle."  -- unification error constructor based vs
         -- Axiom: sigma(f(X1), X1) => X1
         -- Start pattern: sigma(A1, A1)
         -- Expected: empty result list
         (assertEqualWithExplanation "" expectFailCycle =<< actualFailCycle)
     ]
 
-test_simpleStrategy :: [TestTree]
-test_simpleStrategy =
-    [ testCase "Runs one step"
-        -- Axiom: f(X1) => g(X1)
-        -- Start pattern: f(V1)
-        -- Expected: g(V1)
-        (assertEqualWithExplanation "" expectOneStep =<< actualOneStep)
-    , testCase "Runs two steps"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: h(V1)
-        (assertEqualWithExplanation "" expectTwoSteps =<< actualTwoSteps)
-    , testCase "Obeys step limit"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: g(V1)
-        (assertEqualWithExplanation "" expectStepLimit =<< actualStepLimit)
-    , testCase "0 step limit"
-        -- Axiom: f(X1) => g(X1)
-        -- Axiom: g(X1) => h(X1)
-        -- Start pattern: f(V1)
-        -- Expected: f(V1)
-        (assertEqualWithExplanation "" expectZeroStepLimit
-            =<< actualZeroStepLimit)
-    ]
-
-axiomsSimpleStrategy :: [RewriteRule Meta Variable]
-axiomsSimpleStrategy =
-    [ RewriteRule $ RulePattern
-        { left = metaF (mkVar $ x1 patternMetaSort)
-        , right = metaG (mkVar $ x1 patternMetaSort)
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-    , RewriteRule $ RulePattern
-        { left = metaG (mkVar $ x1 patternMetaSort)
-        , right = metaH (mkVar $ x1 patternMetaSort)
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-    ]
-
-expectOneStep :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectOneStep =
-    ( Predicated
-        { term = metaG (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualOneStep :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualOneStep =
-    runSteps
-        mockMetadataTools
-        Unlimited
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        [ RewriteRule $ RulePattern
-            { left = metaF (mkVar $ x1 patternMetaSort)
-            , right = metaG (mkVar $ x1 patternMetaSort)
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
-        ]
-
-expectTwoSteps :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectTwoSteps =
-    ( Predicated
-        { term = metaH (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualTwoSteps :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualTwoSteps =
-    runSteps
-        mockMetadataTools
-        Unlimited
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
-
-
-expectZeroStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectZeroStepLimit =
-        ( Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        , mempty
-        )
-
-actualZeroStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualZeroStepLimit =
-    runSteps
-        mockMetadataTools
-        (Limit 0)
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
-
-expectStepLimit :: (ExpandedPattern Meta Variable, StepProof Meta Variable)
-expectStepLimit =
-    ( Predicated
-        { term = metaG (mkVar $ v1 patternMetaSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , mempty
-    )
-
-actualStepLimit :: IO (CommonExpandedPattern Meta, StepProof Meta Variable)
-actualStepLimit =
-    runSteps
-        mockMetadataTools
-        (Limit 1)
-        Predicated
-            { term = metaF (mkVar $ v1 patternMetaSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        axiomsSimpleStrategy
 
 test_unificationError :: TestTree
 test_unificationError =
@@ -397,6 +413,7 @@ mockMetadataTools = MetadataTools
     , sortAttributes = const def
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
+    , applicationSorts = undefined
     }
 
 sigmaSymbol :: SymbolOrAlias Meta
@@ -483,7 +500,7 @@ runStep
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ Simplification.evalSimplifier emptyLogger
     $ runStrategy
         (transitionRule
             metadataTools
@@ -500,15 +517,14 @@ runSteps
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> Limit Natural
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [RewriteRule level Variable]
     -> IO (CommonExpandedPattern level, StepProof level Variable)
-runSteps metadataTools stepLimit configuration axioms =
+runSteps metadataTools configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ Simplification.evalSimplifier emptyLogger
     $ runStrategy
         (transitionRule
             metadataTools
@@ -516,7 +532,7 @@ runSteps metadataTools stepLimit configuration axioms =
             simplifier
             Map.empty
         )
-        (Limit.replicate stepLimit $ allRewrites axioms)
+        (repeat $ allRewrites axioms)
         (configuration, mempty)
   where
     simplifier = Simplifier.create metadataTools Map.empty

@@ -12,9 +12,6 @@ module Kore.Step.Axiom.UserDefined
     , equalityRuleEvaluator
     ) where
 
-import Control.Monad.Except
-       ( runExceptT )
-
 import           Kore.AST.Pure hiding
                  ( isConcrete )
 import qualified Kore.AST.Pure as Pure
@@ -42,11 +39,12 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier (..) )
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -92,7 +90,7 @@ equalityRuleEvaluator
   , not (Pure.isConcrete patt)
   = notApplicable
   | otherwise = do
-    result <- runExceptT $ applyRule patt rule
+    result <- applyRule patt rule
     case result of
         Left _ ->
             notApplicable
@@ -107,7 +105,8 @@ equalityRuleEvaluator
     unificationProcedure = UnificationProcedure matchAsUnification
 
     applyRule patt' rule' =
-        Step.applyRules
+        Monad.Unify.runUnifier $
+        Step.applyRulesInParallel
             tools
             substitutionSimplifier
             simplifier

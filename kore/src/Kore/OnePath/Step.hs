@@ -11,6 +11,7 @@ module Kore.OnePath.Step
     ( -- * Primitive strategies
       Prim (..)
     , StrategyPattern (..)
+    , StrategyPatternTransformer (..)
     , CommonStrategyPattern
     , extractUnproven
     , simplify
@@ -22,8 +23,6 @@ module Kore.OnePath.Step
 
 import           Control.Applicative
                  ( Alternative (..) )
-import           Control.Monad.Except
-                 ( runExceptT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
@@ -68,6 +67,7 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
@@ -113,11 +113,13 @@ if x then phi else psi
 with these rules
 
 @
-if true then x else y => x
-if false then phi else psi
+if true  then u else v => u
+if false then u else v => v
 @
 
 there would be two 'RewritePattern's, @phi and x=true@ and @psi and x=false@.
+If only the first rule was present, the results would be a 'RewritePattern' with
+@phi and x=true@ and a 'Remainder' with @psi and not x=true@.
 
 When rewriting the same pattern with an rule that does not match, e.g.
 
@@ -125,7 +127,8 @@ When rewriting the same pattern with an rule that does not match, e.g.
 x + y => x +Int y
 @
 
-then the rewrite result should be 'Bottom'.
+then rewriting produces no children.
+
 -}
 data StrategyPattern patt
     = RewritePattern !patt
@@ -149,21 +152,26 @@ extractUnproven (RewritePattern p) = Just p
 extractUnproven (Stuck          p) = Just p
 extractUnproven Bottom             = Nothing
 
+data StrategyPatternTransformer patt a =
+    StrategyPatternTransformer
+        { rewriteTransformer :: patt -> a
+        , stuckTransformer :: patt -> a
+        , bottomValue :: a
+        }
+
 -- | Catamorphism for 'StrategyPattern'
 strategyPattern
-    :: (patt -> a)
-    -- ^ case for RewritePattern
-    -> (patt -> a)
-    -- ^ case for Stuck
-    -> a
-    -- ^ value for Bottom
+    :: StrategyPatternTransformer patt a
     -> StrategyPattern patt
     -> a
-strategyPattern f g x =
+strategyPattern
+    StrategyPatternTransformer
+        {rewriteTransformer, stuckTransformer, bottomValue}
+  =
     \case
-        RewritePattern patt -> f patt
-        Stuck patt -> g patt
-        Bottom -> x
+        RewritePattern patt -> rewriteTransformer patt
+        Stuck patt -> stuckTransformer patt
+        Bottom -> bottomValue
 
 -- | A 'StrategyPattern' instantiated to 'CommonExpandedPattern' for convenience.
 type CommonStrategyPattern level = StrategyPattern (CommonExpandedPattern level)
@@ -295,7 +303,7 @@ transitionRule
     transitionMultiApplyWithRemainders rules (config, proof) = do
         result <-
             Monad.Trans.lift
-            $ runExceptT
+            $ Monad.Unify.runUnifier
             $ Step.sequenceRewriteRules
                 tools
                 substitutionSimplifier
@@ -337,7 +345,8 @@ transitionRule
                     remainderResults =
                         pure . withProof . Stuck <$> remainders
 
-                Foldable.asum (rewriteResults <> remainderResults)
+                Foldable.asum
+                    (MultiOr.uncheckedMerge rewriteResults remainderResults)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level

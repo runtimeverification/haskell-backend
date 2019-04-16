@@ -32,6 +32,10 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.AST.Valid
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (ApplicationSorts) )
+import qualified Kore.ASTHelpers as ApplicationSorts
+                 ( ApplicationSorts (..) )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Attribute.Sort as Attribute
@@ -1279,6 +1283,400 @@ sortAttributesMapping =
         )
     ,   ( boolSort
         , Default.def { Attribute.hook = Hook (Just "BOOL.Bool") }
+        )
+    ]
+
+headSortsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]
+headSortsMapping =
+    [   ( aSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( aSort0Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
+        )
+    ,   ( aSort1Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort1
+            }
+        )
+    ,   ( aSubsortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSort
+            }
+        )
+    ,   ( aSubSubsortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSubSort
+            }
+        )
+    ,   ( aOtherSortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = otherSort
+            }
+        )
+    ,   ( bSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( bSort0Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
+        )
+    ,   ( cSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( dSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( eSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( fSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( gSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( hSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( cfSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( cfSort0Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
+        )
+    ,   ( cfSort1Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort1
+            }
+        )
+    ,   ( cgSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( cgSort0Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
+        )
+    ,   ( chSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( plain00Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( plain00Sort0Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
+        )
+    ,   ( plain00SubsortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSort
+            }
+        )
+    ,   ( plain00SubSubsortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSubSort
+            }
+        )
+    ,   ( plain10Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( plain11Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( plain20Symbol
+        , ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
+        )
+    ,   ( constr10Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( constr11Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( constr20Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort, testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( function20MapTestSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [mapSort, testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functional00Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = []
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functional01Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = []
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functional10Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functional11Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functional20Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort, testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functional00SubSubSortSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = []
+             , applicationSortsResult   = subSubSort
+             }
+        )
+    ,   ( functionalConstr10Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functionalConstr11Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functionalConstr12Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functionalConstr20Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort, testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functionalConstr30Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort, testSort, testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functionalTopConstr20Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort, testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( functionalTopConstr21Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort, testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( injective10Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( injective11Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( sortInjection10Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort0]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( sortInjection11Symbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort1]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( sortInjection0ToTopSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort0]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( sortInjectionSubToTopSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [subSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( sortInjectionSubSubToTopSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [subSubSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( sortInjectionSubSubToSubSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [subSubSort]
+             , applicationSortsResult   = subSort
+             }
+        )
+    ,   ( sortInjectionOtherToTopSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [otherSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( unitMapSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = []
+             , applicationSortsResult   = mapSort
+             }
+        )
+    ,   ( elementMapSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = mapSort
+             }
+        )
+    ,   ( concatMapSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [mapSort, mapSort]
+             , applicationSortsResult   = mapSort
+             }
+        )
+    ,   ( elementListSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort]
+             , applicationSortsResult   = listSort
+             }
+        )
+    ,   ( unitListSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = []
+             , applicationSortsResult   = listSort
+             }
+        )
+    ,   ( concatListSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [listSort, listSort]
+             , applicationSortsResult   = listSort
+             }
+        )
+    ,   ( elementSetSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [setSort]
+             , applicationSortsResult   = setSort
+             }
+        )
+    ,   ( unitSetSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = []
+             , applicationSortsResult   = setSort
+             }
+        )
+    ,   ( concatSetSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [setSort, setSort]
+             , applicationSortsResult   = setSort
+             }
+        )
+    ,   ( lessIntSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [intSort, intSort]
+             , applicationSortsResult   = boolSort
+             }
+        )
+    ,   ( greaterEqIntSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [intSort, intSort]
+             , applicationSortsResult   = boolSort
+             }
+        )
+    ,   ( sigmaSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = [testSort, testSort]
+             , applicationSortsResult   = testSort
+             }
         )
     ]
 
