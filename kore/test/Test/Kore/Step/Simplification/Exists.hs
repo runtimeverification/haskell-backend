@@ -86,6 +86,12 @@ test_simplify =
                 Substitution.unsafeWrap
                     [(Mock.y, Mock.sigma (mkVar Mock.x) (mkVar Mock.z))]
             }
+    simplifies
+        :: HasCallStack
+        => [CommonExpandedPattern Object]
+        -> [CommonExpandedPattern Object]
+        -> String
+        -> TestTree
     simplifies original expected message =
         testCase message $ do
             actual <- simplify mockMetadataTools (makeExists Mock.x original)
