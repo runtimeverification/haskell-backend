@@ -66,6 +66,8 @@ import           Data.String
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.AST.Pure as Kore
 import           Kore.AST.Sentence
@@ -100,7 +102,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import           Kore.Unparser
-                 ( Unparse )
+                 ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -618,13 +620,14 @@ unifyEquals
                     let emptySetPat = asInternal tools sort1 Set.empty
                     (elemUnifier, _proof) <-
                         unifyEqualsChildren key1 key2
-                    -- when subunification problem fails, halt execution
-                    errorIfNotUnifying elemUnifier key1
+                    -- error when subunification problem returns partial result.
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfIncompletelyUnified key1 key2 elemUnifier
                     (setUnifier, _proof) <-
-                        unifyEqualsChildren set2
-                            $ asInternal tools sort1 Set.empty
-                    -- when subunification problem fails, halt execution
-                    errorIfNotUnifying setUnifier emptySetPat
+                        unifyEqualsChildren emptySetPat set2
+                    -- error when subunification problem returns partial result
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfIncompletelyUnified emptySetPat set2 setUnifier
                     -- Return the concrete set, but capture any predicates and
                     -- substitutions from unifying the element
                     -- and framing variable.
@@ -709,21 +712,38 @@ unifyEquals
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
 
--- Check whether the term part of an expanded pattern
--- is identical to the expected term and error if not.
-errorIfNotUnifying
+-- Setup: we are unifying against a concrete (no variables) pattern
+-- If the unification problem is completely solved, we expect that
+-- the term of the unifier is precisely the concrete pattern.
+-- If not, this is probably because the term contains an and coming from
+-- an incomplete unification problem.
+-- An example of how this might happen is unifying a concrete pattern
+-- against a non-functional term.
+-- Since this case is not yet handled by the unification algorithm
+-- we choose to throw an error here.
+errorIfIncompletelyUnified
     ::  ( Monad m
+        , OrdMetaOrObject variable
         , ShowMetaOrObject variable
-        , EqMetaOrObject variable
+        , SortedVariable variable
+        , Unparse (variable Object)
+        , HasCallStack
         )
-    => ExpandedPattern Object variable
+    => StepPattern Object variable
     -> StepPattern Object variable
+    -> ExpandedPattern Object variable
     -> m ()
-errorIfNotUnifying unifiedExpandedPattern expected =
+errorIfIncompletelyUnified expected patt unifiedExpandedPattern =
     Monad.when (term unifiedExpandedPattern /= expected)
         $ error
-            (  "Expecting unification to succeed"
-            ++ show expected ++ "\n /= \n"
-            ++ show (term unifiedExpandedPattern)
+            (  "Unification problem not completely solved. "
+            ++ "When unfying against concrete pattern\n\t"
+            ++ show (unparseToString expected)
+            ++ "\nwith pattern\n\t"
+            ++ show (unparseToString patt)
+            ++ "\nExpecting to get the concrete pattern back but got\n\t"
+            ++ show (unparseToString unifiedExpandedPattern)
+            ++ "\nHandling this is currently not implemented."
+            ++ "\nPlease file an issue if this should work for you."
             )
 
