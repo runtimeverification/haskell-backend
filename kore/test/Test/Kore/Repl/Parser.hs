@@ -30,6 +30,7 @@ test_replParser =
     , redirectTests    `tests` "redirect"
     , ruleTests        `tests` "rule"
     , stepfTests       `tests` "stepf"
+    , clearTests       `tests` "clear"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -196,4 +197,13 @@ ruleTests =
     , "rule 5"  `parsesTo_` ShowRule (Just 5)
     , "rule 5 " `parsesTo_` ShowRule (Just 5)
     , "rule -5" `fails`     "no negative numbers"
+    ]
+
+clearTests :: [ParserTest ReplCommand]
+clearTests =
+    [ "clear"    `parsesTo_` Clear Nothing
+    , "clear "   `parsesTo_` Clear Nothing
+    , "clear 5"  `parsesTo_` Clear (Just 5)
+    , "clear 5 " `parsesTo_` Clear (Just 5)
+    , "clear -5" `fails`     "no negative numbers"
     ]
