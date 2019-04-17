@@ -615,10 +615,28 @@ test_applyRewriteRule_ =
         actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual
 
-    , testCase "\\rewrite(a, \\bottom)" $ do
+    , testCase "rule a => \\bottom" $ do
         let expect = Right [ ExpandedPattern.bottomOf Mock.testSort ]
             initial = pure Mock.a
         actual <- applyRewriteRule_ initial axiomBottom
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "rule a => b ensures \\bottom" $ do
+        let expect = Right [ ExpandedPattern.bottomOf Mock.testSort ]
+            initial = pure Mock.a
+        actual <- applyRewriteRule_ initial axiomEnsuresBottom
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "rule a => b requires \\bottom" $ do
+        let expect = Right [ ]
+            initial = pure Mock.a
+        actual <- applyRewriteRule_ initial axiomRequiresBottom
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "rule a => \\bottom does not apply to c" $ do
+        let expect = Right [ ]
+            initial = pure Mock.c
+        actual <- applyRewriteRule_ initial axiomRequiresBottom
         assertEqualWithExplanation "" expect actual
     ]
   where
@@ -638,6 +656,24 @@ test_applyRewriteRule_ =
             , right = mkBottom Mock.testSort
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
+            , attributes = def
+            }
+
+    axiomEnsuresBottom =
+        RewriteRule RulePattern
+            { left = Mock.a
+            , right = Mock.b
+            , requires = makeTruePredicate
+            , ensures = makeFalsePredicate
+            , attributes = def
+            }
+
+    axiomRequiresBottom =
+        RewriteRule RulePattern
+            { left = Mock.a
+            , right = Mock.b
+            , requires = makeTruePredicate
+            , ensures = makeFalsePredicate
             , attributes = def
             }
 
