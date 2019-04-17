@@ -274,7 +274,9 @@ showLeafs = do
                 . fmap (getNodeState graph)
                 $ leafs
 
-    putStrLn' $ foldr ((<>) . showPair) "" result
+    case foldr ((<>) . showPair) "" result of
+        "" -> putStrLn' "No leafs found, proof is complete"
+        xs -> putStrLn' xs
   where
     getNodeState graph node =
         maybe Nothing (\x -> Just (x, node))

@@ -16,7 +16,7 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
 import           Text.Megaparsec
-                 ( Parsec, eof, option, optional, try )
+                 ( Parsec, eof, noneOf, option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -152,7 +152,7 @@ maybeDecimal :: Parser (Maybe Int)
 maybeDecimal = optional decimal
 
 string :: Parser String
-string = some Char.alphaNumChar <* Char.space
+string = some (noneOf [' ']) <* Char.space
 
 maybeString :: Parser (Maybe String)
 maybeString = optional string
