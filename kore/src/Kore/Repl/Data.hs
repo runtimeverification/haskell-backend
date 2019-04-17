@@ -136,6 +136,7 @@ helpText =
     \label <-l>              remove a label\n\
     \try <a|c><num>          attempts <a>xiom or <c>laim at index <num>.\n\
     \clear [n]               removes all node children from the proof graph\n\
+                             \ (defaults to current node)\n\
     \exit                    exits the repl\
     \\n\
     \Available modifiers:\n\

@@ -526,22 +526,28 @@ clear
     => MonadWriter String m
     => Maybe Int
     -> m ()
-clear mi = do
-    node <- maybe <$> Lens.use lensNode <*> pure id <*> pure mi
-    eg@Strategy.ExecutionGraph { graph = gr } <- Lens.use lensGraph
-    let
-        nodes = collect (next gr) node
-        gr' = Graph.delNodes nodes gr
-        prevNode =
-            maybe 0 id
-                . listToMaybe
-                . fmap fst
-                $ Graph.lpre gr node
-    lensGraph .= eg { Strategy.graph = gr' }
-    lensNode .= prevNode
-    putStrLn' $ "Removed " <> show (length nodes) <> " node(s)."
-
+clear =
+    \case
+        Nothing -> Just <$> Lens.use lensNode >>= clear
+        Just node
+          | node == 0 -> putStrLn' "Cannot clear initial node (0)."
+          | otherwise -> go node
   where
+    go :: Int -> m ()
+    go node = do
+        eg@Strategy.ExecutionGraph { graph = gr } <- Lens.use lensGraph
+        let
+            nodes = collect (next gr) node
+            gr' = Graph.delNodes nodes gr
+            prevNode =
+                maybe 0 id
+                    . listToMaybe
+                    . fmap fst
+                    $ Graph.lpre gr node
+        lensGraph .= eg { Strategy.graph = gr' }
+        lensNode .= prevNode
+        putStrLn' $ "Removed " <> show (length nodes) <> " node(s)."
+
     next :: InnerGraph -> Graph.Node -> [Graph.Node]
     next gr n = fst <$> Graph.lsuc gr n
 
