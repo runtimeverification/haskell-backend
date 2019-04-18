@@ -46,7 +46,8 @@ import           Kore.IndexedModule.Resolvers
                  ( resolveSymbol )
 import qualified Kore.Logger as Log
 import           Kore.OnePath.Verification
-                 ( Axiom (Axiom), Claim (Claim), defaultStrategy, verify )
+                 ( Axiom (Axiom), Claim, defaultStrategy, toClaim, unClaim,
+                 verify )
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
@@ -74,8 +75,8 @@ import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPat
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), extractRewriteAxioms,
-                 extractRewriteClaims, getRewriteRule )
+                 RulePattern (RulePattern), extractOnePathClaims,
+                 extractRewriteAxioms, getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Search
@@ -227,7 +228,7 @@ prove limit definitionModule specModule = do
             initialize definitionModule tools
     specAxioms <-
         mapM (simplifyRuleOnSecond tools)
-            (extractRewriteClaims Object specModule)
+            (extractOnePathClaims specModule)
     let
         axioms = fmap Axiom rewriteRules
         claims = fmap makeClaim specAxioms
@@ -262,7 +263,7 @@ proveWithRepl definitionModule specModule = do
         } <- initialize definitionModule tools
     specAxioms <-
         mapM (simplifyRuleOnSecond tools)
-            (extractRewriteClaims Object specModule)
+            (extractOnePathClaims specModule)
     let
         axioms = fmap Axiom rewriteRules
         claims = fmap makeClaim specAxioms
@@ -275,26 +276,27 @@ proveWithRepl definitionModule specModule = do
         axioms
         claims
 
-makeClaim :: (Attribute.Axiom, Rewrite) -> Claim Object
+makeClaim :: Claim claim => (Attribute.Axiom, claim) -> claim
 makeClaim (attributes, rule) =
-    Claim
+    toClaim
     . RewriteRule
     $ RulePattern { attributes = attributes
-                  , left = (left . getRewriteRule $ rule)
-                  , right = (right . getRewriteRule $ rule)
-                  , requires = (requires . getRewriteRule $ rule)
-                  , ensures = (ensures . getRewriteRule $ rule)
+                  , left = (left . getRewriteRule . unClaim $ rule)
+                  , right = (right . getRewriteRule . unClaim $ rule)
+                  , requires = (requires . getRewriteRule . unClaim $ rule)
+                  , ensures = (ensures . getRewriteRule . unClaim $ rule)
                   }
 
 simplifyRuleOnSecond
-    :: MetadataTools Object StepperAttributes
-    -> (Attribute.Axiom, Rewrite)
-    -> Simplifier (Attribute.Axiom, Rewrite)
+    :: Claim claim
+    => MetadataTools Object StepperAttributes
+    -> (Attribute.Axiom, claim)
+    -> Simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond tools (atts, rule) = do
-    rule' <- simplifyRewriteRule tools rule
-    return (atts, rule')
+    rule' <- simplifyRewriteRule tools (unClaim rule)
+    return (atts, toClaim rule')
 
-extractUntrustedClaims :: [Claim Object] -> [Rewrite]
+extractUntrustedClaims :: Claim claim => [claim] -> [Rewrite]
 extractUntrustedClaims = map Claim.unClaim . filter (not . Claim.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.

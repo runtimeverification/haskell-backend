@@ -33,7 +33,7 @@ import           Data.Profunctor
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject (..) )
+                 ( MetaOrObject (..), Object )
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -62,7 +62,8 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern),
+                 ( AllPathRule (..), OnePathRule (..),
+                 RewriteRule (RewriteRule), RulePattern (RulePattern),
                  getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
@@ -113,14 +114,22 @@ decision is subject to change without notice.
 
  -}
 
-{- | Wrapper for a rewrite rule that should be used as a claim.
+{- | Class for claim-like rules
 -}
-newtype Claim level = Claim
-    { unClaim :: RewriteRule level Variable
-    }
+class Claim claim where
+    unClaim :: claim -> RewriteRule Object Variable
+    toClaim :: RewriteRule Object Variable -> claim
+
+instance Claim (OnePathRule Object Variable) where
+    unClaim = RewriteRule . getOnePathRule
+    toClaim = OnePathRule . getRewriteRule
+
+instance Claim (AllPathRule Object Variable) where
+    unClaim = RewriteRule . getAllPathRule
+    toClaim = AllPathRule . getRewriteRule
 
 -- | Is the 'Claim' trusted?
-isTrusted :: Claim level -> Bool
+isTrusted :: Claim claim => claim -> Bool
 isTrusted =
     Trusted.isTrusted
     . Attribute.trusted
@@ -195,9 +204,11 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 defaultStrategy
-    :: forall level
-    .   (MetaOrObject level)
-    => [Claim level]
+    :: forall level claim
+    .   ( MetaOrObject level
+        , Claim claim
+        )
+    => [claim]
     -- The claims that we want to prove
     -> [Axiom level]
     -> CommonExpandedPattern level
@@ -303,15 +314,17 @@ unprovenNodes executionGraph =
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
 verifyClaimStep
-    :: forall level
-    .  MetaOrObject level
+    :: forall level claim
+    .   ( MetaOrObject level
+        , Claim claim
+        )
     => MetadataTools level StepperAttributes
     -> StepPatternSimplifier level
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> Claim level
+    -> claim
     -- ^ claim that is being proven
-    -> [Claim level]
+    -> [claim]
     -- ^ list of claims in the spec module
     -> [Axiom level]
     -- ^ list of axioms in the main module
