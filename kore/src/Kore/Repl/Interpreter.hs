@@ -51,6 +51,9 @@ import           Data.Text.Prettyprint.Doc
                  ( pretty )
 import           GHC.Exts
                  ( toList )
+import           GHC.IO.Handle
+                 ( hGetContents )
+import qualified System.Process as SP
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SymbolOrAlias (..),
@@ -108,28 +111,29 @@ replInterpreter
 replInterpreter output cmd =
     StateT $ \st -> do
         let rwst = case cmd of
-                    ShowUsage         -> showUsage         $> True
-                    Help              -> help              $> True
-                    ShowClaim c       -> showClaim c       $> True
-                    ShowAxiom a       -> showAxiom a       $> True
-                    Prove i           -> prove i           $> True
-                    ShowGraph         -> showGraph         $> True
-                    ProveSteps n      -> proveSteps n      $> True
-                    ProveStepsF n     -> proveStepsF n     $> True
-                    SelectNode i      -> selectNode i      $> True
-                    ShowConfig mc     -> showConfig mc     $> True
-                    OmitCell c        -> omitCell c        $> True
-                    ShowLeafs         -> showLeafs         $> True
-                    ShowRule   mc     -> showRule mc       $> True
-                    ShowPrecBranch mn -> showPrecBranch mn $> True
-                    ShowChildren mn   -> showChildren mn   $> True
-                    Label ms          -> label ms          $> True
-                    LabelAdd l mn     -> labelAdd l mn     $> True
-                    LabelDel l        -> labelDel l        $> True
-                    Redirect inn file -> redirect inn file $> True
-                    Try ac            -> tryAxiomClaim ac  $> True
-                    Clear n           -> clear n            $> True
-                    Exit              -> pure                 False
+                    ShowUsage          -> showUsage          $> True
+                    Help               -> help               $> True
+                    ShowClaim c        -> showClaim c        $> True
+                    ShowAxiom a        -> showAxiom a        $> True
+                    Prove i            -> prove i            $> True
+                    ShowGraph          -> showGraph          $> True
+                    ProveSteps n       -> proveSteps n       $> True
+                    ProveStepsF n      -> proveStepsF n      $> True
+                    SelectNode i       -> selectNode i       $> True
+                    ShowConfig mc      -> showConfig mc      $> True
+                    OmitCell c         -> omitCell c         $> True
+                    ShowLeafs          -> showLeafs          $> True
+                    ShowRule   mc      -> showRule mc        $> True
+                    ShowPrecBranch mn  -> showPrecBranch mn  $> True
+                    ShowChildren mn    -> showChildren mn    $> True
+                    Label ms           -> label ms           $> True
+                    LabelAdd l mn      -> labelAdd l mn      $> True
+                    LabelDel l         -> labelDel l         $> True
+                    Redirect inn file  -> redirect inn file  $> True
+                    Try ac             -> tryAxiomClaim ac   $> True
+                    Clear n            -> clear n            $> True
+                    Pipe inn file args -> pipe inn file args $> True
+                    Exit               -> pure                  False
         (exit, st', w) <- runRWST rwst () st
         liftIO $ output w
         pure (exit, st')
@@ -374,6 +378,21 @@ redirect cmd path = do
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
+
+pipe
+    :: ReplCommand
+    -> FilePath
+    -> [String]
+    -> ReplM level ()
+pipe cmd file args = do
+    -- putStrLn' . show $ args
+    (_, mhandle, _, _) <-
+        liftIO $ SP.createProcess (SP.proc file args){ SP.std_out = SP.CreatePipe }
+    case mhandle of
+        Just handle -> do
+            output <- liftIO $ hGetContents handle
+            putStrLn' output
+        Nothing  -> return ()
 
 tryAxiomClaim
     :: forall level

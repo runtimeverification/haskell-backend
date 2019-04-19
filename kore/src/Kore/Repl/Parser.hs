@@ -16,7 +16,7 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
 import           Text.Megaparsec
-                 ( Parsec, eof, noneOf, option, optional, try )
+                 ( Parsec, eof, many, noneOf, option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -32,7 +32,7 @@ type Parser = Parsec String String
 commandParser :: Parser ReplCommand
 commandParser = do
     cmd <- commandParser0
-    (eof $> cmd) <|> (redirect cmd)
+    (eof $> cmd) <|> (redirect cmd) <|> (pipe cmd)
 
 commandParser0 :: Parser ReplCommand
 commandParser0 =
@@ -129,6 +129,9 @@ clear = Clear <$$> literal "clear" *> maybeDecimal
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd = Redirect cmd <$$> literal ">" *> string
+
+pipe :: ReplCommand -> Parser ReplCommand
+pipe cmd = Pipe cmd <$$> literal "|" *> string <**> many string
 
 infixr 2 <$$>
 infixr 1 <**>

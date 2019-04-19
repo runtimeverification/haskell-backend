@@ -98,6 +98,8 @@ data ReplCommand
     -- ^ Attempt to apply axiom or claim to current node.
     | Clear !(Maybe Int)
     -- ^ Remove child nodes from graph.
+    | Pipe ReplCommand FilePath ![String]
+    -- ^ Pipes a repl command into a shell command
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -106,41 +108,42 @@ data ReplCommand
 helpText :: String
 helpText =
     "Available commands in the Kore REPL: \n\
-    \help                    shows this help message\n\
-    \claim <n>               shows the nth claim\n\
-    \axiom <n>               shows the nth axiom\n\
-    \prove <n>               initializes proof mode for the nth \
-                             \claim\n\
-    \graph                   shows the current proof graph (*)\n\
-    \step [n]                attempts to run 'n' proof steps at\
-                             \the current node (n=1 by default)\n\
-    \stepf [n]               attempts to run 'n' proof steps at\
-                             \ the current node, stepping through\
-                             \ branchings (n=1 by default)\n\
-    \select <n>              select node id 'n' from the graph\n\
-    \config [n]              shows the config for node 'n'\
-                             \ (defaults to current node)\n\
-    \omit [cell]             adds or removes cell to omit list\
-                             \ (defaults to showing the omit list)\n\
-    \leafs                   shows unevaluated or stuck leafs\n\
-    \rule [n]                shows the rule for node 'n'\
-                             \ (defaults to current node)\n\
-    \prec-branch [n]         shows first preceding branch\
-                             \ (defaults to current node)\n\
-    \children [n]            shows direct children of node\
-                             \ (defaults to current node)\n\
-    \label                   shows all node labels\n\
-    \label <l>               jump to a label\n\
-    \label <+l> [n]          add a new label for a node\
-                             \ (defaults to current node)\n\
-    \label <-l>              remove a label\n\
-    \try <a|c><num>          attempts <a>xiom or <c>laim at index <num>.\n\
-    \clear [n]               removes all node children from the proof graph\n\
-                             \ (defaults to current node)\n\
-    \exit                    exits the repl\
+    \help                       shows this help message\n\
+    \claim <n>                  shows the nth claim\n\
+    \axiom <n>                  shows the nth axiom\n\
+    \prove <n>                  initializes proof mode for the nth \
+                                \claim\n\
+    \graph                      shows the current proof graph (*)\n\
+    \step [n]                   attempts to run 'n' proof steps at\
+                                \the current node (n=1 by default)\n\
+    \stepf [n]                  attempts to run 'n' proof steps at\
+                                \ the current node, stepping through\
+                                \ branchings (n=1 by default)\n\
+    \select <n>                 select node id 'n' from the graph\n\
+    \config [n]                 shows the config for node 'n'\
+                                \ (defaults to current node)\n\
+    \omit [cell]                adds or removes cell to omit list\
+                                \ (defaults to showing the omit list)\n\
+    \leafs                      shows unevaluated or stuck leafs\n\
+    \rule [n]                   shows the rule for node 'n'\
+                                \ (defaults to current node)\n\
+    \prec-branch [n]            shows first preceding branch\
+                                \ (defaults to current node)\n\
+    \children [n]               shows direct children of node\
+                                \ (defaults to current node)\n\
+    \label                      shows all node labels\n\
+    \label <l>                  jump to a label\n\
+    \label <+l> [n]             add a new label for a node\
+                                \ (defaults to current node)\n\
+    \label <-l>                 remove a label\n\
+    \try <a|c><num>             attempts <a>xiom or <c>laim at index <num>.\n\
+    \clear [n]                  removes all node children from the proof graph\n\
+                                \ (defaults to current node)\n\
+    \exit                       exits the repl\
     \\n\
     \Available modifiers:\n\
-    \<command> > file        prints the output of 'command' to file\n\
+    \<command> > file           prints the output of 'command' to file\n\
+    \<command> | shell command  pipes command to shell script\n\
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that\
     \ either the target node was reached using the SMT solver\
