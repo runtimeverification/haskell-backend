@@ -326,7 +326,7 @@ transitionRule
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]
-            Right Step.Results { results, remainders } -> do
+            Right results -> do
                 let
                     withProof :: forall x. x -> (x, StepProof level Variable)
                     withProof x = (x, proof)
@@ -338,16 +338,18 @@ transitionRule
                                 )
                             ]
                     rewriteResults =
-                        fmap withProof . transition <$> Foldable.toList results
+                        fmap withProof . transition
+                        <$> Foldable.toList (Step.results results)
                     remainderResults =
-                        pure . withProof . Stuck <$> Foldable.toList remainders
+                        pure . withProof . Stuck
+                        <$> Foldable.toList (Step.remainders results)
                     transition
                         :: Step.Result Variable
                         -> Transition (CommonStrategyPattern Object)
                     transition result' = do
                         let rule =
                                 Step.unwrapRule
-                                $ Predicated.term $ Step.unifiedRule result'
+                                $ Predicated.term $ Step.appliedRule result'
                         Transition.addRule (RewriteRule rule)
                         Foldable.asum (pure . RewritePattern <$> Step.result result')
 

@@ -11,10 +11,14 @@ module Kore.Step.Step
     ( RulePattern
     , UnificationProcedure (..)
     , UnifiedRule
-    , Results (..)
-    , Result (..)
-    , gatherResults
-    , withoutRemainders
+    , Results
+    , Step.remainders
+    , Step.results
+    , Result
+    , Step.appliedRule
+    , Step.result
+    , Step.gatherResults
+    , Step.withoutRemainders
     , unifyRule
     , applyInitialConditions
     , finalizeAppliedRule
@@ -29,21 +33,15 @@ module Kore.Step.Step
     , toAxiomVariables
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 import           Data.Semigroup
                  ( Semigroup (..) )
-import           Data.Sequence
-                 ( Seq )
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics as GHC
 
 import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
@@ -71,6 +69,7 @@ import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
@@ -130,60 +129,15 @@ solution and the renamed rule is wrapped with the combined condition.
 type UnifiedRule variable =
     Predicated Object variable (RulePattern Object variable)
 
--- | The result of applying a single rule.
-data Result variable =
-    Result
-        { unifiedRule :: !(UnifiedRule (Target variable))
-        , result      :: !(MultiOr (ExpandedPattern Object variable))
-        }
-    deriving GHC.Generic
+type Result variable =
+    Step.Result
+        (UnifiedRule (Target variable))
+        (ExpandedPattern Object variable)
 
-deriving instance Eq (variable Object) => Eq (Result variable)
-
-deriving instance Ord (variable Object) => Ord (Result variable)
-
-deriving instance Show (variable Object) => Show (Result variable)
-
-{- | The results of applying many rules.
-
-The rules may be applied in sequence or in parallel and the 'remainders' vary
-accordingly.
-
- -}
-data Results variable =
-    Results
-        { results :: !(Seq (Result variable))
-        , remainders :: !(MultiOr (ExpandedPattern Object variable))
-        }
-    deriving GHC.Generic
-
-deriving instance Eq (variable Object) => Eq (Results variable)
-
-deriving instance Ord (variable Object) => Ord (Results variable)
-
-deriving instance Show (variable Object) => Show (Results variable)
-
-instance Ord (variable Object) => Semigroup (Results variable) where
-    (<>) results1 results2 =
-        Results
-            { results = Function.on (<>) results results1 results2
-            , remainders = Function.on (<>) remainders results1 results2
-            }
-
-instance Ord (variable Object) => Monoid (Results variable) where
-    mempty = Results { results = empty, remainders = empty }
-    mappend = (<>)
-
-withoutRemainders :: Results variable -> Results variable
-withoutRemainders results = results { remainders = empty }
-
-{- | Gather all the final configurations from the 'Results'.
- -}
-gatherResults
-    :: Ord (variable Object)
-    => Results variable
-    -> MultiOr (ExpandedPattern Object variable)
-gatherResults = Foldable.fold . fmap result . results
+type Results variable =
+    Step.Results
+        (UnifiedRule (Target variable))
+        (ExpandedPattern Object variable)
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
@@ -528,7 +482,7 @@ applyRule
             checkSubstitutionCoverage' =
                 checkSubstitutionCoverage initial' unifiedRule
         result <- traverse checkSubstitutionCoverage' final
-        return Result { unifiedRule, result }
+        return Step.Result { appliedRule = unifiedRule, result }
   where
     unifyRule' =
         unifyRule
@@ -709,11 +663,12 @@ applyRulesInParallel
   = do
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications =
-            MultiOr.make $ Predicated.withoutTerm . unifiedRule <$> results
+            MultiOr.make
+            $ Predicated.withoutTerm . Step.appliedRule <$> results
     remainders' <- gather $ do
         remainder <- scatter (Remainder.remainders $ unifications)
         applyRemainder' initial remainder
-    return Results
+    return Step.Results
         { results = Seq.fromList results
         , remainders = MultiOr.make remainders'
         }
@@ -816,7 +771,7 @@ sequenceRules
     unificationProcedure
     initialConfig
   =
-    Foldable.foldlM sequenceRules1 mempty { remainders = pure initialConfig }
+    Foldable.foldlM sequenceRules1 (Step.remainder initialConfig)
   where
     -- The single remainder of the input configuration after rewriting to
     -- produce the disjunction of results.
@@ -830,7 +785,7 @@ sequenceRules
         let remainder =
                 Remainder.remainder
                 $ MultiOr.make
-                $ Predicated.withoutTerm . unifiedRule <$> results
+                $ Predicated.withoutTerm . Step.appliedRule <$> results
         Monad.liftM MultiOr.make $ gather $ applyRemainder' config remainder
 
     applyRemainder' =
@@ -845,8 +800,8 @@ sequenceRules
         -> RulePattern Object variable
         -> unifier(Results variable)
     sequenceRules1 results rule = do
-        results' <- traverse (applyRule' rule) (remainders results)
-        return (withoutRemainders results <> Foldable.fold results')
+        results' <- traverse (applyRule' rule) (Step.remainders results)
+        return (Step.withoutRemainders results <> Foldable.fold results')
 
     -- Apply rule to produce a pair of the rewritten patterns and
     -- single remainder configuration.
@@ -861,7 +816,7 @@ sequenceRules
                 config
                 rule
         remainders <- remainingAfter config results
-        return Results
+        return Step.Results
             { results = Seq.fromList results
             , remainders
             }
