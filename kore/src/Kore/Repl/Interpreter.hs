@@ -52,7 +52,7 @@ import           Data.Text.Prettyprint.Doc
 import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
-                 ( hGetContents )
+                 ( hGetContents, hPutStr )
 import qualified System.Process as SP
 
 import           Kore.AST.Common
@@ -380,19 +380,28 @@ redirect cmd path = do
     redirectToFile = writeFile path
 
 pipe
-    :: ReplCommand
+    :: forall level
+    .  MetaOrObject level
+    => ReplCommand
     -> FilePath
     -> [String]
     -> ReplM level ()
 pipe cmd file args = do
-    -- putStrLn' . show $ args
-    (_, mhandle, _, _) <-
-        liftIO $ SP.createProcess (SP.proc file args){ SP.std_out = SP.CreatePipe }
-    case mhandle of
+    (mhin, mhout, _, _) <-
+        liftIO $ SP.createProcess (SP.proc file args)
+            { SP.std_in = SP.CreatePipe, SP.std_out = SP.CreatePipe }
+-- TODO: ^ if file doesn't exist then this throws an exception
+    case mhin of
+        Just handle -> do
+            st <- get
+            _ <- lift $ evalStateT (replInterpreter (hPutStr handle) cmd) st
+            return ()
+        Nothing -> putStrLn' "No in"
+    case mhout of
         Just handle -> do
             output <- liftIO $ hGetContents handle
             putStrLn' output
-        Nothing  -> return ()
+        Nothing  -> putStrLn' "No out"
 
 tryAxiomClaim
     :: forall level
