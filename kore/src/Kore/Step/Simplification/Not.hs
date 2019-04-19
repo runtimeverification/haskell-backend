@@ -117,9 +117,7 @@ makeEvaluate
         )
     => ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluate
-    Predicated {term, predicate, substitution}
-  =
+makeEvaluate Predicated { term, predicate, substitution } =
     ( MultiOr.make
         [ Predicated
             { term = makeTermNot term
@@ -127,7 +125,7 @@ makeEvaluate
             , substitution = mempty
             }
         , Predicated
-            { term = mkTop_
+            { term = mkTop (getSort term)
             , predicate =
                 makeNotPredicate
                     (makeAndPredicate
