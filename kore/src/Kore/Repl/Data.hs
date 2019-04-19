@@ -17,7 +17,8 @@ module Kore.Repl.Data
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
-    , lensLabels, lensOmit
+    , lensLabels, lensOmit, lensCommands
+    , shouldStore
     ) where
 
 import qualified Control.Lens.TH.Rules as Lens
@@ -98,6 +99,8 @@ data ReplCommand
     -- ^ Attempt to apply axiom or claim to current node.
     | Clear !(Maybe Int)
     -- ^ Remove child nodes from graph.
+    | SaveSession FilePath
+    -- ^ Writes all commands executed in this session to a file on disk.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -146,6 +149,25 @@ helpText =
     \ either the target node was reached using the SMT solver\
     \ or it was reached through the Remove Destination step."
 
+-- | Determines whether the command needs to be stored or not. Commands that
+-- affect the outcome of the proof are stored.
+shouldStore :: ReplCommand -> Bool
+shouldStore =
+    \case
+        ShowUsage        -> False
+        Help             -> False
+        ShowClaim _      -> False
+        ShowAxiom _      -> False
+        ShowGraph        -> False
+        ShowConfig _     -> False
+        ShowLeafs        -> False
+        ShowRule _       -> False
+        ShowPrecBranch _ -> False
+        ShowChildren _   -> False
+        SaveSession _    -> False
+        Exit             -> False
+        _                -> True
+
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
@@ -157,17 +179,19 @@ type InnerGraph =
 
 -- | State for the rep.
 data ReplState level = ReplState
-    { axioms  :: [Axiom level]
+    { axioms   :: [Axiom level]
     -- ^ List of available axioms
-    , claims  :: [Claim level]
+    , claims   :: [Claim level]
     -- ^ List of claims to be proven
-    , claim   :: Claim level
+    , claim    :: Claim level
     -- ^ Currently focused claim in the repl
-    , graph   :: ExecutionGraph
+    , graph    :: ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
-    , node    :: Graph.Node
+    , node     :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root
-    , omit    :: [String]
+    , commands :: [String]
+    -- ^ All commands evaluated by the current repl session
+    , omit     :: [String]
     -- ^ The omit list, initially empty
     , stepper
           :: Claim level
@@ -177,7 +201,7 @@ data ReplState level = ReplState
           -> Graph.Node
           -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
-    , labels  :: Map String Graph.Node
+    , labels   :: Map String Graph.Node
     -- ^ Map from labels to nodes
     }
 

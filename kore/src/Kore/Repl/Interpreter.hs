@@ -128,7 +128,8 @@ replInterpreter output cmd =
                     LabelDel l        -> labelDel l        $> True
                     Redirect inn file -> redirect inn file $> True
                     Try ac            -> tryAxiomClaim ac  $> True
-                    Clear n           -> clear n            $> True
+                    Clear n           -> clear n           $> True
+                    SaveSession file  -> saveSession file  $> True
                     Exit              -> pure                 False
         (exit, st', w) <- runRWST rwst () st
         liftIO $ output w
@@ -555,6 +556,18 @@ clear =
 
     collect :: (a -> [a]) -> a -> [a]
     collect f x = x : [ z | y <- f x, z <- collect f y]
+
+saveSession
+    :: forall level m
+    .  MonadState (ReplState level) m
+    => MonadWriter String m
+    => MonadIO m
+    => FilePath
+    -> m ()
+saveSession path = do
+   content <- unlines <$> Lens.use lensCommands
+   liftIO $ writeFile path content
+   putStrLn' "Done."
 
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do

@@ -14,6 +14,8 @@ import           Control.Exception
                  ( AsyncException (UserInterrupt) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
+import           Control.Monad
+                 ( when )
 import           Control.Monad.Catch
                  ( MonadCatch, catch )
 import           Control.Monad.Extra
@@ -88,22 +90,25 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
   where
     repl0 :: StateT (ReplState level) Simplifier Bool
     repl0 = do
-        command <- maybe ShowUsage id . parseMaybe commandParser <$> prompt
+        str <- prompt
+        let command = maybe ShowUsage id $ parseMaybe commandParser str
+        when (shouldStore command) $ lensCommands Lens.%= (++ [str])
         replInterpreter putStrLn command
 
     state :: ReplState level
     state =
         ReplState
-            { axioms  = addIndexesToAxioms axioms'
-            , claims  = addIndexesToClaims (length axioms') claims'
-            , claim   = firstClaim
-            , graph   = firstClaimExecutionGraph
-            , node    = (Strategy.root firstClaimExecutionGraph)
+            { axioms   = addIndexesToAxioms axioms'
+            , claims   = addIndexesToClaims (length axioms') claims'
+            , claim    = firstClaim
+            , graph    = firstClaimExecutionGraph
+            , node     = (Strategy.root firstClaimExecutionGraph)
+            , commands = []
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
-            , omit    = []
-            , stepper = stepper0
-            , labels  = Map.empty
+            , omit     = []
+            , stepper  = stepper0
+            , labels   = Map.empty
             }
 
     addIndexesToAxioms
