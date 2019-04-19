@@ -25,9 +25,8 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Pattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
-                 ( MultiOr (..) )
+                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Representation.PredicateSubstitution
                  ( CommonPredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.PredicateSubstitution as Predicated
@@ -56,7 +55,7 @@ test_predicateSubstitutionSimplification =
         assertEqualWithExplanation "" mempty actualBottom
         actualTop <- runSimplifier Map.empty Predicated.topPredicate
         assertEqualWithExplanation ""
-            (MultiOr [Predicated.topPredicate])
+            (MultiOr.singleton Predicated.topPredicate)
             actualTop
 
     , testCase "Applies substitution to predicate" $ do
@@ -85,7 +84,7 @@ test_predicateSubstitutionSimplification =
                         , (Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr [expect]) actual
+        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
@@ -113,7 +112,7 @@ test_predicateSubstitutionSimplification =
                         , (Mock.y, Mock.functional01)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr [expect]) actual
+        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
@@ -151,7 +150,7 @@ test_predicateSubstitutionSimplification =
                         , (Mock.y, Mock.functional01)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr [expect]) actual
+        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
     , testCase "Merges substitution from predicate simplification" $ do
         let expect =
@@ -185,7 +184,7 @@ test_predicateSubstitutionSimplification =
                         [ (Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr [expect]) actual
+        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
     , testCase "Reapplies substitution from predicate simplification" $ do
         let expect =
@@ -228,7 +227,7 @@ test_predicateSubstitutionSimplification =
                         [ (Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr [expect]) actual
+        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
     , testCase "Simplifies after reapplying substitution" $ do
         let expect =
@@ -272,7 +271,7 @@ test_predicateSubstitutionSimplification =
                         [ (Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr [expect]) actual
+        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
     ]
 
 mockMetadataTools :: MetadataTools Object StepperAttributes
@@ -289,7 +288,8 @@ runSimplifier
     -> CommonPredicateSubstitution Object
     -> IO (MultiOr (CommonPredicateSubstitution Object))
 runSimplifier patternSimplifierMap predicateSubstitution =
-    SMT.runSMT SMT.defaultConfig
+    fmap MultiOr.make
+    $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ gather
     $ simplifier predicateSubstitution

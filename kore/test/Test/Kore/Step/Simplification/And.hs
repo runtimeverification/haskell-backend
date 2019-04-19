@@ -97,7 +97,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
 
         , testCase "And function terms" $ do
             let expect =
@@ -107,7 +107,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
 
         , testCase "And predicates" $ do
             let expect =
@@ -131,7 +131,7 @@ test_andSimplification =
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
 
         , testCase "And substitutions - simple" $ do
             let expect =
@@ -153,7 +153,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap [(Mock.z, gOfX)]
                         }
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
 
         , testCase "And substitutions - multiple terms" $ do
             let
@@ -174,7 +174,7 @@ test_andSimplification =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
 
         , testCase "And substitutions - separate predicate" $ do
             let
@@ -196,7 +196,7 @@ test_andSimplification =
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, gOfX)]
                     }
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
 
         , testCase "And substitutions - failure" $ do
             actual <-
@@ -219,7 +219,7 @@ test_andSimplification =
                                 )
                             ]
                         }
-            assertEqualWithExplanation "" (MultiOr []) actual
+            assertEqualWithExplanation "" (MultiOr.make []) actual
             {-
             TODO(virgil): Uncomment this after substitution merge can handle
             function equality.
@@ -319,7 +319,7 @@ test_andSimplification =
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
     , testCase "And-Or distribution" $ do
         let expect =
-                MultiOr
+                MultiOr.make
                     [ Predicated
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
@@ -439,7 +439,8 @@ evaluatePatterns
     -> CommonExpandedPattern Object
     -> IO (CommonOrOfExpandedPattern Object)
 evaluatePatterns first second =
-    SMT.runSMT SMT.defaultConfig
+    fmap MultiOr.make
+    $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ gather
     $ makeEvaluate

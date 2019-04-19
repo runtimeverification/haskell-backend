@@ -326,7 +326,7 @@ applyInitialConditions
     -- The axiom requires clause is included in the unification conditions.
     applied <-
         Monad.Trans.lift
-        $ Monad.liftM MultiOr.filterOr
+        $ Monad.liftM MultiOr.make
         $ gather
         $ normalize (initial <> unification)
     -- If 'applied' is \bottom, the rule is considered to not apply and
@@ -384,10 +384,10 @@ finalizeAppliedRule
     renamedRule
     appliedConditions
   =
-    Monad.Trans.lift . Monad.liftM MultiOr.flatten
-    $ traverse finalizeAppliedRuleWorker appliedConditions
+    Monad.Trans.lift . Monad.liftM MultiOr.make . gather
+    $ finalizeAppliedRuleWorker =<< scatter appliedConditions
   where
-    finalizeAppliedRuleWorker appliedCondition = gather $ do
+    finalizeAppliedRuleWorker appliedCondition = do
         -- Combine the initial conditions, the unification conditions, and the
         -- axiom ensures clause. The axiom requires clause is included by
         -- unifyRule.
@@ -510,7 +510,7 @@ applyRule
     rule
   = Log.withLogScope "applyRule"
     $ Monad.Unify.mapVariable Target.unwrapVariable
-    $ fmap Foldable.toList $ gather $ do
+    $ gather $ do
         let
             -- Wrap the rule and configuration so that unification prefers to
             -- substitute axiom variables.
@@ -710,10 +710,13 @@ applyRulesInParallel
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications =
             MultiOr.make $ Predicated.withoutTerm . unifiedRule <$> results
-    remainders <- gather $ do
+    remainders' <- gather $ do
         remainder <- scatter (Remainder.remainders $ unifications)
         applyRemainder' initial remainder
-    return Results { results = Seq.fromList results, remainders }
+    return Results
+        { results = Seq.fromList results
+        , remainders = MultiOr.make remainders'
+        }
   where
     applyRule' =
         applyRule
@@ -828,7 +831,7 @@ sequenceRules
                 Remainder.remainder
                 $ MultiOr.make
                 $ Predicated.withoutTerm . unifiedRule <$> results
-        gather $ applyRemainder' config remainder
+        Monad.liftM MultiOr.make $ gather $ applyRemainder' config remainder
 
     applyRemainder' =
         applyRemainder
