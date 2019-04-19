@@ -98,7 +98,7 @@ data ReplCommand
     -- ^ Attempt to apply axiom or claim to current node.
     | Clear !(Maybe Int)
     -- ^ Remove child nodes from graph.
-    | Pipe ReplCommand FilePath ![String]
+    | Pipe ReplCommand !String ![String]
     -- ^ Pipes a repl command into an external script.
     | Exit
     -- ^ Exit the repl.

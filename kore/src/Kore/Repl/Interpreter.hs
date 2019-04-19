@@ -53,6 +53,8 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
+import           System.Directory
+                 ( findExecutable )
 import qualified System.Process as SP
 
 import           Kore.AST.Common
@@ -383,25 +385,25 @@ pipe
     :: forall level
     .  MetaOrObject level
     => ReplCommand
-    -> FilePath
+    -> String
     -> [String]
     -> ReplM level ()
 pipe cmd file args = do
-    (mhin, mhout, _, _) <-
-        liftIO $ SP.createProcess (SP.proc file args)
-            { SP.std_in = SP.CreatePipe, SP.std_out = SP.CreatePipe }
--- TODO: ^ if file doesn't exist then this throws an exception
-    case mhin of
-        Just handle -> do
+    exists <- liftIO $ findExecutable file
+    case exists of
+        Nothing -> putStrLn' "Cannot find executable."
+        Just exec -> do
+            (mhin, mhout, _, _) <-
+                liftIO $ SP.createProcess (SP.proc exec args)
+                    { SP.std_in = SP.CreatePipe, SP.std_out = SP.CreatePipe }
             st <- get
-            _ <- lift $ evalStateT (replInterpreter (hPutStr handle) cmd) st
-            return ()
-        Nothing -> putStrLn' "No in"
-    case mhout of
-        Just handle -> do
-            output <- liftIO $ hGetContents handle
-            putStrLn' output
-        Nothing  -> putStrLn' "No out"
+            let outputFunc = maybe putStrLn hPutStr mhin
+            _ <- lift $ evalStateT (replInterpreter outputFunc cmd) st
+            case mhout of
+                Just handle -> do
+                    output <- liftIO $ hGetContents handle
+                    putStrLn' output
+                Nothing -> putStrLn' "No out"
 
 tryAxiomClaim
     :: forall level
