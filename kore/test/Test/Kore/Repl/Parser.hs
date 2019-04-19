@@ -30,6 +30,7 @@ test_replParser =
     , redirectTests    `tests` "redirect"
     , ruleTests        `tests` "rule"
     , stepfTests       `tests` "stepf"
+    , clearTests       `tests` "clear"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -113,12 +114,13 @@ configTests =
 
 omitTests :: [ParserTest ReplCommand]
 omitTests =
-    [ "omit"        `parsesTo_` OmitCell Nothing
-    , "omit "       `parsesTo_` OmitCell Nothing
-    , "omit   "     `parsesTo_` OmitCell Nothing
-    , "omit k"      `parsesTo_` OmitCell (Just "k")
-    , "omit k "     `parsesTo_` OmitCell (Just "k")
-    , "omit state " `parsesTo_` OmitCell (Just "state")
+    [ "omit"                  `parsesTo_` OmitCell Nothing
+    , "omit "                 `parsesTo_` OmitCell Nothing
+    , "omit   "               `parsesTo_` OmitCell Nothing
+    , "omit k"                `parsesTo_` OmitCell (Just "k")
+    , "omit k "               `parsesTo_` OmitCell (Just "k")
+    , "omit state "           `parsesTo_` OmitCell (Just "state")
+    , "omit Lbl-LT-'State-GT" `parsesTo_` OmitCell (Just "Lbl-LT-'State-GT")
     ]
 
 leafsTests :: [ParserTest ReplCommand]
@@ -151,11 +153,11 @@ labelTests =
     , "label 1ab31"     `parsesTo_` Label (Just "1ab31")
     , "label +label"    `parsesTo_` LabelAdd "label" Nothing
     , "label +1ab31"    `parsesTo_` LabelAdd "1ab31" Nothing
+    , "label +-"        `parsesTo_` LabelAdd "-" Nothing
     , "label +label 5"  `parsesTo_` LabelAdd "label" (Just 5)
     , "label +1ab31 5"  `parsesTo_` LabelAdd "1ab31" (Just 5)
     , "label -label"    `parsesTo_` LabelDel "label"
     , "label -1ab31"    `parsesTo_` LabelDel "1ab31"
-    , "label +-"        `fails`     "can't both add and remove"
     , "label +label -5" `fails`     "no negative numbers"
     ]
 
@@ -196,4 +198,13 @@ ruleTests =
     , "rule 5"  `parsesTo_` ShowRule (Just 5)
     , "rule 5 " `parsesTo_` ShowRule (Just 5)
     , "rule -5" `fails`     "no negative numbers"
+    ]
+
+clearTests :: [ParserTest ReplCommand]
+clearTests =
+    [ "clear"    `parsesTo_` Clear Nothing
+    , "clear "   `parsesTo_` Clear Nothing
+    , "clear 5"  `parsesTo_` Clear (Just 5)
+    , "clear 5 " `parsesTo_` Clear (Just 5)
+    , "clear -5" `fails`     "no negative numbers"
     ]
