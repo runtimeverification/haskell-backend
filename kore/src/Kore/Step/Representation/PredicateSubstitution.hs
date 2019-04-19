@@ -13,6 +13,7 @@ module Kore.Step.Representation.PredicateSubstitution
     , bottomPredicate
     , fromPurePattern
     , Predicated.fromPredicate
+    , Predicated.fromSubstitution
     , toPredicate
     , freeVariables
     , Kore.Step.Representation.PredicateSubstitution.mapVariables
