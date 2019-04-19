@@ -13,6 +13,9 @@ module Kore.Step.Simplification.Not
     , simplifyEvaluated
     ) where
 
+import           Control.Applicative
+                 ( liftA2 )
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.AST.Pure
@@ -23,13 +26,10 @@ import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..), substitutionToPredicate )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( toMLPattern, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
+                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -91,17 +91,13 @@ simplifyEvaluated simplified
   | OrOfExpandedPattern.isTrue simplified =
     (MultiOr.make [], SimplificationProof)
   | otherwise =
-    case MultiOr.extractPatterns simplified of
-        [patt] -> makeEvaluate patt
-        _ ->
-            ( makeFromSinglePurePattern
-                (mkNot
-                    (ExpandedPattern.toMLPattern
-                        (OrOfExpandedPattern.toExpandedPattern simplified)
-                    )
-                )
-            , SimplificationProof
-            )
+    ( Foldable.foldr simplifyEvaluatedWorker (MultiOr.make [ExpandedPattern.top]) simplified
+    , SimplificationProof
+    )
+  where
+    simplifyEvaluatedWorker this rest =
+        let (this', _) = makeEvaluate this
+        in liftA2 mkAnd <$> this' <*> rest
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'ExpandedPattern'
 child.
