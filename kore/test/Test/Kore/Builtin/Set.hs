@@ -470,6 +470,7 @@ test_concretizeKeys =
             { variableName = testId "x"
             , variableCounter = mempty
             , variableSort = intSort
+            , variableType = ElementVariable
             }
     key = 1
     symbolicKey = Test.Int.asInternal key
@@ -594,5 +595,10 @@ asInternal = Set.asInternal testMetadataTools setSort
 -- * Constructors
 
 mkIntVar :: Id Object -> CommonStepPattern Object
-mkIntVar variableName =
-    mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
+mkIntVar name =
+    mkVar Variable
+        { variableName = name
+        , variableCounter = mempty
+        , variableSort = intSort
+        , variableType = ElementVariable
+        }

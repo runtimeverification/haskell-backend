@@ -334,12 +334,13 @@ metaSymbolParserTests =
 
 variableParserTests :: [TestTree]
 variableParserTests =
-    parseTree (variableParser Object)
+    parseTree variableParser
         [ success "v:s"
             Variable
                 { variableName = testId "v"
                 , variableSort = sortVariableSort "s"
                 , variableCounter = mempty
+                , variableType = ElementVariable
                 }
         , success "v:s1{s2}"
             Variable
@@ -350,6 +351,7 @@ variableParserTests =
                         , sortActualSorts = [ sortVariableSort "s2" ]
                         }
                 , variableCounter = mempty
+                , variableType = ElementVariable
                 }
         , FailureWithoutMessage ["", "var", "v:", ":s"]
         ]
@@ -380,9 +382,10 @@ applicationPatternParserTests =
     parseTree korePatternParser
         [ success "#v:#Char"
             ( asCommonKorePattern $ VariablePattern Variable
-                { variableName = testId "#v" :: Id Meta
+                { variableName = testId "v" :: Id Meta
                 , variableSort = sortVariableSort "#Char"
                 , variableCounter = mempty
+                , variableType = SetVariable
                 }
             )
         , success "v:s1{s2}"
@@ -394,6 +397,7 @@ applicationPatternParserTests =
                         , sortActualSorts = [ sortVariableSort "s2" ]
                         }
                 , variableCounter = mempty
+                , variableType = ElementVariable
                 }
             )
         , success "c{s1,s2}(v1:s1, v2:s2)"
@@ -410,11 +414,13 @@ applicationPatternParserTests =
                         { variableName = testId "v1" :: Id Object
                         , variableSort = sortVariableSort "s1"
                         , variableCounter = mempty
+                        , variableType = ElementVariable
                         }
                     , asCommonKorePattern $ VariablePattern Variable
                         { variableName = testId "v2" :: Id Object
                         , variableSort = sortVariableSort "s2"
                         , variableCounter = mempty
+                        , variableType = ElementVariable
                         }
                     ]
                 }
@@ -510,14 +516,15 @@ equalsPatternParserTests =
 existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
     parseTree korePatternParser
-        [ success "\\exists{#s}(#v:#Char, \"b\")"
+        [ success "\\exists{s}(v:Char, \"b\")"
             (asCommonKorePattern $ ExistsPattern Exists
-                    { existsSort = sortVariableSort "#s" :: Sort Meta
+                    { existsSort = sortVariableSort "s" :: Sort Meta
                     , existsVariable =
                         Variable
-                            { variableName = testId "#v"
-                            , variableSort = sortVariableSort "#Char"
+                            { variableName = testId "v"
+                            , variableSort = sortVariableSort "Char"
                             , variableCounter = mempty
+                            , variableType = ElementVariable
                             }
                     , existsChild =
                         asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
@@ -568,6 +575,7 @@ forallPatternParserTests =
                             { variableName = testId "v"
                             , variableSort = sortVariableSort "s1"
                             , variableCounter = mempty
+                            , variableType = ElementVariable
                             }
                     , forallChild =
                         asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
@@ -640,6 +648,7 @@ memPatternParserTests =
                             { variableName = testId "v" :: Id Object
                             , variableSort = sortVariableSort "s3"
                             , variableCounter = mempty
+                            , variableType = ElementVariable
                             }
                     , inContainingChild =
                         asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
@@ -779,6 +788,7 @@ variablePatternParserTests =
                 { variableName = testId "v" :: Id Object
                 , variableSort = sortVariableSort "s"
                 , variableCounter = mempty
+                , variableType = ElementVariable
                 }
             )
         , success "v:s1{s2}"
@@ -789,6 +799,7 @@ variablePatternParserTests =
                     , sortActualSorts = [ sortVariableSort "s2" ]
                     }
                 , variableCounter = mempty
+                , variableType = ElementVariable
                 }
             )
             , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
@@ -818,6 +829,7 @@ sentenceAliasParserTests =
                                 { variableName = testId "X" :: Id Object
                                 , variableSort = sortVariableSort "s2"
                                 , variableCounter = mempty
+                                    , variableType = ElementVariable
                                 }
                             ]
                         }
@@ -868,11 +880,13 @@ sentenceAliasParserTests =
                                     { variableName = testId "X" :: Id Object
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
+                                    , variableType = ElementVariable
                                     }
                                 , Variable
                                     { variableName = testId "Y" :: Id Object
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
+                                    , variableType = ElementVariable
                                     }
                                 ]
                             }
@@ -888,11 +902,13 @@ sentenceAliasParserTests =
                                     { variableName = testId "X" :: Id Object
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
+                                    , variableType = ElementVariable
                                     }
                                 , asCommonKorePattern $ VariablePattern Variable
                                     { variableName = testId "Y" :: Id Object
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
+                                    , variableType = ElementVariable
                                     }
                                 ]
                             }
@@ -991,10 +1007,15 @@ sentenceAliasParserTests =
                             }
                     var name =
                         Variable
-                            { variableName = testId name
+                            { variableName
                             , variableSort = resultSort
                             , variableCounter = mempty
+                            , variableType
                             }
+                      where
+                        (variableType, variableName) =
+                            distinguishSetVariable (testId name)
+
                     argument name = mkVar (var name)
                     varA = var "a"
                     varB = var "b"
@@ -1037,6 +1058,7 @@ sentenceAliasParserTests =
                             { variableName = testId "a"
                             , variableSort = resultSort
                             , variableCounter = mempty
+                            , variableType = ElementVariable
                             }
                     arg = mkVar var
                 in asSentence SentenceAlias

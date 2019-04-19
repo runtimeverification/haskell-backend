@@ -388,6 +388,7 @@ sortVisibilityTests =
                 { variableName = testId "var"
                 , variableCounter = mempty
                 , variableSort = sort
+                , variableType = ElementVariable
                 }
     sortReferenceInAndPatternSentence =
         asKoreAxiomSentence
@@ -493,6 +494,7 @@ sortVisibilityTests =
                                 { variableSort = sort
                                 , variableCounter = mempty
                                 , variableName = testId "x"
+                                , variableType = ElementVariable
                                 }
                             ]
                         }
@@ -690,6 +692,7 @@ symbolVisibilityTests =
                                 { variableName = testId "var"
                                 , variableCounter = mempty
                                 , variableSort = defaultSort
+                                , variableType = ElementVariable
                                 }
                             symbolPattern
                         )
@@ -916,6 +919,7 @@ aliasVisibilityTests =
                                 { variableName = testId "var"
                                 , variableCounter = mempty
                                 , variableSort = defaultSort
+                                , variableType = ElementVariable
                                 }
                             aliasPattern
                         )
@@ -977,6 +981,7 @@ aliasVisibilityTests =
                                 , variableSort =
                                     SortVariableSort
                                         (SortVariable (testId "sv1"))
+                                , variableType = ElementVariable
                                 }
                             ]
                         }

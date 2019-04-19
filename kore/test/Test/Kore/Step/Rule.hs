@@ -223,10 +223,10 @@ axiomPatternsIntegrationTests =
                             patternSort = sortTCell
                             freeVariables =
                                 Set.fromList
-                                    [ asUnified (Variable "VarI1" mempty sortAInt)
-                                    , asUnified (Variable "VarI2" mempty sortAInt)
-                                    , asUnified (Variable "VarDotVar1" mempty sortK)
-                                    , asUnified (Variable "VarDotVar0" mempty sortStateCell)
+                                    [ asUnified (Variable "VarI1" mempty sortAInt ElementVariable)
+                                    , asUnified (Variable "VarI2" mempty sortAInt ElementVariable)
+                                    , asUnified (Variable "VarDotVar1" mempty sortK ElementVariable)
+                                    , asUnified (Variable "VarDotVar0" mempty sortStateCell ElementVariable)
                                     ]
                     koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
                 )
@@ -350,6 +350,7 @@ varI1 =
         { variableName = testId "VarI1"
         , variableCounter = mempty
         , variableSort = sortAInt
+        , variableType = ElementVariable
         }
 
 varI2 =
@@ -357,6 +358,7 @@ varI2 =
         { variableName = testId "VarI2"
         , variableCounter = mempty
         , variableSort = sortAInt
+        , variableType = ElementVariable
         }
 
 varKRemainder =
@@ -364,6 +366,7 @@ varKRemainder =
         { variableName = testId "VarDotVar1"
         , variableCounter = mempty
         , variableSort = sortK
+        , variableType = ElementVariable
         }
 
 varStateCell =
@@ -371,6 +374,7 @@ varStateCell =
         { variableName = testId "VarDotVar0"
         , variableCounter = mempty
         , variableSort = sortStateCell
+        , variableType = ElementVariable
         }
 
 parseAxiom :: String -> Either (Error a) KoreSentence

@@ -178,7 +178,7 @@ t_ :: TestTerm
 t_ = mkBottom Mock.testSort
 
 testVar :: Text -> Variable Object
-testVar ident = Variable (testId ident) mempty Mock.testSort
+testVar ident = Variable (testId ident) mempty Mock.testSort ElementVariable
 
 type TestPredicate = Predicate Object Variable
 

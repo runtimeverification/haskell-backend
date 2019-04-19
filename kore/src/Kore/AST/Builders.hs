@@ -135,30 +135,30 @@ sort_ sortType =
 
 -- |Given a string @name@, yields the 'UnsortedPatternStub' defining
 -- name as a variable.
+-- If name starts with @#@, it will be considered a set variable.
 unparameterizedVariable_
     :: Text
     -> AstLocation
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub Object domain
 unparameterizedVariable_ name location =
     UnsortedPatternStub
         (\sortS ->
             VariablePattern Variable
-                { variableName = Id
-                    { getId = name
-                    , idLocation = location
-                    }
+                { variableName = Id { getId = name, idLocation = location }
                 , variableSort = sortS
                 , variableCounter = mempty
+                , variableType = ElementVariable
                 }
         )
 
 -- |Given a 'Sort' @sort@ and a string @name@, yields 'PatternStub' defining
 -- name as a variable of sort @sort@.
+-- If name starts with @#@, it will be considered a set variable.
 parameterizedVariable_
-    :: Sort level
+    :: Sort Object
     -> Text
     -> AstLocation
-    -> CommonPurePatternStub level domain
+    -> CommonPurePatternStub Object domain
 parameterizedVariable_ sort name location =
     withSort sort (unparameterizedVariable_ name location)
 

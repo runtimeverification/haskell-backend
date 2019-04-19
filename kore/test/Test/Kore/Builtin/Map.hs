@@ -283,6 +283,7 @@ test_simplify =
                         { variableName = testId "x"
                         , variableCounter = mempty
                         , variableSort = intSort
+                        , variableType = ElementVariable
                         }
                 key = Test.Int.asInternal 1
                 original = asPattern $ Map.fromList [(key, mkAnd x mkTop_)]
@@ -405,12 +406,14 @@ test_concretizeKeys =
             { variableName = testId "x"
             , variableCounter = mempty
             , variableSort = intSort
+            , variableType = ElementVariable
             }
     v =
         Variable
             { variableName = testId "v"
             , variableCounter = mempty
             , variableSort = intSort
+            , variableType = ElementVariable
             }
     key = Test.Int.asInternal 1
     symbolicKey = fromConcreteStepPattern key
@@ -509,8 +512,13 @@ asInternal = Map.asInternal testMetadataTools mapSort
 -- * Constructors
 
 mkIntVar :: Id Object -> CommonStepPattern Object
-mkIntVar variableName =
-    mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
+mkIntVar name =
+    mkVar Variable
+        { variableName = name
+        , variableCounter = mempty
+        , variableSort = intSort
+        , variableType = ElementVariable
+        }
 
 mockSubstitutionSimplifier :: PredicateSubstitutionSimplifier level
 mockSubstitutionSimplifier = PredicateSubstitutionSimplifier return

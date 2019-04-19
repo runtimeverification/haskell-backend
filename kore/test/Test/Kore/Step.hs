@@ -174,7 +174,7 @@ applyConstructorToVariables name arguments =
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
 var name =
-    mkVar $ (Variable (testId name) mempty) anySort
+    mkVar $ (\s -> Variable (testId name) mempty s ElementVariable) anySort
 -- can the above be more abstract?
 
 sort :: Text -> Sort'
@@ -204,10 +204,10 @@ rewritesTo left right =
 -}
 
 v1, a1, b1, x1 :: Sort Meta -> Variable Meta
-v1 = Variable (testId "#v1") mempty
-a1 = Variable (testId "#a1") mempty
-b1 = Variable (testId "#b1") mempty
-x1 = Variable (testId "#x1") mempty
+v1 s = Variable (testId "#v1") mempty s ElementVariable
+a1 s = Variable (testId "#a1") mempty s ElementVariable
+b1 s = Variable (testId "#b1") mempty s ElementVariable
+x1 s = Variable (testId "#x1") mempty s ElementVariable
 
 rewriteIdentity :: RewriteRule Meta Variable
 rewriteIdentity =

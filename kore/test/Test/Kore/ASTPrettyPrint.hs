@@ -25,6 +25,7 @@ test_astPrettyPrint =
             ++ "    , variableCounter = Nothing\n"
             ++ "    , variableSort =\n"
             ++ "        SortVariableSort (SortVariable ((Id \"sv\" AstLocationNone) :: Id Object))\n"
+            ++ "    , variableType = ElementVariable\n"
             ++ "    }"
             )
             (prettyPrintToString
@@ -33,6 +34,7 @@ test_astPrettyPrint =
                     , variableCounter = mempty
                     , variableSort =
                         SortVariableSort (SortVariable (testId "sv"))
+                    , variableType = ElementVariable
                     }
                 )
             )

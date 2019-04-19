@@ -412,6 +412,7 @@ sentenceAliasWithSortArgument
                         { variableName = testId "x"
                         , variableCounter = mempty
                         , variableSort = sortArgument
+                        , variableType = ElementVariable
                         }
                     ]
                 }
@@ -673,12 +674,13 @@ unifiedSortVariable _x (SortVariableName name) =
 stringUnifiedPattern :: Text -> VerifiedKorePattern
 stringUnifiedPattern s = toKorePattern (mkStringLiteral s)
 
-variable :: VariableName -> Sort level -> Variable level
+variable :: VariableName -> Sort Object -> Variable Object
 variable (VariableName name) sort =
     Variable
         { variableName = testId name
         , variableCounter = mempty
         , variableSort = sort
+        , variableType = ElementVariable
         }
 
 unifiedVariable
@@ -687,7 +689,8 @@ unifiedVariable
 unifiedVariable name sort =
     asUnified (variable name sort)
 
-variablePattern :: VariableName -> Sort level -> Pattern level domain Variable p
+variablePattern
+    :: VariableName -> Sort Object -> Pattern Object domain Variable p
 variablePattern name sort =
     VariablePattern (variable name sort)
 
@@ -750,6 +753,7 @@ simpleExistsEqualsUnifiedPattern
             { variableName = testId name
             , variableCounter = mempty
             , variableSort = operandSort
+            , variableType = ElementVariable
             }
 
 applicationObjectUnifiedPatternWithChildren

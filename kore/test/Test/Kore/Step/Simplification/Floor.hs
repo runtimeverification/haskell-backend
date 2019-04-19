@@ -137,7 +137,7 @@ test_floorSimplification =
         { symbolOrAliasConstructor = gId
         , symbolOrAliasParams      = []
         }
-    x = Variable (testId "x") mempty testSort
+    x = Variable (testId "x") mempty testSort ElementVariable
     a :: CommonStepPattern Object
     a = mkApp testSort aSymbol []
     b :: CommonStepPattern Object

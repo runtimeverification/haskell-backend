@@ -17,6 +17,7 @@ metaVariable = Variable
     { variableName = testId "#v"
     , variableCounter = mempty
     , variableSort = SortVariableSort (SortVariable (testId "#s"))
+    , variableType = ElementVariable
     }
 
 metaVariableDifferentSort :: Variable Meta
@@ -24,6 +25,7 @@ metaVariableDifferentSort = Variable
     { variableName = testId "#v"
     , variableCounter = mempty
     , variableSort = SortVariableSort (SortVariable (testId "#s1"))
+    , variableType = ElementVariable
     }
 
 test_refreshVariable :: [TestTree]

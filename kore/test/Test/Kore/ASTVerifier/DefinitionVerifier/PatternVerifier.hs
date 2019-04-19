@@ -681,6 +681,7 @@ test_patternVerifier =
                 { variableName = testId "x"
                 , variableCounter = mempty
                 , variableSort = anotherObjectSort2
+                , variableType = ElementVariable
                 }
             ]
     objectSortVariable = sortVariable @Object "ObjectSortVariable"
@@ -1020,6 +1021,7 @@ genericPatternInAllContexts
             { variableName = testId (namePrefix <> "_anotherVar")
             , variableCounter = mempty
             , variableSort = testedSort
+            , variableType = ElementVariable
             }
     rawSymbolName = namePrefix <> "_anotherSymbol"
     rawAliasName = namePrefix <> "_anotherAlias"
@@ -1074,6 +1076,7 @@ objectPatternInAllContexts
             { variableName = testId (namePrefix <> "_anotherVar")
             , variableCounter = mempty
             , variableSort = testedSort
+            , variableType = ElementVariable
             }
 
 patternsInAllContexts
@@ -1151,6 +1154,7 @@ patternsInAllContexts
                                 { variableName = testId "x"
                                 , variableCounter = mempty
                                 , variableSort = symbolAliasSort
+                                , variableType = ElementVariable
                                 }
                             ]
                         }

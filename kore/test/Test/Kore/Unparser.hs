@@ -58,6 +58,7 @@ test_unparse =
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
+                                , variableType = ElementVariable
                                 }
                         , inContainingChild = asCommonKorePattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })

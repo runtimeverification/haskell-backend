@@ -292,7 +292,7 @@ existsForallRemainderParser
     -> Parser (m level Variable child)
 existsForallRemainderParser childParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
-    (variable, qChild) <- parenPairParser (variableParser x) childParser
+    (variable, qChild) <- parenPairParser variableParser childParser
     return (constructor sort variable qChild)
 
 {-|'ceilFloorRemainderParser' parses the part after a ceil or floor
@@ -424,18 +424,29 @@ BNF fragments:
 Always starts with @:@.
 -}
 variableRemainderParser
-    :: MetaOrObject level
-    => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Id level  -- ^ The already parsed prefix.
-    -> Parser (Variable level)
-variableRemainderParser x identifier = do
+    :: Id Object  -- ^ The already parsed prefix.
+    -> Parser (Variable Object)
+variableRemainderParser identifier = do
     colonParser
-    sort <- sortParser x
+    sort <- sortParser Object
     return Variable
-        { variableName = identifier
+        { variableName
         , variableSort = sort
         , variableCounter = mempty
+        , variableType
         }
+  where
+    (variableType, variableName) = distinguishSetVariable identifier
+
+{-|Uses the first character of the name to identify set variables.
+set variables distinguish from element variables by the fact their first
+character is @#@
+-}
+distinguishSetVariable :: Id Object -> (VariableType, Id Object)
+distinguishSetVariable identifier@Id { getId = name } =
+    if Text.head name == '#'
+    then (SetVariable, identifier { getId = Text.tail name })
+    else (ElementVariable, identifier)
 
 {-|'variableParser' parses either an @object-variable@, or a @meta-variable@.
 
@@ -449,10 +460,8 @@ BNF definitions:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 variableParser
-    :: MetaOrObject level
-    => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Variable level)
-variableParser x = idParser x >>= variableRemainderParser x
+    :: Parser (Variable Object)
+variableParser = idParser Object >>= variableRemainderParser
 
 {-|'unifiedVariableParser' parses a @variable@.
 
@@ -463,8 +472,7 @@ BNF definitions:
 @
 -}
 unifiedVariableParser :: Parser (Unified Variable)
-unifiedVariableParser = do
-    UnifiedObject <$> variableParser Object
+unifiedVariableParser = UnifiedObject <$> variableParser
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
 application pattern), using an open recursion scheme for its children.
@@ -498,7 +506,7 @@ variableOrTermPatternParser childParser x = do
     identifier <- idParser x
     c <- ParserUtils.peekChar'
     if c == ':'
-        then VariablePattern <$> variableRemainderParser x identifier
+        then VariablePattern <$> variableRemainderParser identifier
         else symbolOrAliasPatternRemainderParser childParser x identifier
 
 
@@ -1012,7 +1020,7 @@ aliasSentenceRemainderParser x
     resultSort <- sortParser x
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- applicationParser (variableParser x) x
+    leftPattern <- applicationParser variableParser x
     mlLexemeParser ":="
     rightPattern <- korePatternParser
     attributes <- attributesParser

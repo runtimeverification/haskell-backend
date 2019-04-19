@@ -437,7 +437,7 @@ test_matcherVariableFunction =
     , testCase "Injection" $ do
         let
             a = Mock.functional00SubSubSort
-            x = Variable (testId "x") mempty Mock.subSort
+            x = Variable (testId "x") mempty Mock.subSort ElementVariable
             expect = Just $ MultiOr.make
                 [ Predicated
                     { predicate = makeTruePredicate
@@ -455,7 +455,7 @@ test_matcherVariableFunction =
     , testCase "Injection reverse" $ do
         let
             a = Mock.functional00SubSubSort
-            x = Variable (testId "x") mempty Mock.subSort
+            x = Variable (testId "x") mempty Mock.subSort ElementVariable
             expect = Nothing
         actual <-
             matchDefinition mockMetadataTools
@@ -466,7 +466,7 @@ test_matcherVariableFunction =
     , testCase "Injection + substitution" $ do
         let
             aSubSub = Mock.functional00SubSubSort
-            xSub = Variable (testId "x") mempty Mock.subSort
+            xSub = Variable (testId "x") mempty Mock.subSort ElementVariable
             expect = Just $ MultiOr.make
                 [ Predicated
                     { predicate = makeTruePredicate
@@ -492,7 +492,7 @@ test_matcherVariableFunction =
     , testCase "substitution + Injection" $ do
         let
             aSubSub = Mock.functional00SubSubSort
-            xSub = Variable (testId "x") mempty Mock.subSort
+            xSub = Variable (testId "x") mempty Mock.subSort ElementVariable
             expect = Just $ MultiOr.make
                 [ Predicated
                     { predicate = makeTruePredicate

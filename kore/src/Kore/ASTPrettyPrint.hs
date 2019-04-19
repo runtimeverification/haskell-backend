@@ -277,12 +277,18 @@ instance PrettyPrint ModuleName where
             <> dquotes (pretty (getModuleName s))
             )
 
+instance PrettyPrint VariableType where
+    prettyPrint _ ElementVariable = "ElementVariable"
+    prettyPrint _ SetVariable = "SetVariable"
+
+
 instance MetaOrObject level => PrettyPrint (Variable level) where
-    prettyPrint _ var@(Variable _ _ _) =
+    prettyPrint _ var@(Variable _ _ _ _) =
         writeStructure "Variable"
             [ writeFieldOneLine "variableName" variableName var
             , writeFieldOneLine "variableCounter" variableCounter var
             , writeFieldNewLine "variableSort" variableSort var
+            , writeFieldOneLine "variableType" variableType var
             ]
 
 instance

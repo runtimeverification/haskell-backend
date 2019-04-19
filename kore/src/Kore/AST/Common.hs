@@ -112,6 +112,20 @@ instance Unparse (SymbolOrAlias level) where
       =
         unparse symbolOrAliasConstructor <> parameters symbolOrAliasParams
 
+
+{-|@VariableType@ corresponds to the `EVar` and `SVar` categories of variables,
+in the Matching mu-Logic paper, used to distinguish between element variables,
+which can only be instantiated by an singleton, i.e., a functional pattern,
+and set variables which can be instantiated by any set, i.e., any pattern.
+-}
+data VariableType = ElementVariable | SetVariable
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (VariableType)
+
+instance NFData (VariableType)
+
+
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -132,19 +146,27 @@ data Variable level = Variable
     { variableName :: !(Id level)
     , variableCounter :: !(Maybe (Sup Natural))
     , variableSort :: !(Sort level)
+    , variableType :: !VariableType
     }
     deriving (Show, Eq, Ord, Generic)
+
+{- | Is the variable a set variable
+ -}
+isSetVariable :: Variable level -> Bool
+isSetVariable Variable { variableType } = variableType == SetVariable
 
 instance Hashable (Variable level)
 
 instance NFData (Variable level)
 
 instance Unparse (Variable level) where
-    unparse Variable { variableName, variableCounter, variableSort } =
-        unparse variableName
-        <> Pretty.pretty variableCounter
-        <> Pretty.colon
-        <> unparse variableSort
+    unparse
+        var@Variable { variableName, variableCounter, variableSort} =
+            if isSetVariable var then "#" else ""
+            <> unparse variableName
+            <> Pretty.pretty variableCounter
+            <> Pretty.colon
+            <> unparse variableSort
 
 {- | Is the variable original (as opposed to generated)?
  -}

@@ -177,10 +177,10 @@ test_substitutionNormalization =
         )
     ]
   where
-    v1 :: Sort level -> Variable level
-    v1 = Variable (testId "v1") mempty
-    x1 :: Sort level -> Variable level
-    x1 = Variable (testId "x1") mempty
+    v1 :: Sort Object -> Variable Object
+    v1 sort = Variable (testId "v1") mempty sort ElementVariable
+    x1 :: Sort Object -> Variable Object
+    x1 sort = Variable (testId "x1") mempty sort ElementVariable
     f = groundHead "f" AstLocationTest
 
 runNormalizeSubstitution

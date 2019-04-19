@@ -159,6 +159,7 @@ searchVar =
         { variableName = Id "V" AstLocationTest
         , variableCounter = mempty
         , variableSort = mySort
+        , variableType = ElementVariable
         }
 
 -- |
@@ -264,6 +265,7 @@ functionalAxiom name =
         { variableName = Id "V" AstLocationTest
         , variableCounter = mempty
         , variableSort = mySort
+        , variableType = ElementVariable
         }
     r = SortVariable $ Id "R" AstLocationTest
 
@@ -367,5 +369,6 @@ test_execGetExitCode =
             { variableName = testId "V"
             , variableCounter = mempty
             , variableSort = myIntSort
+            , variableType = ElementVariable
             }
         getExitCodeSym = SymbolOrAlias getExitCodeId []

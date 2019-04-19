@@ -33,7 +33,8 @@ import Numeric.Natural
        ( Natural )
 
 import           Kore.AST.Common
-                 ( SymbolOrAlias (SymbolOrAlias), Variable (Variable) )
+                 ( SymbolOrAlias (SymbolOrAlias), Variable (Variable),
+                 VariableType (..) )
 import           Kore.AST.Common as Variable
                  ( Variable (..) )
 import           Kore.AST.Common as SymbolOrAlias
@@ -227,6 +228,7 @@ makeVariable varIndex sortName =
         { variableName = testId "var"
         , variableCounter = Just (Element varIndex)
         , variableSort = makeSort sortName
+        , variableType = ElementVariable
         }
 
 makeSort :: Text -> Sort Object

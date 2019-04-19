@@ -996,6 +996,7 @@ varS x variableSort =
         { variableName = noLocationId x
         , variableSort
         , variableCounter = mempty
+        , variableType = ElementVariable
         }
 
 -- | Construct a symbol with a given name and input sorts

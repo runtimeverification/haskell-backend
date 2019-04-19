@@ -152,6 +152,7 @@ test_simplify =
                     { variableName = testId "x"
                     , variableCounter = mempty
                     , variableSort = intSort
+                    , variableType = ElementVariable
                     }
             original = asInternal [mkAnd x mkTop_]
             expected = asExpandedPattern [x]

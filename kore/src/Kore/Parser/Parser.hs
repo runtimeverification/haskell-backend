@@ -32,23 +32,18 @@ module Kore.Parser.Parser
     , parseKorePattern
     , koreParser
     , korePatternParser
-    , metaPatternParser
-    , metaVariableParser
-    , metaHeadParser
     , CommonKorePattern
     , CommonMetaPattern
     ) where
 
 import           Kore.AST.Kore
-import qualified Kore.AST.Pure as AST.Pure
 import           Kore.AST.Sentence
 import           Kore.MetaML.AST
                  ( CommonMetaPattern )
 import           Kore.Parser.Lexeme
                  ( skipWhitespace )
 import qualified Kore.Parser.ParserImpl as KoreParser
-                 ( headParser, koreDefinitionParser, korePatternParser,
-                 metaPatternParser, variableParser )
+                 ( koreDefinitionParser, korePatternParser )
 import           Kore.Parser.ParserUtils
 
 {-|'koreParser' is a parser for Kore.
@@ -90,18 +85,3 @@ parseKorePattern
     -> Either String CommonKorePattern
 parseKorePattern = parseOnly korePatternParser
 
-
----------------------------------
--- Matching Logic Kore Parsers --
--- | parses formulae for ML proofs
-metaPatternParser :: Parser CommonMetaPattern
-metaPatternParser =
-    AST.Pure.castVoidDomainValues <$> KoreParser.metaPatternParser
-
--- | parses meta variables in ML proofs
-metaVariableParser :: Parser (Variable Meta)
-metaVariableParser = KoreParser.variableParser Meta
-
--- | parses meta heads for ML proofs
-metaHeadParser :: Parser (SymbolOrAlias Meta)
-metaHeadParser = KoreParser.headParser Meta
