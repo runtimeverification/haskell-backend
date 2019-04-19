@@ -101,9 +101,8 @@ type ReplM claim level a = RWST () String (ReplState claim level) Simplifier a
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
     :: forall level claim
-    .   ( MetaOrObject level
-        , Claim claim
-        )
+    .  MetaOrObject level
+    => Claim claim
     => (String -> IO ())
     -> ReplCommand
     -> StateT (ReplState claim level) Simplifier Bool
@@ -188,7 +187,8 @@ prove index = do
             putStrLn' "Execution Graph initiated"
 
 showGraph
-    ::  ( MonadIO m, Claim claim)
+    :: MonadIO m
+    => Claim claim
     => MonadState (ReplState claim level) m
     => m ()
 showGraph = do
@@ -217,9 +217,8 @@ proveStepsF n = do
     lensNode  .= (snd $ Graph.nodeRange . Strategy.graph $ graph')
 
 selectNode
-    ::  ( Claim claim
-        , MonadState (ReplState claim level) m
-        )
+    :: Claim claim
+    => MonadState (ReplState claim level) m
     => MonadWriter String m
     => Int
     -> m ()
@@ -230,9 +229,8 @@ selectNode i = do
         else putStrLn' "Invalid node!"
 
 showConfig
-    ::  ( MetaOrObject level
-        , Claim claim
-        )
+    :: MetaOrObject level
+    => Claim claim
     => Maybe Int
     -> ReplM claim level ()
 showConfig configNode = do
@@ -271,9 +269,8 @@ data NodeStates = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
 
 showLeafs
-    ::  ( MetaOrObject level
-        , Claim claim
-        )
+    :: MetaOrObject level
+    => Claim claim
     => ReplM claim level ()
 showLeafs = do
     Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
@@ -304,9 +301,8 @@ showLeafs = do
     showPair (ns, xs) = show ns <> ": " <> show xs
 
 showRule
-    ::  ( MetaOrObject level
-        , Claim claim
-        )
+    :: MetaOrObject level
+    => Claim claim
     => MonadState (ReplState claim level) m
     => MonadWriter String m
     => Maybe Int
@@ -377,9 +373,8 @@ showChildren mnode = do
 
 redirect
     :: forall level claim
-    .   ( MetaOrObject level
-        , Claim claim
-        )
+    .  MetaOrObject level
+    => Claim claim
     => ReplCommand
     -> FilePath
     -> ReplM claim level ()
@@ -394,9 +389,8 @@ redirect cmd path = do
 
 tryAxiomClaim
     :: forall level claim
-    .   ( MetaOrObject level
-        , Claim claim
-        )
+    .  MetaOrObject level
+    => Claim claim
     => level ~ Object
     => Either AxiomIndex ClaimIndex
     -> ReplM claim level ()
@@ -484,9 +478,8 @@ tryAxiomClaim eac = do
 
 label
     :: forall level m claim
-    .   ( Claim claim
-        , MonadState (ReplState claim level) m
-        )
+    .  Claim claim
+    => MonadState (ReplState claim level) m
     => MonadWriter String m
     => Maybe String
     -> m ()
@@ -513,9 +506,8 @@ label =
 
 labelAdd
     :: forall level m claim
-    .   ( Claim claim
-        , MonadState (ReplState claim level) m
-        )
+    .  Claim claim
+    => MonadState (ReplState claim level) m
     => MonadWriter String m
     => String
     -> Maybe Int
@@ -533,9 +525,8 @@ labelAdd lbl mn = do
 
 labelDel
     :: forall level m claim
-    .   ( MonadState (ReplState claim level) m
-        , Claim claim
-        )
+    .  MonadState (ReplState claim level) m
+    => Claim claim
     => MonadWriter String m
     => String
     -> m ()
@@ -549,9 +540,8 @@ labelDel lbl = do
 
 clear
     :: forall level m claim
-    .   ( Claim claim
-        , MonadState (ReplState claim level) m
-        )
+    .  Claim claim
+    => MonadState (ReplState claim level) m
     => MonadWriter String m
     => Maybe Int
     -> m ()

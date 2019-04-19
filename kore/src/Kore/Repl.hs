@@ -66,9 +66,8 @@ import qualified Kore.Step.Strategy as Strategy
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
     :: forall level claim
-    .   ( MetaOrObject level
-        , Claim claim
-        )
+    .  MetaOrObject level
+    => Claim claim
     => MetadataTools level StepperAttributes
     -- ^ tools required for the proof
     -> StepPatternSimplifier level
