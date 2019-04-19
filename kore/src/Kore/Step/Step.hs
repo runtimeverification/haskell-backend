@@ -31,6 +31,7 @@ module Kore.Step.Step
 
 import           Control.Applicative
                  ( Alternative (..) )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
@@ -311,7 +312,7 @@ applyInitialConditions
     -- ^ Initial conditions
     -> PredicateSubstitution Object variable
     -- ^ Unification conditions
-    -> BranchT unifier (PredicateSubstitution Object variable)
+    -> BranchT unifier (OrOfPredicateSubstitution Object variable)
 applyInitialConditions
     metadataTools
     predicateSimplifier
@@ -323,7 +324,16 @@ applyInitialConditions
   = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
-    normalize (initial <> unification)
+    applied <-
+        Monad.Trans.lift
+        $ Monad.liftM MultiOr.filterOr
+        $ gather
+        $ normalize (initial <> unification)
+    -- If 'applied' is \bottom, the rule is considered to not apply and
+    -- no result is returned. If the result is \bottom after this check,
+    -- then the rule is considered to apply with a \bottom result.
+    TopBottom.guardAgainstBottom applied
+    return applied
   where
     normalize condition =
         Substitution.normalizeExcept
@@ -499,16 +509,11 @@ applyRule
             rule' = toAxiomVariables rule
         fmap Foldable.toList $ gather $ do
             unifiedRule <- unifyRule' initial' rule'
-            let unificationCondition = Predicated.withoutTerm unifiedRule
-                renamedRule = Predicated.term unifiedRule
-                initialCondition = Predicated.withoutTerm initial'
+            let renamedRule = Predicated.term unifiedRule
             applied <-
-                fmap MultiOr.filterOr $ Monad.Trans.lift $ gather
-                $ applyInitialConditions' initialCondition unificationCondition
-            -- If 'applied' is \bottom, the rule is considered to not apply and
-            -- no result is returned. If the result is \bottom after this check,
-            -- then the rule is considered to apply with a \bottom result.
-            TopBottom.guardAgainstBottom applied
+                applyInitialConditions'
+                    (Predicated.withoutTerm initial')
+                    (Predicated.withoutTerm unifiedRule)
             result <- fmap MultiOr.filterOr $ Monad.Trans.lift $ gather $ do
                 applied1 <- scatter applied
                 final <- finalizeAppliedRule' renamedRule applied1

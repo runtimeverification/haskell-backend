@@ -88,10 +88,11 @@ applyInitialConditions
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            (OrOfPredicateSubstitution Object Variable)
+            [OrOfPredicateSubstitution Object Variable]
         )
 applyInitialConditions initial unification =
-    evalUnifier
+    (fmap . fmap) Foldable.toList
+    $ evalUnifier
     $ Step.applyInitialConditions
         metadataTools
         predicateSimplifier
@@ -129,7 +130,7 @@ test_applyInitialConditions =
     , testCase "returns axiom right-hand side" $ do
         let unification = PredicateSubstitution.top
             initial = PredicateSubstitution.top
-            expect = Right (MultiOr [ initial ])
+            expect = Right [MultiOr [ initial ]]
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
@@ -145,7 +146,7 @@ test_applyInitialConditions =
                     (Mock.f $ mkVar Mock.y)
                     Mock.b
             expect = MultiOr [Predicate.makeAndPredicate expect1 expect2]
-        Right applied <- applyInitialConditions initial unification
+        Right [applied] <- applyInitialConditions initial unification
         let actual = Predicated.predicate <$> applied
         assertEqual "" expect actual
 
