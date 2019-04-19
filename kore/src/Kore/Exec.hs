@@ -19,6 +19,7 @@ module Kore.Exec
     ) where
 
 import           Control.Comonad
+import qualified Control.Monad as Monad
 import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
@@ -229,6 +230,7 @@ prove limit definitionModule specModule = do
     specAxioms <-
         mapM (simplifyRuleOnSecond tools)
             (extractOnePathClaims specModule)
+    assertSomeClaims specAxioms
     let
         axioms = fmap Axiom rewriteRules
         claims = fmap makeClaim specAxioms
@@ -264,6 +266,7 @@ proveWithRepl definitionModule specModule = do
     specAxioms <-
         mapM (simplifyRuleOnSecond tools)
             (extractOnePathClaims specModule)
+    assertSomeClaims specAxioms
     let
         axioms = fmap Axiom rewriteRules
         claims = fmap makeClaim specAxioms
@@ -275,6 +278,13 @@ proveWithRepl definitionModule specModule = do
         axiomIdToSimplifier
         axioms
         claims
+
+assertSomeClaims :: Monad m => [claim] -> m ()
+assertSomeClaims claims =
+    Monad.when (null claims) . error
+        $   "Unexpected empty set of claims.\n"
+        ++  "Possible explanation: the frontend and the backend don't agree "
+        ++  "on the representation of claims."
 
 makeClaim :: Claim claim => (Attribute.Axiom, claim) -> claim
 makeClaim (attributes, rule) =
