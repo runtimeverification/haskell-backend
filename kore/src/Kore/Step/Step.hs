@@ -64,7 +64,7 @@ import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
+                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import           Kore.Step.Representation.Predicated
                  ( Predicated (Predicated) )
 import qualified Kore.Step.Representation.Predicated as Predicated
@@ -349,6 +349,9 @@ The rule's 'ensures' clause is applied to the conditions and normalized. The
 substitution is applied to the right-hand side of the rule to produce the final
 configurations.
 
+Because the rule as known to apply, @finalizeAppliedRule@ always returns exactly
+one branch.
+
 See also: 'applyInitialConditions'
 
  -}
@@ -369,9 +372,9 @@ finalizeAppliedRule
 
     -> RulePattern Object variable
     -- ^ Applied rule
-    -> PredicateSubstitution Object variable
-    -- ^ Condition of applied rule
-    -> BranchT unifier (ExpandedPattern Object variable)
+    -> OrOfPredicateSubstitution Object variable
+    -- ^ Conditions of applied rule
+    -> BranchT unifier (OrOfExpandedPattern Object variable)
 finalizeAppliedRule
     metadataTools
     predicateSimplifier
@@ -379,22 +382,28 @@ finalizeAppliedRule
     axiomSimplifiers
 
     renamedRule
-    appliedCondition
-  = do
-    -- Combine the initial conditions, the unification conditions, and the axiom
-    -- ensures clause. The axiom requires clause is included by unifyRule.
-    let
-        RulePattern { ensures } = renamedRule
-        ensuresCondition = PredicateSubstitution.fromPredicate ensures
-    finalCondition <- normalize (appliedCondition <> ensuresCondition)
-    -- Apply the normalized substitution to the right-hand side of the axiom.
-    let
-        Predicated { substitution } = finalCondition
-        substitution' = Substitution.toMap substitution
-        RulePattern { right = finalTerm } = renamedRule
-        finalTerm' = Pattern.substitute substitution' finalTerm
-    return finalCondition { ExpandedPattern.term = finalTerm' }
+    appliedConditions
+  =
+    Monad.Trans.lift . Monad.liftM MultiOr.flatten
+    $ traverse finalizeAppliedRuleWorker appliedConditions
   where
+    finalizeAppliedRuleWorker appliedCondition = gather $ do
+        -- Combine the initial conditions, the unification conditions, and the
+        -- axiom ensures clause. The axiom requires clause is included by
+        -- unifyRule.
+        let
+            RulePattern { ensures } = renamedRule
+            ensuresCondition = PredicateSubstitution.fromPredicate ensures
+        finalCondition <- normalize (appliedCondition <> ensuresCondition)
+        -- Apply the normalized substitution to the right-hand side of the
+        -- axiom.
+        let
+            Predicated { substitution } = finalCondition
+            substitution' = Substitution.toMap substitution
+            RulePattern { right = finalTerm } = renamedRule
+            finalTerm' = Pattern.substitute substitution' finalTerm
+        return finalCondition { ExpandedPattern.term = finalTerm' }
+
     normalize condition =
         Substitution.normalizeExcept
             metadataTools
@@ -501,24 +510,25 @@ applyRule
     rule
   = Log.withLogScope "applyRule"
     $ Monad.Unify.mapVariable Target.unwrapVariable
-    $ do
+    $ fmap Foldable.toList $ gather $ do
         let
             -- Wrap the rule and configuration so that unification prefers to
             -- substitute axiom variables.
             initial' = toConfigurationVariables initial
             rule' = toAxiomVariables rule
-        fmap Foldable.toList $ gather $ do
-            unifiedRule <- unifyRule' initial' rule'
-            let renamedRule = Predicated.term unifiedRule
-            applied <-
-                applyInitialConditions'
-                    (Predicated.withoutTerm initial')
-                    (Predicated.withoutTerm unifiedRule)
-            result <- fmap MultiOr.filterOr $ Monad.Trans.lift $ gather $ do
-                applied1 <- scatter applied
-                final <- finalizeAppliedRule' renamedRule applied1
-                checkSubstitutionCoverage initial' unifiedRule final
-            return Result { unifiedRule, result }
+        unifiedRule <- unifyRule' initial' rule'
+        let
+            initialCondition = Predicated.withoutTerm initial'
+            unificationCondition = Predicated.withoutTerm unifiedRule
+        applied <- applyInitialConditions' initialCondition unificationCondition
+        let
+            renamedRule = Predicated.term unifiedRule
+        final <- finalizeAppliedRule' renamedRule applied
+        let
+            checkSubstitutionCoverage' =
+                checkSubstitutionCoverage initial' unifiedRule
+        result <- traverse checkSubstitutionCoverage' final
+        return Result { unifiedRule, result }
   where
     unifyRule' =
         unifyRule
