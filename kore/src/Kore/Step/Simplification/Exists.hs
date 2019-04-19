@@ -17,7 +17,6 @@ import           Control.Applicative
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
@@ -245,28 +244,33 @@ makeEvaluateNoFreeVarInSubstitution
       where
         boundConfiguration
           | hasVariable (Pattern.freeVariables term) =
+            -- Quantify the term (with bound variables) in conjunction with the
+            -- conditions with bound variables.
             (ExpandedPattern.topOf patternSort)
                 { term =
-                    mkExists variable
-                    $ Maybe.fromMaybe (mkTop patternSort)
-                    $ mkAndMaybe (Just term)
+                    mkExists variable . mkAndMaybe term
                     $ Predicate.fromPredicate patternSort <$> boundCondition
                 }
           | otherwise =
+            -- Keep the term (free of bound variables) outside the quantifier on
+            -- the conditions with bound variables.
             (ExpandedPattern.topOf patternSort)
                 { term = term
                 , predicate =
-                    Predicate.makeAndPredicate freePredicate
-                    $ Predicate.makeExistsPredicate variable
-                    $ Maybe.fromMaybe Predicate.makeTruePredicate boundCondition
+                    maybe
+                        Predicate.makeTruePredicate
+                        (Predicate.makeExistsPredicate variable)
+                        boundCondition
                 }
         Valid { patternSort } = extract term
+
         (boundPredicate, freePredicate)
           | hasVariable (Predicate.freeVariables predicate) =
             (Just predicate, makeTruePredicate)
           | otherwise = (Nothing, predicate)
         (boundSubstitution, freeSubstitution) =
             splitSubstitutionByDependency variable substitution
+
         boundCondition =
             mkAndPredicateMaybe boundPredicate
             $ Predicate.fromSubstitution <$> boundSubstitution
@@ -276,7 +280,8 @@ makeEvaluateNoFreeVarInSubstitution
                 , predicate = freePredicate
                 , substitution = freeSubstitution
                 }
-        mkAndMaybe a b = (mkAnd <$> a <*> b) <|> a <|> b
+
+        mkAndMaybe a = maybe a (mkAnd a)
         mkAndPredicateMaybe a b =
             (Predicate.makeAndPredicate <$> a <*> b) <|> a <|> b
 
