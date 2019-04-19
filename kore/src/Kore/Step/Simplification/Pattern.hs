@@ -202,7 +202,7 @@ simplifyInternal
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
         -- TODO(virgil): Move next up through patterns.
         NextPattern p -> return $ Next.simplify p
-        NotPattern p -> return $ Not.simplify p
+        NotPattern p -> return (Not.simplify p, SimplificationProof)
         OrPattern p -> return $ Or.simplify p
         RewritesPattern p -> return $ Rewrites.simplify p
         StringLiteralPattern p -> return $ StringLiteral.simplify p

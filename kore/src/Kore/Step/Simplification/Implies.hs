@@ -100,7 +100,7 @@ simplifyEvaluated first second
   | OrOfExpandedPattern.isTrue second =
     (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
-    Not.simplifyEvaluated first
+    (Not.simplifyEvaluated first, SimplificationProof)
   | otherwise =
     let
         (result, _proofs) =
@@ -128,7 +128,7 @@ simplifyEvaluateHalfImplies first second
   | ExpandedPattern.isTop second =
     (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isBottom second =
-    Not.simplifyEvaluated first
+    (Not.simplifyEvaluated first, SimplificationProof)
   | otherwise =
     -- TODO: Also merge predicate-only patterns for 'Or'
     case MultiOr.extractPatterns first of

@@ -51,9 +51,7 @@ simplify
         , Unparse (variable level)
         )
     => Not level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
-        , SimplificationProof level
-        )
+    -> OrOfExpandedPattern level variable
 simplify
     Not { notChild = child }
   =
@@ -84,16 +82,14 @@ simplifyEvaluated
         , Unparse (variable level)
         )
     => OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level variable
 simplifyEvaluated simplified
   | OrOfExpandedPattern.isFalse simplified =
-    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
+    MultiOr.make [ExpandedPattern.top]
   | OrOfExpandedPattern.isTrue simplified =
-    (MultiOr.make [], SimplificationProof)
+    MultiOr.make []
   | otherwise =
-    ( Foldable.foldr simplifyEvaluatedWorker (MultiOr.make [ExpandedPattern.top]) simplified
-    , SimplificationProof
-    )
+    Foldable.foldr simplifyEvaluatedWorker (MultiOr.make [ExpandedPattern.top]) simplified
   where
     simplifyEvaluatedWorker this rest =
         let (this', _) = makeEvaluate this

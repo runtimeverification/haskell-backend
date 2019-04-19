@@ -86,4 +86,4 @@ fromSubstitution =
 simplifyEvaluated
     :: OrOfExpandedPattern Object Variable
     -> OrOfExpandedPattern Object Variable
-simplifyEvaluated = fst . Not.simplifyEvaluated
+simplifyEvaluated = Not.simplifyEvaluated

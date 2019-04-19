@@ -311,8 +311,8 @@ makeEvaluateFunctionalOr
         seconds
     let
         (secondCeils, _proofs) = unzip secondCeilsWithProofs
-        (firstNotCeil, _proof1) = Not.simplifyEvaluated firstCeil
-        secondNotCeils = map (dropProof . Not.simplifyEvaluated) secondCeils
+        firstNotCeil = Not.simplifyEvaluated firstCeil
+        secondNotCeils = map Not.simplifyEvaluated secondCeils
         oneNotBottom =
             foldl'
                 (dropProofFold Or.simplifyEvaluated)
@@ -466,8 +466,8 @@ makeEvaluate
             axiomIdToSimplfier
             second { term = if termsAreEqual then mkTop_ else secondTerm }
     let
-        (firstCeilNegation, _proof3) = Not.simplifyEvaluated firstCeil
-        (secondCeilNegation, _proof4) = Not.simplifyEvaluated secondCeil
+        firstCeilNegation = Not.simplifyEvaluated firstCeil
+        secondCeilNegation = Not.simplifyEvaluated secondCeil
     (termEquality, _proof) <-
         makeEvaluateTermsAssumesNoBottom
             tools

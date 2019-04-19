@@ -89,11 +89,11 @@ simplifyEvaluated first second
   | OrOfExpandedPattern.isTrue first =
     (second, SimplificationProof)
   | OrOfExpandedPattern.isFalse first =
-    Not.simplifyEvaluated second
+    (Not.simplifyEvaluated second, SimplificationProof)
   | OrOfExpandedPattern.isTrue second =
     (first, SimplificationProof)
   | OrOfExpandedPattern.isFalse second =
-    Not.simplifyEvaluated first
+    (Not.simplifyEvaluated first, SimplificationProof)
   | otherwise =
     case ( firstPatterns, secondPatterns )
       of
