@@ -16,8 +16,9 @@ module Kore.Step.Step
     , gatherResults
     , withoutRemainders
     , unifyRule
+    , applyInitialConditions
+    , finalizeAppliedRule
     , unwrapRule
-    , applyUnifiedRule
     , applyRule
     , applyRulesInParallel
     , applyRewriteRule
@@ -75,6 +76,7 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
+import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof )
 import           Kore.Unification.Error
@@ -285,13 +287,12 @@ unifyRule
             axiomSimplifiers
             condition
 
-{- | Apply a rule to produce final configurations given some initial conditions.
+{- | Apply the initial conditions to the results of rule unification.
 
-The initial conditions are merged with any conditions from the rule unification
-and normalized.
+The rule is considered to apply if the result is not @\\bottom@.
 
  -}
-applyUnifiedRule
+applyInitialConditions
     ::  forall unifier variable unifierM
     .   ( Ord     (variable Object)
         , Show    (variable Object)
@@ -308,26 +309,74 @@ applyUnifiedRule
 
     -> PredicateSubstitution Object variable
     -- ^ Initial conditions
-    -> UnifiedRule variable
-    -- ^ Non-normalized final configuration
-    -> BranchT unifier (ExpandedPattern Object variable)
-applyUnifiedRule
+    -> PredicateSubstitution Object variable
+    -- ^ Unification conditions
+    -> BranchT unifier (PredicateSubstitution Object variable)
+applyInitialConditions
     metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
 
     initial
-    unifiedRule
+    unification
+  = do
+    -- Combine the initial conditions and the unification conditions.
+    -- The axiom requires clause is included in the unification conditions.
+    normalize (initial <> unification)
+  where
+    normalize condition =
+        Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            condition
+
+{- | Produce the final configurations of an applied rule.
+
+The rule's 'ensures' clause is applied to the conditions and normalized. The
+substitution is applied to the right-hand side of the rule to produce the final
+configurations.
+
+See also: 'applyInitialConditions'
+
+ -}
+finalizeAppliedRule
+    ::  forall unifier variable unifierM
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> RulePattern Object variable
+    -- ^ Applied rule
+    -> PredicateSubstitution Object variable
+    -- ^ Condition of applied rule
+    -> BranchT unifier (ExpandedPattern Object variable)
+finalizeAppliedRule
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    renamedRule
+    appliedCondition
   = do
     -- Combine the initial conditions, the unification conditions, and the axiom
     -- ensures clause. The axiom requires clause is included by unifyRule.
     let
-        Predicated { term = renamedRule } = unifiedRule
         RulePattern { ensures } = renamedRule
         ensuresCondition = PredicateSubstitution.fromPredicate ensures
-        unification = Predicated.withoutTerm unifiedRule
-    finalCondition <- normalize (initial <> unification <> ensuresCondition)
+    finalCondition <- normalize (appliedCondition <> ensuresCondition)
     -- Apply the normalized substitution to the right-hand side of the axiom.
     let
         Predicated { substitution } = finalCondition
@@ -450,11 +499,20 @@ applyRule
             rule' = toAxiomVariables rule
         fmap Foldable.toList $ gather $ do
             unifiedRule <- unifyRule' initial' rule'
-            let initialCondition = Predicated.withoutTerm initial'
-            final <- applyUnifiedRule' initialCondition unifiedRule
-            result <-
-                Monad.Trans.lift . gather
-                $ checkSubstitutionCoverage initial' unifiedRule final
+            let unificationCondition = Predicated.withoutTerm unifiedRule
+                renamedRule = Predicated.term unifiedRule
+                initialCondition = Predicated.withoutTerm initial'
+            applied <-
+                fmap MultiOr.filterOr $ Monad.Trans.lift $ gather
+                $ applyInitialConditions' initialCondition unificationCondition
+            -- If 'applied' is \bottom, the rule is considered to not apply and
+            -- no result is returned. If the result is \bottom after this check,
+            -- then the rule is considered to apply with a \bottom result.
+            TopBottom.guardAgainstBottom applied
+            result <- fmap MultiOr.filterOr $ Monad.Trans.lift $ gather $ do
+                applied1 <- scatter applied
+                final <- finalizeAppliedRule' renamedRule applied1
+                checkSubstitutionCoverage initial' unifiedRule final
             return Result { unifiedRule, result }
   where
     unifyRule' =
@@ -464,8 +522,14 @@ applyRule
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
-    applyUnifiedRule' =
-        applyUnifiedRule
+    applyInitialConditions' =
+        applyInitialConditions
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+    finalizeAppliedRule' =
+        finalizeAppliedRule
             metadataTools
             predicateSimplifier
             patternSimplifier
