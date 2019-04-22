@@ -5,12 +5,14 @@ License     : NCSA
 
 module Kore.Step.Result
     ( Result (..)
+    , mapRule
     , Results (..)
     , remainder
     , withoutRemainders
     , gatherResults
     , transitionResult
     , transitionResults
+    , mapRules
     ) where
 
 import           Control.Applicative
@@ -36,7 +38,15 @@ data Result rule config =
         { appliedRule :: !rule
         , result      :: !(MultiOr config)
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+
+{- | Apply a function to the 'appliedRule' of a 'Result'.
+
+See also: 'mapRules'
+
+ -}
+mapRule :: (rule1 -> rule2) -> Result rule1 config -> Result rule2 config
+mapRule f r@Result { appliedRule } = r { appliedRule = f appliedRule }
 
 {- | The results of applying many rules.
 
@@ -98,3 +108,11 @@ transitionResults Results { results, remainders } =
   where
     transitionResultsResults = Foldable.asum (transitionResult <$> results)
     transitionResultsRemainders = Foldable.asum (return <$> remainders)
+
+{- | Apply a function to the rules of the 'results'.
+
+See also: 'mapRule'
+
+ -}
+mapRules :: (rule1 -> rule2) -> Results rule1 config -> Results rule2 config
+mapRules f rs@Results { results } = rs { results = mapRule f <$> results }
