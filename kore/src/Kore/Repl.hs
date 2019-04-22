@@ -14,6 +14,8 @@ import           Control.Exception
                  ( AsyncException (UserInterrupt) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
+import           Control.Monad
+                 ( when )
 import           Control.Monad.Catch
                  ( MonadCatch, catch )
 import           Control.Monad.Extra
@@ -22,10 +24,13 @@ import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
+import           Data.Coerce
+                 ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( listToMaybe )
+import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
@@ -52,6 +57,8 @@ import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Pattern
+                 ( StepPattern )
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
@@ -60,13 +67,19 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Unification.Procedure
+                 ( unificationProcedure )
+import           Kore.Unparser
+                 ( Unparse )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall level
+    :: forall level claim
     .  MetaOrObject level
+    => Unparse (Variable level)
+    => Claim claim
     => MetadataTools level StepperAttributes
     -- ^ tools required for the proof
     -> StepPatternSimplifier level
@@ -77,7 +90,7 @@ runRepl
     -- ^ builtin simplifier
     -> [Axiom level]
     -- ^ list of axioms to used in the proof
-    -> [Claim level]
+    -> [claim]
     -- ^ list of claims to be proven
     -> Simplifier ()
 runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
@@ -86,23 +99,27 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     evalStateT (whileM repl0) state
 
   where
-    repl0 :: StateT (ReplState level) Simplifier Bool
+    repl0 :: StateT (ReplState claim level) Simplifier Bool
     repl0 = do
-        command <- maybe ShowUsage id . parseMaybe commandParser <$> prompt
+        str <- prompt
+        let command = maybe ShowUsage id $ parseMaybe commandParser str
+        when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
         replInterpreter putStrLn command
 
-    state :: ReplState level
+    state :: ReplState claim level
     state =
         ReplState
-            { axioms  = addIndexesToAxioms axioms'
-            , claims  = addIndexesToClaims (length axioms') claims'
-            , claim   = firstClaim
-            , graph   = firstClaimExecutionGraph
-            , node    = (Strategy.root firstClaimExecutionGraph)
+            { axioms   = addIndexesToAxioms axioms'
+            , claims   = addIndexesToClaims (length axioms') claims'
+            , claim    = firstClaim
+            , graph    = firstClaimExecutionGraph
+            , node     = (Strategy.root firstClaimExecutionGraph)
+            , commands = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
             , omit    = []
             , stepper = stepper0
+            , unifier = unifier0
             , labels  = Map.empty
             }
 
@@ -114,10 +131,12 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
 
     addIndexesToClaims
         :: Int
-        -> [Claim level]
-        -> [Claim level]
+        -> [claim]
+        -> [claim]
     addIndexesToClaims len cls =
-        fmap (Claim . addIndex) (zip (fmap unClaim cls) [len..])
+        fmap
+            (coerce . Rule.getRewriteRule . addIndex)
+            (zip (fmap (Rule.RewriteRule . coerce) cls) [len..])
 
     addIndex
         :: (Rule.RewriteRule level Variable, Int)
@@ -142,15 +161,15 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
 
-    firstClaim :: Claim level
+    firstClaim :: Claim claim => claim
     firstClaim = maybe (error "No claims found") id $ listToMaybe claims'
 
     firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: Claim level
-        -> [Claim level]
+        :: claim
+        -> [claim]
         -> [Axiom level]
         -> ExecutionGraph
         -> Graph.Node
@@ -171,6 +190,19 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                     node
             else pure graph
 
+    unifier0
+        :: StepPattern level Variable
+        -> StepPattern level Variable
+        -> UnifierWithExplanation Variable ()
+    unifier0 first second =
+        () <$ unificationProcedure
+            tools
+            predicateSimplifier
+            simplifier
+            axiomToIdSimplifier
+            first
+            second
+
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =
         catch sa $ \UserInterrupt -> do
@@ -182,7 +214,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => MonadState (ReplState level) m => m String
+    prompt :: MonadIO m => MonadState (ReplState claim level) m => m String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do
