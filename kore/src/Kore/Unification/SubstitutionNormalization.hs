@@ -40,8 +40,6 @@ import           Kore.Step.Representation.PredicateSubstitution
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
-import           Kore.Unification.Substitution
-                 ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 
@@ -49,54 +47,53 @@ import           Kore.Variables.Fresh
 in which no variable that occurs on the left hand side also occurs on the
 right side.
 
+The substitution is presented as a 'Map' where any duplication has already been
+resolved.
+
 Returns an error when the substitution is not normalizable (i.e. it contains
 x = f(x) or something equivalent).
 -}
 normalizeSubstitution
-    ::  forall m level variable
-     .  ( MetaOrObject level
-        , Ord (variable level)
+    ::  forall m variable
+     .  ( Ord (variable Object)
         , OrdMetaOrObject variable
         , Monad m
         , FreshVariable variable
         , SortedVariable variable
-        , Show (variable level)
+        , Show (variable Object)
         )
-    => MetadataTools level StepperAttributes
-    -> Substitution level variable
+    => MetadataTools Object StepperAttributes
+    -> Map (variable Object) (StepPattern Object variable)
     -> ExceptT
-        (SubstitutionError level variable)
+        (SubstitutionError Object variable)
         m
-        (PredicateSubstitution level variable)
+        (PredicateSubstitution Object variable)
 normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
   where
-    interestingVariables :: Set (variable level)
-    interestingVariables = Map.keysSet variableToPattern
+    interestingVariables :: Set (variable Object)
+    interestingVariables = Map.keysSet substitution
 
-    variableToPattern :: Map (variable level) (StepPattern level variable)
-    variableToPattern = Substitution.toMap substitution
-
-    allDependencies :: Map (variable level) (Set (variable level))
+    allDependencies :: Map (variable Object) (Set (variable Object))
     allDependencies =
         Map.mapWithKey
             (getDependencies interestingVariables)
-            variableToPattern
+            substitution
 
-    nonSimplifiableDependencies :: Map (variable level) (Set (variable level))
+    nonSimplifiableDependencies :: Map (variable Object) (Set (variable Object))
     nonSimplifiableDependencies =
         Map.mapWithKey
             (getNonSimplifiableDependencies tools interestingVariables)
-            variableToPattern
+            substitution
 
     -- | Do a `topologicalSort` of variables using the `dependencies` Map.
     -- Topological cycles with non-ctors are returned as Left errors.
     -- Non-simplifiable cycles are returned as Right Nothing.
     topologicalSortConverted
         :: Either
-            (SubstitutionError level variable)
-            (Maybe [variable level])
+            (SubstitutionError Object variable)
+            (Maybe [variable Object])
     topologicalSortConverted =
         case topologicalSort (Set.toList <$> allDependencies) of
             Left (ToplogicalSortCycles vars) ->
@@ -111,19 +108,19 @@ normalizeSubstitution tools substitution =
             topologicalSort (Set.toList <$> nonSimplifiableDependencies)
 
     sortedSubstitution
-        :: [variable level]
-        -> [(variable level, StepPattern level variable)]
-    sortedSubstitution = fmap (variableToSubstitution variableToPattern)
+        :: [variable Object]
+        -> [(variable Object, StepPattern Object variable)]
+    sortedSubstitution = fmap (variableToSubstitution substitution)
 
     normalizeSortedSubstitution'
-        :: [variable level]
-        -> m (PredicateSubstitution level variable)
+        :: [variable Object]
+        -> m (PredicateSubstitution Object variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
     maybeToBottom
-        :: Maybe [variable level]
-        -> m (PredicateSubstitution level variable)
+        :: Maybe [variable Object]
+        -> m (PredicateSubstitution Object variable)
     maybeToBottom = maybe
         (return PredicateSubstitution.bottom)
         normalizeSortedSubstitution'
