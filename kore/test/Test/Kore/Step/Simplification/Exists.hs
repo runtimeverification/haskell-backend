@@ -220,7 +220,8 @@ test_makeEvaluate =
                         { term =
                             mkExists Mock.x (mkAnd fOfX (mkEquals_ fOfX gOfA))
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(Mock.y, hOfA)]
+                        , substitution =
+                            Substitution.unsafeWrap [(Mock.y, hOfA)]
                         }
                     ]
         actual <-
