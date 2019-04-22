@@ -13,6 +13,7 @@ module Kore.Step.Result
     , transitionResult
     , transitionResults
     , mapRules
+    , mapConfigs
     ) where
 
 import           Control.Applicative
@@ -116,3 +117,16 @@ See also: 'mapRule'
  -}
 mapRules :: (rule1 -> rule2) -> Results rule1 config -> Results rule2 config
 mapRules f rs@Results { results } = rs { results = mapRule f <$> results }
+
+{- | Apply functions to the configurations of the 'results' and 'remainders'.
+ -}
+mapConfigs
+   :: (config1 -> config2)  -- ^ map 'results'
+   -> (config1 -> config2)  -- ^ map 'remainders'
+   -> Results rule config1
+   -> Results rule config2
+mapConfigs mapResults mapRemainders Results { results, remainders } =
+    Results
+        { results = fmap mapResults <$> results
+        , remainders = mapRemainders <$> remainders
+        }
