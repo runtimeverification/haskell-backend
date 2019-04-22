@@ -38,6 +38,8 @@ import           Data.Set
 import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
+import           GHC.Stack
+                 ( HasCallStack )
 import           Prelude hiding
                  ( null )
 
@@ -45,9 +47,19 @@ import Kore.Step.Pattern as Pattern
 import Kore.TopBottom
        ( TopBottom (..) )
 
--- | 'Substitution' is a wrapper for a list of substitutions of the form
--- (variable level, StepPattern level variable). Values of this type should be
--- manipulated using the functions in this module.
+{- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
+
+Individual substitutions are a pair of type
+
+@
+(variable level, StepPattern level variable)
+@
+
+A collection of substitutions @[xᵢ=φᵢ]@ is /normalized/ if, for all @xⱼ=φⱼ@ in
+the collection, @xⱼ@ is unique among all @xᵢ@ and none of the @xᵢ@ (including
+@xⱼ@) occur free in @φⱼ@.
+
+ -}
 data Substitution level variable
     -- TODO (thomas.tuegel): Instead of a sum type, use a product containing the
     -- normalized and denormalized parts of the substitution together. That
@@ -91,11 +103,21 @@ unwrap
 unwrap (Substitution xs) = xs
 unwrap (NormalizedSubstitution xs)  = Map.toList xs
 
+{- | Convert a normalized substitution to a 'Map'.
+
+@toMap@ throws an error if the substitution is not normalized because the
+conversion to a @Map@ would be unsound.
+
+See also: 'fromMap'
+
+ -}
 toMap
-    :: Ord (variable level)
+    :: (HasCallStack, Ord (variable level))
     => Substitution level variable
     -> Map (variable level) (StepPattern level variable)
-toMap = Map.fromList . unwrap
+toMap (Substitution _) =
+    error "Cannot convert a denormalized substitution to a map!"
+toMap (NormalizedSubstitution norm) = norm
 
 fromMap
     :: Ord (variable level)
@@ -172,6 +194,11 @@ filter
 filter filtering =
     modify (Prelude.filter (filtering . fst))
 
+{- | Return the pair of substitutions that do and do not satisfy the criterion.
+
+The normalization state is preserved.
+
+ -}
 partition
     :: (variable level -> StepPattern level variable -> Bool)
     -> Substitution level variable
@@ -185,10 +212,7 @@ partition criterion (NormalizedSubstitution substitution) =
 
 {- | Return the free variables of the 'Substitution'.
 
-In a substitution of the form
-@
-variable = term
-@
+In a substitution of the form @variable = term@
 the free variables are @variable@ and all the free variables of @term@.
 
  -}
