@@ -24,6 +24,8 @@ import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
+import           Data.Coerce
+                 ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
@@ -67,8 +69,9 @@ import qualified Kore.Step.Strategy as Strategy
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall level
+    :: forall level claim
     .  MetaOrObject level
+    => Claim claim
     => MetadataTools level StepperAttributes
     -- ^ tools required for the proof
     -> StepPatternSimplifier level
@@ -79,7 +82,7 @@ runRepl
     -- ^ builtin simplifier
     -> [Axiom level]
     -- ^ list of axioms to used in the proof
-    -> [Claim level]
+    -> [claim]
     -- ^ list of claims to be proven
     -> Simplifier ()
 runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
@@ -88,14 +91,14 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     evalStateT (whileM repl0) state
 
   where
-    repl0 :: StateT (ReplState level) Simplifier Bool
+    repl0 :: StateT (ReplState claim level) Simplifier Bool
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (++ [str])
         replInterpreter putStrLn command
 
-    state :: ReplState level
+    state :: ReplState claim level
     state =
         ReplState
             { axioms   = addIndexesToAxioms axioms'
@@ -119,10 +122,12 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
 
     addIndexesToClaims
         :: Int
-        -> [Claim level]
-        -> [Claim level]
+        -> [claim]
+        -> [claim]
     addIndexesToClaims len cls =
-        fmap (Claim . addIndex) (zip (fmap unClaim cls) [len..])
+        fmap
+            (coerce . Rule.getRewriteRule . addIndex)
+            (zip (fmap (Rule.RewriteRule . coerce) cls) [len..])
 
     addIndex
         :: (Rule.RewriteRule level Variable, Int)
@@ -147,15 +152,15 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
 
-    firstClaim :: Claim level
+    firstClaim :: Claim claim => claim
     firstClaim = maybe (error "No claims found") id $ listToMaybe claims'
 
     firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: Claim level
-        -> [Claim level]
+        :: claim
+        -> [claim]
         -> [Axiom level]
         -> ExecutionGraph
         -> Graph.Node
@@ -187,7 +192,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => MonadState (ReplState level) m => m String
+    prompt :: MonadIO m => MonadState (ReplState claim level) m => m String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do

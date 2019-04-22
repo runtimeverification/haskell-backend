@@ -39,7 +39,7 @@ import           Kore.OnePath.Step
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
-                 ( Claim (..) )
+                 ( Claim )
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
@@ -178,12 +178,12 @@ type InnerGraph =
     Gr (CommonStrategyPattern Object) (Seq (RewriteRule Object Variable))
 
 -- | State for the rep.
-data ReplState level = ReplState
+data ReplState claim level = ReplState
     { axioms   :: [Axiom level]
     -- ^ List of available axioms
-    , claims   :: [Claim level]
+    , claims   :: [claim]
     -- ^ List of claims to be proven
-    , claim    :: Claim level
+    , claim    :: claim
     -- ^ Currently focused claim in the repl
     , graph    :: ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
@@ -194,12 +194,13 @@ data ReplState level = ReplState
     , omit     :: [String]
     -- ^ The omit list, initially empty
     , stepper
-          :: Claim level
-          -> [Claim level]
-          -> [Axiom level]
-          -> ExecutionGraph
-          -> Graph.Node
-          -> Simplifier ExecutionGraph
+        :: Claim claim
+        => claim
+        -> [claim]
+        -> [Axiom level]
+        -> ExecutionGraph
+        -> Graph.Node
+        -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , labels   :: Map String Graph.Node
     -- ^ Map from labels to nodes
