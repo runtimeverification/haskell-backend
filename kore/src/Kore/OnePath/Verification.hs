@@ -10,7 +10,7 @@ This should be imported qualified.
 
 module Kore.OnePath.Verification
     ( Axiom (..)
-    , Claim (..)
+    , Claim
     , isTrusted
     , defaultStrategy
     , verify
@@ -22,7 +22,7 @@ import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT, throwE )
 import           Data.Coerce
-                 ( coerce )
+                 ( Coercible, coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
@@ -33,7 +33,7 @@ import           Data.Profunctor
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject (..) )
+                 ( MetaOrObject (..), Object )
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -62,8 +62,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern),
-                 getRewriteRule )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -113,20 +112,20 @@ decision is subject to change without notice.
 
  -}
 
-{- | Wrapper for a rewrite rule that should be used as a claim.
+{- | Class type for claim-like rules
 -}
-newtype Claim level = Claim
-    { unClaim :: RewriteRule level Variable
-    }
+type Claim claim =
+    ( Coercible (RulePattern Object Variable) claim
+    , Coercible claim (RulePattern Object Variable)
+    )
 
 -- | Is the 'Claim' trusted?
-isTrusted :: Claim level -> Bool
+isTrusted :: Claim claim => claim -> Bool
 isTrusted =
     Trusted.isTrusted
     . Attribute.trusted
     . RulePattern.attributes
-    . getRewriteRule
-    . unClaim
+    . coerce
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
@@ -195,9 +194,11 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 defaultStrategy
-    :: forall level
-    .   (MetaOrObject level)
-    => [Claim level]
+    :: forall level claim
+    .   ( MetaOrObject level
+        , Claim claim
+        )
+    => [claim]
     -- The claims that we want to prove
     -> [Axiom level]
     -> CommonExpandedPattern level
@@ -225,7 +226,7 @@ defaultStrategy
       where
         unwrap (Axiom a) = a
     coinductiveRewrites :: [RewriteRule level Variable]
-    coinductiveRewrites = map unClaim claims
+    coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
     :: forall level . (MetaOrObject level)
@@ -303,15 +304,17 @@ unprovenNodes executionGraph =
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
 verifyClaimStep
-    :: forall level
-    .  MetaOrObject level
+    :: forall level claim
+    .   ( MetaOrObject level
+        , Claim claim
+        )
     => MetadataTools level StepperAttributes
     -> StepPatternSimplifier level
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> Claim level
+    -> claim
     -- ^ claim that is being proven
-    -> [Claim level]
+    -> [claim]
     -- ^ list of claims in the spec module
     -> [Axiom level]
     -- ^ list of axioms in the main module
@@ -354,9 +357,12 @@ verifyClaimStep
             (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
     strategy'
         | isRoot =
-              onePathFirstStep targetPattern rewrites
+            onePathFirstStep targetPattern rewrites
         | otherwise =
-              onePathFollowupStep targetPattern (unClaim <$> claims) rewrites
+            onePathFollowupStep
+                targetPattern
+                (RewriteRule . coerce <$> claims)
+                rewrites
 
     rewrites :: [RewriteRule level Variable]
     rewrites = coerce <$> axioms
@@ -366,7 +372,6 @@ verifyClaimStep
         ExpandedPattern.fromPurePattern
             . right
             . coerce
-            . unClaim
             $ target
 
     isRoot :: Bool
