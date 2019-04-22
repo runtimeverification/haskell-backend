@@ -386,4 +386,4 @@ splitSubstitutionByDependency variable substitution =
     (if Substitution.null with then Nothing else Just with, without)
   where
     (with, without) = Substitution.partition hasVariable substitution
-    hasVariable (_, term) = Set.member variable (Pattern.freeVariables term)
+    hasVariable _ term = Set.member variable (Pattern.freeVariables term)

@@ -194,7 +194,8 @@ The result has an empty 'Substitution'.
 
  -}
 fromPredicate
-    :: Predicate level variable
+    :: Ord (variable level)
+    => Predicate level variable
     -> Predicated level variable ()
 fromPredicate predicate =
     Predicated { term = (), predicate, substitution = mempty }
