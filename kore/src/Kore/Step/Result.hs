@@ -9,8 +9,12 @@ module Kore.Step.Result
     , remainder
     , withoutRemainders
     , gatherResults
+    , transitionResult
+    , transitionResults
     ) where
 
+import           Control.Applicative
+                 ( Alternative ((<|>)) )
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import           Data.Sequence
@@ -20,6 +24,9 @@ import qualified GHC.Generics as GHC
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Transition
+                 ( TransitionT )
+import qualified Kore.Step.Transition as Transition
 import           Kore.TopBottom
                  ( TopBottom )
 
@@ -75,3 +82,19 @@ gatherResults
     => Results rule config
     -> MultiOr config
 gatherResults = Foldable.fold . fmap result . results
+
+{- | Distribute the 'Result' over a transition rule.
+ -}
+transitionResult :: Result rule config -> TransitionT rule m config
+transitionResult Result { appliedRule, result } = do
+    Transition.addRule appliedRule
+    Foldable.asum (return <$> result)
+
+{- | Distribute the 'Results' over a transition rule.
+ -}
+transitionResults :: Results rule config -> TransitionT rule m config
+transitionResults Results { results, remainders } =
+    transitionResultsResults <|> transitionResultsRemainders
+  where
+    transitionResultsResults = Foldable.asum (transitionResult <$> results)
+    transitionResultsRemainders = Foldable.asum (return <$> remainders)
