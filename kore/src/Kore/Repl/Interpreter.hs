@@ -31,6 +31,8 @@ import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), evalStateT )
 import           Data.Bifunctor
                  ( bimap )
+import           Data.Coerce
+                 ( coerce )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
@@ -73,7 +75,7 @@ import qualified Kore.OnePath.Step as StrategyPatternTransformer
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
-                 ( Claim (..) )
+                 ( Claim )
 import           Kore.Repl.Data
 import           Kore.Step.Pattern
                  ( StepPattern )
@@ -151,7 +153,7 @@ showClaim
     -> m ()
 showClaim index = do
     claim <- Lens.preuse $ lensClaims . Lens.element index
-    maybe printNotFound (printRewriteRule . unClaim) $ claim
+    maybe printNotFound (printRewriteRule .RewriteRule . coerce) $ claim
 
 showAxiom
     :: MonadIO m
@@ -726,7 +728,8 @@ data StepResult
     deriving Show
 
 emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph
-emptyExecutionGraph = Strategy.emptyExecutionGraph . extractConfig . unClaim
+emptyExecutionGraph =
+    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
 
 extractConfig
     :: RewriteRule level Variable

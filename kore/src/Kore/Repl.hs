@@ -22,6 +22,8 @@ import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
+import           Data.Coerce
+                 ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
@@ -118,7 +120,9 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         -> [claim]
         -> [claim]
     addIndexesToClaims len cls =
-        fmap (toClaim . addIndex) (zip (fmap unClaim cls) [len..])
+        fmap
+            (coerce . Rule.getRewriteRule . addIndex)
+            (zip (fmap (Rule.RewriteRule . coerce) cls) [len..])
 
     addIndex
         :: (Rule.RewriteRule level Variable, Int)

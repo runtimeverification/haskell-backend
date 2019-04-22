@@ -38,7 +38,7 @@ import           Kore.OnePath.Step
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
-                 ( Claim (..) )
+                 ( Claim )
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data

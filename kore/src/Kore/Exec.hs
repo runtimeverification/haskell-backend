@@ -23,6 +23,8 @@ import qualified Control.Monad as Monad
 import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
+import           Data.Coerce
+                 ( coerce )
 import qualified Data.Map.Strict as Map
 import           System.Exit
                  ( ExitCode (..) )
@@ -47,8 +49,7 @@ import           Kore.IndexedModule.Resolvers
                  ( resolveSymbol )
 import qualified Kore.Logger as Log
 import           Kore.OnePath.Verification
-                 ( Axiom (Axiom), Claim, defaultStrategy, toClaim, unClaim,
-                 verify )
+                 ( Axiom (Axiom), Claim, defaultStrategy, verify )
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
@@ -75,9 +76,9 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), extractOnePathClaims,
-                 extractRewriteAxioms, getRewriteRule )
+                 ( EqualityRule (EqualityRule), OnePathRule (..),
+                 RewriteRule (RewriteRule), RulePattern (RulePattern),
+                 extractOnePathClaims, extractRewriteAxioms, getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Search
@@ -288,14 +289,13 @@ assertSomeClaims claims =
 
 makeClaim :: Claim claim => (Attribute.Axiom, claim) -> claim
 makeClaim (attributes, rule) =
-    toClaim
-    . RewriteRule
-    $ RulePattern { attributes = attributes
-                  , left = (left . getRewriteRule . unClaim $ rule)
-                  , right = (right . getRewriteRule . unClaim $ rule)
-                  , requires = (requires . getRewriteRule . unClaim $ rule)
-                  , ensures = (ensures . getRewriteRule . unClaim $ rule)
-                  }
+    coerce RulePattern
+        { attributes = attributes
+        , left = (left . coerce $ rule)
+        , right = (right . coerce $ rule)
+        , requires = (requires . coerce $ rule)
+        , ensures = (ensures . coerce $ rule)
+        }
 
 simplifyRuleOnSecond
     :: Claim claim
@@ -303,11 +303,12 @@ simplifyRuleOnSecond
     -> (Attribute.Axiom, claim)
     -> Simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond tools (atts, rule) = do
-    rule' <- simplifyRewriteRule tools (unClaim rule)
-    return (atts, toClaim rule')
+    rule' <- simplifyRewriteRule tools (RewriteRule . coerce $ rule)
+    return (atts, coerce . getRewriteRule $ rule')
 
 extractUntrustedClaims :: Claim claim => [claim] -> [Rewrite]
-extractUntrustedClaims = map Claim.unClaim . filter (not . Claim.isTrusted)
+extractUntrustedClaims =
+    map (RewriteRule . coerce) . filter (not . Claim.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.
 execute

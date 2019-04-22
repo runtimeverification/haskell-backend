@@ -9,14 +9,16 @@ import Test.Tasty.HUnit
 
 import           Control.Monad.Trans.Except
                  ( runExceptT )
+import           Data.Coerce
+                 ( coerce )
 import           Data.Default
                  ( def )
+import           Data.Limit
+                 ( Limit (..) )
 import qualified Data.Map as Map
 import           Numeric.Natural
                  ( Natural )
 
-import           Data.Limit
-                 ( Limit (..) )
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
@@ -437,7 +439,7 @@ runVerification
         (Mock.substitutionSimplifier metadataTools)
         Map.empty
         (OnePath.defaultStrategy claims axioms)
-        ( map (\c -> (Claim.unClaim c, stepLimit))
+        ( map (\c -> (RewriteRule . coerce $ c, stepLimit))
         . filter (not . Claim.isTrusted)
         $ claims)
   where
