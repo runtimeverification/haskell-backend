@@ -18,6 +18,7 @@ module Kore.Repl.Data
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
     , lensLabels, lensOmit, lensUnifier
+    , lensCommands, shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
     ) where
@@ -120,6 +121,8 @@ data ReplCommand
     -- ^ Attempt to apply axiom or claim to current node.
     | Clear !(Maybe Int)
     -- ^ Remove child nodes from graph.
+    | SaveSession FilePath
+    -- ^ Writes all commands executed in this session to a file on disk.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -168,6 +171,25 @@ helpText =
     \ either the target node was reached using the SMT solver\
     \ or it was reached through the Remove Destination step."
 
+-- | Determines whether the command needs to be stored or not. Commands that
+-- affect the outcome of the proof are stored.
+shouldStore :: ReplCommand -> Bool
+shouldStore =
+    \case
+        ShowUsage        -> False
+        Help             -> False
+        ShowClaim _      -> False
+        ShowAxiom _      -> False
+        ShowGraph        -> False
+        ShowConfig _     -> False
+        ShowLeafs        -> False
+        ShowRule _       -> False
+        ShowPrecBranch _ -> False
+        ShowChildren _   -> False
+        SaveSession _    -> False
+        Exit             -> False
+        _                -> True
+
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
@@ -179,17 +201,19 @@ type InnerGraph =
 
 -- | State for the rep.
 data ReplState claim level = ReplState
-    { axioms  :: [Axiom level]
+    { axioms   :: [Axiom level]
     -- ^ List of available axioms
-    , claims  :: [claim]
+    , claims   :: [claim]
     -- ^ List of claims to be proven
-    , claim   :: claim
+    , claim    :: claim
     -- ^ Currently focused claim in the repl
-    , graph   :: ExecutionGraph
+    , graph    :: ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
-    , node    :: Graph.Node
+    , node     :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root
-    , omit    :: [String]
+    , commands :: Seq String
+    -- ^ All commands evaluated by the current repl session
+    , omit     :: [String]
     -- ^ The omit list, initially empty
     , stepper
         :: Claim claim
