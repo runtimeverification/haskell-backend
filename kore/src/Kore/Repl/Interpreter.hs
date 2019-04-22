@@ -26,9 +26,9 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.RWS.Strict
-                 ( MonadWriter, RWST, get, lift, runRWST, tell )
+                 ( MonadWriter, RWST, get, lift, put, runRWST, tell )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT (..), evalStateT )
+                 ( MonadState, StateT (..), execStateT )
 import           Data.Bifunctor
                  ( bimap )
 import           Data.Foldable
@@ -374,7 +374,8 @@ redirect
     -> ReplM level ()
 redirect cmd path = do
     st <- get
-    _ <- lift $ evalStateT (replInterpreter redirectToFile cmd) st
+    st' <- lift $ execStateT (replInterpreter redirectToFile cmd) st
+    put st'
     putStrLn' "File created."
     pure ()
   where
@@ -398,7 +399,8 @@ pipe cmd file args = do
                     { SP.std_in = SP.CreatePipe, SP.std_out = SP.CreatePipe }
             st <- get
             let outputFunc = maybe putStrLn hPutStr mhin
-            _ <- lift $ evalStateT (replInterpreter outputFunc cmd) st
+            st' <- lift $ execStateT (replInterpreter outputFunc cmd) st
+            put st'
             case mhout of
                 Just handle -> do
                     output <- liftIO $ hGetContents handle
