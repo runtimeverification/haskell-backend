@@ -56,6 +56,8 @@ import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Pattern
+                 ( StepPattern )
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
@@ -64,6 +66,10 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Unification.Procedure
+                 ( unificationProcedure )
+import           Kore.Unparser
+                 ( Unparse )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
@@ -71,6 +77,7 @@ import qualified Kore.Step.Strategy as Strategy
 runRepl
     :: forall level claim
     .  MetaOrObject level
+    => Unparse (Variable level)
     => Claim claim
     => MetadataTools level StepperAttributes
     -- ^ tools required for the proof
@@ -109,9 +116,10 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , commands = []
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
-            , omit     = []
-            , stepper  = stepper0
-            , labels   = Map.empty
+            , omit    = []
+            , stepper = stepper0
+            , unifier = unifier0
+            , labels  = Map.empty
             }
 
     addIndexesToAxioms
@@ -180,6 +188,19 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                     graph
                     node
             else pure graph
+
+    unifier0
+        :: StepPattern level Variable
+        -> StepPattern level Variable
+        -> UnifierWithExplanation Variable ()
+    unifier0 first second =
+        () <$ unificationProcedure
+            tools
+            predicateSimplifier
+            simplifier
+            axiomToIdSimplifier
+            first
+            second
 
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =
