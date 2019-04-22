@@ -186,7 +186,11 @@ toMLPattern = toStepPattern
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
 -}
-bottom :: MetaOrObject level => ExpandedPattern level variable
+bottom
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        )
+    => ExpandedPattern level variable
 bottom =
     Predicated
         { term      = mkBottom_
@@ -199,7 +203,12 @@ bottom =
 The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
-bottomOf :: MetaOrObject level => Sort level -> ExpandedPattern level variable
+bottomOf
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        )
+    => Sort level
+    -> ExpandedPattern level variable
 bottomOf resultSort =
     Predicated
         { term      = mkBottom resultSort
@@ -210,7 +219,11 @@ bottomOf resultSort =
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
-top :: MetaOrObject level => ExpandedPattern level variable
+top
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        )
+    => ExpandedPattern level variable
 top =
     Predicated
         { term      = mkTop_
@@ -220,7 +233,12 @@ top =
 
 {- | An 'ExpandedPattern' where the 'term' is 'Top' of the given 'Sort'.
  -}
-topOf :: MetaOrObject level => Sort level -> ExpandedPattern level variable
+topOf
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        )
+    => Sort level
+    -> ExpandedPattern level variable
 topOf resultSort =
     Predicated
         { term      = mkTop resultSort
@@ -237,7 +255,7 @@ topOf resultSort =
 
  -}
 fromPurePattern
-    :: MetaOrObject level
+    :: (MetaOrObject level, Ord (variable level))
     => StepPattern level variable
     -> ExpandedPattern level variable
 fromPurePattern term@(Recursive.project -> _ :< projected) =

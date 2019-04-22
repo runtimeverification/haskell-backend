@@ -43,7 +43,7 @@ propertyTests =
   , null `gives_`         [(empty, True),  (normalized, False), (unnormalized, False) ]
   ]
   where
-    empty = (mempty::Substitution level variable)
+    empty = (mempty :: Substitution Object Variable)
     normalized = unsafeWrap [(Mock.x, Mock.a)]
     unnormalized = wrap [(Mock.x, Mock.a)]
 

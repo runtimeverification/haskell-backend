@@ -38,6 +38,8 @@ import           Data.Set
 import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
+import           GHC.Stack
+                 ( HasCallStack )
 import           Prelude hiding
                  ( null )
 
@@ -45,35 +47,53 @@ import Kore.Step.Pattern as Pattern
 import Kore.TopBottom
        ( TopBottom (..) )
 
--- | 'Substitution' is a wrapper for a list of substitutions of the form
--- (variable level, StepPattern level variable). Values of this type should be
--- manipulated using the functions in this module.
+{- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
+
+Individual substitutions are a pair of type
+
+@
+(variable level, StepPattern level variable)
+@
+
+A collection of substitutions @[xᵢ=φᵢ]@ is /normalized/ if, for all @xⱼ=φⱼ@ in
+the collection, @xⱼ@ is unique among all @xᵢ@ and none of the @xᵢ@ (including
+@xⱼ@) occur free in @φⱼ@.
+
+ -}
 data Substitution level variable
+    -- TODO (thomas.tuegel): Instead of a sum type, use a product containing the
+    -- normalized and denormalized parts of the substitution together. That
+    -- would enable us to keep more substitutions normalized in the Semigroup
+    -- instance below.
     = Substitution ![(variable level, StepPattern level variable)]
-    | NormalizedSubstitution ![(variable level, StepPattern level variable)]
+    | NormalizedSubstitution
+        !(Map (variable level) (StepPattern level variable))
     deriving (Eq, Generic, Ord, Show)
 
-instance
-    (NFData (variable level)) => NFData (Substitution level variable)
+instance NFData (variable level) => NFData (Substitution level variable)
 
 instance
-    (Hashable (variable level)) => Hashable (Substitution level variable)
+    Hashable (variable level) =>
+    Hashable (Substitution level variable)
+  where
+    hashWithSalt salt (Substitution denorm) =
+        salt `hashWithSalt` (0::Int) `hashWithSalt` denorm
+    hashWithSalt salt (NormalizedSubstitution norm) =
+        salt `hashWithSalt` (1::Int) `hashWithSalt` (Map.toList norm)
 
 instance TopBottom (Substitution level variable)
   where
     isTop = null
     isBottom _ = False
 
-instance Semigroup (Substitution level variable) where
-    (Substitution [])             <> (Substitution []) = mempty
-    (Substitution [])             <> ns@(NormalizedSubstitution _) = ns
-    (NormalizedSubstitution [])   <> ns@(NormalizedSubstitution _) = ns
-    ns@(NormalizedSubstitution _) <> (Substitution []) = ns
-    ns@(NormalizedSubstitution _) <> (NormalizedSubstitution []) = ns
-    u1                            <> u2 =
-        Substitution $ unwrap u1 <> unwrap u2
+instance Ord (variable level) => Semigroup (Substitution level variable) where
+    a <> b
+      | null a, null b = mempty
+      | null a         = b
+      | null b         = a
+      | otherwise      = Substitution (unwrap a <> unwrap b)
 
-instance Monoid (Substitution level variable) where
+instance Ord (variable level) => Monoid (Substitution level variable) where
     mempty = NormalizedSubstitution mempty
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
@@ -81,13 +101,23 @@ unwrap
     :: Substitution level variable
     -> [(variable level, StepPattern level variable)]
 unwrap (Substitution xs) = xs
-unwrap (NormalizedSubstitution xs)  = xs
+unwrap (NormalizedSubstitution xs)  = Map.toList xs
 
+{- | Convert a normalized substitution to a 'Map'.
+
+@toMap@ throws an error if the substitution is not normalized because the
+conversion to a @Map@ would be unsound.
+
+See also: 'fromMap'
+
+ -}
 toMap
-    :: Ord (variable level)
+    :: (HasCallStack, Ord (variable level))
     => Substitution level variable
     -> Map (variable level) (StepPattern level variable)
-toMap = Map.fromList . unwrap
+toMap (Substitution _) =
+    error "Cannot convert a denormalized substitution to a map!"
+toMap (NormalizedSubstitution norm) = norm
 
 fromMap
     :: Ord (variable level)
@@ -100,15 +130,16 @@ fromMap = wrap . Map.toList
 wrap
     :: [(variable level, StepPattern level variable)]
     -> Substitution level variable
-wrap [] = NormalizedSubstitution []
+wrap [] = NormalizedSubstitution Map.empty
 wrap xs = Substitution xs
 
 -- | Wrap the list of substitutions to a normalized substitution. Do not use
 -- this unless you are sure you need it.
 unsafeWrap
-    :: [(variable level, StepPattern level variable)]
+    :: Ord (variable level)
+    => [(variable level, StepPattern level variable)]
     -> Substitution level variable
-unsafeWrap = NormalizedSubstitution
+unsafeWrap = NormalizedSubstitution . Map.fromList
 
 -- | Maps a function over the inner representation of the 'Substitution'. The
 -- normalization status is reset to un-normalized.
@@ -148,9 +179,8 @@ isNormalized (NormalizedSubstitution _) = True
 
 -- | Returns true iff the substitution is empty.
 null :: Substitution level variable -> Bool
-null (Substitution [])           = True
-null (NormalizedSubstitution []) = True
-null _                           = False
+null (Substitution denorm)         = List.null denorm
+null (NormalizedSubstitution norm) = Map.null norm
 
 -- | Returns the list of variables in the 'Substitution'.
 variables :: Substitution level variable -> [(variable level)]
@@ -164,23 +194,25 @@ filter
 filter filtering =
     modify (Prelude.filter (filtering . fst))
 
+{- | Return the pair of substitutions that do and do not satisfy the criterion.
+
+The normalization state is preserved.
+
+ -}
 partition
-    :: ((variable level, StepPattern level variable) -> Bool)
+    :: (variable level -> StepPattern level variable -> Bool)
     -> Substitution level variable
     -> (Substitution level variable, Substitution level variable)
 partition criterion (Substitution substitution) =
-    let (true, false) = List.partition criterion substitution
+    let (true, false) = List.partition (uncurry criterion) substitution
     in (Substitution true, Substitution false)
 partition criterion (NormalizedSubstitution substitution) =
-    let (true, false) = List.partition criterion substitution
+    let (true, false) = Map.partitionWithKey criterion substitution
     in (NormalizedSubstitution true, NormalizedSubstitution false)
 
 {- | Return the free variables of the 'Substitution'.
 
-In a substitution of the form
-@
-variable = term
-@
+In a substitution of the form @variable = term@
 the free variables are @variable@ and all the free variables of @term@.
 
  -}

@@ -85,6 +85,7 @@ import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Unify
                  ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -230,8 +231,9 @@ evalGet =
                         (Seq.lookup ix _list)
             emptyList <|> bothConcrete
         )
-    maybeBottom =
-        maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
+      where
+        maybeBottom =
+            maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
 
 evalUnit :: Builtin.Function
 evalUnit =
@@ -421,14 +423,18 @@ unifyEquals
     -> MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> (p -> p -> unifier (expanded, proof))
-    -> (p -> p -> MaybeT unifier (expanded, proof))
+    -> p
+    -> p
+    -> MaybeT unifier (expanded, proof)
 unifyEquals
     simplificationType
     tools
     _
     simplifyChild
+    first
+    second
   =
-    unifyEquals0
+    unifyEquals0 first second
   where
     hookTools = StepperAttributes.hook <$> tools
 
@@ -486,8 +492,7 @@ unifyEquals
         -> Domain.InternalList p
         -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2
-      | Seq.length list1 /= Seq.length list2 =
-        return (ExpandedPattern.bottom, SimplificationProof)
+      | Seq.length list1 /= Seq.length list2 = bottomWithExplanation
       | otherwise =
         Reflection.give tools $ do
             unified <-
@@ -512,8 +517,7 @@ unifyEquals
         builtin1
         builtin2
         frame2
-      | Seq.length prefix2 > Seq.length list1 =
-        return (ExpandedPattern.bottom, SimplificationProof)
+      | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation
       | otherwise =
         do
             (prefixUnified, _) <-
@@ -546,8 +550,7 @@ unifyEquals
         builtin1
         frame2
         builtin2
-      | Seq.length suffix2 > Seq.length list1 =
-        return (ExpandedPattern.bottom, SimplificationProof)
+      | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation
       | otherwise =
         do
             (prefixUnified, _) <- simplifyChild frame2 listPrefix1
@@ -569,6 +572,12 @@ unifyEquals
           where
             prefixLength = Seq.length list1 - Seq.length suffix2
         listPrefix1 = asInternal tools builtinListSort prefix1
+    bottomWithExplanation = do
+        Monad.Unify.explainBottom
+            "Cannot unify lists of different length."
+            first
+            second
+        return (ExpandedPattern.bottom, SimplificationProof)
 
 concatKey :: IsString s => s
 concatKey = "LIST.concat"

@@ -13,6 +13,7 @@ module Kore.Step.Pattern
     , module Kore.AST.MetaOrObject
     , module Kore.AST.Pure
     , Kore.Step.Pattern.freeVariables
+    , hasFreeVariable
     , mapVariables
     , traverseVariables
     , asConcreteStepPattern
@@ -74,6 +75,13 @@ freeVariables :: StepPattern level variable -> Set (variable level)
 freeVariables stepPattern =
     let Valid { freeVariables = freeVars } = extract stepPattern
     in freeVars
+
+hasFreeVariable
+    :: Ord (variable Object)
+    => variable Object
+    -> StepPattern Object variable
+    -> Bool
+hasFreeVariable variable = Set.member variable . Kore.Step.Pattern.freeVariables
 
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.
 
