@@ -822,11 +822,6 @@ instance (MetaOrObject level, PrettyPrint (variable level))
         writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
--- instance PrettyPrint UnificationError where
---     prettyPrint _ UnsupportedPatterns = "UnsupportedPatterns"
---     prettyPrint _ UnsupportedSymbolic = "UnsupportedSymbolic"
-
--- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance MetaOrObject level => PrettyPrint (ClashReason level) where
     prettyPrint flags (DomainValueClash h) =
         betweenParentheses
