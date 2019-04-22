@@ -617,9 +617,12 @@ saveSession
     => FilePath
     -> m ()
 saveSession path = do
-   content <- unlines <$> Lens.use lensCommands
+   content <- seqUnlines <$> Lens.use lensCommands
    liftIO $ writeFile path content
    putStrLn' "Done."
+ where
+   seqUnlines :: Seq String -> String
+   seqUnlines = unlines . toList
 
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do

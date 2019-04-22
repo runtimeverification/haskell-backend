@@ -30,6 +30,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( listToMaybe )
+import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
@@ -102,7 +103,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
-        when (shouldStore command) $ lensCommands Lens.%= (++ [str])
+        when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
         replInterpreter putStrLn command
 
     state :: ReplState claim level
@@ -113,7 +114,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , claim    = firstClaim
             , graph    = firstClaimExecutionGraph
             , node     = (Strategy.root firstClaimExecutionGraph)
-            , commands = []
+            , commands = mempty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
             , omit    = []

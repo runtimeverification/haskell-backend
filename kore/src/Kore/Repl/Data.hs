@@ -211,7 +211,7 @@ data ReplState claim level = ReplState
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node     :: Graph.Node
     -- ^ Currently selected node in the graph; initialized with node = root
-    , commands :: [String]
+    , commands :: Seq String
     -- ^ All commands evaluated by the current repl session
     , omit     :: [String]
     -- ^ The omit list, initially empty
