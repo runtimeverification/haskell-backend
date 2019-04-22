@@ -405,7 +405,7 @@ pipe cmd file args = do
                 Just handle -> do
                     output <- liftIO $ hGetContents handle
                     putStrLn' output
-                Nothing -> putStrLn' "No out"
+                Nothing -> putStrLn' "Error: couldn't access output handle of executable."
 
 tryAxiomClaim
     :: forall level
