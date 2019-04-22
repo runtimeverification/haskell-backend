@@ -124,11 +124,11 @@ makeEvaluate first second
   | ExpandedPattern.isTop first =
     (MultiOr.make [second], SimplificationProof)
   | ExpandedPattern.isBottom first =
-    (fst $ Not.makeEvaluate second, SimplificationProof)
+    (Not.makeEvaluate second, SimplificationProof)
   | ExpandedPattern.isTop second =
     (MultiOr.make [first], SimplificationProof)
   | ExpandedPattern.isBottom second =
-    (fst $ Not.makeEvaluate first, SimplificationProof)
+    (Not.makeEvaluate first, SimplificationProof)
   | otherwise =
     makeEvaluateNonBoolIff first second
 

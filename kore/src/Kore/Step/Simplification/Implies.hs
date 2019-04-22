@@ -157,7 +157,7 @@ makeEvaluateImplies
   | ExpandedPattern.isTop second =
     (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | ExpandedPattern.isBottom second =
-    Not.makeEvaluate first
+    (Not.makeEvaluate first, SimplificationProof)
   | otherwise =
     makeEvaluateImpliesNonBool first second
 

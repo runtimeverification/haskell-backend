@@ -22,16 +22,15 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Unparser
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrOfExpandedPattern'
@@ -92,8 +91,7 @@ simplifyEvaluated simplified
     Foldable.foldr simplifyEvaluatedWorker (MultiOr.make [ExpandedPattern.top]) simplified
   where
     simplifyEvaluatedWorker this rest =
-        let (this', _) = makeEvaluate this
-        in liftA2 mkAnd <$> this' <*> rest
+        liftA2 mkAnd <$> makeEvaluate this <*> rest
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'ExpandedPattern'
 child.
@@ -108,9 +106,9 @@ makeEvaluate
         , Unparse (variable level)
         )
     => ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level variable
 makeEvaluate Predicated { term, predicate, substitution } =
-    ( MultiOr.make
+    MultiOr.make
         [ Predicated
             { term = makeTermNot term
             , predicate = makeTruePredicate
@@ -120,15 +118,11 @@ makeEvaluate Predicated { term, predicate, substitution } =
             { term = mkTop (getSort term)
             , predicate =
                 makeNotPredicate
-                    (makeAndPredicate
-                        predicate
-                        (substitutionToPredicate substitution)
-                    )
+                $ makeAndPredicate predicate
+                $ Predicate.fromSubstitution substitution
             , substitution = mempty
             }
         ]
-    , SimplificationProof
-    )
 
 makeTermNot
     ::  ( MetaOrObject level
