@@ -163,5 +163,5 @@ word = wordWithout []
 wordWithout :: [Char] -> Parser String
 wordWithout xs = some (noneOf $ [' '] <> xs) <* Char.space
 
-maybeWord:: Parser (Maybe String)
+maybeWord :: Parser (Maybe String)
 maybeWord = optional word
