@@ -11,6 +11,7 @@ module Kore.Step.Step
     ( RulePattern
     , UnificationProcedure (..)
     , UnifiedRule
+    , withoutUnification
     , Results
     , Step.remainders
     , Step.results
@@ -128,6 +129,9 @@ solution and the renamed rule is wrapped with the combined condition.
  -}
 type UnifiedRule variable =
     Predicated Object variable (RulePattern Object variable)
+
+withoutUnification :: UnifiedRule variable -> RulePattern Object variable
+withoutUnification = Predicated.term
 
 type Result variable =
     Step.Result
