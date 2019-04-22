@@ -134,7 +134,7 @@ redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd = Redirect cmd <$$> literal ">" *> word
 
 pipe :: ReplCommand -> Parser ReplCommand
-pipe cmd = Pipe cmd <$$> literal "|" *> word <**> many (wordWithout ['>']) -- many (string <* noneOf ['>'])
+pipe cmd = Pipe cmd <$$> literal "|" *> word <**> many (wordWithout ['>'])
 
 infixr 2 <$$>
 infixr 1 <**>
@@ -158,10 +158,10 @@ maybeDecimal :: Parser (Maybe Int)
 maybeDecimal = optional decimal
 
 word :: Parser String
-word = some (noneOf [' ']) <* Char.space
+word = wordWithout []
 
 wordWithout :: [Char] -> Parser String
-wordWithout xs = some (noneOf $ ' ' : xs) <* Char.space
+wordWithout xs = some (noneOf $ [' '] <> xs) <* Char.space
 
 maybeWord:: Parser (Maybe String)
 maybeWord = optional word
