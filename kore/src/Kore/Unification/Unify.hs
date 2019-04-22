@@ -8,8 +8,10 @@ module Kore.Unification.Unify where
 import qualified Control.Monad.Except as Error
 import           Control.Monad.Reader.Class
                  ( MonadReader (..) )
-import qualified Control.Monad.Trans.Class as Trans
+import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Control.Monad.Trans.Except
+import           Data.Text.Prettyprint.Doc
+                 ( Doc )
 
 import           Kore.AST.MetaOrObject
                  ( Object )
@@ -19,6 +21,8 @@ import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( Environment (..), Simplifier )
 import           Kore.Unification.Error
+import           Kore.Unparser
+                 ( Unparse )
 
 -- | This monad is used throughout the step and unification modules. Its main
 -- goal is to abstract over an 'ExceptT' over a 'UnificationOrSubstitutionError'
@@ -47,11 +51,13 @@ class (forall variable. Monad (unifier variable)) => MonadUnify unifier where
         -> unifier variable a
         -> unifier variable' a
 
-    explainFailure
-        :: StepPattern Object variable
+    explainBottom
+        :: Unparse (variable Object)
+        => Doc ()
+        -> StepPattern Object variable
         -> StepPattern Object variable
         -> unifier variable ()
-    explainFailure _ _ = pure ()
+    explainBottom _ _ _ = pure ()
 
 -- | 'Unifier' is the default concrete implementation of a 'MonadUnify'.
 -- See also: 'fromExceptT' and 'runUnifier' for common usages.
@@ -68,7 +74,7 @@ instance MonadUnify Unifier where
 
     throwUnificationError = Unifier . Error.throwError . UnificationError
 
-    liftSimplifier = Unifier . Trans.lift
+    liftSimplifier = Unifier . Monad.Trans.lift
 
     mapVariable f (Unifier e) =
         Unifier $ withExceptT (mapUnificationOrSubstitutionErrorVariables f) e

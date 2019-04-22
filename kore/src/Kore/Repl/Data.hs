@@ -17,18 +17,33 @@ module Kore.Repl.Data
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
-    , lensLabels, lensOmit
+    , lensLabels, lensOmit, lensUnifier
+    , UnifierWithExplanation (..)
+    , runUnifierWithExplanation
     ) where
 
+import           Control.Error
+                 ( hush )
 import qualified Control.Lens.TH.Rules as Lens
+import           Control.Monad
+                 ( join )
+import           Control.Monad.Trans.Accum
+                 ( AccumT )
+import qualified Control.Monad.Trans.Accum as Monad.Accum
+import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Graph.Inductive.Graph as Graph
-
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
 import           Data.Map.Strict
                  ( Map )
+import           Data.Monoid
+                 ( First (..) )
 import           Data.Sequence
                  ( Seq )
+import           Data.Text.Prettyprint.Doc
+                 ( Doc )
+import qualified Data.Text.Prettyprint.Doc as Pretty
+
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
@@ -39,11 +54,18 @@ import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim )
+import           Kore.Step.Pattern
+                 ( StepPattern )
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Unification.Unify
+                 ( MonadUnify, Unifier )
+import qualified Kore.Unification.Unify as Monad.Unify
+import           Kore.Unparser
+                 ( unparse )
 
 newtype AxiomIndex = AxiomIndex
     { unAxiomIndex :: Int
@@ -178,8 +200,61 @@ data ReplState claim level = ReplState
         -> Graph.Node
         -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
+    , unifier
+        :: StepPattern level Variable
+        -> StepPattern level Variable
+        -> UnifierWithExplanation Variable ()
+    -- ^ Unifier function, it is a partially applied 'unificationProcedure'
+    --   where we discard the result since we are looking for unification
+    --   failures
     , labels  :: Map String Graph.Node
     -- ^ Map from labels to nodes
     }
+
+-- | Unifier that stores the first 'explainBottom'.
+-- See 'runUnifierWithExplanation'.
+newtype UnifierWithExplanation variable a = UnifierWithExplanation
+    { getUnifier :: AccumT (First (Doc ())) (Unifier variable) a
+    } deriving (Applicative, Functor, Monad)
+
+instance MonadUnify UnifierWithExplanation where
+    throwSubstitutionError =
+        UnifierWithExplanation
+            . Monad.Trans.lift
+            . Monad.Unify.throwSubstitutionError
+
+    throwUnificationError =
+        UnifierWithExplanation
+            . Monad.Trans.lift
+            . Monad.Unify.throwUnificationError
+
+    liftSimplifier =
+        UnifierWithExplanation
+            . Monad.Trans.lift
+            . Monad.Unify.liftSimplifier
+
+    mapVariable f (UnifierWithExplanation u) =
+        UnifierWithExplanation
+            $ Monad.Accum.mapAccumT (Monad.Unify.mapVariable f) u
+
+    explainBottom info first second =
+        UnifierWithExplanation . Monad.Accum.add . First . Just $ Pretty.vsep
+            [ info
+            , "When unifying:"
+            , Pretty.indent 4 $ unparse first
+            , "With:"
+            , Pretty.indent 4 $ unparse second
+            ]
+
+runUnifierWithExplanation
+    :: UnifierWithExplanation variable a
+    -> Simplifier (Maybe (Doc ()))
+runUnifierWithExplanation (UnifierWithExplanation accum)
+    = fmap join
+        . (fmap . fmap) getFirst
+        . (fmap . fmap) snd
+        . fmap hush
+        . Monad.Unify.runUnifier
+        $ Monad.Accum.runAccumT accum mempty
 
 Lens.makeLenses ''ReplState

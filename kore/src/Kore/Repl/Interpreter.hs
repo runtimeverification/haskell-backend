@@ -29,6 +29,7 @@ import           Control.Monad.RWS.Strict
                  ( MonadWriter, RWST, get, lift, runRWST, tell )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), evalStateT )
+import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Bifunctor
                  ( bimap )
 import           Data.Coerce
@@ -49,8 +50,7 @@ import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
-import           Data.Text.Prettyprint.Doc
-                 ( pretty )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
 
@@ -432,7 +432,7 @@ tryAxiomClaim eac = do
     then a single step command will identify it as being Stuck.
 -}
                     case Graph.suc' $ Graph.context gr node of
-                        [] -> putStrLn' "Could not unify."
+                        [] -> showUnificationFailure eac' node
                         [node'] -> do
                             lensGraph .= graph'
                             lensNode .= node'
@@ -454,15 +454,13 @@ tryAxiomClaim eac = do
                 Stuck patt -> (to, n, RewritePattern patt, from)
                 _ -> ct
         | otherwise = ct
-
     getAxiomOrClaim
         :: [Axiom level]
         -> [claim]
         -> Graph.Node
         -> Maybe (Either [Axiom level] [claim])
     getAxiomOrClaim axioms claims node =
-        bimap singleton singleton <$> resolve axioms claims node
-
+        bimap pure pure <$> resolve axioms claims node
     resolve
         :: [Axiom level]
         -> [claim]
@@ -474,9 +472,44 @@ tryAxiomClaim eac = do
             Right (ClaimIndex cid)
               | node == 0 -> Nothing
               | otherwise -> Right <$> claims `atZ` cid
+    showUnificationFailure
+        :: Either [Axiom level] [claim]
+        -> Graph.Node
+        -> ReplM claim level ()
+    showUnificationFailure axiomOrClaim' node = do
+        case extractLeftPattern axiomOrClaim' of
+            Nothing    -> putStrLn' "No axiom or claim found."
+            Just first -> do
+                second <- getCurrentConfig node
+                strategyPattern
+                    StrategyPatternTransformer
+                        { bottomValue        = putStrLn' "Cannot unify bottom"
+                        , rewriteTransformer = unify first . term
+                        , stuckTransformer   = unify first . term
+                        }
+                    second
+    unify
+        :: StepPattern Object Variable
+        -> StepPattern Object Variable
+        -> ReplM claim level ()
+    unify first second = do
+        unifier <- Lens.use lensUnifier
+        mdoc <-
+            Monad.Trans.lift . runUnifierWithExplanation $ unifier first second
+        case mdoc of
+            Nothing -> putStrLn' "No unification error found."
+            Just doc -> putStrLn' $ show doc
+    extractLeftPattern
+        :: Either [Axiom level] [claim]
+        -> Maybe (StepPattern level Variable)
+    extractLeftPattern =
+        listToMaybe
+            . fmap (left . getRewriteRule)
+            . either (fmap unAxiom) (fmap coerce)
+    getCurrentConfig node = do
+        Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+        return . Graph.lab' . Graph.context graph $ node
 
-    singleton :: a -> [a]
-    singleton a = [a]
 
 label
     :: forall level m claim
@@ -580,7 +613,7 @@ printRewriteRule rule = do
     putStrLn' $ unparseToString rule
     putStrLn'
         . show
-        . pretty
+        . Pretty.pretty
         . extractSourceAndLocation
         $ rule
 
