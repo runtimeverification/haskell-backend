@@ -134,7 +134,7 @@ redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd = Redirect cmd <$$> literal ">" *> word
 
 pipe :: ReplCommand -> Parser ReplCommand
-pipe cmd = Pipe cmd <$$> literal "|" *> word <**> many (wordWithout ['>'])
+pipe cmd = Pipe cmd <$$> literal "|" *> wordWithout ['>'] <**> many (wordWithout ['>'])
 
 infixr 2 <$$>
 infixr 1 <**>
