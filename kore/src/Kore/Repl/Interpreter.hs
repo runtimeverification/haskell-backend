@@ -397,8 +397,8 @@ pipe cmd file args = do
             (mhin, mhout, _, _) <-
                 liftIO $ SP.createProcess (SP.proc exec args)
                     { SP.std_in = SP.CreatePipe, SP.std_out = SP.CreatePipe }
-            st <- get
             let outputFunc = maybe putStrLn hPutStr mhin
+            st <- get
             st' <- lift $ execStateT (replInterpreter outputFunc cmd) st
             put st'
             case mhout of
