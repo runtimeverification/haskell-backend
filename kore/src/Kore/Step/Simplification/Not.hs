@@ -14,15 +14,21 @@ module Kore.Step.Simplification.Not
     ) where
 
 import           Control.Applicative
-                 ( liftA2 )
+                 ( Alternative (..) )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.AST.Pure
-import           Kore.AST.Valid
+import           Kore.AST.Valid hiding
+                 ( mkAnd )
+import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
@@ -31,7 +37,13 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+import qualified Kore.Step.Simplification.And as And
+import           Kore.Step.Simplification.Data
+                 ( BranchT, PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier, gather )
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrOfExpandedPattern'
 child.
@@ -43,18 +55,31 @@ Right now this uses the following:
 
 -}
 simplify
-    ::  ( MetaOrObject level
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => Not level (OrOfExpandedPattern level variable)
-    -> OrOfExpandedPattern level variable
+    => MetadataTools Object Attribute.Symbol
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> Not Object (OrOfExpandedPattern Object variable)
+    -> Simplifier (OrOfExpandedPattern Object variable)
 simplify
+    tools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
     Not { notChild = child }
   =
-    simplifyEvaluated child
+    gather $ simplifyEvaluated
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        child
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrOfExpandedPattern' child.
@@ -74,24 +99,37 @@ besides the pattern sort, which will make it even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( MetaOrObject level
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-simplifyEvaluated simplified
+    => MetadataTools Object Attribute.Symbol
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> OrOfExpandedPattern Object variable
+    -> BranchT Simplifier (ExpandedPattern Object variable)
+simplifyEvaluated
+    tools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
+    simplified
   | OrOfExpandedPattern.isFalse simplified =
-    MultiOr.make [ExpandedPattern.top]
+    return ExpandedPattern.top
   | OrOfExpandedPattern.isTrue simplified =
-    MultiOr.make []
+    empty
   | otherwise =
-    Foldable.foldr simplifyEvaluatedWorker (MultiOr.make [ExpandedPattern.top]) simplified
+    Foldable.foldrM mkAnd ExpandedPattern.top (simplified >>= makeEvaluate)
   where
-    simplifyEvaluatedWorker this rest =
-        liftA2 mkAnd <$> makeEvaluate this <*> rest
+    mkAnd =
+        And.makeEvaluate
+            tools
+            predicateSimplifier
+            termSimplifier
+            axiomSimplifiers
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'ExpandedPattern'
 child.

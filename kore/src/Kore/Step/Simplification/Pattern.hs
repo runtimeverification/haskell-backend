@@ -195,14 +195,20 @@ simplifyInternal
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
         FloorPattern p -> return $ Floor.simplify p
         ForallPattern p -> return $ Forall.simplify p
-        IffPattern p -> return $ Iff.simplify p
-        ImpliesPattern p -> return $ Implies.simplify p
+        IffPattern p ->
+            Iff.simplify
+                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+        ImpliesPattern p ->
+            Implies.simplify
+                tools substitutionSimplifier simplifier axiomIdToEvaluator p
         InPattern p ->
             In.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
         -- TODO(virgil): Move next up through patterns.
         NextPattern p -> return $ Next.simplify p
-        NotPattern p -> return (Not.simplify p, SimplificationProof)
+        NotPattern p ->
+            fmap withProof $ Not.simplify
+                tools substitutionSimplifier simplifier axiomIdToEvaluator p
         OrPattern p -> return $ Or.simplify p
         RewritesPattern p -> return $ Rewrites.simplify p
         StringLiteralPattern p -> return $ StringLiteral.simplify p
@@ -211,3 +217,4 @@ simplifyInternal
         VariablePattern p -> return $ Variable.simplify p
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier
+    withProof a = (a, SimplificationProof)
