@@ -54,6 +54,7 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Representation.Predicated as Predicated
+import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
@@ -65,7 +66,6 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -330,30 +330,16 @@ transitionRule
                 let
                     withProof :: forall x. x -> (x, StepProof level Variable)
                     withProof x = (x, proof)
-
-                    rewriteResults, remainderResults
-                        ::  [ Transition
-                                ( CommonStrategyPattern Object
-                                , StepProof Object Variable
-                                )
-                            ]
-                    rewriteResults =
-                        fmap withProof . transition
-                        <$> Foldable.toList (Step.results results)
-                    remainderResults =
-                        pure . withProof . Stuck
-                        <$> Foldable.toList (Step.remainders results)
-                    transition
-                        :: Step.Result Variable
-                        -> Transition (CommonStrategyPattern Object)
-                    transition result' = do
-                        let rule =
-                                Step.unwrapRule
-                                $ Predicated.term $ Step.appliedRule result'
-                        Transition.addRule (RewriteRule rule)
-                        Foldable.asum (pure . RewritePattern <$> Step.result result')
-
-                Foldable.asum rewriteResults <|> Foldable.asum remainderResults
+                    mapRules =
+                        Result.mapRules
+                        $ RewriteRule
+                        . Step.unwrapRule
+                        . Step.withoutUnification
+                    mapConfigs =
+                        Result.mapConfigs
+                            (withProof . RewritePattern)
+                            (withProof . Stuck)
+                Result.transitionResults (mapConfigs $ mapRules results)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
