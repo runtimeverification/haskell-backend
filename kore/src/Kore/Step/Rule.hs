@@ -195,7 +195,7 @@ extractRewriteAxiomFrom level sentence =
   where
     koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
 
--- | Extracts all One-Path claims from a verified definition.
+-- | Extracts all One-Path claims from a verified module.
 extractOnePathClaims
     :: VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
