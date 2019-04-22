@@ -34,6 +34,7 @@ module Kore.Predicate.Predicate
     , makeTruePredicate
     , allVariables
     , Kore.Predicate.Predicate.freeVariables
+    , hasFreeVariable
     , Kore.Predicate.Predicate.mapVariables
     , stringFromPredicate
     , substitutionToPredicate
@@ -54,6 +55,7 @@ import           Data.Map.Strict
                  ( Map )
 import           Data.Set
                  ( Set )
+import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 import           GHC.Stack
@@ -73,7 +75,7 @@ import           Kore.Unification.Substitution
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Free
-                 ( freePureVariables, pureAllVariables )
+                 ( pureAllVariables )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -505,7 +507,15 @@ freeVariables
     :: (MetaOrObject level , Ord (variable level))
     => Predicate level variable
     -> Set (variable level)
-freeVariables = freePureVariables . unwrapPredicate
+freeVariables = Step.Pattern.freeVariables . unwrapPredicate
+
+hasFreeVariable
+    :: Ord (variable Object)
+    => variable Object
+    -> Predicate Object variable
+    -> Bool
+hasFreeVariable variable =
+    Set.member variable . Kore.Predicate.Predicate.freeVariables
 
 {- | 'substitutionToPredicate' transforms a substitution in a predicate.
 
