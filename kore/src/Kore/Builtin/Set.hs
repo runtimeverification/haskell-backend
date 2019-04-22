@@ -66,6 +66,8 @@ import           Data.String
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
+import           GHC.Stack
+                 ( HasCallStack )
 
 import           Kore.AST.Pure as Kore
 import           Kore.AST.Sentence
@@ -99,8 +101,9 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier )
 import           Kore.Unification.Unify
                  ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( Unparse )
+                 ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -527,7 +530,9 @@ unifyEquals
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> (p -> p -> unifier (expanded, proof))
-    -> (p -> p -> MaybeT unifier (expanded, proof))
+    -> p
+    -> p
+    -> MaybeT unifier (expanded, proof)
 unifyEquals
     simplificationType
     tools
@@ -535,8 +540,10 @@ unifyEquals
     _
     _
     unifyEqualsChildren
+    first
+    second
   =
-    unifyEquals0
+    unifyEquals0 first second
   where
     hookTools = StepperAttributes.hook <$> tools
 
@@ -610,21 +617,21 @@ unifyEquals
             -> StepPattern Object variable -- ^ framing variable
             -> unifier (expanded, proof)
         unifyEqualsSelect builtin1' _ key2 set2
-          | set1 == Set.empty =
-            return (ExpandedPattern.bottom, SimplificationProof)
+          | set1 == Set.empty = bottomWithExplanation
           | otherwise = case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->
                 Reflection.give tools $ do
                     let emptySetPat = asInternal tools sort1 Set.empty
                     (elemUnifier, _proof) <-
                         unifyEqualsChildren key1 key2
-                    -- when subunification problem fails, halt execution
-                    errorIfNotUnifying elemUnifier key1
+                    -- error when subunification problem returns partial result.
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfIncompletelyUnified key1 key2 elemUnifier
                     (setUnifier, _proof) <-
-                        unifyEqualsChildren set2
-                            $ asInternal tools sort1 Set.empty
-                    -- when subunification problem fails, halt execution
-                    errorIfNotUnifying setUnifier emptySetPat
+                        unifyEqualsChildren emptySetPat set2
+                    -- error when subunification problem returns partial result
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfIncompletelyUnified emptySetPat set2 setUnifier
                     -- Return the concrete set, but capture any predicates and
                     -- substitutions from unifying the element
                     -- and framing variable.
@@ -650,8 +657,7 @@ unifyEquals
     unifyEqualsConcrete builtin1 builtin2
       | set1 == set2 =
         return (unified, SimplificationProof)
-      | otherwise =
-        return (ExpandedPattern.bottom, SimplificationProof)
+      | otherwise = bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
@@ -680,8 +686,7 @@ unifyEquals
                     asExpandedPattern builtinSetSort set1 <* remainder
             return (result, SimplificationProof)
 
-      | otherwise =
-        return (ExpandedPattern.bottom, SimplificationProof)
+      | otherwise = bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
@@ -702,28 +707,48 @@ unifyEquals
                             mkApp builtinSetSort element'
                                 <$> propagatePredicates [key]
                     return (result, SimplificationProof)
-            _ ->
-                -- Cannot unify a non-element Set with an element Set.
-                return (ExpandedPattern.bottom, SimplificationProof)
+            _ -> bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
+    bottomWithExplanation = do
+        Monad.Unify.explainBottom
+            "Cannot unify sets with different sizes."
+            first
+            second
+        return (ExpandedPattern.bottom, SimplificationProof)
 
--- Check whether the term part of an expanded pattern
--- is identical to the expected term and error if not.
-errorIfNotUnifying
+-- Setup: we are unifying against a concrete (no variables) pattern
+-- If the unification problem is completely solved, we expect that
+-- the term of the unifier is precisely the concrete pattern.
+-- If not, this is probably because the term contains an and coming from
+-- an incomplete unification problem.
+-- An example of how this might happen is unifying a concrete pattern
+-- against a non-functional term.
+-- Since this case is not yet handled by the unification algorithm
+-- we choose to throw an error here.
+errorIfIncompletelyUnified
     ::  ( Monad m
+        , OrdMetaOrObject variable
         , ShowMetaOrObject variable
-        , EqMetaOrObject variable
+        , SortedVariable variable
+        , Unparse (variable Object)
+        , HasCallStack
         )
-    => ExpandedPattern Object variable
+    => StepPattern Object variable
     -> StepPattern Object variable
+    -> ExpandedPattern Object variable
     -> m ()
-errorIfNotUnifying unifiedExpandedPattern expected =
+errorIfIncompletelyUnified expected patt unifiedExpandedPattern =
     Monad.when (term unifiedExpandedPattern /= expected)
         $ error
-            (  "Expecting unification to succeed"
-            ++ show expected ++ "\n /= \n"
-            ++ show (term unifiedExpandedPattern)
+            (  "Unification problem not completely solved. "
+            ++ "When unfying against concrete pattern\n\t"
+            ++ show (unparseToString expected)
+            ++ "\nwith pattern\n\t"
+            ++ show (unparseToString patt)
+            ++ "\nExpecting to get the concrete pattern back but got\n\t"
+            ++ show (unparseToString unifiedExpandedPattern)
+            ++ "\nHandling this is currently not implemented."
+            ++ "\nPlease file an issue if this should work for you."
             )
-

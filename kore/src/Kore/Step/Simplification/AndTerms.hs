@@ -27,10 +27,12 @@ import           Control.Exception
                  ( assert )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Prelude hiding
                  ( concat )
 
@@ -269,7 +271,7 @@ The comment for 'Kore.Step.Simplification.And.simplify' describes all
 the special cases handled by this.
 
 -}
--- NOTE (hs-boot): Please update AndTerms.hs-boot file when changing the
+-- NOTE (hs-boot): Please update the AndTerms.hs-boot file when changing the
 -- signature.
 termUnification
     :: forall level variable unifier unifierM .
@@ -492,15 +494,15 @@ andEqualsFunctions =
     , (BothT,   liftTS functionVariableAndEquals)
     , (BothT,   addT   equalInjectiveHeadsAndEquals)
     , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads)
-    , (BothT,   liftE  constructorSortInjectionAndEquals)
-    , (BothT,   liftE  constructorAndEqualsAssumesDifferentHeads)
+    , (BothT,   liftE1 constructorSortInjectionAndEquals)
+    , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads)
     , (BothT,   liftB1 Builtin.Map.unifyEquals)
     , (BothT,   liftB1 Builtin.Set.unifyEquals)
     , (BothT,   liftB  Builtin.List.unifyEquals)
     , (BothT,   liftE  domainValueAndConstructorErrors)
-    , (BothT,   liftET domainValueAndEqualsAssumesDifferent)
-    , (BothT,   liftET stringLiteralAndEqualsAssumesDifferent)
-    , (BothT,   liftET charLiteralAndEqualsAssumesDifferent)
+    , (BothT,   liftE0 domainValueAndEqualsAssumesDifferent)
+    , (BothT,   liftE0 stringLiteralAndEqualsAssumesDifferent)
+    , (BothT,   liftE0 charLiteralAndEqualsAssumesDifferent)
     , (AndT,    lift   functionAnd)
     ]
   where
@@ -535,6 +537,30 @@ andEqualsFunctions =
 
     lift = pure . transformerLiftOld
     liftE = lift . toExpanded
+    liftE0
+        f
+        _simplificationType
+        _tools
+        _substitutionSimplifier
+        _simplifier
+        _axiomIdToSimplifier
+        _substitutionMerger
+        _termSimplifier
+        first
+        second
+      = Bifunctor.first ExpandedPattern.fromPurePattern <$> f first second
+    liftE1
+        f
+        _simplificationType
+        tools
+        _substitutionSimplifier
+        _simplifier
+        _axiomIdToSimplifier
+        _substitutionMerger
+        _termSimplifier
+        first
+        second
+      = Bifunctor.first ExpandedPattern.fromPurePattern <$> f tools first second
     liftET = liftE . addToolsArg
     addS
         f
@@ -575,8 +601,7 @@ andEqualsFunctions =
         _termSimplifier
         p1
         p2
-      = MaybeT $ Monad.Unify.liftSimplifier $ runMaybeT $
-        f tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
+      = f tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
     liftTS
         f
         simplificationType
@@ -791,6 +816,8 @@ bottomTermEquals
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , Unparse (variable level)
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -800,18 +827,18 @@ bottomTermEquals
     -- ^ Map from symbol IDs to defined functions
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT Simplifier
+    -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 bottomTermEquals
     tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    (Bottom_ _)
+    first@(Bottom_ _)
     second
-  = Monad.Trans.lift $ do
+  = Monad.Trans.lift $ do -- MonadUnify
     (secondCeil, _proof) <-
-        Ceil.makeEvaluateTerm
+        Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm
             tools
             substitutionSimplifier
             simplifier
@@ -823,7 +850,11 @@ bottomTermEquals
         [ Predicated
             {term = (), predicate = PredicateTrue, substitution}
           ]
-          | substitution == mempty ->
+          | substitution == mempty -> do
+            Monad.Unify.explainBottom
+                "Cannot unify bottom with non-bottom pattern."
+                first
+                second
             return (ExpandedPattern.bottom, SimplificationProof)
         _ -> return
             ( Predicated
@@ -853,6 +884,8 @@ termBottomEquals
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , Unparse (variable level)
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> PredicateSubstitutionSimplifier level
@@ -862,8 +895,7 @@ termBottomEquals
     -- ^ Map from symbol IDs to defined functions
     -> StepPattern level variable
     -> StepPattern level variable
-    -> MaybeT
-        Simplifier
+    -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 termBottomEquals
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
@@ -928,9 +960,9 @@ variableFunctionAndEquals
     simplifier
     axiomIdToSimplifier
     (PredicateSubstitutionMerger substitutionMerger)
-    (Var_ v)
+    first@(Var_ v)
     second
-  | isFunctionPattern tools second = Monad.Trans.lift $ do -- ExceptT Simplifier
+  | isFunctionPattern tools second = Monad.Trans.lift $ do -- MonadUnify
     Predicated {term = (), predicate, substitution} <-
         case simplificationType of -- Simplifier
             SimplificationType.And ->
@@ -947,7 +979,16 @@ variableFunctionAndEquals
                         axiomIdToSimplifier
                         second
                 case MultiOr.extractPatterns resultOr of
-                    [] -> return PredicateSubstitution.bottom
+                    [] -> do
+                        Monad.Unify.explainBottom
+                           (Pretty.hsep
+                               [ "Unification of variable and bottom"
+                               , "when attempting to simplify equals."
+                               ]
+                           )
+                           first
+                           second
+                        return PredicateSubstitution.bottom
                     [resultPredicateSubstitution] ->
                         return resultPredicateSubstitution
                     _ -> error
@@ -1106,6 +1147,7 @@ when @src1@ is a subsort of @src2@.
 sortInjectionAndEqualsAssumesDifferentHeads
     ::  forall level variable unifier unifierM .
         ( Ord (variable level)
+        , Unparse (variable level)
         , MetaOrObject level
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -1125,7 +1167,17 @@ sortInjectionAndEqualsAssumesDifferentHeads
     Nothing ->
         Monad.Trans.lift (Monad.Unify.throwUnificationError UnsupportedPatterns)
     Just NotInjection -> empty
-    Just NotMatching -> return (ExpandedPattern.bottom, SimplificationProof)
+    Just NotMatching -> do
+        Monad.Trans.lift $ Monad.Unify.explainBottom
+           (Pretty.hsep
+               [ "Unification of sort injections failed due to mismatch."
+               , "This can happen either because one of them is a constructor"
+               , "or because their sort intersection is empty."
+               ]
+           )
+           first
+           second
+        return (ExpandedPattern.bottom, SimplificationProof)
     Just
         (Matching SortInjectionMatch
             { injectionHead, sort, firstChild, secondChild }
@@ -1133,7 +1185,17 @@ sortInjectionAndEqualsAssumesDifferentHeads
             (merged, _) <- Monad.Trans.lift $
                 termMerger firstChild secondChild
             if ExpandedPattern.isBottom merged
-                then return (ExpandedPattern.bottom, SimplificationProof)
+                then do
+                    Monad.Trans.lift $ Monad.Unify.explainBottom
+                        (Pretty.hsep
+                            [ "Unification of sort injections failed when"
+                            , "merging application children:"
+                            , "the result is bottom."
+                            ]
+                        )
+                        first
+                        second
+                    return (ExpandedPattern.bottom, SimplificationProof)
                 else return
                     ( applyInjection sort injectionHead <$> merged
                     , SimplificationProof
@@ -1282,17 +1344,24 @@ returns @\\bottom@.
 constructorSortInjectionAndEquals
     ::  ( Eq (variable level)
         , MetaOrObject level
+        , Unparse (variable level)
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
-    -> Maybe (StepPattern level variable, SimplificationProof level)
+    -> MaybeT unifier (StepPattern level variable, SimplificationProof level)
 constructorSortInjectionAndEquals
     tools
-    (App_ firstHead _)
-    (App_ secondHead _)
+    first@(App_ firstHead _)
+    second@(App_ secondHead _)
   | isConstructorSortInjection =
-    assert (firstHead /= secondHead) $
+    assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
+        Monad.Unify.explainBottom
+            "Cannot unify constructors with sort injections."
+            first
+            second
         return (mkBottom_, SimplificationProof)
   where
     -- Are we asked to unify a constructor with a sort injection?
@@ -1313,17 +1382,28 @@ to be different; therefore their conjunction is @\\bottom@.
 constructorAndEqualsAssumesDifferentHeads
     ::  ( Eq (variable level)
         , MetaOrObject level
+        , Unparse (variable level)
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
         )
     => MetadataTools level StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
-    -> Maybe (StepPattern level variable, SimplificationProof level)
+    -> MaybeT unifier (StepPattern level variable, SimplificationProof level)
 constructorAndEqualsAssumesDifferentHeads
     tools
-    (App_ firstHead _)
-    (App_ secondHead _)
+    first@(App_ firstHead _)
+    second@(App_ secondHead _)
   | isConstructor firstHead && isConstructor secondHead =
-    assert (firstHead /= secondHead) $
+    assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
+        Monad.Unify.explainBottom
+            (Pretty.hsep
+                [ "Cannot unify different constructors or"
+                , "incompatible sort injections."
+                ]
+            )
+            first
+            second
         return (mkBottom_, SimplificationProof)
   where
     isConstructor = give tools Attribute.isConstructor_
@@ -1370,25 +1450,41 @@ See also: 'equalAndEquals'
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
     :: Eq (variable Object)
+    => Unparse (variable Object)
+    => MonadUnify unifierM
+    => unifier ~ unifierM variable
     => StepPattern Object variable
     -> StepPattern Object variable
-    -> Maybe (StepPattern Object variable, SimplificationProof Object)
+    -> MaybeT unifier (StepPattern Object variable, SimplificationProof Object)
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ (Domain.BuiltinExternal _))
     second@(DV_ _ (Domain.BuiltinExternal _))
-  =
-    assert (first /= second) $ return (mkBottom_, SimplificationProof)
+  = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ (Domain.BuiltinBool _))
     second@(DV_ _ (Domain.BuiltinBool _))
-  =
-    assert (first /= second) $ return (mkBottom_, SimplificationProof)
+  = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ (Domain.BuiltinInt _))
     second@(DV_ _ (Domain.BuiltinInt _))
-  =
-    assert (first /= second) $ return (mkBottom_, SimplificationProof)
+  = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent _ _ = empty
+
+cannotUnifyDomainValues
+    :: Eq (variable Object)
+    => Unparse (variable Object)
+    => MonadUnify unifierM
+    => unifier ~ unifierM variable
+    => StepPattern Object variable
+    -> StepPattern Object variable
+    -> unifier (StepPattern Object variable, SimplificationProof Object)
+cannotUnifyDomainValues first second = do
+    assert (first /= second) $ do
+        Monad.Unify.explainBottom
+            "Cannot unify distinct domain values."
+            first
+            second
+        return (mkBottom_, SimplificationProof)
 
 {-| Unify two literal strings.
 
@@ -1400,15 +1496,16 @@ See also: 'equalAndEquals'
  -}
 stringLiteralAndEqualsAssumesDifferent
     :: Eq (variable Object)
+    => Unparse (variable Object)
+    => MonadUnify unifierM
+    => unifier ~ unifierM variable
     => StepPattern Object variable
     -> StepPattern Object variable
-    -> Maybe (StepPattern Object variable, SimplificationProof Object)
+    -> MaybeT unifier (StepPattern Object variable, SimplificationProof Object)
 stringLiteralAndEqualsAssumesDifferent
     first@(StringLiteral_ _)
     second@(StringLiteral_ _)
-  =
-    assert (first /= second) $
-        return (mkBottom_, SimplificationProof)
+  = Monad.Trans.lift $ cannotUnifyDomainValues first second
 stringLiteralAndEqualsAssumesDifferent _ _ = empty
 
 {-| Unify two literal characters.
@@ -1421,15 +1518,16 @@ See also: 'equalAndEquals'
  -}
 charLiteralAndEqualsAssumesDifferent
     :: Eq (variable Object)
+    => Unparse (variable Object)
+    => MonadUnify unifierM
+    => unifier ~ unifierM variable
     => StepPattern Object variable
     -> StepPattern Object variable
-    -> Maybe (StepPattern Object variable, SimplificationProof Object)
+    -> MaybeT unifier (StepPattern Object variable, SimplificationProof Object)
 charLiteralAndEqualsAssumesDifferent
     first@(CharLiteral_ _)
     second@(CharLiteral_ _)
-  =
-    assert (first /= second) $
-        return (mkBottom_, SimplificationProof)
+  = Monad.Trans.lift $ cannotUnifyDomainValues first second
 charLiteralAndEqualsAssumesDifferent _ _ = empty
 
 {- | Unify any two function patterns.

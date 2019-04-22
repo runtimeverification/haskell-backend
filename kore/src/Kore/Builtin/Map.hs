@@ -93,6 +93,7 @@ import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Unify
                  ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -570,7 +571,9 @@ unifyEquals
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> (p -> p -> unifier (expanded, proof))
-    -> (p -> p -> MaybeT unifier (expanded, proof))
+    -> p
+    -> p
+    -> MaybeT unifier (expanded, proof)
 unifyEquals
     simplificationType
     tools
@@ -578,8 +581,10 @@ unifyEquals
     _
     _
     unifyEqualsChildren
+    first
+    second
   =
-    unifyEquals0
+    unifyEquals0 first second
   where
     hookTools = StepperAttributes.hook <$> tools
 
@@ -666,13 +671,10 @@ unifyEquals
               | not (Map.null remainder1) =
                 -- There is nothing with which to unify the
                 -- remainder of map1.
-                ExpandedPattern.bottom
-              | not (Map.null remainder2) =
-                -- There is nothing with which to unify the
-                -- remainder of map2.
-                ExpandedPattern.bottom
+                bottomWithExplanation
+              | not (Map.null remainder2) = bottomWithExplanation
               | otherwise =
-                asInternal tools builtinMapSort
+                return $ asInternal tools builtinMapSort
                     <$> (propagatePredicates . discardProofs) intersect
               where
                 -- Elements of map1 missing from map2
@@ -680,7 +682,7 @@ unifyEquals
                 -- Elements of map2 missing from map1
                 remainder2 = Map.difference map2 map1
 
-        return (result, SimplificationProof)
+        (,) <$> result <*> pure SimplificationProof
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
@@ -707,10 +709,9 @@ unifyEquals
                 asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
 
             result
-              | not (Map.null remainder2) =
-                -- There is nothing with which to unify the remainder of map2.
-                ExpandedPattern.bottom
+              | not (Map.null remainder2) = bottomWithExplanation
               | otherwise =
+                return $
                     Reflection.give tools asExpandedPattern builtinMapSort map1
                     <* concrete
                     <* frame
@@ -718,13 +719,12 @@ unifyEquals
                 -- Elements of map2 missing from map1
                 remainder2 = Map.difference map2 map1
 
-        return (result, SimplificationProof)
+        (,) <$> result <*> pure SimplificationProof
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
         Domain.InternalMap { builtinMapChild = map2 } = builtin2
         asBuiltinMap = asInternal tools builtinMapSort
-
 
     unifyEqualsElement
         :: level ~ Object
@@ -743,9 +743,16 @@ unifyEquals
                             mkApp builtinMapSort element'
                             <$> propagatePredicates [key, value]
                     return (result, SimplificationProof)
-            _ ->
-                -- Cannot unify a non-element Map with an element Map.
-                return (ExpandedPattern.bottom, SimplificationProof)
+            _ -> withProof bottomWithExplanation
+            -- Cannot unify a non-element Map with an element Map
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
+    bottomWithExplanation = do
+        Monad.Unify.explainBottom
+            "Cannot unify a non-element map with an element map."
+            first
+            second
+        return ExpandedPattern.bottom
+    withProof :: Applicative f => f a -> f (a, proof)
+    withProof fa = (,) <$> fa <*> pure SimplificationProof

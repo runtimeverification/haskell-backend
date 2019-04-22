@@ -31,6 +31,8 @@ module Kore.Step.Strategy
       -- * Running strategies
     , constructExecutionGraph
     , ExecutionGraph(..)
+    , insNode
+    , insEdge
     , runStrategy
     , pickLongest
     , pickFinal
@@ -230,6 +232,31 @@ data ChildNode config rule = ChildNode
     }
     deriving (Eq, Show, Functor)
 
+{- | Insert a node into the execution graph.
+
+The 'Graph.Node' index must not already exist in the graph.
+
+ -}
+insNode
+    :: (Graph.Node, config)
+    -> ExecutionGraph config rule
+    -> ExecutionGraph config rule
+insNode lnode exe@ExecutionGraph { graph } =
+    exe { graph = Graph.insNode lnode graph }
+
+{- | Insert an unlabeled edge into the execution graph.
+
+The source and target 'Graph.Node' indices must already exist in the graph.
+
+ -}
+insEdge
+    :: (Graph.Node, Graph.Node)
+    -- ^ (source, target) of the edge
+    -> ExecutionGraph config rule
+    -> ExecutionGraph config rule
+insEdge (fromNode, toNode) exe@ExecutionGraph { graph } =
+    exe { graph = Graph.insEdge (fromNode, toNode, mempty) graph }
+
 insChildNode
     :: ChildNode config rule
     -> State (Gr config (Seq rule)) Graph.Node
@@ -309,8 +336,7 @@ executionHistoryStep transit prim exe@ExecutionGraph { graph } node
 -- allow merging of states, loop detection, etc.
 emptyExecutionGraph
     :: forall config rule
-    .  Hashable config
-    => config
+    .  config
     -> ExecutionGraph config rule
 emptyExecutionGraph config =
     ExecutionGraph
@@ -335,7 +361,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 constructExecutionGraph
     :: forall m config rule instr
-    .  (Monad m, Hashable config, Show config, Show rule)
+    .  (Monad m, Show config, Show rule)
     => (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> config
@@ -441,7 +467,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 runStrategy
     :: forall m prim rule config
-    .  (Monad m, Show config, Show rule, Hashable config)
+    .  (Monad m, Show config, Show rule)
     => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]

@@ -13,6 +13,7 @@ module Kore.OnePath.Step
     , StrategyPattern (..)
     , StrategyPatternTransformer (..)
     , CommonStrategyPattern
+    , extractUnproven
     , simplify
     , transitionRule
     , onePathFirstStep
@@ -141,6 +142,16 @@ data StrategyPattern patt
     -- differentiate between them and stuck results.
   deriving (Show, Eq, Ord, Generic)
 
+{- | Extract the unproven part of a 'StrategyPattern'.
+
+Returns 'Nothing' if there is no remaining unproven part.
+
+ -}
+extractUnproven :: StrategyPattern patt -> Maybe patt
+extractUnproven (RewritePattern p) = Just p
+extractUnproven (Stuck          p) = Just p
+extractUnproven Bottom             = Nothing
+
 data StrategyPatternTransformer patt a =
     StrategyPatternTransformer
         { rewriteTransformer :: patt -> a
@@ -268,7 +279,10 @@ transitionRule
                 nonEmptyConfigs = MultiOr.filterOr configs
             if null nonEmptyConfigs
                 then return (Bottom, proof'')
-                else Foldable.asum (pure . prove <$> map wrapper (Foldable.toList nonEmptyConfigs))
+                else Foldable.asum
+                    (   pure . prove
+                    <$> map wrapper (Foldable.toList nonEmptyConfigs)
+                    )
 
     transitionApplyWithRemainders
         :: [RewriteRule level Variable]
