@@ -55,7 +55,9 @@ import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
 import           System.Directory
                  ( findExecutable )
-import qualified System.Process as SP
+import           System.Process
+                 ( StdStream (CreatePipe), createProcess, proc, std_in,
+                 std_out )
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SymbolOrAlias (..),
@@ -395,8 +397,8 @@ pipe cmd file args = do
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
             (mhin, mhout, _, _) <-
-                liftIO $ SP.createProcess (SP.proc exec args)
-                    { SP.std_in = SP.CreatePipe, SP.std_out = SP.CreatePipe }
+                liftIO $ createProcess (proc exec args)
+                    { std_in = CreatePipe, std_out = CreatePipe }
             let outputFunc = maybe putStrLn hPutStr mhin
             st <- get
             st' <- lift $ execStateT (replInterpreter outputFunc cmd) st
