@@ -229,7 +229,9 @@ evalLookup =
                     Builtin.appliedFunction $ maybeBottom $ Map.lookup _key _map
             emptyMap <|> bothConcrete
         )
-    maybeBottom = maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
+      where
+        maybeBottom =
+            maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
 
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function

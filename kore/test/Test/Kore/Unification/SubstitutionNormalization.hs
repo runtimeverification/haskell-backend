@@ -8,6 +8,7 @@ import Test.Tasty.HUnit
 
 import qualified Control.Monad.Except as Except
 import qualified Data.Default as Default
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
@@ -192,7 +193,7 @@ runNormalizeSubstitution
 runNormalizeSubstitution substitution =
     fmap (Substitution.unwrap . Predicated.substitution)
     . Except.runExcept
-    $ normalizeSubstitution mockMetadataTools (Substitution.wrap substitution)
+    $ normalizeSubstitution mockMetadataTools (Map.fromList substitution)
 
 runNormalizeSubstitutionObject
     :: [(Variable Object, StepPattern Object Variable)]
@@ -202,7 +203,7 @@ runNormalizeSubstitutionObject
 runNormalizeSubstitutionObject substitution =
     fmap (Substitution.unwrap . Predicated.substitution)
     . Except.runExcept
-    $ normalizeSubstitution mockMetadataToolsO (Substitution.wrap substitution)
+    $ normalizeSubstitution mockMetadataToolsO (Map.fromList substitution)
   where
     mockMetadataToolsO :: MetadataTools Object StepperAttributes
     mockMetadataToolsO =
