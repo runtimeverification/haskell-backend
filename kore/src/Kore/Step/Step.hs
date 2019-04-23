@@ -307,7 +307,7 @@ The rule's 'ensures' clause is applied to the conditions and normalized. The
 substitution is applied to the right-hand side of the rule to produce the final
 configurations.
 
-Because the rule as known to apply, @finalizeAppliedRule@ always returns exactly
+Because the rule is known to apply, @finalizeAppliedRule@ always returns exactly
 one branch.
 
 See also: 'applyInitialConditions'
