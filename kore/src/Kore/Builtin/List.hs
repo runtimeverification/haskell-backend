@@ -231,8 +231,9 @@ evalGet =
                         (Seq.lookup ix _list)
             emptyList <|> bothConcrete
         )
-    maybeBottom =
-        maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
+      where
+        maybeBottom =
+            maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
 
 evalUnit :: Builtin.Function
 evalUnit =

@@ -723,20 +723,19 @@ addToolsArg = pure
 
 toExpanded
     ::
-    ( MetaOrObject level
-    , SortedVariable variable
-    , Show (variable level)
-    , Eq (variable level)
+    ( SortedVariable variable
+    , Show (variable Object)
+    , Ord (variable Object)
     )
-    =>   (  MetadataTools level StepperAttributes
-        -> StepPattern level variable
-        -> StepPattern level variable
-        -> Maybe (StepPattern level variable, SimplificationProof level)
+    =>   (  MetadataTools Object StepperAttributes
+        -> StepPattern Object variable
+        -> StepPattern Object variable
+        -> Maybe (StepPattern Object variable, SimplificationProof Object)
         )
-    ->  (  MetadataTools level StepperAttributes
-        -> StepPattern level variable
-        -> StepPattern level variable
-        -> Maybe (ExpandedPattern level variable, SimplificationProof level)
+    ->  (  MetadataTools Object StepperAttributes
+        -> StepPattern Object variable
+        -> StepPattern Object variable
+        -> Maybe (ExpandedPattern Object variable, SimplificationProof Object)
         )
 toExpanded transformer tools first second =
     toExpanded0 <$> transformer tools first second
