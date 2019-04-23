@@ -23,6 +23,7 @@ import           Control.Monad.Except
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
+import qualified Data.Map as Map
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -48,6 +49,7 @@ import           Kore.Unification.Error
                  ( substitutionToUnifyOrSubError )
 import           Kore.Unification.Substitution
                  ( Substitution )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.SubstitutionNormalization
                  ( normalizeSubstitution )
 import           Kore.Unification.UnifierImpl
@@ -133,8 +135,7 @@ normalizeExcept
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitution level variable
-    -> BranchT unifier
-        (PredicateSubstitution level variable)
+    -> BranchT unifier (PredicateSubstitution level variable)
 normalizeExcept
     tools
     predicateSimplifier@(PredicateSubstitutionSimplifier simplifySubstitution)
@@ -144,19 +145,23 @@ normalizeExcept
   = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
-    (duplication, _) <- normalizeSubstitutionDuplication' substitution
+    (deduplicated, _) <- normalizeSubstitutionDuplication' substitution
     let
-        Predicated { substitution = duplicationSubstitution } = duplication
-        Predicated { predicate = duplicationPredicate } = duplication
+        Predicated { substitution = preDeduplicatedSubstitution } = deduplicated
+        Predicated { predicate = deduplicatedPredicate } = deduplicated
+        -- The substitution is not fully normalized, but it is safe to convert
+        -- to a Map because it has been deduplicated.
+        deduplicatedSubstitution =
+            Map.fromList $ Substitution.unwrap preDeduplicatedSubstitution
 
-    normalized <- normalizeSubstitution' duplicationSubstitution
+    normalized <- normalizeSubstitution' deduplicatedSubstitution
     let
         Predicated { substitution = normalizedSubstitution } = normalized
         Predicated { predicate = normalizedPredicate } = normalized
 
         mergedPredicate =
             makeMultipleAndPredicate
-                [predicate, duplicationPredicate, normalizedPredicate]
+                [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
     Monad.Morph.hoist Monad.Unify.liftSimplifier

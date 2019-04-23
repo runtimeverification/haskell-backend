@@ -9,14 +9,16 @@ import Test.Tasty.HUnit
 
 import           Control.Monad.Trans.Except
                  ( runExceptT )
+import           Data.Coerce
+                 ( coerce )
 import           Data.Default
                  ( def )
+import           Data.Limit
+                 ( Limit (..) )
 import qualified Data.Map as Map
 import           Numeric.Natural
                  ( Natural )
 
-import           Data.Limit
-                 ( Limit (..) )
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
@@ -39,7 +41,8 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+                 ( OnePathRule (..), RewriteRule (..),
+                 RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -377,18 +380,17 @@ simpleClaim
     :: MetaOrObject level
     => CommonStepPattern level
     -> CommonStepPattern level
-    -> OnePath.Claim level
+    -> OnePathRule level Variable
 simpleClaim left right =
-    OnePath.Claim (simpleRewrite left right)
+    OnePathRule . getRewriteRule $ simpleRewrite left right
 
 simpleTrustedClaim
     :: MetaOrObject level
     => CommonStepPattern level
     -> CommonStepPattern level
-    -> OnePath.Claim level
+    -> OnePathRule level Variable
 simpleTrustedClaim left right =
-    OnePath.Claim
-    . RewriteRule
+    OnePathRule
     $ RulePattern
             { left = left
             , right = right
@@ -413,12 +415,14 @@ simpleRewrite left right =
         }
 
 runVerification
-    :: MetaOrObject level
+    ::  ( MetaOrObject level
+        , OnePath.Claim claim
+        )
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
     -> [OnePath.Axiom level]
-    -> [OnePath.Claim level]
+    -> [claim]
     -> IO (Either (CommonOrOfExpandedPattern level) ())
 runVerification
     metadataTools
@@ -435,7 +439,7 @@ runVerification
         (Mock.substitutionSimplifier metadataTools)
         Map.empty
         (OnePath.defaultStrategy claims axioms)
-        ( map (\c -> (Claim.unClaim c, stepLimit))
+        ( map (\c -> (RewriteRule . coerce $ c, stepLimit))
         . filter (not . Claim.isTrusted)
         $ claims)
   where

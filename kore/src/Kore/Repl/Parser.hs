@@ -59,6 +59,7 @@ commandParser0 =
         , label
         , tryAxiomClaim
         , clear
+        , saveSession
         , exit
         ]
 
@@ -129,6 +130,9 @@ claimIndex = ClaimIndex <$$> Char.string "c" *> decimal
 
 clear :: Parser ReplCommand
 clear = Clear <$$> literal "clear" *> maybeDecimal
+
+saveSession :: Parser ReplCommand
+saveSession = SaveSession <$$> literal "save-session" *> word
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd = Redirect cmd <$$> literal ">" *> word

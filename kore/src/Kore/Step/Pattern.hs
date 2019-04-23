@@ -13,6 +13,8 @@ module Kore.Step.Pattern
     , module Kore.AST.MetaOrObject
     , module Kore.AST.Pure
     , Kore.Step.Pattern.freeVariables
+    , hasFreeVariable
+    , withoutFreeVariable
     , mapVariables
     , traverseVariables
     , asConcreteStepPattern
@@ -42,6 +44,7 @@ import qualified Data.Map.Strict as Map
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Annotation.Valid
                  ( Valid (..) )
@@ -61,6 +64,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 type StepPattern level variable =
@@ -74,6 +78,38 @@ freeVariables :: StepPattern level variable -> Set (variable level)
 freeVariables stepPattern =
     let Valid { freeVariables = freeVars } = extract stepPattern
     in freeVars
+
+hasFreeVariable
+    :: Ord (variable Object)
+    => variable Object
+    -> StepPattern Object variable
+    -> Bool
+hasFreeVariable variable = Set.member variable . Kore.Step.Pattern.freeVariables
+
+{- | Throw an error if the variable occurs free in the pattern.
+
+Otherwise, the argument is returned.
+
+ -}
+withoutFreeVariable
+    ::  ( Ord (variable Object)
+        , Unparse (variable Object)
+        )
+    => variable Object  -- ^ variable
+    -> StepPattern Object variable
+    -> a  -- ^ result, if the variable does not occur free in the pattern
+    -> a
+withoutFreeVariable variable stepPattern result
+  | hasFreeVariable variable stepPattern =
+    (error . show . Pretty.vsep)
+        [ Pretty.hsep
+            [ "Unexpected free variable"
+            , unparse variable
+            , "in pattern:"
+            ]
+        , Pretty.indent 4 (unparse stepPattern)
+        ]
+  | otherwise = result
 
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.
 

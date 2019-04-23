@@ -10,6 +10,7 @@ module Kore.Step.Representation.Predicated
     , withCondition
     , andCondition
     , fromPredicate
+    , fromSubstitution
     , andPredicate
     , Kore.Step.Representation.Predicated.freeVariables
     , toPredicate
@@ -194,10 +195,27 @@ The result has an empty 'Substitution'.
 
  -}
 fromPredicate
-    :: Predicate level variable
+    :: Ord (variable level)
+    => Predicate level variable
     -> Predicated level variable ()
 fromPredicate predicate =
     Predicated { term = (), predicate, substitution = mempty }
+
+{- | Construct a 'Predicated' holding the given 'Substitution'.
+
+The result has a true 'Predicate'.
+
+ -}
+fromSubstitution
+    :: Ord (variable Object)
+    => Substitution Object variable
+    -> Predicated Object variable ()
+fromSubstitution substitution =
+    Predicated
+        { term = ()
+        , predicate = Predicate.makeTruePredicate
+        , substitution
+        }
 
 {- | Combine the predicate with the conditions of the first argument.
  -}

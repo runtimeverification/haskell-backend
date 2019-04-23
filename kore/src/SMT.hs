@@ -81,8 +81,6 @@ data Config =
         -- ^ solver executable file name
         , arguments :: [String]
         -- ^ default command-line arguments to solver
-        , logic :: Text
-        -- ^ SMT-LIB2 logic
         , preludeFile :: Maybe FilePath
         -- ^ prelude of definitions to initialize solver
         , logFile :: Maybe FilePath
@@ -98,11 +96,8 @@ defaultConfig =
         { executable = "z3"
         , arguments =
             [ "-smt2"  -- use SMT-LIB2 format
-            , "-in"  -- read from standard input
+            , "-in"    -- read from standard input
             ]
-        , logic = "QF_UFNIA"  -- Quantifier-Free formulas
-                              -- with Non-linear Integer Arithmetic
-                              -- and uninterpreted functions
         , preludeFile = Nothing
         , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
@@ -177,11 +172,9 @@ newSolver config = do
     -- TODO (thomas.tuegel): Set up logging using logFile.
     -- TODO (thomas.tuegel): Initialize solver from preludeFile.
     Config { timeOut } = config
-    Config { logic } = config
     Config { executable = exe, arguments = args } = config
     Config { preludeFile } = config
     SMT { getSMT } = do
-        setLogic logic
         setTimeOut timeOut
         maybe (pure ()) loadFile preludeFile
 
@@ -328,12 +321,6 @@ setTimeOut TimeOut { getTimeOut } =
             setInfo ":time" (SimpleSMT.int timeOut)
         Unlimited ->
             return ()
-
--- | Set the logic used by the solver.
-setLogic :: MonadSMT m => Text -> m ()
-setLogic logic =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.setLogic solver logic
 
 -- | Load a .smt2 file
 loadFile :: MonadSMT m => FilePath -> m ()

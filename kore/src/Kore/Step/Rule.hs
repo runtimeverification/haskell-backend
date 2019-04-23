@@ -7,6 +7,8 @@ License     : NCSA
 module Kore.Step.Rule
     ( EqualityRule (..)
     , RewriteRule (..)
+    , OnePathRule (..)
+    , AllPathRule (..)
     , RulePattern (..)
     , isHeatingRule
     , isCoolingRule
@@ -16,7 +18,8 @@ module Kore.Step.Rule
     , verifiedKoreSentenceToAxiomPattern
     , koreSentenceToAxiomPattern
     , extractRewriteAxioms
-    , extractRewriteClaims
+    , extractOnePathClaims
+    , extractAllPathClaims
     , mkRewriteAxiom
     , mkEqualityAxiom
     , refreshRulePattern
@@ -26,10 +29,8 @@ module Kore.Step.Rule
     ) where
 
 import           Control.Comonad
-import qualified Data.Foldable as Foldable
 import           Data.Map.Strict
                  ( Map )
-import qualified Data.Map.Strict as Map
 import           Data.Maybe
 import           Data.Set
                  ( Set )
@@ -106,12 +107,37 @@ instance (Unparse (variable level), Ord (variable level)) => Unparse (RewriteRul
                 (Valid.mkAnd left (Predicate.unwrapPredicate requires))
                 right
 
+qualifiedAxiomOpToConstructor
+    :: SymbolOrAlias Object
+    -> Maybe
+        (RulePattern level variable -> QualifiedAxiomPattern level variable)
+qualifiedAxiomOpToConstructor patternHead = case headName of
+    "weakExistsFinally" -> Just $ OnePathClaimPattern . OnePathRule
+    "weakAlwaysFinally" -> Just $ AllPathClaimPattern . AllPathRule
+    _ -> Nothing
+  where
+    headName = getId (symbolOrAliasConstructor patternHead)
+
+{-  | One-Path-Claim rule pattern.
+-}
+newtype OnePathRule level variable =
+    OnePathRule { getOnePathRule :: RulePattern level variable }
+    deriving (Eq, Show)
+
+{-  | All-Path-Claim rule pattern.
+-}
+newtype AllPathRule level variable =
+    AllPathRule { getAllPathRule :: RulePattern level variable }
+    deriving (Eq, Show)
+
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern level variable
     = RewriteAxiomPattern (RewriteRule level variable)
     | FunctionAxiomPattern (EqualityRule level variable)
+    | OnePathClaimPattern (OnePathRule level variable)
+    | AllPathClaimPattern (AllPathRule level variable)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
     -- not only to function-related ones.
     deriving (Eq, Show)
@@ -156,21 +182,6 @@ extractRewriteAxioms level idxMod =
         )
         (indexedModuleAxioms idxMod)
 
--- | Extracts all 'RewriteRule' claims matching a given @level@ from
--- a verified definition.
-extractRewriteClaims
-    :: MetaOrObject level
-    => level -- ^expected level for the axiom pattern
-    -> VerifiedModule declAtts axiomAtts
-    -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, RewriteRule level Variable)]
-extractRewriteClaims level idxMod =
-    mapMaybe
-        ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
-        . fmap (extractRewriteAxiomFrom level) -- applying on second component
-        )
-    $ (indexedModuleClaims idxMod)
-
 extractRewriteAxiomFrom
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
@@ -180,6 +191,52 @@ extractRewriteAxiomFrom
 extractRewriteAxiomFrom level sentence =
     case verifiedKoreSentenceToAxiomPattern level koreSentence of
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
+        _ -> Nothing
+  where
+    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
+
+-- | Extracts all One-Path claims from a verified module.
+extractOnePathClaims
+    :: VerifiedModule declAtts axiomAtts
+    -- ^'IndexedModule' containing the definition
+    -> [(axiomAtts, OnePathRule Object Variable)]
+extractOnePathClaims idxMod =
+    mapMaybe
+        ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
+        . fmap extractOnePathClaimFrom         -- applying on second component
+        )
+    $ (indexedModuleClaims idxMod)
+
+extractOnePathClaimFrom
+    :: SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    -- ^ Sentence to extract axiom pattern from
+    -> Maybe (OnePathRule Object Variable)
+extractOnePathClaimFrom sentence =
+    case verifiedKoreSentenceToAxiomPattern Object koreSentence of
+        Right (OnePathClaimPattern axiomPat) -> Just axiomPat
+        _ -> Nothing
+  where
+    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
+
+-- | Extracts all All-Path claims from a verified definition.
+extractAllPathClaims
+    :: VerifiedModule declAtts axiomAtts
+    -- ^'IndexedModule' containing the definition
+    -> [(axiomAtts, AllPathRule Object Variable)]
+extractAllPathClaims idxMod =
+    mapMaybe
+        ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
+        . fmap extractAllPathClaimFrom         -- applying on second component
+        )
+    $ (indexedModuleClaims idxMod)
+
+extractAllPathClaimFrom
+    :: SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    -- ^ Sentence to extract axiom pattern from
+    -> Maybe (AllPathRule Object Variable)
+extractAllPathClaimFrom sentence =
+    case verifiedKoreSentenceToAxiomPattern Object koreSentence of
+        Right (AllPathClaimPattern axiomPat) -> Just axiomPat
         _ -> Nothing
   where
     koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
@@ -244,6 +301,16 @@ patternToAxiomPattern attributes pat =
         -- quantifiers.
         Rewrites_ _ (And_ _ requires lhs) (And_ _ ensures rhs) ->
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
+                { left = lhs
+                , right = rhs
+                , requires = Predicate.wrapPredicate requires
+                , ensures = Predicate.wrapPredicate ensures
+                , attributes
+                }
+        -- Reachability claims
+        Implies_ _ (And_ _ requires lhs) (App_ op [And_ _ ensures rhs])
+          | Just constructor <- qualifiedAxiomOpToConstructor op ->
+            pure $ constructor RulePattern
                 { left = lhs
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
@@ -330,8 +397,8 @@ refreshRulePattern
     => Set (variable level)  -- ^ Variables to avoid
     -> RulePattern level variable
     -> (Map (variable level) (variable level), RulePattern level variable)
-refreshRulePattern avoid0 rulePattern =
-    let (_, rename) = refreshVariables originalFreeVariables
+refreshRulePattern avoid rulePattern =
+    let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
         left' = Pattern.substitute subst left
         right' = Pattern.substitute subst right
@@ -346,21 +413,6 @@ refreshRulePattern avoid0 rulePattern =
   where
     RulePattern { left, right, requires } = rulePattern
     originalFreeVariables = freeVariables rulePattern
-    refreshVariables = Foldable.foldl' refreshOneVariable (avoid0, Map.empty)
-    refreshOneVariable (avoid, rename) var
-      | Just var' <- refreshVariable avoid var =
-        let avoid' =
-                -- Avoid the freshly-generated variable in future renamings.
-                Set.insert var' avoid
-            rename' =
-                -- Record a mapping from the original variable to the
-                -- freshly-generated variable.
-                Map.insert var var' rename
-        in (avoid', rename')
-      | otherwise =
-        -- The variable does not collide with any others, so renaming is not
-        -- necessary.
-        (Set.insert var avoid, rename)
 
 {- | Extract the free variables of a 'RulePattern'.
  -}
