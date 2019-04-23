@@ -24,6 +24,7 @@ module Kore.Repl.Data
     , emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex
     , initializeProofFor
+    , getInnerGraph, getConfigAt
     ) where
 
 import           Control.Error
@@ -330,3 +331,23 @@ initializeProofFor claim st = st
       , node   = 0
       , labels = Map.empty
       }
+
+getInnerGraph
+    :: forall claim level
+    .  ReplState claim level
+    -> InnerGraph
+getInnerGraph = Strategy.graph . graph
+
+getConfigAt
+    :: forall claim level
+    .  level ~ Object
+    => Maybe Int
+    -> ReplState claim level
+    -> Maybe (Graph.Node, CommonStrategyPattern level)
+getConfigAt maybeNode st =
+    if node' `elem` Graph.nodes graph
+        then Just (node', Graph.lab' . Graph.context graph $ node')
+        else Nothing
+  where
+    node' = maybe (st Lens.^. lensNode) id maybeNode
+    graph = getInnerGraph st

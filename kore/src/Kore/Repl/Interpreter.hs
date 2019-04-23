@@ -179,7 +179,8 @@ showAxiom index = do
     maybe printNotFound (printRewriteRule . unAxiom) $ axiom
 
 prove
-    :: (level ~ Object)
+    :: forall level claim m
+    .  (level ~ Object)
     => MonadIO m
     => Claim claim
     => MonadState (ReplState claim level) m
@@ -190,9 +191,10 @@ prove index = do
     claim' <- State.getClaimByIndex index <$> get
     maybe printNotFound initProof claim'
   where
+    initProof :: claim -> m ()
     initProof claim = do
-        modify $ State.initializeProofFor claim
-        putStrLn' "Execution Graph initiated"
+            modify $ State.initializeProofFor claim
+            putStrLn' "Execution Graph initiated"
 
 showGraph
     :: MonadIO m
@@ -200,7 +202,7 @@ showGraph
     => MonadState (ReplState claim level) m
     => m ()
 showGraph = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    graph <- getInnerGraph <$> get
     axioms <- Lens.use lensAxioms
     liftIO $ showDotGraph (length axioms) graph
 
@@ -222,7 +224,14 @@ proveStepsF n = do
     node   <- Lens.use lensNode
     graph' <- recursiveForcedStep n graph node
     lensGraph .= graph'
-    lensNode  .= (snd $ Graph.nodeRange . Strategy.graph $ graph')
+    lensNode  .= newestAddedNode graph'
+  where
+     -- Since we don't know which path was the longest,
+     -- we need to find the largest node in the graph.
+     -- This assumes the graph will assign new nodes
+     -- in ascending order.
+     newestAddedNode :: ExecutionGraph -> Graph.Node
+     newestAddedNode = snd . Graph.nodeRange . Strategy.graph
 
 selectNode
     :: Claim claim
@@ -231,7 +240,7 @@ selectNode
     => Int
     -> m ()
 selectNode i = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
+    graph <- getInnerGraph <$> get
     if i `elem` Graph.nodes graph
         then lensNode .= i
         else putStrLn' "Invalid node!"
@@ -242,19 +251,13 @@ showConfig
     => Maybe Int
     -> ReplM claim level ()
 showConfig configNode = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    node <- Lens.use lensNode
-    let node' = maybe node id configNode
-    if node' `elem` Graph.nodes graph
-        then do
+    maybeConfig <- getConfigAt configNode <$> get
+    case maybeConfig of
+        Nothing -> putStrLn' "Invalid node!"
+        Just (node, config) -> do
             omit <- Lens.use lensOmit
-            putStrLn' $ "Config at node " <> show node' <> " is:"
-            putStrLn'
-                . unparseStrategy omit
-                . Graph.lab'
-                . Graph.context graph
-                $ node'
-        else putStrLn' "Invalid node!"
+            putStrLn' $ "Config at node " <> show node <> " is:"
+            putStrLn' $ unparseStrategy omit config
 
 omitCell :: Claim claim => Maybe String -> ReplM claim level ()
 omitCell =
