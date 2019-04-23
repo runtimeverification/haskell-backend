@@ -31,6 +31,7 @@ test_replParser =
     , ruleTests        `tests` "rule"
     , stepfTests       `tests` "stepf"
     , clearTests       `tests` "clear"
+    , saveSessionTests `tests` "save-session"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -207,4 +208,11 @@ clearTests =
     , "clear 5"  `parsesTo_` Clear (Just 5)
     , "clear 5 " `parsesTo_` Clear (Just 5)
     , "clear -5" `fails`     "no negative numbers"
+    ]
+
+saveSessionTests :: [ParserTest ReplCommand]
+saveSessionTests =
+    [ "save-session file"  `parsesTo_` SaveSession "file"
+    , "save-session file " `parsesTo_` SaveSession "file"
+    , "save-session"       `fails`     "need to supply file name"
     ]

@@ -101,6 +101,7 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier )
 import           Kore.Unification.Unify
                  ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
@@ -529,7 +530,9 @@ unifyEquals
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> (p -> p -> unifier (expanded, proof))
-    -> (p -> p -> MaybeT unifier (expanded, proof))
+    -> p
+    -> p
+    -> MaybeT unifier (expanded, proof)
 unifyEquals
     simplificationType
     tools
@@ -537,8 +540,10 @@ unifyEquals
     _
     _
     unifyEqualsChildren
+    first
+    second
   =
-    unifyEquals0
+    unifyEquals0 first second
   where
     hookTools = StepperAttributes.hook <$> tools
 
@@ -612,8 +617,7 @@ unifyEquals
             -> StepPattern Object variable -- ^ framing variable
             -> unifier (expanded, proof)
         unifyEqualsSelect builtin1' _ key2 set2
-          | set1 == Set.empty =
-            return (ExpandedPattern.bottom, SimplificationProof)
+          | set1 == Set.empty = bottomWithExplanation
           | otherwise = case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->
                 Reflection.give tools $ do
@@ -653,8 +657,7 @@ unifyEquals
     unifyEqualsConcrete builtin1 builtin2
       | set1 == set2 =
         return (unified, SimplificationProof)
-      | otherwise =
-        return (ExpandedPattern.bottom, SimplificationProof)
+      | otherwise = bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
@@ -683,8 +686,7 @@ unifyEquals
                     asExpandedPattern builtinSetSort set1 <* remainder
             return (result, SimplificationProof)
 
-      | otherwise =
-        return (ExpandedPattern.bottom, SimplificationProof)
+      | otherwise = bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
@@ -705,12 +707,16 @@ unifyEquals
                             mkApp builtinSetSort element'
                                 <$> propagatePredicates [key]
                     return (result, SimplificationProof)
-            _ ->
-                -- Cannot unify a non-element Set with an element Set.
-                return (ExpandedPattern.bottom, SimplificationProof)
+            _ -> bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
+    bottomWithExplanation = do
+        Monad.Unify.explainBottom
+            "Cannot unify sets with different sizes."
+            first
+            second
+        return (ExpandedPattern.bottom, SimplificationProof)
 
 -- Setup: we are unifying against a concrete (no variables) pattern
 -- If the unification problem is completely solved, we expect that
@@ -746,4 +752,3 @@ errorIfIncompletelyUnified expected patt unifiedExpandedPattern =
             ++ "\nHandling this is currently not implemented."
             ++ "\nPlease file an issue if this should work for you."
             )
-

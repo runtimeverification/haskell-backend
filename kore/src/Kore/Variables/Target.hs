@@ -67,13 +67,9 @@ instance
     toVariable (Target var) = toVariable var
     toVariable (NonTarget var) = toVariable var
 
-{- | The implementation of @refreshVariable@ for 'StepperVariable' ensures that
-fresh variables are always unique under projection by 'unwrapStepperVariable'.
+{- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance
-    (FreshVariable variable, SortedVariable variable) =>
-    FreshVariable (Target variable)
-  where
+instance FreshVariable variable => FreshVariable (Target variable) where
     refreshVariable (Set.map unwrapVariable -> avoiding) =
         \case
             Target variable ->
