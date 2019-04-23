@@ -115,7 +115,7 @@ instance Unparse (SymbolOrAlias level) where
 
 {-|@VariableType@ corresponds to the `EVar` and `SVar` categories of variables,
 in the Matching mu-Logic paper, used to distinguish between element variables,
-which can only be instantiated by an singleton, i.e., a functional pattern,
+which can only be instantiated by a singleton, i.e., a functional pattern,
 and set variables which can be instantiated by any set, i.e., any pattern.
 -}
 data VariableType = ElementVariable | SetVariable
