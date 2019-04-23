@@ -11,6 +11,7 @@ Portability : POSIX
 module Kore.Implicit.Verified
     ( implicitKoreDefinition
     , implicitMetaDefinition
+    , MetaDefinition
     )
     where
 
@@ -25,8 +26,6 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( Error, printError )
 import           Kore.Implicit.Definitions
-                 ( uncheckedKoreDefinition, uncheckedMetaDefinition )
-import           Kore.MetaML.AST
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do

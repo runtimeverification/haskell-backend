@@ -24,7 +24,6 @@ import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.MetaML.AST
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
 
@@ -86,22 +85,6 @@ test_patternVerifier =
         (simpleExistsPattern metaVariable' metaSort1)
         (NamePrefix "#dummy")
         (TestedPatternSort metaSort1)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
-        -- TODO: Here we should be able to use NoRestrict,
-        -- at least in some cases.
-        NeedsInternalDefinitions
-    , successTestsForMetaPattern "implicit meta pattern"
-        (ApplicationPattern Application
-            { applicationSymbolOrAlias = nilSortListHead
-            , applicationChildren = []
-            }
-        )
-        (NamePrefix "#dummy")
-        (TestedPatternSort sortListMetaSort)
         (SortVariablesThatMustBeDeclared [])
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort anotherMetaSort)

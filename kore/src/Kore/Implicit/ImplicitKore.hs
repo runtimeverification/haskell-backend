@@ -7,11 +7,14 @@ module Kore.Implicit.ImplicitKore
     ( uncheckedKoreModule
     ) where
 
+import           Data.Functor.Const
+                 ( Const )
 import qualified Data.Text as Text
+import           Data.Void
+                 ( Void )
 
 import Kore.AST.Pure
 import Kore.AST.Sentence
-import Kore.MetaML.AST
 
 metaSortDescription
     :: MetaSortType -> Sentence Meta sortParam patternType
@@ -27,7 +30,7 @@ metaSortDescription sortType =
         , idLocation = AstLocationImplicit
         }
 
-uncheckedKoreModule :: MetaModule
+uncheckedKoreModule :: PureModule Meta (Const Void)
 uncheckedKoreModule =
     Module
         { moduleName       = ModuleName "kore"

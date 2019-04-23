@@ -19,12 +19,10 @@ module Test.Kore
     , sortVariable
     , sortVariableSort
     , stepPatternGen
-    , metaMLPatternGen
     , expandedPatternGen
     , orOfExpandedPatternGen
     , predicateGen
     , predicateChildGen
-    , metaModuleGen
     , variableGen
     , Logger.emptyLogger
     ) where
@@ -51,7 +49,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
 import qualified Kore.Logger.Output as Logger
                  ( emptyLogger )
-import           Kore.MetaML.AST
 import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
@@ -797,21 +794,6 @@ sentenceImportGen =
         <$> moduleNameGen
         <*> attributesGen
 
-sentenceAxiomGen
-   :: MetaOrObject level
-   => Gen patternType
-   -> Gen (SentenceAxiom (SortVariable level) patternType)
-sentenceAxiomGen patGen = do
-    sentenceAxiomParameters <- couple sortVariableGen
-    Reader.local (addSortVariables sentenceAxiomParameters) $ do
-        sentenceAxiomPattern <- patGen
-        sentenceAxiomAttributes <- attributesGen
-        return SentenceAxiom
-            { sentenceAxiomParameters
-            , sentenceAxiomPattern
-            , sentenceAxiomAttributes
-            }
-
 unifiedSentenceAxiomGen
    :: Gen patternType
    -> Gen (SentenceAxiom (Unified SortVariable) patternType)
@@ -885,109 +867,6 @@ definitionGen senGen =
     Definition
         <$> attributesGen
         <*> couple1 (moduleGen senGen)
-
-metaMLPatternGen
-    :: Sort Meta
-    -> Gen (MetaMLPattern Variable (Valid (Variable Meta) Meta))
-metaMLPatternGen patternSort =
-    Gen.sized metaMLPatternGenWorker
-  where
-    metaMLPatternGenWorker n
-      | n <= 1 =
-        case () of
-            () | patternSort == stringMetaSort ->
-                 mkStringLiteral . getStringLiteral <$> stringLiteralGen
-               | patternSort == charMetaSort ->
-                 mkCharLiteral . getCharLiteral <$> charLiteralGen
-               | otherwise ->
-                 mkVar <$> variableGen patternSort
-      | otherwise =
-        (Gen.small . Gen.frequency)
-            [ (1, metaMLPatternAndGen)
-            , (1, metaMLPatternAppGen)
-            , (1, metaMLPatternBottomGen)
-            , (1, metaMLPatternCeilGen)
-            , (1, metaMLPatternEqualsGen)
-            , (1, metaMLPatternExistsGen)
-            , (1, metaMLPatternFloorGen)
-            , (1, metaMLPatternForallGen)
-            , (1, metaMLPatternIffGen)
-            , (1, metaMLPatternImpliesGen)
-            , (1, metaMLPatternInGen)
-            , (1, metaMLPatternNotGen)
-            , (1, metaMLPatternOrGen)
-            , (1, metaMLPatternTopGen)
-            , (5, metaMLPatternVariableGen)
-            ]
-    metaMLPatternAndGen =
-        mkAnd
-            <$> metaMLPatternGen patternSort
-            <*> metaMLPatternGen patternSort
-    metaMLPatternAppGen =
-        mkApp patternSort
-            <$> symbolOrAliasGen
-            <*> couple (metaMLPatternGen =<< sortGen)
-    metaMLPatternBottomGen = pure (mkBottom patternSort)
-    metaMLPatternCeilGen = do
-        child <- metaMLPatternGen =<< sortGen
-        pure (mkCeil patternSort child)
-    metaMLPatternEqualsGen = do
-        operandSort <- sortGen
-        mkEquals patternSort
-            <$> metaMLPatternGen operandSort
-            <*> metaMLPatternGen operandSort
-    metaMLPatternExistsGen = do
-        varSort <- sortGen
-        var <- variableGen varSort
-        child <-
-            Reader.local
-                (addVariable var)
-                (metaMLPatternGen patternSort)
-        pure (mkExists var child)
-    metaMLPatternForallGen = do
-        varSort <- sortGen
-        var <- variableGen varSort
-        child <-
-            Reader.local
-                (addVariable var)
-                (metaMLPatternGen patternSort)
-        pure (mkForall var child)
-    metaMLPatternFloorGen = do
-        child <- metaMLPatternGen =<< sortGen
-        pure (mkFloor patternSort child)
-    metaMLPatternIffGen =
-        mkIff
-            <$> metaMLPatternGen patternSort
-            <*> metaMLPatternGen patternSort
-    metaMLPatternImpliesGen =
-        mkImplies
-            <$> metaMLPatternGen patternSort
-            <*> metaMLPatternGen patternSort
-    metaMLPatternInGen =
-        mkIn patternSort
-            <$> metaMLPatternGen patternSort
-            <*> metaMLPatternGen patternSort
-    metaMLPatternNotGen =
-        mkNot <$> metaMLPatternGen patternSort
-    metaMLPatternOrGen =
-        mkOr
-            <$> metaMLPatternGen patternSort
-            <*> metaMLPatternGen patternSort
-    metaMLPatternTopGen = pure (mkTop patternSort)
-    metaMLPatternVariableGen = mkVar <$> variableGen patternSort
-
-metaSentenceGen :: Gen MetaSentence
-metaSentenceGen =
-    eraseSentenceAnnotations <$> Gen.choice
-        [ (SentenceSymbolSentence <$> sentenceSymbolGen)
-        , (SentenceAliasSentence <$> sentenceAliasGen metaMLPatternGen)
-        , (SentenceImportSentence <$> sentenceImportGen)
-        , (SentenceAxiomSentence
-            <$> sentenceAxiomGen (metaMLPatternGen =<< sortGen))
-        ]
-
-metaModuleGen :: Gen MetaModule
-metaModuleGen = moduleGen metaSentenceGen
 
 testId :: Text -> Id level
 testId name =

@@ -212,10 +212,6 @@ toKorePattern =
 
 {- | Extract a 'StepPattern' from a 'KorePattern'.
 
-@patternKoreToStep@ does not lift the term, but rather fails with 'koreFail'
-if any part of the pattern is on a different level.  For lifting functions see
-"Kore.MetaML.Lift".
-
  -}
 fromKorePattern
     ::  ( MetaOrObject level

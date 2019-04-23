@@ -12,15 +12,26 @@ module Kore.Implicit.Definitions
     ( uncheckedKoreDefinition
     , uncheckedKoreModules
     , uncheckedMetaDefinition
+    , MetaModule
+    , MetaDefinition
     ) where
 
+import Data.Functor.Const
+       ( Const )
+import Data.Void
+       ( Void )
+
+import           Kore.AST.MetaOrObject
+                 ( Meta )
 import qualified Kore.AST.Pure as AST.Pure
 import           Kore.AST.PureToKore
                  ( modulePureToKore )
 import           Kore.AST.Sentence
 import           Kore.Implicit.ImplicitKore
                  ( uncheckedKoreModule )
-import           Kore.MetaML.AST
+
+type MetaModule = PureModule Meta (Const Void)
+type MetaDefinition = PureDefinition Meta (Const Void)
 
 metaModules :: [MetaModule]
 metaModules = [uncheckedKoreModule]
