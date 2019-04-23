@@ -60,6 +60,7 @@ import Kore.Unparser
 import Template.Tools
        ( newDefinitionGroup )
 
+
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
@@ -72,6 +73,7 @@ instance NFData StringLiteral
 
 instance Unparse StringLiteral where
     unparse = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral
+    unparse2 = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral
 
 {-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
@@ -85,6 +87,7 @@ instance NFData CharLiteral
 
 instance Unparse CharLiteral where
     unparse = Pretty.squotes . fromString . escapeChar . getCharLiteral
+    unparse2 = Pretty.squotes . fromString . escapeChar . getCharLiteral
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
@@ -111,6 +114,14 @@ instance Unparse (SymbolOrAlias level) where
             }
       =
         unparse symbolOrAliasConstructor <> parameters symbolOrAliasParams
+
+    unparse2
+        SymbolOrAlias
+            { symbolOrAliasConstructor
+            }
+      =
+        unparse2 symbolOrAliasConstructor
+
 
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
@@ -145,6 +156,14 @@ instance Unparse (Variable level) where
         <> Pretty.pretty variableCounter
         <> Pretty.colon
         <> unparse variableSort
+    unparse2 Variable { variableName } =
+        unparse variableName 
+    unparse2BindingVariables Variable { variableName, variableCounter, variableSort } =
+        unparse variableName
+        <> Pretty.pretty variableCounter
+        <> Pretty.colon 
+        <> unparse variableSort
+
 
 {- | Is the variable original (as opposed to generated)?
  -}
@@ -197,6 +216,8 @@ instance NFData (Concrete level)
 
 instance Unparse (Concrete level) where
     unparse = \case {}
+    unparse2 = \case {}
+
 
 {- | 'SortedVariable' is a Kore variable with a known sort.
 
@@ -254,6 +275,8 @@ instance Hashable MLPatternType
 
 instance Unparse MLPatternType where
     unparse = ("\\" <>) . fromString . patternString
+    unparse2 = ("\\" <>) . fromString . patternString
+
 
 allPatternTypes :: [MLPatternType]
 allPatternTypes =
@@ -344,6 +367,16 @@ instance Unparse child => Unparse (And level child) where
         <> parameters [andSort]
         <> arguments [andFirst, andSecond]
 
+    unparse2
+        And { andFirst, andSecond }
+      =
+        "("
+        <> unparse2 andFirst
+        <> " ∧ "
+        <> unparse2 andSecond
+        <> ")"
+
+
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
 @object-pattern@ and @meta-pattern@ syntactic categories from
 the Semantics of K, Section 9.1.4 (Patterns).
@@ -390,6 +423,22 @@ instance Unparse child => Unparse (Application level child) where
         unparse applicationSymbolOrAlias
         <> arguments applicationChildren
 
+    unparse2
+        Application { applicationSymbolOrAlias, applicationChildren }
+      =
+        case applicationChildren of
+            [] -> 
+                "(" 
+                <> unparse2 applicationSymbolOrAlias
+                <> ")"
+            children ->
+                "(" 
+                <> unparse2 applicationSymbolOrAlias
+                <> " "
+                <> arguments2 children
+                <> ")"
+
+
 {-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -428,6 +477,8 @@ instance NFData (Bottom level child)
 instance Unparse (Bottom level child) where
     unparse Bottom { bottomSort } =
         "\\bottom" <> parameters [bottomSort] <> noArguments
+    unparse2 Bottom { } =
+        "⊥"
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -479,6 +530,11 @@ instance Unparse child => Unparse (Ceil level child) where
         <> parameters [ceilOperandSort, ceilResultSort]
         <> arguments [ceilChild]
 
+    unparse2 Ceil { ceilChild } =
+        "⌈" <> (unparse2 ceilChild) <> "⌉"
+
+
+
 {-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
 syntactic category, which are not yet in the Semantics of K document,
 but they should appear in Section 9.1.4 (Patterns) at some point.
@@ -529,6 +585,7 @@ instance
     Unparse (DomainValue level domain child)
   where
     unparse DomainValue { domainValueChild } = unparse domainValueChild
+    unparse2 DomainValue { domainValueChild } = unparse2 domainValueChild
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -588,6 +645,16 @@ instance Unparse child => Unparse (Equals level child) where
         <> parameters [equalsOperandSort, equalsResultSort]
         <> arguments [equalsFirst, equalsSecond]
 
+    unparse2
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      =
+        "(" <> (unparse2 equalsFirst) <> " " <> "=" <> " " <> (unparse2 equalsSecond) <> ")"
+
+
+
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -641,6 +708,12 @@ instance
         <> parameters [existsSort]
         <> arguments' [unparse existsVariable, unparse existsChild]
 
+    unparse2 Exists { existsVariable, existsChild } =
+        "(" <> "∃" <> " " 
+        <> (unparse2BindingVariables existsVariable) 
+        <> " . " <> (unparse2 existsChild) <> ")"
+
+
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -690,6 +763,12 @@ instance Unparse child => Unparse (Floor level child) where
         "\\floor"
         <> parameters [floorOperandSort, floorResultSort]
         <> arguments [floorChild]
+
+    unparse2 Floor { floorChild } =
+        "⌊" <> (unparse2 floorChild) <> "⌋"
+
+
+
 
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -744,6 +823,12 @@ instance
         <> parameters [forallSort]
         <> arguments' [unparse forallVariable, unparse forallChild]
 
+    unparse2 Forall { forallVariable, forallChild } =
+        "(" <> "∀" <> " " 
+        <> (unparse2BindingVariables forallVariable) 
+        <> " . " <> (unparse2 forallChild) <> ")"
+
+
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -792,6 +877,12 @@ instance Unparse child => Unparse (Iff level child) where
         <> parameters [iffSort]
         <> arguments [iffFirst, iffSecond]
 
+    unparse2 Iff { iffFirst, iffSecond } =
+        "(" <> (unparse2 iffFirst) 
+        <> " ↔ " 
+        <> (unparse2 iffSecond) <> ")"
+
+
 {-|'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -839,6 +930,11 @@ instance Unparse child => Unparse (Implies level child) where
         "\\implies"
         <> parameters [impliesSort]
         <> arguments [impliesFirst, impliesSecond]
+
+    unparse2 Implies { impliesFirst, impliesSecond } =
+        "(" <> (unparse2 impliesFirst) <> " → " 
+        <> (unparse2 impliesSecond) <> ")"
+
 
 {-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -901,6 +997,17 @@ instance Unparse child => Unparse (In level child) where
         <> parameters [inOperandSort, inResultSort]
         <> arguments [inContainedChild, inContainingChild]
 
+    unparse2
+        In
+            { inContainedChild
+            , inContainingChild
+            }
+      =
+        "(" <> (unparse2 inContainedChild) <> " " <> "∈" <> " " <> (unparse2 inContainingChild) <> ")"
+
+
+
+
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
@@ -947,6 +1054,11 @@ instance Unparse child => Unparse (Next level child) where
         "\\next"
         <> parameters [nextSort]
         <> arguments [nextChild]
+
+    unparse2 Next { nextChild } =
+        "(" <> "∙" <> " " <> (unparse2 nextChild) <> ")"
+
+
 
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -995,6 +1107,10 @@ instance Unparse child => Unparse (Not level child) where
         <> parameters [notSort]
         <> arguments [notChild]
 
+    unparse2 Not { notChild } =
+        "(" <> "¬" <> " " <> (unparse2 notChild) <> ")"
+
+
 {-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -1042,6 +1158,12 @@ instance Unparse child => Unparse (Or level child) where
         "\\or"
         <> parameters [orSort]
         <> arguments [orFirst, orSecond]
+
+    unparse2 Or { orFirst, orSecond } =
+        "(" <> (unparse2 orFirst) <> " " <> "∨" <> " " <> (unparse2 orSecond) <> ")"
+
+
+
 
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -1092,6 +1214,12 @@ instance Unparse child => Unparse (Rewrites level child) where
         <> parameters [rewritesSort]
         <> arguments [rewritesFirst, rewritesSecond]
 
+    unparse2 Rewrites { rewritesFirst, rewritesSecond } =
+        "(" <> (unparse2 rewritesFirst) <> " " <> "⇒" <> " " <> (unparse2 rewritesSecond) <> ")"
+
+
+
+
 {-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -1130,6 +1258,17 @@ instance NFData (Top level child)
 instance Unparse (Top level child) where
     unparse Top { topSort } =
         "\\top" <> parameters [topSort] <> noArguments
+
+    unparse2 Top { } =
+        "⊤"
+
+
+{-|'SortPattern' corresponds to the pattern in applicative Kore that
+represents a sort in regular Kore. For example, Int is a sort in
+regular Kore, so it is also a pattern (built by the constant symbol Int)
+in applicative Kore, and ⟦Int⟧ is the pattern that represents the inhabitant
+set of sort Int.
+-}
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -1180,6 +1319,8 @@ data Pattern level domain variable child where
         :: !(Top level child) -> Pattern level domain variable child
     VariablePattern
         :: !(variable level) -> Pattern level domain variable child
+    SortPattern
+        :: !(Sort level) -> Pattern level domain variable child
 
 $newDefinitionGroup
 {- dummy top-level splice to make ''Pattern available for lifting -}
@@ -1272,6 +1413,32 @@ instance
             CharLiteralPattern p   -> unparse p
             TopPattern p           -> unparse p
             VariablePattern p      -> unparse p
+            SortPattern s          -> unparse s
+
+    unparse2 =
+        \case
+            AndPattern p           -> unparse2 p
+            ApplicationPattern p   -> unparse2 p
+            BottomPattern p        -> unparse2 p
+            CeilPattern p          -> unparse2 p
+            DomainValuePattern p   -> unparse2 p
+            EqualsPattern p        -> unparse2 p
+            ExistsPattern p        -> unparse2 p
+            FloorPattern p         -> unparse2 p
+            ForallPattern p        -> unparse2 p
+            IffPattern p           -> unparse2 p
+            ImpliesPattern p       -> unparse2 p
+            InPattern p            -> unparse2 p
+            NextPattern p          -> unparse2 p
+            NotPattern p           -> unparse2 p
+            OrPattern p            -> unparse2 p
+            RewritesPattern p      -> unparse2 p
+            StringLiteralPattern p -> unparse2 p
+            CharLiteralPattern p   -> unparse2 p
+            TopPattern p           -> unparse2 p
+            VariablePattern p      -> unparse2 p
+            SortPattern s          -> unparse s
+
 
 data SortedPattern level domain variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level domain variable child)
@@ -1412,6 +1579,7 @@ traverseVariables traversing =
         ExistsPattern any0 -> ExistsPattern <$> traverseVariablesExists any0
         ForallPattern all0 -> ForallPattern <$> traverseVariablesForall all0
         VariablePattern variable -> VariablePattern <$> traversing variable
+        SortPattern s -> pure (SortPattern s)
         -- Trivial cases
         AndPattern andP -> pure (AndPattern andP)
         ApplicationPattern appP -> pure (ApplicationPattern appP)
@@ -1445,6 +1613,7 @@ mapDomainValues mapping =
     \case
         -- Non-trivial case
         DomainValuePattern domainP -> DomainValuePattern (mapping domainP)
+        SortPattern s -> SortPattern s
         -- Trivial cases
         AndPattern andP -> AndPattern andP
         ApplicationPattern appP -> ApplicationPattern appP

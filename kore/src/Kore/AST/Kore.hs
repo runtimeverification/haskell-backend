@@ -179,6 +179,8 @@ instance
     Unparse (UnifiedPattern domain variable child)
   where
     unparse (UnifiedObjectPattern pat) = unparse pat
+    unparse2 (UnifiedObjectPattern pat) = unparse2 pat
+
 
 {- | The abstract syntax of Kore.
 
@@ -276,6 +278,8 @@ instance
     Unparse (KorePattern domain variable annotation)
   where
     unparse (Recursive.project -> _ :< pat) = unparse pat
+    unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
+
 
 type instance Base (KorePattern domain variable annotation) =
     CofreeF (UnifiedPattern domain variable) annotation

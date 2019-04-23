@@ -373,6 +373,8 @@ verifyPatternHead =
         VariablePattern var ->
             transCofreeF (VariablePattern . getConst)
                 <$> verifyVariable var
+        SortPattern _ ->
+            koreFail "Unexpected pattern." 
   where
     transCofreeF fg (a :< fb) = a :< fg fb
 
@@ -846,6 +848,7 @@ patternNameForContext (CharLiteralPattern _) = "<char>"
 patternNameForContext (TopPattern _) = "\\top"
 patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
+patternNameForContext (SortPattern _) = "\\inh"
 
 variableNameForContext :: Variable level -> String
 variableNameForContext variable = getIdForError (variableName variable)

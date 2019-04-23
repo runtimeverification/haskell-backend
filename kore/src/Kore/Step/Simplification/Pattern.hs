@@ -67,6 +67,8 @@ import qualified Kore.Step.Simplification.Rewrites as Rewrites
                  ( simplify )
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
                  ( simplify )
+import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
+                 ( simplify )                
 import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
@@ -209,5 +211,6 @@ simplifyInternal
         CharLiteralPattern p -> return $ CharLiteral.simplify p
         TopPattern p -> return $ Top.simplify p
         VariablePattern p -> return $ Variable.simplify p
+        SortPattern s -> return $ Inhabitant.simplify s
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

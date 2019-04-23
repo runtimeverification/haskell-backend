@@ -121,6 +121,7 @@ instance IsString (Id level) where
 
 instance Unparse (Id level) where
     unparse = Pretty.pretty . getId
+    unparse2 = Pretty.pretty . getId
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options

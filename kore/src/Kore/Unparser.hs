@@ -17,6 +17,11 @@ module Kore.Unparser
     , arguments
     , noArguments
     , attributes
+    , unparseToText2
+    , unparseToString2
+    , parameters2
+    , arguments2
+    , attributes2
     , parameters'
     , arguments'
     , argument'
@@ -57,21 +62,38 @@ import qualified Numeric
  -}
 class Unparse p where
     -- | Render a type from abstract to concrete Kore syntax.
+    -- original/old unparser
     unparse :: p -> Doc ann
+    -- applicative/new unparser
+    unparse2 :: p -> Doc ann 
+    -- special unparser only for binding variables
+    unparse2BindingVariables :: p -> Doc ann
+    -- default implementation of unparse2BindingVariables
+    unparse2BindingVariables = unparse2
 
 instance Unparse a => Unparse (Const a child) where
     unparse (Const a) = unparse a
+    unparse2 (Const a) = unparse2 a
+
 
 instance Unparse Void where
     unparse = \case {}
+    unparse2 = \case {}
+
 
 -- | Serialize an object to 'Text'.
 unparseToText :: Unparse p => p -> Text
 unparseToText = renderStrict . layoutPretty defaultLayoutOptions . unparse
 
+unparseToText2 :: Unparse p => p -> Text
+unparseToText2 = renderStrict . layoutPretty defaultLayoutOptions . unparse2
+
 -- | Serialize an object to 'String'.
 unparseToString :: Unparse p => p -> String
 unparseToString = renderDefault . unparse
+
+unparseToString2 :: Unparse p => p -> String
+unparseToString2 = renderDefault . unparse2
 
 renderDefault :: Doc ann -> String
 renderDefault = renderString . layoutPretty defaultLayoutOptions
@@ -79,20 +101,26 @@ renderDefault = renderString . layoutPretty defaultLayoutOptions
 parameters :: Unparse p => [p] -> Doc ann
 parameters = parameters' . map unparse
 
+parameters2 :: Unparse p => [p] -> Doc ann
+parameters2 = parameters' . map unparse2
+
 -- | Print a list of sort parameters.
 parameters' :: [Doc ann] -> Doc ann
-parameters' = list lbrace rbrace
+parameters' = list "" ""
 
 arguments :: Unparse p => [p] -> Doc ann
 arguments = arguments' . map unparse
 
+arguments2 :: Unparse p => [p] -> Doc ann
+arguments2 = arguments' . map unparse2
+
 -- | Print a list of documents as arguments.
 arguments' :: [Doc ann] -> Doc ann
-arguments' = list lparen rparen
+arguments' = list "" ""
 
 -- | Print a document as arguments.
 argument' :: Doc ann -> Doc ann
-argument' = list lparen rparen . (: [])
+argument' = list "" "" . (: [])
 
 -- | Print a list of no arguments.
 noArguments :: Doc ann
@@ -100,6 +128,9 @@ noArguments = arguments' []
 
 attributes :: Unparse p => [p] -> Doc ann
 attributes = attributes' . map unparse
+
+attributes2 :: Unparse p => [p] -> Doc ann
+attributes2 = attributes' . map unparse2
 
 -- | Print a list of documents as attributes.
 attributes' :: [Doc ann] -> Doc ann
@@ -118,7 +149,7 @@ list left right =
   where
     open = left <> line'
     close = line' <> right
-    between = comma
+    between = space
 
 -- | Render a 'Doc ann' with indentation and without extra line breaks.
 layoutPrettyUnbounded :: Doc ann -> SimpleDocStream ann

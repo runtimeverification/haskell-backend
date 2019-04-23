@@ -83,3 +83,6 @@ instance
   where
     unparse (Target var) = unparse var
     unparse (NonTarget var) = unparse var
+    unparse2 (Target var) = unparse2 var
+    unparse2 (NonTarget var) = unparse2 var
+

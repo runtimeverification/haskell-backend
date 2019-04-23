@@ -24,13 +24,16 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
+import           Kore.AST.ApplicativeKore
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+                 ( VerifiedModule , toVerifiedPureDefinition )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
+import           Kore.Unparser as Unparser
+
 
 import GlobalMain
 
@@ -52,6 +55,7 @@ data KoreParserOptions = KoreParserOptions
     , willVerify          :: !Bool   -- ^ Option to verify definition
     , willChkAttr         :: !Bool   -- ^ Option to check attributes during verification
     }
+
 
 -- | Command Line Argument Parser
 commandLineParser :: Parser KoreParserOptions
@@ -115,7 +119,7 @@ main = do
             then mainVerify willChkAttr parsedDefinition
             else return Map.empty
         when willPrintDefinition $
-            putStrLn (prettyPrintToString parsedDefinition)
+            putStrLn (unparseToString2 (completeDefinition (toVerifiedPureDefinition indexedModules)))
 
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName
@@ -163,3 +167,4 @@ mainVerify willChkAttr definition =
       case verifyResult of
         Left err1            -> error (printError err1)
         Right indexedModules -> return indexedModules
+        

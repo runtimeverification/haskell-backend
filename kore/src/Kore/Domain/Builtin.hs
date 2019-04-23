@@ -87,6 +87,19 @@ unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
     applyElement elem' = unparse elementSymbol <> elem'
     applyConcat set1 set2 = unparse concatSymbol <> arguments' [set1, set2]
 
+{- unparseCollection2
+    :: SymbolOrAlias Object  -- ^ unit symbol
+    -> SymbolOrAlias Object  -- ^ element symbol
+    -> SymbolOrAlias Object  -- ^ concat symbol
+    -> [Pretty.Doc ann]      -- ^ children
+    -> Pretty.Doc ann
+unparseCollection2 unitSymbol elementSymbol concatSymbol builtinChildren =
+    foldr applyConcat applyUnit (applyElement <$> builtinChildren)
+  where
+    applyUnit = unparse2 unitSymbol <> noArguments
+    applyElement elem' = unparse2 elementSymbol <> elem'
+    applyConcat set1 set2 = unparse2 concatSymbol <> arguments' [set1, set2] -}
+
 -- * Builtin Map
 
 {- | Internal representation of the builtin @MAP.Map@ domain.
@@ -133,6 +146,20 @@ instance Unparse child => Unparse (InternalMap child) where
         unparseElementArguments (key, value) =
             arguments' [unparse key, unparse value]
 
+    unparse2 builtinMap =
+        unparseCollection
+            builtinMapUnit
+            builtinMapElement
+            builtinMapConcat
+            (unparseElementArguments <$> Map.toAscList builtinMapChild)
+      where
+        InternalMap { builtinMapChild } = builtinMap
+        InternalMap { builtinMapUnit } = builtinMap
+        InternalMap { builtinMapElement } = builtinMap
+        InternalMap { builtinMapConcat } = builtinMap
+        unparseElementArguments (key, value) =
+            arguments' [unparse2 key, unparse2 value]
+
 -- * Builtin List
 
 {- | Internal representation of the builtin @LIST.List@ domain.
@@ -177,6 +204,18 @@ instance Unparse child => Unparse (InternalList child) where
         InternalList { builtinListElement } = builtinList
         InternalList { builtinListConcat } = builtinList
 
+    unparse2 builtinList =
+        unparseCollection
+            builtinListUnit
+            builtinListElement
+            builtinListConcat
+            (argument' . unparse2 <$> Foldable.toList builtinListChild)
+      where
+        InternalList { builtinListChild } = builtinList
+        InternalList { builtinListUnit } = builtinList
+        InternalList { builtinListElement } = builtinList
+        InternalList { builtinListConcat } = builtinList
+
 -- * Builtin Set
 
 {- | Internal representation of the builtin @SET.Set@ domain.
@@ -212,6 +251,18 @@ instance Unparse InternalSet where
         InternalSet { builtinSetElement } = builtinSet
         InternalSet { builtinSetConcat } = builtinSet
 
+    unparse2 builtinSet =
+        unparseCollection
+            builtinSetUnit
+            builtinSetElement
+            builtinSetConcat
+            (argument' . unparse2 <$> Foldable.toList builtinSetChild)
+      where
+        InternalSet { builtinSetChild } = builtinSet
+        InternalSet { builtinSetUnit } = builtinSet
+        InternalSet { builtinSetElement } = builtinSet
+        InternalSet { builtinSetConcat } = builtinSet
+
 -- * Builtin Int
 
 {- | Internal representation of the builtin @INT.Int@ domain.
@@ -233,6 +284,11 @@ instance Unparse InternalInt where
         <> parameters [builtinIntSort]
         <> arguments' [Pretty.dquotes $ Pretty.pretty builtinIntValue]
 
+    unparse2 InternalInt { builtinIntSort, builtinIntValue } =
+        "\\dv2"
+        <> parameters2 [builtinIntSort]
+        <> arguments' [Pretty.dquotes $ Pretty.pretty builtinIntValue]
+
 -- * Builtin Bool
 
 {- | Internal representation of the builtin @BOOL.Bool@ domain.
@@ -252,6 +308,15 @@ instance Unparse InternalBool where
     unparse InternalBool { builtinBoolSort, builtinBoolValue } =
         "\\dv"
         <> parameters [builtinBoolSort]
+        <> arguments' [Pretty.dquotes value]
+      where
+        value
+          | builtinBoolValue = "true"
+          | otherwise        = "false"
+
+    unparse2 InternalBool { builtinBoolSort, builtinBoolValue } =
+        "\\dv2"
+        <> parameters2 [builtinBoolSort]
         <> arguments' [Pretty.dquotes value]
       where
         value
@@ -288,6 +353,15 @@ instance Unparse child => Unparse (Builtin child) where
             BuiltinMap builtinMap -> unparse builtinMap
             BuiltinList builtinList -> unparse builtinList
             BuiltinSet builtinSet -> unparse builtinSet
+
+    unparse2 =
+        \case
+            BuiltinExternal external -> unparse2 external
+            BuiltinInt builtinInt -> unparse2 builtinInt
+            BuiltinBool builtinBool -> unparse2 builtinBool
+            BuiltinMap builtinMap -> unparse2 builtinMap
+            BuiltinList builtinList -> unparse2 builtinList
+            BuiltinSet builtinSet -> unparse2 builtinSet
 
 makeLenses ''InternalMap
 makeLenses ''InternalList
