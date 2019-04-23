@@ -173,9 +173,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                         , declaredVariables =
                             PatternVerifier.emptyDeclaredVariables
                         }
-            purePattern =
-                either (error . printError) id
-                    (fromKorePattern Object verifiedPattern)
+            purePattern = verifiedPattern
         return (verifiedModule, purePattern)
     execution
         ::  ( VerifiedModule StepperAttributes Attribute.Axiom
