@@ -21,10 +21,15 @@ module Kore.Repl.Data
     , lensCommands, shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
+    , emptyExecutionGraph
+    , getClaimByIndex, getAxiomByIndex
+    , initializeProofFor
     ) where
 
 import           Control.Error
                  ( hush )
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( join )
@@ -32,9 +37,12 @@ import           Control.Monad.Trans.Accum
                  ( AccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
 import qualified Control.Monad.Trans.Class as Monad.Trans
+import           Data.Coerce
+                 ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
+import qualified Data.Map as Map
 import           Data.Map.Strict
                  ( Map )
 import           Data.Monoid
@@ -50,15 +58,17 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern )
+                 ( CommonStrategyPattern, StrategyPattern (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Step.Pattern
                  ( StepPattern )
+import           Kore.Step.Representation.ExpandedPattern
+                 ( Predicated (..) )
 import           Kore.Step.Rule
-                 ( RewriteRule )
+                 ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
@@ -235,6 +245,7 @@ data ReplState claim level = ReplState
     -- ^ Map from labels to nodes
     }
 
+
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
 newtype UnifierWithExplanation variable a = UnifierWithExplanation
@@ -282,3 +293,40 @@ runUnifierWithExplanation (UnifierWithExplanation accum)
         $ Monad.Accum.runAccumT accum mempty
 
 Lens.makeLenses ''ReplState
+
+extractConfig
+    :: RewriteRule level Variable
+    -> CommonStrategyPattern level
+extractConfig (RewriteRule RulePattern { left, requires }) =
+    RewritePattern $ Predicated left requires mempty
+
+emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph
+emptyExecutionGraph =
+    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
+
+getClaimByIndex
+    :: forall claim level
+    .  Int
+    -> ReplState claim level
+    -> Maybe claim
+getClaimByIndex index st = st Lens.^? lensClaims . Lens.element index
+
+getAxiomByIndex
+    :: forall claim level
+    .  Int
+    -> ReplState claim level
+    -> Maybe (Axiom level)
+getAxiomByIndex index st = st Lens.^? lensAxioms . Lens.element index
+
+initializeProofFor
+    :: forall claim level
+    . Claim claim
+    =>  claim
+    -> ReplState claim level
+    -> ReplState claim level
+initializeProofFor claim st = st
+      { graph  = emptyExecutionGraph claim
+      , claim  = claim
+      , node   = 0
+      , labels = Map.empty
+      }

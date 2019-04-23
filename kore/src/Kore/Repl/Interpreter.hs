@@ -8,7 +8,6 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Interpreter
     ( replInterpreter
-    , emptyExecutionGraph
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -26,7 +25,9 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.RWS.Strict
-                 ( MonadWriter, RWST, get, lift, runRWST, tell )
+                 ( MonadWriter, RWST, lift, runRWST, tell )
+import           Control.Monad.State.Class
+                 ( get, modify, put )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), evalStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -77,14 +78,13 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
+import qualified Kore.Repl.Data as State
 import           Kore.Step.Pattern
                  ( StepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Rule
-                 ( RewriteRule (..) )
-import           Kore.Step.Rule
-                 ( RulePattern (..) )
+                 ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
                  ( attributes )
@@ -108,35 +108,46 @@ replInterpreter
     => (String -> IO ())
     -> ReplCommand
     -> StateT (ReplState claim level) Simplifier Bool
-replInterpreter output cmd =
-    StateT $ \st -> do
-        let rwst = case cmd of
-                    ShowUsage         -> showUsage         $> True
-                    Help              -> help              $> True
-                    ShowClaim c       -> showClaim c       $> True
-                    ShowAxiom a       -> showAxiom a       $> True
-                    Prove i           -> prove i           $> True
-                    ShowGraph         -> showGraph         $> True
-                    ProveSteps n      -> proveSteps n      $> True
-                    ProveStepsF n     -> proveStepsF n     $> True
-                    SelectNode i      -> selectNode i      $> True
-                    ShowConfig mc     -> showConfig mc     $> True
-                    OmitCell c        -> omitCell c        $> True
-                    ShowLeafs         -> showLeafs         $> True
-                    ShowRule   mc     -> showRule mc       $> True
-                    ShowPrecBranch mn -> showPrecBranch mn $> True
-                    ShowChildren mn   -> showChildren mn   $> True
-                    Label ms          -> label ms          $> True
-                    LabelAdd l mn     -> labelAdd l mn     $> True
-                    LabelDel l        -> labelDel l        $> True
-                    Redirect inn file -> redirect inn file $> True
-                    Try ac            -> tryAxiomClaim ac  $> True
-                    Clear n           -> clear n           $> True
-                    SaveSession file  -> saveSession file  $> True
-                    Exit              -> pure                 False
-        (exit, st', w) <- runRWST rwst () st
-        liftIO $ output w
-        pure (exit, st')
+replInterpreter printFn replCmd = do
+    let command = case replCmd of
+                ShowUsage         -> showUsage         $> True
+                Help              -> help              $> True
+                ShowClaim c       -> showClaim c       $> True
+                ShowAxiom a       -> showAxiom a       $> True
+                Prove i           -> prove i           $> True
+                ShowGraph         -> showGraph         $> True
+                ProveSteps n      -> proveSteps n      $> True
+                ProveStepsF n     -> proveStepsF n     $> True
+                SelectNode i      -> selectNode i      $> True
+                ShowConfig mc     -> showConfig mc     $> True
+                OmitCell c        -> omitCell c        $> True
+                ShowLeafs         -> showLeafs         $> True
+                ShowRule   mc     -> showRule mc       $> True
+                ShowPrecBranch mn -> showPrecBranch mn $> True
+                ShowChildren mn   -> showChildren mn   $> True
+                Label ms          -> label ms          $> True
+                LabelAdd l mn     -> labelAdd l mn     $> True
+                LabelDel l        -> labelDel l        $> True
+                Redirect inn file -> redirect inn file $> True
+                Try ac            -> tryAxiomClaim ac  $> True
+                Clear n           -> clear n           $> True
+                SaveSession file  -> saveSession file  $> True
+                Exit              -> pure                 False
+    (output, shouldContinue) <- evaluateCommand command
+    liftIO $ printFn output
+    pure shouldContinue
+  where
+    -- Extracts the Writer out of the RWST monad using the current state
+    -- and updates the state, returning the writer output along with the
+    -- monadic result.
+    evaluateCommand
+        :: ReplM claim level Bool
+        -> StateT (ReplState claim level) Simplifier (String, Bool)
+    evaluateCommand c = do
+        st <- get
+        (exit, st', w) <- Monad.Trans.lift $ runRWST c () st
+        put st'
+        pure (w, exit)
 
 showUsage :: MonadWriter String m => m ()
 showUsage =
@@ -153,7 +164,7 @@ showClaim
     => Int
     -> m ()
 showClaim index = do
-    claim <- Lens.preuse $ lensClaims . Lens.element index
+    claim <- State.getClaimByIndex index <$> get
     maybe printNotFound (printRewriteRule .RewriteRule . coerce) $ claim
 
 showAxiom
@@ -164,7 +175,7 @@ showAxiom
     => Int
     -> m ()
 showAxiom index = do
-    axiom <- Lens.preuse $ lensAxioms . Lens.element index
+    axiom <- State.getAxiomByIndex index <$> get
     maybe printNotFound (printRewriteRule . unAxiom) $ axiom
 
 prove
@@ -176,18 +187,12 @@ prove
     => Int
     -> m ()
 prove index = do
-    claim' <- Lens.preuse $ lensClaims . Lens.element index
-    case claim' of
-        Nothing -> printNotFound
-        Just claim -> do
-            let
-                graph@Strategy.ExecutionGraph { root }
-                    = emptyExecutionGraph claim
-            lensGraph  .= graph
-            lensClaim  .= claim
-            lensNode   .= root
-            lensLabels .= Map.empty
-            putStrLn' "Execution Graph initiated"
+    claim' <- State.getClaimByIndex index <$> get
+    maybe printNotFound initProof claim'
+  where
+    initProof claim = do
+        modify $ State.initializeProofFor claim
+        putStrLn' "Execution Graph initiated"
 
 showGraph
     :: MonadIO m
@@ -775,13 +780,3 @@ data StepResult
     | Branch [Graph.Node]
     | Success
     deriving Show
-
-emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph
-emptyExecutionGraph =
-    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
-
-extractConfig
-    :: RewriteRule level Variable
-    -> CommonStrategyPattern level
-extractConfig (RewriteRule RulePattern { left, requires }) =
-    RewritePattern $ Predicated left requires mempty
