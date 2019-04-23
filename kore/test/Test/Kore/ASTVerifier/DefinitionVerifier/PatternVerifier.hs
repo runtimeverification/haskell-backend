@@ -160,6 +160,27 @@ test_patternVerifier =
         (DeclaredSort anotherSort)
         [objectSortSentence, anotherSortSentence]
         NeedsInternalDefinitions
+    , failureTestsForObjectPattern
+        "Object pattern - quantified set variable"
+        (ExpectedErrorMessage "Expecting element variable.")
+        (ErrorStack
+            [ "\\exists 'ObjectVariable' (<test data>)"
+            , "(<test data>)"
+            ]
+        )
+        (ExistsPattern Exists
+            { existsSort = objectSort
+            , existsVariable = setVariable
+            , existsChild = toKorePattern (mkVar setVariable)
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort objectSort)
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort anotherSort)
+        [objectSortSentence, anotherSortSentence]
+        NeedsInternalDefinitions
+
     , successTestsForObjectPattern
         "Object pattern - sort variable defined"
         (simpleExistsPattern
@@ -645,6 +666,7 @@ test_patternVerifier =
     objectSort = simpleSort objectSortName
     objectVariableName = VariableName "ObjectVariable"
     objectVariable' = variable objectVariableName objectSort
+    setVariable = objectVariable' { variableType = SetVariable }
     objectSortSentence = simpleSortSentence objectSortName
     metaSort1 = updateAstLocation charListMetaSort AstLocationTest
     metaVariable' = variable (VariableName "#MetaVariable") metaSort1

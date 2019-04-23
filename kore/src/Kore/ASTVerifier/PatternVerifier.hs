@@ -600,6 +600,7 @@ verifyBinder
 verifyBinder binderSort binderVariable = \binder -> do
     let variable = binderVariable binder
         patternSort = binderSort binder
+    ensureElementVariable variable
     verifyVariableDeclaration variable
     verifyPatternSort patternSort
     let withQuantifiedVariable ctx@Context { declaredVariables } =
@@ -642,13 +643,19 @@ verifyVariable
         )
     => Variable level
     -> PatternVerifier (CofreeF base valid VerifiedKorePattern)
-verifyVariable variable@Variable { variableName, variableSort } = do
+verifyVariable variable@Variable { variableName, variableSort, variableType }
+  = do
     declaredVariable <- lookupDeclaredVariable variableName
-    let Variable { variableSort = declaredSort } = declaredVariable
+    let Variable { variableSort = declaredSort, variableType = declaredType }
+            = declaredVariable
     koreFailWithLocationsWhen
         (variableSort /= declaredSort)
         [ variable, declaredVariable ]
         "The declared sort is different."
+    koreFailWithLocationsWhen
+        (variableType /= declaredType)
+        [ variable, declaredVariable ]
+        "The declared variable type is different."
     let patternSort = variableSort
         verified = Const variable
         freeVariables = Set.singleton (asUnified variable)
@@ -795,11 +802,19 @@ addFreeVariable
     return vars
         { objectDeclaredVariables = Map.insert (variableName v) v objectVars }
 
+ensureElementVariable :: Variable a -> PatternVerifier ()
+ensureElementVariable variable =
+    koreFailWithLocationsWhen
+        (variableType variable /= ElementVariable)
+        [ variable ]
+        "Expecting element variable."
+
 checkVariable
     :: Variable a
     -> Map.Map (Id a) (Variable a)
     -> PatternVerifier VerifySuccess
-checkVariable var vars =
+checkVariable var vars = do
+    ensureElementVariable var
     case Map.lookup (variableName var) vars of
         Nothing -> verifySuccess
         Just v ->
