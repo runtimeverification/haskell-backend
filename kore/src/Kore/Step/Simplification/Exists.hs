@@ -228,8 +228,9 @@ makeEvaluate
 The variable was found on the left-hand side of a substitution and the given
 term will be substituted everywhere. The variable may occur anywhere in the
 'term' or 'predicate' of the 'ExpandedPattern', but not in the
-'substitution'. The final result will not contain the quantified variable and
-thus the quantifier will actually be omitted.
+'substitution'. The quantified variable must not occur free in the substituted
+ term; an error is thrown if it is found.  The final result will not contain the
+ quantified variable and thus the quantifier will actually be omitted.
 
 See also: 'quantifyExpandedPattern'
 
@@ -262,7 +263,7 @@ makeEvaluateBoundLeft
     variable
     boundTerm
     normalized
-  = do
+  = withoutFreeVariable variable boundTerm $ do
         let
             boundSubstitution = Map.singleton variable boundTerm
             substituted =
