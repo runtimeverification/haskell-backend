@@ -61,9 +61,9 @@ verifyAttributes _ DoNotVerifyAttributes =
 
 verifyAttributePattern
     :: MonadError (Error VerifyError) m
-    => UnifiedPattern domain variable (KorePattern domain variable annotation)
+    => Pattern Object domain variable (KorePattern domain variable annotation)
     -> m VerifySuccess
-verifyAttributePattern (UnifiedObjectPattern pat) =
+verifyAttributePattern pat =
     case pat of
         ApplicationPattern _ -> verifySuccess
         _ ->

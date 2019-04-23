@@ -25,18 +25,12 @@ import           Kore.AST.Common as SymbolOrAlias
                  ( SymbolOrAlias (..) )
 import           Kore.AST.Identifier
                  ( Id (getId) )
-import           Kore.AST.Kore
-                 ( KorePattern )
-import           Kore.AST.MetaOrObject
-                 ( Object, Unified )
 import           Kore.AST.Sentence
                  ( SentenceSymbol (SentenceSymbol, sentenceSymbolSymbol) )
 import qualified Kore.AST.Sentence as Sentence
                  ( Symbol (Symbol) )
 import qualified Kore.AST.Sentence as Sentence.Symbol
                  ( Symbol (..) )
-import           Kore.AST.Valid
-                 ( Valid )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (ApplicationSorts) )
 import qualified Kore.ASTHelpers as ApplicationSorts
@@ -53,7 +47,6 @@ import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol (Symbol) )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
                  ( Symbol (..) )
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule, indexedModuleSymbolSentences )
 import           Kore.IndexedModule.MetadataTools
@@ -61,6 +54,7 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Sort
                  ( Sort (SortVariableSort) )
+import           Kore.Step.Pattern
 import           Kore.Step.SMT.Encoder
                  ( encodeName )
 import qualified Kore.Step.SMT.Sorts as Sorts
@@ -189,11 +183,7 @@ declareSymbols
         )
     => IndexedModule
         param
-        (KorePattern
-            Domain.Builtin
-            Variable
-            (Unified (Valid (Unified Variable)))
-        )
+        (StepPattern Object Variable)
         Attribute.Symbol
         Attribute.Axiom
     -> m ()
@@ -205,13 +195,7 @@ declareSymbol
         , SMT.MonadSMT m
         )
     =>  ( Attribute.Symbol
-        , SentenceSymbol
-            Object
-            (KorePattern
-                Domain.Builtin
-                Variable
-                (Unified (Valid (Unified Variable)))
-            )
+        , SentenceSymbol Object (StepPattern Object Variable)
         )
     -> m ()
 declareSymbol

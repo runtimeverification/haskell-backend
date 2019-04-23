@@ -22,21 +22,21 @@ import           Test.Kore.Parser.Regression
                  regressionTest )
 
 implicitKoreRegressionTests
-    :: KoreDefinition -> InputFileName -> GoldenFileName -> TestTree
+    :: ParsedDefinition -> InputFileName -> GoldenFileName -> TestTree
 implicitKoreRegressionTests definition inputFileName goldenFileName =
     testGroup "Implicit kore tests"
         [ implicitKoreTest definition inputFileName
         , regressionTest inputFileName goldenFileName VerifyRequestNo
         ]
 
-implicitKoreTest :: KoreDefinition -> InputFileName -> TestTree
+implicitKoreTest :: ParsedDefinition -> InputFileName -> TestTree
 implicitKoreTest definition (InputFileName inputFileName) =
     goldenVsString
         "Testing the implicit kore"
         (Paths.dataFileName inputFileName)
         (toByteString definition)
 
-toByteString :: KoreDefinition -> IO LazyByteString.ByteString
+toByteString :: ParsedDefinition -> IO LazyByteString.ByteString
 toByteString m =
     return (LazyChar8.pack (unparseToString m))
 

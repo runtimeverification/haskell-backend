@@ -78,7 +78,7 @@ testMetaModule =
         , moduleAttributes = Attributes []
         }
 
-mainModule :: VerifiedKoreModule
+mainModule :: VerifiedPureModule Object
 mainModule =
     Module
         { moduleName = testMainModuleName
@@ -90,15 +90,15 @@ mainModule =
         }
 
 
-testDefinition :: KoreDefinition
+testDefinition :: ParsedDefinition
 testDefinition =
     (<$>)
-        eraseUnifiedSentenceAnnotations
+        eraseSentenceAnnotations
         Definition
             { definitionAttributes = Attributes []
             , definitionModules =
-                [ toKoreModule testObjectModule
-                , toKoreModule testMetaModule
+                [ testObjectModule
+                , testMetaModule
                 , mainModule
                 ]
             }
@@ -199,14 +199,14 @@ testSubsorts =
     meta = extractMetadataTools $ moduleIndex Map.! testObjectModuleName
 
 
-testSubsortDefinition :: KoreDefinition
+testSubsortDefinition :: ParsedDefinition
 testSubsortDefinition =
     Definition
         { definitionAttributes = Attributes []
         , definitionModules = [ testSubsortModule ]
         }
 
-testSubsortModule :: KoreModule
+testSubsortModule :: ParsedModule
 testSubsortModule =
     Module
         { moduleName = testObjectModuleName
@@ -222,20 +222,20 @@ testSubsortModule =
         , moduleAttributes = Attributes []
         }
   where
-    subsortAxiom :: Sort Object -> Sort Object -> KoreSentence
+    subsortAxiom :: Sort Object -> Sort Object -> ParsedSentence
     subsortAxiom subSort superSort =
-        constructUnifiedSentence SentenceAxiomSentence $
+        SentenceAxiomSentence
           (SentenceAxiom
-              { sentenceAxiomParameters = [UnifiedObject (sortVariable "R")]
+              { sentenceAxiomParameters = [sortVariable "R"]
               , sentenceAxiomPattern =
                   asCommonKorePattern $ TopPattern (Top sortVarR)
               , sentenceAxiomAttributes = Attributes
                   [subsortAttribute subSort superSort]
               })
 
-    sortDecl :: Sort Object -> KoreSentence
+    sortDecl :: Sort Object -> ParsedSentence
     sortDecl (SortActualSort (SortActual name [])) =
-        constructUnifiedSentence SentenceSortSentence $
+        SentenceSortSentence
           (SentenceSort
               { sentenceSortName = name
               , sentenceSortParameters = []

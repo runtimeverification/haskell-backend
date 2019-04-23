@@ -21,23 +21,22 @@ import Kore.IndexedModule.IndexedModule
 
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
 verifySort
-    :: (MetaOrObject level, MonadError (Error VerifyError) m)
-    => (Id level -> m (SortDescription level dom))
+    :: MonadError (Error VerifyError) m
+    => (Id Object -> m (SortDescription Object dom))
     -- ^ Provides a sortMetaSorts description.
-    -> Set.Set UnifiedSortVariable
+    -> Set.Set (SortVariable Object)
     -- ^ Sort variables visible here.
-    -> Sort level
+    -> Sort Object
     -> m VerifySuccess
 verifySort _ declaredSortVariables (SortVariableSort variable)
   = do
     koreFailWithLocationsWhen
-        (not (unifiedVariable `Set.member` declaredSortVariables))
+        (Set.notMember variable declaredSortVariables)
         [variableId]
         ("Sort variable '" ++ getIdForError variableId ++ "' not declared.")
     verifySuccess
   where
     variableId = getSortVariable variable
-    unifiedVariable = asUnified variable
 verifySort findSortDescription declaredSortVariables (SortActualSort sort)
   = do
     withLocationAndContext
@@ -61,11 +60,11 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
     sortId     = getIdForError sortName
 
 verifySortMatchesDeclaration
-    :: (MetaOrObject level, MonadError (Error VerifyError) m)
-    => (Id level -> m (SortDescription level dom))
-    -> Set.Set UnifiedSortVariable
-    -> SortActual level
-    -> SortDescription level dom
+    :: MonadError (Error VerifyError) m
+    => (Id Object -> m (SortDescription Object dom))
+    -> Set.Set (SortVariable Object)
+    -> SortActual Object
+    -> SortDescription Object dom
     -> m VerifySuccess
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription

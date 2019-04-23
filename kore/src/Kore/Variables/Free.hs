@@ -10,24 +10,15 @@ Portability : portable
 
 -}
 module Kore.Variables.Free
-    ( freeVariables
-    , freePureVariables
-    , allVariables
+    ( freePureVariables
     , pureAllVariables
     , synthetic
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad as Monad
-import           Control.Monad.RWS.Strict
-                 ( RWS )
 import qualified Control.Monad.RWS.Strict as Monad.RWS
-import           Control.Monad.State.Strict
-                 ( State )
-import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
-import           Data.Functor.Foldable
-                 ( Recursive )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Set
                  ( Set )
@@ -69,93 +60,6 @@ freePureVariables root =
                     -- descend into the bound pattern
                     (freePureVariables1 forallChild)
             p -> mapM_ freePureVariables1 p
-
--- | The free variables of a pattern.
-freeVariables
-    ::  forall patternHead patternType annotation domain variable.
-        ( UnifiedPatternInterface patternHead
-        , Functor (patternHead domain variable)
-        , Foldable domain
-        , OrdMetaOrObject variable
-        , Recursive patternType
-        , Base patternType ~ CofreeF (patternHead domain variable) annotation
-        )
-    => patternType -> Set.Set (Unified variable)
-freeVariables root =
-    let (free, ()) =
-            Monad.RWS.execRWS
-                (freeVariables1 root)
-                Set.empty  -- initial set of bound variables
-                Set.empty  -- initial set of free variables
-    in
-        free
-  where
-    unlessM m go = m >>= \b -> Monad.unless b go
-    isBound v = Monad.RWS.asks (Set.member $ asUnified v)
-    recordFree v = Monad.RWS.modify' (Set.insert $ asUnified v)
-
-    freeVariables1 recursive =
-        unifiedPatternApply freeVariables2
-        $ Cofree.tailF $ Recursive.project recursive
-
-    freeVariables2
-        :: MetaOrObject level
-        => Pattern level domain variable patternType
-        -> RWS (Set.Set (Unified variable)) () (Set.Set (Unified variable)) ()
-    freeVariables2 =
-        \case
-            VariablePattern v -> unlessM (isBound v) (recordFree v)
-            ExistsPattern Exists { existsVariable, existsChild } ->
-                Monad.RWS.local
-                    -- record the bound variable
-                    (Set.insert $ asUnified existsVariable)
-                    -- descend into the bound pattern
-                    (freeVariables1 existsChild)
-            ForallPattern Forall { forallVariable, forallChild } ->
-                Monad.RWS.local
-                    -- record the bound variable
-                    (Set.insert $ asUnified forallVariable)
-                    -- descend into the bound pattern
-                    (freeVariables1 forallChild)
-            p -> mapM_ freeVariables1 p
-
-
--- | The free variables of a pattern.
-allVariables
-    ::  forall patternHead patternType annotation domain variable.
-        ( UnifiedPatternInterface patternHead
-        , Functor (patternHead domain variable)
-        , Foldable domain
-        , OrdMetaOrObject variable
-        , Recursive patternType
-        , Base patternType ~ CofreeF (patternHead domain variable) annotation
-        )
-    => patternType -> Set.Set (Unified variable)
-allVariables root =
-    State.execState
-        (allVariables1 root)
-        Set.empty  -- initial set of all variables
-  where
-    record v = State.modify' (Set.insert $ asUnified v)
-
-    allVariables1 recursive =
-        unifiedPatternApply allVariables2
-        $ Cofree.tailF $ Recursive.project recursive
-
-    allVariables2
-        :: MetaOrObject level
-        => Pattern level domain variable patternType
-        -> State (Set.Set (Unified variable)) ()
-    allVariables2 =
-        \case
-            VariablePattern variable -> record variable
-            ExistsPattern Exists { existsVariable, existsChild } -> do
-                record existsVariable
-                allVariables1 existsChild
-            ForallPattern Forall { forallVariable, forallChild } -> do
-                record forallVariable
-                allVariables1 forallChild
-            p -> mapM_ allVariables1 p
 
 pureMergeVariables
     :: (Foldable domain, Ord (variable level))

@@ -46,7 +46,7 @@ import           Kore.Parser.ParserUtils
 Data.Kore.AST.Kore
 The input must contain a full valid Kore defininition and nothing else.
 -}
-koreParser :: Parser KoreDefinition
+koreParser :: Parser ParsedDefinition
 koreParser = skipWhitespace *> KoreParser.koreDefinitionParser <* endOfInput
 
 {-|'korePatternParser' is a parser for Kore patterns.
@@ -66,7 +66,7 @@ else.
 parseKoreDefinition
     :: FilePath  -- ^ Filename used for error messages
     -> String  -- ^ The concrete syntax of a valid Kore definition
-    -> Either String KoreDefinition
+    -> Either String ParsedDefinition
 parseKoreDefinition = parseOnly koreParser
 
 {- | Parse a string representing a Kore pattern.

@@ -129,7 +129,7 @@ main = do
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
-mainDefinitionParse :: String -> IO KoreDefinition
+mainDefinitionParse :: String -> IO ParsedDefinition
 mainDefinitionParse = mainParse parseKoreDefinition
 
 -- | IO action that parses a kore pattern from a filename and prints timing
@@ -141,7 +141,7 @@ mainPatternParse = mainParse parseKorePattern
 -- timing information.
 mainVerify
     :: Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> KoreDefinition -- ^ Parsed definition to check well-formedness
+    -> ParsedDefinition -- ^ Parsed definition to check well-formedness
     -> IO
         (Map.Map
             ModuleName

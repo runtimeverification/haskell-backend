@@ -52,7 +52,7 @@ import           System.IO
 
 import           Kore.AST.Kore
 import           Kore.AST.Sentence
-                 ( KoreDefinition, ModuleName (..), getModuleNameForError )
+                 ( ModuleName (..), ParsedDefinition, getModuleNameForError )
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification,
@@ -312,7 +312,7 @@ verifyDefinitionWithBase
         )
     -- ^ base definition to use for verification
     -> Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> KoreDefinition -- ^ Parsed definition to check well-formedness
+    -> ParsedDefinition -- ^ Parsed definition to check well-formedness
     -> IO
         ( Map.Map
             ModuleName
@@ -342,7 +342,7 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
 Also prints timing information; see 'mainParse'.
 
  -}
-parseDefinition :: FilePath -> IO KoreDefinition
+parseDefinition :: FilePath -> IO ParsedDefinition
 parseDefinition = mainParse parseKoreDefinition
 
 mainParse

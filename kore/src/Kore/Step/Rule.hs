@@ -183,17 +183,16 @@ extractRewriteAxioms level idxMod =
         (indexedModuleAxioms idxMod)
 
 extractRewriteAxiomFrom
-    :: MetaOrObject level
-    => level -- ^expected level for the axiom pattern
-    -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    :: Object
+    -> SentenceAxiom (SortVariable Object) VerifiedKorePattern
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (RewriteRule level Variable)
+    -> Maybe (RewriteRule Object Variable)
 extractRewriteAxiomFrom level sentence =
     case verifiedKoreSentenceToAxiomPattern level koreSentence of
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
   where
-    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
+    koreSentence = SentenceAxiomSentence sentence
 
 -- | Extracts all One-Path claims from a verified module.
 extractOnePathClaims
@@ -208,7 +207,7 @@ extractOnePathClaims idxMod =
     $ (indexedModuleClaims idxMod)
 
 extractOnePathClaimFrom
-    :: SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    :: SentenceAxiom (SortVariable Object) VerifiedKorePattern
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (OnePathRule Object Variable)
 extractOnePathClaimFrom sentence =
@@ -216,7 +215,7 @@ extractOnePathClaimFrom sentence =
         Right (OnePathClaimPattern axiomPat) -> Just axiomPat
         _ -> Nothing
   where
-    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
+    koreSentence = SentenceAxiomSentence sentence
 
 -- | Extracts all All-Path claims from a verified definition.
 extractAllPathClaims
@@ -228,10 +227,10 @@ extractAllPathClaims idxMod =
         ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
         . fmap extractAllPathClaimFrom         -- applying on second component
         )
-    $ (indexedModuleClaims idxMod)
+    (indexedModuleClaims idxMod)
 
 extractAllPathClaimFrom
-    :: SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    :: SentenceAxiom (SortVariable Object) VerifiedKorePattern
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (AllPathRule Object Variable)
 extractAllPathClaimFrom sentence =
@@ -239,37 +238,30 @@ extractAllPathClaimFrom sentence =
         Right (AllPathClaimPattern axiomPat) -> Just axiomPat
         _ -> Nothing
   where
-    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
+    koreSentence = SentenceAxiomSentence sentence
 
 -- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
 -- a given 'KoreSentence'.
 verifiedKoreSentenceToAxiomPattern
-    :: MetaOrObject level
-    => level
-    -> VerifiedKoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
-verifiedKoreSentenceToAxiomPattern level =
-    \case
-        UnifiedObjectSentence object -> sentenceToAxiomPattern level object
+    :: Object
+    -> VerifiedPureSentence Object
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
+verifiedKoreSentenceToAxiomPattern = sentenceToAxiomPattern
 
 -- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
 -- a given 'KoreSentence'.
 koreSentenceToAxiomPattern
-    :: MetaOrObject level
-    => level
-    -> VerifiedKoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
-koreSentenceToAxiomPattern level =
-    \case
-        UnifiedObjectSentence object -> sentenceToAxiomPattern level object
+    :: Object
+    -> VerifiedPureSentence Object
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
+koreSentenceToAxiomPattern = sentenceToAxiomPattern
 
 sentenceToAxiomPattern
-    :: MetaOrObject level
-    => level
-    -> Sentence level' UnifiedSortVariable VerifiedKorePattern
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
+    :: Object
+    -> Sentence Object (SortVariable Object) VerifiedKorePattern
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
 sentenceToAxiomPattern
-    level
+    _
     (SentenceAxiomSentence SentenceAxiom
         { sentenceAxiomPattern
         , sentenceAxiomAttributes
@@ -279,8 +271,7 @@ sentenceToAxiomPattern
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
             sentenceAxiomAttributes
-    stepPattern <- Pattern.fromKorePattern level sentenceAxiomPattern
-    patternToAxiomPattern attributes stepPattern
+    patternToAxiomPattern attributes sentenceAxiomPattern
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
 
@@ -290,10 +281,9 @@ sentenceToAxiomPattern _ _ =
 not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
-    :: MetaOrObject level
-    => Attribute.Axiom
-    -> CommonStepPattern level
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
+    :: Attribute.Axiom
+    -> CommonStepPattern Object
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
 patternToAxiomPattern attributes pat =
     case pat of
         -- normal rewrite axioms
@@ -348,9 +338,9 @@ mkRewriteAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
-    -> VerifiedKoreSentence
+    -> VerifiedPureSentence Object
 mkRewriteAxiom lhs rhs requires =
-    (asKoreAxiomSentence . Pattern.toKoreSentenceAxiom . mkAxiom_)
+    (SentenceAxiomSentence . mkAxiom_)
         (mkRewrites
             (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
             (mkAnd (mkTop patternSort) rhs)
@@ -367,10 +357,9 @@ mkEqualityAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
-    -> VerifiedKoreSentence
+    -> VerifiedPureSentence Object
 mkEqualityAxiom lhs rhs requires =
-    asKoreAxiomSentence
-    $ Pattern.toKoreSentenceAxiom
+    SentenceAxiomSentence
     $ mkAxiom [sortVariableR]
     $ case requires of
         Just requires' ->

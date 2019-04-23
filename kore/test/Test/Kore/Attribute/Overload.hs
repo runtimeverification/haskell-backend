@@ -8,7 +8,6 @@ import           Data.Proxy
 
 import           Kore.AST.Kore
 import qualified Kore.AST.Pure as Pure
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -141,15 +140,14 @@ test_ignore =
                 ]
             }
 
-    overloadAxiom :: KoreSentence
+    overloadAxiom :: ParsedSentence
     overloadAxiom =
-        asKoreAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = [ UnifiedObject sortVarS ]
+        SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [ sortVarS ]
             , sentenceAxiomAttributes =
                 Attributes [ overloadAttribute superSymbol subSymbol ]
             , sentenceAxiomPattern =
-                patternPureToKore
-                $ Pure.eraseAnnotations
+                Pure.eraseAnnotations
                 $ mkEquals sortS
                     (mkApp Mock.testSort superSymbol [])
                     (mkApp Mock.testSort subSymbol   [])

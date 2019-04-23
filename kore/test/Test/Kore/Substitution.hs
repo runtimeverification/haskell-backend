@@ -15,9 +15,6 @@ objectVariable = Variable
     , variableCounter = mempty
     }
 
-unifiedObjectVariable :: Unified Variable
-unifiedObjectVariable = UnifiedObject objectVariable
-
 objectVariablePattern
     :: Pattern Object Domain.Builtin Variable CommonKorePattern
 objectVariablePattern = VariablePattern objectVariable
@@ -34,9 +31,6 @@ metaVariable = Variable
     , variableSort = metaSort
     , variableCounter = mempty
     }
-
-unifiedMetaVariable :: Unified Variable
-unifiedMetaVariable = UnifiedObject metaVariable
 
 metaVariablePattern :: Pattern Meta Domain.Builtin Variable CommonKorePattern
 metaVariablePattern = VariablePattern metaVariable

@@ -32,12 +32,14 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import           Kore.Step.Pattern
+                 ( StepPattern )
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
-    :: [UnifiedSentence param pat]
+    :: [Sentence Object param pat]
     -> Map.Map Text AstLocation
     -- ^ Names that are already defined.
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
@@ -76,11 +78,8 @@ verifyUniqueId existing (UnparameterizedId name location) =
   where
     name' = Text.pack name
 
-definedNamesForSentence :: UnifiedSentence param pat -> [UnparameterizedId]
-definedNamesForSentence =
-    applyUnifiedSentence
-        definedNamesForObjectSentence
-        definedNamesForObjectSentence
+definedNamesForSentence :: Sentence Object param pat -> [UnparameterizedId]
+definedNamesForSentence = definedNamesForObjectSentence
 
 definedNamesForObjectSentence
     :: Sentence Object param pat -> [UnparameterizedId]
@@ -106,8 +105,8 @@ verifySentences
     -- pattern.
     -> AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> [KoreSentence]
-    -> Either (Error VerifyError) [VerifiedKoreSentence]
+    -> [ParsedSentence]
+    -> Either (Error VerifyError) [VerifiedPureSentence Object]
 verifySentences indexedModule attributesVerification builtinVerifiers =
     traverse
         (verifySentence
@@ -120,39 +119,32 @@ verifySentence
     :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
-    -> KoreSentence
-    -> Either (Error VerifyError) VerifiedKoreSentence
+    -> ParsedSentence
+    -> Either (Error VerifyError) (VerifiedPureSentence Object)
 verifySentence builtinVerifiers indexedModule attributesVerification =
-    applyUnifiedSentence
-        (verifyObjectSentence
-            builtinVerifiers
-            indexedModule
-            attributesVerification
-        )
-        (verifyObjectSentence
-            builtinVerifiers
-            indexedModule
-            attributesVerification
-        )
+    verifyObjectSentence
+        builtinVerifiers
+        indexedModule
+        attributesVerification
 
 verifyObjectSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
-    -> Sentence Object UnifiedSortVariable CommonKorePattern
-    -> Either (Error VerifyError) VerifiedKoreSentence
+    -> Sentence Object (SortVariable Object) CommonKorePattern
+    -> Either (Error VerifyError) (VerifiedPureSentence Object)
 verifyObjectSentence
     builtinVerifiers
     indexedModule
     attributesVerification
     sentence
   =
-    withSentenceContext sentence (UnifiedObjectSentence <$> verifyObjectSentence0)
+    withSentenceContext sentence verifyObjectSentence0
   where
     verifyObjectSentence0
         :: Either
             (Error VerifyError)
-            (Sentence Meta UnifiedSortVariable VerifiedKorePattern)
+            (Sentence Object (SortVariable Object) (StepPattern Object Variable))
     verifyObjectSentence0 = do
         verified <-
             case sentence of
@@ -214,7 +206,7 @@ verifyObjectSentence
 
 verifySentenceAttributes
     :: AttributesVerification declAtts axiomAtts
-    -> Sentence level UnifiedSortVariable CommonKorePattern
+    -> Sentence level (SortVariable level) CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 verifySentenceAttributes attributesVerification sentence =
     do
@@ -276,8 +268,8 @@ verifyHookSentence
 verifySymbolSentence
     :: (MetaOrObject level)
     => KoreIndexedModule declAtts axiomAtts
-    -> KoreSentenceSymbol level
-    -> Either (Error VerifyError) (VerifiedKoreSentenceSymbol level)
+    -> ParsedSentenceSymbol
+    -> Either (Error VerifyError) (VerifiedPureSentenceSymbol level)
 verifySymbolSentence indexedModule sentence =
     do
         variables <- buildDeclaredSortVariables sortParams
@@ -297,8 +289,8 @@ verifyAliasSentence
     :: (MetaOrObject level)
     => Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
-    -> KoreSentenceAlias level
-    -> Either (Error VerifyError) (VerifiedKoreSentenceAlias level)
+    -> ParsedSentenceAlias
+    -> Either (Error VerifyError) (VerifiedPureSentenceAlias level)
 verifyAliasSentence builtinVerifiers indexedModule sentence =
     do
         variables <- buildDeclaredSortVariables sortParams
@@ -330,13 +322,13 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
     SentenceAlias { sentenceAliasResultSort } = sentence
     findSort         = findIndexedSort indexedModule
     sortParams       = (aliasParams . sentenceAliasAlias) sentence
-    expectedSort = asUnified sentenceAliasResultSort
+    expectedSort = sentenceAliasResultSort
 
 verifyAxiomSentence
-    :: KoreSentenceAxiom
+    :: ParsedSentenceAxiom
     -> Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
-    -> Either (Error VerifyError) VerifiedKoreSentenceAxiom
+    -> Either (Error VerifyError) (VerifiedPureSentenceAxiom Object)
 verifyAxiomSentence axiom builtinVerifiers indexedModule =
     do
         variables <-
@@ -358,8 +350,8 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
     SentenceAxiom { sentenceAxiomPattern } = axiom
 
 verifySortSentence
-    :: KoreSentenceSort Object
-    -> Either (Error VerifyError) (VerifiedKoreSentenceSort Object)
+    :: ParsedSentenceSort
+    -> Either (Error VerifyError) (VerifiedPureSentenceSort Object)
 verifySortSentence sentenceSort = do
     _ <- buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
     traverse verifyNoPatterns sentenceSort
@@ -367,14 +359,13 @@ verifySortSentence sentenceSort = do
 buildDeclaredSortVariables
     :: MetaOrObject level
     => [SortVariable level]
-    -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
+    -> Either (Error VerifyError) (Set.Set (SortVariable level))
 buildDeclaredSortVariables variables =
-    buildDeclaredUnifiedSortVariables
-        (map asUnified variables)
+    buildDeclaredUnifiedSortVariables variables
 
 buildDeclaredUnifiedSortVariables
-    :: [UnifiedSortVariable]
-    -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
+    :: [SortVariable level]
+    -> Either (Error VerifyError) (Set.Set (SortVariable level))
 buildDeclaredUnifiedSortVariables [] = Right Set.empty
 buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
     variables <- buildDeclaredUnifiedSortVariables list
@@ -386,5 +377,4 @@ buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
         ++ "'.")
     return (Set.insert unifiedVariable variables)
   where
-    extractVariableName (UnifiedObject variable) =
-        getIdForError (getSortVariable variable)
+    extractVariableName variable = getIdForError (getSortVariable variable)

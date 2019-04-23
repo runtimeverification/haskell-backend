@@ -8,8 +8,6 @@ module Test.Kore
     , aliasGen
     , sortVariableGen
     , sortGen
-    , unifiedVariableGen
-    , unifiedSortGen
     , korePatternGen
     , attributesGen
     , koreSentenceGen
@@ -114,20 +112,6 @@ addSortVariables
     -> Context
     -> Context
 addSortVariables vars = \ctx -> foldr addSortVariable ctx vars
-
-addUnifiedSortVariable
-    :: Unified SortVariable
-    -> Context
-    -> Context
-addUnifiedSortVariable =
-    \case
-        UnifiedObject var -> addSortVariable var
-
-addUnifiedSortVariables
-    :: [Unified SortVariable]
-    -> Context
-    -> Context
-addUnifiedSortVariables vars = \ctx -> foldr addUnifiedSortVariable ctx vars
 
 type Gen = ReaderT Context Hedgehog.Gen
 
@@ -234,18 +218,6 @@ sortGen =
       where
         actualSort = SortActualSort <$> sortActualGen level
 
-unifiedSortGen :: Gen (Unified Sort)
-unifiedSortGen =
-    Gen.choice
-        [ UnifiedObject <$> sortGen
-        ]
-
-unifiedSortVariableGen :: Gen UnifiedSortVariable
-unifiedSortVariableGen =
-    Gen.choice
-        [ UnifiedObject <$> sortVariableGen
-        ]
-
 moduleNameGen :: MonadGen m => m ModuleName
 moduleNameGen = ModuleName <$> objectIdGen
 
@@ -274,12 +246,6 @@ variableGen patternSort =
       where
         freshVariable =
             Variable <$> idGen level <*> pure mempty <*> pure patternSort
-
-unifiedVariableGen :: Unified Sort -> Gen (Unified Variable)
-unifiedVariableGen = transformUnified unifiedVariableGenWorker
-  where
-    unifiedVariableGenWorker sort =
-        asUnified <$> variableGen sort
 
 unaryOperatorGen
     :: MonadGen m
@@ -597,7 +563,7 @@ stepPatternChildGen patternSort =
 
 korePatternGen :: Hedgehog.Gen CommonKorePattern
 korePatternGen =
-    standaloneGen (transformUnified korePatternChildGen =<< unifiedSortGen)
+    standaloneGen (korePatternChildGen =<< sortGen)
 
 korePatternChildGen
     ::  forall level.
@@ -658,8 +624,7 @@ korePatternChildGen patternSort' =
         asCommonKorePattern . VariablePattern <$> variableGen patternSort'
 
 korePatternUnifiedGen :: Gen CommonKorePattern
-korePatternUnifiedGen =
-    transformUnified korePatternChildGen =<< unifiedSortGen
+korePatternUnifiedGen = korePatternChildGen =<< sortGen
 
 predicateGen
     :: MetaOrObject level
@@ -733,10 +698,8 @@ predicateChildGen childGen patternSort' =
         return (makeForallPredicate var child)
 
 sentenceAliasGen
-    ::  forall level patternType.
-        MetaOrObject level
-    => (Sort level -> Gen patternType)
-    -> Gen (SentenceAlias level patternType)
+    :: (Sort Object -> Gen patternType)
+    -> Gen (SentenceAlias Object patternType)
 sentenceAliasGen patGen =
     Gen.small sentenceAliasGenWorker
   where
@@ -794,12 +757,12 @@ sentenceImportGen =
         <$> moduleNameGen
         <*> attributesGen
 
-unifiedSentenceAxiomGen
+sentenceAxiomGen
    :: Gen patternType
-   -> Gen (SentenceAxiom (Unified SortVariable) patternType)
-unifiedSentenceAxiomGen patGen = do
-    sentenceAxiomParameters <- couple unifiedSortVariableGen
-    Reader.local (addUnifiedSortVariables sentenceAxiomParameters) $ do
+   -> Gen (SentenceAxiom (SortVariable Object) patternType)
+sentenceAxiomGen patGen = do
+    sentenceAxiomParameters <- couple sortVariableGen
+    Reader.local (addSortVariables sentenceAxiomParameters) $ do
         sentenceAxiomPattern <- patGen
         sentenceAxiomAttributes <- attributesGen
         return SentenceAxiom
@@ -826,29 +789,18 @@ attributesGen :: Gen Attributes
 attributesGen =
     Attributes <$> couple (korePatternChildGen =<< sortGen @Object)
 
-koreSentenceGen :: Gen KoreSentence
+koreSentenceGen :: Gen ParsedSentence
 koreSentenceGen =
     Gen.choice
-        [ constructUnifiedSentence SentenceAliasSentence
-            <$> sentenceAliasGen @Meta korePatternChildGen
-        , constructUnifiedSentence SentenceSymbolSentence
-            <$> sentenceSymbolGen @Meta
-        , constructUnifiedSentence SentenceAliasSentence
-            <$> sentenceAliasGen @Object korePatternChildGen
-        , constructUnifiedSentence SentenceSymbolSentence
-            <$> sentenceSymbolGen @Object
-        , constructUnifiedSentence SentenceImportSentence
+        [ SentenceAliasSentence <$> sentenceAliasGen korePatternChildGen
+        , SentenceSymbolSentence <$> sentenceSymbolGen
+        , SentenceImportSentence
             <$> sentenceImportGen
-        , asKoreAxiomSentence
-            <$> unifiedSentenceAxiomGen korePatternUnifiedGen
-        , asKoreClaimSentence
-            <$> unifiedSentenceAxiomGen korePatternUnifiedGen
-        , constructUnifiedSentence SentenceSortSentence
-            <$> sentenceSortGen @Object
-        , constructUnifiedSentence (SentenceHookSentence . SentenceHookedSort)
-            <$> sentenceSortGen @Object
-        , constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol)
-            <$> sentenceSymbolGen @Object
+        , SentenceAxiomSentence <$> sentenceAxiomGen korePatternUnifiedGen
+        , SentenceClaimSentence <$> sentenceAxiomGen korePatternUnifiedGen
+        , SentenceSortSentence <$> sentenceSortGen
+        , (SentenceHookSentence . SentenceHookedSort) <$> sentenceSortGen
+        , (SentenceHookSentence . SentenceHookedSymbol) <$> sentenceSymbolGen
         ]
 
 moduleGen

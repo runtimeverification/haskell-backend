@@ -430,7 +430,4 @@ mainParseSearchPattern indexedModule patternFileName = do
 makePurePattern
     :: VerifiedKorePattern
     -> CommonStepPattern Object
-makePurePattern pat =
-    case fromKorePattern Object pat of
-        Left err -> error (printError err)
-        Right objPat -> objPat
+makePurePattern = id

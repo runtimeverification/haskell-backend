@@ -32,7 +32,7 @@ test_unparse =
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     }
-                    :: KoreSentenceSort Object
+                    :: ParsedSentenceSort
                 )
             )
             "sort x{} []"
@@ -71,7 +71,7 @@ test_unparse =
                 , moduleSentences = []
                 , moduleAttributes = Attributes []
                 }
-                :: KoreModule
+                :: ParsedModule
             )
             "module t\n\
             \endmodule\n\
@@ -109,7 +109,7 @@ test_unparse =
                         }
                     ]
                 }
-                :: KoreDefinition
+                :: ParsedDefinition
             )
             "[]\n\
             \module i\n\
@@ -119,12 +119,12 @@ test_unparse =
             \endmodule\n\
             \[]"
         , unparseTest
-            ( constructUnifiedSentence SentenceImportSentence $ SentenceImport
+            ( SentenceImportSentence SentenceImport
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
                 , sentenceImportAttributes =
                     Attributes { getAttributes = [] } :: Attributes
                 }
-                :: KoreSentence
+                :: ParsedSentence
             )
             "import sl []"
         , unparseTest
@@ -187,8 +187,8 @@ test_parse =
             roundtrip (standaloneGen sortGen) (sortParser Meta)
         , testProperty "UnifiedVariable" $
             roundtrip
-                (standaloneGen $ unifiedVariableGen =<< unifiedSortGen)
-                unifiedVariableParser
+                (standaloneGen $ variableGen =<< sortGen)
+                (variableParser Object)
         , testProperty "CommonKorePattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $

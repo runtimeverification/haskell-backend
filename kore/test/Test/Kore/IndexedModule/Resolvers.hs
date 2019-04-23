@@ -96,7 +96,7 @@ testMetaModule =
         , moduleAttributes = Attributes []
         }
 
-subMainModule :: VerifiedKoreModule
+subMainModule :: VerifiedPureModule Object
 subMainModule =
     Module
         { moduleName = testSubMainModuleName
@@ -107,7 +107,7 @@ subMainModule =
         , moduleAttributes = Attributes [strictAttribute]
         }
 
-mainModule :: VerifiedKoreModule
+mainModule :: VerifiedPureModule Object
 mainModule =
     Module
         { moduleName = testMainModuleName
@@ -119,13 +119,13 @@ mainModule =
         }
 
 
-testDefinition :: VerifiedKoreDefinition
+testDefinition :: VerifiedPureDefinition Object
 testDefinition =
     Definition
         { definitionAttributes = Attributes [strictAttribute]
         , definitionModules =
-            [ toKoreModule testObjectModule
-            , toKoreModule testMetaModule
+            [ testObjectModule
+            , testMetaModule
             , subMainModule
             , mainModule
             ]
@@ -137,7 +137,7 @@ testIndexedModule =
         verifyAndIndexDefinition
             DoNotVerifyAttributes
             Builtin.koreVerifiers
-            (eraseUnifiedSentenceAnnotations <$> testDefinition)
+            (eraseSentenceAnnotations <$> testDefinition)
       of
         Right modulesMap ->
             fromMaybe
@@ -221,7 +221,7 @@ test_resolvers =
                                 freeVariables = Set.empty
                             top' = TopPattern Top { topSort = objectS1 }
                         in
-                            asKorePattern (valid :< top')
+                            asPurePattern (valid :< top')
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -258,7 +258,7 @@ test_resolvers =
                             freeVariables = Set.empty
                         top' = TopPattern Top { topSort = charListMetaSort }
                     in
-                        asKorePattern (valid :< top')
+                        asPurePattern (valid :< top')
                 , sentenceAliasResultSort = charListMetaSort
                 }
             ))

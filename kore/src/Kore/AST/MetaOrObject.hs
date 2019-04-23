@@ -14,13 +14,6 @@ module Kore.AST.MetaOrObject
     , Meta
     , Object (..)
     , MetaOrObject (..)
-    , Unified (..)
-    , asUnified
-    , fromUnified
-    , applyUnified
-    , transformUnified
-    , mapUnified
-    , sequenceUnified
     , toProxy
     , ShowMetaOrObject
     , EqMetaOrObject
@@ -96,58 +89,3 @@ instance
     unparse =
         \case
             UnifiedObject object -> unparse object
-
-{-|Given a function transforming objects of 'Meta' type and another transforming
-objects of 'Object' type, 'applyUnified' builds the corresponding direct sum
-function combining their effects to transform an 'Unified' object.
--}
-applyUnified
-    :: (thing Meta -> b)
-    -> (thing Object -> b)
-    -> (Unified thing -> b)
-applyUnified _ objectT (UnifiedObject x) = objectT x
-
-{-|Given a function transforming objects of any 'level', 'transformUnified'
-"lifts" the function to apply on 'Unified' objects.
--}
-transformUnified
-    :: (forall level . MetaOrObject level => thing level -> b)
-    -> (Unified thing -> b)
-transformUnified f = applyUnified f f
-
-{-|Given a function transforming @thing1 level@ objects into @thing2 level@ ones,
-it builds one transforming 'Unified' @thing1@ objects into 'Unified' @thing2@
-ones.
-
-Its functionality is akin fo that of 'Functor.fmap'
--}
-mapUnified
-    :: (forall level . MetaOrObject level => thing1 level -> thing2 level)
-    -> (Unified thing1 -> Unified thing2)
-mapUnified f (UnifiedObject o) = UnifiedObject (f o)
-
-{-|Given a function transforming @thing1 level@ objects into an action
-producing @thing2 level@ objects,
-it builds one transforming 'Unified' @thing1@ objects into
-actions procuding 'Unified' @thing2@ objects.
-
-Its functionality is akin fo that of 'Applicative.sequence'
--}
-sequenceUnified
-    :: Applicative a
-    => (forall level . MetaOrObject level => thing1 level -> a (thing2 level))
-    -> (Unified thing1 -> a (Unified thing2))
-sequenceUnified f (UnifiedObject o) = UnifiedObject <$> f o
-
-{-|'asUnified' takes an arbitrary 'Meta' or 'Object' @thing@ and transforms it
-into the corresponding 'Unified' @thing@.
--}
-asUnified
-    :: MetaOrObject level => thing level -> Unified thing
-asUnified x = UnifiedObject x
-
-{- | Remove a trivial 'Unified' wrapper.
-
- -}
-fromUnified :: Unified thing -> thing Object
-fromUnified (UnifiedObject thing) = thing

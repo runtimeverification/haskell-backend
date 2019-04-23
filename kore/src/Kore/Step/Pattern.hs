@@ -1,9 +1,6 @@
 {-|
-Module      : Kore.Step.Pattern
-Description : Abstract representation of Kore patterns in the evaluator
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
 module Kore.Step.Pattern
@@ -19,12 +16,6 @@ module Kore.Step.Pattern
     , traverseVariables
     , asConcreteStepPattern
     , fromConcreteStepPattern
-    , toKorePattern
-    , fromKorePattern
-    , toKoreSentence
-    , toKoreSentenceAlias
-    , toKoreSentenceAxiom
-    , toKoreModule
     , substitute
     , externalizeFreshVariables
     ) where
@@ -53,16 +44,10 @@ import           Kore.AST.Common
                  ( Exists (..), Forall (..), Pattern (..),
                  SortedVariable (..) )
 import qualified Kore.AST.Common as Base
-import           Kore.AST.Kore
-                 ( KorePattern, UnifiedPattern (..), UnifiedSortVariable,
-                 asUnifiedPattern )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( CofreeF (..), Concrete, Pattern, PurePattern, Variable )
-import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Error
-import           Kore.Sort
 import qualified Kore.Substitute as Substitute
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -194,154 +179,6 @@ fromConcreteStepPattern
     => StepPattern level Concrete
     -> StepPattern level variable
 fromConcreteStepPattern = mapVariables (\case {})
-
-{- | Convert a leveled 'StepPattern' to a unified 'KorePattern'.
- -}
-toKorePattern
-    ::  ( MetaOrObject level
-        , OrdMetaOrObject variable
-        , annotation ~ Valid (Unified variable)
-        )
-    => StepPattern level variable
-    -> KorePattern Domain.Builtin variable (Unified annotation)
-toKorePattern =
-    Recursive.unfold toKorePatternWorker
-  where
-    toKorePatternWorker (Recursive.project -> ann :< pat) =
-        asUnified (Valid.mapVariables asUnified ann) :< asUnifiedPattern pat
-
-{- | Extract a 'StepPattern' from a 'KorePattern'.
-
- -}
-fromKorePattern
-    ::  ( MetaOrObject level
-        , OrdMetaOrObject variable
-        , annotation ~ Valid (Unified variable)
-        )
-    => level
-    -> KorePattern Domain.Builtin variable (Unified annotation)
-    -> Either (Error a) (StepPattern level variable)
-fromKorePattern level =
-    Recursive.fold (extractStepPattern $ isMetaOrObject $ toProxy level)
-
-extractStepPattern
-    ::  ( MetaOrObject level
-        , OrdMetaOrObject variable
-        , annotation ~ Valid (Unified variable)
-        , result ~ StepPattern level variable
-        )
-    => IsMetaOrObject level
-    -> Base
-        (KorePattern Domain.Builtin variable (Unified annotation))
-        (Either (Error e) result)
-    -> Either (Error e) result
-extractStepPattern IsObject = \(ann :< pat) ->
-    case pat of
-        UnifiedObjectPattern opat ->
-            case ann of
-                UnifiedObject oann ->
-                  do
-                    opat' <- sequence opat
-                    oann' <- Valid.traverseVariables extractObjectVariable oann
-                    (return . Recursive.embed) (oann' :< opat')
-                  where
-                    extractObjectVariable = extractVariable IsObject
-
-extractVariable
-    :: IsMetaOrObject level
-    -> Unified variable
-    -> Either (Error e) (variable level)
-extractVariable =
-    \case
-        IsObject ->
-            \case
-                UnifiedObject ovar -> return ovar
-
-{- | Convert a 'Sentence' over 'StepPattern' to a 'KorePattern' sentence.
- -}
-toKoreSentence
-    ::  ( MetaOrObject level
-        , OrdMetaOrObject variable
-        , annotation ~ Valid (Unified variable)
-        )
-    => Sentence level (SortVariable level) (StepPattern level variable)
-    -> UnifiedSentence UnifiedSortVariable
-        (KorePattern Domain.Builtin variable (Unified annotation))
-toKoreSentence (SentenceAliasSentence sa) =
-    asSentence $ toKoreSentenceAlias sa
-toKoreSentence (SentenceSymbolSentence (SentenceSymbol a b c d)) =
-    constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
-toKoreSentence (SentenceImportSentence (SentenceImport a b)) =
-    constructUnifiedSentence SentenceImportSentence $ SentenceImport a b
-toKoreSentence (SentenceAxiomSentence msx) =
-    asKoreAxiomSentence $ toKoreSentenceAxiom msx
-toKoreSentence (SentenceClaimSentence msx) =
-    asKoreClaimSentence $ toKoreSentenceAxiom msx
-toKoreSentence (SentenceSortSentence mss) =
-  constructUnifiedSentence SentenceSortSentence mss
-    { sentenceSortName = sentenceSortName mss
-    , sentenceSortParameters = sentenceSortParameters mss
-    }
-toKoreSentence (SentenceHookSentence hooked) =
-    case hooked of
-        SentenceHookedSort mss ->
-            constructUnifiedSentence
-                (SentenceHookSentence . SentenceHookedSort)
-                mss
-                    { sentenceSortName = sentenceSortName mss
-                    , sentenceSortParameters = sentenceSortParameters mss
-                    }
-        SentenceHookedSymbol (SentenceSymbol a b c d) ->
-            constructUnifiedSentence
-                (SentenceHookSentence . SentenceHookedSymbol)
-                (SentenceSymbol a b c d)
-
-{- | Convert a 'SentenceAlias' over 'StepPattern' to a 'KorePattern' sentence.
- -}
-toKoreSentenceAlias
-    ::  ( MetaOrObject level
-        , OrdMetaOrObject variable
-        , annotation ~ Valid (Unified variable)
-        )
-    => SentenceAlias level (StepPattern level variable)
-    -> SentenceAlias level
-        (KorePattern Domain.Builtin variable (Unified annotation))
-toKoreSentenceAlias = (<$>) toKorePattern
-
-{- | Convert a 'SentenceAxiom' over 'StepPattern' to a 'KorePattern' sentence.
- -}
-toKoreSentenceAxiom
-    ::  ( MetaOrObject level
-        , OrdMetaOrObject variable
-        , annotation ~ Valid (Unified variable)
-        )
-    => SentenceAxiom (SortVariable level) (StepPattern level variable)
-    -> SentenceAxiom UnifiedSortVariable
-        (KorePattern Domain.Builtin variable (Unified annotation))
-toKoreSentenceAxiom = unifyAxiomParameters . (<$>) toKorePattern
-  where
-    unifyAxiomParameters axiom@SentenceAxiom { sentenceAxiomParameters } =
-        axiom
-            { sentenceAxiomParameters =
-                asUnified <$> sentenceAxiomParameters
-            }
-
-{- | Convert a 'Module' over 'StepPattern' sentences to 'KorePattern' sentences.
- -}
-toKoreModule
-    ::  ( MetaOrObject level
-        , OrdMetaOrObject variable
-        , annotation ~ Valid (Unified variable)
-        , stepPattern ~ StepPattern level variable
-        , korePattern ~ KorePattern Domain.Builtin variable (Unified annotation)
-        )
-    => Module (Sentence level (SortVariable level) stepPattern)
-    -> Module (UnifiedSentence UnifiedSortVariable korePattern)
-toKoreModule mm = Module
-    { moduleName = moduleName mm
-    , moduleSentences = map toKoreSentence (moduleSentences mm)
-    , moduleAttributes =  moduleAttributes mm
-    }
 
 {- | Traverse the pattern from the top down and apply substitutions.
 

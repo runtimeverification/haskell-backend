@@ -193,7 +193,7 @@ extractSearchResults =
         _ -> Nothing
 
 verifiedMyModule
-    :: VerifiedKoreModule
+    :: VerifiedPureModule Object
     -> VerifiedModule StepperAttributes Attribute.Axiom
 verifiedMyModule module_ = indexedModule
   where
@@ -204,7 +204,7 @@ verifiedMyModule module_ = indexedModule
         definition
     definition = Definition
         { definitionAttributes = Attributes []
-        , definitionModules = [eraseUnifiedSentenceAnnotations <$> module_]
+        , definitionModules = [eraseSentenceAnnotations <$> module_]
         }
 
 mySortName :: Id Object
@@ -217,7 +217,7 @@ mySort = SortActualSort SortActual
     }
 
 -- | sort MySort{} []
-mySortDecl :: VerifiedKoreSentenceSort Object
+mySortDecl :: VerifiedPureSentenceSort Object
 mySortDecl = SentenceSort
     { sentenceSortName = mySortName
     , sentenceSortParameters = []
@@ -225,7 +225,7 @@ mySortDecl = SentenceSort
     }
 
 -- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
-constructorDecl :: Text -> VerifiedKoreSentenceSymbol Object
+constructorDecl :: Text -> VerifiedPureSentenceSymbol Object
 constructorDecl name =
     (mkSymbol_ (testId name) [] mySort)
         { sentenceSymbolAttributes = Attributes
@@ -244,12 +244,11 @@ constructorDecl name =
 --  [functional{}()]
 functionalAxiom
     :: Text
-    -> VerifiedKoreSentence
+    -> VerifiedPureSentence Object
 functionalAxiom name =
-    constructUnifiedSentence
-        ((<$>) toKorePattern . SentenceAxiomSentence)
+    SentenceAxiomSentence
         (mkAxiom
-            [UnifiedObject r]
+            [r]
             (mkExists v
                 (mkEquals
                     (SortVariableSort r)
@@ -269,7 +268,7 @@ functionalAxiom name =
 
 {- | Rewrite the left-hand constant into the right-hand constant.
  -}
-rewriteAxiom :: Text -> Text -> VerifiedKoreSentence
+rewriteAxiom :: Text -> Text -> VerifiedPureSentence Object
 rewriteAxiom lhsName rhsName =
     mkRewriteAxiom
         (applyToNoArgs mySort lhsName)
@@ -345,7 +344,7 @@ test_execGetExitCode =
 
     myIntSort = SortActualSort $ SortActual myIntSortId []
 
-    intSortDecl :: VerifiedKoreSentenceSort Object
+    intSortDecl :: VerifiedPureSentenceSort Object
     intSortDecl = SentenceSort
         { sentenceSortName = myIntSortId
         , sentenceSortParameters = []
@@ -354,7 +353,7 @@ test_execGetExitCode =
 
     getExitCodeId = testId "LblgetExitCode"
 
-    getExitCodeDecl :: VerifiedKoreSentenceSymbol Object
+    getExitCodeDecl :: VerifiedPureSentenceSymbol Object
     getExitCodeDecl =
         ( mkSymbol_ getExitCodeId [myIntSort] myIntSort )
             { sentenceSymbolAttributes = Attributes [functionalAttribute] }

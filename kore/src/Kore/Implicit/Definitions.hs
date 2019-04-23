@@ -24,8 +24,6 @@ import Data.Void
 import           Kore.AST.MetaOrObject
                  ( Meta )
 import qualified Kore.AST.Pure as AST.Pure
-import           Kore.AST.PureToKore
-                 ( modulePureToKore )
 import           Kore.AST.Sentence
 import           Kore.Implicit.ImplicitKore
                  ( uncheckedKoreModule )
@@ -49,16 +47,16 @@ uncheckedMetaDefinition =
 {-| 'uncheckedKoreModules' is the list of all the implicit modules as
 'KoreModule'. Does not do any validation for these modules.
 -}
-uncheckedKoreModules :: [KoreModule]
+uncheckedKoreModules :: [ParsedModule]
 uncheckedKoreModules =
-    map modulePureToKore (castModuleDomainValues <$> metaModules)
+    castModuleDomainValues <$> metaModules
   where
     castModuleDomainValues = (fmap . fmap) AST.Pure.castVoidDomainValues
 
 {-| 'uncheckedKoreDefinition' contains all the implicit modules as 'KoreModule'.
 Does not do any validation for these modules.
 -}
-uncheckedKoreDefinition :: KoreDefinition
+uncheckedKoreDefinition :: ParsedDefinition
 uncheckedKoreDefinition =
     Definition
         { definitionAttributes = Attributes []

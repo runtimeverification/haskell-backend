@@ -15,11 +15,10 @@ module Kore.Implicit.Verified
     )
     where
 
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( defaultNullAttributesVerification,
-                 verifyImplicitKoreDefinition )
+                 verifyImplicitParsedDefinition )
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import qualified Kore.Builtin as Builtin
@@ -30,10 +29,9 @@ import           Kore.Implicit.Definitions
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
     _ <-
-        verifyImplicitKoreDefinition
+        verifyImplicitParsedDefinition
             defaultNullAttributesVerification
             Builtin.koreVerifiers
-            $ definitionPureToKore
             $ castDefinitionDomainValues uncheckedMetaDefinition
     return uncheckedMetaDefinition
 
@@ -47,9 +45,9 @@ implicitMetaDefinition =
         Left err -> error (printError err)
         Right d  -> d
 
-checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
+checkedKoreDefinition :: Either (Error VerifyError) ParsedDefinition
 checkedKoreDefinition = do
-    _ <- verifyImplicitKoreDefinition
+    _ <- verifyImplicitParsedDefinition
         defaultNullAttributesVerification
         Builtin.koreVerifiers
         uncheckedKoreDefinition
@@ -59,7 +57,7 @@ checkedKoreDefinition = do
 that is implicitly defined and visible everywhere. This definition passes
 validation checks.
 -}
-implicitKoreDefinition :: KoreDefinition
+implicitKoreDefinition :: ParsedDefinition
 implicitKoreDefinition =
     case checkedKoreDefinition of
         Left err -> error (printError err)

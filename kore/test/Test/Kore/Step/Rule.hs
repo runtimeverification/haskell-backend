@@ -70,11 +70,11 @@ axiomPatternsUnitTests =
                 )
             )
         ,   let
-                axiom1 :: VerifiedKoreSentence
+                axiom1 :: VerifiedPureSentence Object
                 axiom1 = mkRewriteAxiom varI1 varI2 Nothing
-                axiom2 :: VerifiedKoreSentence
+                axiom2 :: VerifiedPureSentence Object
                 axiom2 =
-                    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
+                    (SentenceAxiomSentence . mkAxiom_)
                         (applyInj sortKItem
                             (mkRewrites
                                 (mkAnd mkTop_ varI1)
@@ -86,12 +86,12 @@ axiomPatternsUnitTests =
                         { moduleName = ModuleName "TEST"
                         , moduleSentences =
                             map
-                                eraseUnifiedSentenceAnnotations
+                                eraseSentenceAnnotations
                                 [ axiom1
                                 , axiom2
                                 , sortSentenceAInt
                                 , sortSentenceKItem
-                                , toKoreSentence symbolSentenceInj
+                                , symbolSentenceInj
                                 ]
                         , moduleAttributes = Attributes []
                         }
@@ -121,7 +121,7 @@ axiomPatternsUnitTests =
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
                 (koreSentenceToAxiomPattern Object
-                    ((asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
+                    ((SentenceAxiomSentence . mkAxiom_)
                         (applySymbol
                             symbolInj
                             [sortAInt, sortKItem]
@@ -217,16 +217,15 @@ axiomPatternsIntegrationTests =
                             \        )\n\
                             \    )\n\
                             \[]"
-                    let valid =
-                            UnifiedObject Valid { patternSort, freeVariables }
+                    let valid = Valid { patternSort, freeVariables }
                           where
                             patternSort = sortTCell
                             freeVariables =
                                 Set.fromList
-                                    [ asUnified (Variable "VarI1" mempty sortAInt)
-                                    , asUnified (Variable "VarI2" mempty sortAInt)
-                                    , asUnified (Variable "VarDotVar1" mempty sortK)
-                                    , asUnified (Variable "VarDotVar0" mempty sortStateCell)
+                                    [ Variable "VarI1" mempty sortAInt
+                                    , Variable "VarI2" mempty sortAInt
+                                    , Variable "VarDotVar1" mempty sortK
+                                    , Variable "VarDotVar0" mempty sortStateCell
                                     ]
                     koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
                 )
@@ -247,9 +246,9 @@ sortAInt = simpleSort (SortName "AInt")
 sortAExp = simpleSort (SortName "AExp")
 sortBExp = simpleSort (SortName "BExp")
 
-sortSentenceAInt :: VerifiedKoreSentence
+sortSentenceAInt :: VerifiedPureSentence Object
 sortSentenceAInt =
-    toKoreSentence (asSentence sentence)
+    (asSentence sentence)
   where
     sentence :: SentenceSort Object (CommonStepPattern Object)
     sentence =
@@ -259,9 +258,9 @@ sortSentenceAInt =
             , sentenceSortAttributes = Attributes []
             }
 
-sortSentenceKItem :: VerifiedKoreSentence
+sortSentenceKItem :: VerifiedPureSentence Object
 sortSentenceKItem =
-    toKoreSentence (asSentence sentence)
+    (asSentence sentence)
   where
     sentence :: SentenceSort Object (CommonStepPattern Object)
     sentence =
@@ -373,7 +372,7 @@ varStateCell =
         , variableSort = sortStateCell
         }
 
-parseAxiom :: String -> Either (Error a) KoreSentence
+parseAxiom :: String -> Either (Error a) ParsedSentence
 parseAxiom str =
     case parseOnly (koreSentenceParser <* endOfInput) "<test-string>" str of
         Left err  -> koreFail err

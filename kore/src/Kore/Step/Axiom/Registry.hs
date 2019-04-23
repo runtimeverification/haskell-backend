@@ -21,7 +21,7 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.Attribute.Axiom
                  ( Assoc (Assoc), Comm (Comm), Idem (Idem), Unit (Unit) )
@@ -42,6 +42,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
+import           Kore.Step.Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
@@ -81,7 +82,7 @@ extractEqualityAxioms level =
     -- not a function axiom.
     extractSentenceAxiom
         :: Map (AxiomIdentifier level) [EqualityRule level Variable]
-        -> (attrs, VerifiedKoreSentenceAxiom)
+        -> (attrs, VerifiedPureSentenceAxiom Object)
         -> Map (AxiomIdentifier level) [EqualityRule level Variable]
     extractSentenceAxiom axioms (_, sentence) =
         let
@@ -98,11 +99,10 @@ extractEqualityAxioms level =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    :: MetaOrObject level
-    => level
-    -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
-    -> Maybe (AxiomIdentifier level, EqualityRule level Variable)
-axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
+    :: Object
+    -> SentenceAxiom (SortVariable Object) (StepPattern Object Variable)
+    -> Maybe (AxiomIdentifier Object, EqualityRule Object Variable)
+axiomToIdAxiomPatternPair level (SentenceAxiomSentence -> axiom) =
     case verifiedKoreSentenceToAxiomPattern level axiom of
         Left _ -> Nothing
         Right

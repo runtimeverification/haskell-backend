@@ -328,11 +328,11 @@ keccakSymbol = builtinSymbol "KECCAK"
 -- * Sorts
 
 -- | Declare 'a sort' in a Kore module.
-sortDecl :: Sort Object -> KoreSentence
+sortDecl :: Sort Object -> ParsedSentence
 sortDecl sort =
     asSentence sentence
   where
-    sentence :: KoreSentenceSort Object
+    sentence :: ParsedSentenceSort
     sentence =
         SentenceSort
             { sentenceSortName =
@@ -348,11 +348,11 @@ hookedSortDecl
     -- ^ declared sort
     -> [CommonKorePattern]
     -- ^ declaration attributes
-    -> KoreSentence
+    -> ParsedSentence
 hookedSortDecl sort attrs =
     (asSentence . SentenceHookedSort) sentence
   where
-    sentence :: KoreSentenceSort Object
+    sentence :: ParsedSentenceSort
     sentence =
         SentenceSort
             { sentenceSortName =
@@ -373,7 +373,7 @@ boolSort =
         }
 
 -- | Declare 'boolSort' in a Kore module.
-boolSortDecl :: KoreSentence
+boolSortDecl :: ParsedSentence
 boolSortDecl = hookedSortDecl boolSort [ hookAttribute "BOOL.Bool" ]
 
 builtinBool :: Bool -> InternalBool
@@ -394,7 +394,7 @@ intSort =
         }
 
 -- | Declare 'intSort' in a Kore module.
-intSortDecl :: KoreSentence
+intSortDecl :: ParsedSentence
 intSortDecl = hookedSortDecl intSort [ hookAttribute "INT.Int" ]
 
 builtinInt :: Integer -> InternalInt
@@ -439,7 +439,7 @@ listSort =
         }
 
 -- | Declare 'listSort' in a Kore module.
-listSortDecl :: KoreSentence
+listSortDecl :: ParsedSentence
 listSortDecl =
     hookedSortDecl
         listSort
@@ -470,7 +470,7 @@ listSort2 =
         }
 
 -- | Declare 'listSort' in a Kore module.
-listSortDecl2 :: KoreSentence
+listSortDecl2 :: ParsedSentence
 listSortDecl2 =
     hookedSortDecl
         listSort2
@@ -491,7 +491,7 @@ mapSort =
         }
 
 -- | Declare 'mapSort' in a Kore module.
-mapSortDecl :: KoreSentence
+mapSortDecl :: ParsedSentence
 mapSortDecl =
     hookedSortDecl
         mapSort
@@ -523,7 +523,7 @@ pairSort lSort rSort =
         }
 
 -- | Declare 'Pair' in a Kore module.
-pairSortDecl :: KoreSentence
+pairSortDecl :: ParsedSentence
 pairSortDecl =
     asSentence decl
   where
@@ -531,7 +531,7 @@ pairSortDecl =
     rSortVariable = SortVariable (testId "r")
     lSort = SortVariableSort lSortVariable
     rSort = SortVariableSort rSortVariable
-    decl :: KoreSentenceSort Object
+    decl :: ParsedSentenceSort
     decl =
         SentenceSort
             { sentenceSortName =
@@ -553,7 +553,7 @@ setSort =
         }
 
 -- | Declare 'setSort' in a Kore module.
-setSortDecl :: KoreSentence
+setSortDecl :: ParsedSentence
 setSortDecl =
     hookedSortDecl
         setSort
@@ -586,7 +586,7 @@ stringSort =
         }
 
 -- | Declare 'stringSort' in a Kore module.
-stringSortDecl :: KoreSentence
+stringSortDecl :: ParsedSentence
 stringSortDecl =
     hookedSortDecl
         stringSort
@@ -605,7 +605,7 @@ symbolDecl
     -- ^ argument sorts
     -> [CommonKorePattern]
     -- ^ declaration attributes
-    -> KoreSentence
+    -> ParsedSentence
 symbolDecl
     SymbolOrAlias { symbolOrAliasConstructor }
     sentenceSymbolResultSort
@@ -614,7 +614,7 @@ symbolDecl
   =
     asSentence sentence
   where
-    sentence :: KoreSentenceSymbol Object
+    sentence :: ParsedSentenceSymbol
     sentence =
         SentenceSymbol
             { sentenceSymbolSymbol
@@ -638,7 +638,7 @@ hookedSymbolDecl
     -- ^ argument sorts
     -> [CommonKorePattern]
     -- ^ declaration attributes
-    -> KoreSentence
+    -> ParsedSentence
 hookedSymbolDecl
     SymbolOrAlias { symbolOrAliasConstructor }
     sentenceSymbolResultSort
@@ -647,7 +647,7 @@ hookedSymbolDecl
   =
     (asSentence . SentenceHookedSymbol) sentence
   where
-    sentence :: KoreSentenceSymbol Object
+    sentence :: ParsedSentenceSymbol
     sentence =
         SentenceSymbol
             { sentenceSymbolSymbol
@@ -671,7 +671,7 @@ unhookedSymbolDecl
     -- ^ argument sorts
     -> [CommonKorePattern]
     -- ^ declaration attributes
-    -> KoreSentence
+    -> ParsedSentence
 unhookedSymbolDecl
     SymbolOrAlias { symbolOrAliasConstructor }
     sentenceSymbolResultSort
@@ -680,7 +680,7 @@ unhookedSymbolDecl
   =
     asSentence sentence
   where
-    sentence :: KoreSentenceSymbol Object
+    sentence :: ParsedSentenceSymbol
     sentence =
         SentenceSymbol
             { sentenceSymbolSymbol
@@ -694,11 +694,11 @@ unhookedSymbolDecl
             , symbolParams = []
             }
 
-importKoreModule :: ModuleName -> KoreSentence
-importKoreModule moduleName =
+importParsedModule :: ModuleName -> ParsedSentence
+importParsedModule moduleName =
     asSentence sentence
   where
-    sentence :: KoreSentenceImport
+    sentence :: ParsedSentenceImport
     sentence =
         SentenceImport
             { sentenceImportModuleName = moduleName
@@ -711,7 +711,7 @@ boolModuleName :: ModuleName
 boolModuleName = ModuleName "BOOL"
 
 -- | Declare the @BOOL@ builtins.
-boolModule :: KoreModule
+boolModule :: ParsedModule
 boolModule =
     Module
         { moduleName = boolModuleName
@@ -748,13 +748,13 @@ intModuleName :: ModuleName
 intModuleName = ModuleName "INT"
 
 -- | Declare the @INT@ builtins.
-intModule :: KoreModule
+intModule :: ParsedModule
 intModule =
     Module
         { moduleName = intModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importKoreModule boolModuleName
+            [ importParsedModule boolModuleName
             , intSortDecl
             -- comparison symbols
             , comparisonSymbolDecl gtIntSymbol
@@ -833,13 +833,13 @@ kEqualModuleName :: ModuleName
 kEqualModuleName = ModuleName "KEQUAL"
 
 -- | Declare the @KEQUAL@ builtins.
-kEqualModule :: KoreModule
+kEqualModule :: ParsedModule
 kEqualModule =
     Module
         { moduleName = kEqualModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importKoreModule boolModuleName
+            [ importParsedModule boolModuleName
             , hookedSymbolDecl
                 keqBoolSymbol
                 boolSort
@@ -864,11 +864,11 @@ kEqualModule =
             ]
         }
 
-injSymbolDecl :: KoreSentence
+injSymbolDecl :: ParsedSentence
 injSymbolDecl =
     asSentence decl
   where
-    decl :: KoreSentenceSymbol Object
+    decl :: ParsedSentenceSymbol
     decl =
         SentenceSymbol
             { sentenceSymbolSymbol =
@@ -898,13 +898,13 @@ listModuleName :: ModuleName
 listModuleName = ModuleName "LIST"
 
 -- | Declare the @LIST@ builtins.
-listModule :: KoreModule
+listModule :: ParsedModule
 listModule =
     Module
         { moduleName = listModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importKoreModule intModuleName
+            [ importParsedModule intModuleName
             , listSortDecl
             , hookedSymbolDecl
                 unitListSymbol
@@ -960,15 +960,15 @@ mapModuleName :: ModuleName
 mapModuleName = ModuleName "MAP"
 
 -- | Declare the @MAP@ builtins.
-mapModule :: KoreModule
+mapModule :: ParsedModule
 mapModule =
     Module
         { moduleName = mapModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importKoreModule boolModuleName
-            , importKoreModule intModuleName
-            , importKoreModule setModuleName
+            [ importParsedModule boolModuleName
+            , importParsedModule intModuleName
+            , importParsedModule setModuleName
             , mapSortDecl
             , hookedSymbolDecl
                 unitMapSymbol
@@ -1019,7 +1019,7 @@ pairModuleName = ModuleName "PAIR"
 
 {- | Declare the @Pair@ sort and constructors.
  -}
-pairModule :: KoreModule
+pairModule :: ParsedModule
 pairModule =
     Module
         { moduleName = pairModuleName
@@ -1030,11 +1030,11 @@ pairModule =
             ]
         }
 
-pairSymbolDecl :: KoreSentence
+pairSymbolDecl :: ParsedSentence
 pairSymbolDecl =
     asSentence decl
   where
-    decl :: KoreSentenceSymbol Object
+    decl :: ParsedSentenceSymbol
     decl =
         SentenceSymbol
             { sentenceSymbolSymbol =
@@ -1065,15 +1065,15 @@ setModuleName :: ModuleName
 setModuleName = ModuleName "SET"
 
 -- | Declare the @SET@ builtins.
-setModule :: KoreModule
+setModule :: ParsedModule
 setModule =
     Module
         { moduleName = setModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importKoreModule intModuleName
-            , importKoreModule boolModuleName
-            , importKoreModule listModuleName
+            [ importParsedModule intModuleName
+            , importParsedModule boolModuleName
+            , importParsedModule listModuleName
             , setSortDecl
             , hookedSymbolDecl
                 unitSetSymbol
@@ -1123,14 +1123,14 @@ stringModuleName :: ModuleName
 stringModuleName = ModuleName "STRING"
 
 -- | Declare the @STRING@ builtins.
-stringModule :: KoreModule
+stringModule :: ParsedModule
 stringModule =
     Module
         { moduleName = stringModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importKoreModule boolModuleName
-            , importKoreModule intModuleName
+            [ importParsedModule boolModuleName
+            , importParsedModule intModuleName
             , stringSortDecl
             , hookedSymbolDecl
                 ltStringSymbol
@@ -1186,15 +1186,15 @@ kryptoModuleName :: ModuleName
 kryptoModuleName = ModuleName "KRYPTO"
 
 -- | Declare the @KRYPTO@ builtins.
-kryptoModule :: KoreModule
+kryptoModule :: ParsedModule
 kryptoModule =
     Module
         { moduleName = kryptoModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importKoreModule stringModuleName
-            , importKoreModule intModuleName
-            , importKoreModule listModuleName
+            [ importParsedModule stringModuleName
+            , importParsedModule intModuleName
+            , importParsedModule listModuleName
             , hookedSymbolDecl
                 ecdsaRecoverSymbol
                 stringSort
@@ -1213,28 +1213,28 @@ kryptoModule =
 testModuleName :: ModuleName
 testModuleName = ModuleName "TEST"
 
-testModule :: KoreModule
+testModule :: ParsedModule
 testModule =
     Module
         { moduleName = testModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ importKoreModule boolModuleName
-            , importKoreModule intModuleName
-            , importKoreModule kEqualModuleName
-            , importKoreModule listModuleName
-            , importKoreModule mapModuleName
-            , importKoreModule pairModuleName
-            , importKoreModule setModuleName
-            , importKoreModule stringModuleName
-            , importKoreModule kryptoModuleName
+            [ importParsedModule boolModuleName
+            , importParsedModule intModuleName
+            , importParsedModule kEqualModuleName
+            , importParsedModule listModuleName
+            , importParsedModule mapModuleName
+            , importParsedModule pairModuleName
+            , importParsedModule setModuleName
+            , importParsedModule stringModuleName
+            , importParsedModule kryptoModuleName
             ]
         }
 
 -- -------------------------------------------------------------
 -- * Definition
 
-testDefinition :: KoreDefinition
+testDefinition :: ParsedDefinition
 testDefinition =
     Definition
         { definitionAttributes = Attributes []

@@ -32,7 +32,7 @@ verifyUniqueNames
     :: (Unparse param, Unparse pat)
     => Map.Map Text AstLocation
     -- ^ Names that are already defined.
-    -> Module (UnifiedSentence param pat)
+    -> Module (Sentence Object param pat)
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
@@ -48,7 +48,7 @@ verifyModule
     :: AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
-    -> Either (Error VerifyError) (Module VerifiedKoreSentence)
+    -> Either (Error VerifyError) (VerifiedPureModule Object)
 verifyModule attributesVerification builtinVerifiers indexedModule =
     withContext
         ("module '" ++ getModuleNameForError (indexedModuleName indexedModule) ++ "'")

@@ -10,7 +10,6 @@ import Kore.AST.Sentence
 import Kore.AST.Valid
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
-import Kore.Step.Pattern
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -98,7 +97,7 @@ test_uniqueSortVariables =
                     (SortName "s")
                     []
                     topS
-                    :: VerifiedKoreSentenceAlias Object
+                    :: VerifiedPureSentenceAlias Object
                 )
             , simpleSortSentence (SortName "s")
             ]
@@ -203,7 +202,7 @@ test_uniqueSortVariables =
             [ asSentence
                 (symbolSentenceWithSortParameters
                     (SymbolName "a") (SortName "s") []
-                :: VerifiedKoreSentenceSymbol Object
+                :: VerifiedPureSentenceSymbol Object
                 )
             , simpleSortSentence (SortName "s")
             ]
@@ -431,12 +430,10 @@ test_uniqueSortVariables =
     ]
   where
     topS =
-        toKorePattern
             (mkTop
                 (simpleSort $ SortName "s" :: Sort Object)
             )
     topS1 =
-        toKorePattern
             (mkTop
                 (simpleSort $ SortName "s1" :: Sort Object)
             )

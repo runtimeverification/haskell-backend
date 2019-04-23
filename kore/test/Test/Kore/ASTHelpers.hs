@@ -112,10 +112,10 @@ applicationSorts operandSorts resultSort =
         }
 
 symbolSentence
-    :: [SortVariable level]
-    -> [Sort level]
-    -> Sort level
-    -> KoreSentenceSymbol level
+    :: [SortVariable Object]
+    -> [Sort Object]
+    -> Sort Object
+    -> ParsedSentenceSymbol
 symbolSentence sortParameters operandSorts resultSort =
     SentenceSymbol
         { sentenceSymbolSymbol     = Symbol

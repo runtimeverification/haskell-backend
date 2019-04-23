@@ -23,14 +23,6 @@ import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
-                 ( Attributes (Attributes), Definition (Definition),
-                 KoreSentence, Module (Module), ModuleName (ModuleName),
-                 Sentence (SentenceAliasSentence, SentenceAxiomSentence, SentenceClaimSentence, SentenceHookSentence, SentenceImportSentence, SentenceSortSentence, SentenceSymbolSentence),
-                 SentenceAlias (SentenceAlias), SentenceAxiom (SentenceAxiom),
-                 SentenceHook (SentenceHookedSort, SentenceHookedSymbol),
-                 SentenceImport (SentenceImport), SentenceSort (SentenceSort),
-                 SentenceSymbol (SentenceSymbol), Symbol (Symbol),
-                 UnifiedSentence (UnifiedObjectSentence), asSentence )
 import qualified Kore.AST.Sentence as Definition
                  ( Definition (..) )
 import qualified Kore.AST.Sentence as Module
@@ -89,10 +81,6 @@ instance With (Definition sentence) Attribute where
         d@Definition {definitionAttributes = Attributes as}
         Attribute {getAttribute}
       = d { Definition.definitionAttributes = Attributes (getAttribute:as) }
-
-instance With (UnifiedSentence variable patt) Attribute where
-    (UnifiedObjectSentence s) `with` attribute =
-        UnifiedObjectSentence (s `with` attribute)
 
 instance With (Sentence level sort patt) Attribute where
     (SentenceAliasSentence s) `with` attribute =
@@ -158,14 +146,14 @@ instance With (Module sentence) sentence where
       = m { Module.moduleSentences = sentence : sentences }
 
 indexModule
-    :: Module KoreSentence
+    :: ParsedModule
     -> VerifiedModule Attribute.Symbol Attribute.Axiom
 indexModule m@Module{ moduleName } =
     indexModules moduleName [m]
 
 indexModules
     :: ModuleName
-    -> [Module KoreSentence]
+    -> [ParsedModule]
     -> VerifiedModule Attribute.Symbol Attribute.Axiom
 indexModules moduleName modules =
     case perhapsIndexedDefinition of
@@ -225,7 +213,7 @@ emptyModule name =
         , moduleAttributes = Attributes []
         }
 
-sortDeclaration :: Text -> KoreSentence
+sortDeclaration :: Text -> ParsedSentence
 sortDeclaration name =
     asSentence
         (SentenceSort
@@ -236,7 +224,7 @@ sortDeclaration name =
         :: SentenceSort Object CommonKorePattern
         )
 
-symbolDeclaration :: Text -> Text -> [Text] -> KoreSentence
+symbolDeclaration :: Text -> Text -> [Text] -> ParsedSentence
 symbolDeclaration name sortName argumentSortNames =
     asSentence
         (SentenceSymbol

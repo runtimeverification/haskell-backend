@@ -137,7 +137,7 @@ withApplication
     -> Parser attrs
 withApplication ident go kore =
     case Recursive.project kore of
-        _ :< UnifiedObjectPattern (ApplicationPattern app)
+        _ :< ApplicationPattern app
           | symbolOrAliasConstructor == ident -> \attrs ->
             Kore.Error.withLocationAndContext
                 symbol
@@ -217,7 +217,7 @@ getTwoArguments =
 getSymbolOrAlias :: CommonKorePattern -> Parser (SymbolOrAlias Object)
 getSymbolOrAlias kore =
     case Recursive.project kore of
-        _ :< UnifiedObjectPattern (ApplicationPattern app)
+        _ :< ApplicationPattern app
           | [] <- applicationChildren -> return symbol
           | otherwise ->
             Kore.Error.withLocationAndContext
@@ -234,7 +234,7 @@ getSymbolOrAlias kore =
 getStringLiteral :: CommonKorePattern -> Parser StringLiteral
 getStringLiteral kore =
     case Recursive.project kore of
-        _ :< UnifiedObjectPattern (StringLiteralPattern lit) -> return lit
+        _ :< StringLiteralPattern lit -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
 
 instance ParseAttributes Attribute.Sort where

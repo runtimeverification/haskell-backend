@@ -8,9 +8,6 @@ import Data.Text
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.Sentence
-                 ( Attributes (Attributes), KoreSentence,
-                 ModuleName (ModuleName), SentenceImport (SentenceImport),
-                 asSentence )
 import qualified Kore.AST.Sentence as SentenceImport
                  ( SentenceImport (..) )
 import qualified Kore.Builtin.Int as Int
@@ -298,7 +295,7 @@ test_sortDeclaration =
         ]
     ]
   where
-    importModule :: Text -> KoreSentence
+    importModule :: Text -> ParsedSentence
     importModule name =
         asSentence
             (SentenceImport

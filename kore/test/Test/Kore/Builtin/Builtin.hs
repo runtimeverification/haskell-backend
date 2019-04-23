@@ -112,7 +112,7 @@ testSymbolWithSolver eval title resultSort symbol args expected =
 -- * Evaluation
 
 verify
-    :: KoreDefinition
+    :: ParsedDefinition
     -> Either
         (Kore.Error.Error VerifyError)
         (Map
@@ -310,7 +310,5 @@ hpropUnparse
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
     let syntax = unparseToString builtin
-        expected =
-            (Kore.eraseAnnotations . toKorePattern)
-                (Builtin.externalizePattern builtin)
+        expected = eraseAnnotations (Builtin.externalizePattern builtin)
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

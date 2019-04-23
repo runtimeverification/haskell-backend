@@ -35,7 +35,7 @@ import           Kore.AST.Identifier
 import           Kore.AST.Kore
                  ( KorePattern, VerifiedKorePattern )
 import           Kore.AST.MetaOrObject
-                 ( Object (Object), Unified )
+                 ( Object )
 import           Kore.AST.Sentence
                  ( SentenceAxiom (SentenceAxiom), SentenceSort (SentenceSort) )
 import qualified Kore.AST.Sentence as SentenceSort
@@ -71,7 +71,7 @@ import           Kore.Sort
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
 import           Kore.Step.Pattern
-                 ( CommonStepPattern, fromKorePattern )
+                 ( CommonStepPattern )
 import           Kore.Step.SMT.Encoder
                  ( encodeName )
 import           Kore.Unparser
@@ -156,7 +156,7 @@ declareSorts
         (KorePattern
             Domain.Builtin
             Variable
-            (Unified (Valid (Unified Variable)))
+            (Valid (Variable Object) Object)
         )
         Symbol
         Attribute.Axiom
@@ -307,7 +307,7 @@ parseNoJunkAxioms
         (KorePattern
             Domain.Builtin
             Variable
-            (Unified (Valid (Unified Variable)))
+            (Valid (Variable Object) Object)
         )
         Symbol
         Attribute.Axiom
@@ -324,15 +324,8 @@ parseSMTDataType
         )
     -> Maybe SMTDataType
 parseSMTDataType (attributes, SentenceAxiom {sentenceAxiomPattern})
-  | Axiom.Constructor.isConstructor (Attribute.constructor attributes)
-  = case fromKorePattern Object sentenceAxiomPattern of
-    Left err -> (error . unlines)
-        [ "Unexpected error transforming kore pattern to pure pattern:"
-        , " all patterns should be pure."
-        , "err=" ++ show err
-        , "pattern=" ++ show sentenceAxiomPattern
-        ]
-    Right patt -> parseSMTDataTypePattern patt
+  | Axiom.Constructor.isConstructor (Attribute.constructor attributes) =
+    parseSMTDataTypePattern sentenceAxiomPattern
   | otherwise = Nothing
 
 parseSMTDataTypePattern :: CommonStepPattern Object -> Maybe SMTDataType

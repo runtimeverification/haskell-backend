@@ -20,7 +20,7 @@ test_astPrettyPrint =
         )
     , testCase "Object unified variable"
         (assertEqual ""
-            (  "UnifiedObject Variable\n"
+            (  "Variable\n"
             ++ "    { variableName = (Id \"v\" AstLocationNone) :: Id Object\n"
             ++ "    , variableCounter = Nothing\n"
             ++ "    , variableSort =\n"
@@ -28,7 +28,7 @@ test_astPrettyPrint =
             ++ "    }"
             )
             (prettyPrintToString
-                (UnifiedObject Variable
+                (Variable
                     { variableName = testId "v"
                     , variableCounter = mempty
                     , variableSort =
