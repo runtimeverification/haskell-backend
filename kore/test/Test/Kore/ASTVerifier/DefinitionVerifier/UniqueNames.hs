@@ -231,18 +231,6 @@ test_uniqueNames =
             , simpleSortSentence (SortName "s")
             ]
         )
-    , expectFailureWithError
-        "Definition with an implicit meta symbol name"
-        (Error
-            [ "module 'MODULE'"
-            , "(<test data>, <implicitly defined entity>)"
-            ]
-            "Duplicated name: '#nilCharList'."
-        )
-        ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaAliasSentence (AliasName "#nilCharList") stringSortName
-            ]
-        )
     ]
   where
     stringSortName = SortName ((Text.pack . show) (MetaListSortType CharSort))
