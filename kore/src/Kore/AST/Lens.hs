@@ -62,6 +62,7 @@ patternLens
             RewritesPattern rew0 -> RewritesPattern <$> patternLensRewrites rew0
             TopPattern top0 -> TopPattern <$> patternLensTop top0
             VariablePattern var0 -> VariablePattern <$> lensVariable var0
+            SetVariablePattern var0 -> SetVariablePattern <$> lensVariable var0
             ApplicationPattern app0 ->
                 ApplicationPattern <$> patternLensApplication app0
             StringLiteralPattern lit -> pure (StringLiteralPattern lit)

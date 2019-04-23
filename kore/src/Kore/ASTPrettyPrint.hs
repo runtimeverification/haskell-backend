@@ -572,6 +572,8 @@ instance
         writeOneFieldStruct flags "TopPattern" p
     prettyPrint flags (VariablePattern p)      =
         writeOneFieldStruct flags "VariablePattern" p
+    prettyPrint flags (SetVariablePattern p)      =
+        writeOneFieldStruct flags "SetVariablePattern" p
 
 instance
     ( self ~ CofreeT f w a

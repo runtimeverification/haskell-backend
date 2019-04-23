@@ -112,6 +112,7 @@ translatePredicate translateUninterpreted predicate =
             NextPattern _ -> empty
             RewritesPattern _ -> empty
             VariablePattern _ -> empty
+            SetVariablePattern _ -> empty
             StringLiteralPattern _ -> empty
             CharLiteralPattern _ -> empty
 

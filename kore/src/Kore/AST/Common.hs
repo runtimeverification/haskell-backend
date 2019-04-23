@@ -1180,6 +1180,8 @@ data Pattern level domain variable child where
         :: !(Top level child) -> Pattern level domain variable child
     VariablePattern
         :: !(variable level) -> Pattern level domain variable child
+    SetVariablePattern
+        :: !(variable level) -> Pattern level domain variable child
 
 $newDefinitionGroup
 {- dummy top-level splice to make ''Pattern available for lifting -}
@@ -1272,6 +1274,7 @@ instance
             CharLiteralPattern p   -> unparse p
             TopPattern p           -> unparse p
             VariablePattern p      -> unparse p
+            SetVariablePattern p   -> unparse p
 
 data SortedPattern level domain variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level domain variable child)
@@ -1412,6 +1415,7 @@ traverseVariables traversing =
         ExistsPattern any0 -> ExistsPattern <$> traverseVariablesExists any0
         ForallPattern all0 -> ForallPattern <$> traverseVariablesForall all0
         VariablePattern variable -> VariablePattern <$> traversing variable
+        SetVariablePattern variable -> SetVariablePattern <$> traversing variable
         -- Trivial cases
         AndPattern andP -> pure (AndPattern andP)
         ApplicationPattern appP -> pure (ApplicationPattern appP)
@@ -1465,6 +1469,7 @@ mapDomainValues mapping =
         CharLiteralPattern charP -> CharLiteralPattern charP
         TopPattern topP -> TopPattern topP
         VariablePattern varP -> VariablePattern varP
+        SetVariablePattern varP -> SetVariablePattern varP
 
 {- | Cast a 'Pattern' head with @'Const' 'Void'@ domain values into any domain.
 

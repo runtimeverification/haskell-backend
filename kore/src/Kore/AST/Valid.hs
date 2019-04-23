@@ -217,6 +217,7 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 CharLiteralPattern _ -> illSorted
                 StringLiteralPattern _ -> illSorted
                 VariablePattern _ -> illSorted
+                SetVariablePattern _ -> illSorted
 
 {- | Call the argument function with two patterns whose sorts agree.
 

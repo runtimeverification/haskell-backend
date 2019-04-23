@@ -55,6 +55,7 @@ getPatternResultSort applicationSorts =
         CharLiteralPattern _ -> charMetaSort
         TopPattern Top { topSort } -> topSort
         VariablePattern variable -> sortedVariableSort variable
+        SetVariablePattern variable -> sortedVariableSort variable
 
 -- |Sample argument function for 'getPatternResultSort', failing for all input.
 undefinedHeadSort :: SymbolOrAlias level -> ApplicationSorts level

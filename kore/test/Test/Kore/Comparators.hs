@@ -207,6 +207,12 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
+    sumConstructorPair (SetVariablePattern a1) (SetVariablePattern a2) =
+        SumConstructorSameWithArguments (EqWrap "SetVariablePattern" a1 a2)
+    sumConstructorPair pattern1@(SetVariablePattern _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
 instance
     ( EqualWithExplanation child
     , Eq child, Eq level, Eq (variable level)

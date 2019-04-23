@@ -127,5 +127,6 @@ instance
             CharLiteralPattern _ -> AstLocationUnknown
             TopPattern Top { topSort } -> locationFromAst topSort
             VariablePattern variable -> locationFromAst variable
+            SetVariablePattern variable -> locationFromAst variable
 
     updateAstLocation = undefined
