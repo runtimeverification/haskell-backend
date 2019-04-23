@@ -379,8 +379,8 @@ applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree korePatternParser
         [ success "#v:#Char"
-            ( asCommonKorePattern $ VariablePattern Variable
-                { variableName = testId "#v" :: Id Meta
+            ( asCommonKorePattern $ SetVariablePattern Variable
+                { variableName = testId "#v"
                 , variableSort = sortVariableSort "#Char"
                 , variableCounter = mempty
                 }
