@@ -266,7 +266,11 @@ omitCell =
         Just str -> addOrRemove str
   where
     showCells :: ReplM claim level ()
-    showCells = Lens.use lensOmit >>= traverse_ putStrLn'
+    showCells = do
+        omitList <- Lens.use lensOmit
+        case omitList of
+            [] -> putStrLn' "Omit list is currently empty."
+            _  -> traverse_ putStrLn' omitList
 
     addOrRemove :: String -> ReplM claim level ()
     addOrRemove str = lensOmit %= toggle str
