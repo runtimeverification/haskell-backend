@@ -26,9 +26,9 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.RWS.Strict
-                 ( MonadWriter, RWST, get, lift, runRWST, tell )
+                 ( MonadWriter, RWST, get, lift, put, runRWST, tell )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT (..), evalStateT )
+                 ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Bifunctor
                  ( bimap )
@@ -53,6 +53,13 @@ import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
+import           GHC.IO.Handle
+                 ( hGetContents, hPutStr )
+import           System.Directory
+                 ( findExecutable )
+import           System.Process
+                 ( StdStream (CreatePipe), createProcess, proc, std_in,
+                 std_out )
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SymbolOrAlias (..),
@@ -111,29 +118,30 @@ replInterpreter
 replInterpreter output cmd =
     StateT $ \st -> do
         let rwst = case cmd of
-                    ShowUsage         -> showUsage         $> True
-                    Help              -> help              $> True
-                    ShowClaim c       -> showClaim c       $> True
-                    ShowAxiom a       -> showAxiom a       $> True
-                    Prove i           -> prove i           $> True
-                    ShowGraph         -> showGraph         $> True
-                    ProveSteps n      -> proveSteps n      $> True
-                    ProveStepsF n     -> proveStepsF n     $> True
-                    SelectNode i      -> selectNode i      $> True
-                    ShowConfig mc     -> showConfig mc     $> True
-                    OmitCell c        -> omitCell c        $> True
-                    ShowLeafs         -> showLeafs         $> True
-                    ShowRule   mc     -> showRule mc       $> True
-                    ShowPrecBranch mn -> showPrecBranch mn $> True
-                    ShowChildren mn   -> showChildren mn   $> True
-                    Label ms          -> label ms          $> True
-                    LabelAdd l mn     -> labelAdd l mn     $> True
-                    LabelDel l        -> labelDel l        $> True
-                    Redirect inn file -> redirect inn file $> True
-                    Try ac            -> tryAxiomClaim ac  $> True
-                    Clear n           -> clear n           $> True
-                    SaveSession file  -> saveSession file  $> True
-                    Exit              -> pure                 False
+                    ShowUsage          -> showUsage          $> True
+                    Help               -> help               $> True
+                    ShowClaim c        -> showClaim c        $> True
+                    ShowAxiom a        -> showAxiom a        $> True
+                    Prove i            -> prove i            $> True
+                    ShowGraph          -> showGraph          $> True
+                    ProveSteps n       -> proveSteps n       $> True
+                    ProveStepsF n      -> proveStepsF n      $> True
+                    SelectNode i       -> selectNode i       $> True
+                    ShowConfig mc      -> showConfig mc      $> True
+                    OmitCell c         -> omitCell c         $> True
+                    ShowLeafs          -> showLeafs          $> True
+                    ShowRule   mc      -> showRule mc        $> True
+                    ShowPrecBranch mn  -> showPrecBranch mn  $> True
+                    ShowChildren mn    -> showChildren mn    $> True
+                    Label ms           -> label ms           $> True
+                    LabelAdd l mn      -> labelAdd l mn      $> True
+                    LabelDel l         -> labelDel l         $> True
+                    Redirect inn file  -> redirect inn file  $> True
+                    Try ac             -> tryAxiomClaim ac   $> True
+                    Clear n            -> clear n            $> True
+                    Pipe inn file args -> pipe inn file args $> True
+                    SaveSession file   -> saveSession file  $> True
+                    Exit               -> pure                  False
         (exit, st', w) <- runRWST rwst () st
         liftIO $ output w
         pure (exit, st')
@@ -383,12 +391,39 @@ redirect
     -> ReplM claim level ()
 redirect cmd path = do
     st <- get
-    _ <- lift $ evalStateT (replInterpreter redirectToFile cmd) st
+    st' <- lift $ execStateT (replInterpreter redirectToFile cmd) st
+    put st'
     putStrLn' "File created."
     pure ()
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
+
+pipe
+    :: forall level claim
+    .  MetaOrObject level
+    => Claim claim
+    => ReplCommand
+    -> String
+    -> [String]
+    -> ReplM claim level ()
+pipe cmd file args = do
+    exists <- liftIO $ findExecutable file
+    case exists of
+        Nothing -> putStrLn' "Cannot find executable."
+        Just exec -> do
+            (maybeInput, maybeOutput, _, _) <-
+                liftIO $ createProcess (proc exec args)
+                    { std_in = CreatePipe, std_out = CreatePipe }
+            let outputFunc = maybe putStrLn hPutStr maybeInput
+            st <- get
+            st' <- lift $ execStateT (replInterpreter outputFunc cmd) st
+            put st'
+            case maybeOutput of
+                Just handle -> do
+                    output <- liftIO $ hGetContents handle
+                    putStrLn' output
+                Nothing -> putStrLn' "Error: couldn't access output handle of executable."
 
 tryAxiomClaim
     :: forall level claim
