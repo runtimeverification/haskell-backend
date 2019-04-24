@@ -21,7 +21,7 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Proxy
                  ( Proxy )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.Error
 import           Kore.Attribute.Hook
@@ -61,7 +61,7 @@ verifyAttributes _ DoNotVerifyAttributes =
 
 verifyAttributePattern
     :: MonadError (Error VerifyError) m
-    => Pattern Object domain variable (KorePattern domain variable annotation)
+    => Pattern Object domain variable (PurePattern Object domain variable annotation)
     -> m VerifySuccess
 verifyAttributePattern pat =
     case pat of

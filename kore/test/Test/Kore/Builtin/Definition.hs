@@ -6,7 +6,7 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Constructor
@@ -346,7 +346,7 @@ sortDecl sort =
 hookedSortDecl
     :: Sort Object
     -- ^ declared sort
-    -> [CommonKorePattern]
+    -> [ParsedPattern]
     -- ^ declaration attributes
     -> ParsedSentence
 hookedSortDecl sort attrs =
@@ -603,7 +603,7 @@ symbolDecl
     -- ^ result sort
     -> [Sort Object]
     -- ^ argument sorts
-    -> [CommonKorePattern]
+    -> [ParsedPattern]
     -- ^ declaration attributes
     -> ParsedSentence
 symbolDecl
@@ -636,7 +636,7 @@ hookedSymbolDecl
     -- ^ result sort
     -> [Sort Object]
     -- ^ argument sorts
-    -> [CommonKorePattern]
+    -> [ParsedPattern]
     -- ^ declaration attributes
     -> ParsedSentence
 hookedSymbolDecl
@@ -669,7 +669,7 @@ unhookedSymbolDecl
     -- ^ result sort
     -> [Sort Object]
     -- ^ argument sorts
-    -> [CommonKorePattern]
+    -> [ParsedPattern]
     -- ^ declaration attributes
     -> ParsedSentence
 unhookedSymbolDecl

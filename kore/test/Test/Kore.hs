@@ -22,6 +22,9 @@ module Test.Kore
     , predicateGen
     , predicateChildGen
     , variableGen
+      -- * Re-exports
+    , ParsedPattern
+    , asParsedPattern
     , Logger.emptyLogger
     ) where
 
@@ -39,7 +42,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -47,6 +49,8 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
 import qualified Kore.Logger.Output as Logger
                  ( emptyLogger )
+import           Kore.Parser
+                 ( ParsedPattern, asParsedPattern )
 import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
@@ -561,7 +565,7 @@ stepPatternChildGen patternSort =
     stepPatternTopGen = pure (mkTop patternSort)
     stepPatternVariableGen = mkVar <$> variableGen patternSort
 
-korePatternGen :: Hedgehog.Gen CommonKorePattern
+korePatternGen :: Hedgehog.Gen ParsedPattern
 korePatternGen =
     standaloneGen (korePatternChildGen =<< sortGen)
 
@@ -569,7 +573,7 @@ korePatternChildGen
     ::  forall level.
         MetaOrObject level
     => Sort level
-    -> Gen CommonKorePattern
+    -> Gen ParsedPattern
 korePatternChildGen patternSort' =
     Gen.sized korePatternChildGenWorker
   where
@@ -592,38 +596,38 @@ korePatternChildGen patternSort' =
                     , (1, korePatternGenRewrites)
                     ]
 
-    korePatternGenLevel :: Gen CommonKorePattern
+    korePatternGenLevel :: Gen ParsedPattern
     korePatternGenLevel =
-        asCommonKorePattern <$> patternGen korePatternChildGen patternSort'
+        asParsedPattern <$> patternGen korePatternChildGen patternSort'
 
-    korePatternGenStringLiteral :: Gen CommonKorePattern
+    korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asCommonKorePattern . StringLiteralPattern <$> stringLiteralGen
+        asParsedPattern . StringLiteralPattern <$> stringLiteralGen
 
-    korePatternGenCharLiteral :: Gen CommonKorePattern
+    korePatternGenCharLiteral :: Gen ParsedPattern
     korePatternGenCharLiteral =
-        asCommonKorePattern . CharLiteralPattern <$> charLiteralGen
+        asParsedPattern . CharLiteralPattern <$> charLiteralGen
 
-    korePatternGenDomainValue :: level ~ Object => Gen CommonKorePattern
+    korePatternGenDomainValue :: level ~ Object => Gen ParsedPattern
     korePatternGenDomainValue =
-        asCommonKorePattern . DomainValuePattern
+        asParsedPattern . DomainValuePattern
             <$> genBuiltinExternal patternSort'
 
-    korePatternGenNext :: level ~ Object => Gen CommonKorePattern
+    korePatternGenNext :: level ~ Object => Gen ParsedPattern
     korePatternGenNext =
-        asCommonKorePattern . NextPattern
+        asParsedPattern . NextPattern
             <$> nextGen korePatternChildGen patternSort'
 
-    korePatternGenRewrites :: level ~ Object => Gen CommonKorePattern
+    korePatternGenRewrites :: level ~ Object => Gen ParsedPattern
     korePatternGenRewrites =
-        asCommonKorePattern . RewritesPattern
+        asParsedPattern . RewritesPattern
             <$> rewritesGen korePatternChildGen patternSort'
 
-    korePatternGenVariable :: Gen CommonKorePattern
+    korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asCommonKorePattern . VariablePattern <$> variableGen patternSort'
+        asParsedPattern . VariablePattern <$> variableGen patternSort'
 
-korePatternUnifiedGen :: Gen CommonKorePattern
+korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen
 
 predicateGen

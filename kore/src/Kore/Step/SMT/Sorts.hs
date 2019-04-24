@@ -32,8 +32,6 @@ import qualified Kore.AST.Common as Variable
                  ( Variable (..) )
 import           Kore.AST.Identifier
                  ( Id (getId) )
-import           Kore.AST.Kore
-                 ( KorePattern, VerifiedKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -44,12 +42,12 @@ import qualified Kore.AST.Sentence as SentenceAxiom
                  ( SentenceAxiom (..) )
 import           Kore.AST.Valid
                  ( pattern App_, pattern Bottom_, pattern Exists_, pattern Or_,
-                 Valid, pattern Var_ )
+                 pattern Var_ )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Constructor as Axiom.Constructor
-import           Kore.Attribute.Hook.Hook
+import           Kore.Attribute.Hook
                  ( Hook (Hook) )
-import qualified Kore.Attribute.Hook.Hook as Hook
+import qualified Kore.Attribute.Hook as Hook
 import           Kore.Attribute.Smtlib
                  ( applySExpr )
 import           Kore.Attribute.Smtlib.Smtlib
@@ -60,9 +58,8 @@ import           Kore.Attribute.Symbol
                  ( Symbol )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Int as Int
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule, recursiveIndexedModuleAxioms,
+                 ( VerifiedModule, recursiveIndexedModuleAxioms,
                  recursiveIndexedModuleSortDescriptions )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (sortAttributes) )
@@ -76,6 +73,7 @@ import           Kore.Step.SMT.Encoder
                  ( encodeName )
 import           Kore.Unparser
                  ( unparseToString )
+import qualified Kore.Verified.Sentence as Verified
 import qualified SMT
 
 data SMTConstructor =
@@ -151,15 +149,7 @@ declareSorts
     ::  ( Given (MetadataTools Object Symbol)
         , SMT.MonadSMT m
         )
-    => IndexedModule
-        param
-        (KorePattern
-            Domain.Builtin
-            Variable
-            (Valid (Variable Object) Object)
-        )
-        Symbol
-        Attribute.Axiom
+    => VerifiedModule Symbol Attribute.Axiom
     -> m ()
 declareSorts indexedModule = do
     -- TODO: Filter out meta sorts like '#Char'
@@ -184,8 +174,7 @@ declareSorts indexedModule = do
             addToMap axiom _ = error
                 ("Unexpected no-junk axiom for sort variable: " ++ show axiom)
 
-        sortDeclarations
-            :: [(Attribute.Sort, SentenceSort Object VerifiedKorePattern)]
+        sortDeclarations :: [(Attribute.Sort, Verified.SentenceSort)]
         sortDeclarations =
             Map.elems (recursiveIndexedModuleSortDescriptions indexedModule)
 
@@ -302,15 +291,7 @@ declareSortsWithNoJunkAxioms sorts =
         return (encodeName (constrName <> pack (show index)), translatedSort)
 
 parseNoJunkAxioms
-    :: IndexedModule
-        param
-        (KorePattern
-            Domain.Builtin
-            Variable
-            (Valid (Variable Object) Object)
-        )
-        Symbol
-        Attribute.Axiom
+    :: VerifiedModule Symbol Attribute.Axiom
     -> [SMTDataType]
 parseNoJunkAxioms indexedModule =
     filter (\ SMTDataType{constructors} -> not (null constructors))
@@ -319,9 +300,7 @@ parseNoJunkAxioms indexedModule =
         (recursiveIndexedModuleAxioms indexedModule)
 
 parseSMTDataType
-    ::  ( Attribute.Axiom
-        , SentenceAxiom param VerifiedKorePattern
-        )
+    :: (Attribute.Axiom, Verified.SentenceAxiom)
     -> Maybe SMTDataType
 parseSMTDataType (attributes, SentenceAxiom {sentenceAxiomPattern})
   | Axiom.Constructor.isConstructor (Attribute.constructor attributes) =

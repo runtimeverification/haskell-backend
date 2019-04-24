@@ -8,10 +8,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertBool, assertEqual, assertFailure, testCase )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
 
+import Test.Kore
 import Test.Tasty.HUnit.Extensions
 
 test_withSort :: TestTree
@@ -74,8 +75,8 @@ test_withSort =
         ]
   where
     assertSortedStub
-        :: SortedPattern Meta Domain.Builtin Variable CommonKorePattern
-        -> PatternStub Meta Domain.Builtin Variable CommonKorePattern
+        :: SortedPattern Meta Domain.Builtin Variable ParsedPattern
+        -> PatternStub Meta Domain.Builtin Variable ParsedPattern
         -> IO ()
     assertSortedStub expectedSorted stub =
         case stub of

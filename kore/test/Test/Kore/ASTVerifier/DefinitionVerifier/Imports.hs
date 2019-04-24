@@ -8,13 +8,14 @@ import Test.Tasty
 import GHC.Stack
        ( HasCallStack )
 
-import Kore.AST.Kore
-import Kore.AST.Sentence
-import Kore.AST.Valid
-import Kore.Error
-import Kore.Implicit.ImplicitSorts
-import Kore.IndexedModule.Error
-       ( noSort )
+import           Kore.AST.Pure
+import           Kore.AST.Sentence
+import           Kore.AST.Valid
+import           Kore.Error
+import           Kore.Implicit.ImplicitSorts
+import           Kore.IndexedModule.Error
+                 ( noSort )
+import qualified Kore.Verified.Sentence as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -322,7 +323,7 @@ sortVisibilityTests =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: VerifiedPureSentenceSort Object)
+        :: Verified.SentenceSort)
     anotherSort = SortActualSort SortActual
         { sortActualName = testId "sort3"
         , sortActualSorts = []
@@ -333,7 +334,7 @@ sortVisibilityTests =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: VerifiedPureSentenceSort Object)
+        :: Verified.SentenceSort)
     topSortPattern = mkTop sort
     metaTopSortPattern = mkTop charMetaSort
     sortReferenceInSort =
@@ -356,7 +357,7 @@ sortVisibilityTests =
                 , sentenceSortParameters = [SortVariable (testId "x")]
                 , sentenceSortAttributes = Attributes []
                 }
-            :: VerifiedPureSentenceSort Object)
+            :: Verified.SentenceSort)
         ]
     sortReferenceInTopPatternSentence =
         SentenceAxiomSentence
@@ -430,7 +431,7 @@ sortVisibilityTests =
                 , sentenceSymbolResultSort = sort
                 , sentenceSymbolAttributes = Attributes []
                 }
-            :: VerifiedPureSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
     sortReferenceInSentenceSymbolSortsSentence =
         asSentence
             (SentenceSymbol
@@ -442,7 +443,7 @@ sortVisibilityTests =
                 , sentenceSymbolResultSort = anotherSort
                 , sentenceSymbolAttributes = Attributes []
                 }
-            :: VerifiedPureSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
     sortReferenceInSentenceSymbolSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSentenceAliasResultSortSentence =
@@ -467,7 +468,7 @@ sortVisibilityTests =
                     mkTop sort
                 , sentenceAliasAttributes = Attributes []
                 }
-            :: VerifiedPureSentenceAlias Object)
+            :: Verified.SentenceAlias)
     sortReferenceInSentenceAliasSortsSentence =
         asSentence
             (SentenceAlias
@@ -496,7 +497,7 @@ sortVisibilityTests =
                     mkTop anotherSort
                 , sentenceAliasAttributes = Attributes []
                 }
-            :: VerifiedPureSentenceAlias Object)
+            :: Verified.SentenceAlias)
     sortReferenceInSentenceAliasSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSymbolOrAliasSentence =
@@ -526,7 +527,7 @@ sortVisibilityTests =
                     SortVariableSort (SortVariable (testId "sv1"))
                 , sentenceSymbolAttributes = Attributes []
                 }
-            :: VerifiedPureSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
         ]
 
 symbolVisibilityTests :: [TestTree]
@@ -628,7 +629,7 @@ symbolVisibilityTests =
                 SortVariableSort (SortVariable (testId "sv1"))
             , sentenceSymbolAttributes = Attributes []
             }
-        :: VerifiedPureSentenceSymbol Object)
+        :: Verified.SentenceSymbol)
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
     metaSymbolPattern =
         mkApp
@@ -649,7 +650,7 @@ symbolVisibilityTests =
                 SortVariableSort (SortVariable (testId "#sv1"))
             , sentenceSymbolAttributes = Attributes []
             }
-        :: VerifiedPureSentenceSymbol Meta)
+        :: Verified.SentenceSymbol)
     symbolReferenceInAxiomSentence =
         SentenceAxiomSentence
             SentenceAxiom
@@ -725,7 +726,7 @@ symbolVisibilityTests =
                     SortVariableSort (SortVariable (testId "sv1"))
                 , sentenceSymbolAttributes = Attributes []
                 }
-            :: VerifiedPureSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
         : defaultSymbolSupportSentences
 
 aliasVisibilityTests :: [TestTree]
@@ -935,7 +936,7 @@ aliasVisibilityTests =
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAliasOrAliasSupportSentences
-        :: [VerifiedPureSentence Object]
+        :: [Verified.Sentence]
     aliasReferenceInAliasOrAliasSupportSentences =
         let aliasConstructor :: Id Object
             aliasConstructor = testId "alias2" :: Id Object
@@ -981,18 +982,18 @@ defaultSort = SortActualSort SortActual
     , sortActualSorts = []
     }
 
-defaultSortDeclaration :: VerifiedPureSentence Object
+defaultSortDeclaration :: Verified.Sentence
 defaultSortDeclaration = asSentence
     (SentenceSort
         { sentenceSortName = testId "sort1"
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes []
         }
-    :: VerifiedPureSentenceSort Object)
+    :: Verified.SentenceSort)
 
-newtype DeclaringSentence = DeclaringSentence (VerifiedPureSentence Object)
-newtype UsingSentence = UsingSentence (VerifiedPureSentence Object)
-newtype SupportingSentences = SupportingSentences [VerifiedPureSentence Object]
+newtype DeclaringSentence = DeclaringSentence Verified.Sentence
+newtype UsingSentence = UsingSentence Verified.Sentence
+newtype SupportingSentences = SupportingSentences [Verified.Sentence]
 
 nameReferenceTests
     :: HasCallStack
@@ -1280,7 +1281,7 @@ nameDuplicationTests =
                         , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
                         }
-                    :: VerifiedPureSentenceSort Object)
+                    :: Verified.SentenceSort)
                 ]
             , moduleAttributes = Attributes []
             }
@@ -1299,7 +1300,7 @@ nameDuplicationTests =
                             SortVariableSort (SortVariable (testId "sv1"))
                         , sentenceSymbolAttributes = Attributes []
                         }
-                    :: VerifiedPureSentenceSymbol Object)
+                    :: Verified.SentenceSymbol)
                 ]
             , moduleAttributes = Attributes []
             }
@@ -1337,7 +1338,11 @@ nameDuplicationTests =
             }
 
 duplicatedNameFailureTest
-    :: String -> String -> VerifiedPureModule Object -> VerifiedPureModule Object -> TestTree
+    :: String
+    -> String
+    -> Module Verified.Sentence
+    -> Module Verified.Sentence
+    -> TestTree
 duplicatedNameFailureTest message duplicatedName module1 module2 =
     expectFailureWithError
         message

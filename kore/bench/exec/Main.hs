@@ -13,7 +13,6 @@ import qualified Data.Set as Set
 import           Numeric.Natural
                  ( Natural )
 
-import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( ModuleName (..) )
@@ -153,7 +152,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     $ Map.lookup mainModuleName verifiedModules
             indexedModule =
                 mapIndexedModulePatterns
-                    Kore.eraseAnnotations
+                    eraseAnnotations
                     verifiedModule
         pat <- parseProgram
         let

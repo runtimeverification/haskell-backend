@@ -5,11 +5,12 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables
 import Test.Tasty
        ( TestTree )
 
-import Kore.AST.Kore
-import Kore.AST.Sentence
-import Kore.AST.Valid
-import Kore.Error
-import Kore.Implicit.ImplicitSorts
+import           Kore.AST.Pure
+import           Kore.AST.Sentence
+import           Kore.AST.Valid
+import           Kore.Error
+import           Kore.Implicit.ImplicitSorts
+import qualified Kore.Verified.Sentence as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -97,7 +98,7 @@ test_uniqueSortVariables =
                     (SortName "s")
                     []
                     topS
-                    :: VerifiedPureSentenceAlias Object
+                    :: Verified.SentenceAlias
                 )
             , simpleSortSentence (SortName "s")
             ]
@@ -202,7 +203,7 @@ test_uniqueSortVariables =
             [ asSentence
                 (symbolSentenceWithSortParameters
                     (SymbolName "a") (SortName "s") []
-                :: VerifiedPureSentenceSymbol Object
+                :: Verified.SentenceSymbol
                 )
             , simpleSortSentence (SortName "s")
             ]

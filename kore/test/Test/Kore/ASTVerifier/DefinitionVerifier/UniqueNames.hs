@@ -7,7 +7,7 @@ import Test.Tasty
 
 import qualified Data.Text as Text
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.Error
 import Kore.Implicit.ImplicitSorts

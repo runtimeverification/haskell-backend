@@ -11,17 +11,9 @@ module Kore.Attribute.Idem
     , idemId, idemSymbol, idemAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | @Idem@ represents the @idem@ attribute for axioms.
  -}
@@ -46,21 +38,16 @@ idemSymbol =
         }
 
 -- | Kore pattern representing the @idem@ attribute.
-idemAttribute :: CommonKorePattern
-idemAttribute =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = idemSymbol
-            , applicationChildren = []
-            }
+idemAttribute :: AttributePattern
+idemAttribute = attributePattern_ idemSymbol
 
 instance ParseAttributes Idem where
     parseAttribute =
-        withApplication $ \params args Idem { isIdem } -> do
+        withApplication' $ \params args Idem { isIdem } -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isIdem failDuplicate
+            Monad.when isIdem failDuplicate'
             return Idem { isIdem = True }
       where
-        withApplication = Parser.withApplication idemId
-        failDuplicate = Parser.failDuplicate idemId
+        withApplication' = Parser.withApplication idemId
+        failDuplicate' = Parser.failDuplicate idemId

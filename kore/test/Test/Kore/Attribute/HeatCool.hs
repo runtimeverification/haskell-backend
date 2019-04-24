@@ -3,7 +3,7 @@ module Test.Kore.Attribute.HeatCool where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.Attribute.HeatCool
 
 import Test.Kore.Attribute.Parser
@@ -37,11 +37,11 @@ test_heat_arguments =
         $ parseHeatCool $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = heatSymbol
                 , applicationChildren =
-                    [ (asCommonKorePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -53,7 +53,7 @@ test_heat_parameters =
         $ parseHeatCool $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
@@ -90,11 +90,11 @@ test_cool_arguments =
         $ parseHeatCool $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = coolSymbol
                 , applicationChildren =
-                    [ (asCommonKorePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -106,7 +106,7 @@ test_cool_parameters =
         $ parseHeatCool $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

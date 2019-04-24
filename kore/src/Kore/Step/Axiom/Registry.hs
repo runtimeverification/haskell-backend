@@ -50,6 +50,7 @@ import           Kore.Step.Rule
                  verifiedKoreSentenceToAxiomPattern )
 import qualified Kore.Step.Rule
                  ( RulePattern (..) )
+import qualified Kore.Verified.Sentence as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
@@ -82,7 +83,7 @@ extractEqualityAxioms level =
     -- not a function axiom.
     extractSentenceAxiom
         :: Map (AxiomIdentifier level) [EqualityRule level Variable]
-        -> (attrs, VerifiedPureSentenceAxiom Object)
+        -> (attrs, Verified.SentenceAxiom)
         -> Map (AxiomIdentifier level) [EqualityRule level Variable]
     extractSentenceAxiom axioms (_, sentence) =
         let

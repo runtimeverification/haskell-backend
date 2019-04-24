@@ -18,19 +18,16 @@ module Kore.Attribute.Sort
     , lensConcat
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
-       ( Default (..) )
-import GHC.Generics
-       ( Generic )
+import qualified Control.Monad as Monad
 
 import qualified Control.Lens.TH.Rules as Lens
-import           Kore.Attribute.Hook.Hook
+import           Kore.Attribute.Hook
+import           Kore.Attribute.Parser hiding
+                 ( Sort )
 import           Kore.Attribute.Smtlib.Smtlib
-import           Kore.Attribute.Sort.Concat.Concat
-import           Kore.Attribute.Sort.Element.Element
-import           Kore.Attribute.Sort.Unit.Unit
+import           Kore.Attribute.Sort.Concat
+import           Kore.Attribute.Sort.Element
+import           Kore.Attribute.Sort.Unit
 
 data Sort =
     Sort
@@ -64,3 +61,11 @@ defaultSortAttributes =
 -- | See also: 'defaultSortAttributes'
 instance Default Sort where
     def = defaultSortAttributes
+
+instance ParseAttributes Sort where
+    parseAttribute attr =
+        lensHook (parseAttribute attr)
+        Monad.>=> lensSmtlib (parseAttribute attr)
+        Monad.>=> lensUnit (parseAttribute attr)
+        Monad.>=> lensElement (parseAttribute attr)
+        Monad.>=> lensConcat (parseAttribute attr)

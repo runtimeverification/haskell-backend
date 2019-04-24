@@ -16,7 +16,7 @@ import qualified Data.Map as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
@@ -25,6 +25,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Unparser
+import qualified Kore.Verified.Sentence as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}
@@ -48,7 +49,7 @@ verifyModule
     :: AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
-    -> Either (Error VerifyError) (VerifiedPureModule Object)
+    -> Either (Error VerifyError) (Module Verified.Sentence)
 verifyModule attributesVerification builtinVerifiers indexedModule =
     withContext
         ("module '" ++ getModuleNameForError (indexedModuleName indexedModule) ++ "'")

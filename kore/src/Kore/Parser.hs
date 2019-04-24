@@ -28,6 +28,7 @@ module Kore.Parser
     , koreParser
     , korePatternParser
     , ParsedPattern
+    , Parser.asParsedPattern
     , ParsedDefinition
     ) where
 
@@ -40,7 +41,6 @@ import qualified Kore.Parser.Parser as Parser
 import           Kore.Parser.ParserUtils
 
 {-|'koreParser' is a parser for Kore.
-Data.Kore.AST.Kore
 The input must contain a full valid Kore defininition and nothing else.
 -}
 koreParser :: Parser ParsedDefinition
@@ -68,7 +68,7 @@ parseKoreDefinition = parseOnly koreParser
 
 {- | Parse a string representing a Kore pattern.
 
-@parseKorePattern@ returns a 'CommonKorePattern' upon success, or an parse error
+@parseKorePattern@ returns a 'ParsedPattern' upon success, or an parse error
 message otherwise. The input must contain a valid Kore pattern and nothing else.
 
  -}

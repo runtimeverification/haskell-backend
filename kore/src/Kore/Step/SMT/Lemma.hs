@@ -24,7 +24,7 @@ import qualified Data.Map.Strict as Map
 import           Data.Reflection
 import qualified Data.Text as Text
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.SmtLemma
@@ -47,15 +47,11 @@ import qualified SMT
 -- It assumes that all symbols in all smt-lemma rules either have been
 -- declared in the smt prelude or they have an smtlib attribute.
 declareSMTLemmas
-    :: forall m param .
-        ( MonadSMT m
+    :: forall m
+    .   ( MonadSMT m
         , Given (MetadataTools Object StepperAttributes)
         )
-    => IndexedModule
-            param
-            (StepPattern Object Variable)
-            StepperAttributes
-            Attribute.Axiom
+    => VerifiedModule StepperAttributes Attribute.Axiom
     -> m ()
 declareSMTLemmas m = SMT.liftSMT $ do
     Sorts.declareSorts m

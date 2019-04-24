@@ -11,8 +11,42 @@ module Kore.Attribute.Sort.Concat
     , concatId, concatSymbol, concatAttribute
     ) where
 
-import Kore.AST.Kore
-import Kore.Attribute.Sort.Concat.Concat
+import Control.DeepSeq
+       ( NFData )
+import Data.Default
+import GHC.Generics
+       ( Generic )
+
+import Kore.Attribute.Parser
+
+-- | @Concat@ represents the @concat@ attribute for sorts.
+newtype Concat = Concat { getConcat :: Maybe (SymbolOrAlias Object) }
+    deriving (Generic, Eq, Ord, Show)
+
+instance Semigroup Concat where
+    (<>) a@(Concat (Just _)) _ = a
+    (<>) _                     b = b
+
+instance Monoid Concat where
+    mempty = Concat { getConcat = Nothing }
+
+instance Default Concat where
+    def = mempty
+
+instance NFData Concat
+
+instance ParseAttributes Concat where
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Concat { getConcat }
+          | Just _ <- getConcat = failDuplicate'
+          | otherwise = do
+            getZeroParams params
+            arg <- getOneArgument args
+            symbol <- getSymbolOrAlias arg
+            return Concat { getConcat = Just symbol }
+        withApplication' = withApplication concatId
+        failDuplicate' = failDuplicate concatId
 
 -- | Kore identifier representing the @concat@ attribute symbol.
 concatId :: Id Object
@@ -27,18 +61,6 @@ concatSymbol =
         }
 
 -- | Kore pattern representing the @concat@ attribute.
-concatAttribute
-    :: SymbolOrAlias Object
-    -> CommonKorePattern
+concatAttribute :: SymbolOrAlias Object -> AttributePattern
 concatAttribute symbol =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = concatSymbol
-            , applicationChildren =
-                [ (asCommonKorePattern . ApplicationPattern)
-                    Application
-                        { applicationSymbolOrAlias = symbol
-                        , applicationChildren = []
-                        }
-                ]
-            }
+    attributePattern concatSymbol [attributePattern_ symbol]

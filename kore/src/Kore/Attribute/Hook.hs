@@ -12,15 +12,56 @@ module Kore.Attribute.Hook
     , getHookAttribute
     ) where
 
-import Data.Text
-       ( Text )
+import qualified Control.Monad as Monad
+import           Data.Hashable
+                 ( Hashable )
+import qualified Data.Maybe as Maybe
+import           Data.Text
+                 ( Text )
 
-import           Kore.AST.Kore
-import           Kore.AST.Sentence
-                 ( Attributes )
-import           Kore.Attribute.Hook.Hook
-import qualified Kore.Attribute.Parser as Parser
-import           Kore.Error
+import Kore.Attribute.Parser as Parser
+import Kore.Error
+
+newtype Hook = Hook { getHook :: Maybe Text }
+  deriving (Eq, Generic, Ord, Read, Show)
+
+instance Default Hook where
+    def = emptyHook
+
+instance Hashable Hook
+
+instance NFData Hook
+
+{- | Parse the @hook@ Kore attribute, if present.
+
+  It is a parse error if the @hook@ attribute is not given exactly one literal
+  string argument.
+
+  See also: 'hookAttribute'
+
+ -}
+instance ParseAttributes Hook where
+    parseAttribute =
+        withApplication' $ \params args (Hook hook) -> do
+            getZeroParams params
+            arg <- getOneArgument args
+            StringLiteral name <- getStringLiteral arg
+            Monad.unless (Maybe.isNothing hook) failDuplicate'
+            return Hook { getHook = Just name }
+      where
+        withApplication' = withApplication hookId
+        failDuplicate' = failDuplicate hookId
+
+{- | The missing @hook@ attribute.
+
+ -}
+emptyHook :: Hook
+emptyHook = Hook Nothing
+
+{- | Kore identifier representing a @hook@ attribute symbol.
+ -}
+hookId :: Id Object
+hookId = "hook"
 
 {- | Kore symbol representing the head of a @hook@ attribute.
 
@@ -42,15 +83,15 @@ function.
 
  -}
 hookAttribute :: Text  -- ^ hooked function name
-              -> CommonKorePattern
+              -> AttributePattern
 hookAttribute builtin =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = hookSymbol
             , applicationChildren = [lit]
             }
   where
-    lit = (asCommonKorePattern . StringLiteralPattern) (StringLiteral builtin)
+    lit = (asAttributePattern . StringLiteralPattern) (StringLiteral builtin)
 
 {- | Look up a required @hook{}()@ attribute from the given attributes.
 

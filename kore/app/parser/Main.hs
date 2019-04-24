@@ -13,8 +13,6 @@ import           Options.Applicative
                  ( InfoMod, Parser, argument, fullDesc, header, help, long,
                  metavar, progDesc, str, strOption, value )
 
-import           Kore.AST.Kore
-                 ( CommonKorePattern )
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
                  ( prettyPrintToString )
@@ -29,8 +27,8 @@ import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import           Kore.Parser.Parser
-                 ( parseKoreDefinition, parseKorePattern )
+import           Kore.Parser
+                 ( ParsedPattern, parseKoreDefinition, parseKorePattern )
 
 import GlobalMain
 
@@ -134,7 +132,7 @@ mainDefinitionParse = mainParse parseKoreDefinition
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
-mainPatternParse :: String -> IO CommonKorePattern
+mainPatternParse :: String -> IO ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
 -- | IO action verifies well-formedness of Kore definition and prints

@@ -39,8 +39,7 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Kore hiding
-                 ( freeVariables )
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid hiding
                  ( freeVariables )
@@ -58,6 +57,7 @@ import qualified Kore.Step.Pattern as Pattern
 import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
+import qualified Kore.Verified.Sentence as Verified
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -184,7 +184,7 @@ extractRewriteAxioms level idxMod =
 
 extractRewriteAxiomFrom
     :: Object
-    -> SentenceAxiom (SortVariable Object) VerifiedKorePattern
+    -> Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (RewriteRule Object Variable)
 extractRewriteAxiomFrom level sentence =
@@ -207,7 +207,7 @@ extractOnePathClaims idxMod =
     $ (indexedModuleClaims idxMod)
 
 extractOnePathClaimFrom
-    :: SentenceAxiom (SortVariable Object) VerifiedKorePattern
+    :: Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (OnePathRule Object Variable)
 extractOnePathClaimFrom sentence =
@@ -230,7 +230,7 @@ extractAllPathClaims idxMod =
     (indexedModuleClaims idxMod)
 
 extractAllPathClaimFrom
-    :: SentenceAxiom (SortVariable Object) VerifiedKorePattern
+    :: Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (AllPathRule Object Variable)
 extractAllPathClaimFrom sentence =
@@ -244,7 +244,7 @@ extractAllPathClaimFrom sentence =
 -- a given 'KoreSentence'.
 verifiedKoreSentenceToAxiomPattern
     :: Object
-    -> VerifiedPureSentence Object
+    -> Verified.Sentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
 verifiedKoreSentenceToAxiomPattern = sentenceToAxiomPattern
 
@@ -252,13 +252,13 @@ verifiedKoreSentenceToAxiomPattern = sentenceToAxiomPattern
 -- a given 'KoreSentence'.
 koreSentenceToAxiomPattern
     :: Object
-    -> VerifiedPureSentence Object
+    -> Verified.Sentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
 koreSentenceToAxiomPattern = sentenceToAxiomPattern
 
 sentenceToAxiomPattern
     :: Object
-    -> Sentence Object (SortVariable Object) VerifiedKorePattern
+    -> Verified.Sentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
 sentenceToAxiomPattern
     _
@@ -338,7 +338,7 @@ mkRewriteAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
-    -> VerifiedPureSentence Object
+    -> Verified.Sentence
 mkRewriteAxiom lhs rhs requires =
     (SentenceAxiomSentence . mkAxiom_)
         (mkRewrites
@@ -357,7 +357,7 @@ mkEqualityAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
-    -> VerifiedPureSentence Object
+    -> Verified.Sentence
 mkEqualityAxiom lhs rhs requires =
     SentenceAxiomSentence
     $ mkAxiom [sortVariableR]

@@ -11,20 +11,12 @@ module Kore.Attribute.ProductionID
     , productionIDId, productionIDSymbol, productionIDAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
 import qualified Data.Maybe as Maybe
 import           Data.Text
                  ( Text )
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | @ProductionID@ represents the @productionID@ attribute.
  -}
@@ -49,25 +41,25 @@ productionIDSymbol =
         }
 
 -- | Kore pattern representing a @productionID@ attribute.
-productionIDAttribute :: Text -> CommonKorePattern
+productionIDAttribute :: Text -> AttributePattern
 productionIDAttribute name =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = productionIDSymbol
             , applicationChildren =
-                [ (asCommonKorePattern . StringLiteralPattern)
+                [ (asAttributePattern . StringLiteralPattern)
                     (StringLiteral name)
                 ]
             }
 
 instance ParseAttributes ProductionID where
     parseAttribute =
-        withApplication $ \params args (ProductionID productionID) -> do
+        withApplication' $ \params args (ProductionID productionID) -> do
             Parser.getZeroParams params
             arg <- Parser.getOneArgument args
             StringLiteral name <- Parser.getStringLiteral arg
-            Monad.unless (Maybe.isNothing productionID) failDuplicate
+            Monad.unless (Maybe.isNothing productionID) failDuplicate'
             return ProductionID { getProductionID = Just name }
       where
-        withApplication = Parser.withApplication productionIDId
-        failDuplicate = Parser.failDuplicate productionIDId
+        withApplication' = Parser.withApplication productionIDId
+        failDuplicate' = Parser.failDuplicate productionIDId

@@ -23,7 +23,7 @@ import           Data.Text
 import           System.Exit
                  ( ExitCode (..) )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -39,7 +39,6 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step
@@ -53,6 +52,7 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Verified.Sentence as Verified
 import qualified SMT
 
 import Test.Kore
@@ -193,7 +193,7 @@ extractSearchResults =
         _ -> Nothing
 
 verifiedMyModule
-    :: VerifiedPureModule Object
+    :: Module Verified.Sentence
     -> VerifiedModule StepperAttributes Attribute.Axiom
 verifiedMyModule module_ = indexedModule
   where
@@ -217,7 +217,7 @@ mySort = SortActualSort SortActual
     }
 
 -- | sort MySort{} []
-mySortDecl :: VerifiedPureSentenceSort Object
+mySortDecl :: Verified.SentenceSort
 mySortDecl = SentenceSort
     { sentenceSortName = mySortName
     , sentenceSortParameters = []
@@ -225,7 +225,7 @@ mySortDecl = SentenceSort
     }
 
 -- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
-constructorDecl :: Text -> VerifiedPureSentenceSymbol Object
+constructorDecl :: Text -> Verified.SentenceSymbol
 constructorDecl name =
     (mkSymbol_ (testId name) [] mySort)
         { sentenceSymbolAttributes = Attributes
@@ -242,9 +242,7 @@ constructorDecl name =
 --              V:MySort{},
 --              a{}()))
 --  [functional{}()]
-functionalAxiom
-    :: Text
-    -> VerifiedPureSentence Object
+functionalAxiom :: Text -> Verified.Sentence
 functionalAxiom name =
     SentenceAxiomSentence
         (mkAxiom
@@ -268,7 +266,7 @@ functionalAxiom name =
 
 {- | Rewrite the left-hand constant into the right-hand constant.
  -}
-rewriteAxiom :: Text -> Text -> VerifiedPureSentence Object
+rewriteAxiom :: Text -> Text -> Verified.Sentence
 rewriteAxiom lhsName rhsName =
     mkRewriteAxiom
         (applyToNoArgs mySort lhsName)
@@ -344,7 +342,7 @@ test_execGetExitCode =
 
     myIntSort = SortActualSort $ SortActual myIntSortId []
 
-    intSortDecl :: VerifiedPureSentenceSort Object
+    intSortDecl :: Verified.SentenceSort
     intSortDecl = SentenceSort
         { sentenceSortName = myIntSortId
         , sentenceSortParameters = []
@@ -353,7 +351,7 @@ test_execGetExitCode =
 
     getExitCodeId = testId "LblgetExitCode"
 
-    getExitCodeDecl :: VerifiedPureSentenceSymbol Object
+    getExitCodeDecl :: Verified.SentenceSymbol
     getExitCodeDecl =
         ( mkSymbol_ getExitCodeId [myIntSort] myIntSort )
             { sentenceSymbolAttributes = Attributes [functionalAttribute] }

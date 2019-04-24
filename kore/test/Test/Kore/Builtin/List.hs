@@ -12,7 +12,6 @@ import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
 
-import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook

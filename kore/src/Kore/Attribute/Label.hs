@@ -11,18 +11,11 @@ module Kore.Attribute.Label
     , labelId, labelSymbol, labelAttribute
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
 import Data.Text
        ( Text )
-import GHC.Generics
-       ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.AST.Common as Common
+import Kore.Attribute.Parser as Parser
 
 -- | @Label@ represents the @overload@ attribute for symbols.
 newtype Label = Label { unLabel :: Maybe Text }
@@ -54,28 +47,20 @@ labelSymbol =
         }
 
 -- | Kore pattern representing the @overload@ attribute.
-labelAttribute
-    :: Text
-    -> CommonKorePattern
+labelAttribute :: Text -> AttributePattern
 labelAttribute label =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = labelSymbol
-            , applicationChildren =
-                [ (asCommonKorePattern . StringLiteralPattern)
-                    (StringLiteral label)
-                ]
-            }
+    attributePattern labelSymbol
+        [ (asAttributePattern . StringLiteralPattern) (StringLiteral label) ]
 
 instance ParseAttributes Label where
-    parseAttribute = withApplication parseApplication
+    parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Label { unLabel }
-          | Just _ <- unLabel = failDuplicate
+          | Just _ <- unLabel = failDuplicate'
           | otherwise = do
             Parser.getZeroParams params
             arg1 <- Parser.getOneArgument args
             str <- Parser.getStringLiteral arg1
-            return Label { unLabel = Just (getStringLiteral str) }
-        withApplication = Parser.withApplication labelId
-        failDuplicate = Parser.failDuplicate labelId
+            return Label { unLabel = Just (Common.getStringLiteral str) }
+        withApplication' = Parser.withApplication labelId
+        failDuplicate' = Parser.failDuplicate labelId

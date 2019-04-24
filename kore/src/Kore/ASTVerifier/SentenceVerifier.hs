@@ -21,7 +21,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Error
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
@@ -32,8 +32,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
-import           Kore.Step.Pattern
-                 ( StepPattern )
+import qualified Kore.Verified.Sentence as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.
@@ -106,7 +105,7 @@ verifySentences
     -> AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
     -> [ParsedSentence]
-    -> Either (Error VerifyError) [VerifiedPureSentence Object]
+    -> Either (Error VerifyError) [Verified.Sentence]
 verifySentences indexedModule attributesVerification builtinVerifiers =
     traverse
         (verifySentence
@@ -120,7 +119,7 @@ verifySentence
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
     -> ParsedSentence
-    -> Either (Error VerifyError) (VerifiedPureSentence Object)
+    -> Either (Error VerifyError) Verified.Sentence
 verifySentence builtinVerifiers indexedModule attributesVerification =
     verifyObjectSentence
         builtinVerifiers
@@ -131,8 +130,8 @@ verifyObjectSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
-    -> Sentence Object (SortVariable Object) CommonKorePattern
-    -> Either (Error VerifyError) (VerifiedPureSentence Object)
+    -> ParsedSentence
+    -> Either (Error VerifyError) Verified.Sentence
 verifyObjectSentence
     builtinVerifiers
     indexedModule
@@ -141,10 +140,7 @@ verifyObjectSentence
   =
     withSentenceContext sentence verifyObjectSentence0
   where
-    verifyObjectSentence0
-        :: Either
-            (Error VerifyError)
-            (Sentence Object (SortVariable Object) (StepPattern Object Variable))
+    verifyObjectSentence0 :: Either (Error VerifyError) Verified.Sentence
     verifyObjectSentence0 = do
         verified <-
             case sentence of
@@ -206,7 +202,7 @@ verifyObjectSentence
 
 verifySentenceAttributes
     :: AttributesVerification declAtts axiomAtts
-    -> Sentence level (SortVariable level) CommonKorePattern
+    -> ParsedSentence
     -> Either (Error VerifyError) VerifySuccess
 verifySentenceAttributes attributesVerification sentence =
     do
@@ -221,8 +217,8 @@ verifyHookSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
-    -> SentenceHook CommonKorePattern
-    -> Either (Error VerifyError) (SentenceHook VerifiedKorePattern)
+    -> ParsedSentenceHook
+    -> Either (Error VerifyError) Verified.SentenceHook
 verifyHookSentence
     builtinVerifiers
     indexedModule
@@ -266,10 +262,9 @@ verifyHookSentence
     findSort = findIndexedSort indexedModule
 
 verifySymbolSentence
-    :: (MetaOrObject level)
-    => KoreIndexedModule declAtts axiomAtts
+    :: KoreIndexedModule declAtts axiomAtts
     -> ParsedSentenceSymbol
-    -> Either (Error VerifyError) (VerifiedPureSentenceSymbol level)
+    -> Either (Error VerifyError) Verified.SentenceSymbol
 verifySymbolSentence indexedModule sentence =
     do
         variables <- buildDeclaredSortVariables sortParams
@@ -290,7 +285,7 @@ verifyAliasSentence
     => Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> ParsedSentenceAlias
-    -> Either (Error VerifyError) (VerifiedPureSentenceAlias level)
+    -> Either (Error VerifyError) Verified.SentenceAlias
 verifyAliasSentence builtinVerifiers indexedModule sentence =
     do
         variables <- buildDeclaredSortVariables sortParams
@@ -328,7 +323,7 @@ verifyAxiomSentence
     :: ParsedSentenceAxiom
     -> Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
-    -> Either (Error VerifyError) (VerifiedPureSentenceAxiom Object)
+    -> Either (Error VerifyError) Verified.SentenceAxiom
 verifyAxiomSentence axiom builtinVerifiers indexedModule =
     do
         variables <-
@@ -351,7 +346,7 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
 
 verifySortSentence
     :: ParsedSentenceSort
-    -> Either (Error VerifyError) (VerifiedPureSentenceSort Object)
+    -> Either (Error VerifyError) Verified.SentenceSort
 verifySortSentence sentenceSort = do
     _ <- buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
     traverse verifyNoPatterns sentenceSort

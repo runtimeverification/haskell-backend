@@ -11,17 +11,9 @@ module Kore.Attribute.Functional
     , functionalId, functionalSymbol, functionalAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | @Functional@ represents the @functional@ attribute for symbols.
  -}
@@ -52,22 +44,21 @@ functionalSymbol =
         }
 
 -- | Kore pattern representing the @functional@ attribute.
-functionalAttribute :: CommonKorePattern
+functionalAttribute :: AttributePattern
 functionalAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = functionalSymbol
             , applicationChildren = []
             }
 
 instance ParseAttributes Functional where
-    parseAttribute =
-        withApplication parseApplication
+    parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Functional { isDeclaredFunctional } = do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isDeclaredFunctional failDuplicate
+            Monad.when isDeclaredFunctional failDuplicate'
             return Functional { isDeclaredFunctional = True }
-        withApplication = Parser.withApplication functionalId
-        failDuplicate = Parser.failDuplicate functionalId
+        withApplication' = Parser.withApplication functionalId
+        failDuplicate' = Parser.failDuplicate functionalId

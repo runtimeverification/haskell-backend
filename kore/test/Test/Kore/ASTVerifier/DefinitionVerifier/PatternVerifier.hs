@@ -12,7 +12,6 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 
 import           Kore.AST.AstWithLocation
-import           Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -25,6 +24,7 @@ import           Kore.IndexedModule.Error
                  ( noSort )
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
+import qualified Kore.Verified.Sentence as Verified
 
 import           Test.Kore
 import           Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
@@ -682,11 +682,11 @@ test_patternVerifier =
                 , sentenceSymbolAttributes =
                     Attributes []
                 }
-            :: VerifiedPureSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
     intSortName = SortName "Int"
     intSort :: Sort Object
     intSort = simpleSort intSortName
-    intSortSentence :: VerifiedPureSentenceHook Object
+    intSortSentence :: Verified.SentenceHook
     intSortSentence =
         SentenceHookedSort SentenceSort
             { sentenceSortName = testId name
@@ -699,7 +699,7 @@ test_patternVerifier =
     boolSortName = SortName "Int"
     boolSort :: Sort Object
     boolSort = simpleSort boolSortName
-    boolSortSentence :: VerifiedPureSentenceHook Object
+    boolSortSentence :: Verified.SentenceHook
     boolSortSentence =
         SentenceHookedSort SentenceSort
             { sentenceSortName = testId name
@@ -744,7 +744,7 @@ test_verifyBinder =
 
 dummyVariableAndSentences
     :: NamePrefix
-    -> (Variable Object, [VerifiedPureSentence Object])
+    -> (Variable Object, [Verified.Sentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
   where
@@ -761,7 +761,7 @@ successTestsForObjectPattern
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
 successTestsForObjectPattern
@@ -808,7 +808,7 @@ successTestsForMetaPattern
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Meta
     -> VariableOfDeclaredSort Meta
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
 successTestsForMetaPattern
@@ -848,7 +848,7 @@ failureTestsForObjectPattern
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
 failureTestsForObjectPattern
@@ -907,7 +907,7 @@ failureTestsForMetaPattern
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Meta
     -> VariableOfDeclaredSort Meta
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
 failureTestsForMetaPattern
@@ -953,7 +953,7 @@ genericPatternInAllContexts
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort level
     -> VariableOfDeclaredSort level
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
 genericPatternInAllContexts
@@ -1019,7 +1019,7 @@ objectPatternInAllContexts
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
 objectPatternInAllContexts
@@ -1063,7 +1063,7 @@ patternsInAllContexts
     -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort level
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
 patternsInAllContexts
@@ -1106,7 +1106,7 @@ patternsInAllContexts
                 , sentenceSymbolAttributes =
                     Attributes []
                 }
-    aliasSentence :: VerifiedPureSentence Object
+    aliasSentence :: Verified.Sentence
     aliasSentence =
         let aliasConstructor = testId rawAliasName
             aliasParams = [SortVariable (testId rawSortVariableName)]
@@ -1487,7 +1487,7 @@ testsForUnifiedPatternInTopLevelContext
     -> DeclaredSort level
     -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelContext
@@ -1509,7 +1509,7 @@ testsForUnifiedPatternInTopLevelGenericContext
     -> NamePrefix
     -> DeclaredSort level
     -> SortVariablesThatMustBeDeclared level
-    -> [VerifiedPureSentence Object]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext

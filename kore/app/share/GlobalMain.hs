@@ -50,7 +50,7 @@ import           System.Clock
 import           System.IO
                  ( hPutStrLn, stderr )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( ModuleName (..), ParsedDefinition, getModuleNameForError )
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -66,7 +66,8 @@ import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule,
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Parser
-                 ( parseKoreDefinition )
+                 ( ParsedPattern, parseKoreDefinition )
+import qualified Kore.Verified.Pattern as Verified
 import qualified Paths_kore as MetaData
                  ( version )
 
@@ -227,8 +228,8 @@ clockSomethingIO description something = do
 mainPatternVerify
     :: VerifiedModule declAttrs axiomAttrs
     -- ^ Module containing definitions visible in the pattern
-    -> CommonKorePattern -- ^ Parsed pattern to check well-formedness
-    -> IO VerifiedKorePattern
+    -> ParsedPattern -- ^ Parsed pattern to check well-formedness
+    -> IO Verified.Pattern
 mainPatternVerify verifiedModule patt = do
     verifyResult <-
         clockSomething "Verifying the pattern"

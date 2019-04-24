@@ -28,9 +28,9 @@ import           Numeric.Natural
 
 import           Data.Sup
 import qualified Kore.Annotation.Null as Annotation
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
@@ -338,7 +338,7 @@ instance
             [ writeFieldOneLine "patternSort" patternSort valid
             , writeFieldNewLine
                 "freeVariables"
-                Kore.AST.Kore.freeVariables
+                Kore.AST.Valid.freeVariables
                 valid
             ]
 

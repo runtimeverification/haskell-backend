@@ -12,7 +12,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 
 import           Kore.Annotation.Valid
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -28,6 +27,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
+import qualified Kore.Verified.Sentence as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -59,16 +59,16 @@ testSubMainModuleName = ModuleName "TEST-SUB-MAIN-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-strictAttribute :: CommonKorePattern
+strictAttribute :: ParsedPattern
 strictAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asParsedPattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias =
                 groundHead "strict" AstLocationTest :: SymbolOrAlias Object
             , applicationChildren = []
             }
 
-testObjectModule :: Module (VerifiedPureSentence Object)
+testObjectModule :: Module Verified.Sentence
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -85,7 +85,7 @@ testObjectModule =
         , moduleAttributes = Attributes [strictAttribute]
         }
 
-testMetaModule :: Module (VerifiedPureSentence Meta)
+testMetaModule :: Module Verified.Sentence
 testMetaModule =
     Module
         { moduleName = testMetaModuleName
@@ -96,7 +96,7 @@ testMetaModule =
         , moduleAttributes = Attributes []
         }
 
-subMainModule :: VerifiedPureModule Object
+subMainModule :: Module Verified.Sentence
 subMainModule =
     Module
         { moduleName = testSubMainModuleName
@@ -107,7 +107,7 @@ subMainModule =
         , moduleAttributes = Attributes [strictAttribute]
         }
 
-mainModule :: VerifiedPureModule Object
+mainModule :: Module Verified.Sentence
 mainModule =
     Module
         { moduleName = testMainModuleName
@@ -119,7 +119,7 @@ mainModule =
         }
 
 
-testDefinition :: VerifiedPureDefinition Object
+testDefinition :: Definition Verified.Sentence
 testDefinition =
     Definition
         { definitionAttributes = Attributes [strictAttribute]

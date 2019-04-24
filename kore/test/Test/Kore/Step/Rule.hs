@@ -17,12 +17,10 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (..), verifyAndIndexDefinition )
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -36,6 +34,7 @@ import           Kore.Step.Pattern hiding
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
+import qualified Kore.Verified.Sentence as Verified
 
 import           Test.Kore
                  ( testId )
@@ -67,9 +66,8 @@ axiomPatternsUnitTests =
                 )
             )
         ,   let
-                axiom1 :: VerifiedPureSentence Object
+                axiom1, axiom2 :: Verified.Sentence
                 axiom1 = mkRewriteAxiom varI1 varI2 Nothing
-                axiom2 :: VerifiedPureSentence Object
                 axiom2 =
                     (SentenceAxiomSentence . mkAxiom_)
                         (applyInj sortKItem
@@ -243,7 +241,7 @@ sortAInt = simpleSort (SortName "AInt")
 sortAExp = simpleSort (SortName "AExp")
 sortBExp = simpleSort (SortName "BExp")
 
-sortSentenceAInt :: VerifiedPureSentence Object
+sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
     (asSentence sentence)
   where
@@ -255,7 +253,7 @@ sortSentenceAInt =
             , sentenceSortAttributes = Attributes []
             }
 
-sortSentenceKItem :: VerifiedPureSentence Object
+sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
     (asSentence sentence)
   where

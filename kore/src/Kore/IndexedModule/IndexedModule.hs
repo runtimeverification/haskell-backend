@@ -59,7 +59,7 @@ import           GHC.Generics
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Error
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
@@ -69,9 +69,13 @@ import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Subsort
 import           Kore.Error
+import           Kore.Parser
+                 ( ParsedPattern )
+import qualified Kore.Verified.Pattern as Verified
+import qualified Kore.Verified.Sentence as Verified
 
 type SortDescription level dom =
-    SentenceSort level (KorePattern dom Variable (Annotation.Null Object))
+    SentenceSort level (PurePattern level dom Variable (Annotation.Null level))
 
 data IndexModuleError
 
@@ -242,10 +246,9 @@ mapIndexedModulePatterns mapping indexedModule =
         )
 
 type KoreIndexedModule =
-    IndexedModule (SortVariable Object) CommonKorePattern
+    IndexedModule (SortVariable Object) ParsedPattern
 
-type VerifiedModule =
-    IndexedModule (SortVariable Object) VerifiedKorePattern
+type VerifiedModule = IndexedModule (SortVariable Object) Verified.Pattern
 
 {- | Convert a 'VerifiedModule' back into a 'Module'.
 
@@ -254,7 +257,7 @@ The original module attributes /are/ preserved.
  -}
 toVerifiedPureModule
     :: VerifiedModule declAtts axiomAtts
-    -> VerifiedPureModule Object
+    -> Module Verified.Sentence
 toVerifiedPureModule module' =
     Module
         { moduleName = indexedModuleName module'
@@ -276,7 +279,7 @@ See also: 'toVerifiedPureModule'
 toVerifiedPureDefinition
     :: Foldable t
     => t (VerifiedModule declAtts axiomAtts)
-    -> VerifiedPureDefinition Object
+    -> Definition Verified.Sentence
 toVerifiedPureDefinition idx =
     Definition
         { definitionAttributes = Default.def
@@ -334,7 +337,7 @@ newtype ImplicitIndexedModule param pat declAtts axiomAtts =
     deriving (Show)
 
 type KoreImplicitIndexedModule =
-    ImplicitIndexedModule (SortVariable Object) CommonKorePattern
+    ImplicitIndexedModule (SortVariable Object) ParsedPattern
 
 emptyIndexedModule
     ::  ( Default parsedDeclAttributes

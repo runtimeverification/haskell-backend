@@ -11,7 +11,7 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -29,6 +29,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.Step.Pattern
+import qualified Kore.Verified.Sentence as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -53,7 +54,7 @@ testMetaModuleName = ModuleName "TEST-META-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-testObjectModule :: Module (VerifiedPureSentence Object)
+testObjectModule :: Module Verified.Sentence
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -70,7 +71,7 @@ testObjectModule =
         , moduleAttributes = Attributes []
         }
 
-testMetaModule :: Module (VerifiedPureSentence Meta)
+testMetaModule :: Module Verified.Sentence
 testMetaModule =
     Module
         { moduleName = testMetaModuleName
@@ -78,7 +79,7 @@ testMetaModule =
         , moduleAttributes = Attributes []
         }
 
-mainModule :: VerifiedPureModule Object
+mainModule :: Module Verified.Sentence
 mainModule =
     Module
         { moduleName = testMainModuleName
@@ -228,7 +229,7 @@ testSubsortModule =
           (SentenceAxiom
               { sentenceAxiomParameters = [sortVariable "R"]
               , sentenceAxiomPattern =
-                  asCommonKorePattern $ TopPattern (Top sortVarR)
+                  asParsedPattern $ TopPattern (Top sortVarR)
               , sentenceAxiomAttributes = Attributes
                   [subsortAttribute subSort superSort]
               })

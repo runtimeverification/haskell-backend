@@ -25,7 +25,6 @@ import           Numeric.Natural
 import qualified Kore.AllPath as AllPath
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
@@ -1335,8 +1334,8 @@ instance
             (patternSort actual)
         , EqWrap
             "freeVariables = "
-            (Kore.AST.Kore.freeVariables expected)
-            (Kore.AST.Kore.freeVariables actual)
+            (Kore.Annotation.Valid.freeVariables expected)
+            (Kore.Annotation.Valid.freeVariables actual)
         ]
     structConstructorName _ = "Valid"
 

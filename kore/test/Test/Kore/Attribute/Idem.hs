@@ -3,7 +3,7 @@ module Test.Kore.Attribute.Idem where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.Attribute.Idem
 
 import Test.Kore.Attribute.Parser
@@ -37,11 +37,11 @@ test_arguments =
         $ parseIdem $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = idemSymbol
                 , applicationChildren =
-                    [ (asCommonKorePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -53,7 +53,7 @@ test_parameters =
         $ parseIdem $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

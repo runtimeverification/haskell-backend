@@ -11,17 +11,9 @@ module Kore.Attribute.SortInjection
     , sortInjectionId, sortInjectionSymbol, sortInjectionAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 -- | @SortInjection@ represents the @sortInjection@ attribute for symbols.
 newtype SortInjection = SortInjection { isSortInjection :: Bool }
@@ -51,21 +43,16 @@ sortInjectionSymbol =
         }
 
 -- | Kore pattern representing the @sortInjection@ attribute.
-sortInjectionAttribute :: CommonKorePattern
-sortInjectionAttribute =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = sortInjectionSymbol
-            , applicationChildren = []
-            }
+sortInjectionAttribute :: AttributePattern
+sortInjectionAttribute = attributePattern sortInjectionSymbol []
 
 instance ParseAttributes SortInjection where
     parseAttribute =
-        withApplication $ \params args SortInjection { isSortInjection } -> do
+        withApplication' $ \params args SortInjection { isSortInjection } -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isSortInjection failDuplicate
+            Monad.when isSortInjection failDuplicate'
             return SortInjection { isSortInjection = True }
       where
-        withApplication = Parser.withApplication sortInjectionId
-        failDuplicate = Parser.failDuplicate sortInjectionId
+        withApplication' = Parser.withApplication sortInjectionId
+        failDuplicate' = Parser.failDuplicate sortInjectionId

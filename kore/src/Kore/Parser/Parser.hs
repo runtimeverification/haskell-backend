@@ -48,7 +48,6 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
@@ -60,6 +59,11 @@ import           Kore.Unparser
                  ( unparseToString )
 
 type ParsedPattern = ParsedPurePattern Object Domain.Builtin
+
+asParsedPattern
+    :: (Pattern Object Domain.Builtin Variable) ParsedPattern
+    -> ParsedPattern
+asParsedPattern patternBase = asPurePattern (mempty :< patternBase)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.
@@ -516,16 +520,16 @@ BNF definitions:
     | ⟨meta-head⟩ ‘(’ ⟨pattern-list⟩ ‘)’
 @
 -}
-koreVariableOrTermPatternParser :: Parser CommonKorePattern
+koreVariableOrTermPatternParser :: Parser ParsedPattern
 koreVariableOrTermPatternParser = do
     c <- ParserUtils.peekChar'
     if c == '#'
         then
-            asCommonKorePattern <$> variableOrTermPatternParser
+            asParsedPattern <$> variableOrTermPatternParser
                 korePatternParser
                 Meta
         else
-            asCommonKorePattern <$> variableOrTermPatternParser
+            asParsedPattern <$> variableOrTermPatternParser
                 korePatternParser
                 Object
 
@@ -570,7 +574,7 @@ BNF definitions:
 
 Always starts with @\@.
 -}
-koreMLConstructorParser :: Parser CommonKorePattern
+koreMLConstructorParser :: Parser ParsedPattern
 koreMLConstructorParser = do
     void (Parser.char '\\')
     mlPatternParser
@@ -584,13 +588,13 @@ koreMLConstructorParser = do
         openCurlyBraceParser
         c <- ParserUtils.peekChar'
         if c == '#'
-            then asCommonKorePattern <$>
+            then asParsedPattern <$>
                 mlConstructorRemainderParser
                     korePatternParser
                     builtinDomainParser
                     Meta
                     patternType
-            else asCommonKorePattern <$>
+            else asParsedPattern <$>
                 mlConstructorRemainderParser
                     korePatternParser
                     builtinDomainParser
@@ -767,13 +771,13 @@ BNF definitions:
 Note that the @meta-pattern@ can be a @string@, while the @object-pattern@
 can't.
 -}
-korePatternParser :: Parser CommonKorePattern
+korePatternParser :: Parser ParsedPattern
 korePatternParser = do
     c <- ParserUtils.peekChar'
     case c of
         '\\' -> koreMLConstructorParser
-        '"'  -> asCommonKorePattern . StringLiteralPattern <$> stringLiteralParser
-        '\'' -> asCommonKorePattern . CharLiteralPattern <$> charLiteralParser
+        '"'  -> asParsedPattern . StringLiteralPattern <$> stringLiteralParser
+        '\'' -> asParsedPattern . CharLiteralPattern <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
 
 {-|'inSquareBracketsListParser' parses a @list@ of items delimited by
@@ -982,7 +986,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 aliasSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (SentenceAlias level CommonKorePattern)
+    -> Parser (SentenceAlias level ParsedPattern)
 aliasSentenceRemainderParser x
   = do
     aliasSymbol <- (aliasParser x)
@@ -1025,8 +1029,8 @@ BNF example:
 Always starts with @{@.
 -}
 axiomSentenceRemainderParser
-    ::  (  SentenceAxiom (SortVariable Object) CommonKorePattern
-        -> Sentence Meta (SortVariable Object) CommonKorePattern
+    ::  (  SentenceAxiom (SortVariable Object) ParsedPattern
+        -> Sentence Meta (SortVariable Object) ParsedPattern
         )
     -> Parser ParsedSentence
 axiomSentenceRemainderParser ctor =

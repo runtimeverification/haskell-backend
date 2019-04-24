@@ -18,10 +18,7 @@ import           Data.Default
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | @Comm@ represents the @comm@ attribute for axioms.
  -}
@@ -46,9 +43,9 @@ commSymbol =
         }
 
 -- | Kore pattern representing the @comm@ attribute.
-commAttribute :: CommonKorePattern
+commAttribute :: AttributePattern
 commAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = commSymbol
             , applicationChildren = []
@@ -56,11 +53,11 @@ commAttribute =
 
 instance ParseAttributes Comm where
     parseAttribute =
-        withApplication $ \params args Comm { isComm } -> do
+        withApplication' $ \params args Comm { isComm } -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isComm failDuplicate
+            Monad.when isComm failDuplicate'
             return Comm { isComm = True }
       where
-        withApplication = Parser.withApplication commId
-        failDuplicate = Parser.failDuplicate commId
+        withApplication' = Parser.withApplication commId
+        failDuplicate' = Parser.failDuplicate commId

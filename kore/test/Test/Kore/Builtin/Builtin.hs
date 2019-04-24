@@ -21,7 +21,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -169,7 +168,7 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
 indexedModule =
     makeIndexedModuleAttributesNull
-    $ mapIndexedModulePatterns Kore.eraseAnnotations verifiedModule
+    $ mapIndexedModulePatterns eraseAnnotations verifiedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)

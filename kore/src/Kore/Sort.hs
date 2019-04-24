@@ -22,6 +22,7 @@ module Kore.Sort
     , metaSortsListWithString
     -- * Re-exports
     , module Kore.AST.Identifier
+    , module Kore.AST.MetaOrObject
     ) where
 
 import           Control.DeepSeq
@@ -33,6 +34,7 @@ import           GHC.Generics
                  ( Generic )
 
 import Kore.AST.Identifier
+import Kore.AST.MetaOrObject
 import Kore.Unparser
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and

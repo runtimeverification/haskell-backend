@@ -12,7 +12,7 @@ import           Test.Tasty.Hedgehog
 import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
@@ -39,11 +39,11 @@ test_unparse =
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ asCommonKorePattern (TopPattern Top
+                    [ asParsedPattern (TopPattern Top
                         { topSort = SortVariableSort SortVariable
                             { getSortVariable = testId "#Fm" :: Id Meta }
                         })
-                    , asCommonKorePattern (InPattern In
+                    , asParsedPattern (InPattern In
                         { inOperandSort = SortActualSort SortActual
                             { sortActualName = testId "B" :: Id Object
                             , sortActualSorts = []
@@ -53,13 +53,13 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asCommonKorePattern $ VariablePattern Variable
+                            asParsedPattern $ VariablePattern Variable
                                 { variableName = testId "T" :: Id Object
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
                                 }
-                        , inContainingChild = asCommonKorePattern (StringLiteralPattern
+                        , inContainingChild = asParsedPattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })
                         })
                     ]
@@ -130,7 +130,7 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asCommonKorePattern
+                    [ asParsedPattern
                         ( TopPattern Top
                             { topSort = SortActualSort SortActual
                                 { sortActualName = testId "#CharList" :: Id Meta
@@ -145,11 +145,11 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asCommonKorePattern
+                    [ asParsedPattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
-                    , asCommonKorePattern
+                    , asParsedPattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
@@ -189,7 +189,7 @@ test_parse =
             roundtrip
                 (standaloneGen $ variableGen =<< sortGen)
                 (variableParser Object)
-        , testProperty "CommonKorePattern" $
+        , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $
             roundtrip (standaloneGen attributesGen) attributesParser

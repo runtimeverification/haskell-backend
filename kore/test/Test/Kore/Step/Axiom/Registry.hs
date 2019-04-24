@@ -13,7 +13,6 @@ import           Data.Proxy
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -47,21 +46,19 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import qualified Kore.Verified.Sentence as Verified
 import qualified SMT
 
 import           Test.Kore
-                 ( emptyLogger )
+                 ( asParsedPattern, emptyLogger )
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
-updateAttributes :: Attributes -> VerifiedPureSentence Object -> VerifiedPureSentence Object
+updateAttributes :: Attributes -> Verified.Sentence -> Verified.Sentence
 updateAttributes attrs = updateAttrs
   where
-    updateAttrs
-        :: MetaOrObject level
-        => Sentence level (SortVariable level) (StepPattern level Variable)
-        -> VerifiedPureSentence level
+    updateAttrs :: Verified.Sentence -> Verified.Sentence
     updateAttrs (SentenceSymbolSentence ss) =
         SentenceSymbolSentence
             (ss { sentenceSymbolAttributes = attrs })
@@ -97,7 +94,7 @@ injHead s1 s2 = SymbolOrAlias
     }
 
 
-testDef :: VerifiedPureDefinition Object
+testDef :: Definition Verified.Sentence
 testDef =
     simpleDefinitionFromSentences
         (ModuleName "test")
@@ -204,7 +201,7 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes =
                     Attributes
-                        [ asCommonKorePattern
+                        [ asParsedPattern
                             (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     simplificationSymbol

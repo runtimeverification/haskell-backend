@@ -29,8 +29,7 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Kore
-import qualified Kore.AST.Pure as AST.Pure
+import           Kore.AST.Pure as AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
@@ -46,6 +45,7 @@ import           Kore.Implicit.ImplicitSorts
                  ( predicateSortActual )
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Unparser
+import qualified Kore.Verified.Sentence as Verified
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
@@ -178,7 +178,7 @@ verifyAndIndexDefinitionWithBase
 
     let
         indexVerifiedModules
-            :: [Module (VerifiedPureSentence Object)]
+            :: [Module Verified.Sentence]
             -> Either
                 (Error VerifyError)
                 (Map.Map ModuleName (VerifiedModule declAtts axiomAtts))

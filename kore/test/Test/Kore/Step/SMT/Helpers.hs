@@ -38,10 +38,10 @@ import           Kore.AST.Common as Variable
                  ( Variable (..) )
 import           Kore.AST.Common as SymbolOrAlias
                  ( SymbolOrAlias (..) )
-import           Kore.AST.Kore
-                 ( eraseAnnotations )
 import           Kore.AST.MetaOrObject
                  ( Object )
+import           Kore.AST.Pure
+                 ( eraseAnnotations )
 import           Kore.AST.Sentence
 import qualified Kore.AST.Sentence as SentenceAxiom
                  ( SentenceAxiom (..) )

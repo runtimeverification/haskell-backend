@@ -3,7 +3,7 @@ module Test.Kore.Attribute.Sort.Unit where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.Attribute.Sort.Unit
 
@@ -42,16 +42,16 @@ test_arity =
     $ parseUnit $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = unitSymbol
                 , applicationChildren =
-                    [ (asCommonKorePattern . ApplicationPattern)
+                    [ (asAttributePattern . ApplicationPattern)
                         Application
                             { applicationSymbolOrAlias = unitSymbol
                             , applicationChildren = []
                             }
-                    , (asCommonKorePattern . ApplicationPattern)
+                    , (asAttributePattern . ApplicationPattern)
                         Application
                             { applicationSymbolOrAlias = unitSymbol
                             , applicationChildren = []
@@ -66,11 +66,11 @@ test_arguments =
     $ parseUnit $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = unitSymbol
                 , applicationChildren =
-                    [ (asCommonKorePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -82,7 +82,7 @@ test_parameters =
     $ parseUnit $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

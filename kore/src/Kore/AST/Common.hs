@@ -2,15 +2,8 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 {-|
-Module      : Kore.AST.Common
-Description : Data Structures for representing the Kore language AST that do not
-              need unified constructs (see "Kore.AST.Kore" for the unified
-              ones).
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : traian.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 
 This module includes all the data structures necessary for representing
 the syntactic categories of a Kore definition that do not need unified

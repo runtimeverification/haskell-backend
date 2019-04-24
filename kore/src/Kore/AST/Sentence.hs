@@ -1,13 +1,6 @@
 {-|
-Module      : Kore.AST.Sentence
-Description : Data Structures for representing the Kore language AST that do not
-              need unified constructs (see Kore.AST.Kore for the unified
-              ones).
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : traian.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 
 This module includes all the data structures necessary for representing
 the syntactic categories of a Kore definition that do not need unified
@@ -48,15 +41,6 @@ module Kore.AST.Sentence
     , PureModule
     , PureDefinition
     , castDefinitionDomainValues
-    , VerifiedPureSentenceSymbol
-    , VerifiedPureSentenceAlias
-    , VerifiedPureSentenceImport
-    , VerifiedPureSentenceAxiom
-    , VerifiedPureSentenceSort
-    , VerifiedPureSentenceHook
-    , VerifiedPureSentence
-    , VerifiedPureModule
-    , VerifiedPureDefinition
     , ParsedSentenceAlias
     , ParsedSentenceSymbol
     , ParsedSentenceImport
@@ -71,7 +55,6 @@ module Kore.AST.Sentence
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Default
 import           Data.Functor.Const
                  ( Const )
 import           Data.Hashable
@@ -90,8 +73,8 @@ import           GHC.Generics
                  ( Generic )
 
 import qualified Kore.Annotation.Null as Annotation
-import           Kore.AST.Kore as Kore
 import           Kore.AST.Pure as Pure
+import           Kore.Attribute.Attributes
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Unparser
 
@@ -152,24 +135,6 @@ instance Unparse (Alias level) where
     unparse Alias { aliasConstructor, aliasParams } =
         unparse aliasConstructor
         <> parameters aliasParams
-
-{-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
-It is parameterized by the types of Patterns, @pat@.
--}
-
-newtype Attributes =
-    Attributes { getAttributes :: [CommonKorePattern] }
-    deriving (Eq, Ord, Generic, Show)
-
-instance Hashable Attributes
-
-instance NFData Attributes
-
-instance Unparse Attributes where
-    unparse = attributes . getAttributes
-
-instance Default Attributes where
-    def = Attributes []
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -646,65 +611,6 @@ type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level domain =
     Sentence level (SortVariable level) (ParsedPurePattern level domain)
-
-{- | A 'PureSentenceSymbol' which has passed verification.
- -}
-type VerifiedPureSentenceSymbol level =
-    SentenceSymbol level (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentenceAlias' which has passed verification.
-
-The patterns contained are annotated by 'Valid'.
-
- -}
-type VerifiedPureSentenceAlias level =
-    SentenceAlias level (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentenceImport' which has passed verification.
- -}
-type VerifiedPureSentenceImport level =
-    SentenceImport (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentenceAxiom' which has passed verification.
-
-The patterns contained are annotated by 'Valid'.
-
- -}
-type VerifiedPureSentenceAxiom level =
-    SentenceAxiom
-        (SortVariable level)
-        (VerifiedPurePattern level Domain.Builtin)
-
-type VerifiedPureSentenceSort level =
-    SentenceSort level (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentenceHook' which has passed verification.
-
-The contained patterns are annotated by 'Valid'.
-
- -}
-type VerifiedPureSentenceHook level =
-    SentenceHook (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentence' which has passed verification.
-
-The contained patterns are annotated by 'Valid'.
-
- -}
-type VerifiedPureSentence level =
-    Sentence
-        level
-        (SortVariable level)
-        (PurePattern
-            level
-            Domain.Builtin
-            Variable
-            (Valid (Variable level) level)
-        )
-
-type VerifiedPureModule level = Module (VerifiedPureSentence level)
-
-type VerifiedPureDefinition level = Definition (VerifiedPureSentence level)
 
 instance
     ( MetaOrObject level

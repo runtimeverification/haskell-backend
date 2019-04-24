@@ -5,7 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.ASTPrettyPrint
 import qualified Kore.Domain.Builtin as Domain
 
@@ -53,6 +53,6 @@ test_astPrettyPrint =
 
 prettyPrintPattern
     :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable CommonKorePattern
+    => Pattern level Domain.Builtin Variable ParsedPattern
     -> String
 prettyPrintPattern = prettyPrintToString

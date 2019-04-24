@@ -18,8 +18,6 @@ import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Kore
-                 ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -57,6 +55,8 @@ import           Kore.Error
                  ( Error )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
+import           Kore.Parser
+                 ( ParsedPattern )
 import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
@@ -68,7 +68,7 @@ import Test.Kore
 class With a b where
     with :: a -> b -> a
 
-newtype Attribute = Attribute {getAttribute :: CommonKorePattern}
+newtype Attribute = Attribute {getAttribute :: ParsedPattern}
 
 instance With (Module sentence) Attribute where
     with
@@ -221,7 +221,7 @@ sortDeclaration name =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: SentenceSort Object CommonKorePattern
+        :: SentenceSort Object ParsedPattern
         )
 
 symbolDeclaration :: Text -> Text -> [Text] -> ParsedSentence
@@ -233,7 +233,7 @@ symbolDeclaration name sortName argumentSortNames =
             , sentenceSymbolResultSort = makeSort sortName
             , sentenceSymbolAttributes = Attributes []
             }
-        :: SentenceSymbol Object CommonKorePattern
+        :: SentenceSymbol Object ParsedPattern
         )
 
 makeSymbol :: Text -> Symbol Object

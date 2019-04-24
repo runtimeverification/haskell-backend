@@ -12,14 +12,15 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
-import Kore.AST.Kore
-import Kore.AST.Sentence
-import Kore.AST.Valid
-       ( mkTop )
-import Kore.Error
-import Kore.Implicit.ImplicitSorts
-import Kore.IndexedModule.Error
-       ( noSort )
+import           Kore.AST.Pure
+import           Kore.AST.Sentence
+import           Kore.AST.Valid
+                 ( mkTop )
+import           Kore.Error
+import           Kore.Implicit.ImplicitSorts
+import           Kore.IndexedModule.Error
+                 ( noSort )
+import qualified Kore.Verified.Sentence as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -31,26 +32,26 @@ data TestFlag
 
 data AdditionalTestConfiguration
     = SkipTest
-    | AdditionalSentences [VerifiedPureSentence Object]
+    | AdditionalSentences [Verified.Sentence]
 
-data TestConfiguration level = TestConfiguration
+data TestConfiguration = TestConfiguration
     { testConfigurationDescription :: !String
-    , testConfigurationAdditionalSentences :: ![VerifiedPureSentence level]
-    , testConfigurationAdditionalSortVariables :: ![SortVariable level]
+    , testConfigurationAdditionalSentences :: ![Verified.Sentence]
+    , testConfigurationAdditionalSortVariables :: ![SortVariable Object]
     , testConfigurationCaseBasedConfiguration
         :: ![([TestFlag], AdditionalTestConfiguration)]
     }
 
-data SuccessConfiguration level
-    = SuccessConfiguration (TestConfiguration level)
+data SuccessConfiguration
+    = SuccessConfiguration TestConfiguration
     | SuccessConfigurationSkipAll
-data FailureConfiguration level
-    = FailureConfiguration (TestConfiguration level)
+data FailureConfiguration
+    = FailureConfiguration TestConfiguration
     | FailureConfigurationSkipAll
 
 data FlaggedTestData = FlaggedTestData
     { flaggedTestDataFlags    :: ![TestFlag]
-    , flaggedTestDataTestData :: !([VerifiedPureSentence Object] -> TestData)
+    , flaggedTestDataTestData :: !([Verified.Sentence] -> TestData)
     }
 
 test_sortUsage :: [TestTree]
@@ -200,7 +201,7 @@ test_sortUsage =
                         , sentenceSortAttributes =
                             Attributes []
                         }
-                    :: VerifiedPureSentenceSort Object)
+                    :: Verified.SentenceSort)
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -232,7 +233,7 @@ test_sortUsage =
                         , sentenceSortAttributes =
                             Attributes []
                         }
-                    :: VerifiedPureSentenceSort Object)
+                    :: Verified.SentenceSort)
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -260,8 +261,8 @@ newtype CommonDescription = CommonDescription String
 testsForObjectSort
     :: HasCallStack
     => CommonDescription
-    -> SuccessConfiguration Object
-    -> FailureConfiguration Object
+    -> SuccessConfiguration
+    -> FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
     -> TestedSort Object
@@ -323,9 +324,9 @@ testsForObjectSort
         addSentenceToTestConfiguration additionalSortSentence
 
 addSentenceToTestConfiguration
-    :: VerifiedPureSentence level
-    -> TestConfiguration level
-    -> TestConfiguration level
+    :: Verified.Sentence
+    -> TestConfiguration
+    -> TestConfiguration
 addSentenceToTestConfiguration
     sentence
     configuration@TestConfiguration
@@ -336,7 +337,7 @@ addSentenceToTestConfiguration
 
 successTestsForMetaSort
     :: CommonDescription
-    -> SuccessConfiguration Meta
+    -> SuccessConfiguration
     -> TestedSort Meta
     -> SortActualThatIsDeclared Meta
     -> NamePrefix
@@ -364,7 +365,7 @@ successTestsForMetaSort
 
 failureTestsForMetaSort
     :: CommonDescription
-    -> FailureConfiguration Meta
+    -> FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
     -> TestedSort Meta
@@ -397,7 +398,7 @@ failureTestsForMetaSort
   = testGroup commonDescription []
 
 expectSuccessFlaggedTests
-    :: SuccessConfiguration Object
+    :: SuccessConfiguration
     -> [FlaggedTestData]
     -> TestTree
 expectSuccessFlaggedTests
@@ -412,7 +413,7 @@ expectSuccessFlaggedTests SuccessConfigurationSkipAll _ = testGroup "" []
 
 expectFailureWithErrorFlaggedTests
     :: HasCallStack
-    => FailureConfiguration Object
+    => FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
     -> [FlaggedTestData]
@@ -432,7 +433,7 @@ expectFailureWithErrorFlaggedTests FailureConfigurationSkipAll _ _ _ =
     testGroup "" []
 
 flaggedObjectTestsForSort
-    :: TestConfiguration Object
+    :: TestConfiguration
     -> TestedSort Object
     -> SortActualThatIsDeclared Object
     -> NamePrefix
@@ -460,7 +461,7 @@ flaggedObjectTestsForSort
         testConfigurationAdditionalSortVariables testConfiguration
 
 flaggedMetaTestsForSort
-    :: TestConfiguration Meta
+    :: TestConfiguration
     -> TestedSort Meta
     -> SortActualThatIsDeclared Meta
     -> NamePrefix
@@ -480,14 +481,14 @@ flaggedMetaTestsForSort
         asSentence
 
 applyTestConfiguration
-    :: TestConfiguration Object
+    :: TestConfiguration
     -> [FlaggedTestData]
     -> [TestData]
 applyTestConfiguration testConfiguration =
     mapMaybe (applyOneTestConfiguration testConfiguration)
 
 applyOneTestConfiguration
-    :: TestConfiguration Object
+    :: TestConfiguration
     -> FlaggedTestData
     -> Maybe TestData
 applyOneTestConfiguration testConfiguration flaggedTestData =
@@ -520,8 +521,8 @@ unfilteredTestExamplesForSort
     -> SortActualThatIsDeclared level
     -> [SortVariable level]
     -> NamePrefix
-    -> (VerifiedPureSentenceAlias level -> VerifiedPureSentence level)
-    -> (VerifiedPureSentenceSymbol level -> VerifiedPureSentence level)
+    -> (Verified.SentenceAlias -> Verified.Sentence)
+    -> (Verified.SentenceSymbol -> Verified.Sentence)
     -> [FlaggedTestData]
 unfilteredTestExamplesForSort
     _x

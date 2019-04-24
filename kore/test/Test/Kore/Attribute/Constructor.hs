@@ -3,7 +3,7 @@ module Test.Kore.Attribute.Constructor where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.Attribute.Constructor
 
 import Test.Kore.Attribute.Parser
@@ -37,11 +37,11 @@ test_arguments =
         $ parseConstructor $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = constructorSymbol
                 , applicationChildren =
-                    [ (asCommonKorePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -53,7 +53,7 @@ test_parameters =
         $ parseConstructor $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

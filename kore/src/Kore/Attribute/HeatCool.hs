@@ -20,10 +20,7 @@ import Data.Default
 import GHC.Generics
        ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | Denote the heating or cooling phase of execution.
 
@@ -49,9 +46,9 @@ heatSymbol =
         }
 
 -- | Kore pattern representing the @heat@ attribute.
-heatAttribute :: CommonKorePattern
+heatAttribute :: AttributePattern
 heatAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = heatSymbol
             , applicationChildren = []
@@ -70,9 +67,9 @@ coolSymbol =
         }
 
 -- | Kore pattern representing the @cool@ attribute.
-coolAttribute :: CommonKorePattern
+coolAttribute :: AttributePattern
 coolAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = coolSymbol
             , applicationChildren = []
@@ -83,26 +80,26 @@ instance ParseAttributes HeatCool where
         parseHeat attr >=> parseCool attr
       where
         parseHeat =
-            withApplication $ \params args heatCool -> do
+            withApplication' $ \params args heatCool -> do
                 Parser.getZeroParams params
                 Parser.getZeroArguments args
                 case heatCool of
                     Normal -> return Heat
-                    Heat -> failDuplicate
-                    Cool -> failConflicting
+                    Heat -> failDuplicate'
+                    Cool -> failConflicting'
           where
-            withApplication = Parser.withApplication heatId
-            failDuplicate = Parser.failDuplicate heatId
-            failConflicting = Parser.failConflicting [coolId, heatId]
+            withApplication' = Parser.withApplication heatId
+            failDuplicate' = Parser.failDuplicate heatId
+            failConflicting' = Parser.failConflicting [coolId, heatId]
         parseCool =
-            withApplication $ \params args heatCool -> do
+            withApplication' $ \params args heatCool -> do
                 Parser.getZeroParams params
                 Parser.getZeroArguments args
                 case heatCool of
                     Normal -> return Cool
-                    Cool -> failDuplicate
-                    Heat -> failConflicting
+                    Cool -> failDuplicate'
+                    Heat -> failConflicting'
           where
-            withApplication = Parser.withApplication coolId
-            failDuplicate = Parser.failDuplicate coolId
-            failConflicting = Parser.failConflicting [heatId, coolId]
+            withApplication' = Parser.withApplication coolId
+            failDuplicate' = Parser.failDuplicate coolId
+            failConflicting' = Parser.failConflicting [heatId, coolId]

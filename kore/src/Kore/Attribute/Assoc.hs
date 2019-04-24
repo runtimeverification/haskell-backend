@@ -11,17 +11,9 @@ module Kore.Attribute.Assoc
     , assocId, assocSymbol, assocAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | @Assoc@ represents the @assoc@ attribute for axioms.
  -}
@@ -46,9 +38,9 @@ assocSymbol =
         }
 
 -- | Kore pattern representing the @assoc@ attribute.
-assocAttribute :: CommonKorePattern
+assocAttribute :: AttributePattern
 assocAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = assocSymbol
             , applicationChildren = []
@@ -56,11 +48,11 @@ assocAttribute =
 
 instance ParseAttributes Assoc where
     parseAttribute =
-        withApplication $ \params args Assoc { isAssoc } -> do
+        withApplication' $ \params args Assoc { isAssoc } -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isAssoc failDuplicate
+            Monad.when isAssoc failDuplicate'
             return Assoc { isAssoc = True }
       where
-        withApplication = Parser.withApplication assocId
-        failDuplicate = Parser.failDuplicate assocId
+        withApplication' = Parser.withApplication assocId
+        failDuplicate' = Parser.failDuplicate assocId

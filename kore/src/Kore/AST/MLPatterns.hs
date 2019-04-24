@@ -14,7 +14,7 @@ module Kore.AST.MLPatterns
 
 import qualified Control.Lens as Lens
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
 import Kore.Domain.Class

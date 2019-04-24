@@ -21,7 +21,7 @@ import           Data.Text
 import qualified Data.Text as Text
 import           SimpleSMT
 
-import           Kore.AST.Kore
+import           Kore.Attribute.Parser
 import           Kore.Attribute.Smtlib.Smtlib
 import qualified Kore.Builtin.Error as Builtin.Error
 
@@ -34,13 +34,13 @@ smtlibSymbol =
         }
 
 -- | Kore pattern representing the @smtlib@ attribute.
-smtlibAttribute :: Text -> CommonKorePattern
+smtlibAttribute :: Text -> AttributePattern
 smtlibAttribute syntax =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = smtlibSymbol
             , applicationChildren =
-                [ (asCommonKorePattern . StringLiteralPattern)
+                [ (asAttributePattern . StringLiteralPattern)
                     (StringLiteral syntax)
                 ]
             }

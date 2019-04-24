@@ -11,16 +11,7 @@ module Kore.Attribute.Overload
     , overloadId, overloadSymbol, overloadAttribute
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
-import GHC.Generics
-       ( Generic )
-
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload =
@@ -56,18 +47,18 @@ overloadSymbol =
 overloadAttribute
     :: SymbolOrAlias Object
     -> SymbolOrAlias Object
-    -> CommonKorePattern
+    -> AttributePattern
 overloadAttribute symbol1 symbol2 =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = overloadSymbol
             , applicationChildren =
-                [ (asCommonKorePattern . ApplicationPattern)
+                [ (asAttributePattern . ApplicationPattern)
                     Application
                         { applicationSymbolOrAlias = symbol1
                         , applicationChildren = []
                         }
-                , (asCommonKorePattern . ApplicationPattern)
+                , (asAttributePattern . ApplicationPattern)
                     Application
                         { applicationSymbolOrAlias = symbol2
                         , applicationChildren = []
@@ -76,15 +67,15 @@ overloadAttribute symbol1 symbol2 =
             }
 
 instance ParseAttributes Overload where
-    parseAttribute = withApplication parseApplication
+    parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Overload { getOverload }
-          | Just _ <- getOverload = failDuplicate
+          | Just _ <- getOverload = failDuplicate'
           | otherwise = do
             Parser.getZeroParams params
             (arg1, arg2) <- Parser.getTwoArguments args
             symbol1 <- Parser.getSymbolOrAlias arg1
             symbol2 <- Parser.getSymbolOrAlias arg2
             return Overload { getOverload = Just (symbol1, symbol2) }
-        withApplication = Parser.withApplication overloadId
-        failDuplicate = Parser.failDuplicate overloadId
+        withApplication' = Parser.withApplication overloadId
+        failDuplicate' = Parser.failDuplicate overloadId
