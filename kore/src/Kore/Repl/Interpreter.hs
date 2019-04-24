@@ -444,20 +444,23 @@ labelDel lbl = do
            putStrLn' "Label doesn't exist."
 
 redirect
-    :: forall level claim
+    :: forall level claim m
     .  MetaOrObject level
     => Claim claim
     => ReplCommand
     -> FilePath
     -> ReplM claim level ()
 redirect cmd path = do
-    st <- get
-    st' <- lift $ execStateT (replInterpreter redirectToFile cmd) st
-    put st'
+    get >>= runInterpreter >>= put
     putStrLn' "File created."
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
+
+    runInterpreter
+        :: ReplState claim level
+        -> ReplM claim level (ReplState claim level)
+    runInterpreter = lift . execStateT (replInterpreter redirectToFile cmd)
 
 tryAxiomClaim
     :: forall level claim
