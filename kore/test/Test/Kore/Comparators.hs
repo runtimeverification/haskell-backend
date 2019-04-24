@@ -25,6 +25,8 @@ import           Numeric.Natural
 import qualified Kore.AllPath as AllPath
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
+import qualified Kore.AST.Common as SetVariable
+                 ( SetVariable (..) )
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
@@ -204,6 +206,12 @@ instance
     sumConstructorPair (VariablePattern a1) (VariablePattern a2) =
         SumConstructorSameWithArguments (EqWrap "VariablePattern" a1 a2)
     sumConstructorPair pattern1@(VariablePattern _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (SetVariablePattern a1) (SetVariablePattern a2) =
+        SumConstructorSameWithArguments (EqWrap "SetVariablePattern" a1 a2)
+    sumConstructorPair pattern1@(SetVariablePattern _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
@@ -753,6 +761,23 @@ instance
     => EqualWithExplanation (Top level child)
   where
     compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation (variable level)
+    , Show (variable level)
+    ) => WrapperEqualWithExplanation (SetVariable variable level)
+  where
+    wrapperConstructorName _ = "SetVariable"
+    wrapperField =
+        Function.on (EqWrap "getVariable = ") SetVariable.getVariable
+
+instance
+    ( EqualWithExplanation (variable level)
+    , Show (variable level)
+    ) => EqualWithExplanation (SetVariable variable level)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show
 
 instance StructEqualWithExplanation (Variable level)
