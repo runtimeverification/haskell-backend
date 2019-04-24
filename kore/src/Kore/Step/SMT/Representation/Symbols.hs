@@ -13,8 +13,6 @@ module Kore.Step.SMT.Representation.Symbols
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
-import           Data.Text
-                 ( Text )
 
 import           Kore.AST.Identifier
                  ( Id )
@@ -48,15 +46,6 @@ import qualified Kore.Step.SMT.AST as AST
 import           Kore.Unparser
                  ( unparseToString )
 import qualified SMT
-
-nameFromSExpression :: SMT.SExpr -> Text
-nameFromSExpression (SMT.Atom name) = name
-nameFromSExpression (SMT.List (SMT.Atom name : _)) = name
-nameFromSExpression e =
-    (error . unlines)
-        [ "Cannot extract name from s-expression."
-        , "expression=" ++ SMT.showSExpr e
-        ]
 
 {-| Builds smt representations for symbols in the given module.
 
@@ -128,13 +117,14 @@ builtinDeclaration
         }
     )
   = do
-    smtName <- nameFromSExpression <$> getSmthook
+    smtName <- SMT.nameFromSExpr <$> getSmthook
     return
         ( symbolConstructor
         , AST.Symbol
             { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName)
             , declaration =
                 AST.SymbolDeclaredIndirectly
+                    (AST.AlreadyEncoded smtName)
                     (map
                         AST.SortReference
                         (sentenceSymbolResultSort : sentenceSymbolSorts)
@@ -159,7 +149,7 @@ smtlibDeclaration
         }
     )
   = do
-    smtName <- nameFromSExpression <$> getSmtlib
+    smtName <- SMT.nameFromSExpr <$> getSmtlib
     return
         ( symbolConstructor
         , AST.Symbol
@@ -196,6 +186,7 @@ constructorDeclaration
                 emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName)
             , declaration =
                 AST.SymbolDeclaredIndirectly
+                    encodedName
                     (map
                         AST.SortReference
                         (sentenceSymbolResultSort : sentenceSymbolSorts)

@@ -96,8 +96,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Unification.Substitution as Substitution
 
-import Debug.Trace
-
 -- | Configuration used in symbolic execution.
 type Config = CommonExpandedPattern Object
 
@@ -248,7 +246,7 @@ prove limit definitionModule specModule = do
             axiomIdToSimplifier
             (defaultStrategy claims axioms)
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-    traceM (show result)
+    --traceM (show result)
     return $ Bifunctor.first OrOfExpandedPattern.toStepPattern result
 
 -- | Initialize and run the repl with the main and spec modules. This will loop

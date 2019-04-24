@@ -57,6 +57,7 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
+import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
 import           Test.Kore
@@ -1701,7 +1702,9 @@ builtinZeroarySmtSort :: SMT.SExpr -> SMT.UnresolvedSort
 builtinZeroarySmtSort sExpr =
     SMT.Sort
         { smtFromSortArgs = const (const (Just sExpr))
-        , declaration = SMT.SortDeclaredIndirectly
+        , declaration =
+            SMT.SortDeclaredIndirectly
+                (SMT.AlreadyEncoded (SMT.nameFromSExpr sExpr))
         }
 
 smtConstructor
@@ -1711,10 +1714,12 @@ smtConstructor symbolId argumentSorts resultSort =
         { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
         , declaration =
             SMT.SymbolDeclaredIndirectly
+                encodableId
                 (map SMT.SortReference (resultSort : argumentSorts))
         }
   where
-    encodedId = SMT.encode (SMT.encodable symbolId)
+    encodableId = SMT.encodable symbolId
+    encodedId = SMT.encode encodableId
 
 smtBuiltinSymbol
     :: Text -> [Sort Object] -> Sort Object -> SMT.UnresolvedSymbol
@@ -1723,6 +1728,7 @@ smtBuiltinSymbol builtin argumentSorts resultSort =
         { smtFromSortArgs = const (const (Just (SMT.Atom builtin)))
         , declaration =
             SMT.SymbolDeclaredIndirectly
+                (SMT.AlreadyEncoded builtin)
                 (map SMT.SortReference (resultSort : argumentSorts))
         }
 

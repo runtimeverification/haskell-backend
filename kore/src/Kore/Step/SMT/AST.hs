@@ -92,12 +92,12 @@ instance (Show sort, Show name) => Show (Symbol sort name) where
 data KoreSortDeclaration sort symbol name
     = SortDeclarationDataType !(AST.DataTypeDeclaration sort symbol name)
     | SortDeclarationSort !(AST.SortDeclaration name)
-    | SortDeclaredIndirectly
+    | SortDeclaredIndirectly !name
     deriving (Eq, Ord, Show)
 
 data KoreSymbolDeclaration sort name
     = SymbolDeclaredDirectly !(AST.FunctionDeclaration sort name)
-    | SymbolDeclaredIndirectly ![sort]
+    | SymbolDeclaredIndirectly !name ![sort]
     deriving (Eq, Ord, Show)
 
 data Declarations sort symbol name =

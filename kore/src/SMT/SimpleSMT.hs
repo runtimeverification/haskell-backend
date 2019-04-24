@@ -25,6 +25,7 @@ module SMT.SimpleSMT
     -- ** S-Expressions
     , SExpr(..)
     , showSExpr, readSExprs
+    , nameFromSExpr
 
     -- ** Logging and Debugging
     , Logger(..)

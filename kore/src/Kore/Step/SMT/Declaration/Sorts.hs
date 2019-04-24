@@ -48,5 +48,5 @@ declare AST.Declarations { sorts } = do
       = Just (Right declaration)
     eitherDeclaration
         AST.Sort
-            { declaration = AST.SortDeclaredIndirectly }
+            { declaration = AST.SortDeclaredIndirectly _}
       = Nothing

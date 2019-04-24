@@ -11,7 +11,7 @@ module Kore.Step.SMT.Representation.Sorts
     ) where
 
 import           Control.Monad
-                 ( zipWithM )
+                 ( when, zipWithM )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( mapMaybe )
@@ -70,7 +70,8 @@ import qualified SMT
                  ( Constructor (Constructor),
                  ConstructorArgument (ConstructorArgument),
                  DataTypeDeclaration (DataTypeDeclaration), SExpr (Atom, List),
-                 SortDeclaration (SortDeclaration), showSExpr, tBool, tInt )
+                 SortDeclaration (SortDeclaration), nameFromSExpr, showSExpr,
+                 tBool, tInt )
 import qualified SMT as SMT.DataTypeDeclaration
                  ( DataTypeDeclaration (..) )
 import qualified SMT as SMT.SortDeclaration
@@ -188,7 +189,9 @@ builtinSortDeclaration
         ( sentenceSortName
         , AST.Sort
             { smtFromSortArgs = emptySortArgsToSmt smtRepresentation
-            , declaration = AST.SortDeclaredIndirectly
+            , declaration =
+                AST.SortDeclaredIndirectly
+                    (AST.AlreadyEncoded (SMT.nameFromSExpr smtRepresentation))
             }
         )
   where
@@ -287,6 +290,14 @@ parseNoJunkPattern
     -> Maybe (Id Object , AST.UnresolvedSort)
 parseNoJunkPattern patt = do  -- Maybe
     (name, sortBuilder, constructors) <- parseNoJunkPatternHelper patt
+    -- We currently have invalid axioms like
+    -- axiom{} \bottom{Sort'Hash'KVariable{}}() [constructor{}()] // no junk
+    -- We could use them to prove anything we want and skip all the pain of
+    -- doing actual proofs, but it seems that we should pretend that
+    -- all is fine and look the other way when we encounter one of these
+    -- inconsistent things.
+    -- TODO (virgil): Transform this check into an assertion.
+    when (null constructors) Nothing
     return (name, sortBuilder constructors)
 
 parseNoJunkPatternHelper

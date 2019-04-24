@@ -18,6 +18,7 @@ module SMT.AST
 
     , SExpr (..)
     , buildSExpr, parseSExpr, readSExpr, readSExprs, sendSExpr, showSExpr
+    , nameFromSExpr
 
     , SmtConstructor
     , SmtConstructorArgument
@@ -112,6 +113,16 @@ data FunctionDeclaration sort name =
         , resultSort :: !sort
         }
     deriving (Eq, Ord, Show)
+
+-- | Extracts the name from a sexpression denoting a named object.
+nameFromSExpr :: SExpr -> Text
+nameFromSExpr (Atom name) = name
+nameFromSExpr (List (Atom name : _)) = name
+nameFromSExpr e =
+    (error . unlines)
+        [ "Cannot extract name from s-expression."
+        , "expression=" ++ showSExpr e
+        ]
 
 -- | Instantiate Constructor with the types needed by SimpleSMT.
 type SmtConstructor = Constructor SExpr Text Text

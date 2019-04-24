@@ -58,8 +58,6 @@ import qualified SMT
 
 import GlobalMain
 
-import Debug.Trace
-
 {-
 Main module to run kore-exec
 TODO: add command line argument tab-completion
@@ -349,13 +347,11 @@ mainWithOptions
                 SMT.runSMT smtConfig
                 $ evalSimplifier logger
                 $ do
-                    traceM "a"
                     give
                         (MetadataTools.build indexedModule)
                         (declareSMTLemmas indexedModule)
                     case proveParameters of
                         Nothing -> do
-                            traceM "a.1"
                             let
                                 purePattern = fromMaybe
                                     (error "Missing: --pattern PATTERN_FILE")
@@ -364,7 +360,6 @@ mainWithOptions
                                 Nothing -> do
                                     pat <-
                                         exec indexedModule strategy' purePattern
-                                    traceM "Here."
                                     exitCode <-
                                         execGetExitCode
                                             indexedModule strategy' pat

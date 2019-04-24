@@ -32,6 +32,8 @@ import           Kore.Step.SMT.AST
 import qualified Kore.Step.SMT.AST as DoNotUse
 import qualified SMT
 
+import Kore.Debug
+
 data Resolvers sort symbol name = Resolvers
     { sortResolver :: SortReference -> Maybe sort
     , symbolResolver :: SymbolReference -> Maybe symbol
@@ -135,17 +137,23 @@ referenceCheckResolvers Declarations {sorts, symbols} =
                 }
             )
         )
-      = do
-        _ <- Map.lookup sortActualName sorts
-        return reference
-    referenceCheckSort _ = Nothing
+      = traceMaybe D_SMT_referenceCheckSort [debugArg "reference" reference]
+        $ do
+            _ <- Map.lookup sortActualName sorts
+            return reference
+    referenceCheckSort reference =
+        traceMaybe D_SMT_referenceCheckSort [debugArg "reference" reference]
+        $ Nothing
 
-    referenceCheckSymbol reference@SymbolReference {getSymbolReference} = do
-        _ <- Map.lookup getSymbolReference symbols
-        return reference
+    referenceCheckSymbol reference@SymbolReference {getSymbolReference} =
+        traceMaybe D_SMT_referenceCheckSymbol [debugArg "reference" reference]
+        $ do
+            _ <- Map.lookup getSymbolReference symbols
+            return reference
 
 resolveDeclarations
-    :: Resolvers sort symbol name
+    :: (Show sort, Show symbol, Show name)
+    => Resolvers sort symbol name
     -> UnresolvedDeclarations
     -> Declarations sort symbol name
 resolveDeclarations
@@ -158,13 +166,15 @@ resolveDeclarations
         }
 
 resolveSort
-    :: Resolvers sort symbol name
+    :: (Show sort, Show symbol, Show name)
+    => Resolvers sort symbol name
     -> UnresolvedSort
     -> Maybe (Sort sort symbol name)
 resolveSort
     resolvers
     Sort { smtFromSortArgs, declaration }
-  = do
+  = traceMaybe D_SMT_resolveSort [debugArg "declaration" declaration]
+    $ do
     newDeclaration <- resolveKoreSortDeclaration resolvers declaration
     return Sort
         { smtFromSortArgs = smtFromSortArgs
@@ -183,8 +193,10 @@ resolveKoreSortDeclaration resolvers (SortDeclarationSort declaration) =
         (SortDeclarationSort
             (resolveSortDeclaration resolvers declaration)
         )
-resolveKoreSortDeclaration _ SortDeclaredIndirectly =
-    Just SortDeclaredIndirectly
+resolveKoreSortDeclaration
+    Resolvers {nameResolver} (SortDeclaredIndirectly name)
+  =
+    Just (SortDeclaredIndirectly (nameResolver name))
 
 resolveDataTypeDeclaration
     :: Resolvers sort symbol name
@@ -241,13 +253,14 @@ resolveSortDeclaration
     SMT.SortDeclaration { name = nameResolver name, arity }
 
 resolveSymbol
-    :: Resolvers sort symbol name
+    :: (Show sort, Show name)
+    => Resolvers sort symbol name
     -> UnresolvedSymbol
     -> Maybe (Symbol sort name)
 resolveSymbol
     resolvers
     Symbol { smtFromSortArgs, declaration }
-  = do
+  = traceMaybe D_SMT_resolveSymbol [debugArg "declaration" declaration] $ do
     newDeclaration <- resolveKoreSymbolDeclaration resolvers declaration
     return Symbol
         { smtFromSortArgs = smtFromSortArgs
@@ -261,11 +274,11 @@ resolveKoreSymbolDeclaration
 resolveKoreSymbolDeclaration resolvers (SymbolDeclaredDirectly declaration) =
     SymbolDeclaredDirectly <$> resolveFunctionDeclaration resolvers declaration
 resolveKoreSymbolDeclaration
-    Resolvers {sortResolver}
-    (SymbolDeclaredIndirectly sorts)
+    Resolvers {sortResolver, nameResolver}
+    (SymbolDeclaredIndirectly name sorts)
   = do
     newSorts <- mapM sortResolver sorts
-    return $ SymbolDeclaredIndirectly newSorts
+    return $ SymbolDeclaredIndirectly (nameResolver name) newSorts
 
 resolveFunctionDeclaration
     :: Resolvers sort symbol name

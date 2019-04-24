@@ -37,6 +37,7 @@ module SMT
     , inNewScope
     -- * Expressions
     , SExpr (..)
+    , SimpleSMT.nameFromSExpr
     , SimpleSMT.showSExpr
     , SimpleSMT.tBool
     , SimpleSMT.tInt

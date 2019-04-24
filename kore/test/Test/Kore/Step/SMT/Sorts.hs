@@ -325,21 +325,6 @@ test_sortDeclaration =
                 )
             ]
         ]
-    , testsForModule "Empty sort"
-        -- NOTE that S below is not a valid kore sort, so this test can
-        -- be removed.
-        (indexModules
-            (ModuleName "first")
-            [ emptyModule "first"
-                `with` sortDeclaration "S"
-                `with` constructorAxiom "S" []
-            ]
-        )
-        [ isNotSatisfiable
-            [ "x" `ofType` encodeName "S"
-            , SMT.assert (atom "x" `eq` atom "x")
-            ]
-        ]
     ]
   where
     importModule :: Text -> KoreSentence
