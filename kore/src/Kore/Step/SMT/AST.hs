@@ -9,6 +9,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 module Kore.Step.SMT.AST
     ( Declarations (..)
     , Encodable (AlreadyEncoded)
+    , IndirectSymbolDeclaration (..)
     , KoreSortDeclaration (..)
     , KoreSymbolDeclaration (..)
     , SmtDeclarations
@@ -24,6 +25,7 @@ module Kore.Step.SMT.AST
     , UnresolvedDataTypeDeclaration
     , UnresolvedDeclarations
     , UnresolvedFunctionDeclaration
+    , UnresolvedIndirectSymbolDeclaration
     , UnresolvedKoreSortDeclaration
     , UnresolvedKoreSymbolDeclaration
     , UnresolvedSort
@@ -35,9 +37,9 @@ module Kore.Step.SMT.AST
     , mergePreferFirst
     ) where
 
-import qualified Data.Map.Merge.Strict as Map.Merge
 import           Data.Map.Strict
                  ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
 
@@ -51,6 +53,11 @@ import           Kore.Step.SMT.Encoder
                  ( encodeName )
 import qualified SMT.AST as AST
 
+{-| A representation of the Kore Sort type together with its related
+declarations (constructors, noJunk axioms), optimized for dealing with the SMT.
+
+The SmtSort type below instantiates Sort with the types used by the SMT.
+-}
 data Sort sort symbol name =
     Sort
         { smtFromSortArgs
@@ -58,7 +65,13 @@ data Sort sort symbol name =
                 -> [Kore.Sort Object]
                 -> Maybe AST.SExpr
                 )
+        -- ^ Produces the SMT representation of a sort. Given a map with
+        -- Smt representations for sorts and a list of sort arguments, returns
+        -- an s-expression that can be used, say, when declaring symbols of
+        -- that sort.
         , declaration :: !(KoreSortDeclaration sort symbol name)
+        -- ^ Information needed for declaring the sort, also listing all
+        -- dependencies on other sorts and symbols.
         }
 
 instance (Show sort, Show symbol, Show name)
@@ -71,6 +84,11 @@ instance (Show sort, Show symbol, Show name)
                 ++ show declaration
                 ++ "}"
 
+{-| A representation of the Kore SymbolOrAlias type together with symbol
+declaration sentences, optimized for dealing with the SMT.
+
+The SmtSymbol type below instantiates Symbol with the types used by the SMT.
+-}
 data Symbol sort name =
     Symbol
         { smtFromSortArgs
@@ -78,7 +96,13 @@ data Symbol sort name =
                 -> [Kore.Sort Object]
                 -> Maybe AST.SExpr
                 )
+        -- ^ Produces the SMT representation of a symbol. Given a map with
+        -- Smt representations for sorts and a list of sort arguments, returns
+        -- an s-expression that can be used, say, when building assertions
+        -- using that symbol.
         , declaration :: !(KoreSymbolDeclaration sort name)
+        -- ^ Information needed for declaring the symbol, also listing all
+        -- dependencies on other sorts and symbols.
         }
 
 instance (Show sort, Show name) => Show (Symbol sort name) where
@@ -89,17 +113,48 @@ instance (Show sort, Show name) => Show (Symbol sort name) where
                 ++ show declaration
                 ++ "}"
 
+{-| Data needed for declaring an SMT sort.
+
+The SmtKoreSortDeclaration type below instantiates Sort with the types used
+by the SMT.
+-}
 data KoreSortDeclaration sort symbol name
     = SortDeclarationDataType !(AST.DataTypeDeclaration sort symbol name)
+    -- ^ Constructor-based sort. Assumed to declare its own constructors.
     | SortDeclarationSort !(AST.SortDeclaration name)
+    -- ^ Non-constructor sort.
     | SortDeclaredIndirectly !name
+    -- ^ Sort that we don't need to declare (e.g. builtins like Int) so we just
+    -- represent that the SMT already knows about it.
     deriving (Eq, Ord, Show)
 
+{-| Data needed for declaring an SMT symbol.
+
+The SmtKoreSymbolDeclaration type below instantiates Symbol with the types used
+by the SMT.
+-}
 data KoreSymbolDeclaration sort name
     = SymbolDeclaredDirectly !(AST.FunctionDeclaration sort name)
-    | SymbolDeclaredIndirectly !name ![sort]
+    -- ^ Normal symbol declaration
+    | SymbolDeclaredIndirectly !(IndirectSymbolDeclaration sort name)
+    -- ^ Symbol declared in a different way (e.g. builtin or constructor).
+    -- The IndirectSymbolDeclaration value holds dependencies on other sorts
+    -- and debug information.
     deriving (Eq, Ord, Show)
 
+{-| Holds the sorts on which an already declared symbol depends.
+-}
+data IndirectSymbolDeclaration sort name =
+    IndirectSymbolDeclaration
+        { name :: !name
+        , sorts :: ![sort]
+        }
+    deriving (Eq, Ord, Show)
+
+{-| Holds things that we declare to an SMT. When encountered in its
+SmtDeclarations instatiation, we usually assume that all dependencies between
+the various declarations can be resolved.
+-}
 data Declarations sort symbol name =
     Declarations
         { sorts :: Map (Kore.Id Object) (Sort sort symbol name)
@@ -107,12 +162,22 @@ data Declarations sort symbol name =
         }
     deriving Show
 
-
+{-| Marks a dependency on a given sort.
+-}
 newtype SortReference = SortReference { getSortReference :: Kore.Sort Object }
     deriving (Eq, Ord, Show)
+
+{-| Marks a dependency on a given symbol.
+-}
 newtype SymbolReference =
     SymbolReference { getSymbolReference :: Kore.Id Object }
     deriving (Eq, Ord, Show)
+
+{-| Data that should be encoded before being used with the SMT.
+
+Use @AlreadyEncoded@ and @encodable@ to create it, @encode@ to extract its data,
+and @appendToEncoding@ to modify it.
+-}
 data Encodable
     = AlreadyEncoded !Text
     | Encodable !Text
@@ -120,11 +185,14 @@ data Encodable
     -- happens.
     deriving (Eq, Ord, Show)
 
+-- Type instantiations to be used by the SMT.
 type SmtDeclarations = Declarations AST.SExpr Text Text
 type SmtKoreSymbolDeclaration = KoreSymbolDeclaration AST.SExpr Text
 type SmtSort = Sort AST.SExpr Text Text
 type SmtSymbol = Symbol AST.SExpr Text
 
+-- Type instantiations with unresolved dependencies, produced direclty from the
+-- input module.
 type UnresolvedConstructorArgument =
     AST.ConstructorArgument SortReference Encodable
 type UnresolvedConstructor =
@@ -135,6 +203,8 @@ type UnresolvedDeclarations =
     Declarations SortReference SymbolReference Encodable
 type UnresolvedFunctionDeclaration =
     AST.FunctionDeclaration SortReference Encodable
+type UnresolvedIndirectSymbolDeclaration =
+    IndirectSymbolDeclaration SortReference Encodable
 type UnresolvedKoreSortDeclaration =
     KoreSortDeclaration SortReference SymbolReference Encodable
 type UnresolvedKoreSymbolDeclaration =
@@ -166,13 +236,6 @@ mergePreferFirst
     Declarations { sorts = sorts2, symbols = symbols2 }
   =
     Declarations
-        { sorts = sorts1 `leftMerge` sorts2
-        , symbols = symbols1 `leftMerge` symbols2
+        { sorts = sorts1 `Map.union` sorts2
+        , symbols = symbols1 `Map.union` symbols2
         }
-  where
-    leftMerge :: Ord k => Map k v -> Map k v -> Map k v
-    leftMerge =
-        Map.Merge.merge
-            Map.Merge.preserveMissing
-            Map.Merge.preserveMissing
-            (Map.Merge.zipWithMatched (\ _key left _right -> left))

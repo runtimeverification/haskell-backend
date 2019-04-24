@@ -52,7 +52,9 @@ import qualified Kore.AST.Sentence as SentenceAxiom
 import           Kore.AST.Valid
                  ( mkApp, mkBottom, mkExists, mkOr, mkVar )
 import qualified Kore.Attribute.Axiom as Attribute
+                 ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
+                 ( Symbol )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
@@ -70,7 +72,9 @@ import qualified SMT
 import Test.Kore
        ( testId )
 import Test.Kore.Step.SMT.Builders
-       ( noJunk, with )
+       ( noJunk )
+import Test.Kore.With
+       ( with )
 import Test.SMT
        ( withSolver )
 

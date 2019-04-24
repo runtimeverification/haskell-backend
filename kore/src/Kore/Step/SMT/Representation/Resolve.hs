@@ -20,6 +20,7 @@ import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
 import           Kore.Step.SMT.AST
                  ( Declarations (Declarations), Encodable,
+                 IndirectSymbolDeclaration (IndirectSymbolDeclaration),
                  KoreSortDeclaration (SortDeclarationDataType, SortDeclarationSort, SortDeclaredIndirectly),
                  KoreSymbolDeclaration (SymbolDeclaredDirectly, SymbolDeclaredIndirectly),
                  SmtDeclarations, Sort (Sort), SortReference (SortReference),
@@ -275,10 +276,13 @@ resolveKoreSymbolDeclaration resolvers (SymbolDeclaredDirectly declaration) =
     SymbolDeclaredDirectly <$> resolveFunctionDeclaration resolvers declaration
 resolveKoreSymbolDeclaration
     Resolvers {sortResolver, nameResolver}
-    (SymbolDeclaredIndirectly name sorts)
+    (SymbolDeclaredIndirectly IndirectSymbolDeclaration {name, sorts})
   = do
     newSorts <- mapM sortResolver sorts
-    return $ SymbolDeclaredIndirectly (nameResolver name) newSorts
+    return $ SymbolDeclaredIndirectly IndirectSymbolDeclaration
+        { name = nameResolver name
+        , sorts = newSorts
+        }
 
 resolveFunctionDeclaration
     :: Resolvers sort symbol name

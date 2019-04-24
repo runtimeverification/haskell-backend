@@ -1713,9 +1713,10 @@ smtConstructor symbolId argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
         , declaration =
-            SMT.SymbolDeclaredIndirectly
-                encodableId
-                (map SMT.SortReference (resultSort : argumentSorts))
+            SMT.SymbolDeclaredIndirectly SMT.IndirectSymbolDeclaration
+                { name = encodableId
+                , sorts = map SMT.SortReference (resultSort : argumentSorts)
+                }
         }
   where
     encodableId = SMT.encodable symbolId
@@ -1727,9 +1728,10 @@ smtBuiltinSymbol builtin argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom builtin)))
         , declaration =
-            SMT.SymbolDeclaredIndirectly
-                (SMT.AlreadyEncoded builtin)
-                (map SMT.SortReference (resultSort : argumentSorts))
+            SMT.SymbolDeclaredIndirectly SMT.IndirectSymbolDeclaration
+                { name = SMT.AlreadyEncoded builtin
+                , sorts = map SMT.SortReference (resultSort : argumentSorts)
+                }
         }
 
 emptySmtDeclarations :: SMT.SmtDeclarations
@@ -1744,132 +1746,64 @@ smtDeclarations = SMT.resolve smtUnresolvedDeclarations
 
 smtUnresolvedDeclarations :: SMT.UnresolvedDeclarations
 smtUnresolvedDeclarations = SMT.Declarations
-    { sorts =
-        Map.insert testSort0Id (zeroarySmtSort testSort0Id)
-        $ Map.insert testSort1Id (zeroarySmtSort testSort1Id)
-        $ Map.insert topSortId (zeroarySmtSort topSortId)
-        $ Map.insert topSortId (zeroarySmtSort subSortId)
-        $ Map.insert topSortId (zeroarySmtSort subSubsortId)
-        $ Map.insert topSortId (zeroarySmtSort otherSortId)
+    { sorts = Map.fromList
+        [ (testSort0Id, zeroarySmtSort testSort0Id)
+        , (testSort1Id, zeroarySmtSort testSort1Id)
+        , (topSortId, zeroarySmtSort topSortId)
+        , (topSortId, zeroarySmtSort subSortId)
+        , (topSortId, zeroarySmtSort subSubsortId)
+        , (topSortId, zeroarySmtSort otherSortId)
         -- TODO(virgil): testSort has constructors, it should have a
         -- constructor-based definition. The same for others.
-        $ Map.insert testSortId (zeroarySmtSort testSortId)
-        $ Map.insert intSortId (builtinZeroarySmtSort SMT.tInt)
-        $ Map.insert boolSortId (builtinZeroarySmtSort SMT.tBool)
-        $ Map.empty
-    , symbols =
-        Map.insert aId
-            (smtConstructor aId
-                []
-                testSort
+        , (testSortId, zeroarySmtSort testSortId)
+        , (intSortId, builtinZeroarySmtSort SMT.tInt)
+        , (boolSortId, builtinZeroarySmtSort SMT.tBool)
+        ]
+    , symbols = Map.fromList
+        [ (aId, smtConstructor aId [] testSort)
+        , ( aSort0Id, smtConstructor aSort0Id [] testSort1)
+        , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
+        , ( aSubsortId, smtConstructor aSubsortId [] subSort)
+        , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
+        , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
+        , ( bId, smtConstructor bId [] testSort)
+        , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
+        , ( cId, smtConstructor cId [] testSort)
+        , ( dId, smtConstructor dId [] testSort)
+        , ( eId, smtConstructor eId [] testSort)
+        , ( constr10Id, smtConstructor constr10Id [testSort] testSort)
+        , ( constr11Id, smtConstructor constr11Id [testSort] testSort)
+        , ( constr20Id, smtConstructor constr20Id [testSort, testSort] testSort)
+        ,   ( functionalConstr10Id
+            , smtConstructor functionalConstr10Id [testSort] testSort
             )
-        $ Map.insert aSort0Id
-            (smtConstructor aSort0Id
-                []
-                testSort1
+        ,   ( functionalConstr11Id
+            , smtConstructor functionalConstr11Id [testSort] testSort
             )
-        $ Map.insert aSort1Id
-            (smtConstructor aSort1Id
-                []
-                testSort1
+        ,   ( functionalConstr12Id
+            , smtConstructor functionalConstr12Id [testSort] testSort
             )
-        $ Map.insert aSubsortId
-            (smtConstructor aSubsortId
-                []
-                subSort
+        ,   ( functionalConstr20Id
+            , smtConstructor functionalConstr20Id [testSort, testSort] testSort
             )
-        $ Map.insert aSubSubsortId
-            (smtConstructor aSubSubsortId
-                []
-                subSubsort
-            )
-        $ Map.insert aOtherSortId
-            (smtConstructor aOtherSortId
-                []
-                otherSort
-            )
-        $ Map.insert bId
-            (smtConstructor bId
-                []
-                testSort
-            )
-        $ Map.insert bSort0Id
-            (smtConstructor bSort0Id
-                []
-                testSort0
-            )
-        $ Map.insert cId
-            (smtConstructor cId
-                []
-                testSort
-            )
-        $ Map.insert dId
-            (smtConstructor dId
-                []
-                testSort
-            )
-        $ Map.insert eId
-            (smtConstructor eId
-                []
-                testSort
-            )
-        $ Map.insert constr10Id
-            (smtConstructor constr10Id
-                [testSort]
-                testSort
-            )
-        $ Map.insert constr11Id
-            (smtConstructor constr11Id
-                [testSort]
-                testSort
-            )
-        $ Map.insert constr20Id
-            (smtConstructor constr20Id
-                [testSort, testSort]
-                testSort
-            )
-        $ Map.insert functionalConstr10Id
-            (smtConstructor functionalConstr10Id
-                [testSort]
-                testSort
-            )
-        $ Map.insert functionalConstr11Id
-            (smtConstructor functionalConstr11Id
-                [testSort]
-                testSort
-            )
-        $ Map.insert functionalConstr12Id
-            (smtConstructor functionalConstr12Id
-                [testSort]
-                testSort
-            )
-            $ Map.insert functionalConstr20Id
-            (smtConstructor functionalConstr20Id
-                [testSort, testSort]
-                testSort
-            )
-        $ Map.insert functionalConstr30Id
-            (smtConstructor functionalConstr30Id
+        ,   ( functionalConstr30Id
+            , smtConstructor
+                functionalConstr30Id
                 [testSort, testSort, testSort]
                 testSort
             )
-        $ Map.insert functionalTopConstr20Id
-            (smtConstructor functionalTopConstr21Id
-                [testSort, testSort]
-                testSort
+        ,   ( functionalTopConstr20Id
+            , smtConstructor
+                functionalTopConstr21Id [testSort, testSort] testSort
             )
-        $ Map.insert functionalTopConstr21Id
-            (smtConstructor functionalTopConstr21Id
-                [testSort, testSort]
-                testSort
+        ,   ( functionalTopConstr21Id
+            , smtConstructor
+                functionalTopConstr21Id [testSort, testSort] testSort
             )
-        $ Map.insert lessIntId
-            (smtBuiltinSymbol "<" [intSort, intSort] boolSort)
-        $ Map.insert greaterEqIntId
-            (smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
-        $ Map.insert sigmaId
-            (smtConstructor sigmaId [testSort, testSort] testSort)
-        $ Map.empty
+        , ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
+        , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
+        , ( sigmaId, smtConstructor sigmaId [testSort, testSort] testSort)
+        ]
     }
 
 testSortId :: Id Object

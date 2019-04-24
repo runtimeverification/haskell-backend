@@ -62,7 +62,7 @@ data SExpr
     | List ![SExpr]
     deriving (Generic, Eq, Ord, Show)
 
-{--| An argument to a data type constructor.
+{-| An argument to a data type constructor.
 
 The name can be used as a getter in smt solvers. (Note: this is currently not
 working due to a bug in z3 data type declaration,
@@ -76,7 +76,7 @@ data ConstructorArgument sort name =
         }
     deriving (Eq, Ord, Show)
 
-{--| A data type constructor.
+{-| A data type constructor.
 --}
 data Constructor sort symbol name =
     Constructor
@@ -85,7 +85,7 @@ data Constructor sort symbol name =
         }
     deriving (Eq, Ord, Show)
 
-{--| A constructor-based data type declaration.
+{-| A constructor-based data type declaration.
 
 If the list of constructors is empty, the data type is empty.
 --}

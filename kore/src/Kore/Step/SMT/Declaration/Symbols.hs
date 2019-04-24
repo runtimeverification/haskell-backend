@@ -35,5 +35,5 @@ declareKoreSymbolDeclaration
     (AST.SymbolDeclaredDirectly declaration)
   =
     SMT.declareFun_ declaration
-declareKoreSymbolDeclaration (AST.SymbolDeclaredIndirectly _ _) =
+declareKoreSymbolDeclaration (AST.SymbolDeclaredIndirectly _) =
     return ()

@@ -7,12 +7,12 @@ License     : NCSA
 
 This module is intended to be imported qualified:
 @
-import qualified Kore.Attribute.SymbolData as Attribute
+import qualified Kore.Attribute.Symbol.Symbol as Attribute
 @
 
  -}
 
-module Kore.Attribute.SymbolData
+module Kore.Attribute.Symbol.Symbol
     ( Symbol (..)
     , StepperAttributes
     , defaultSymbolAttributes

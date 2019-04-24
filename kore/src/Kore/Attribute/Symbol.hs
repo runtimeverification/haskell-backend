@@ -67,7 +67,7 @@ import Kore.Attribute.Injective
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
-import Kore.Attribute.SymbolData
+import Kore.Attribute.Symbol.Symbol
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..), SmtMetadataTools )
 

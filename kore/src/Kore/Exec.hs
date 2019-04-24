@@ -246,7 +246,6 @@ prove limit definitionModule specModule = do
             axiomIdToSimplifier
             (defaultStrategy claims axioms)
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-    --traceM (show result)
     return $ Bifunctor.first OrOfExpandedPattern.toStepPattern result
 
 -- | Initialize and run the repl with the main and spec modules. This will loop

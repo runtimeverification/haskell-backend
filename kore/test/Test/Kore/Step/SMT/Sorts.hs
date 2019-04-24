@@ -24,12 +24,14 @@ import qualified SMT
 
 import           Test.Kore.Step.SMT.Builders
                  ( constructor, emptyModule, functional, hook, indexModule,
-                 indexModules, sortDeclaration, symbolDeclaration, with )
+                 indexModules, sortDeclaration, symbolDeclaration )
 import           Test.Kore.Step.SMT.Helpers
                  ( atom, constructorAxiom, eq, gt, isNotSatisfiable,
                  isSatisfiable, list, lt, ofType )
 import qualified Test.Kore.Step.SMT.Helpers as Helpers
                  ( testsForModule )
+import           Test.Kore.With
+                 ( with )
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =
@@ -117,7 +119,7 @@ test_sortDeclaration =
             , SMT.assert (SMT.not (atom "x" `eq` atom (encodeName "D")))
             ]
         ]
-    , testsForModule "zzzConstructor with arguments"
+    , testsForModule "Constructor with arguments"
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
             `with` (sortDeclaration "Integer" `with` hook Int.sort)

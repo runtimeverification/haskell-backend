@@ -326,7 +326,7 @@ finalizeAppliedRule
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object

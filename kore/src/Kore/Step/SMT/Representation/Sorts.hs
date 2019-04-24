@@ -40,6 +40,9 @@ import           Kore.AST.Valid
                  ( pattern App_, pattern Bottom_, pattern Exists_, pattern Or_,
                  pattern Var_ )
 import qualified Kore.Attribute.Axiom as Attribute
+                 ( Axiom )
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
+                 ( constructor )
 import qualified Kore.Attribute.Axiom.Constructor as Axiom.Constructor
 import           Kore.Attribute.Hook.Hook
                  ( Hook (Hook) )
@@ -274,7 +277,7 @@ parseNoJunkAxiom
         )
     -> Maybe (Id Object, AST.UnresolvedSort)
 parseNoJunkAxiom (attributes, SentenceAxiom {sentenceAxiomPattern})
-  | Axiom.Constructor.isConstructor (Attribute.constructor attributes)
+  | Axiom.Constructor.isConstructor (Attribute.Axiom.constructor attributes)
   = case fromKorePattern Object sentenceAxiomPattern of
     Left err -> (error . unlines)
         [ "Unexpected error transforming kore pattern to pure pattern."

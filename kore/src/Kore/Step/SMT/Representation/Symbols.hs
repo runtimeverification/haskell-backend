@@ -123,12 +123,12 @@ builtinDeclaration
         , AST.Symbol
             { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName)
             , declaration =
-                AST.SymbolDeclaredIndirectly
-                    (AST.AlreadyEncoded smtName)
-                    (map
+                AST.SymbolDeclaredIndirectly AST.IndirectSymbolDeclaration
+                    { name = AST.AlreadyEncoded smtName
+                    , sorts = map
                         AST.SortReference
                         (sentenceSymbolResultSort : sentenceSymbolSorts)
-                    )
+                    }
             }
         )
   where
@@ -185,12 +185,12 @@ constructorDeclaration
             { smtFromSortArgs =
                 emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName)
             , declaration =
-                AST.SymbolDeclaredIndirectly
-                    encodedName
-                    (map
+                AST.SymbolDeclaredIndirectly AST.IndirectSymbolDeclaration
+                    { name = encodedName
+                    , sorts = map
                         AST.SortReference
                         (sentenceSymbolResultSort : sentenceSymbolSorts)
-                    )
+                    }
             }
         )
     else Nothing

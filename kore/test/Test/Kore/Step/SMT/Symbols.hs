@@ -23,12 +23,14 @@ import qualified SMT
 
 import           Test.Kore.Step.SMT.Builders
                  ( constructor, emptyModule, functional, indexModule, smtlib,
-                 sortDeclaration, symbolDeclaration, with )
+                 sortDeclaration, symbolDeclaration )
 import           Test.Kore.Step.SMT.Helpers
                  ( atom, constructorAxiom, eq, gt, isError, isNotSatisfiable,
                  isSatisfiable, lt, ofType )
 import qualified Test.Kore.Step.SMT.Helpers as Helpers
                  ( testsForModule )
+import           Test.Kore.With
+                 ( with )
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =
