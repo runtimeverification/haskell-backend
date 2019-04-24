@@ -208,6 +208,9 @@ instance
     sumConstructorPair pattern1@(VariablePattern _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
+    
+    sumConstructorPair (SortPattern s1) (SortPattern s2) =
+        koreFail "Unexpected pattern."
 
     sumConstructorPair (SetVariablePattern a1) (SetVariablePattern a2) =
         SumConstructorSameWithArguments (EqWrap "SetVariablePattern" a1 a2)

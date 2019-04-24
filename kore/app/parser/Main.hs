@@ -119,7 +119,8 @@ main = do
             then mainVerify willChkAttr parsedDefinition
             else return Map.empty
         when willPrintDefinition $
-            putStrLn (unparseToString2 (completeDefinition (toVerifiedPureDefinition indexedModules)))
+            putStrLn (prettyPrintToString parsedDefinition)
+            ---putStrLn (unparseToString2 (completeDefinition (toVerifiedPureDefinition indexedModules)))
 
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName
