@@ -114,14 +114,24 @@ instance Unparse (SymbolOrAlias level) where
             }
       =
         unparse symbolOrAliasConstructor <> parameters symbolOrAliasParams
-
+    --- 'unparse2' prints alias with all parameter sorts.
     unparse2
         SymbolOrAlias
             { symbolOrAliasConstructor
+            , symbolOrAliasParams
             }
-      =
-        unparse2 symbolOrAliasConstructor
+      = "(" 
+        <> unparse2 symbolOrAliasConstructor 
+        <> " "
+        <> parameters2 symbolOrAliasParams 
+        <> ")"
 
+unparseSymbolOrAliasNoSortParams :: SymbolOrAlias level -> Pretty.Doc ann
+unparseSymbolOrAliasNoSortParams
+    SymbolOrAlias
+        { symbolOrAliasConstructor
+        }
+  = unparse2 symbolOrAliasConstructor 
 
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
@@ -156,13 +166,16 @@ instance Unparse (Variable level) where
         <> Pretty.pretty variableCounter
         <> Pretty.colon
         <> unparse variableSort
-    unparse2 Variable { variableName } =
-        unparse variableName 
+    unparse2 Variable { variableName, variableCounter, variableSort } =
+        unparseIdLower variableName
+        <> Pretty.pretty variableCounter
+        <> Pretty.colon
+        <> unparse2 variableSort
     unparse2BindingVariables Variable { variableName, variableCounter, variableSort } =
-        unparse variableName
+        unparseIdLower variableName
         <> Pretty.pretty variableCounter
         <> Pretty.colon 
-        <> unparse variableSort
+        <> unparse2 variableSort
 
 
 {- | Is the variable original (as opposed to generated)?
@@ -371,8 +384,9 @@ instance Unparse child => Unparse (And level child) where
         And { andFirst, andSecond }
       =
         "("
+        <> "\\and"
         <> unparse2 andFirst
-        <> " ∧ "
+        <> " "
         <> unparse2 andSecond
         <> ")"
 
@@ -433,7 +447,7 @@ instance Unparse child => Unparse (Application level child) where
                 <> ")"
             children ->
                 "(" 
-                <> unparse2 applicationSymbolOrAlias
+                <> unparseSymbolOrAliasNoSortParams applicationSymbolOrAlias
                 <> " "
                 <> arguments2 children
                 <> ")"
@@ -478,7 +492,7 @@ instance Unparse (Bottom level child) where
     unparse Bottom { bottomSort } =
         "\\bottom" <> parameters [bottomSort] <> noArguments
     unparse2 Bottom { } =
-        "⊥"
+        "\\bottom"
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -531,7 +545,10 @@ instance Unparse child => Unparse (Ceil level child) where
         <> arguments [ceilChild]
 
     unparse2 Ceil { ceilChild } =
-        "⌈" <> (unparse2 ceilChild) <> "⌉"
+        "("
+        <> "\\ceil"
+        <> unparse2 ceilChild
+        <> ")"
 
 
 
@@ -651,7 +668,12 @@ instance Unparse child => Unparse (Equals level child) where
             , equalsSecond
             }
       =
-        "(" <> (unparse2 equalsFirst) <> " " <> "=" <> " " <> (unparse2 equalsSecond) <> ")"
+        "("
+        <> "\\equals"
+        <> unparse2 equalsFirst
+        <> " "
+        <> unparse2 equalsSecond
+        <> ")"
 
 
 

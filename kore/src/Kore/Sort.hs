@@ -31,9 +31,6 @@ import           Data.Hashable
 import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
-import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
-
 
 import Kore.AST.Identifier
 import Kore.Unparser
@@ -55,8 +52,7 @@ instance NFData (SortVariable level)
 
 instance Unparse (SortVariable level) where
     unparse = unparse . getSortVariable
-    unparse2 SortVariable { getSortVariable = Id { getId } } =
-        Pretty.pretty (Text.toLower getId)
+    unparse2 SortVariable { getSortVariable } = unparseIdLower getSortVariable
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,

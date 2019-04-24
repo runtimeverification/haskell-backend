@@ -102,25 +102,30 @@ parameters :: Unparse p => [p] -> Doc ann
 parameters = parameters' . map unparse
 
 parameters2 :: Unparse p => [p] -> Doc ann
-parameters2 = parameters' . map unparse2
+parameters2 = parameters2' . map unparse2
 
 -- | Print a list of sort parameters.
 parameters' :: [Doc ann] -> Doc ann
-parameters' = list "" ""
+parameters' = list lbrace rbrace
+parameters2' :: [Doc ann] -> Doc ann
+parameters2' = list "" ""
 
 arguments :: Unparse p => [p] -> Doc ann
 arguments = arguments' . map unparse
 
 arguments2 :: Unparse p => [p] -> Doc ann
-arguments2 = arguments' . map unparse2
+arguments2 = arguments2' . map unparse2
 
 -- | Print a list of documents as arguments.
 arguments' :: [Doc ann] -> Doc ann
-arguments' = list "" ""
+arguments' = list lparen rparen
+arguments2' :: [Doc ann] -> Doc ann
+arguments2' = list "" ""
 
 -- | Print a document as arguments.
 argument' :: Doc ann -> Doc ann
-argument' = list "" "" . (: [])
+argument' = list lparen rparen . (: [])
+
 
 -- | Print a list of no arguments.
 noArguments :: Doc ann
