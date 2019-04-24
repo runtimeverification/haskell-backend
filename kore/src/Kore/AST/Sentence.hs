@@ -817,11 +817,15 @@ type ParsedSentenceAxiom =
 type ParsedSentenceHook =
     SentenceHook (ParsedPurePattern Object Domain.Builtin)
 
-type ParsedSentence = PureSentence Object Domain.Builtin
+type ParsedSentence =
+    Sentence
+        Object
+        (SortVariable Object)
+        (ParsedPurePattern Object Domain.Builtin)
 
-type ParsedModule = PureModule Object Domain.Builtin
+type ParsedModule = Module ParsedSentence
 
-type ParsedDefinition = PureDefinition Object Domain.Builtin
+type ParsedDefinition = Definition ParsedSentence
 
 castDefinitionDomainValues
     :: Functor domain

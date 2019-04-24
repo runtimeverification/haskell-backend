@@ -64,6 +64,8 @@ import qualified Kore.Parser.ParserUtils as ParserUtils
 import           Kore.Unparser
                  ( unparseToString )
 
+type ParsedPattern = ParsedPurePattern Object Domain.Builtin
+
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.
 
@@ -710,13 +712,17 @@ mlConstructorRemainderParser childParser domainValueParser x patternType =
 builtinDomainParser :: Parser child -> Parser (Domain.Builtin child)
 builtinDomainParser _ = do
     domainValueSort <- inCurlyBracesRemainderParser (sortParser Object)
-    domainValueChild <- inParenthesesParser metaPatternParser
+    domainValueChild <- inParenthesesParser stringLiteralPatternParser
     let external =
             Domain.External
                 { domainValueSort
                 , domainValueChild
                 }
     return (Domain.BuiltinExternal external)
+  where
+    stringLiteralPatternParser =
+        asPurePattern . (mempty :<) . StringLiteralPattern
+        <$> stringLiteralParser
 
 noDomainParser :: Parser child -> Parser (Const Void child)
 noDomainParser _ = unsupportedPatternType Meta DomainValuePatternType
@@ -1092,22 +1098,9 @@ leveledPatternParser patternParser domainValueParser level = do
         '\'' -> CharLiteralPattern <$> charLiteralParser
         _ -> variableOrTermPatternParser patternParser Object
 
-purePatternParser
-    :: MetaOrObject level
-    => level
-    -> Parser (ParsedPurePattern level Domain.Builtin)
-purePatternParser level = purePatternParserAux builtinDomainParser level
-
-purePatternParserAux
-    :: (MetaOrObject level, Functor domain)
-    => (forall child. Parser child -> Parser (domain child))
-    -> level
-    -> Parser (ParsedPurePattern level domain)
-purePatternParserAux domainValueParser level = do
-    patternHead <- leveledPatternParser childParser domainValueParser level
+purePatternParser :: Parser ParsedPattern
+purePatternParser = do
+    patternHead <- leveledPatternParser childParser builtinDomainParser Object
     return $ asPurePattern (mempty :< patternHead)
   where
-    childParser = purePatternParserAux domainValueParser level
-
-metaPatternParser :: Parser (ParsedPurePattern Meta (Const Void))
-metaPatternParser = purePatternParserAux noDomainParser Meta
+    childParser = purePatternParser

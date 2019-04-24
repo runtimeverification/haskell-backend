@@ -1,1 +1,6 @@
-Error in module 'DV-2' -> axiom declaration -> \dv (../src/test/resources//test-dv-2.kore 3:19): Domain value argument must be a literal string.
+../src/test/resources//test-dv-2.kore:3:22:
+  |
+3 |     axiom {s} \dv{s}(\or{#String{}}("0", "1")) []
+  |                      ^
+unexpected '\'
+expecting '"'

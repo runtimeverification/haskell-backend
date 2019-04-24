@@ -32,13 +32,15 @@ module Kore.Parser.Parser
     , parseKorePattern
     , koreParser
     , korePatternParser
-    , CommonKorePattern
+    , ParsedPattern
+    , ParsedDefinition
     ) where
 
-import           Kore.AST.Kore
 import           Kore.AST.Sentence
 import           Kore.Parser.Lexeme
                  ( skipWhitespace )
+import           Kore.Parser.ParserImpl
+                 ( ParsedPattern )
 import qualified Kore.Parser.ParserImpl as KoreParser
 import           Kore.Parser.ParserUtils
 
@@ -53,7 +55,7 @@ koreParser = skipWhitespace *> KoreParser.koreDefinitionParser <* endOfInput
 
 The input must contain a full valid Kore pattern and nothing else.
 -}
-korePatternParser :: Parser CommonKorePattern
+korePatternParser :: Parser ParsedPattern
 korePatternParser = KoreParser.korePatternParser
 
 {- | Parse a string representing a Kore definition.
@@ -78,5 +80,5 @@ message otherwise. The input must contain a valid Kore pattern and nothing else.
 parseKorePattern
     :: FilePath  -- ^ Filename used for error messages
     -> String  -- ^ The concrete syntax of a valid Kore pattern
-    -> Either String CommonKorePattern
+    -> Either String ParsedPattern
 parseKorePattern = parseOnly korePatternParser
