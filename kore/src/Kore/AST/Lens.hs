@@ -62,6 +62,8 @@ patternLens
             RewritesPattern rew0 -> RewritesPattern <$> patternLensRewrites rew0
             TopPattern top0 -> TopPattern <$> patternLensTop top0
             VariablePattern var0 -> VariablePattern <$> lensVariable var0
+            SetVariablePattern svar0 ->
+                SetVariablePattern <$> patternLensSetVariable svar0
             ApplicationPattern app0 ->
                 ApplicationPattern <$> patternLensApplication app0
             StringLiteralPattern lit -> pure (StringLiteralPattern lit)
@@ -184,6 +186,9 @@ patternLens
             <$> lensResultSort rewritesSort
             <*> lensChild rewritesFirst
             <*> lensChild rewritesSecond
+
+    patternLensSetVariable (SetVariable variable) =
+        SetVariable <$> lensVariable variable
 
     patternLensTop Top { topSort } =
         Top <$> lensResultSort topSort
