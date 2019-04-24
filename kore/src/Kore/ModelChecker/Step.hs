@@ -43,7 +43,7 @@ import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.Predicated as Predicated
+import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
@@ -55,7 +55,6 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -105,6 +104,8 @@ unroll = Unroll
 computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
+type Transition = TransitionT (RewriteRule Object Variable) Simplifier
+
 transitionRule
     :: forall level . (MetaOrObject level)
     => MetadataTools level StepperAttributes
@@ -115,7 +116,7 @@ transitionRule
     -- ^ Map from symbol IDs to defined functions
     -> Prim (CommonModalPattern level) (RewriteRule level Variable)
     -> CommonProofState level
-    -> TransitionT (RewriteRule level Variable) Simplifier
+    -> Transition
         (CommonProofState level)
 transitionRule
     tools
@@ -249,27 +250,18 @@ transitionRule
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]
-            Right Step.Results { results, remainders } -> do
+            Right results -> do
                 let
-                    rewriteResults, remainderResults
-                        ::  MultiOr.MultiOr
-                                (TransitionT
-                                    (RewriteRule level Variable)
-                                    Simplifier
-                                    ( CommonProofState level)
-                                )
-                    rewriteResults = transition <$> results
-                    transition result' = do
-                        let rule =
-                                Step.unwrapRule
-                                $ Predicated.term $ Step.unifiedRule result'
-                        Transition.addRule (RewriteRule rule)
-                        return (GoalLHS $ Step.result result')
-                    remainderResults =
-                        pure . GoalRemLHS <$> remainders
-
-                Foldable.asum
-                    (MultiOr.uncheckedMerge rewriteResults remainderResults)
+                    mapRules =
+                        StepResult.mapRules
+                        $ RewriteRule
+                        . Step.unwrapRule
+                        . Step.withoutUnification
+                    mapConfigs =
+                        StepResult.mapConfigs
+                            GoalLHS
+                            GoalRemLHS
+                StepResult.transitionResults (mapConfigs $ mapRules results)
 
 defaultOneStepStrategy
     :: patt
