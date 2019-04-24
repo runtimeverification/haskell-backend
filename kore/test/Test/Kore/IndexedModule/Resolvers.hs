@@ -27,7 +27,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

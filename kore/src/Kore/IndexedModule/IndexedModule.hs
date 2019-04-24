@@ -71,8 +71,7 @@ import           Kore.Attribute.Subsort
 import           Kore.Error
 import           Kore.Parser
                  ( ParsedPattern )
-import qualified Kore.Verified.Pattern as Verified
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 type SortDescription level dom =
     SentenceSort level (PurePattern level dom Variable (Annotation.Null level))

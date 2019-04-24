@@ -50,7 +50,7 @@ import           Kore.Step.Rule
                  verifiedKoreSentenceToAxiomPattern )
 import qualified Kore.Step.Rule
                  ( RulePattern (..) )
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 

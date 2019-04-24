@@ -73,7 +73,7 @@ import           Kore.Step.SMT.Encoder
                  ( encodeName )
 import           Kore.Unparser
                  ( unparseToString )
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 import qualified SMT
 
 data SMTConstructor =

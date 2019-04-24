@@ -25,7 +25,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Unparser
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}

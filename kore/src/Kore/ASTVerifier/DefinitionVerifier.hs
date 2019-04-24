@@ -45,7 +45,7 @@ import           Kore.Implicit.ImplicitSorts
                  ( predicateSortActual )
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Unparser
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 

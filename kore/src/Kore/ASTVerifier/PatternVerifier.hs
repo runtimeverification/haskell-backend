@@ -61,7 +61,7 @@ import           Kore.Parser
                  ( ParsedPattern )
 import           Kore.Unparser
 import qualified Kore.Variables.Free as Variables
-import qualified Kore.Verified.Pattern as Verified
+import qualified Kore.Verified as Verified
 
 data DeclaredVariables = DeclaredVariables
     { objectDeclaredVariables :: !(Map.Map (Id Object) (Variable Object))

@@ -24,8 +24,7 @@ import           Kore.Step.Pattern hiding
                  ( freeVariables )
 import           Kore.Unparser
                  ( unparseToString )
-import qualified Kore.Verified.Pattern as Verified
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 import Test.Kore
 

@@ -29,7 +29,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
 import           Kore.Step.Pattern
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

@@ -67,7 +67,7 @@ import           Kore.IndexedModule.IndexedModule
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
-import qualified Kore.Verified.Pattern as Verified
+import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
                  ( version )
 

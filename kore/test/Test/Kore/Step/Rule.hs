@@ -34,7 +34,7 @@ import           Kore.Step.Pattern hiding
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 import           Test.Kore
                  ( testId )

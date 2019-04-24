@@ -57,7 +57,7 @@ import qualified Kore.Step.Pattern as Pattern
 import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 newtype AxiomPatternError = AxiomPatternError ()
 

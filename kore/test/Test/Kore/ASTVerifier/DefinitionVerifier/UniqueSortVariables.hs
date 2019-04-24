@@ -10,7 +10,7 @@ import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

@@ -52,7 +52,7 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 import qualified SMT
 
 import Test.Kore

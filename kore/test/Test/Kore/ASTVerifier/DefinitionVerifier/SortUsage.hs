@@ -20,7 +20,7 @@ import           Kore.Error
 import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error
                  ( noSort )
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

@@ -46,7 +46,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 import qualified SMT
 
 import           Test.Kore

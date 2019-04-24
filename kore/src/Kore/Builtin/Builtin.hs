@@ -139,7 +139,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Unparser
-import qualified Kore.Verified.Pattern as Verified
+import qualified Kore.Verified as Verified
 
 type Parser = Parsec Void Text
 

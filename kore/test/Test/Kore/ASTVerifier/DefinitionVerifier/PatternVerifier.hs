@@ -24,7 +24,7 @@ import           Kore.IndexedModule.Error
                  ( noSort )
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
-import qualified Kore.Verified.Sentence as Verified
+import qualified Kore.Verified as Verified
 
 import           Test.Kore
 import           Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
