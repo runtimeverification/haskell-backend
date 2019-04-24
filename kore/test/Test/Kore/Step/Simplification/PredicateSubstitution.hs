@@ -66,7 +66,7 @@ test_predicateSubstitutionSimplification =
                         makeEqualsPredicate
                             (Mock.f Mock.a)
                             (Mock.g Mock.b)
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
@@ -79,7 +79,7 @@ test_predicateSubstitutionSimplification =
                         makeEqualsPredicate
                             (Mock.f (mkVar Mock.x))
                             (Mock.g (mkVar Mock.y))
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
@@ -94,7 +94,7 @@ test_predicateSubstitutionSimplification =
                         makeEqualsPredicate
                             Mock.functional00
                             Mock.functional01
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
@@ -107,7 +107,7 @@ test_predicateSubstitutionSimplification =
                         makeEqualsPredicate
                             (Mock.constr10 (mkVar Mock.x))
                             (Mock.constr10 (mkVar Mock.y))
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
@@ -119,7 +119,7 @@ test_predicateSubstitutionSimplification =
                 Predicated
                     { term = ()
                     , predicate = makeEqualsPredicate Mock.functional00 Mock.a
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
@@ -145,7 +145,7 @@ test_predicateSubstitutionSimplification =
                         makeEqualsPredicate
                             (Mock.f (mkVar Mock.x))
                             (Mock.f (mkVar Mock.y))
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
@@ -180,7 +180,7 @@ test_predicateSubstitutionSimplification =
                         makeEqualsPredicate
                             (Mock.constr10 (mkVar Mock.x))
                             (Mock.f (mkVar Mock.y))
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.y, Mock.b)
                         ]
                     }
@@ -223,7 +223,7 @@ test_predicateSubstitutionSimplification =
                                 (Mock.f (mkVar Mock.x))
                                 (Mock.g Mock.a)
                             )
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.y, Mock.b)
                         ]
                     }
@@ -267,7 +267,7 @@ test_predicateSubstitutionSimplification =
                                 (Mock.f (mkVar Mock.x))
                                 (Mock.g Mock.a)
                             )
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (Mock.y, Mock.b)
                         ]
                     }

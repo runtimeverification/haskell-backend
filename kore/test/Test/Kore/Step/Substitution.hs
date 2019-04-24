@@ -19,8 +19,12 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
                  ( StepPattern )
+import           Kore.Step.Representation.MultiOr
+                 ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
@@ -50,6 +54,25 @@ test_normalize =
         let expect = mempty
         actual <- normalize PredicateSubstitution.bottomPredicate
         assertEqual "Expected empty result" expect actual
+    , testCase "∃ y z. x = σ(y, z)" $ do
+        let expect =
+                PredicateSubstitution.fromPredicate
+                $ Predicate.makeMultipleExists [Mock.y, Mock.z]
+                $ Predicate.makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+        actual <- normalizeExcept expect
+        assertEqual "Expected original result" (Right $ MultiOr.make [expect]) actual
+    , testCase "¬∃ y z. x = σ(y, z)" $ do
+        let expect =
+                PredicateSubstitution.fromPredicate
+                $ Predicate.makeNotPredicate
+                $ Predicate.makeMultipleExists [Mock.y, Mock.z]
+                $ Predicate.makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+        actual <- normalizeExcept expect
+        assertEqual "Expected original result" (Right $ MultiOr.make [expect]) actual
     ]
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
@@ -348,6 +371,22 @@ normalize predicated =
     $ evalSimplifier emptyLogger
     $ gather
     $ Substitution.normalize
+        mockMetadataTools
+        (Mock.substitutionSimplifier mockMetadataTools)
+        (Simplifier.create mockMetadataTools Map.empty)
+        Map.empty
+        predicated
+
+normalizeExcept
+    :: Predicated Object Variable ()
+    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr (Predicated Object Variable ())))
+normalizeExcept predicated =
+    runSMT
+    $ evalSimplifier emptyLogger
+    $ Monad.Unify.runUnifier
+    $ fmap MultiOr.make
+    $ gather
+    $ Substitution.normalizeExcept
         mockMetadataTools
         (Mock.substitutionSimplifier mockMetadataTools)
         (Simplifier.create mockMetadataTools Map.empty)
