@@ -224,7 +224,7 @@ pipeTests =
 pipeRedirectTests :: [ParserTest ReplCommand]
 pipeRedirectTests =
     [ "config | script > file"                     `parsesTo_` pipeRedirectConfig Nothing "script" [] "file"
-    , "config 5 | script \"arg1\" \"arg2\" > file" `parsesTo_` pipeRedirectConfig (Just 5) "script" ["arg1", "arg2"] "file"
+    , "config 5 | script \"a r g 1\" arg2 > file"  `parsesTo_` pipeRedirectConfig (Just 5) "script" ["a r g 1", "arg2"] "file"
     , "config 5 | > "                              `fails`     "no script or file name"
     , "config 5 | script > "                       `fails`     "no file name"
     , "config 5 | > file"                          `fails`     "no script name"

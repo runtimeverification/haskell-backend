@@ -168,7 +168,7 @@ helpText =
     \\n\
     \Available modifiers:\n\
     \<command> > file                    prints the output of 'command' to file\n\
-    \<command> | external script         pipes command to external script and prints the result in the repl (each command line argument should be between double quotes)\n\
+    \<command> | external script         pipes command to external script and prints the result in the repl\n\
     \<command> | external script > file  pipes and then redirects the output of the piped command to a file\n\
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that\
