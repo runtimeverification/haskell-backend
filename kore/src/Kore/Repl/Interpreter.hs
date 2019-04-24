@@ -363,13 +363,77 @@ showChildren
     :: Claim claim
     => Maybe Int
     -> ReplM claim level ()
-showChildren mnode = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    node <- Lens.use lensNode
-    let node' = maybe node id mnode
-    if node' `elem` Graph.nodes graph
-       then putStrLn' $ show (Graph.suc graph node')
-       else putStrLn' "Invalid node!"
+showChildren maybeNode = do
+    graph <- getInnerGraph <$> get
+    node' <- getTargetNode maybeNode <$> get
+    case node' of
+        Nothing -> putStrLn' "Invalid node!"
+        Just node -> putStrLn' . show . Graph.suc graph $ node
+
+label
+    :: forall level m claim
+    .  Claim claim
+    => MonadState (ReplState claim level) m
+    => MonadWriter String m
+    => Maybe String
+    -> m ()
+label =
+    \case
+        Nothing  -> showLabels
+        Just lbl -> gotoLabel lbl
+  where
+    showLabels :: m ()
+    showLabels = do
+        labels <- Lens.use lensLabels
+        if null labels
+           then putStrLn' "No labels are set."
+           else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
+
+    gotoLabel :: String -> m ()
+    gotoLabel l = do
+        labels <- Lens.use lensLabels
+        selectNode $ maybe (-1) id (Map.lookup l labels)
+
+    acc :: String -> Graph.Node -> String -> String
+    acc key node res =
+        res <> "\n  " <> key <> ": " <> show node
+
+labelAdd
+    :: forall level m claim
+    .  Claim claim
+    => MonadState (ReplState claim level) m
+    => MonadWriter String m
+    => String
+    -> Maybe Int
+    -> m ()
+labelAdd lbl maybeNode = do
+    node' <- getTargetNode maybeNode <$> get
+    case node' of
+        Nothing -> putStrLn' "Target node is not in the graph."
+        Just node -> do
+            labels <- Lens.use lensLabels
+            if lbl `Map.notMember` labels
+                then do
+                    lensLabels .= Map.insert lbl node labels
+                    putStrLn' "Label added."
+                else
+                    putStrLn' "Label already exists."
+
+labelDel
+    :: forall level m claim
+    .  MonadState (ReplState claim level) m
+    => Claim claim
+    => MonadWriter String m
+    => String
+    -> m ()
+labelDel lbl = do
+    labels <- Lens.use lensLabels
+    if lbl `Map.member` labels
+       then do
+           lensLabels .= Map.delete lbl labels
+           putStrLn' "Removed label."
+       else
+           putStrLn' "Label doesn't exist."
 
 redirect
     :: forall level claim
@@ -507,69 +571,6 @@ tryAxiomClaim eac = do
     getCurrentConfig node = do
         Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
         return . Graph.lab' . Graph.context graph $ node
-
-
-label
-    :: forall level m claim
-    .  Claim claim
-    => MonadState (ReplState claim level) m
-    => MonadWriter String m
-    => Maybe String
-    -> m ()
-label =
-    \case
-        Nothing -> showLabels
-        Just lbl -> gotoLabel lbl
-  where
-    showLabels :: m ()
-    showLabels = do
-        labels <- Lens.use lensLabels
-        if null labels
-           then putStrLn' "No labels are set."
-           else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
-
-    gotoLabel :: String -> m ()
-    gotoLabel l = do
-        labels <- Lens.use lensLabels
-        selectNode $ maybe (-1) id (Map.lookup l labels)
-
-    acc :: String -> Graph.Node -> String -> String
-    acc key node res =
-        res <> "\n  " <> key <> ": " <> (show node)
-
-labelAdd
-    :: forall level m claim
-    .  Claim claim
-    => MonadState (ReplState claim level) m
-    => MonadWriter String m
-    => String
-    -> Maybe Int
-    -> m ()
-labelAdd lbl mn = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    node <- Lens.use lensNode
-    let node' = maybe node id mn
-    labels <- Lens.use lensLabels
-    if lbl `Map.notMember` labels && node' `elem` Graph.nodes graph
-       then do
-           lensLabels .= Map.insert lbl node' labels
-           putStrLn' "Label added."
-       else putStrLn' "Label already exists or the node isn't in the graph."
-
-labelDel
-    :: forall level m claim
-    .  MonadState (ReplState claim level) m
-    => Claim claim
-    => MonadWriter String m
-    => String
-    -> m ()
-labelDel lbl = do
-    labels <- Lens.use lensLabels
-    if lbl `Map.member` labels
-       then do
-           lensLabels .= Map.delete lbl labels
-           putStrLn' "Removed label."
-       else putStrLn' "Label doesn't exist."
 
 clear
     :: forall level m claim
