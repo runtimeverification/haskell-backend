@@ -57,6 +57,8 @@ import qualified Kore.Step.Simplification.Implies as Implies
                  ( simplify )
 import qualified Kore.Step.Simplification.In as In
                  ( simplify )
+import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
+                 ( simplify )
 import qualified Kore.Step.Simplification.Next as Next
                  ( simplify )
 import qualified Kore.Step.Simplification.Not as Not
@@ -69,8 +71,6 @@ import qualified Kore.Step.Simplification.SetVariable as SetVariable
                  ( simplify )
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
                  ( simplify )
-import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
-                 ( simplify )                
 import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable

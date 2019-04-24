@@ -374,7 +374,7 @@ verifyPatternHead =
             transCofreeF (VariablePattern . getConst)
                 <$> verifyVariable var
         SortPattern _ ->
-            koreFail "Unexpected pattern." 
+            koreFail "Unexpected pattern."
         SetVariablePattern (SetVariable var) ->
             transCofreeF (SetVariablePattern . SetVariable . getConst)
                 <$> verifyVariable var

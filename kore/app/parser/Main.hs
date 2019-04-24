@@ -13,6 +13,7 @@ import           Options.Applicative
                  ( InfoMod, Parser, argument, fullDesc, header, help, long,
                  metavar, progDesc, str, strOption, value )
 
+import           Kore.AST.ApplicativeKore
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.Sentence
@@ -24,12 +25,11 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import           Kore.AST.ApplicativeKore
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule , toVerifiedPureDefinition )
+                 ( VerifiedModule, toVerifiedPureDefinition )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Unparser as Unparser
@@ -167,4 +167,4 @@ mainVerify willChkAttr definition =
       case verifyResult of
         Left err1            -> error (printError err1)
         Right indexedModules -> return indexedModules
-        
+

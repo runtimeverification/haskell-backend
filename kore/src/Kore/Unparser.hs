@@ -65,7 +65,7 @@ class Unparse p where
     -- original/old unparser
     unparse :: p -> Doc ann
     -- applicative/new unparser
-    unparse2 :: p -> Doc ann 
+    unparse2 :: p -> Doc ann
     -- special unparser only for binding variables
     unparse2BindingVariables :: p -> Doc ann
     -- default implementation of unparse2BindingVariables

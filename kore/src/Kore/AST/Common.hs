@@ -120,10 +120,10 @@ instance Unparse (SymbolOrAlias level) where
             { symbolOrAliasConstructor
             , symbolOrAliasParams
             }
-      = "(" 
-        <> unparse2 symbolOrAliasConstructor 
+      = "("
+        <> unparse2 symbolOrAliasConstructor
         <> " "
-        <> parameters2 symbolOrAliasParams 
+        <> parameters2 symbolOrAliasParams
         <> ")"
 
 unparseSymbolOrAliasNoSortParams :: SymbolOrAlias level -> Pretty.Doc ann
@@ -131,7 +131,7 @@ unparseSymbolOrAliasNoSortParams
     SymbolOrAlias
         { symbolOrAliasConstructor
         }
-  = unparse2 symbolOrAliasConstructor 
+  = unparse2 symbolOrAliasConstructor
 
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
@@ -174,7 +174,7 @@ instance Unparse (Variable level) where
     unparse2BindingVariables Variable { variableName, variableCounter, variableSort } =
         unparseIdLower variableName
         <> Pretty.pretty variableCounter
-        <> Pretty.colon 
+        <> Pretty.colon
         <> unparse2 variableSort
 
 
@@ -455,12 +455,12 @@ instance Unparse child => Unparse (Application level child) where
         Application { applicationSymbolOrAlias, applicationChildren }
       =
         case applicationChildren of
-            [] -> 
-                "(" 
+            [] ->
+                "("
                 <> unparse2 applicationSymbolOrAlias
                 <> ")"
             children ->
-                "(" 
+                "("
                 <> unparseSymbolOrAliasNoSortParams applicationSymbolOrAlias
                 <> " "
                 <> arguments2 children
@@ -745,8 +745,8 @@ instance
         <> arguments' [unparse existsVariable, unparse existsChild]
 
     unparse2 Exists { existsVariable, existsChild } =
-        "(" <> "∃" <> " " 
-        <> (unparse2BindingVariables existsVariable) 
+        "(" <> "∃" <> " "
+        <> (unparse2BindingVariables existsVariable)
         <> " . " <> (unparse2 existsChild) <> ")"
 
 
@@ -860,8 +860,8 @@ instance
         <> arguments' [unparse forallVariable, unparse forallChild]
 
     unparse2 Forall { forallVariable, forallChild } =
-        "(" <> "∀" <> " " 
-        <> (unparse2BindingVariables forallVariable) 
+        "(" <> "∀" <> " "
+        <> (unparse2BindingVariables forallVariable)
         <> " . " <> (unparse2 forallChild) <> ")"
 
 
@@ -914,8 +914,8 @@ instance Unparse child => Unparse (Iff level child) where
         <> arguments [iffFirst, iffSecond]
 
     unparse2 Iff { iffFirst, iffSecond } =
-        "(" <> (unparse2 iffFirst) 
-        <> " ↔ " 
+        "(" <> (unparse2 iffFirst)
+        <> " ↔ "
         <> (unparse2 iffSecond) <> ")"
 
 
@@ -968,7 +968,7 @@ instance Unparse child => Unparse (Implies level child) where
         <> arguments [impliesFirst, impliesSecond]
 
     unparse2 Implies { impliesFirst, impliesSecond } =
-        "(" <> (unparse2 impliesFirst) <> " → " 
+        "(" <> (unparse2 impliesFirst) <> " → "
         <> (unparse2 impliesSecond) <> ")"
 
 

@@ -482,7 +482,7 @@ unparseAxiom
         , unparse sentenceAxiomAttributes
         ]
 
-unparseAxiom2 
+unparseAxiom2
     ::  ( Unparse patternType
         , Unparse sortParam
         )

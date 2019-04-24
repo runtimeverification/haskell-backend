@@ -8,25 +8,26 @@ module Kore.AST.ApplicativeKore
      )
 where
 
-import           Control.Comonad
-import           Data.Foldable
-import           Kore.AST.Valid
-import           Kore.AST.Common
-import           Kore.AST.MetaOrObject
-import           Kore.AST.Sentence
-import           Kore.Step.Pattern hiding ( freeVariables )
+import Control.Comonad
+import Data.Foldable
+import Kore.AST.Common
+import Kore.AST.MetaOrObject
+import Kore.AST.Sentence
+import Kore.AST.Valid
+import Kore.Step.Pattern hiding
+       ( freeVariables )
 
 -- use (CommonStepPattern level) for patternType
 
 completeDefinition :: VerifiedPureDefinition Object -> VerifiedPureDefinition Object
 completeDefinition Definition { definitionAttributes, definitionModules } =
-    Definition 
+    Definition
     { definitionAttributes
     , definitionModules = map completeModule definitionModules
     }
 
 completeModule :: VerifiedPureModule Object -> VerifiedPureModule Object
-completeModule Module { moduleName, moduleSentences, moduleAttributes } = 
+completeModule Module { moduleName, moduleSentences, moduleAttributes } =
     Module
     { moduleName
     , moduleSentences = concat (map completeSentence moduleSentences)
