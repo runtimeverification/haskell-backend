@@ -12,14 +12,12 @@ module Kore.Repl.Interpreter
 
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
-import           Control.Error.Safe
-                 ( atZ )
 import           Control.Lens
                  ( (%=), (.=) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( foldM, join )
+                 ( foldM )
 import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
@@ -31,8 +29,6 @@ import           Control.Monad.State.Class
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Data.Bifunctor
-                 ( bimap )
 import           Data.Bitraversable
                  ( bitraverse )
 import           Data.Coerce
@@ -344,7 +340,7 @@ showRule configNode = do
             putStrLn' $ maybe
                 "Error: identifier attribute wasn't initialized."
                 id
-                (axiomOrClaim' (length axioms) ruleIndex)
+                (showAxiomOrClaim (length axioms) ruleIndex)
   where
     getRuleIndex :: RewriteRule Object Variable -> Attribute.RuleIndex
     getRuleIndex = Attribute.identifier . Rule.attributes . Rule.getRewriteRule
@@ -446,7 +442,7 @@ labelDel lbl = do
            putStrLn' "Label doesn't exist."
 
 redirect
-    :: forall level claim m
+    :: forall level claim
     .  MetaOrObject level
     => Claim claim
     => ReplCommand
@@ -500,12 +496,12 @@ tryAxiomClaim eac = do
     rightToList :: Either a b -> [b]
     rightToList = either (const []) pure
 
-    stuckToUnstuck nodes Strategy.ExecutionGraph{ root, graph } =
-        lensGraph .=
-            Strategy.ExecutionGraph
-                { root
-                , graph = Graph.gmap (stuckToRewrite nodes) graph
-                }
+    stuckToUnstuck :: [Graph.Node] -> ExecutionGraph -> ReplM claim level ()
+    stuckToUnstuck nodes Strategy.ExecutionGraph{ graph } =
+        modify
+            . updateInnerGraph
+            . Graph.gmap (stuckToRewrite nodes)
+            $ graph
 
     stuckToRewrite xs ct@(to, n, lab, from)
         | n `elem` xs =
@@ -560,28 +556,26 @@ clear =
         Nothing -> Just <$> Lens.use lensNode >>= clear
         Just node
           | node == 0 -> putStrLn' "Cannot clear initial node (0)."
-          | otherwise -> go node
+          | otherwise -> clear0 node
   where
-    go :: Int -> m ()
-    go node = do
-        eg@Strategy.ExecutionGraph { graph = gr } <- Lens.use lensGraph
+    clear0 :: Int -> m ()
+    clear0 node = do
+        graph <- getInnerGraph <$> get
         let
-            nodes = collect (next gr) node
-            gr' = Graph.delNodes nodes gr
-            prevNode =
-                maybe 0 id
-                    . listToMaybe
-                    . fmap fst
-                    $ Graph.lpre gr node
-        lensGraph .= eg { Strategy.graph = gr' }
-        lensNode .= prevNode
-        putStrLn' $ "Removed " <> show (length nodes) <> " node(s)."
+            nodesToBeRemoved = collect (next graph) node
+            graph' = Graph.delNodes nodesToBeRemoved graph
+        modify (updateInnerGraph graph')
+        lensNode .= prevNode graph' node
+        putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
     next :: InnerGraph -> Graph.Node -> [Graph.Node]
     next gr n = fst <$> Graph.lsuc gr n
 
     collect :: (a -> [a]) -> a -> [a]
     collect f x = x : [ z | y <- f x, z <- collect f y]
+
+    prevNode :: InnerGraph -> Graph.Node -> Graph.Node
+    prevNode graph = maybe 0 id . listToMaybe . fmap fst . Graph.lpre graph
 
 saveSession
     :: forall level m claim
@@ -600,7 +594,7 @@ saveSession path = do
 
 pipe
     :: forall level claim
-    .  MetaOrObject level
+    .  level ~ Object
     => Claim claim
     => ReplCommand
     -> String
@@ -611,18 +605,27 @@ pipe cmd file args = do
     case exists of
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
-            (maybeInput, maybeOutput, _, _) <-
-                liftIO $ createProcess (proc exec args)
-                    { std_in = CreatePipe, std_out = CreatePipe }
-            let outputFunc = maybe putStrLn hPutStr maybeInput
-            st <- get
-            st' <- lift $ execStateT (replInterpreter outputFunc cmd) st
-            put st'
+            (maybeInput, maybeOutput, _, _) <- createProcess' exec
+            let
+                outputFunc = maybe putStrLn hPutStr maybeInput
+            get >>= runInterpreter outputFunc >>= put
             case maybeOutput of
+                Nothing ->
+                    putStrLn' "Error: couldn't access output handle."
                 Just handle -> do
                     output <- liftIO $ hGetContents handle
                     putStrLn' output
-                Nothing -> putStrLn' "Error: couldn't access output handle of executable."
+  where
+    runInterpreter
+        :: (String -> IO ())
+        -> ReplState claim level
+        -> ReplM claim level (ReplState claim level)
+    runInterpreter io = lift . execStateT (replInterpreter io cmd)
+
+    createProcess' exec =
+        liftIO $ createProcess (proc exec args)
+            { std_in = CreatePipe, std_out = CreatePipe }
+
 
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
@@ -740,23 +743,17 @@ showDotGraph len =
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule -> maybe "Unknown " Text.Lazy.pack
-                      . fmap (axiomOrClaim len)
-                      . getRuleIndex
+                      . showAxiomOrClaim len
                       . Attribute.identifier
                       . Rule.attributes
                       . Rule.getRewriteRule
                       $ rule
 
-axiomOrClaim' :: Int -> Attribute.RuleIndex -> Maybe String
-axiomOrClaim' len (RuleIndex Nothing) = Nothing
-axiomOrClaim' len (RuleIndex (Just rid))
+showAxiomOrClaim :: Int -> Attribute.RuleIndex -> Maybe String
+showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
+showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
-
-axiomOrClaim :: Int -> Int -> String
-axiomOrClaim len iden
-  | iden < len = "Axiom " <> show iden
-  | otherwise  = "Claim " <> show (iden - len)
 
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)

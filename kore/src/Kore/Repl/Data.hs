@@ -27,6 +27,7 @@ module Kore.Repl.Data
     , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
     , findAxiom, findClaim
     , StepResult(..), runStepper'
+    , updateInnerGraph
     ) where
 
 import           Control.Error
@@ -54,7 +55,6 @@ import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
                  ( Seq )
-import qualified Data.Sequence as Seq
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -349,6 +349,17 @@ getInnerGraph
     -> InnerGraph
 getInnerGraph = Strategy.graph . graph
 
+updateInnerGraph
+    :: forall claim level
+    .  InnerGraph
+    -> ReplState claim level
+    -> ReplState claim level
+updateInnerGraph ig st = Lens.over lensGraph (updateInnerGraph0 ig) st
+  where
+    updateInnerGraph0 :: InnerGraph -> ExecutionGraph -> ExecutionGraph
+    updateInnerGraph0 graph Strategy.ExecutionGraph { root } =
+        Strategy.ExecutionGraph { root, graph }
+
 getTargetNode
     :: forall claim level
     .  Maybe Int
@@ -433,9 +444,9 @@ runStepper' claim claims axioms node' st = do
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
         stepper' claim claims axioms graph' node'
     pure . (,) gr $ case Graph.suc innerGraph node' of
-        []      -> NoResult
-        [node'] -> SingleResult node'
-        nodes   -> BranchResult nodes
+        []       -> NoResult
+        [single] -> SingleResult single
+        nodes    -> BranchResult nodes
   where
     graph'     = graph st
     stepper'   = stepper st
