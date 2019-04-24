@@ -31,6 +31,8 @@ import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Location as Attribute
+import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Error
 import           Kore.OnePath.Step
@@ -244,7 +246,7 @@ instance
     ) =>
     EqualWithExplanation (PurePattern level domain variable annotation)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(PurePattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -284,7 +286,7 @@ instance
     ) =>
     EqualWithExplanation (KorePattern domain variable annotation)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(KorePattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -312,7 +314,7 @@ instance
     ) =>
     EqualWithExplanation (CofreeT f w a)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(CofreeT _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -329,7 +331,7 @@ instance
     ( EqualWithExplanation a, Show a ) =>
     EqualWithExplanation (Identity a)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Identity _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -1443,7 +1445,7 @@ instance
     ( EqualWithExplanation variable, Show variable
     ) => StructEqualWithExplanation (Valid variable level)
   where
-    structFieldsWithNames expected actual =
+    structFieldsWithNames expected@(Valid _ _) actual@(Valid _ _) =
         [ EqWrap
             "patternSort = "
             (patternSort expected)
@@ -1513,11 +1515,15 @@ instance
     StructEqualWithExplanation (RulePattern level variable)
   where
     structConstructorName _ = "RulePattern"
-    structFieldsWithNames expect actual =
+    structFieldsWithNames
+        expect@(RulePattern _ _ _ _ _)
+        actual@(RulePattern _ _ _ _ _)
+      =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "left = "      ) left
             , Function.on (EqWrap "right = "     ) right
             , Function.on (EqWrap "requires = "  ) requires
+            , Function.on (EqWrap "ensures = "   ) ensures
             , Function.on (EqWrap "attributes = ") attributes
             ]
 
@@ -1527,7 +1533,10 @@ instance EqualWithExplanation Attribute.Axiom where
 
 instance StructEqualWithExplanation Attribute.Axiom where
     structConstructorName _ = "Axiom"
-    structFieldsWithNames expect actual =
+    structFieldsWithNames
+        expect@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+        actual@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+      =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "heatCool = "       ) Attribute.heatCool
             , Function.on (EqWrap "productionID = "   ) Attribute.productionID
@@ -1541,6 +1550,9 @@ instance StructEqualWithExplanation Attribute.Axiom where
             , Function.on (EqWrap "overload = "       ) Attribute.overload
             , Function.on (EqWrap "smtLemma = "       ) Attribute.smtLemma
             , Function.on (EqWrap "label = "          ) Attribute.label
+            , Function.on (EqWrap "sorceLocation = "  ) Attribute.sourceLocation
+            , Function.on (EqWrap "constructor = "    ) Attribute.constructor
+            , Function.on (EqWrap "identifier = "     ) Attribute.identifier
             ]
 
 instance EqualWithExplanation Attribute.HeatCool where
@@ -1558,7 +1570,8 @@ instance SumEqualWithExplanation Attribute.HeatCool where
         SumConstructorDifferent (show expect) (show actual)
 
 instance EqualWithExplanation Attribute.ProductionID where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.ProductionID _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.ProductionID where
@@ -1567,7 +1580,8 @@ instance WrapperEqualWithExplanation Attribute.ProductionID where
         Function.on (EqWrap "getProductionID = ") Attribute.getProductionID
 
 instance EqualWithExplanation Attribute.Assoc where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Assoc _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Assoc where
@@ -1575,7 +1589,8 @@ instance WrapperEqualWithExplanation Attribute.Assoc where
     wrapperField = Function.on (EqWrap "isAssoc = ") Attribute.isAssoc
 
 instance EqualWithExplanation Attribute.Comm where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Comm _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Comm where
@@ -1583,7 +1598,8 @@ instance WrapperEqualWithExplanation Attribute.Comm where
     wrapperField = Function.on (EqWrap "isComm = ") Attribute.isComm
 
 instance EqualWithExplanation Attribute.Unit where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Unit _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Unit where
@@ -1591,7 +1607,8 @@ instance WrapperEqualWithExplanation Attribute.Unit where
     wrapperField = Function.on (EqWrap "isUnit = ") Attribute.isUnit
 
 instance EqualWithExplanation Attribute.Idem where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Idem _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Idem where
@@ -1599,7 +1616,8 @@ instance WrapperEqualWithExplanation Attribute.Idem where
     wrapperField = Function.on (EqWrap "isIdem = ") Attribute.isIdem
 
 instance EqualWithExplanation Attribute.Trusted where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Trusted _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Trusted where
@@ -1607,7 +1625,8 @@ instance WrapperEqualWithExplanation Attribute.Trusted where
     wrapperField = Function.on (EqWrap "isTrusted = ") Attribute.isTrusted
 
 instance EqualWithExplanation Attribute.Concrete where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Concrete _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Concrete where
@@ -1615,7 +1634,8 @@ instance WrapperEqualWithExplanation Attribute.Concrete where
     wrapperField = Function.on (EqWrap "isConcrete = ") Attribute.isConcrete
 
 instance EqualWithExplanation Attribute.Simplification where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Simplification _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Simplification where
@@ -1624,7 +1644,8 @@ instance WrapperEqualWithExplanation Attribute.Simplification where
         Function.on (EqWrap "isSimplification = ") Attribute.isSimplification
 
 instance EqualWithExplanation Attribute.Overload where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Overload _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Overload where
@@ -1632,7 +1653,8 @@ instance WrapperEqualWithExplanation Attribute.Overload where
     wrapperField = Function.on (EqWrap "getOverload = ") Attribute.getOverload
 
 instance EqualWithExplanation Attribute.SmtLemma where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.SmtLemma _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.SmtLemma where
@@ -1640,12 +1662,104 @@ instance WrapperEqualWithExplanation Attribute.SmtLemma where
     wrapperField = Function.on (EqWrap "isSmtLemma = ") Attribute.isSmtLemma
 
 instance EqualWithExplanation Attribute.Label where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Label _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Label where
     wrapperConstructorName _ = "Label"
     wrapperField = Function.on (EqWrap "unLabel = ") Attribute.unLabel
+
+instance
+    EqualWithExplanation Attribute.RuleIndex
+  where
+    compareWithExplanation a@(Attribute.RuleIndex _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance
+    WrapperEqualWithExplanation Attribute.RuleIndex
+  where
+    wrapperField = Function.on (EqWrap "getRuleIndex = ") Attribute.getRuleIndex
+    wrapperConstructorName _ = "RuleIndex"
+
+instance
+    EqualWithExplanation Attribute.Constructor
+  where
+    compareWithExplanation a@(Attribute.Constructor _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance
+    WrapperEqualWithExplanation Attribute.Constructor
+  where
+    wrapperField =
+        Function.on (EqWrap "isConstructor = ") Attribute.isConstructor
+    wrapperConstructorName _ = "Constructor"
+
+instance EqualWithExplanation Attribute.SourceLocation
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation Attribute.SourceLocation
+  where
+    structConstructorName _ = "SourceLocation"
+    structFieldsWithNames
+        expect@(Attribute.SourceLocation _ _)
+        actual@(Attribute.SourceLocation _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "location = ") Attribute.location
+            , Function.on (EqWrap "source = ") Attribute.source
+            ]
+
+instance EqualWithExplanation Attribute.Location
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation Attribute.Location
+  where
+    structConstructorName _ = "Location"
+    structFieldsWithNames
+        expect@(Attribute.Location _ _)
+        actual@(Attribute.Location _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "start = ") Attribute.start
+            , Function.on (EqWrap "end = ") Attribute.end
+            ]
+
+instance EqualWithExplanation Attribute.LineColumn
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation Attribute.LineColumn
+  where
+    structConstructorName _ = "LineColumn"
+    structFieldsWithNames
+        expect@(Attribute.LineColumn _ _)
+        actual@(Attribute.LineColumn _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "start = ") Attribute.line
+            , Function.on (EqWrap "end = ") Attribute.column
+            ]
+
+instance
+    EqualWithExplanation Attribute.Source
+  where
+    compareWithExplanation a@(Attribute.Source _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance
+    WrapperEqualWithExplanation Attribute.Source
+  where
+    wrapperField = Function.on (EqWrap "unSource = ") Attribute.unSource
+    wrapperConstructorName _ = "Source"
 
 -- For: Alias
 
@@ -1661,7 +1775,7 @@ instance
     => StructEqualWithExplanation (Alias level)
   where
     structConstructorName _ = "Alias"
-    structFieldsWithNames expect actual =
+    structFieldsWithNames expect@(Alias _ _) actual@(Alias _ _) =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "aliasConstructor = ") aliasConstructor
             , Function.on (EqWrap "aliasParams = ") aliasParams
@@ -1673,7 +1787,7 @@ instance
     MetaOrObject level
     => EqualWithExplanation (SortVariable level)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(SortVariable _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -1706,7 +1820,7 @@ instance
 instance
     EqualWithExplanation Attributes
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attributes _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -1715,11 +1829,17 @@ instance
     wrapperField = Function.on (EqWrap "getAttributes = ") getAttributes
     wrapperConstructorName _ = "Attributes"
 
-instance (EqualWithExplanation goal, Show goal) => EqualWithExplanation (AllPath.ProofState goal) where
+instance
+    (EqualWithExplanation goal, Show goal)
+    => EqualWithExplanation (AllPath.ProofState goal)
+  where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation goal, Show goal) => SumEqualWithExplanation (AllPath.ProofState goal) where
+instance
+    (EqualWithExplanation goal, Show goal)
+    => SumEqualWithExplanation (AllPath.ProofState goal)
+  where
     sumConstructorPair AllPath.Proven          AllPath.Proven          =
         SumConstructorSameNoArguments
     sumConstructorPair (AllPath.Goal goal1)    (AllPath.Goal goal2)    =
