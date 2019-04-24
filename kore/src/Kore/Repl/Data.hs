@@ -24,7 +24,7 @@ module Kore.Repl.Data
     , emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex
     , initializeProofFor
-    , getInnerGraph, getConfigAt
+    , getInnerGraph, getConfigAt, getRuleFor
     ) where
 
 import           Control.Error
@@ -33,7 +33,7 @@ import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
-                 ( join )
+                 ( guard, join )
 import           Control.Monad.Trans.Accum
                  ( AccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
@@ -46,13 +46,18 @@ import           Data.Graph.Inductive.PatriciaTree
 import qualified Data.Map as Map
 import           Data.Map.Strict
                  ( Map )
+import           Data.Maybe
+                 ( listToMaybe )
 import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
                  ( Seq )
+import qualified Data.Sequence as Seq
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import           GHC.Exts
+                 ( toList )
 
 import           Kore.AST.Common
                  ( Variable )
@@ -351,3 +356,32 @@ getConfigAt maybeNode st =
   where
     node' = maybe (st Lens.^. lensNode) id maybeNode
     graph = getInnerGraph st
+
+getRuleFor
+    :: forall claim level
+    .  level ~ Object
+    => Maybe Int
+    -> ReplState claim level
+    -> Maybe (RewriteRule Object Variable)
+getRuleFor maybeNode state = do
+    guard $ node' `elem` Graph.nodes gr
+    getRewriteRule . Graph.inn gr $ node'
+
+  where
+    node' :: Graph.Node
+    node' = maybe (node state) id maybeNode
+
+    gr :: InnerGraph
+    gr = getInnerGraph state
+
+    getRewriteRule
+        :: forall a b
+        .  [(a, b, Seq (RewriteRule Object Variable))]
+        -> Maybe (RewriteRule Object Variable)
+    getRewriteRule =
+        listToMaybe
+        . join
+        . fmap (toList . third)
+
+    third :: forall a b c. (a, b, c) -> c
+    third (_, _, c) = c

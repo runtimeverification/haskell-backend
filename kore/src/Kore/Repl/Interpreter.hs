@@ -65,7 +65,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom (..), sourceLocation )
+                 ( Axiom (..), RuleIndex (..), sourceLocation )
 import           Kore.Attribute.RuleIndex
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..),
@@ -280,29 +280,30 @@ omitCell =
       | x `elem` xs = filter (/= x) xs
       | otherwise   = x : xs
 
-data NodeStates = StuckNode | UnevaluatedNode
-    deriving (Eq, Ord, Show)
-
 showLeafs
     :: MetaOrObject level
     => Claim claim
     => ReplM claim level ()
 showLeafs = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    let nodes = Graph.nodes graph
-    let leafs = filter (\x -> (Graph.outdeg graph x) == 0) nodes
-    let result =
+    graph <- getInnerGraph <$> get
+    let leafsByType =
             groupSort
                 . catMaybes
                 . fmap (getNodeState graph)
-                $ leafs
+                . findLeafNodes
+                $ graph
 
-    case foldr ((<>) . showPair) "" result of
-        "" -> putStrLn' "No leafs found, proof is complete"
+    case foldMap showPair leafsByType of
+        "" -> putStrLn' "No leafs found, proof is complete."
         xs -> putStrLn' xs
   where
+    findLeafNodes :: InnerGraph -> [Graph.Node]
+    findLeafNodes graph =
+        filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
+
+    getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
     getNodeState graph node =
-        maybe Nothing (\x -> Just (x, node))
+        fmap (\nodeState -> (nodeState, node))
         . strategyPattern StrategyPatternTransformer
             { rewriteTransformer = const . Just $ UnevaluatedNode
             , stuckTransformer = const . Just $ StuckNode
@@ -312,7 +313,7 @@ showLeafs = do
         . Graph.context graph
         $ node
 
-    showPair :: (NodeStates, [Graph.Node]) -> String
+    showPair :: (NodeState, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
 
 showRule
@@ -323,34 +324,27 @@ showRule
     => Maybe Int
     -> m ()
 showRule configNode = do
-    ReplState { axioms, graph = Strategy.ExecutionGraph { graph } } <- get
-    node <- Lens.use lensNode
-    let node' = maybe node id configNode
-    if node' `elem` Graph.nodes graph
-        then do
-            putStrLn' $ "Rule for node " <> show node' <> " is:"
-            unparseNodeLabels
-                . Graph.inn'
-                . Graph.context graph
-                $ node'
-            let mrule = getRewriteRuleFromLabel
-                            . Graph.inn'
-                            . Graph.context graph
-                            $ node'
-            case mrule of
-                Just rule -> do
-                    let mid = getRuleIndex
-                                . Attribute.identifier
-                                . Rule.attributes
-                                . Rule.getRewriteRule
-                                $ rule
-                    putStrLn' $ maybe
-                        "Error: identifier attribute wasn't initialized."
-                        (axiomOrClaim (length axioms))
-                        mid
-                Nothing ->
-                    putStrLn' "No rule was applied."
-        else putStrLn' "Invalid node!"
+    maybeRule <- getRuleFor configNode <$> get
+    case maybeRule of
+        Nothing -> putStrLn' "Invalid node!"
+        Just rule -> do
+            axioms <- Lens.use lensAxioms
+            printRewriteRule rule
+            let ruleIndex = getRuleIndex rule
+            putStrLn' $ maybe
+                "Error: identifier attribute wasn't initialized."
+                id
+                (axiomOrClaim' (length axioms) ruleIndex)
+
+  where
+    getRuleIndex :: RewriteRule Object Variable -> Attribute.RuleIndex
+    getRuleIndex = Attribute.identifier . Rule.attributes . Rule.getRewriteRule
+
+axiomOrClaim' :: Int -> Attribute.RuleIndex -> Maybe String
+axiomOrClaim' len (RuleIndex Nothing) = Nothing
+axiomOrClaim' len (RuleIndex (Just rid))
+  | rid < len = Just $ "Axiom " <> show rid
+  | otherwise = Just $ "Claim " <> show (rid - len)
 
 axiomOrClaim :: Int -> Int -> String
 axiomOrClaim len iden
@@ -726,29 +720,6 @@ unparseStrategy omitList =
            . Identifier.getId
            . symbolOrAliasConstructor
 
-unparseNodeLabels
-    :: MonadWriter String m
-    => [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
-    -> m ()
-unparseNodeLabels =
-    traverse_ printRewriteRule
-    . join
-    . fmap (toList . third)
-  where
-    third :: (a, b, c) -> c
-    third (_, _, c) = c
-
-getRewriteRuleFromLabel
-    :: [ (Graph.Node, Graph.Node, Seq (RewriteRule Object Variable)) ]
-    -> Maybe (RewriteRule Object Variable)
-getRewriteRuleFromLabel =
-    listToMaybe
-    . join
-    . fmap (toList . third)
-  where
-      third :: (a, b, c) -> c
-      third (_, _, c) = c
-
 extractSourceAndLocation
     :: RewriteRule level Variable
     -> SourceLocation
@@ -781,6 +752,9 @@ showDotGraph len =
                       . Rule.attributes
                       . Rule.getRewriteRule
                       $ rule
+
+data NodeState = StuckNode | UnevaluatedNode
+    deriving (Eq, Ord, Show)
 
 data StepResult
     = NoChildNodes
