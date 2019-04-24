@@ -128,5 +128,7 @@ instance
             TopPattern Top { topSort } -> locationFromAst topSort
             VariablePattern variable -> locationFromAst variable
             SortPattern _ -> locationFromAst AstLocationUnknown
+            SetVariablePattern (SetVariable variable) ->
+                locationFromAst variable
 
     updateAstLocation = undefined

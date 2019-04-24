@@ -40,6 +40,7 @@ module Kore.AST.Valid
     , mkRewrites
     , mkTop
     , mkVar
+    , mkSetVar
     , mkStringLiteral
     , mkCharLiteral
     , mkSort
@@ -219,6 +220,7 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 StringLiteralPattern _ -> illSorted
                 VariablePattern _ -> illSorted
                 SortPattern _ -> illSorted
+                SetVariablePattern _ -> illSorted
 
 {- | Call the argument function with two patterns whose sorts agree.
 
@@ -950,11 +952,28 @@ mkVar
     => variable level
     -> PurePattern level domain variable valid
 mkVar var =
-    asPurePattern (valid :< VariablePattern var)
+    asPurePattern (validVar var :< VariablePattern var)
+
+validVar
+    :: SortedVariable variable
+    => variable level
+    -> Valid (variable level) level
+validVar var = Valid { patternSort, freeVariables }
   where
     patternSort = sortedVariableSort var
     freeVariables = Set.singleton var
-    valid = Valid { patternSort, freeVariables }
+
+{- | Construct a set variable pattern.
+ -}
+mkSetVar
+    ::  ( Functor domain
+        , SortedVariable variable
+        , valid ~ Valid (variable level) level
+        )
+    => variable level
+    -> PurePattern level domain variable valid
+mkSetVar var =
+    asPurePattern (validVar var :< SetVariablePattern (SetVariable var))
 
 {- | Construct a 'StringLiteral' pattern.
  -}

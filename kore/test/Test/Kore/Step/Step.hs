@@ -129,7 +129,7 @@ test_applyUnifiedRule =
             initial = PredicateSubstitution.bottom
             expect = Right mempty
         actual <- applyUnifiedRule initial unifiedRule
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
         let unifiedRule =
@@ -149,7 +149,7 @@ test_applyUnifiedRule =
             initial = PredicateSubstitution.top
             expect = Right (MultiOr [ right axiom <$ initial ])
         actual <- applyUnifiedRule initial unifiedRule
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     , testCase "combine initial and rule conditions" $ do
         let unifiedRule =
@@ -201,7 +201,7 @@ test_applyUnifiedRule =
                 $ Predicate.makeNotPredicate predicate
             expect = Right mempty
         actual <- applyUnifiedRule initial unifiedRule
-        assertEqual "" expect actual
+        assertEqualWithExplanation "" expect actual
 
     ]
 
@@ -696,18 +696,24 @@ applyRewriteRules initial rules =
         UnificationProcedure Unification.unificationProcedure
 
 checkResults
-    :: MultiOr (ExpandedPattern Object Variable)
+    :: HasCallStack
+    => MultiOr (ExpandedPattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkResults expect actual =
-    assertEqualWithExplanation "" expect (Step.result <$> Step.results actual)
+    assertEqualWithExplanation "compare results"
+        expect
+        (Step.result <$> Step.results actual)
 
 checkRemainders
-    :: MultiOr (ExpandedPattern Object Variable)
+    :: HasCallStack
+    => MultiOr (ExpandedPattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkRemainders expect actual =
-    assertEqualWithExplanation "" expect (Step.remainders actual)
+    assertEqualWithExplanation "compare remainders"
+        expect
+        (Step.remainders actual)
 
 test_applyRewriteRules :: [TestTree]
 test_applyRewriteRules =
@@ -740,14 +746,9 @@ test_applyRewriteRules =
                         { term = initialTerm
                         , predicate =
                             makeNotPredicate
-                            $ makeCeilPredicate Mock.cg
-                        , substitution = mempty
-                        }
-                    , Predicated
-                        { term = initialTerm
-                        , predicate =
-                            makeNotPredicate
-                            $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         , substitution = mempty
                         }
                     ]
@@ -794,18 +795,9 @@ test_applyRewriteRules =
                         , predicate =
                             makeAndPredicate (makeCeilPredicate Mock.cf)
                             $ makeNotPredicate
-                            $ makeCeilPredicate Mock.cg
-                        , substitution = mempty
-                        }
-                    , Predicated
-                        { term =
-                            Mock.functionalConstr20
-                                (mkVar Mock.x)
-                                Mock.cg
-                        , predicate =
-                            makeAndPredicate (makeCeilPredicate Mock.cf)
-                            $ makeNotPredicate
-                            $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         , substitution = mempty
                         }
                     ]
@@ -883,12 +875,10 @@ test_applyRewriteRules =
                 MultiOr
                     [ initial
                         { predicate =
-                            makeNotPredicate (makeCeilPredicate Mock.cg)
-                        }
-                    , initial
-                        { predicate =
                             makeNotPredicate
-                            $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         }
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -916,15 +906,13 @@ test_applyRewriteRules =
         --   rewritten: cg, with (⌈cf⌉ and ⌈cg⌉) and [x=b]
         --   remainder:
         --     constr20(x, cf, cg)
-        --        with ¬(⌈cf⌉ and ⌈cg⌉)
-        --        or   ¬[x=a]
-        --        or   ¬[x=b]
+        --        with ¬(⌈cf⌉ and ⌈cg⌉ and [x=a])
+        --         and ¬(⌈cf⌉ and ⌈cg⌉ and [x=b])
         let
             definedBranches =
                 makeAndPredicate
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
-            undefinedBranches = Predicate.makeNotPredicate definedBranches
             results =
                 MultiOr
                     [ Predicated
@@ -942,36 +930,17 @@ test_applyRewriteRules =
                     ]
             remainders =
                 MultiOr
-                    [ initial { predicate = undefinedBranches }
-                    , initial
-                        { predicate =
-                            Predicate.makeAndPredicate
-                                undefinedBranches
-                                (Predicate.makeNotPredicate
-                                    $ Predicate.makeEqualsPredicate
-                                        (mkVar Mock.x)
-                                        Mock.b
-                                )
-                        }
-                    , initial
+                    [ initial
                         { predicate =
                             Predicate.makeAndPredicate
                                 (Predicate.makeNotPredicate
-                                    $ Predicate.makeEqualsPredicate
-                                        (mkVar Mock.x)
-                                        Mock.a
-                                )
-                                undefinedBranches
-                        }
-                    , initial
-                        { predicate =
-                            Predicate.makeAndPredicate
-                                (Predicate.makeNotPredicate
+                                    $ Predicate.makeAndPredicate definedBranches
                                     $ Predicate.makeEqualsPredicate
                                         (mkVar Mock.x)
                                         Mock.a
                                 )
                                 (Predicate.makeNotPredicate
+                                    $ Predicate.makeAndPredicate definedBranches
                                     $ Predicate.makeEqualsPredicate
                                         (mkVar Mock.x)
                                         Mock.b
@@ -1011,12 +980,10 @@ test_applyRewriteRules =
                 MultiOr
                     [ initial
                         { predicate =
-                            makeNotPredicate (makeCeilPredicate Mock.cg)
-                        }
-                    , initial
-                        { predicate =
                             makeNotPredicate
-                            $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         }
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -1242,9 +1209,29 @@ test_sequenceMatchingRules :: [TestTree]
 test_sequenceMatchingRules =
     [ testCase "functional10(x) and functional10(sigma(x, y)) => a" $ do
         let
-            expect = UnificationError UnsupportedSymbolic
             initialTerm = Mock.functional10 (mkVar Mock.x)
             initial = pure initialTerm
-        Left actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
-        assertEqualWithExplanation "" expect actual
+            x' = nextVariable Mock.x
+            sigma = Mock.sigma (mkVar x') (mkVar Mock.y)
+            results =
+                MultiOr
+                    [ Predicated
+                        { term = Mock.a
+                        , predicate = Predicate.makeTruePredicate
+                        , substitution = Substitution.wrap [(Mock.x, sigma)]
+                        }
+                    ]
+            remainders =
+                MultiOr
+                    [ initial
+                        { predicate =
+                            Predicate.makeNotPredicate
+                            $ Predicate.makeExistsPredicate x'
+                            $ Predicate.makeExistsPredicate Mock.y
+                            $ Predicate.makeEqualsPredicate (mkVar Mock.x) sigma
+                        }
+                    ]
+        Right actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
+        checkResults results actual
+        checkRemainders remainders actual
     ]
