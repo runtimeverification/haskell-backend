@@ -202,7 +202,6 @@ pipeTests =
     , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just 5) "script" ["arg1", "arg2"]
     , "step 5 | script"                     `parsesTo_` pipeStep 5 "script" []
     , "config 5 | "                         `fails`     "no script name"
-    , "config 5 | script arg1"              `fails`     "arguments should be between double quotes"
     ]
   where
     pipeConfig
@@ -228,7 +227,6 @@ pipeRedirectTests =
     , "config 5 | > "                              `fails`     "no script or file name"
     , "config 5 | script > "                       `fails`     "no file name"
     , "config 5 | > file"                          `fails`     "no script name"
-    , "config 5 | script arg1 >"                   `fails`     "arguments should be between double quotes"
     ]
   where
     pipeRedirectConfig

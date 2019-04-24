@@ -147,7 +147,7 @@ pipe :: ReplCommand -> Parser ReplCommand
 pipe cmd = Pipe cmd <$$> literal "|" *> wordWithout ['>'] <**> many arg
 
 arg :: Parser String
-arg = quotedArg <|> word
+arg = quotedArg <|> wordWithout ['>']
 
 quotedArg :: Parser String
 quotedArg = Char.char '"' *> manyTill L.charLiteral (Char.char '"') <* Char.space
