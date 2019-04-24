@@ -6,7 +6,7 @@ License     : NCSA
 
 module Kore.Step.Remainder
     ( remainder
-    , quantifyTarget
+    , existentiallyQuantifyTarget
     ) where
 
 import           Control.Applicative
@@ -55,10 +55,10 @@ remainder results =
     mkMultiAndPredicate $ mkNotExists conditions
   where
     conditions = mkMultiAndPredicate . unificationConditions <$> results
-    mkNotExists = mkNotMultiOr . fmap quantifyTarget
+    mkNotExists = mkNotMultiOr . fmap existentiallyQuantifyTarget
 
 -- | Existentially-quantify target (axiom) variables in the 'Predicate'.
-quantifyTarget
+existentiallyQuantifyTarget
     ::  ( Ord     (variable Object)
         , Show    (variable Object)
         , Unparse (variable Object)
@@ -66,7 +66,7 @@ quantifyTarget
         )
     => Predicate Object (Target variable)
     -> Predicate Object variable
-quantifyTarget predicate =
+existentiallyQuantifyTarget predicate =
     Predicate.mapVariables Target.unwrapVariable
     $ Predicate.makeMultipleExists freeNonTargetVariables predicate
   where

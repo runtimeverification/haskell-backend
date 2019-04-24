@@ -39,4 +39,5 @@ test_quantifyTarget =
     [ target `becomes` quantified $  "quantifies target variables"
     ]
   where
-    becomes original expect = equals (Remainder.quantifyTarget original) expect
+    becomes original expect =
+        equals (Remainder.existentiallyQuantifyTarget original) expect
