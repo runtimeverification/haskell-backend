@@ -33,7 +33,9 @@ commandParser :: Parser ReplCommand
 commandParser = do
     cmd <- nonRecursiveCommand
     endOfInput cmd
+        <|> pipeWithAppend cmd
         <|> pipeWithRedirect cmd
+        <|> appendTo cmd
         <|> redirect cmd
         <|> pipe cmd
 
@@ -64,7 +66,16 @@ nonRecursiveCommand =
         ]
 
 pipeWithRedirect :: ReplCommand -> Parser ReplCommand
-pipeWithRedirect cmd = try (pipe cmd >>= redirect)
+pipeWithRedirect = pipeWith redirect
+
+pipeWithAppend :: ReplCommand -> Parser ReplCommand
+pipeWithAppend = pipeWith appendTo
+
+pipeWith
+    :: (ReplCommand -> Parser ReplCommand)
+    -> ReplCommand
+    -> Parser ReplCommand
+pipeWith parserCmd cmd = try (pipe cmd >>= parserCmd)
 
 endOfInput :: ReplCommand -> Parser ReplCommand
 endOfInput cmd = eof $> cmd
@@ -145,6 +156,9 @@ redirect cmd = Redirect cmd <$$> literal ">" *> word
 
 pipe :: ReplCommand -> Parser ReplCommand
 pipe cmd = Pipe cmd <$$> literal "|" *> wordWithout ['>'] <**> many arg
+
+appendTo :: ReplCommand -> Parser ReplCommand
+appendTo cmd = AppendTo cmd <$$> literal ">>" *> word
 
 arg :: Parser String
 arg = quotedArg <|> wordWithout ['>']
