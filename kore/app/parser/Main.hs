@@ -13,7 +13,7 @@ import           Options.Applicative
                  ( InfoMod, Parser, argument, fullDesc, header, help, long,
                  metavar, progDesc, str, strOption, value )
 
-import           Kore.AST.ApplicativeKore
+---import           Kore.AST.ApplicativeKore
 import           Kore.AST.Kore
                  ( CommonKorePattern )
 import           Kore.AST.Sentence
@@ -29,10 +29,11 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule, toVerifiedPureDefinition )
+                 ( VerifiedModule )
+---                 ( VerifiedModule, toVerifiedPureDefinition )
 import           Kore.Parser.Parser
                  ( parseKoreDefinition, parseKorePattern )
-import           Kore.Unparser as Unparser
+---import           Kore.Unparser as Unparser
 
 
 import GlobalMain
