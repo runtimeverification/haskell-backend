@@ -82,7 +82,8 @@ import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubs
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), OnePathRule (..),
                  RewriteRule (RewriteRule), RulePattern (RulePattern),
-                 extractOnePathClaims, extractImplicationClaims, extractRewriteAxioms, getRewriteRule )
+                 extractImplicationClaims, extractOnePathClaims,
+                 extractRewriteAxioms, getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Search

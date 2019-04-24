@@ -28,8 +28,8 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import           Kore.ModelChecker.Step
-                 ( CommonModalPattern, ModalPattern (..), Prim (..), CommonProofState,
-                   defaultOneStepStrategy )
+                 ( CommonModalPattern, CommonProofState, ModalPattern (..),
+                 Prim (..), defaultOneStepStrategy )
 import qualified Kore.ModelChecker.Step as ProofState
                  ( ProofState (..) )
 import qualified Kore.ModelChecker.Step as ModelChecker
@@ -44,12 +44,13 @@ import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Representation.ExpandedPattern as Predicated
                  ( Predicated (..) )
 import           Kore.Step.Rule
-                 ( RulePattern (..), RewriteRule, ImplicationRule (ImplicationRule) )
+                 ( ImplicationRule (ImplicationRule), RewriteRule,
+                 RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
 import           Kore.Step.Strategy
-                 ( Strategy, pickFinal, TransitionT, runStrategy )
+                 ( Strategy, TransitionT, pickFinal, runStrategy )
 import           Numeric.Natural
                  ( Natural )
 

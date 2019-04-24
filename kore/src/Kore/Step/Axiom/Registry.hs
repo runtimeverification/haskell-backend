@@ -44,7 +44,7 @@ import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
-                 QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, OnePathClaimPattern, ImplicationAxiomPattern, RewriteAxiomPattern),
+                 QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern),
                  verifiedKoreSentenceToAxiomPattern )
 import qualified Kore.Step.Rule
