@@ -335,38 +335,29 @@ showRule configNode = do
                 "Error: identifier attribute wasn't initialized."
                 id
                 (axiomOrClaim' (length axioms) ruleIndex)
-
   where
     getRuleIndex :: RewriteRule Object Variable -> Attribute.RuleIndex
     getRuleIndex = Attribute.identifier . Rule.attributes . Rule.getRewriteRule
-
-axiomOrClaim' :: Int -> Attribute.RuleIndex -> Maybe String
-axiomOrClaim' len (RuleIndex Nothing) = Nothing
-axiomOrClaim' len (RuleIndex (Just rid))
-  | rid < len = Just $ "Axiom " <> show rid
-  | otherwise = Just $ "Claim " <> show (rid - len)
-
-axiomOrClaim :: Int -> Int -> String
-axiomOrClaim len iden
-  | iden < len = "Axiom " <> show iden
-  | otherwise  = "Claim " <> show (iden - len)
 
 showPrecBranch
     :: Claim claim
     => Maybe Int
     -> ReplM claim level ()
-showPrecBranch mnode = do
-    Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-    node <- Lens.use lensNode
-    let node' = maybe node id mnode
-    if node' `elem` Graph.nodes graph
-       then putStrLn' . show $ loop (loopCond graph) node'
-       else putStrLn' "Invalid node!"
+showPrecBranch maybeNode = do
+    graph <- getInnerGraph <$> get
+    node' <- getTargetNode maybeNode <$> get
+    case node' of
+        Nothing -> putStrLn' "Invalid node!"
+        Just node -> putStrLn' . show $ loop (loopCond graph) node
   where
+    -- "Left n" means continue looping with value being n
+    -- "Right n" means "stop and return n"
     loopCond gph n
-      | (Graph.outdeg gph n) <= 1 && (not . null . Graph.pre gph $ n)
-          = Left $ head (Graph.pre gph n)
+      | isNotBranch gph n && isNotRoot gph n = Left $ head (Graph.pre gph n)
       | otherwise = Right n
+
+    isNotBranch gph n = Graph.outdeg gph n <= 1
+    isNotRoot gph n = not . null . Graph.pre gph $ n
 
 showChildren
     :: Claim claim
@@ -752,6 +743,17 @@ showDotGraph len =
                       . Rule.attributes
                       . Rule.getRewriteRule
                       $ rule
+
+axiomOrClaim' :: Int -> Attribute.RuleIndex -> Maybe String
+axiomOrClaim' len (RuleIndex Nothing) = Nothing
+axiomOrClaim' len (RuleIndex (Just rid))
+  | rid < len = Just $ "Axiom " <> show rid
+  | otherwise = Just $ "Claim " <> show (rid - len)
+
+axiomOrClaim :: Int -> Int -> String
+axiomOrClaim len iden
+  | iden < len = "Axiom " <> show iden
+  | otherwise  = "Claim " <> show (iden - len)
 
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)

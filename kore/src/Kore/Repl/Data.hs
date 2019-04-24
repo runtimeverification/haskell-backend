@@ -24,7 +24,7 @@ module Kore.Repl.Data
     , emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex
     , initializeProofFor
-    , getInnerGraph, getConfigAt, getRuleFor
+    , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
     ) where
 
 import           Control.Error
@@ -343,6 +343,16 @@ getInnerGraph
     -> InnerGraph
 getInnerGraph = Strategy.graph . graph
 
+getTargetNode
+    :: forall claim level
+    .  Maybe Int
+    -> ReplState claim level
+    -> Maybe Int
+getTargetNode maybeNode st = do
+    let node' = maybe (node st) id maybeNode
+    guard $ node' `elem` Graph.nodes (getInnerGraph st)
+    pure node'
+
 getConfigAt
     :: forall claim level
     .  level ~ Object
@@ -350,11 +360,9 @@ getConfigAt
     -> ReplState claim level
     -> Maybe (Graph.Node, CommonStrategyPattern level)
 getConfigAt maybeNode st =
-    if node' `elem` Graph.nodes graph
-        then Just (node', Graph.lab' . Graph.context graph $ node')
-        else Nothing
+    getConfig <$> getTargetNode maybeNode st
   where
-    node' = maybe (st Lens.^. lensNode) id maybeNode
+    getConfig n = (n, Graph.lab' . Graph.context graph $ n)
     graph = getInnerGraph st
 
 getRuleFor
@@ -363,16 +371,12 @@ getRuleFor
     => Maybe Int
     -> ReplState claim level
     -> Maybe (RewriteRule Object Variable)
-getRuleFor maybeNode state = do
-    guard $ node' `elem` Graph.nodes gr
-    getRewriteRule . Graph.inn gr $ node'
+getRuleFor maybeNode st =
+    getTargetNode maybeNode st >>= getRewriteRule . Graph.inn gr
 
   where
-    node' :: Graph.Node
-    node' = maybe (node state) id maybeNode
-
     gr :: InnerGraph
-    gr = getInnerGraph state
+    gr = getInnerGraph st
 
     getRewriteRule
         :: forall a b
