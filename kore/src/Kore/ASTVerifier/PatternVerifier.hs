@@ -373,8 +373,8 @@ verifyPatternHead =
         VariablePattern var ->
             transCofreeF (VariablePattern . getConst)
                 <$> verifyVariable var
-        SetVariablePattern var ->
-            transCofreeF (SetVariablePattern . getConst)
+        SetVariablePattern (SetVariable var) ->
+            transCofreeF (SetVariablePattern . SetVariable . getConst)
                 <$> verifyVariable var
   where
     transCofreeF fg (a :< fb) = a :< fg fb
@@ -849,7 +849,7 @@ patternNameForContext (CharLiteralPattern _) = "<char>"
 patternNameForContext (TopPattern _) = "\\top"
 patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
-patternNameForContext (SetVariablePattern variable) =
+patternNameForContext (SetVariablePattern (SetVariable variable)) =
     "set variable '" ++ variableNameForContext variable ++ "'"
 
 variableNameForContext :: Variable level -> String

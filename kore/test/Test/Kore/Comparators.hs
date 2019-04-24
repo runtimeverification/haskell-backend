@@ -761,6 +761,30 @@ instance
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
+instance
+    ( EqualWithExplanation (variable level)
+    , Show (variable level)
+    ) => StructEqualWithExplanation (SetVariable variable level)
+  where
+    structFieldsWithNames
+        expected@(SetVariable _)
+        actual@(SetVariable _)
+      = [ EqWrap
+            "getVvariable = "
+            (getVariable expected)
+            (getVariable actual)
+        ]
+    structConstructorName _ = "SetVariable"
+
+instance
+    ( EqualWithExplanation (variable level)
+    , Show (variable level)
+    ) => EqualWithExplanation (SetVariable variable level)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+
 instance StructEqualWithExplanation (Variable level)
   where
     structFieldsWithNames

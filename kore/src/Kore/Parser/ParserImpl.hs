@@ -500,7 +500,7 @@ variableOrTermPatternParser childParser isSetVar = do
         then do
             var <- variableRemainderParser Object identifier
             if isSetVar
-                then return $ SetVariablePattern var
+                then return . SetVariablePattern . SetVariable $ var
                 else return $ VariablePattern var
         else symbolOrAliasPatternRemainderParser childParser Object identifier
 

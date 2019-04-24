@@ -285,6 +285,13 @@ instance MetaOrObject level => PrettyPrint (Variable level) where
             , writeFieldNewLine "variableSort" variableSort var
             ]
 
+instance PrettyPrint (variable level)
+    => PrettyPrint (SetVariable variable level)
+  where
+    prettyPrint _ svar@(SetVariable _) =
+        writeStructure "SetVariable"
+            [writeFieldNewLine "getVariable" getVariable svar]
+
 instance
     ( PrettyPrint child
     , MetaOrObject level
