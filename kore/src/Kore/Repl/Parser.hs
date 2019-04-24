@@ -16,7 +16,7 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
 import           Text.Megaparsec
-                 ( Parsec, eof, many, noneOf, option, optional, try )
+                 ( Parsec, eof, many, manyTill, noneOf, option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -31,14 +31,14 @@ type Parser = Parsec String String
 -- @
 commandParser :: Parser ReplCommand
 commandParser = do
-    cmd <- commandParser0
-    (eof $> cmd)
-        <|> try (pipe cmd >>= redirect)
-        <|> (redirect cmd)
-        <|> (pipe cmd)
+    cmd <- nonRecursiveCommand
+    endOfInput cmd
+        <|> pipeWithRedirect cmd
+        <|> redirect cmd
+        <|> pipe cmd
 
-commandParser0 :: Parser ReplCommand
-commandParser0 =
+nonRecursiveCommand :: Parser ReplCommand
+nonRecursiveCommand =
     Foldable.asum
         [ help
         , showClaim
@@ -62,6 +62,12 @@ commandParser0 =
         , saveSession
         , exit
         ]
+
+pipeWithRedirect :: ReplCommand -> Parser ReplCommand
+pipeWithRedirect cmd = try (pipe cmd >>= redirect)
+
+endOfInput :: ReplCommand -> Parser ReplCommand
+endOfInput cmd = eof $> cmd
 
 help :: Parser ReplCommand
 help = const Help <$$> literal "help"
@@ -138,7 +144,10 @@ redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd = Redirect cmd <$$> literal ">" *> word
 
 pipe :: ReplCommand -> Parser ReplCommand
-pipe cmd = Pipe cmd <$$> literal "|" *> wordWithout ['>'] <**> many (wordWithout ['>'])
+pipe cmd = Pipe cmd <$$> literal "|" *> wordWithout ['>'] <**> many arg
+
+arg :: Parser String
+arg = Char.char '"' *> manyTill L.charLiteral (Char.char '"') <* Char.space
 
 infixr 2 <$$>
 infixr 1 <**>

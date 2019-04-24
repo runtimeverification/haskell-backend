@@ -192,32 +192,51 @@ redirectTests =
     , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "claim 3 > cf"    `parsesTo_` Redirect (ShowClaim 3)         "cf"
-    , "config 5 > "      `fails`     "no file name"
+    , "config 5 > "     `fails`     "no file name"
     ]
 
 pipeTests :: [ParserTest ReplCommand]
 pipeTests =
-    [ "config | script"             `parsesTo_` Pipe (ShowConfig Nothing) "script" []
-    , "config 5 | script"           `parsesTo_` Pipe (ShowConfig (Just 5)) "script" []
-    , "config 5 | script arg1 arg2" `parsesTo_` Pipe (ShowConfig (Just 5)) "script" ["arg1", "arg2"]
-    , "step 5 | script"             `parsesTo_` Pipe (ProveSteps 5) "script" []
-    , "config 5 | "                  `fails`     "no script name"
+    [ "config | script"             `parsesTo_` pipeConfig Nothing "script" []
+    , "config 5 | script"           `parsesTo_` pipeConfig (Just 5) "script" []
+    , "config 5 | script arg1 arg2" `parsesTo_` pipeConfig (Just 5) "script" ["arg1", "arg2"]
+    , "step 5 | script"             `parsesTo_` pipeStep 5 "script" []
+    , "config 5 | "                 `fails`     "no script name"
     ]
+  where
+    pipeConfig
+        :: Maybe Int
+        -> String
+        -> [String]
+        -> ReplCommand
+    pipeConfig mi s xs =
+        Pipe (ShowConfig mi) s xs
+    pipeStep
+        :: Int
+        -> String
+        -> [String]
+        -> ReplCommand
+    pipeStep i s xs =
+        Pipe (ProveSteps i) s xs
+
 
 pipeRedirectTests :: [ParserTest ReplCommand]
 pipeRedirectTests =
-    [ "config | script > file"             `parsesTo_` Redirect (Pipe (ShowConfig Nothing)
-                                                                      "script"
-                                                                      [])
-                                                                "file"
-    , "config 5 | script arg1 arg2 > file" `parsesTo_` Redirect (Pipe (ShowConfig (Just 5))
-                                                                      "script"
-                                                                      ["arg1", "arg2"])
-                                                                "file"
+    [ "config | script > file"             `parsesTo_` pipeRedirectConfig Nothing "script" [] "file"
+    , "config 5 | script arg1 arg2 > file" `parsesTo_` pipeRedirectConfig (Just 5) "script" ["arg1", "arg2"] "file"
     , "config 5 | > "                      `fails`     "no script or file name"
     , "config 5 | script > "               `fails`     "no file name"
     , "config 5 | > file"                  `fails`     "no script name"
     ]
+  where
+    pipeRedirectConfig
+        :: Maybe Int
+        -> String
+        -> [String]
+        -> String
+        -> ReplCommand
+    pipeRedirectConfig mi s xs file =
+        Redirect (Pipe (ShowConfig mi) s xs) file
 
 ruleTests :: [ParserTest ReplCommand]
 ruleTests =

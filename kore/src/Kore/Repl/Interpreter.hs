@@ -412,14 +412,14 @@ pipe cmd file args = do
     case exists of
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
-            (mhin, mhout, _, _) <-
+            (maybeInput, maybeOutput, _, _) <-
                 liftIO $ createProcess (proc exec args)
                     { std_in = CreatePipe, std_out = CreatePipe }
-            let outputFunc = maybe putStrLn hPutStr mhin
+            let outputFunc = maybe putStrLn hPutStr maybeInput
             st <- get
             st' <- lift $ execStateT (replInterpreter outputFunc cmd) st
             put st'
-            case mhout of
+            case maybeOutput of
                 Just handle -> do
                     output <- liftIO $ hGetContents handle
                     putStrLn' output
