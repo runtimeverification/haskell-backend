@@ -607,15 +607,22 @@ checkSubstitutionCoverage tools initial unified final
         Set.isSubsetOf leftAxiomVariables substitutionVariables
     isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
     isAcceptable = all isValidSymbolic (Map.toList subst)
-    isValidSymbolic (x, t)
-      | Target.isTarget x = True
-      | Valid.App_ symbolOrAlias _ <- t =
-        isConstructor symbolOrAlias || isSortInjection symbolOrAlias
+    -- A constructor-like pattern consists of constructor applications and
+    -- variables only.
+    isConstructorLikePattern p
+      | Valid.App_ symbolOrAlias children <- p =
+        isConstructor symbolOrAlias && all isConstructorLikePattern children
+      | Valid.Var_ _ <- p = True
       | otherwise = False
-      where
-        isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
-        isSortInjection =
-            Reflection.give tools Attribute.Symbol.isSortInjection_
+    isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
+    isSortInjectionPattern p
+      | Valid.App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
+      | otherwise = False
+    isSortInjection = Reflection.give tools Attribute.Symbol.isSortInjection_
+    isValidSymbolic (x, t) =
+        Target.isTarget x
+        || isConstructorLikePattern t
+        || isSortInjectionPattern t
 
 {- | Apply the given rules to the initial configuration in parallel.
 
