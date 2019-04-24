@@ -33,6 +33,7 @@ dependencies:
   - data-default
   - deepseq
   - deriving-compat
+  - directory
   - errors
   - exceptions
   - extra

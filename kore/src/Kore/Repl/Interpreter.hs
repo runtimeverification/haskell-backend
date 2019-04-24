@@ -29,7 +29,7 @@ import           Control.Monad.RWS.Strict
 import           Control.Monad.State.Class
                  ( get, modify, put )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT (..), evalStateT )
+                 ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Bifunctor
                  ( bimap )
@@ -54,6 +54,13 @@ import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
+import           GHC.IO.Handle
+                 ( hGetContents, hPutStr )
+import           System.Directory
+                 ( findExecutable )
+import           System.Process
+                 ( StdStream (CreatePipe), createProcess, proc, std_in,
+                 std_out )
 
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SymbolOrAlias (..),
@@ -110,29 +117,30 @@ replInterpreter
     -> StateT (ReplState claim level) Simplifier Bool
 replInterpreter printFn replCmd = do
     let command = case replCmd of
-                ShowUsage         -> showUsage         $> True
-                Help              -> help              $> True
-                ShowClaim c       -> showClaim c       $> True
-                ShowAxiom a       -> showAxiom a       $> True
-                Prove i           -> prove i           $> True
-                ShowGraph         -> showGraph         $> True
-                ProveSteps n      -> proveSteps n      $> True
-                ProveStepsF n     -> proveStepsF n     $> True
-                SelectNode i      -> selectNode i      $> True
-                ShowConfig mc     -> showConfig mc     $> True
-                OmitCell c        -> omitCell c        $> True
-                ShowLeafs         -> showLeafs         $> True
-                ShowRule   mc     -> showRule mc       $> True
-                ShowPrecBranch mn -> showPrecBranch mn $> True
-                ShowChildren mn   -> showChildren mn   $> True
-                Label ms          -> label ms          $> True
-                LabelAdd l mn     -> labelAdd l mn     $> True
-                LabelDel l        -> labelDel l        $> True
-                Redirect inn file -> redirect inn file $> True
-                Try ac            -> tryAxiomClaim ac  $> True
-                Clear n           -> clear n           $> True
-                SaveSession file  -> saveSession file  $> True
-                Exit              -> pure                 False
+                ShowUsage         -> showUsage           $> True
+                Help              -> help                $> True
+                ShowClaim c       -> showClaim c         $> True
+                ShowAxiom a       -> showAxiom a         $> True
+                Prove i           -> prove i             $> True
+                ShowGraph         -> showGraph           $> True
+                ProveSteps n      -> proveSteps n        $> True
+                ProveStepsF n     -> proveStepsF n       $> True
+                SelectNode i      -> selectNode i        $> True
+                ShowConfig mc     -> showConfig mc       $> True
+                OmitCell c        -> omitCell c          $> True
+                ShowLeafs         -> showLeafs           $> True
+                ShowRule   mc     -> showRule mc         $> True
+                ShowPrecBranch mn -> showPrecBranch mn   $> True
+                ShowChildren mn   -> showChildren mn     $> True
+                Label ms          -> label ms            $> True
+                LabelAdd l mn     -> labelAdd l mn       $> True
+                LabelDel l        -> labelDel l          $> True
+                Redirect inn file -> redirect inn file   $> True
+                Try ac            -> tryAxiomClaim ac    $> True
+                Clear n           -> clear n             $> True
+                SaveSession file  -> saveSession file    $> True
+                Pipe inn file args -> pipe inn file args $> True
+                Exit              -> pure                   False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
     pure shouldContinue
@@ -444,9 +452,9 @@ redirect
     -> ReplM claim level ()
 redirect cmd path = do
     st <- get
-    _ <- lift $ evalStateT (replInterpreter redirectToFile cmd) st
+    st' <- lift $ execStateT (replInterpreter redirectToFile cmd) st
+    put st'
     putStrLn' "File created."
-    pure ()
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
@@ -621,6 +629,32 @@ saveSession path = do
  where
    seqUnlines :: Seq String -> String
    seqUnlines = unlines . toList
+
+pipe
+    :: forall level claim
+    .  MetaOrObject level
+    => Claim claim
+    => ReplCommand
+    -> String
+    -> [String]
+    -> ReplM claim level ()
+pipe cmd file args = do
+    exists <- liftIO $ findExecutable file
+    case exists of
+        Nothing -> putStrLn' "Cannot find executable."
+        Just exec -> do
+            (maybeInput, maybeOutput, _, _) <-
+                liftIO $ createProcess (proc exec args)
+                    { std_in = CreatePipe, std_out = CreatePipe }
+            let outputFunc = maybe putStrLn hPutStr maybeInput
+            st <- get
+            st' <- lift $ execStateT (replInterpreter outputFunc cmd) st
+            put st'
+            case maybeOutput of
+                Just handle -> do
+                    output <- liftIO $ hGetContents handle
+                    putStrLn' output
+                Nothing -> putStrLn' "Error: couldn't access output handle of executable."
 
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
 printRewriteRule rule = do
