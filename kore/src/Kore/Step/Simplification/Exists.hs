@@ -30,7 +30,6 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( traverseFlattenWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
@@ -196,7 +195,7 @@ makeEvaluate
     axiomIdToSimplifier
     variable
     original
-  = fmap withProof $ gather $ do
+  = fmap (withProof . MultiOr.make) $ gather $ do
     normalized <- normalize original
     let Predicated { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of

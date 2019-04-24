@@ -36,6 +36,7 @@ import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Foldable as Foldable
 import           Data.Hashable
                  ( Hashable )
 import           Data.Typeable
@@ -53,8 +54,6 @@ import           Kore.Logger
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
@@ -136,25 +135,23 @@ instance MonadSMT m => MonadSMT (BranchT m) where
 
 {- | Collect results from many simplification branches into one result.
 
-@gather@ returns all the results of a @'BranchT' m a@ in a single disjunction
-('MultiOr'). @gather@ strips away the @BranchT@ transformer so that it always
-returns one result.
+@gather@ returns all the results of a @'BranchT' m a@ in a single list.
 
 Examples:
 
 @
-gather (pure a <|> pure b) === pure ('OrOfExpandedPattern.make' [a, b])
+gather (pure a <|> pure b) === pure [a, b]
 @
 
 @
-gather empty === pure ('OrOfExpandedPattern.make' [])
+gather empty === pure []
 @
 
 See also: 'scatter'
 
  -}
-gather :: Monad m => BranchT m a -> m (MultiOr a)
-gather (BranchT simpl) = OrOfExpandedPattern.MultiOr <$> ListT.gather simpl
+gather :: Monad m => BranchT m a -> m [a]
+gather (BranchT simpl) = ListT.gather simpl
 
 {- | Collect results from many simplification branches into one result.
 
@@ -165,7 +162,7 @@ returns one result.
 See also: 'scatter', 'gather'
 
  -}
-gatherAll :: Monad m => BranchT m (MultiOr a) -> m (MultiOr a)
+gatherAll :: Monad m => BranchT m [a] -> m [a]
 gatherAll simpl = Monad.join <$> gather simpl
 
 {- | Disperse results into many simplification branches.
@@ -173,18 +170,18 @@ gatherAll simpl = Monad.join <$> gather simpl
 Examples:
 
 @
-scatter ('OrOfExpandedPattern.make' [a, b]) === (pure a <|> pure b)
+scatter [a, b] === (pure a <|> pure b)
 @
 
 @
-scatter ('OrOfExpandedPattern.make' []) === empty
+scatter [] === empty
 @
 
 See also: 'gather'
 
  -}
-scatter :: MultiOr a -> BranchT m a
-scatter = BranchT . ListT.scatter
+scatter :: Foldable f => f a -> BranchT m a
+scatter = BranchT . ListT.scatter . Foldable.toList
 
 -- * Simplifier
 
@@ -239,7 +236,7 @@ evalSimplifierBranch
     -- ^ initial counter for fresh variables
     -> BranchT Simplifier a
     -- ^ simplifier computation
-    -> SMT (MultiOr a)
+    -> SMT [a]
 evalSimplifierBranch logger =
     evalSimplifier logger . gather
 
@@ -328,7 +325,7 @@ simplifyTerm
             predicateSimplifier
             stepPattern
             PredicateSubstitution.top
-    return (results, SimplificationProof)
+    return (OrOfExpandedPattern.make results, SimplificationProof)
 
 
 {- | Use a 'StepPatternSimplifier' to simplify a pattern subject to conditions.

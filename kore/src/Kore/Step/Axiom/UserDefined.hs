@@ -133,8 +133,6 @@ equalityRuleEvaluator
         :: Step.Results variable
         -> Simplifier (AttemptedAxiomResults Object variable)
     simplifyResults stepResults = do
-        results <-
-            simplifyOrOfExpandedPattern
-            $ Step.result <$> Step.results stepResults
+        results <- simplifyOrOfExpandedPattern $ Step.gatherResults stepResults
         remainders <- simplifyOrOfExpandedPattern $ Step.remainders stepResults
         return AttemptedAxiomResults { results, remainders }
