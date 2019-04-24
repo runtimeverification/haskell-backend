@@ -472,22 +472,15 @@ application pattern), using an open recursion scheme for its children.
 BNF definitions:
 
 @
-⟨object-pattern⟩ ::=
-    | ⟨object-variable⟩
+⟨pattern⟩ ::=
+    | ⟨variable⟩
+    | ⟨set-variable⟩
     | ⟨object-head⟩ ‘(’ ⟨child-list⟩ ‘)’
-⟨object-variable⟩ ::= ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
+⟨variable⟩ ::= ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
+⟨set-variable⟩ ::= '#' ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
 ⟨object-head⟩ ::= ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
 ⟨object-head-constructor⟩ ::= ⟨object-identifier⟩
-
-⟨meta-pattern⟩ ::=
-    | ⟨meta-variable⟩
-    | ⟨meta-head⟩ ‘(’ ⟨child-list⟩ ‘)’
-⟨meta-variable⟩ ::= ⟨meta-identifier⟩ ‘:’ ⟨meta-sort⟩
-⟨meta-head⟩ ::= ⟨meta-head-constructor⟩ ‘{’ ⟨meta-sort-list⟩ ‘}’
-⟨meta-head-constructor⟩ ::= ⟨meta-identifier⟩
 @
-
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 variableOrTermPatternParser
     :: Parser child

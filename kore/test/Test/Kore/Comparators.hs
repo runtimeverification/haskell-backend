@@ -25,6 +25,8 @@ import           Numeric.Natural
 import qualified Kore.AllPath as AllPath
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
+import qualified Kore.AST.Common as SetVariable
+                 ( SetVariable (..) )
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
@@ -764,26 +766,19 @@ instance
 instance
     ( EqualWithExplanation (variable level)
     , Show (variable level)
-    ) => StructEqualWithExplanation (SetVariable variable level)
+    ) => WrapperEqualWithExplanation (SetVariable variable level)
   where
-    structFieldsWithNames
-        expected@(SetVariable _)
-        actual@(SetVariable _)
-      = [ EqWrap
-            "getVvariable = "
-            (getVariable expected)
-            (getVariable actual)
-        ]
-    structConstructorName _ = "SetVariable"
+    wrapperConstructorName _ = "SetVariable"
+    wrapperField =
+        Function.on (EqWrap "getVariable = ") SetVariable.getVariable
 
 instance
     ( EqualWithExplanation (variable level)
     , Show (variable level)
     ) => EqualWithExplanation (SetVariable variable level)
   where
-    compareWithExplanation = structCompareWithExplanation
+    compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show
-
 
 instance StructEqualWithExplanation (Variable level)
   where
