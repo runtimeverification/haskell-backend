@@ -9,18 +9,15 @@ Portability : POSIX
 -}
 module Kore.Implicit.ImplicitSortsImpl (defineMetaSort) where
 
-import Kore.AST.Builders
+import qualified Data.Text as Text
+
 import Kore.AST.MetaOrObject
 import Kore.AST.Pure
 
 {-|'defineMetaSort' is a helper function for defining meta sorts together
 with their constructors, helper functions and axioms.
 -}
-defineMetaSort
-    :: MetaBasicSortType
-    -> ( Sort Meta
-       , Sort Meta
-       )
+defineMetaSort :: MetaBasicSortType -> (Sort Meta, Sort Meta)
 defineMetaSort sortType =
     (objectSort, listSort)
   where
@@ -28,3 +25,14 @@ defineMetaSort sortType =
     listSortType =  MetaListSortType sortType
     objectSort = sort_ objectSortType
     listSort = sort_ listSortType
+
+-- |Creates a 'level' 'Sort' from a given 'MetaSortType'
+sort_ :: MetaSortType -> Sort level
+sort_ sortType =
+    SortActualSort SortActual
+        { sortActualName = Id
+            { getId = Text.pack (show sortType)
+            , idLocation = AstLocationImplicit
+            }
+        , sortActualSorts = []
+        }

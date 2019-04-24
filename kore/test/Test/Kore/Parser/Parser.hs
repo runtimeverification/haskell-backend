@@ -6,8 +6,6 @@ import Test.Tasty
 import Data.Text
        ( Text )
 
-import           Kore.AST.Builders
-                 ( sort_ )
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
@@ -125,7 +123,6 @@ metaSortConverterTests =
         , success "#SymbolList{}" symbolListMetaSort
         , success "#Variable{}" variableMetaSort
         , success "#VariableList{}" variableListMetaSort
-        , success "#User{}" (sort_ $ MetaBasicSortType $ UserSort "User")
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
             ]

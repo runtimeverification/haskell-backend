@@ -12,14 +12,11 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
-import           Data.Proxy
-                 ( Proxy (..) )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Builders
 import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
@@ -271,7 +268,7 @@ sortSentenceKItem =
             }
 
 sortParam :: Text -> SortVariable Object
-sortParam name = sortParameter Proxy name AstLocationTest
+sortParam name = SortVariable (testId name)
 
 sortParamSort :: Text -> Sort Object
 sortParamSort = SortVariableSort . sortParam
