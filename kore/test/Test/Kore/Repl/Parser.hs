@@ -197,12 +197,12 @@ redirectTests =
 
 pipeTests :: [ParserTest ReplCommand]
 pipeTests =
-    [ "config | script"             `parsesTo_` pipeConfig Nothing "script" []
-    , "config 5 | script"           `parsesTo_` pipeConfig (Just 5) "script" []
+    [ "config | script"                     `parsesTo_` pipeConfig Nothing "script" []
+    , "config 5 | script"                   `parsesTo_` pipeConfig (Just 5) "script" []
     , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just 5) "script" ["arg1", "arg2"]
-    , "step 5 | script"             `parsesTo_` pipeStep 5 "script" []
-    , "config 5 | "                 `fails`     "no script name"
-    , "config 5 | script arg1"      `fails`     "arguments should be between double quotes"
+    , "step 5 | script"                     `parsesTo_` pipeStep 5 "script" []
+    , "config 5 | "                         `fails`     "no script name"
+    , "config 5 | script arg1"              `fails`     "arguments should be between double quotes"
     ]
   where
     pipeConfig
@@ -223,12 +223,12 @@ pipeTests =
 
 pipeRedirectTests :: [ParserTest ReplCommand]
 pipeRedirectTests =
-    [ "config | script > file"             `parsesTo_` pipeRedirectConfig Nothing "script" [] "file"
+    [ "config | script > file"                     `parsesTo_` pipeRedirectConfig Nothing "script" [] "file"
     , "config 5 | script \"arg1\" \"arg2\" > file" `parsesTo_` pipeRedirectConfig (Just 5) "script" ["arg1", "arg2"] "file"
-    , "config 5 | > "                      `fails`     "no script or file name"
-    , "config 5 | script > "               `fails`     "no file name"
-    , "config 5 | > file"                  `fails`     "no script name"
-    , "config 5 | script arg1 >"           `fails`     "arguments should be between double quotes"
+    , "config 5 | > "                              `fails`     "no script or file name"
+    , "config 5 | script > "                       `fails`     "no file name"
+    , "config 5 | > file"                          `fails`     "no script name"
+    , "config 5 | script arg1 >"                   `fails`     "arguments should be between double quotes"
     ]
   where
     pipeRedirectConfig
