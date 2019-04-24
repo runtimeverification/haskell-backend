@@ -12,7 +12,6 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error
                  ( noSort )
 import qualified Kore.Verified as Verified

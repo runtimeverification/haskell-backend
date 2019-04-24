@@ -19,7 +19,6 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
 import           Kore.Unparser
@@ -302,9 +301,8 @@ aliasSentenceWithSort (AliasName name) sort =
                             }
                     , applicationChildren = []
                     }
-            , sentenceAliasRightPattern = mkTop patternMetaSort
-            , sentenceAliasAttributes =
-                Attributes [] :: Attributes
+            , sentenceAliasRightPattern = mkTop sort
+            , sentenceAliasAttributes = Attributes []
             }
 
 metaAliasSentenceWithSortParameters

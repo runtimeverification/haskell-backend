@@ -54,7 +54,6 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Parser
@@ -674,7 +673,7 @@ verifyStringLiteral
     => StringLiteral
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyStringLiteral str = do
-    let patternSort = charListMetaSort
+    let patternSort = stringMetaSort
         freeVariables = Set.empty
         verified = Const str
     return (Valid { patternSort, freeVariables } :< verified)

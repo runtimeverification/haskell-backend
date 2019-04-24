@@ -40,7 +40,6 @@ import           Data.Functor.Const
                  ( Const )
 import           Data.Maybe
                  ( isJust )
-import qualified Data.Text as Text
 import           Data.Void
                  ( Void )
 import           Text.Megaparsec
@@ -110,15 +109,9 @@ sortParser x = do
     actualSortParser identifier = do
         sorts <- inCurlyBracesListParser (sortParser x)
         return $ SortActualSort SortActual
-            { sortActualName = stringNameNormalizer identifier
+            { sortActualName = identifier
             , sortActualSorts = sorts
             }
-    stringNameNormalizer :: Id level -> Id level
-    stringNameNormalizer identifier@Id {getId = i} =
-        if Text.unpack i == show StringSort
-            then identifier
-                { getId = (Text.pack . show) (MetaListSortType CharSort) }
-            else identifier
 
 {-|'validateMetaSort' checks that a @meta-sort@ is well-formed.
 
@@ -127,10 +120,7 @@ Relevant BNF definitions:
 @
 ⟨meta-sort⟩ ::= ⟨meta-sort-variable⟩ | ⟨meta-sort-constructor⟩ ‘{’ ‘}’
 ⟨meta-sort-constructor⟩ ::=
-    | ‘#Char’       | ‘#CharList’   | ‘#String’
-    | ‘#Sort’       | ‘#SortList’   | ‘#Symbol’
-    | ‘#SymbolList’ | ‘#Variable’   | ‘#VariableList’
-    | ‘#Pattern’    | ‘#PatternList’
+    | ‘#Char’       | ‘#String’
 @
 -}
 validateMetaSort

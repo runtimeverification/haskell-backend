@@ -17,7 +17,6 @@ import           Kore.AST.Sentence
 import           Kore.AST.Valid
                  ( mkTop )
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error
                  ( noSort )
 import qualified Kore.Verified as Verified
@@ -67,7 +66,7 @@ test_sortUsage =
     , expectSuccess "Definition with meta alias"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
-                (AliasName "#a") charListMetaSort []
+                (AliasName "#a") stringMetaSort []
             ]
         )
     , testsForObjectSort
@@ -148,18 +147,6 @@ test_sortUsage =
                     (simpleSortActual additionalSortName))
                 (NamePrefix "internal")
             )
-    , successTestsForMetaSort
-        (CommonDescription "Referencing simple sort")
-        (SuccessConfiguration TestConfiguration
-            { testConfigurationDescription = "The sort is declared"
-            , testConfigurationAdditionalSentences = []
-            , testConfigurationAdditionalSortVariables = []
-            , testConfigurationCaseBasedConfiguration = []
-            }
-        )
-        (TestedSort (simpleSort (SortName "#CharList")))
-        (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))
-        (NamePrefix "#internal")
     , failureTestsForMetaSort
         (CommonDescription "Referencing simple sort")
         (FailureConfiguration TestConfiguration

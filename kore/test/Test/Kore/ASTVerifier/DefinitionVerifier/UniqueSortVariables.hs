@@ -9,7 +9,6 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -50,14 +49,14 @@ test_uniqueSortVariables =
     , expectSuccess "Definition with meta alias"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
-                (AliasName "#a") charListMetaSort []
+                (AliasName "#a") stringMetaSort []
             ]
         )
     , expectSuccess "Meta alias with one sort parameter"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#sv" ]
             ]
         )
@@ -65,7 +64,7 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#a" ]
             ]
         )
@@ -74,7 +73,7 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#String" ]
             ]
         )
@@ -83,7 +82,7 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#sv1"
                 , sortVariable @Meta "#sv2"
                 ]
@@ -158,14 +157,14 @@ test_uniqueSortVariables =
     , expectSuccess "Definition with meta symbol"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaSymbolSentenceWithSortParameters
-                (SymbolName "#a") charListMetaSort []
+                (SymbolName "#a") stringMetaSort []
             ]
         )
     , expectSuccess "Meta symbol with one sort parameter"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#sv" ]
             ]
         )
@@ -173,7 +172,7 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#a" ]
             ]
         )
@@ -182,7 +181,7 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#String" ]
             ]
         )
@@ -191,7 +190,7 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#sv1"
                 , sortVariable @Meta "#sv2"
                 ]
@@ -333,7 +332,7 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#sv"
                 , sortVariable @Meta "#sv"
                 ]
@@ -373,7 +372,7 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
-                charListMetaSort
+                stringMetaSort
                 [ sortVariable @Meta "#sv"
                 , sortVariable @Meta "#sv"
                 ]

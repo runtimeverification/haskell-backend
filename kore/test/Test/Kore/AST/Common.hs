@@ -10,10 +10,10 @@ import Test.Tasty.HUnit
 
 import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Implicit.ImplicitSorts
 
-import Test.Kore
-import Test.Tasty.HUnit.Extensions
+import           Test.Kore
+import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Tasty.HUnit.Extensions
 
 test_withSort :: TestTree
 test_withSort =
@@ -22,10 +22,10 @@ test_withSort =
             (assertSortedStub
                 SortedPattern
                     { sortedPatternPattern = TopPattern Top
-                        { topSort = sortListMetaSort }
-                    , sortedPatternSort = sortListMetaSort
+                        { topSort = Mock.testSort }
+                    , sortedPatternSort = Mock.testSort
                     }
-                (withSort sortListMetaSort
+                (withSort Mock.testSort
                     (UnsortedPatternStub
                         (\sort -> TopPattern Top { topSort = sort })
                     )
@@ -35,14 +35,14 @@ test_withSort =
             (assertSortedStub
                 SortedPattern
                     { sortedPatternPattern = TopPattern Top
-                        { topSort = sortListMetaSort }
-                    , sortedPatternSort = sortListMetaSort
+                        { topSort = Mock.testSort }
+                    , sortedPatternSort = Mock.testSort
                     }
-                (withSort sortListMetaSort
+                (withSort Mock.testSort
                     (SortedPatternStub SortedPattern
                         { sortedPatternPattern =
-                            TopPattern Top { topSort = sortListMetaSort }
-                        , sortedPatternSort = sortListMetaSort
+                            TopPattern Top { topSort = Mock.testSort }
+                        , sortedPatternSort = Mock.testSort
                         }
                     )
                 )
@@ -53,20 +53,20 @@ test_withSort =
                     "Expecting unmatched sorts error"
                     (  "Unmatched sorts: "
                     ++ "SortActualSort (SortActual {sortActualName = Id "
-                    ++ "{getId = \"#PatternList\", "
-                    ++ "idLocation = AstLocationImplicit}, "
+                    ++ "{getId = \"testSort0\", "
+                    ++ "idLocation = AstLocationTest}, "
                     ++ "sortActualSorts = []}) "
                     ++ "and SortActualSort (SortActual {sortActualName = Id "
-                    ++ "{getId = \"#SortList\""
-                    ++ ", idLocation = AstLocationImplicit}"
+                    ++ "{getId = \"testSort1\""
+                    ++ ", idLocation = AstLocationTest}"
                     ++ ", sortActualSorts = []})."
                     )
                 )
-                (withSort patternListMetaSort
+                (withSort Mock.testSort0
                     (SortedPatternStub SortedPattern
                         { sortedPatternPattern =
-                            TopPattern Top { topSort = sortListMetaSort }
-                        , sortedPatternSort = sortListMetaSort
+                            TopPattern Top { topSort = Mock.testSort1 }
+                        , sortedPatternSort = Mock.testSort1
                         }
                     )
                 :: PatternStub Meta Domain.Builtin Variable ()

@@ -5,12 +5,9 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueNames
 import Test.Tasty
        ( TestTree )
 
-import qualified Data.Text as Text
-
 import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.Error
-import Kore.Implicit.ImplicitSorts
 
 import Test.Kore.ASTVerifier.DefinitionVerifier
 
@@ -81,10 +78,7 @@ test_uniqueNames =
     -}
         (simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (unifiedVariablePattern
-                    (VariableName "#a")
-                    sortMetaSort
-                )
+                (unifiedVariablePattern (VariableName "#a") charMetaSort)
                 [unifiedSortVariable Meta (SortVariableName "#a")]
             ]
         )
@@ -233,4 +227,4 @@ test_uniqueNames =
         )
     ]
   where
-    stringSortName = SortName ((Text.pack . show) (MetaListSortType CharSort))
+    stringSortName = SortName (getId stringMetaSortId)

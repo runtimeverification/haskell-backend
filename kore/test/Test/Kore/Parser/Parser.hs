@@ -10,7 +10,6 @@ import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Implicit.ImplicitSorts
 import           Kore.Parser.Parser
 
 import Test.Kore hiding
@@ -112,16 +111,7 @@ metaSortConverterTests =
         [ success "#var"
             (SortVariableSort (SortVariable (testId "#var")))
         , success "#Char{}" charMetaSort
-        , success "#CharList{}" charListMetaSort
-        , success "#Pattern{}" patternMetaSort
-        , success "#PatternList{}" patternListMetaSort
-        , success "#Sort{}" sortMetaSort
-        , success "#SortList{}" sortListMetaSort
-        , success "#String{}" charListMetaSort
-        , success "#Symbol{}" symbolMetaSort
-        , success "#SymbolList{}" symbolListMetaSort
-        , success "#Variable{}" variableMetaSort
-        , success "#VariableList{}" variableListMetaSort
+        , success "#String{}" stringMetaSort
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
             ]

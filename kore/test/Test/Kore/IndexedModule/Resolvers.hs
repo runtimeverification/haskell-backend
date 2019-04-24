@@ -21,7 +21,6 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
@@ -42,10 +41,10 @@ objectB :: SentenceAlias Object (CommonStepPattern Object)
 objectB = mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
 
 metaA :: SentenceSymbol Meta (CommonStepPattern Meta)
-metaA = mkSymbol_ (testId "#a") [] charListMetaSort
+metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias Meta (CommonStepPattern Meta)
-metaB = mkAlias_ (testId "#b") charListMetaSort [] $ mkTop charListMetaSort
+metaB = mkAlias_ (testId "#b") stringMetaSort [] $ mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -184,7 +183,7 @@ test_resolvers =
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol metaA
                 , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort = charListMetaSort
+                , sentenceSymbolResultSort = stringMetaSort
                 }
             ))
             (resolveSymbol testIndexedModule (testId "#a" :: Id Meta))
@@ -254,12 +253,12 @@ test_resolvers =
                     let
                         valid = Valid { patternSort, freeVariables }
                           where
-                            patternSort = charListMetaSort
+                            patternSort = stringMetaSort
                             freeVariables = Set.empty
-                        top' = TopPattern Top { topSort = charListMetaSort }
+                        top' = TopPattern Top { topSort = stringMetaSort }
                     in
                         asPurePattern (valid :< top')
-                , sentenceAliasResultSort = charListMetaSort
+                , sentenceAliasResultSort = stringMetaSort
                 }
             ))
             (resolveAlias testIndexedModule (testId "#b" :: Id Meta))
@@ -288,9 +287,8 @@ test_resolvers =
         )
     ]
   where
-    SortActualSort charMetaSortActual = charMetaSort
     charMetaId :: Id Meta
-    charMetaId = sortActualName charMetaSortActual
+    charMetaId = charMetaSortId
 
 
 test_resolver_undefined_messages :: TestTree

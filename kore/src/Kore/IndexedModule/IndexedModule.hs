@@ -36,6 +36,12 @@ module Kore.IndexedModule.IndexedModule
     , toVerifiedPureDefinition
     , recursiveIndexedModuleSortDescriptions
     , recursiveIndexedModuleAxioms
+    -- * Implicit Kore
+    , implicitModuleName
+    , implicitNames
+    , implicitSortNames
+    , implicitIndexedModule
+    , implicitModules
     ) where
 
 import           Control.DeepSeq
@@ -51,6 +57,8 @@ import qualified Data.Foldable as Foldable
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -802,3 +810,39 @@ indexedModulesInScope =
         name = indexedModuleName imod
 
     resolveImport (_, _, imod) = resolveModule imod
+
+implicitModules
+    :: (Default declAttrs, Default axiomAttrs)
+    => Map ModuleName (IndexedModule sortParam patternType declAttrs axiomAttrs)
+implicitModules = Map.singleton implicitModuleName implicitIndexedModule
+
+-- | The name of the module containing the implicit Kore declarations.
+implicitModuleName :: ModuleName
+implicitModuleName = ModuleName "kore"
+
+-- | The 'IndexedModule' that indexes the implicit Kore declarations.
+implicitIndexedModule
+    :: (Default declAttrs, Default axiomAttrs)
+    => IndexedModule sortParam patternType declAttrs axiomAttrs
+implicitIndexedModule =
+    (emptyIndexedModule implicitModuleName)
+        { indexedModuleSortDescriptions =
+            Map.fromSet makeSortIndex implicitSortNames
+        }
+  where
+    makeSortIndex sortId = (Default.def, declareSort sortId)
+    declareSort sortId =
+        SentenceSort
+            { sentenceSortName = sortId
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes []
+            }
+
+implicitNames :: Map Text AstLocation
+implicitNames =
+    Map.mapKeys getId
+    $ Map.fromSet idLocation
+    $ Set.insert predicateSortId implicitSortNames
+
+implicitSortNames :: Set (Id Meta)
+implicitSortNames = Set.fromList [charMetaSortId, stringMetaSortId]

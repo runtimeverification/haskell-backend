@@ -111,7 +111,6 @@ import           Kore.AST.Lens
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.Domain.Class
-import           Kore.Implicit.ImplicitSorts
 import           Kore.Unparser
                  ( Unparse, renderDefault, unparseToString )
 import qualified Kore.Unparser as Unparse

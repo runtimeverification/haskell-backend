@@ -19,7 +19,6 @@ import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error
                  ( noSort )
 import           Kore.Step.Pattern hiding
@@ -221,7 +220,7 @@ test_patternVerifier =
         NeedsInternalDefinitions
     , failureTestsForMetaPattern "Meta pattern - sort not matched"
         (ExpectedErrorMessage
-            "Expecting sort '#Variable{}' but got '#CharList{}'.")
+            "Expecting sort '#Char{}' but got '#String{}'.")
         (ErrorStack
             [ "\\exists '#MetaVariable' (<test data>)"
             , "(<test data>, <test data>)"
@@ -430,7 +429,7 @@ test_patternVerifier =
     , successTestsForMetaPattern "Simple string pattern"
         (StringLiteralPattern (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
-        (TestedPatternSort charListMetaSort)
+        (TestedPatternSort stringMetaSort)
         (SortVariablesThatMustBeDeclared [])
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort anotherMetaSort)
@@ -453,7 +452,7 @@ test_patternVerifier =
         NeedsInternalDefinitions
     , failureTestsForMetaPattern "String pattern - sort not matched"
         (ExpectedErrorMessage
-            "Expecting sort '#Char{}' but got '#CharList{}'.")
+            "Expecting sort '#Char{}' but got '#String{}'.")
         (ErrorStack
             [ "(<test data>, <implicitly defined entity>)" ]
         )
@@ -627,23 +626,23 @@ test_patternVerifier =
     objectVariableName = VariableName "ObjectVariable"
     objectVariable' = variable objectVariableName objectSort
     objectSortSentence = simpleSortSentence objectSortName
-    metaSort1 = updateAstLocation charListMetaSort AstLocationTest
+    metaSort1 = updateAstLocation stringMetaSort AstLocationTest
     metaVariable' = variable (VariableName "#MetaVariable") metaSort1
-    dummyMetaSort = updateAstLocation patternMetaSort AstLocationTest
+    dummyMetaSort = updateAstLocation charMetaSort AstLocationTest
     dummyMetaVariable = variable (VariableName "#otherVariable") dummyMetaSort
     anotherSortName = SortName "anotherSort"
     anotherSort :: Sort Object
     anotherSort = simpleSort anotherSortName
     anotherVariable = variable objectVariableName anotherSort
     anotherSortSentence = simpleSortSentence anotherSortName
-    anotherMetaSort = updateAstLocation symbolMetaSort AstLocationTest
+    anotherMetaSort = updateAstLocation stringMetaSort AstLocationTest
     anotherObjectSortName2 = SortName "anotherSort2"
     anotherObjectSort2 :: Sort Object
     anotherObjectSort2 = simpleSort anotherObjectSortName2
     anotherObjectSortSentence2 = simpleSortSentence anotherObjectSortName2
     invalidMetaSort :: Sort Meta
     invalidMetaSort = simpleSort (SortName "#InvalidMetaSort")
-    anotherMetaSort2 = updateAstLocation variableMetaSort AstLocationTest
+    anotherMetaSort2 = updateAstLocation charMetaSort AstLocationTest
     objectSymbolName = SymbolName "ObjectSymbol"
     objectSymbolSentence =
         objectSymbolSentenceWithArguments

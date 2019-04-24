@@ -24,7 +24,6 @@ import           Kore.Attribute.Subsort
 import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), extractMetadataTools )
@@ -43,7 +42,7 @@ objectA =
         { sentenceSymbolAttributes = Attributes [ constructorAttribute ] }
 
 metaA :: SentenceSymbol Meta (CommonStepPattern Meta)
-metaA = mkSymbol_ (testId "#a") [] charListMetaSort
+metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
