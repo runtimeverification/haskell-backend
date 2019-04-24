@@ -12,7 +12,7 @@ import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Implicit.ImplicitSorts
-import           Kore.Parser.ParserImpl
+import           Kore.Parser.Parser
 
 import Test.Kore hiding
        ( sortVariable, sortVariableSort )

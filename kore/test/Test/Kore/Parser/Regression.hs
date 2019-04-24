@@ -27,7 +27,7 @@ import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Parser.Parser
+import           Kore.Parser
 
 import qualified Paths
 

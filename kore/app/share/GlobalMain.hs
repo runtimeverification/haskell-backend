@@ -65,7 +65,7 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule,
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
-import           Kore.Parser.Parser
+import           Kore.Parser
                  ( parseKoreDefinition )
 import qualified Paths_kore as MetaData
                  ( version )

@@ -13,7 +13,7 @@ import System.IO
 
 import Kore.AST.Sentence
        ( ParsedDefinition )
-import Kore.Parser.Parser
+import Kore.Parser
        ( parseKoreDefinition )
 import Kore.Unparser
 

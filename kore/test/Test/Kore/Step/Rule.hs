@@ -28,7 +28,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import           Kore.Parser.ParserImpl
+import           Kore.Parser.Parser
 import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern hiding

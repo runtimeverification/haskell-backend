@@ -32,7 +32,7 @@ import           Kore.IndexedModule.IndexedModule
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Logger.Output
                  ( emptyLogger )
-import           Kore.Parser.Parser
+import           Kore.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Step
                  ( anyRewrite )

@@ -15,7 +15,7 @@ import           Test.Tasty.HUnit
 import Kore.AST.Kore
 import Kore.AST.Sentence
 import Kore.Parser.Lexeme
-import Kore.Parser.ParserImpl
+import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
 import Kore.Unparser
 
