@@ -144,21 +144,24 @@ clear = Clear <$$> literal "clear" *> maybeDecimal
 
 saveSession :: Parser ReplCommand
 saveSession =
-    SaveSession <$$> literal "save-session" *> quotedOrWordNo ""
+    SaveSession <$$> literal "save-session" *> quotedOrWordWithout ""
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd =
-    Redirect cmd <$$> literal ">" *> quotedOrWordNo ">"
+    Redirect cmd <$$> literal ">" *> quotedOrWordWithout ">"
 
 pipe :: ReplCommand -> Parser ReplCommand
 pipe cmd =
     Pipe cmd
     <$$> literal "|"
-    *> quotedOrWordNo ">"
-    <**> many (quotedOrWordNo ">")
+    *> quotedOrWordWithout ">"
+    <**> many (quotedOrWordWithout ">")
 
 appendTo :: ReplCommand -> Parser ReplCommand
-appendTo cmd = AppendTo cmd <$$> literal ">>" *> quotedOrWordNo ""
+appendTo cmd =
+    AppendTo cmd
+    <$$> literal ">>"
+    *> quotedOrWordWithout ""
 
 infixr 2 <$$>
 infixr 1 <**>
@@ -184,8 +187,8 @@ maybeDecimal = optional decimal
 word :: Parser String
 word = wordWithout []
 
-quotedOrWordNo :: String -> Parser String
-quotedOrWordNo s = quotedWord <|> wordWithout s
+quotedOrWordWithout :: String -> Parser String
+quotedOrWordWithout s = quotedWord <|> wordWithout s
 
 quotedWord :: Parser String
 quotedWord =
