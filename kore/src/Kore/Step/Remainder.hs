@@ -68,9 +68,9 @@ existentiallyQuantifyTarget
     -> Predicate Object variable
 existentiallyQuantifyTarget predicate =
     Predicate.mapVariables Target.unwrapVariable
-    $ Predicate.makeMultipleExists freeNonTargetVariables predicate
+    $ Predicate.makeMultipleExists freeTargetVariables predicate
   where
-    freeNonTargetVariables =
+    freeTargetVariables =
         Set.filter Target.isTarget (Predicate.freeVariables predicate)
 
 {- | Negate a disjunction of many terms.
