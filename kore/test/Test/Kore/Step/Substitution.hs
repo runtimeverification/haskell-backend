@@ -19,6 +19,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
                  ( StepPattern )
 import           Kore.Step.Representation.MultiOr
@@ -53,6 +54,25 @@ test_normalize =
         let expect = mempty
         actual <- normalize PredicateSubstitution.bottomPredicate
         assertEqual "Expected empty result" expect actual
+    , testCase "∃ y z. x = σ(y, z)" $ do
+        let expect =
+                PredicateSubstitution.fromPredicate
+                $ Predicate.makeMultipleExists [Mock.y, Mock.z]
+                $ Predicate.makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+        actual <- normalizeExcept expect
+        assertEqual "Expected original result" (Right $ MultiOr.make [expect]) actual
+    , testCase "¬∃ y z. x = σ(y, z)" $ do
+        let expect =
+                PredicateSubstitution.fromPredicate
+                $ Predicate.makeNotPredicate
+                $ Predicate.makeMultipleExists [Mock.y, Mock.z]
+                $ Predicate.makeEqualsPredicate
+                    (mkVar Mock.x)
+                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+        actual <- normalizeExcept expect
+        assertEqual "Expected original result" (Right $ MultiOr.make [expect]) actual
     ]
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
@@ -245,16 +265,15 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Normalizes substitution"
         $ do
             let expect =
-                    MultiOr.make
-                        [ Predicated
-                            { term = ()
-                            , predicate = makeTruePredicate
-                            , substitution = Substitution.unsafeWrap
-                                [ (Mock.x, Mock.constr10 Mock.a)
-                                , (Mock.y, Mock.a)
-                                ]
-                            }
-                        ]
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.constr10 Mock.a)
+                            , (Mock.y, Mock.a)
+                            ]
+                        }
+                    ]
             actual <-
                 normalize
                     Predicated
@@ -270,14 +289,13 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Predicate from normalizing substitution"
         $ do
             let expect =
-                    MultiOr.make
-                        [ Predicated
-                            { term = ()
-                            , predicate = makeEqualsPredicate Mock.cf Mock.cg
-                            , substitution = Substitution.unsafeWrap
-                                [ (Mock.x, Mock.constr10 Mock.cf) ]
-                            }
-                        ]
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeEqualsPredicate Mock.cf Mock.cg
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.constr10 Mock.cf) ]
+                        }
+                    ]
             actual <-
                 normalize
                     Predicated
@@ -293,16 +311,15 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Normalizes substitution and substitutes in predicate"
         $ do
             let expect =
-                    MultiOr.make
-                        [ Predicated
-                            { term = ()
-                            , predicate = makeCeilPredicate (Mock.f Mock.a)
-                            , substitution = Substitution.unsafeWrap
-                                [ (Mock.x, Mock.constr10 Mock.a)
-                                , (Mock.y, Mock.a)
-                                ]
-                            }
-                        ]
+                    [ Predicated
+                        { term = ()
+                        , predicate = makeCeilPredicate (Mock.f Mock.a)
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.constr10 Mock.a)
+                            , (Mock.y, Mock.a)
+                            ]
+                        }
+                    ]
             actual <-
                 normalize
                     Predicated
@@ -348,12 +365,28 @@ merge s1 s2 =
 
 normalize
     :: Predicated Object Variable term
-    -> IO (MultiOr (Predicated Object Variable term))
+    -> IO [Predicated Object Variable term]
 normalize predicated =
     runSMT
     $ evalSimplifier emptyLogger
     $ gather
     $ Substitution.normalize
+        mockMetadataTools
+        (Mock.substitutionSimplifier mockMetadataTools)
+        (Simplifier.create mockMetadataTools Map.empty)
+        Map.empty
+        predicated
+
+normalizeExcept
+    :: Predicated Object Variable ()
+    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr (Predicated Object Variable ())))
+normalizeExcept predicated =
+    runSMT
+    $ evalSimplifier emptyLogger
+    $ Monad.Unify.runUnifier
+    $ fmap MultiOr.make
+    $ gather
+    $ Substitution.normalizeExcept
         mockMetadataTools
         (Mock.substitutionSimplifier mockMetadataTools)
         (Simplifier.create mockMetadataTools Map.empty)

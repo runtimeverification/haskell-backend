@@ -195,18 +195,20 @@ The result has an empty 'Substitution'.
 
  -}
 fromPredicate
-    :: Predicate level variable
+    :: Ord (variable level)
+    => Predicate level variable
     -> Predicated level variable ()
 fromPredicate predicate =
     Predicated { term = (), predicate, substitution = mempty }
 
 {- | Construct a 'Predicated' holding the given 'Substitution'.
 
-The result has an true 'Predicate'.
+The result has a true 'Predicate'.
 
  -}
 fromSubstitution
-    :: Substitution Object variable
+    :: Ord (variable Object)
+    => Substitution Object variable
     -> Predicated Object variable ()
 fromSubstitution substitution =
     Predicated

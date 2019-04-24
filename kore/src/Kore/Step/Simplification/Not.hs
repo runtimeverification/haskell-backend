@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Not
     , simplifyEvaluated
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 
@@ -39,7 +37,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSubstitutionSimplifier, Simplifier,
+                 ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier, gather )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -74,7 +72,7 @@ simplify
     axiomSimplifiers
     Not { notChild = child }
   =
-    gather $ simplifyEvaluated
+    simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier
@@ -110,7 +108,7 @@ simplifyEvaluated
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> OrOfExpandedPattern Object variable
-    -> BranchT Simplifier (ExpandedPattern Object variable)
+    -> Simplifier (OrOfExpandedPattern Object variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -118,11 +116,12 @@ simplifyEvaluated
     axiomSimplifiers
     simplified
   | OrOfExpandedPattern.isFalse simplified =
-    return ExpandedPattern.top
+    return (MultiOr.make [ExpandedPattern.top])
   | OrOfExpandedPattern.isTrue simplified =
-    empty
+    return (MultiOr.make [])
   | otherwise =
-    Foldable.foldrM mkAnd ExpandedPattern.top (simplified >>= makeEvaluate)
+    fmap MultiOr.make . gather
+    $ Foldable.foldrM mkAnd ExpandedPattern.top (simplified >>= makeEvaluate)
   where
     mkAnd =
         And.makeEvaluate

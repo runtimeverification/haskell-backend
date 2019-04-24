@@ -16,7 +16,7 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
 import           Text.Megaparsec
-                 ( Parsec, eof, noneOf, option, optional, try )
+                 ( Parsec, eof, many, manyTill, noneOf, option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -31,11 +31,14 @@ type Parser = Parsec String String
 -- @
 commandParser :: Parser ReplCommand
 commandParser = do
-    cmd <- commandParser0
-    (eof $> cmd) <|> (redirect cmd)
+    cmd <- nonRecursiveCommand
+    endOfInput cmd
+        <|> pipeWithRedirect cmd
+        <|> redirect cmd
+        <|> pipe cmd
 
-commandParser0 :: Parser ReplCommand
-commandParser0 =
+nonRecursiveCommand :: Parser ReplCommand
+nonRecursiveCommand =
     Foldable.asum
         [ help
         , showClaim
@@ -59,6 +62,12 @@ commandParser0 =
         , saveSession
         , exit
         ]
+
+pipeWithRedirect :: ReplCommand -> Parser ReplCommand
+pipeWithRedirect cmd = try (pipe cmd >>= redirect)
+
+endOfInput :: ReplCommand -> Parser ReplCommand
+endOfInput cmd = eof $> cmd
 
 help :: Parser ReplCommand
 help = const Help <$$> literal "help"
@@ -88,7 +97,7 @@ showConfig :: Parser ReplCommand
 showConfig = ShowConfig <$$> literal "config" *> maybeDecimal
 
 omitCell :: Parser ReplCommand
-omitCell = OmitCell <$$> literal "omit" *> maybeString
+omitCell = OmitCell <$$> literal "omit" *> maybeWord
 
 showLeafs :: Parser ReplCommand
 showLeafs = const ShowLeafs <$$> literal "leafs"
@@ -103,14 +112,14 @@ showChildren :: Parser ReplCommand
 showChildren = ShowChildren <$$> literal "children" *> maybeDecimal
 
 label :: Parser ReplCommand
-label = Label <$$> literal "label" *> maybeString
+label = Label <$$> literal "label" *> maybeWord
 
 labelAdd :: Parser ReplCommand
 labelAdd =
-    LabelAdd <$$> literal "label" *> literal "+" *> string <**> maybeDecimal
+    LabelAdd <$$> literal "label" *> literal "+" *> word <**> maybeDecimal
 
 labelDel :: Parser ReplCommand
-labelDel = LabelDel <$$> literal "label" *> literal "-" *> string
+labelDel = LabelDel <$$> literal "label" *> literal "-" *> word
 
 exit :: Parser ReplCommand
 exit = const Exit <$$> literal "exit"
@@ -129,10 +138,19 @@ clear :: Parser ReplCommand
 clear = Clear <$$> literal "clear" *> maybeDecimal
 
 saveSession :: Parser ReplCommand
-saveSession = SaveSession <$$> literal "save-session" *> string
+saveSession = SaveSession <$$> literal "save-session" *> word
 
 redirect :: ReplCommand -> Parser ReplCommand
-redirect cmd = Redirect cmd <$$> literal ">" *> string
+redirect cmd = Redirect cmd <$$> literal ">" *> word
+
+pipe :: ReplCommand -> Parser ReplCommand
+pipe cmd = Pipe cmd <$$> literal "|" *> wordWithout ['>'] <**> many arg
+
+arg :: Parser String
+arg = quotedArg <|> wordWithout ['>']
+
+quotedArg :: Parser String
+quotedArg = Char.char '"' *> manyTill L.charLiteral (Char.char '"') <* Char.space
 
 infixr 2 <$$>
 infixr 1 <**>
@@ -155,8 +173,11 @@ decimal = L.decimal <* Char.space
 maybeDecimal :: Parser (Maybe Int)
 maybeDecimal = optional decimal
 
-string :: Parser String
-string = some (noneOf [' ']) <* Char.space
+word :: Parser String
+word = wordWithout []
 
-maybeString :: Parser (Maybe String)
-maybeString = optional string
+wordWithout :: [Char] -> Parser String
+wordWithout xs = some (noneOf $ [' '] <> xs) <* Char.space
+
+maybeWord :: Parser (Maybe String)
+maybeWord = optional word

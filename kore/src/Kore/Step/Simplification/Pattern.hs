@@ -65,6 +65,8 @@ import qualified Kore.Step.Simplification.Or as Or
                  ( simplify )
 import qualified Kore.Step.Simplification.Rewrites as Rewrites
                  ( simplify )
+import qualified Kore.Step.Simplification.SetVariable as SetVariable
+                 ( simplify )
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
                  ( simplify )
 import qualified Kore.Step.Simplification.Top as Top
@@ -215,6 +217,7 @@ simplifyInternal
         CharLiteralPattern p -> return $ CharLiteral.simplify p
         TopPattern p -> return $ Top.simplify p
         VariablePattern p -> return $ Variable.simplify p
+        SetVariablePattern p -> return $ SetVariable.simplify p
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier
     withProof a = (a, SimplificationProof)

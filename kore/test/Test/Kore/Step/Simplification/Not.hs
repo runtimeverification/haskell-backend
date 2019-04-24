@@ -26,7 +26,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier, gather )
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Unification.Substitution
@@ -102,7 +102,6 @@ simplifyEvaluated
 simplifyEvaluated =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger
-    . gather
     . Not.simplifyEvaluated
         mockMetadataTools
         (Mock.substitutionSimplifier mockMetadataTools)

@@ -35,7 +35,7 @@ import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier, gather )
+                 StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
@@ -134,7 +134,7 @@ simplifyEvaluated
     return (MultiOr.make [ExpandedPattern.top], SimplificationProof)
   | OrOfExpandedPattern.isFalse second = do
     result <-
-        gather $ Not.simplifyEvaluated
+        Not.simplifyEvaluated
             tools
             predicateSimplifier
             termSimplifier
@@ -180,7 +180,7 @@ simplifyEvaluateHalfImplies
   | ExpandedPattern.isTop second =
     return (MultiOr.make [ExpandedPattern.top])
   | ExpandedPattern.isBottom second =
-    gather $ Not.simplifyEvaluated
+    Not.simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier

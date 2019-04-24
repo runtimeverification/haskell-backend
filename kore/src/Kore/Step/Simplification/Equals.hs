@@ -55,7 +55,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, gather )
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -311,7 +311,7 @@ makeEvaluateFunctionalOr
         )
         seconds
     firstNotCeil <-
-        gather $ Not.simplifyEvaluated
+        Not.simplifyEvaluated
             tools
             substitutionSimplifier
             simplifier
@@ -320,7 +320,7 @@ makeEvaluateFunctionalOr
     let (secondCeils, _proofs) = unzip secondCeilsWithProofs
     secondNotCeils <-
         Traversable.for secondCeils
-        $ gather . Not.simplifyEvaluated
+        $ Not.simplifyEvaluated
             tools
             substitutionSimplifier
             simplifier
@@ -481,14 +481,14 @@ makeEvaluate
             axiomIdToSimplfier
             second { term = if termsAreEqual then mkTop_ else secondTerm }
     firstCeilNegation <-
-        gather $ Not.simplifyEvaluated
+        Not.simplifyEvaluated
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
             firstCeil
     secondCeilNegation <-
-        gather $ Not.simplifyEvaluated
+        Not.simplifyEvaluated
             tools
             substitutionSimplifier
             simplifier

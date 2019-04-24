@@ -35,7 +35,7 @@ import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPat
                  ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, gather )
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
@@ -121,7 +121,7 @@ simplifyEvaluated
     second
   | OrOfExpandedPattern.isTrue first = return second
   | OrOfExpandedPattern.isFalse first =
-    gather $ Not.simplifyEvaluated
+    Not.simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier
@@ -129,7 +129,7 @@ simplifyEvaluated
         second
   | OrOfExpandedPattern.isTrue second = return first
   | OrOfExpandedPattern.isFalse second =
-    gather $ Not.simplifyEvaluated
+    Not.simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier

@@ -54,6 +54,7 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Representation.Predicated as Predicated
+import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
@@ -65,7 +66,6 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -191,6 +191,8 @@ simplify = Simplify
 removeDestination :: patt -> Prim patt rewrite
 removeDestination = RemoveDestination
 
+type Transition = TransitionT (RewriteRule Object Variable) Simplifier
+
 {- | Transition rule for primitive strategies in 'Prim'.
 
 @transitionRule@ is intended to be partially applied and passed to
@@ -299,7 +301,7 @@ transitionRule
     transitionMultiApplyWithRemainders
         :: [RewriteRule level Variable]
         -> (CommonExpandedPattern level, StepProof level Variable)
-        -> TransitionT (RewriteRule level Variable) Simplifier
+        -> Transition
             (CommonStrategyPattern level, StepProof level Variable)
     transitionMultiApplyWithRemainders _ (config, _)
         | ExpandedPattern.isBottom config = empty
@@ -316,40 +318,29 @@ transitionRule
                 config
                 rules
         case result of
-            Left _ ->
+            Left err ->
                 (error . show . Pretty.vsep)
                 [ "Not implemented error:"
+                , Pretty.indent 4 (Pretty.pretty err)
                 , "while applying a \\rewrite axiom to the pattern:"
                 , Pretty.indent 4 (unparse config)
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]
-            Right Step.Results { results, remainders } -> do
+            Right results -> do
                 let
                     withProof :: forall x. x -> (x, StepProof level Variable)
                     withProof x = (x, proof)
-
-                    rewriteResults, remainderResults
-                        ::  MultiOr.MultiOr
-                                (TransitionT
-                                    (RewriteRule level Variable)
-                                    Simplifier
-                                    ( CommonStrategyPattern level
-                                    , StepProof level Variable
-                                    )
-                                )
-                    rewriteResults = fmap withProof . transition <$> results
-                    transition result' = do
-                        let rule =
-                                Step.unwrapRule
-                                $ Predicated.term $ Step.unifiedRule result'
-                        Transition.addRule (RewriteRule rule)
-                        return (RewritePattern $ Step.result result')
-                    remainderResults =
-                        pure . withProof . Stuck <$> remainders
-
-                Foldable.asum
-                    (MultiOr.uncheckedMerge rewriteResults remainderResults)
+                    mapRules =
+                        Result.mapRules
+                        $ RewriteRule
+                        . Step.unwrapRule
+                        . Step.withoutUnification
+                    mapConfigs =
+                        Result.mapConfigs
+                            (withProof . RewritePattern)
+                            (withProof . Stuck)
+                Result.transitionResults (mapConfigs $ mapRules results)
 
     transitionRemoveDestination
         :: CommonExpandedPattern level
