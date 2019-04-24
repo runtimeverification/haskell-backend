@@ -850,10 +850,11 @@ instance SumEqualWithExplanation UnificationError
   where
     sumConstructorPair UnsupportedPatterns UnsupportedPatterns =
         SumConstructorSameNoArguments
-    sumConstructorPair UnsupportedSymbolic UnsupportedSymbolic =
-        SumConstructorSameNoArguments
+    sumConstructorPair (UnsupportedSymbolic a) (UnsupportedSymbolic b) =
+        SumConstructorSameWithArguments
+        $ EqWrap "UnsupportedSymbolic" (show a) (show b)
     sumConstructorPair a b =
-        SumConstructorDifferent (printWithExplanation a) (printWithExplanation b)
+        Function.on SumConstructorDifferent printWithExplanation a b
 
 instance EqualWithExplanation UnificationError
   where

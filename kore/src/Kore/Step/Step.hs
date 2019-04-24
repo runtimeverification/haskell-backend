@@ -32,6 +32,7 @@ import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
+import qualified Data.Reflection as Reflection
 import           Data.Semigroup
                  ( Semigroup (..) )
 import qualified Data.Set as Set
@@ -39,8 +40,10 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics as GHC
 
 import           Kore.AST.Pure
+import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Logger as Log
@@ -362,8 +365,7 @@ applyRemainder
     -- ^ Initial configuration
     -> Predicate Object variable
     -- ^ Remainder
-    -> BranchT unifier
-        (ExpandedPattern Object variable)
+    -> BranchT unifier (ExpandedPattern Object variable)
 applyRemainder
     metadataTools
     predicateSimplifier
@@ -377,7 +379,8 @@ applyRemainder
         finalCondition = Predicated.withoutTerm final
         Predicated { Predicated.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
-    return normalizedCondition { Predicated.term = finalTerm }
+    let normalized = normalizedCondition { Predicated.term = finalTerm }
+    return normalized
   where
     normalize condition =
         Substitution.normalizeExcept
@@ -449,7 +452,12 @@ applyRule
             unifiedRule <- unifyRule' initial' rule'
             let initialCondition = Predicated.withoutTerm initial'
             final <- applyUnifiedRule' initialCondition unifiedRule
-            result <- checkSubstitutionCoverage initial' unifiedRule final
+            result <-
+                checkSubstitutionCoverage
+                    metadataTools
+                    initial'
+                    unifiedRule
+                    final
             return Result { unifiedRule, result }
   where
     unifyRule' =
@@ -538,22 +546,35 @@ checkSubstitutionCoverage
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
-    => ExpandedPattern level (Target variable)
+    => MetadataTools level StepperAttributes
+    -> ExpandedPattern level (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
     -> ExpandedPattern level (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier
-        (ExpandedPattern level variable)
-checkSubstitutionCoverage initial unified final
-  | isCoveringSubstitution = return (unwrapConfiguration final)
+    -> BranchT unifier (ExpandedPattern level variable)
+checkSubstitutionCoverage tools initial unified final
+  | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
   | isSymbolic =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule, but this was not unexpected because the initial
     -- configuration was symbolic. This case is not yet supported, but it is not
     -- a fatal error.
-        Monad.Trans.lift (Monad.Unify.throwUnificationError UnsupportedSymbolic)
+    Monad.Trans.lift
+    $ Monad.Unify.throwUnificationError
+    $ UnsupportedSymbolic $ Pretty.vsep
+        [ "While applying axiom:"
+        , Pretty.indent 4 (Pretty.pretty axiom)
+        , "from the initial configuration:"
+        , Pretty.indent 4 (unparse initial)
+        , "Expected unification:"
+        , Pretty.indent 4 (unparse unification)
+        , "to cover all the variables:"
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Set.toAscList leftAxiomVariables)
+        , "in the left-hand side of the axiom."
+        ]
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
@@ -574,16 +595,34 @@ checkSubstitutionCoverage initial unified final
         ]
   where
     Predicated { term = axiom } = unified
+    unification = Predicated.toPredicate (Predicated.withoutTerm unified)
     leftAxiomVariables =
         Pattern.freeVariables leftAxiom
       where
         RulePattern { left = leftAxiom } = axiom
     Predicated { substitution } = final
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    subst = Substitution.toMap substitution
+    substitutionVariables = Map.keysSet subst
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
-    isSymbolic =
-        Foldable.any Target.isNonTarget substitutionVariables
+    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+    isAcceptable = all isValidSymbolic (Map.toList subst)
+    -- A constructor-like pattern consists of constructor applications and
+    -- variables only.
+    isConstructorLikePattern p
+      | Valid.App_ symbolOrAlias children <- p =
+        isConstructor symbolOrAlias && all isConstructorLikePattern children
+      | Valid.Var_ _ <- p = True
+      | otherwise = False
+    isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
+    isSortInjectionPattern p
+      | Valid.App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
+      | otherwise = False
+    isSortInjection = Reflection.give tools Attribute.Symbol.isSortInjection_
+    isValidSymbolic (x, t) =
+        Target.isTarget x
+        || isConstructorLikePattern t
+        || isSortInjectionPattern t
 
 {- | Apply the given rules to the initial configuration in parallel.
 
@@ -626,9 +665,8 @@ applyRulesInParallel
   = do
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications = Predicated.withoutTerm . unifiedRule <$> results
-    remainders <- gather $ do
-        remainder <- scatter (Remainder.remainders unifications)
-        applyRemainder' initial remainder
+        remainder = Remainder.remainder unifications
+    remainders <- gather $ applyRemainder' initial remainder
     return Results { results, remainders }
   where
     applyRule' =
