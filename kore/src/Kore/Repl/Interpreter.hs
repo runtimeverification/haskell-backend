@@ -33,6 +33,8 @@ import           Control.Monad.State.Strict
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Bifunctor
                  ( bimap )
+import           Data.Bitraversable
+                 ( bitraverse )
 import           Data.Coerce
                  ( coerce )
 import           Data.Foldable
@@ -216,9 +218,9 @@ showGraph = do
 
 proveSteps :: Claim claim => Int -> ReplM claim level ()
 proveSteps n = do
-    result <- loopM performStepNoBranching (n, Success)
+    result <- loopM performStepNoBranching (n, SingleResult n)
     case result of
-        (0, Success) -> pure ()
+        (0, SingleResult _) -> pure ()
         (done, res) ->
             putStrLn'
                 $ "Stopped after "
@@ -464,62 +466,46 @@ redirect cmd path = do
 
 tryAxiomClaim
     :: forall level claim
-    .  MetaOrObject level
+    .  level ~ Object
     => Claim claim
-    => level ~ Object
     => Either AxiomIndex ClaimIndex
     -> ReplM claim level ()
 tryAxiomClaim eac = do
-    ReplState { axioms, claims, claim, graph, node, stepper } <- get
-    case getAxiomOrClaim axioms claims node of
-        Nothing ->
-            putStrLn' "Could not find axiom or claim,\
-                 \or attempt to use claim as first step"
-        Just eac' -> do
-            if Graph.outdeg (Strategy.graph graph) node == 0
-                then do
-                    graph'@Strategy.ExecutionGraph { graph = gr } <-
-                        lift $ stepper
-                            claim
-                            (either (const []) id eac')
-                            (either id (const []) eac')
-                            graph
-                            node
-{-
-    After trying to apply an axiom/claim, there are three possible cases:
-    - If there are no resulting nodes then the rule
-    couldn't be applied.
-    - If there is a single resulting node then the rule
-    was applied successfully.
-    - If there are more than one resulting nodes then
-    the rule was applied successfully but it wasn't sufficient.
-    If a remainder exists after applying a set of axioms
-    the current unification algorithm considers this
-    remainder to be Stuck. In this case, though, since only one
-    rule of the set is applied we must consider the
-    possibility that another axiom may be further applied
-    successfully on the resulting remainder, so as a workaround
-    we will change the state of these nodes from Stuck to
-    RewritePattern to allow further applications.
-    If indeed no other axiom can be applied on the remainder,
-    then a single step command will identify it as being Stuck.
--}
-                    case Graph.suc' $ Graph.context gr node of
-                        [] -> showUnificationFailure eac' node
-                        [node'] -> do
-                            lensGraph .= graph'
-                            lensNode .= node'
-                            putStrLn' "Unification successful."
-                        xs -> do
-                            lensGraph .=
-                                Strategy.ExecutionGraph
-                                    (Strategy.root graph')
-                                    (tryAgainOnNodes xs gr)
-                            putStrLn' "Unification successful."
-                else putStrLn' "Node is already evaluated"
+    claim <- Lens.use lensClaim
+    st <- get
+    case bitraverse (findAxiom st) (findClaim st) eac of
+        Nothing -> putStrLn' "Could not find axiom or claim."
+        Just axiomOrClaim -> do
+            node <- Lens.use lensNode
+            (graph, stepResult) <- lift $ runStepper'
+                claim
+                (rightToList axiomOrClaim)
+                (leftToList  axiomOrClaim)
+                node
+                st
+            case stepResult of
+                NoResult ->
+                    showUnificationFailure axiomOrClaim node
+                SingleResult node' -> do
+                    lensNode .= node'
+                    putStrLn' "Unification successful."
+                BranchResult nodes -> do
+                    stuckToUnstuck nodes graph
+                    putStrLn'
+                        $ "Unification successful with branching: " <> show nodes
   where
-    tryAgainOnNodes ns gph =
-        Graph.gmap (stuckToRewrite ns) gph
+    leftToList :: Either a b -> [a]
+    leftToList = either pure (const [])
+
+    rightToList :: Either a b -> [b]
+    rightToList = either (const []) pure
+
+    stuckToUnstuck nodes Strategy.ExecutionGraph{ root, graph } =
+        lensGraph .=
+            Strategy.ExecutionGraph
+                { root
+                , graph = Graph.gmap (stuckToRewrite nodes) graph
+                }
 
     stuckToRewrite xs ct@(to, n, lab, from)
         | n `elem` xs =
@@ -527,33 +513,17 @@ tryAxiomClaim eac = do
                 Stuck patt -> (to, n, RewritePattern patt, from)
                 _ -> ct
         | otherwise = ct
-    getAxiomOrClaim
-        :: [Axiom level]
-        -> [claim]
-        -> Graph.Node
-        -> Maybe (Either [Axiom level] [claim])
-    getAxiomOrClaim axioms claims node =
-        bimap pure pure <$> resolve axioms claims node
-    resolve
-        :: [Axiom level]
-        -> [claim]
-        -> Graph.Node
-        -> Maybe (Either (Axiom level) (claim))
-    resolve axioms claims node =
-        case eac of
-            Left  (AxiomIndex aid) -> Left  <$> axioms `atZ` aid
-            Right (ClaimIndex cid)
-              | node == 0 -> Nothing
-              | otherwise -> Right <$> claims `atZ` cid
+
     showUnificationFailure
-        :: Either [Axiom level] [claim]
+        :: Either (Axiom level) claim
         -> Graph.Node
         -> ReplM claim level ()
     showUnificationFailure axiomOrClaim' node = do
-        case extractLeftPattern axiomOrClaim' of
-            Nothing    -> putStrLn' "No axiom or claim found."
-            Just first -> do
-                second <- getCurrentConfig node
+        let first = extractLeftPattern axiomOrClaim'
+        maybeSecond <- getConfigAt (Just node) <$> get
+        case maybeSecond of
+            Nothing -> putStrLn' "Unexpected error getting current config."
+            Just (_, second) ->
                 strategyPattern
                     StrategyPatternTransformer
                         { bottomValue        = putStrLn' "Cannot unify bottom"
@@ -573,15 +543,10 @@ tryAxiomClaim eac = do
             Nothing -> putStrLn' "No unification error found."
             Just doc -> putStrLn' $ show doc
     extractLeftPattern
-        :: Either [Axiom level] [claim]
-        -> Maybe (StepPattern level Variable)
+        :: Either (Axiom level) claim
+        -> StepPattern level Variable
     extractLeftPattern =
-        listToMaybe
-            . fmap (left . getRewriteRule)
-            . either (fmap unAxiom) (fmap coerce)
-    getCurrentConfig node = do
-        Strategy.ExecutionGraph { graph } <- Lens.use lensGraph
-        return . Graph.lab' . Graph.context graph $ node
+            left . getRewriteRule . either unAxiom coerce
 
 clear
     :: forall level m claim
@@ -677,11 +642,11 @@ performSingleStep = do
     lensGraph .= graph'
     let context = Graph.context gr node
     case Graph.suc' context of
-      [] -> pure NoChildNodes
+      [] -> pure NoResult
       [configNo] -> do
           lensNode .= configNo
-          pure Success
-      neighbors -> pure (Branch neighbors)
+          pure $ SingleResult configNo
+      neighbors -> pure (BranchResult neighbors)
 
 recursiveForcedStep
     :: Claim claim
@@ -711,7 +676,7 @@ performStepNoBranching
     -> ReplM claim level (Either (Int, StepResult) (Int, StepResult))
 performStepNoBranching (0, res) =
     pure $ Right (0, res)
-performStepNoBranching (n, Success) = do
+performStepNoBranching (n, SingleResult _) = do
     res <- performSingleStep
     pure $ Left (n-1, res)
 performStepNoBranching (n, res) =
@@ -795,9 +760,3 @@ axiomOrClaim len iden
 
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
-
-data StepResult
-    = NoChildNodes
-    | Branch [Graph.Node]
-    | Success
-    deriving Show

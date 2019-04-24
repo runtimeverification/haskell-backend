@@ -25,10 +25,12 @@ module Kore.Repl.Data
     , getClaimByIndex, getAxiomByIndex
     , initializeProofFor
     , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
+    , findAxiom, findClaim
+    , StepResult(..), runStepper'
     ) where
 
 import           Control.Error
-                 ( hush )
+                 ( atZ, hush )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
@@ -393,3 +395,47 @@ getRuleFor maybeNode st =
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
+
+findAxiom
+    :: forall claim level
+    .  level ~ Object
+    => ReplState claim level
+    -> AxiomIndex
+    -> Maybe (Axiom level)
+findAxiom st (AxiomIndex index) = axioms st `atZ` index
+
+findClaim
+    :: forall claim level
+    .  level ~ Object
+    => Claim claim
+    => ReplState claim level
+    -> ClaimIndex
+    -> Maybe claim
+findClaim st (ClaimIndex index) = claims st `atZ` index
+
+data StepResult
+    = NoResult
+    | SingleResult Graph.Node
+    | BranchResult [Graph.Node]
+    deriving (Show)
+
+runStepper'
+    :: forall claim level
+    .  level ~ Object
+    => Claim claim
+    => claim
+    -> [claim]
+    -> [Axiom level]
+    -> Graph.Node
+    -> ReplState claim level
+    -> Simplifier (ExecutionGraph, StepResult)
+runStepper' claim claims axioms node' st = do
+    gr@Strategy.ExecutionGraph { graph = innerGraph } <-
+        stepper' claim claims axioms graph' node'
+    pure . (,) gr $ case Graph.suc innerGraph node' of
+        []      -> NoResult
+        [node'] -> SingleResult node'
+        nodes   -> BranchResult nodes
+  where
+    graph'     = graph st
+    stepper'   = stepper st
