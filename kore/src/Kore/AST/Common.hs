@@ -180,6 +180,19 @@ externalizeFreshVariable variable@Variable { variableName, variableCounter } =
             , idLocation = AstLocationGeneratedVariable
             }
 
+
+-- |Wrapper for set variables
+newtype SetVariable variable level
+    = SetVariable { getVariable :: variable level }
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (variable level) => Hashable (SetVariable variable level)
+
+instance NFData (variable level) => NFData (SetVariable variable level)
+
+instance Unparse (variable level) => Unparse (SetVariable variable level) where
+    unparse = unparse . getVariable
+
 {- | @Concrete level@ is a variable occuring in a concrete pattern.
 
     Concrete patterns do not contain variables, so this is an uninhabited type
@@ -1180,6 +1193,8 @@ data Pattern level domain variable child where
         :: !(Top level child) -> Pattern level domain variable child
     VariablePattern
         :: !(variable level) -> Pattern level domain variable child
+    SetVariablePattern
+        :: !(SetVariable variable level) -> Pattern level domain variable child
 
 $newDefinitionGroup
 {- dummy top-level splice to make ''Pattern available for lifting -}
@@ -1272,6 +1287,7 @@ instance
             CharLiteralPattern p   -> unparse p
             TopPattern p           -> unparse p
             VariablePattern p      -> unparse p
+            SetVariablePattern p   -> unparse p
 
 data SortedPattern level domain variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level domain variable child)
@@ -1412,6 +1428,8 @@ traverseVariables traversing =
         ExistsPattern any0 -> ExistsPattern <$> traverseVariablesExists any0
         ForallPattern all0 -> ForallPattern <$> traverseVariablesForall all0
         VariablePattern variable -> VariablePattern <$> traversing variable
+        SetVariablePattern (SetVariable variable)
+            -> SetVariablePattern . SetVariable <$> traversing variable
         -- Trivial cases
         AndPattern andP -> pure (AndPattern andP)
         ApplicationPattern appP -> pure (ApplicationPattern appP)
@@ -1465,6 +1483,7 @@ mapDomainValues mapping =
         CharLiteralPattern charP -> CharLiteralPattern charP
         TopPattern topP -> TopPattern topP
         VariablePattern varP -> VariablePattern varP
+        SetVariablePattern varP -> SetVariablePattern varP
 
 {- | Cast a 'Pattern' head with @'Const' 'Void'@ domain values into any domain.
 

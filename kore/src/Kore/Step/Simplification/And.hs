@@ -193,7 +193,7 @@ simplifyEvaluated
                 axiomIdToSimplifier
                 first1
                 second1
-    return (result, SimplificationProof)
+    return (MultiOr.make result, SimplificationProof)
 
 {-|'makeEvaluate' simplifies an 'And' of 'ExpandedPattern's.
 

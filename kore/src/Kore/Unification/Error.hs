@@ -20,9 +20,13 @@ module Kore.Unification.Error
     ) where
 
 import qualified Data.Set as Set
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.AST.Common
 import Kore.Sort
+import Kore.Unparser
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError level variable
@@ -30,12 +34,28 @@ data UnificationOrSubstitutionError level variable
     | SubstitutionError (SubstitutionError level variable)
     deriving (Eq, Show)
 
+instance
+    Unparse (variable level) =>
+    Pretty (UnificationOrSubstitutionError level variable)
+  where
+    pretty (UnificationError  err) = Pretty.pretty err
+    pretty (SubstitutionError err) = Pretty.pretty err
+
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
 data UnificationError
     = UnsupportedPatterns
-    | UnsupportedSymbolic
-    deriving (Eq, Show)
+    | UnsupportedSymbolic (Pretty.Doc ())
+    deriving Show
+
+instance Eq UnificationError where
+    (==) UnsupportedPatterns UnsupportedPatterns = True
+    (==) (UnsupportedSymbolic a) (UnsupportedSymbolic b) = show a == show b
+    (==) _ _ = False
+
+instance Pretty UnificationError where
+    pretty UnsupportedPatterns = "Unsupported patterns"
+    pretty (UnsupportedSymbolic err) = Pretty.unAnnotate err
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason level
@@ -51,6 +71,16 @@ newtype SubstitutionError level variable
     = NonCtorCircularVariableDependency [variable level]
     -- ^the circularity path may pass through non-constructors: maybe solvable.
     deriving (Eq, Show)
+
+instance
+    Unparse (variable level) =>
+    Pretty (SubstitutionError level variable)
+  where
+    pretty (NonCtorCircularVariableDependency vars) =
+        Pretty.vsep
+        ( "Non-constructor circular variable dependency:"
+        : (unparse <$> vars)
+        )
 
 {-| 'substitutionErrorVariables' extracts all variables in a
 'SubstitutionError' as a set.

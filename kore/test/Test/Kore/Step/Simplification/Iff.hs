@@ -1,14 +1,19 @@
 module Test.Kore.Step.Simplification.Iff
-    ( test_iffSimplification
+    ( test_simplify
+    , test_makeEvaluate
     ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
+
+import qualified Data.Function as Function
+import qualified Data.Map.Strict as Map
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
@@ -20,264 +25,50 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Unification.Substitution as Substitution
+import qualified SMT
 
+import           Test.Kore
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
+import qualified Test.Terse as Terse
 
-test_iffSimplification :: [TestTree]
-test_iffSimplification =
-    [ testCase "Iff - bool operations"
-        (do
-            -- iff(top, top) = top
-            assertEqualWithExplanation "iff(top,top)"
-                (MultiOr.make
-                    [ ExpandedPattern.top ]
-                )
-                (evaluate
-                    (makeIff
-                        [ExpandedPattern.top]
-                        [ExpandedPattern.top]
-                    )
-                )
-            -- iff(bottom,bottom) = top
-            assertEqualWithExplanation "iff(bottom,bottom)"
-                (MultiOr.make
-                    [ ExpandedPattern.top ]
-                )
-                (evaluate
-                    (makeIff
-                        []
-                        []
-                    )
-                )
-            -- iff(top, bottom) = bottom
-            assertEqualWithExplanation "iff(top,bottom)"
-                (MultiOr.make
-                    []
-                )
-                (evaluate
-                    (makeIff
-                        [ExpandedPattern.top]
-                        []
-                    )
-                )
-            -- iff(bottom, top) = bottom
-            assertEqualWithExplanation "iff(bottom,top)"
-                (MultiOr.make
-                    []
-                )
-                (evaluate
-                    (makeIff
-                        []
-                        [ExpandedPattern.top]
-                    )
-                )
-        )
-    , testCase "Iff - half bool"
-        (do
-            -- iff(top, p) = p
-            assertEqualWithExplanation "iff(top,p)"
-                (MultiOr.make
-                    [ Predicated
-                        { term = Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-                )
-                (evaluate
-                    (makeIff
-                        [ExpandedPattern.top]
-                        [ Predicated
-                            { term = Mock.a
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
-                    )
-                )
-            -- iff(p, top) = p
-            assertEqualWithExplanation "iff(p, top)"
-                (MultiOr.make
-                    [ Predicated
-                        { term = Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-                )
-                (evaluate
-                    (makeIff
-                        [ Predicated
-                            { term = Mock.a
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
-                        [ExpandedPattern.top]
-                    )
-                )
-            -- iff(bottom,p) = not p
-            assertEqualWithExplanation "iff(bottom,p)"
-                (MultiOr.make
-                    [ Predicated
-                        { term = mkNot Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-                )
-                (evaluate
-                    (makeIff
-                        []
-                        [ Predicated
-                            { term = Mock.a
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
-                    )
-                )
-            -- iff(p,bottom) = not p
-            assertEqualWithExplanation "iff(p,bottom)"
-                (MultiOr.make
-                    [ Predicated
-                        { term = mkNot Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-                )
-                (evaluate
-                    (makeIff
-                        [ Predicated
-                            { term = Mock.a
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
-                        []
-                    )
-                )
-        )
-    , testCase "expanded Iff - bool operations"
-        (do
-            -- iff(top,top) = top
-            assertEqualWithExplanation "iff(top,top)"
-                (MultiOr.make
-                    [ ExpandedPattern.top ]
-                )
-                (makeEvaluate
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
-                )
-            -- iff(bottom,bottom) = bottom
-            assertEqualWithExplanation "iff(bottom,bottom)"
-                (MultiOr.make
-                    [ ExpandedPattern.top ]
-                )
-                (makeEvaluate
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
-                )
-            -- iff(top,bottom) = bottom
-            assertEqualWithExplanation "iff(top,bottom)"
-                (MultiOr.make
-                    []
-                )
-                (makeEvaluate
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
-                )
-            -- iff(bottom,top) = bottom
-            assertEqualWithExplanation "iff(bottom,top)"
-                (MultiOr.make
-                    []
-                )
-                (makeEvaluate
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
-                )
-        )
-    , testCase "expanded Iff - half bool"
-        (do
-            -- iff(top, p) = p
-            assertEqualWithExplanation "iff(top,p)"
-                (MultiOr.make
-                    [ Predicated
-                        { term = Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-                )
-                (makeEvaluate
-                    ExpandedPattern.top
-                    Predicated
-                        { term = Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                )
-            -- iff(p, top) = p
-            assertEqualWithExplanation "iff(p, top)"
-                (MultiOr.make
-                    [ Predicated
-                        { term = Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-                )
-                (makeEvaluate
-                    Predicated
-                        { term = Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ExpandedPattern.top
-                )
-            -- iff(bottom,p) = not p
-            assertEqualWithExplanation "iff(bottom,p)"
-                (MultiOr.make
-                    [ Predicated
-                        { term = mkNot Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-                )
-                (makeEvaluate
-                    ExpandedPattern.bottom
-                    Predicated
-                        { term = Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                )
-            -- iff(p,bottom) = not p
-            assertEqualWithExplanation "iff(p,bottom)"
-                (MultiOr.make
-                    [ Predicated
-                        { term = mkNot Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-                )
-                (makeEvaluate
-                    Predicated
-                        { term = Mock.a
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ExpandedPattern.bottom
-                )
-        )
+test_simplify :: [TestTree]
+test_simplify =
+    [ testGroup "Boolean operations"
+        (testSimplifyBoolean <$> [minBound..] <*> [minBound..])
+    , testGroup "Half-Boolean operations"
+        [ (top   , termA ) `becomes` [termA]     $ "iff(⊤, a) = a"
+        , (termA , top   ) `becomes` [termA]     $ "iff(a, ⊤) = a"
+        , (bottom, termA ) `becomes` [termNotA]  $ "iff(⊤, a) = ¬a"
+        , (termA , bottom) `becomes` [termNotA]  $ "iff(a, ⊤) = ¬a"
+        ]
+    ]
+  where
+    becomes (a, b) rs name =
+        testCase name $ do
+            let expect = MultiOr.make rs
+            actual <- simplify $ makeIff [a] [b]
+            assertEqualWithExplanation "" expect actual
+
+test_makeEvaluate :: [TestTree]
+test_makeEvaluate =
+    [ testGroup "Boolean operations"
+        (testEvaluateBoolean <$> [minBound..] <*> [minBound..])
+    , testGroup "Half-Boolean operations"
+        [ (top   , termA ) `becomes` [termA]     $ "iff(⊤, a) = a"
+        , (termA , top   ) `becomes` [termA]     $ "iff(a, ⊤) = a"
+        , (bottom, termA ) `becomes` [termNotA]  $ "iff(⊤, a) = ¬a"
+        , (termA , bottom) `becomes` [termNotA]  $ "iff(a, ⊤) = ¬a"
+        ]
     , testCase "iff with predicates and substitutions"
         -- iff(top and predicate1 and subst1, top and predicate2 and subst2)
         --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
@@ -351,6 +142,56 @@ test_iffSimplification =
             )
         )
     ]
+  where
+    becomes (a, b) rs =
+        Terse.equals
+            (makeEvaluate a b)
+            (MultiOr.make rs)
+
+testSimplifyBoolean :: HasCallStack => Bool -> Bool -> TestTree
+testSimplifyBoolean a b =
+    testCase ("iff(" ++ name a ++ ", " ++ name b ++ ")") $ do
+        actual <- simplify $ makeIff [value a] [value b]
+        let expect = MultiOr.make [value r]
+        assertEqualWithExplanation ("expected: " ++ name r) expect actual
+  where
+    name x
+      | x = "⊤"
+      | otherwise = "⊥"
+    value x
+      | x = ExpandedPattern.top
+      | otherwise = ExpandedPattern.bottom
+    r = a == b
+
+testEvaluateBoolean :: HasCallStack => Bool -> Bool -> TestTree
+testEvaluateBoolean a b =
+    Terse.equals
+        (MultiOr.make [value r])
+        (Function.on makeEvaluate value a b)
+        ("iff(" ++ name a ++ ", " ++ name b ++ ")")
+  where
+    name x
+      | x = "⊤"
+      | otherwise = "⊥"
+    value x
+      | x = ExpandedPattern.top
+      | otherwise = ExpandedPattern.bottom
+    r = a == b
+
+termA :: CommonExpandedPattern Object
+termA =
+    Predicated
+        { term = Mock.a
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
+
+termNotA :: CommonExpandedPattern Object
+termNotA = mkNot <$> termA
+
+top, bottom :: CommonExpandedPattern Object
+top = ExpandedPattern.top
+bottom = ExpandedPattern.bottom
 
 makeIff
     :: (Ord (variable Object))
@@ -364,14 +205,20 @@ makeIff first second =
         , iffSecond = MultiOr.make second
         }
 
-evaluate
+simplify
     :: MetaOrObject level
     => Iff level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
-evaluate iff0 =
-    case Iff.simplify iff0 of
-        (result, _proof) -> result
-
+    -> IO (CommonOrOfExpandedPattern level)
+simplify iff0 =
+    (<$>) fst
+    $ SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ Iff.simplify
+        mockMetadataTools
+        (Mock.substitutionSimplifier mockMetadataTools)
+        (Simplifier.create mockMetadataTools Map.empty)
+        Map.empty
+        iff0
 
 makeEvaluate
     :: MetaOrObject level
@@ -379,5 +226,13 @@ makeEvaluate
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
 makeEvaluate first second =
-    case Iff.makeEvaluate first second of
-        (result, _proof) -> result
+    Iff.makeEvaluate first second
+
+mockMetadataTools :: MetadataTools Object Attribute.Symbol
+mockMetadataTools =
+    Mock.makeMetadataTools
+        Mock.attributesMapping
+        Mock.headTypeMapping
+        Mock.sortAttributesMapping
+        Mock.subsorts
+        Mock.headSortsMapping
