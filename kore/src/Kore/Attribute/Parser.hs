@@ -69,7 +69,7 @@ import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Error
                  ( Error, castError )
 import qualified Kore.Error
-import           SimpleSMT
+import           SMT.SimpleSMT
                  ( SExpr, readSExprs )
 
 data ParseError

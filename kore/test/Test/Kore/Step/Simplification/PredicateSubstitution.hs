@@ -14,7 +14,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -274,7 +274,7 @@ test_predicateSubstitutionSimplification =
         assertEqualWithExplanation "" (MultiOr.singleton expect) actual
     ]
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -282,6 +282,7 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap Object

@@ -32,7 +32,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeMultipleAndPredicate,
                  substitutionToPredicate )
@@ -78,7 +78,7 @@ normalize
         , ShowMetaOrObject variable
         , Unparse (variable level)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -130,7 +130,7 @@ normalizeExcept
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -204,7 +204,7 @@ mergePredicatesAndSubstitutions
        , ShowMetaOrObject variable
        , FreshVariable variable
        )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -261,7 +261,7 @@ mergePredicatesAndSubstitutionsExcept
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -318,7 +318,7 @@ createPredicatesAndSubstitutionsMergerExcept
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -356,7 +356,7 @@ createPredicatesAndSubstitutionsMerger
         , ShowMetaOrObject variable
         , FreshVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -397,7 +397,7 @@ createLiftedPredicatesAndSubstitutionsMerger
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -434,7 +434,7 @@ normalizeSubstitutionAfterMerge
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level

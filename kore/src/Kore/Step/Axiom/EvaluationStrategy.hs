@@ -35,7 +35,7 @@ import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -122,7 +122,7 @@ totalDefinitionEvaluation rules =
             , Unparse (variable level)
             , ShowMetaOrObject variable
             )
-        => MetadataTools level StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
@@ -198,7 +198,7 @@ evaluateBuiltin
         , ShowMetaOrObject variable
         )
     => BuiltinAndAxiomSimplifier level
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -257,7 +257,7 @@ applyFirstSimplifierThatWorks
         )
     => [BuiltinAndAxiomSimplifier level]
     -> AcceptsMultipleResults
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -349,7 +349,7 @@ evaluateWithDefinitionAxioms
         , ShowMetaOrObject variable
         )
     => [EqualityRule level Variable]
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level

@@ -13,7 +13,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
                  makeTruePredicate )
@@ -254,7 +254,7 @@ test_makeEvaluate =
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -262,6 +262,7 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
 makeExists
     :: Ord (variable Object)
@@ -284,7 +285,7 @@ testSort =
 
 simplify
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Exists level Variable (CommonOrOfExpandedPattern level)
     -> IO (CommonOrOfExpandedPattern level)
 simplify tools exists =
@@ -300,7 +301,7 @@ simplify tools exists =
 
 makeEvaluate
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Variable level
     -> CommonExpandedPattern level
     -> IO (CommonOrOfExpandedPattern level)

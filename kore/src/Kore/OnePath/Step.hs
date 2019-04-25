@@ -40,7 +40,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -230,7 +230,7 @@ and n destinations.
  -}
 transitionRule
     :: forall level . (MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns

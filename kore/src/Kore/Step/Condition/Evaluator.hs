@@ -40,7 +40,7 @@ If the predicate is non-trivial (not @\\top{_}()@ or @\\bottom{_}()@),
 evaluate
     ::  forall level variable .
         ( FreshVariable variable
-        , Given (MetadataTools level StepperAttributes)
+        , Given (SmtMetadataTools StepperAttributes)
         , MetaOrObject level
         , Ord (variable level)
         , OrdMetaOrObject variable

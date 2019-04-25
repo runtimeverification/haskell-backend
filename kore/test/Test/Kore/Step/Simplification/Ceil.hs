@@ -16,7 +16,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Logger.Output as Logger
                  ( emptyLogger )
 import           Kore.Predicate.Predicate
@@ -470,6 +470,7 @@ test_ceilSimplification =
             Mock.sortAttributesMapping
             Mock.subsorts
             Mock.headSortsMapping
+            Mock.smtDeclarations
     asConcrete p =
         let Just r = asConcreteStepPattern p in r
 
@@ -486,7 +487,7 @@ appliedMockEvaluator result =
 
 mockEvaluator
     :: AttemptedAxiom level variable
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -522,7 +523,7 @@ makeCeil patterns =
 evaluate
     ::  ( MetaOrObject level
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Ceil level (CommonOrOfExpandedPattern level)
     -> IO (CommonOrOfExpandedPattern level)
 evaluate tools ceil =
@@ -538,7 +539,7 @@ evaluate tools ceil =
 
 makeEvaluate
     ::  ( MetaOrObject level )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonExpandedPattern level
     -> IO (CommonOrOfExpandedPattern level)
 makeEvaluate tools child =
@@ -546,7 +547,7 @@ makeEvaluate tools child =
 
 makeEvaluateWithAxioms
     ::  ( MetaOrObject level )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> CommonExpandedPattern level

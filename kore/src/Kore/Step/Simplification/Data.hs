@@ -62,10 +62,10 @@ import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubs
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
-import           SimpleSMT
-                 ( Solver )
 import           SMT
                  ( MonadSMT, SMT (..), liftSMT, withSolver' )
+import           SMT.SimpleSMT
+                 ( Solver )
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.

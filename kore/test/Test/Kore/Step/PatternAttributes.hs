@@ -13,7 +13,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Proof.Functional
 import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
@@ -435,7 +435,7 @@ test_patternAttributes =
         )
     ]
   where
-    mockMetadataTools :: MetadataTools Object StepperAttributes
+    mockMetadataTools :: SmtMetadataTools StepperAttributes
     mockMetadataTools =
         Mock.makeMetadataTools
             Mock.attributesMapping
@@ -443,6 +443,8 @@ test_patternAttributes =
             Mock.sortAttributesMapping
             Mock.subsorts
             Mock.headSortsMapping
+            Mock.smtDeclarations
 
-    mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-    mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] [] []
+    mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
+    mockMetaMetadataTools =
+        Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations

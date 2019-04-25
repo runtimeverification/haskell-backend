@@ -20,7 +20,7 @@ import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.Data as AttemptedAxiomResults
@@ -65,7 +65,7 @@ equalityRuleEvaluator
         )
     => EqualityRule level Variable
     -- ^ Axiom defining the current function.
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level
