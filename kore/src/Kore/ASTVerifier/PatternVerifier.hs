@@ -62,16 +62,13 @@ import           Kore.Unparser
 import qualified Kore.Variables.Free as Variables
 import qualified Kore.Verified as Verified
 
-data DeclaredVariables = DeclaredVariables
-    { objectDeclaredVariables :: !(Map.Map (Id Object) (Variable Object))
-    , metaDeclaredVariables   :: !(Map.Map (Id Meta) (Variable Meta))
-    }
+newtype DeclaredVariables =
+    DeclaredVariables
+        { getDeclaredVariables :: Map.Map (Id Object) (Variable Object) }
+    deriving (Monoid, Semigroup)
 
 emptyDeclaredVariables :: DeclaredVariables
-emptyDeclaredVariables = DeclaredVariables
-    { objectDeclaredVariables = Map.empty
-    , metaDeclaredVariables = Map.empty
-    }
+emptyDeclaredVariables = mempty
 
 data Context =
     Context
@@ -126,18 +123,10 @@ lookupSymbolDeclaration symbolId = do
     (_, symbolDecl) <- resolveSymbol indexedModule symbolId
     return symbolDecl
 
-lookupDeclaredVariable
-    :: MetaOrObject level
-    => Id level
-    -> PatternVerifier (Variable level)
+lookupDeclaredVariable :: Id Object -> PatternVerifier (Variable Object)
 lookupDeclaredVariable varId = do
-    Context { declaredVariables } <- Reader.ask
-    case isMetaOrObject varId of
-        IsObject ->
-            maybe errorUnquantified return
-                $ Map.lookup varId objectDeclaredVariables
-          where
-            DeclaredVariables { objectDeclaredVariables } = declaredVariables
+    variables <- Reader.asks (getDeclaredVariables . declaredVariables)
+    maybe errorUnquantified return $ Map.lookup varId variables
   where
     errorUnquantified :: PatternVerifier (Variable level)
     errorUnquantified =
@@ -145,18 +134,11 @@ lookupDeclaredVariable varId = do
             ("Unquantified variable: '" ++ getIdForError varId ++ "'.")
 
 addDeclaredVariable
-    :: MetaOrObject level
-    => Variable level
+    :: Variable Object
     -> DeclaredVariables
     -> DeclaredVariables
-addDeclaredVariable variable@Variable { variableName } =
-    case isMetaOrObject variable of
-        IsObject ->
-            \declared@DeclaredVariables { objectDeclaredVariables } ->
-                declared
-                    { objectDeclaredVariables =
-                        Map.insert variableName variable objectDeclaredVariables
-                    }
+addDeclaredVariable variable (getDeclaredVariables -> variables) =
+    DeclaredVariables $ Map.insert (variableName variable) variable variables
 
 {- | Add a new variable to the set of 'DeclaredVariables'.
 
@@ -167,28 +149,14 @@ newDeclaredVariable
     :: DeclaredVariables
     -> Variable Object
     -> PatternVerifier DeclaredVariables
-newDeclaredVariable declared =
-    \case
-        variable@Variable { variableName } -> do
-            let DeclaredVariables { objectDeclaredVariables } = declared
-            case Map.lookup variableName objectDeclaredVariables of
-                Just variable' ->
-                    alreadyDeclared variable variable'
-                Nothing ->
-                    return declared
-                        { objectDeclaredVariables =
-                            Map.insert
-                                variableName
-                                variable
-                                objectDeclaredVariables
-                        }
+newDeclaredVariable declared variable@Variable { variableName } = do
+    let declaredVariables = getDeclaredVariables declared
+    case Map.lookup variableName declaredVariables of
+        Just variable' -> alreadyDeclared variable'
+        Nothing -> return (addDeclaredVariable variable declared)
   where
-    alreadyDeclared
-        :: MetaOrObject level
-        => Variable level
-        -> Variable level
-        -> PatternVerifier DeclaredVariables
-    alreadyDeclared variable@Variable { variableName } variable' =
+    alreadyDeclared :: Variable Object -> PatternVerifier DeclaredVariables
+    alreadyDeclared variable' =
         koreFailWithLocations [variable', variable]
             ("Variable '"
                 ++ getIdForError variableName
@@ -775,34 +743,25 @@ addFreeVariable
     :: DeclaredVariables
     -> Variable Object
     -> PatternVerifier DeclaredVariables
-addFreeVariable
-    vars@DeclaredVariables { objectDeclaredVariables = objectVars }
-    var
-  = do
-    checkVariable var objectVars
-    return vars
-        { objectDeclaredVariables =
-            Map.insert (variableName var) var objectVars
-        }
+addFreeVariable (getDeclaredVariables -> vars) var = do
+    checkVariable var vars
+    return $ DeclaredVariables $ Map.insert (variableName var) var vars
 
 checkVariable
     :: Variable a
     -> Map.Map (Id a) (Variable a)
     -> PatternVerifier VerifySuccess
 checkVariable var vars =
-    case Map.lookup (variableName var) vars of
-        Nothing -> verifySuccess
-        Just v ->
-            koreFailWithLocations
-                [v, var]
-                ( (renderString . Pretty.layoutCompact)
-                  ("Inconsistent free variable usage:"
-                     <+> unparse v
-                     <+> "and"
-                     <+> unparse var
-                     <> Pretty.dot
-                  )
-                )
+    maybe verifySuccess inconsistent $ Map.lookup (variableName var) vars
+  where
+    inconsistent v =
+        koreFailWithLocations [v, var]
+        $ renderString $ Pretty.layoutCompact
+        $ "Inconsistent free variable usage:"
+            <+> unparse v
+            <+> "and"
+            <+> unparse var
+            <> Pretty.dot
 
 patternNameForContext :: Pattern level dom Variable p -> String
 patternNameForContext (AndPattern _) = "\\and"
