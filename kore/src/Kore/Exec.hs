@@ -293,7 +293,7 @@ boundedModelCheck
     -> Simplifier [Bounded.CheckResult]
 boundedModelCheck limit definitionModule specModule = do
     let
-        tools = extractMetadataTools definitionModule
+        tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
         , simplifier

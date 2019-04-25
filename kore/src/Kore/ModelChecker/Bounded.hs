@@ -25,7 +25,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.ModelChecker.Step
                  ( CommonModalPattern, CommonProofState, ModalPattern (..),
                  Prim (..), defaultOneStepStrategy )
@@ -64,7 +64,7 @@ data CheckResult
 
 check
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
     -- ^ Simplifies normal patterns through, e.g., function evaluation
     -> PredicateSubstitutionSimplifier level
@@ -123,7 +123,7 @@ bmcStrategy
 
 checkClaim
     :: forall level . (MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level

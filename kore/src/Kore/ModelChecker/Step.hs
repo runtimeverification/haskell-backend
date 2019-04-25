@@ -31,7 +31,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.ModelChecker.Simplification
                  ( checkImplicationIsTop )
 import           Kore.Step.Axiom.Data
@@ -107,7 +107,7 @@ type Transition = TransitionT (RewriteRule Object Variable) Simplifier
 
 transitionRule
     :: forall level . (MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
