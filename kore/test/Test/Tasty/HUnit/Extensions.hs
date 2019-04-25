@@ -273,6 +273,10 @@ instance EqualWithExplanation Integer where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
+instance EqualWithExplanation Int where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
 instance EqualWithExplanation Bool where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
