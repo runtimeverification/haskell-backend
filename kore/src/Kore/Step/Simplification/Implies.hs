@@ -18,7 +18,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeImpliesPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -32,10 +32,8 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
@@ -62,7 +60,7 @@ simplify
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => MetadataTools Object Attribute.Symbol
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
@@ -111,7 +109,7 @@ simplifyEvaluated
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => MetadataTools Object Attribute.Symbol
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
@@ -159,7 +157,7 @@ simplifyEvaluateHalfImplies
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => MetadataTools Object Attribute.Symbol
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object

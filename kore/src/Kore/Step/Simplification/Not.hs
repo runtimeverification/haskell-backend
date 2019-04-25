@@ -21,7 +21,7 @@ import           Kore.AST.Valid hiding
                  ( mkAnd )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -59,7 +59,7 @@ simplify
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => MetadataTools Object Attribute.Symbol
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
@@ -103,7 +103,7 @@ simplifyEvaluated
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => MetadataTools Object Attribute.Symbol
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
