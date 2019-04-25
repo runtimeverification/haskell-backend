@@ -133,6 +133,7 @@ instance Unparse (V level) where
 
 instance Unparse (W level) where
     unparse (W name) = "W" <> pretty name <> ":" <> unparse sortVariable
+    unparse2 = error "Not implemented"
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVariable
