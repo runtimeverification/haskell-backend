@@ -78,23 +78,19 @@ verifyUniqueId existing (UnparameterizedId name location) =
     name' = Text.pack name
 
 definedNamesForSentence :: Sentence Object param pat -> [UnparameterizedId]
-definedNamesForSentence = definedNamesForObjectSentence
-
-definedNamesForObjectSentence
-    :: Sentence Object param pat -> [UnparameterizedId]
-definedNamesForObjectSentence (SentenceAliasSentence sentenceAlias) =
+definedNamesForSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForObjectSentence (SentenceSymbolSentence sentenceSymbol) =
+definedNamesForSentence (SentenceSymbolSentence sentenceSymbol) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForObjectSentence (SentenceImportSentence _) = []
-definedNamesForObjectSentence (SentenceAxiomSentence _)  = []
-definedNamesForObjectSentence (SentenceClaimSentence _)  = []
-definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
+definedNamesForSentence (SentenceImportSentence _) = []
+definedNamesForSentence (SentenceAxiomSentence _)  = []
+definedNamesForSentence (SentenceClaimSentence _)  = []
+definedNamesForSentence (SentenceSortSentence sentenceSort) =
     [ toUnparameterizedId (sentenceSortName sentenceSort) ]
-definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSort sentence))
-  = definedNamesForObjectSentence (SentenceSortSentence sentence)
-definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSymbol sentence))
-  = definedNamesForObjectSentence (SentenceSymbolSentence sentence)
+definedNamesForSentence (SentenceHookSentence (SentenceHookedSort sentence)) =
+    definedNamesForSentence (SentenceSortSentence sentence)
+definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
+    definedNamesForSentence (SentenceSymbolSentence sentence)
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
