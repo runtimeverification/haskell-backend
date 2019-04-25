@@ -25,12 +25,12 @@ import           Control.Monad.IO.Class
 import           Control.Monad.RWS.Strict
                  ( MonadWriter, RWST, lift, runRWST, tell )
 import           Control.Monad.State.Class
-                 ( get, modify, put )
+                 ( get, put )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Bitraversable
-                 ( bitraverse )
+                 ( bisequence, bitraverse )
 import           Data.Coerce
                  ( coerce )
 import           Data.Foldable
@@ -83,7 +83,6 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
-import qualified Kore.Repl.Data as State
 import           Kore.Step.Pattern
                  ( StepPattern )
 import           Kore.Step.Representation.ExpandedPattern
@@ -156,63 +155,67 @@ replInterpreter printFn replCmd = do
         pure (w, exit)
 
 showUsage :: MonadWriter String m => m ()
-showUsage =
-    putStrLn' "Could not parse command, try using 'help'."
+showUsage = putStrLn' "Could not parse command, try using 'help'."
 
 help :: MonadWriter String m => m ()
 help = putStrLn' helpText
 
+-- | Prints a claim using an index in the claims list.
 showClaim
-    :: MonadIO m
-    => Claim claim
+    :: Claim claim
     => MonadState (ReplState claim level) m
     => MonadWriter String m
     => Int
+    -- ^ index in the claims list
     -> m ()
 showClaim index = do
-    claim <- State.getClaimByIndex index <$> get
+    claim <- getClaimByIndex index
     maybe printNotFound (printRewriteRule .RewriteRule . coerce) $ claim
 
+-- | Prints an axiom using an index in the axioms list.
 showAxiom
-    :: MonadIO m
-    => Claim claim
-    => MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim level) m
     => MonadWriter String m
     => Int
+    -- ^ index in the axioms list
     -> m ()
 showAxiom index = do
-    axiom <- State.getAxiomByIndex index <$> get
+    axiom <- getAxiomByIndex index
     maybe printNotFound (printRewriteRule . unAxiom) $ axiom
 
+-- | Changes the currently focused proof, using an index in the claims list.
 prove
     :: forall level claim m
-    .  (level ~ Object)
-    => MonadIO m
-    => Claim claim
+    .  Claim claim
     => MonadState (ReplState claim level) m
     => MonadWriter String m
     => Int
+    -- ^ index in the claims list
     -> m ()
 prove index = do
-    claim' <- State.getClaimByIndex index <$> get
+    claim' <- getClaimByIndex index
     maybe printNotFound initProof claim'
   where
     initProof :: claim -> m ()
     initProof claim = do
-            modify $ State.initializeProofFor claim
+            initializeProofFor claim
             putStrLn' "Execution Graph initiated"
 
 showGraph
     :: MonadIO m
-    => Claim claim
     => MonadState (ReplState claim level) m
     => m ()
 showGraph = do
-    graph <- getInnerGraph <$> get
+    graph <- getInnerGraph
     axioms <- Lens.use lensAxioms
     liftIO $ showDotGraph (length axioms) graph
 
-proveSteps :: Claim claim => Int -> ReplM claim level ()
+-- | Executes 'n' prove steps, or until branching occurs.
+proveSteps
+    :: Claim claim
+    => Int
+    -- ^ maximum number of steps to perform
+    -> ReplM claim level ()
 proveSteps n = do
     result <- loopM performStepNoBranching (n, SingleResult n)
     case result of
@@ -224,40 +227,40 @@ proveSteps n = do
                 <> " step(s) due to "
                 <> show res
 
-proveStepsF :: Claim claim => Int -> ReplM claim level ()
+-- | Executes 'n' prove steps, distributing over branches. It will perform less
+-- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+proveStepsF
+    :: Claim claim
+    => Int
+    -- ^ maximum number of steps to perform
+    -> ReplM claim level ()
 proveStepsF n = do
     graph  <- Lens.use lensGraph
     node   <- Lens.use lensNode
     graph' <- recursiveForcedStep n graph node
     lensGraph .= graph'
-    lensNode  .= newestAddedNode graph'
-  where
-     -- Since we don't know which path was the longest,
-     -- we need to find the largest node in the graph.
-     -- This assumes the graph will assign new nodes
-     -- in ascending order.
-     newestAddedNode :: ExecutionGraph -> Graph.Node
-     newestAddedNode = snd . Graph.nodeRange . Strategy.graph
 
+-- | Focuses the node with id equals to 'n'.
 selectNode
-    :: Claim claim
-    => MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim level) m
     => MonadWriter String m
     => Int
+    -- ^ node identifier
     -> m ()
 selectNode i = do
-    graph <- getInnerGraph <$> get
+    graph <- getInnerGraph
     if i `elem` Graph.nodes graph
         then lensNode .= i
         else putStrLn' "Invalid node!"
 
+-- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig
-    :: MetaOrObject level
-    => Claim claim
+    :: level ~ Object
     => Maybe Int
+    -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim level ()
 showConfig configNode = do
-    maybeConfig <- getConfigAt configNode <$> get
+    maybeConfig <- getConfigAt configNode
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
         Just (node, config) -> do
@@ -265,7 +268,13 @@ showConfig configNode = do
             putStrLn' $ "Config at node " <> show node <> " is:"
             putStrLn' $ unparseStrategy omit config
 
-omitCell :: Claim claim => Maybe String -> ReplM claim level ()
+-- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
+-- depending on whether the string already exists in the list or not.
+omitCell
+    :: forall claim level
+    .  Maybe String
+    -- ^ Nothing to show current list, @Just str@ to add/remove to list
+    -> ReplM claim level ()
 omitCell =
     \case
         Nothing  -> showCells
@@ -286,12 +295,11 @@ omitCell =
       | x `elem` xs = filter (/= x) xs
       | otherwise   = x : xs
 
-showLeafs
-    :: MetaOrObject level
-    => Claim claim
-    => ReplM claim level ()
+-- | Shows all leaf nodes identifiers which are either stuck or can be
+-- evaluated further.
+showLeafs :: ReplM claim level ()
 showLeafs = do
-    graph <- getInnerGraph <$> get
+    graph <- getInnerGraph
     let leafsByType =
             groupSort
                 . catMaybes
@@ -323,14 +331,12 @@ showLeafs = do
     showPair (ns, xs) = show ns <> ": " <> show xs
 
 showRule
-    :: MetaOrObject level
-    => Claim claim
-    => MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim level) m
     => MonadWriter String m
     => Maybe Int
     -> m ()
 showRule configNode = do
-    maybeRule <- getRuleFor configNode <$> get
+    maybeRule <- getRuleFor configNode
     case maybeRule of
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
@@ -345,13 +351,14 @@ showRule configNode = do
     getRuleIndex :: RewriteRule Object Variable -> Attribute.RuleIndex
     getRuleIndex = Attribute.identifier . Rule.attributes . Rule.getRewriteRule
 
+-- | Shows the previous branching point.
 showPrecBranch
-    :: Claim claim
-    => Maybe Int
+    :: Maybe Int
+    -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim level ()
 showPrecBranch maybeNode = do
-    graph <- getInnerGraph <$> get
-    node' <- getTargetNode maybeNode <$> get
+    graph <- getInnerGraph
+    node' <- getTargetNode maybeNode
     case node' of
         Nothing -> putStrLn' "Invalid node!"
         Just node -> putStrLn' . show $ loop (loopCond graph) node
@@ -365,23 +372,25 @@ showPrecBranch maybeNode = do
     isNotBranch gph n = Graph.outdeg gph n <= 1
     isNotRoot gph n = not . null . Graph.pre gph $ n
 
+-- | Shows the next node(s) for the selected node.
 showChildren
-    :: Claim claim
-    => Maybe Int
+    :: Maybe Int
+    -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim level ()
 showChildren maybeNode = do
-    graph <- getInnerGraph <$> get
-    node' <- getTargetNode maybeNode <$> get
+    graph <- getInnerGraph
+    node' <- getTargetNode maybeNode
     case node' of
         Nothing -> putStrLn' "Invalid node!"
         Just node -> putStrLn' . show . Graph.suc graph $ node
 
+-- | Shows existing labels or go to an existing label.
 label
     :: forall level m claim
-    .  Claim claim
-    => MonadState (ReplState claim level) m
+    .  MonadState (ReplState claim level) m
     => MonadWriter String m
     => Maybe String
+    -- ^ 'Nothing' for show labels, @Just str@ for jumping to the string label.
     -> m ()
 label =
     \case
@@ -404,16 +413,17 @@ label =
     acc key node res =
         res <> "\n  " <> key <> ": " <> show node
 
+-- | Adds label for selected node.
 labelAdd
-    :: forall level m claim
-    .  Claim claim
-    => MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim level) m
     => MonadWriter String m
     => String
+    -- ^ label
     -> Maybe Int
+    -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
 labelAdd lbl maybeNode = do
-    node' <- getTargetNode maybeNode <$> get
+    node' <- getTargetNode maybeNode
     case node' of
         Nothing -> putStrLn' "Target node is not in the graph."
         Just node -> do
@@ -425,12 +435,12 @@ labelAdd lbl maybeNode = do
                 else
                     putStrLn' "Label already exists."
 
+-- | Removes a label.
 labelDel
-    :: forall level m claim
-    .  MonadState (ReplState claim level) m
-    => Claim claim
+    :: MonadState (ReplState claim level) m
     => MonadWriter String m
     => String
+    -- ^ label
     -> m ()
 labelDel lbl = do
     labels <- Lens.use lensLabels
@@ -441,12 +451,15 @@ labelDel lbl = do
        else
            putStrLn' "Label doesn't exist."
 
+-- | Redirect command to specified file.
 redirect
     :: forall level claim
-    .  MetaOrObject level
+    .  level ~ Object
     => Claim claim
     => ReplCommand
+    -- ^ command to redirect
     -> FilePath
+    -- ^ file path
     -> ReplM claim level ()
 redirect cmd path = do
     get >>= runInterpreter >>= put
@@ -460,25 +473,29 @@ redirect cmd path = do
         -> ReplM claim level (ReplState claim level)
     runInterpreter = lift . execStateT (replInterpreter redirectToFile cmd)
 
+-- | Attempt to use a specific axiom or claim to progress the current proof.
 tryAxiomClaim
     :: forall level claim
     .  level ~ Object
     => Claim claim
     => Either AxiomIndex ClaimIndex
+    -- ^ tagged index in the axioms or claims list
     -> ReplM claim level ()
 tryAxiomClaim eac = do
-    claim <- Lens.use lensClaim
-    st <- get
-    case bitraverse (findAxiom st) (findClaim st) eac of
+    maybeEitherAxiomOrClaim <-
+        fmap bisequence
+            . bitraverse
+                (getAxiomByIndex . coerce)
+                (getClaimByIndex . coerce)
+             $  eac
+    case maybeEitherAxiomOrClaim of
         Nothing -> putStrLn' "Could not find axiom or claim."
         Just axiomOrClaim -> do
             node <- Lens.use lensNode
-            (graph, stepResult) <- lift $ runStepper'
-                claim
+            (graph, stepResult) <- runStepper'
                 (rightToList axiomOrClaim)
                 (leftToList  axiomOrClaim)
                 node
-                st
             case stepResult of
                 NoResult ->
                     showUnificationFailure axiomOrClaim node
@@ -498,10 +515,7 @@ tryAxiomClaim eac = do
 
     stuckToUnstuck :: [Graph.Node] -> ExecutionGraph -> ReplM claim level ()
     stuckToUnstuck nodes Strategy.ExecutionGraph{ graph } =
-        modify
-            . updateInnerGraph
-            . Graph.gmap (stuckToRewrite nodes)
-            $ graph
+        updateInnerGraph $ Graph.gmap (stuckToRewrite nodes) graph
 
     stuckToRewrite xs ct@(to, n, lab, from)
         | n `elem` xs =
@@ -516,7 +530,7 @@ tryAxiomClaim eac = do
         -> ReplM claim level ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
-        maybeSecond <- getConfigAt (Just node) <$> get
+        maybeSecond <- getConfigAt (Just node)
         case maybeSecond of
             Nothing -> putStrLn' "Unexpected error getting current config."
             Just (_, second) ->
@@ -544,12 +558,13 @@ tryAxiomClaim eac = do
     extractLeftPattern =
             left . getRewriteRule . either unAxiom coerce
 
+-- | Removes specified node and all its child nodes.
 clear
     :: forall level m claim
-    .  Claim claim
-    => MonadState (ReplState claim level) m
+    .  MonadState (ReplState claim level) m
     => MonadWriter String m
     => Maybe Int
+    -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
 clear =
     \case
@@ -560,11 +575,11 @@ clear =
   where
     clear0 :: Int -> m ()
     clear0 node = do
-        graph <- getInnerGraph <$> get
+        graph <- getInnerGraph
         let
             nodesToBeRemoved = collect (next graph) node
             graph' = Graph.delNodes nodesToBeRemoved graph
-        modify (updateInnerGraph graph')
+        updateInnerGraph graph'
         lensNode .= prevNode graph' node
         putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
@@ -577,12 +592,13 @@ clear =
     prevNode :: InnerGraph -> Graph.Node -> Graph.Node
     prevNode graph = maybe 0 id . listToMaybe . fmap fst . Graph.lpre graph
 
+-- | Save this sessions' commands to the specified file.
 saveSession
-    :: forall level m claim
-    .  MonadState (ReplState level claim) m
+    :: MonadState (ReplState level claim) m
     => MonadWriter String m
     => MonadIO m
     => FilePath
+    -- ^ path to file
     -> m ()
 saveSession path = do
    content <- seqUnlines <$> Lens.use lensCommands
@@ -592,13 +608,17 @@ saveSession path = do
    seqUnlines :: Seq String -> String
    seqUnlines = unlines . toList
 
+-- | Pipe result of command to specified program.
 pipe
     :: forall level claim
     .  level ~ Object
     => Claim claim
     => ReplCommand
+    -- ^ command to pipe
     -> String
+    -- ^ path to the program that will receive the command's output
     -> [String]
+    -- ^ additional arguments to be passed to the program
     -> ReplM claim level ()
 pipe cmd file args = do
     exists <- liftIO $ findExecutable file
@@ -626,31 +646,30 @@ pipe cmd file args = do
         liftIO $ createProcess (proc exec args)
             { std_in = CreatePipe, std_out = CreatePipe }
 
+-- | Performs n proof steps, picking the next node unless branching occurs.
+-- Returns 'Left' while it has to continue looping, and 'Right' when done
+-- or when execution branches or proof finishes earlier than the counter.
+--
+-- See 'loopM' for details.
+performStepNoBranching
+    :: forall claim level
+    .  Claim claim
+    => (Int, StepResult)
+    -- ^ (current step, last result)
+    -> ReplM claim level (Either (Int, StepResult) (Int, StepResult))
+performStepNoBranching =
+    \case
+        -- Termination branch
+        (0, res) -> pure $ Right (0, res)
+        -- Loop branch
+        (n, SingleResult _) -> do
+            res <- runStepper
+            pure $ Left (n-1, res)
+        -- Early exit when there is a branch or there is no next.
+        (n, res) -> pure $ Right (n, res)
 
-printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
-printRewriteRule rule = do
-    putStrLn' $ unparseToString rule
-    putStrLn'
-        . show
-        . Pretty.pretty
-        . extractSourceAndLocation
-        $ rule
-
-performSingleStep
-    :: Claim claim => ReplM claim level StepResult
-performSingleStep = do
-    ReplState { claims , axioms , graph , claim , node, stepper } <- get
-    graph'@Strategy.ExecutionGraph { graph = gr }  <-
-        lift $ stepper claim claims axioms graph node
-    lensGraph .= graph'
-    let context = Graph.context gr node
-    case Graph.suc' context of
-      [] -> pure NoResult
-      [configNo] -> do
-          lensNode .= configNo
-          pure $ SingleResult configNo
-      neighbors -> pure (BranchResult neighbors)
-
+-- TODO(Vladimir): It would be ideal for this to be implemented in terms of
+-- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
     => Int
@@ -667,29 +686,31 @@ recursiveForcedStep n graph node
           [] -> return graph'
           xs -> foldM (recursiveForcedStep $ n-1) graph' xs
 
--- | Performs n proof steps, picking the next node unless branching occurs.
--- Returns 'Left' while it has to continue looping, and 'Right' when done
--- or when execution branches or proof finishes earlier than the counter.
---
--- See 'loopM' for details.
-performStepNoBranching
-    :: Claim claim
-    => (Int, StepResult)
-    -- ^ (current step, last result)
-    -> ReplM claim level (Either (Int, StepResult) (Int, StepResult))
-performStepNoBranching (0, res) =
-    pure $ Right (0, res)
-performStepNoBranching (n, SingleResult _) = do
-    res <- performSingleStep
-    pure $ Left (n-1, res)
-performStepNoBranching (n, res) =
-    pure $ Right (n, res)
+-- | Prints an unparsed rewrite rule along with its source location.
+printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
+printRewriteRule rule = do
+    putStrLn' $ unparseToString rule
+    putStrLn'
+        . show
+        . Pretty.pretty
+        . extractSourceAndLocation
+        $ rule
+  where
+    extractSourceAndLocation
+        :: RewriteRule level Variable
+        -> SourceLocation
+    extractSourceAndLocation
+        (RewriteRule (RulePattern{ Axiom.attributes })) =
+            Attribute.sourceLocation attributes
 
+-- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy
     :: forall level
     .  MetaOrObject level
     => [String]
+    -- ^ omit list
     -> CommonStrategyPattern level
+    -- ^ pattern
     -> String
 unparseStrategy omitList =
     strategyPattern StrategyPatternTransformer
@@ -708,29 +729,25 @@ unparseStrategy omitList =
                     -- Do not display children
                     ann :< ApplicationPattern (withoutChildren app)
                 projected -> projected
-      where
-        withoutChildren app = app { applicationChildren = [] }
+
+    withoutChildren app = app { applicationChildren = [] }
 
     shouldBeExcluded =
-       (flip elem) omitList
+       (`elem` omitList)
            . Text.unpack
            . Identifier.getId
            . symbolOrAliasConstructor
 
-extractSourceAndLocation
-    :: RewriteRule level Variable
-    -> SourceLocation
-extractSourceAndLocation
-    (RewriteRule (RulePattern{ Axiom.attributes })) =
-        Attribute.sourceLocation attributes
+putStrLn' :: MonadWriter String m => String -> m ()
+putStrLn' str = tell $ str <> "\n"
 
 printNotFound :: MonadWriter String m => m ()
 printNotFound = putStrLn' "Variable or index not found"
 
-putStrLn' :: MonadWriter String m => String -> m ()
-putStrLn' str = tell $ str <> "\n"
-
-showDotGraph :: Int -> InnerGraph-> IO ()
+-- | Shows the 'dot' graph. This currently only works on Linux. The 'Int'
+-- parameter is needed in order to distinguish between axioms and claims and
+-- represents the number of available axioms.
+showDotGraph :: Int -> InnerGraph -> IO ()
 showDotGraph len =
     (flip Graph.runGraphvizCanvas') Graph.Xlib
         . Graph.graphToDot params
@@ -742,12 +759,13 @@ showDotGraph len =
     ruleIndex lbl =
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
-            Just rule -> maybe "Unknown " Text.Lazy.pack
-                      . showAxiomOrClaim len
-                      . Attribute.identifier
-                      . Rule.attributes
-                      . Rule.getRewriteRule
-                      $ rule
+            Just rule ->
+                maybe "Unknown" Text.Lazy.pack
+                    . showAxiomOrClaim len
+                    . Attribute.identifier
+                    . Rule.attributes
+                    . Rule.getRewriteRule
+                    $ rule
 
 showAxiomOrClaim :: Int -> Attribute.RuleIndex -> Maybe String
 showAxiomOrClaim _   (RuleIndex Nothing) = Nothing

@@ -25,18 +25,19 @@ module Kore.Repl.Data
     , getClaimByIndex, getAxiomByIndex
     , initializeProofFor
     , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
-    , findAxiom, findClaim
-    , StepResult(..), runStepper'
+    , StepResult(..), runStepper, runStepper'
     , updateInnerGraph
     ) where
 
 import           Control.Error
-                 ( atZ, hush )
+                 ( hush )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
-                 ( guard, join )
+                 ( join )
+import           Control.Monad.State.Strict
+                 ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
                  ( AccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
@@ -235,6 +236,7 @@ data ReplState claim level = ReplState
     -- ^ Currently selected node in the graph; initialized with node = root
     , commands :: Seq String
     -- ^ All commands evaluated by the current repl session
+    -- TODO(Vladimir): This should be a Set String instead.
     , omit     :: [String]
     -- ^ The omit list, initially empty
     , stepper
@@ -306,95 +308,106 @@ runUnifierWithExplanation (UnifierWithExplanation accum)
 
 Lens.makeLenses ''ReplState
 
-extractConfig
-    :: RewriteRule level Variable
-    -> CommonStrategyPattern level
-extractConfig (RewriteRule RulePattern { left, requires }) =
-    RewritePattern $ Predicated left requires mempty
-
+-- | Creates a fresh execution graph for the given claim.
 emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
+  where
+    extractConfig
+        :: RewriteRule level Variable
+        -> CommonStrategyPattern level
+    extractConfig (RewriteRule RulePattern { left, requires }) =
+        RewritePattern $ Predicated left requires mempty
 
+-- | Get nth claim from the claims list.
 getClaimByIndex
-    :: forall claim level
-    .  Int
-    -> ReplState claim level
-    -> Maybe claim
-getClaimByIndex index st = st Lens.^? lensClaims . Lens.element index
+    :: MonadState (ReplState claim level) m
+    => Int
+    -- ^ index in the claims list
+    -> m (Maybe claim)
+getClaimByIndex index = Lens.preuse $ lensClaims . Lens.element index
 
+-- | Get nth axiom from the axioms list.
 getAxiomByIndex
-    :: forall claim level
-    .  Int
-    -> ReplState claim level
-    -> Maybe (Axiom level)
-getAxiomByIndex index st = st Lens.^? lensAxioms . Lens.element index
+    :: MonadState (ReplState claim level) m
+    => Int
+    -- ^ index in the axioms list
+    -> m (Maybe (Axiom level))
+getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
+-- | Initialize the execution graph with selected claim.
 initializeProofFor
-    :: forall claim level
-    . Claim claim
-    =>  claim
-    -> ReplState claim level
-    -> ReplState claim level
-initializeProofFor claim st = st
-      { graph  = emptyExecutionGraph claim
-      , claim  = claim
-      , node   = 0
-      , labels = Map.empty
-      }
+    :: MonadState (ReplState claim level) m
+    => Claim claim
+    => claim
+    -> m ()
+initializeProofFor claim =
+    modify (\st -> st
+        { graph  = emptyExecutionGraph claim
+        , claim  = claim
+        , node   = 0
+        , labels = Map.empty
+        })
 
+-- | Get the internal representation of the execution graph.
 getInnerGraph
-    :: forall claim level
-    .  ReplState claim level
-    -> InnerGraph
-getInnerGraph = Strategy.graph . graph
+    :: MonadState (ReplState claim level) m
+    => m InnerGraph
+getInnerGraph = Strategy.graph . graph <$> get
 
+-- | Update the internal representation of the execution graph.
 updateInnerGraph
-    :: forall claim level
-    .  InnerGraph
-    -> ReplState claim level
-    -> ReplState claim level
-updateInnerGraph ig st = Lens.over lensGraph (updateInnerGraph0 ig) st
+    :: MonadState (ReplState claim level) m
+    => InnerGraph
+    -> m ()
+updateInnerGraph ig = lensGraph Lens.%= updateInnerGraph0 ig
   where
     updateInnerGraph0 :: InnerGraph -> ExecutionGraph -> ExecutionGraph
     updateInnerGraph0 graph Strategy.ExecutionGraph { root } =
         Strategy.ExecutionGraph { root, graph }
 
+-- | Get selected node (or current node for 'Nothing') and validate that it's
+-- part of the execution graph.
 getTargetNode
-    :: forall claim level
-    .  Maybe Int
-    -> ReplState claim level
-    -> Maybe Int
-getTargetNode maybeNode st = do
-    let node' = maybe (node st) id maybeNode
-    guard $ node' `elem` Graph.nodes (getInnerGraph st)
-    pure node'
+    :: MonadState (ReplState claim level) m
+    => Maybe Graph.Node
+    -- ^ node index
+    -> m (Maybe Graph.Node)
+getTargetNode maybeNode = do
+    currentNode <- Lens.use lensNode
+    let node' = maybe currentNode id maybeNode
+    graph <- getInnerGraph
+    if node' `elem` Graph.nodes graph
+       then pure $ Just node'
+       else pure $ Nothing
 
+-- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
-    :: forall claim level
-    .  level ~ Object
-    => Maybe Int
-    -> ReplState claim level
-    -> Maybe (Graph.Node, CommonStrategyPattern level)
-getConfigAt maybeNode st =
-    getConfig <$> getTargetNode maybeNode st
+    :: level ~ Object
+    => MonadState (ReplState claim level) m
+    => Maybe Graph.Node
+    -> m (Maybe (Graph.Node, CommonStrategyPattern level))
+getConfigAt maybeNode = do
+    node' <- getTargetNode maybeNode
+    case node' of
+        Nothing -> pure $ Nothing
+        Just n -> do
+            graph' <- getInnerGraph
+            pure $ Just (n, getLabel graph' n)
   where
-    getConfig n = (n, Graph.lab' . Graph.context graph $ n)
-    graph = getInnerGraph st
+    getLabel gr n = Graph.lab' . Graph.context gr $ n
 
+-- | Get the rule used to reach selected node.
 getRuleFor
-    :: forall claim level
-    .  level ~ Object
-    => Maybe Int
-    -> ReplState claim level
-    -> Maybe (RewriteRule Object Variable)
-getRuleFor maybeNode st =
-    getTargetNode maybeNode st >>= getRewriteRule . Graph.inn gr
-
+    :: MonadState (ReplState claim level) m
+    => Maybe Graph.Node
+    -- ^ node index
+    -> m (Maybe (RewriteRule Object Variable))
+getRuleFor maybeNode = do
+    targetNode <- getTargetNode maybeNode
+    graph' <- getInnerGraph
+    pure $ targetNode >>= getRewriteRule . Graph.inn graph'
   where
-    gr :: InnerGraph
-    gr = getInnerGraph st
-
     getRewriteRule
         :: forall a b
         .  [(a, b, Seq (RewriteRule Object Variable))]
@@ -407,46 +420,48 @@ getRuleFor maybeNode st =
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
 
-findAxiom
-    :: forall claim level
-    .  level ~ Object
-    => ReplState claim level
-    -> AxiomIndex
-    -> Maybe (Axiom level)
-findAxiom st (AxiomIndex index) = axioms st `atZ` index
-
-findClaim
-    :: forall claim level
-    .  level ~ Object
-    => Claim claim
-    => ReplState claim level
-    -> ClaimIndex
-    -> Maybe claim
-findClaim st (ClaimIndex index) = claims st `atZ` index
-
+-- | Result after running one or multiple proof steps.
 data StepResult
     = NoResult
+    -- ^ reached end of proof on current branch
     | SingleResult Graph.Node
+    -- ^ single follow-up configuration
     | BranchResult [Graph.Node]
+    -- ^ configuration branched
     deriving (Show)
 
-runStepper'
-    :: forall claim level
-    .  level ~ Object
+-- | Run a single step for the data in state (claim, axioms, claims, current node
+-- and execution graph.
+runStepper
+    :: MonadState (ReplState claim level) (m Simplifier)
+    => Monad.Trans.MonadTrans m
     => Claim claim
-    => claim
-    -> [claim]
+    => m Simplifier StepResult
+runStepper = do
+    ReplState { claims, axioms, node } <- get
+    (graph', res) <- runStepper' claims axioms node
+    lensGraph Lens..= graph'
+    case res of
+        SingleResult nextNode -> do
+            lensNode Lens..= nextNode
+            pure res
+        _                     -> pure res
+
+-- | Run a single step for the current claim with the selected claims, axioms
+-- starting at the selected node.
+runStepper'
+    :: MonadState (ReplState claim level) (m Simplifier)
+    => Monad.Trans.MonadTrans m
+    => Claim claim
+    => [claim]
     -> [Axiom level]
     -> Graph.Node
-    -> ReplState claim level
-    -> Simplifier (ExecutionGraph, StepResult)
-runStepper' claim claims axioms node' st = do
+    -> m Simplifier (ExecutionGraph, StepResult)
+runStepper' claims axioms node = do
+    ReplState { claim, graph, stepper } <- get
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
-        stepper' claim claims axioms graph' node'
-    pure . (,) gr $ case Graph.suc innerGraph node' of
+        Monad.Trans.lift $ stepper claim claims axioms graph node
+    pure . (,) gr $ case Graph.suc innerGraph node of
         []       -> NoResult
         [single] -> SingleResult single
         nodes    -> BranchResult nodes
-  where
-    graph'     = graph st
-    stepper'   = stepper st
