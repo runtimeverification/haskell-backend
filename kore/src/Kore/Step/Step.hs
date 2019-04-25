@@ -11,11 +11,19 @@ module Kore.Step.Step
     ( RulePattern
     , UnificationProcedure (..)
     , UnifiedRule
-    , Results (..)
-    , Result (..)
+    , withoutUnification
+    , Results
+    , Step.remainders
+    , Step.results
+    , Result
+    , Step.appliedRule
+    , Step.result
+    , Step.gatherResults
+    , Step.withoutRemainders
     , unifyRule
+    , applyInitialConditions
+    , finalizeAppliedRule
     , unwrapRule
-    , applyUnifiedRule
     , applyRule
     , applyRulesInParallel
     , applyRewriteRule
@@ -26,21 +34,22 @@ module Kore.Step.Step
     , toAxiomVariables
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
+import qualified Data.Reflection as Reflection
 import           Data.Semigroup
                  ( Semigroup (..) )
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics as GHC
 
 import           Kore.AST.Pure
+import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
 import qualified Kore.Logger as Log
@@ -55,22 +64,23 @@ import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
+                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import           Kore.Step.Representation.Predicated
                  ( Predicated (Predicated) )
 import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.TopBottom
-                 ( TopBottom (..) )
+import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof )
 import           Kore.Unification.Error
@@ -123,58 +133,18 @@ solution and the renamed rule is wrapped with the combined condition.
 type UnifiedRule variable =
     Predicated Object variable (RulePattern Object variable)
 
--- | The result of applying a single rule.
-data Result variable =
-    Result
-        { unifiedRule :: !(UnifiedRule (Target variable))
-        , result      :: !(ExpandedPattern Object variable)
-        }
-    deriving GHC.Generic
+withoutUnification :: UnifiedRule variable -> RulePattern Object variable
+withoutUnification = Predicated.term
 
-deriving instance Eq (variable Object) => Eq (Result variable)
+type Result variable =
+    Step.Result
+        (UnifiedRule (Target variable))
+        (ExpandedPattern Object variable)
 
-deriving instance Ord (variable Object) => Ord (Result variable)
-
-deriving instance Show (variable Object) => Show (Result variable)
-
-instance TopBottom (Result variable) where
-    isTop (Result {unifiedRule, result}) =
-        isTop (Predicated.withoutTerm unifiedRule) && isTop result
-    isBottom (Result {unifiedRule, result}) =
-        isBottom (Predicated.withoutTerm unifiedRule) || isBottom result
-
-{- | The results of applying many rules.
-
-The rules may be applied in sequence or in parallel and the 'remainders' vary
-accordingly.
-
- -}
-data Results variable =
-    Results
-        { results :: !(MultiOr (Result variable))
-        , remainders :: !(MultiOr (ExpandedPattern Object variable))
-        }
-    deriving GHC.Generic
-
-deriving instance Eq (variable Object) => Eq (Results variable)
-
-deriving instance Ord (variable Object) => Ord (Results variable)
-
-deriving instance Show (variable Object) => Show (Results variable)
-
-instance Ord (variable Object) => Semigroup (Results variable) where
-    (<>) results1 results2 =
-        Results
-            { results = Function.on (<>) results results1 results2
-            , remainders = Function.on (<>) remainders results1 results2
-            }
-
-instance Ord (variable Object) => Monoid (Results variable) where
-    mempty = Results { results = empty, remainders = empty }
-    mappend = (<>)
-
-withoutRemainders :: Results variable -> Results variable
-withoutRemainders results = results { remainders = empty }
+type Results variable =
+    Step.Results
+        (UnifiedRule (Target variable))
+        (ExpandedPattern Object variable)
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
@@ -228,8 +198,7 @@ unifyRule
     -- ^ Initial configuration
     -> RulePattern Object variable
     -- ^ Rule
-    -> BranchT unifier
-        (UnifiedRule variable)
+    -> BranchT unifier (UnifiedRule variable)
 unifyRule
     metadataTools
     (UnificationProcedure unificationProcedure)
@@ -280,13 +249,12 @@ unifyRule
             axiomSimplifiers
             condition
 
-{- | Apply a rule to produce final configurations given some initial conditions.
+{- | Apply the initial conditions to the results of rule unification.
 
-The initial conditions are merged with any conditions from the rule unification
-and normalized.
+The rule is considered to apply if the result is not @\\bottom@.
 
  -}
-applyUnifiedRule
+applyInitialConditions
     ::  forall unifier variable unifierM
     .   ( Ord     (variable Object)
         , Show    (variable Object)
@@ -303,35 +271,100 @@ applyUnifiedRule
 
     -> PredicateSubstitution Object variable
     -- ^ Initial conditions
-    -> UnifiedRule variable
-    -- ^ Non-normalized final configuration
-    -> BranchT unifier
-        (ExpandedPattern Object variable)
-applyUnifiedRule
+    -> PredicateSubstitution Object variable
+    -- ^ Unification conditions
+    -> BranchT unifier (OrOfPredicateSubstitution Object variable)
+applyInitialConditions
     metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
 
     initial
-    unifiedRule
+    unification
   = do
-    -- Combine the initial conditions, the unification conditions, and the axiom
-    -- ensures clause. The axiom requires clause is included by unifyRule.
-    let
-        Predicated { term = renamedRule } = unifiedRule
-        RulePattern { ensures } = renamedRule
-        ensuresCondition = PredicateSubstitution.fromPredicate ensures
-        unification = Predicated.withoutTerm unifiedRule
-    finalCondition <- normalize (initial <> unification <> ensuresCondition)
-    -- Apply the normalized substitution to the right-hand side of the axiom.
-    let
-        Predicated { substitution } = finalCondition
-        substitution' = Substitution.toMap substitution
-        RulePattern { right = finalTerm } = renamedRule
-        finalTerm' = Pattern.substitute substitution' finalTerm
-    return finalCondition { ExpandedPattern.term = finalTerm' }
+    -- Combine the initial conditions and the unification conditions.
+    -- The axiom requires clause is included in the unification conditions.
+    applied <-
+        Monad.Trans.lift
+        $ Monad.liftM MultiOr.make
+        $ gather
+        $ normalize (initial <> unification)
+    -- If 'applied' is \bottom, the rule is considered to not apply and
+    -- no result is returned. If the result is \bottom after this check,
+    -- then the rule is considered to apply with a \bottom result.
+    TopBottom.guardAgainstBottom applied
+    return applied
   where
+    normalize condition =
+        Substitution.normalizeExcept
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            condition
+
+{- | Produce the final configurations of an applied rule.
+
+The rule's 'ensures' clause is applied to the conditions and normalized. The
+substitution is applied to the right-hand side of the rule to produce the final
+configurations.
+
+Because the rule is known to apply, @finalizeAppliedRule@ always returns exactly
+one branch.
+
+See also: 'applyInitialConditions'
+
+ -}
+finalizeAppliedRule
+    ::  forall unifier variable unifierM
+    .   ( Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
+        , FreshVariable  variable
+        , SortedVariable variable
+        , MonadUnify unifierM
+        , unifier ~ unifierM variable
+        )
+    => MetadataTools Object StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+
+    -> RulePattern Object variable
+    -- ^ Applied rule
+    -> OrOfPredicateSubstitution Object variable
+    -- ^ Conditions of applied rule
+    -> BranchT unifier (OrOfExpandedPattern Object variable)
+finalizeAppliedRule
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+
+    renamedRule
+    appliedConditions
+  =
+    Monad.Trans.lift . Monad.liftM MultiOr.make . gather
+    $ finalizeAppliedRuleWorker =<< scatter appliedConditions
+  where
+    finalizeAppliedRuleWorker appliedCondition = do
+        -- Combine the initial conditions, the unification conditions, and the
+        -- axiom ensures clause. The axiom requires clause is included by
+        -- unifyRule.
+        let
+            RulePattern { ensures } = renamedRule
+            ensuresCondition = PredicateSubstitution.fromPredicate ensures
+        finalCondition <- normalize (appliedCondition <> ensuresCondition)
+        -- Apply the normalized substitution to the right-hand side of the
+        -- axiom.
+        let
+            Predicated { substitution } = finalCondition
+            substitution' = Substitution.toMap substitution
+            RulePattern { right = finalTerm } = renamedRule
+            finalTerm' = Pattern.substitute substitution' finalTerm
+        return finalCondition { ExpandedPattern.term = finalTerm' }
+
     normalize condition =
         Substitution.normalizeExcept
             metadataTools
@@ -362,8 +395,7 @@ applyRemainder
     -- ^ Initial configuration
     -> Predicate Object variable
     -- ^ Remainder
-    -> BranchT unifier
-        (ExpandedPattern Object variable)
+    -> BranchT unifier (ExpandedPattern Object variable)
 applyRemainder
     metadataTools
     predicateSimplifier
@@ -377,7 +409,8 @@ applyRemainder
         finalCondition = Predicated.withoutTerm final
         Predicated { Predicated.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
-    return normalizedCondition { Predicated.term = finalTerm }
+    let normalized = normalizedCondition { Predicated.term = finalTerm }
+    return normalized
   where
     normalize condition =
         Substitution.normalizeExcept
@@ -427,7 +460,7 @@ applyRule
     -- ^ Configuration being rewritten.
     -> RulePattern Object variable
     -- ^ Rewriting axiom
-    -> unifier (MultiOr (Result variable))
+    -> unifier [Result variable]
 applyRule
     metadataTools
     predicateSimplifier
@@ -439,18 +472,28 @@ applyRule
     rule
   = Log.withLogScope "applyRule"
     $ Monad.Unify.mapVariable Target.unwrapVariable
-    $ do
+    $ gather $ do
         let
             -- Wrap the rule and configuration so that unification prefers to
             -- substitute axiom variables.
             initial' = toConfigurationVariables initial
             rule' = toAxiomVariables rule
-        gather $ do
-            unifiedRule <- unifyRule' initial' rule'
-            let initialCondition = Predicated.withoutTerm initial'
-            final <- applyUnifiedRule' initialCondition unifiedRule
-            result <- checkSubstitutionCoverage initial' unifiedRule final
-            return Result { unifiedRule, result }
+        unifiedRule <- unifyRule' initial' rule'
+        let
+            initialCondition = Predicated.withoutTerm initial'
+            unificationCondition = Predicated.withoutTerm unifiedRule
+        applied <- applyInitialConditions' initialCondition unificationCondition
+        let
+            renamedRule = Predicated.term unifiedRule
+        final <- finalizeAppliedRule' renamedRule applied
+        let
+            checkSubstitutionCoverage' =
+                checkSubstitutionCoverage
+                    metadataTools
+                    initial'
+                    unifiedRule
+        result <- traverse checkSubstitutionCoverage' final
+        return Step.Result { appliedRule = unifiedRule, result }
   where
     unifyRule' =
         unifyRule
@@ -459,8 +502,14 @@ applyRule
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
-    applyUnifiedRule' =
-        applyUnifiedRule
+    applyInitialConditions' =
+        applyInitialConditions
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+    finalizeAppliedRule' =
+        finalizeAppliedRule
             metadataTools
             predicateSimplifier
             patternSimplifier
@@ -494,7 +543,7 @@ applyRewriteRule
     -- ^ Configuration being rewritten.
     -> RewriteRule Object variable
     -- ^ Rewriting axiom
-    -> unifier (MultiOr (Result variable))
+    -> unifier [Result variable]
 applyRewriteRule
     metadataTools
     predicateSimplifier
@@ -538,22 +587,35 @@ checkSubstitutionCoverage
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
-    => ExpandedPattern level (Target variable)
+    => MetadataTools level StepperAttributes
+    -> ExpandedPattern level (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
     -> ExpandedPattern level (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier
-        (ExpandedPattern level variable)
-checkSubstitutionCoverage initial unified final
-  | isCoveringSubstitution = return (unwrapConfiguration final)
+    -> BranchT unifier (ExpandedPattern level variable)
+checkSubstitutionCoverage tools initial unified final
+  | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
   | isSymbolic =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule, but this was not unexpected because the initial
     -- configuration was symbolic. This case is not yet supported, but it is not
     -- a fatal error.
-        Monad.Trans.lift (Monad.Unify.throwUnificationError UnsupportedSymbolic)
+    Monad.Trans.lift
+    $ Monad.Unify.throwUnificationError
+    $ UnsupportedSymbolic $ Pretty.vsep
+        [ "While applying axiom:"
+        , Pretty.indent 4 (Pretty.pretty axiom)
+        , "from the initial configuration:"
+        , Pretty.indent 4 (unparse initial)
+        , "Expected unification:"
+        , Pretty.indent 4 (unparse unification)
+        , "to cover all the variables:"
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Set.toAscList leftAxiomVariables)
+        , "in the left-hand side of the axiom."
+        ]
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
@@ -574,16 +636,34 @@ checkSubstitutionCoverage initial unified final
         ]
   where
     Predicated { term = axiom } = unified
+    unification = Predicated.toPredicate (Predicated.withoutTerm unified)
     leftAxiomVariables =
         Pattern.freeVariables leftAxiom
       where
         RulePattern { left = leftAxiom } = axiom
     Predicated { substitution } = final
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    subst = Substitution.toMap substitution
+    substitutionVariables = Map.keysSet subst
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
-    isSymbolic =
-        Foldable.any Target.isNonTarget substitutionVariables
+    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+    isAcceptable = all isValidSymbolic (Map.toList subst)
+    -- A constructor-like pattern consists of constructor applications and
+    -- variables only.
+    isConstructorLikePattern p
+      | Valid.App_ symbolOrAlias children <- p =
+        isConstructor symbolOrAlias && all isConstructorLikePattern children
+      | Valid.Var_ _ <- p = True
+      | otherwise = False
+    isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
+    isSortInjectionPattern p
+      | Valid.App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
+      | otherwise = False
+    isSortInjection = Reflection.give tools Attribute.Symbol.isSortInjection_
+    isValidSymbolic (x, t) =
+        Target.isTarget x
+        || isConstructorLikePattern t
+        || isSortInjectionPattern t
 
 {- | Apply the given rules to the initial configuration in parallel.
 
@@ -625,11 +705,15 @@ applyRulesInParallel
     initial
   = do
     results <- Foldable.fold <$> traverse applyRule' rules
-    let unifications = Predicated.withoutTerm . unifiedRule <$> results
-    remainders <- gather $ do
-        remainder <- scatter (Remainder.remainders unifications)
-        applyRemainder' initial remainder
-    return Results { results, remainders }
+    let unifications =
+            MultiOr.make
+                (Predicated.withoutTerm . Step.appliedRule <$> results)
+        remainder = Remainder.remainder unifications
+    remainders' <- gather $ applyRemainder' initial remainder
+    return Step.Results
+        { results = Seq.fromList results
+        , remainders = MultiOr.make remainders'
+        }
   where
     applyRule' =
         applyRule
@@ -729,21 +813,22 @@ sequenceRules
     unificationProcedure
     initialConfig
   =
-    Foldable.foldlM sequenceRules1 mempty { remainders = pure initialConfig }
+    Foldable.foldlM sequenceRules1 (Step.remainder initialConfig)
   where
     -- The single remainder of the input configuration after rewriting to
     -- produce the disjunction of results.
     remainingAfter
         :: ExpandedPattern Object variable
         -- ^ initial configuration
-        -> MultiOr (Result variable)
-        -- ^ disjunction of results
+        -> [Result variable]
+        -- ^ results
         -> unifier (MultiOr (ExpandedPattern Object variable))
     remainingAfter config results = do
         let remainder =
                 Remainder.remainder
-                $ Predicated.withoutTerm . unifiedRule <$> results
-        gather $ applyRemainder' config remainder
+                $ MultiOr.make
+                $ Predicated.withoutTerm . Step.appliedRule <$> results
+        Monad.liftM MultiOr.make $ gather $ applyRemainder' config remainder
 
     applyRemainder' =
         applyRemainder
@@ -757,8 +842,8 @@ sequenceRules
         -> RulePattern Object variable
         -> unifier(Results variable)
     sequenceRules1 results rule = do
-        results' <- traverse (applyRule' rule) (remainders results)
-        return (withoutRemainders results <> Foldable.fold results')
+        results' <- traverse (applyRule' rule) (Step.remainders results)
+        return (Step.withoutRemainders results <> Foldable.fold results')
 
     -- Apply rule to produce a pair of the rewritten patterns and
     -- single remainder configuration.
@@ -773,8 +858,8 @@ sequenceRules
                 config
                 rule
         remainders <- remainingAfter config results
-        return Results
-            { results
+        return Step.Results
+            { results = Seq.fromList results
             , remainders
             }
 

@@ -472,34 +472,30 @@ application pattern), using an open recursion scheme for its children.
 BNF definitions:
 
 @
-⟨object-pattern⟩ ::=
-    | ⟨object-variable⟩
+⟨pattern⟩ ::=
+    | ⟨variable⟩
+    | ⟨set-variable⟩
     | ⟨object-head⟩ ‘(’ ⟨child-list⟩ ‘)’
-⟨object-variable⟩ ::= ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
+⟨variable⟩ ::= ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
+⟨set-variable⟩ ::= '#' ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
 ⟨object-head⟩ ::= ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
 ⟨object-head-constructor⟩ ::= ⟨object-identifier⟩
-
-⟨meta-pattern⟩ ::=
-    | ⟨meta-variable⟩
-    | ⟨meta-head⟩ ‘(’ ⟨child-list⟩ ‘)’
-⟨meta-variable⟩ ::= ⟨meta-identifier⟩ ‘:’ ⟨meta-sort⟩
-⟨meta-head⟩ ::= ⟨meta-head-constructor⟩ ‘{’ ⟨meta-sort-list⟩ ‘}’
-⟨meta-head-constructor⟩ ::= ⟨meta-identifier⟩
 @
-
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 variableOrTermPatternParser
-    :: MetaOrObject level
-    => Parser child
-    -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Pattern level domain Variable child)
-variableOrTermPatternParser childParser x = do
-    identifier <- idParser x
+    :: Parser child
+    -> Bool  -- ^ Whether it can be a Set Variable
+    -> Parser (Pattern Object domain Variable child)
+variableOrTermPatternParser childParser isSetVar = do
+    identifier <- idParser Object
     c <- ParserUtils.peekChar'
     if c == ':'
-        then VariablePattern <$> variableRemainderParser x identifier
-        else symbolOrAliasPatternRemainderParser childParser x identifier
+        then do
+            var <- variableRemainderParser Object identifier
+            if isSetVar
+                then return . SetVariablePattern . SetVariable $ var
+                else return $ VariablePattern var
+        else symbolOrAliasPatternRemainderParser childParser Object identifier
 
 
 {-| parses a symbol or alias constructor and sort list
@@ -539,15 +535,9 @@ BNF definitions:
 koreVariableOrTermPatternParser :: Parser CommonKorePattern
 koreVariableOrTermPatternParser = do
     c <- ParserUtils.peekChar'
-    if c == '#'
-        then
-            asCommonKorePattern <$> variableOrTermPatternParser
-                korePatternParser
-                Meta
-        else
-            asCommonKorePattern <$> variableOrTermPatternParser
-                korePatternParser
-                Object
+    asCommonKorePattern <$> variableOrTermPatternParser
+        korePatternParser
+        (c == '#')
 
 {-|'koreMLConstructorParser' parses a pattern starting with @\@.
 
@@ -1114,7 +1104,7 @@ leveledPatternParser patternParser domainValueParser level = do
         '\\' -> leveledMLConstructorParser patternParser domainValueParser level
         '"'  -> StringLiteralPattern <$> stringLiteralParser
         '\'' -> CharLiteralPattern <$> charLiteralParser
-        _ -> variableOrTermPatternParser patternParser Object
+        _ -> variableOrTermPatternParser patternParser (c == '#')
 
 purePatternParser
     :: MetaOrObject level
