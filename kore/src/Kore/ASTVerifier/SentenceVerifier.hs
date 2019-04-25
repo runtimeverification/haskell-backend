@@ -116,28 +116,11 @@ verifySentence
     -> AttributesVerification declAtts axiomAtts
     -> ParsedSentence
     -> Either (Error VerifyError) Verified.Sentence
-verifySentence builtinVerifiers indexedModule attributesVerification =
-    verifyObjectSentence
-        builtinVerifiers
-        indexedModule
-        attributesVerification
-
-verifyObjectSentence
-    :: Builtin.Verifiers
-    -> KoreIndexedModule declAtts axiomAtts
-    -> AttributesVerification declAtts axiomAtts
-    -> ParsedSentence
-    -> Either (Error VerifyError) Verified.Sentence
-verifyObjectSentence
-    builtinVerifiers
-    indexedModule
-    attributesVerification
-    sentence
-  =
-    withSentenceContext sentence verifyObjectSentence0
+verifySentence builtinVerifiers indexedModule attributesVerification sentence =
+    withSentenceContext sentence verifySentenceWorker
   where
-    verifyObjectSentence0 :: Either (Error VerifyError) Verified.Sentence
-    verifyObjectSentence0 = do
+    verifySentenceWorker :: Either (Error VerifyError) Verified.Sentence
+    verifySentenceWorker = do
         verified <-
             case sentence of
                 SentenceSymbolSentence symbolSentence ->
