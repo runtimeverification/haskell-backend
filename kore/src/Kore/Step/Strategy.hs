@@ -50,8 +50,9 @@ import           Control.Applicative
 import           Control.Monad
                  ( (>=>) )
 import           Control.Monad.State.Strict
-                 ( State )
+                 ( MonadState, StateT )
 import qualified Control.Monad.State.Strict as State
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
@@ -59,6 +60,9 @@ import           Data.Graph.Inductive.PatriciaTree
 import           Data.Hashable
 import qualified Data.List as List
 import           Data.Maybe
+import           Data.Sequence
+                 ( Seq )
+import qualified Data.Sequence as Seq
 import           Prelude hiding
                  ( all, and, any, or, replicate, seq, sequence )
 
@@ -258,8 +262,9 @@ insEdge (fromNode, toNode) exe@ExecutionGraph { graph } =
     exe { graph = Graph.insEdge (fromNode, toNode, mempty) graph }
 
 insChildNode
-    :: ChildNode config rule
-    -> State (Gr config (Seq rule)) Graph.Node
+    :: MonadState (Gr config (Seq rule)) m
+    => ChildNode config rule
+    -> m Graph.Node
 insChildNode configNode =
     State.state insChildNodeWorker
   where
@@ -366,47 +371,54 @@ constructExecutionGraph
     -> [instr]
     -> config
     -> m (ExecutionGraph config rule)
-constructExecutionGraph transit instrs config0 = do
-    finalGraph <- constructExecutionGraph1 ([root], initialGraph) instrs
+constructExecutionGraph transit instrs0 config0 = do
+    finalGraph <- State.execStateT (unfoldWorker initialSeed) initialGraph
     return exe { graph = finalGraph }
   where
     exe@ExecutionGraph { root, graph = initialGraph } =
         emptyExecutionGraph config0
+    initialSeed = Seq.singleton ([root], instrs0)
 
-    constructExecutionGraph1
-        :: ([Graph.Node], Gr config (Seq rule))
-        -> [instr]
-        -> m (Gr config (Seq rule))
-    constructExecutionGraph1 ([], graph) _ = return graph
-    constructExecutionGraph1 (_, graph) [] = return graph
-    constructExecutionGraph1 (todo, graph) (instr : instrs') = do
-        (todo', graph') <-
-            Foldable.foldlM
-                (constructExecutionGraph2 instr)
-                ([], graph)
-                todo
-        constructExecutionGraph1 (todo', graph') instrs'
+    transit' instr config =
+        (Monad.Trans.lift . runTransitionT) (transit instr config)
 
-    constructExecutionGraph2 instr (todo, graph) node =
-        case Graph.lab graph node of
-            Nothing -> error "Node does not exist"
-            Just config -> do
-                configs <- runTransitionT (transit instr config)
-                let
-                    nodes = mkChildNode <$> configs
-                    (todo', graph') =
-                        State.runState (traverse insChildNode nodes) graph
-                return (todo ++ todo', graph')
-      where
-        mkChildNode
-            :: (config, Seq rule)
-            -- ^ Child node identifier and configuration
-            -> ChildNode config rule
-        mkChildNode (config, rules) =
-            ChildNode
-                { config
-                , parents = [(rules, node)]
-                }
+    unfoldWorker
+        :: Seq ([Graph.Node], [instr])
+        -> StateT (Gr config (Seq rule)) m ()
+    unfoldWorker Seq.Empty = return ()
+    unfoldWorker ((nodes, instrs) Seq.:<| rest)
+      | []              <- nodes  = unfoldWorker rest
+      | []              <- instrs = unfoldWorker rest
+      | instr : instrs' <- instrs = do
+        nodes' <- traverse (applyInstr instr) nodes
+        let seeds = map (withInstrs instrs') nodes'
+        -- The graph is unfolded breadth-first by appending the new seeds to the
+        -- end of the todo list. The next seed is always taken from the
+        -- beginning of the sequence, so that all the pending seeds are unfolded
+        -- once before the new seeds are unfolded.
+        unfoldWorker (rest <> Seq.fromList seeds)
+
+    withInstrs instrs nodes = (nodes, instrs)
+
+    applyInstr instr node = do
+        config <- getNodeConfig node
+        configs' <- transit' instr config
+        traverse insChildNode (childOf node <$> configs')
+
+    getNodeConfig node =
+        fromMaybe (error "Node does not exist")
+        <$> State.gets (\graph -> Graph.lab graph node)
+
+    childOf
+        :: Graph.Node
+        -> (config, Seq rule)
+        -- ^ Child node identifier and configuration
+        -> ChildNode config rule
+    childOf node (config, rules) =
+        ChildNode
+            { config
+            , parents = [(rules, node)]
+            }
 
 {- | Transition rule for running a 'Strategy'.
 
