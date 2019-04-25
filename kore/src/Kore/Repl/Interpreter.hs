@@ -29,8 +29,6 @@ import           Control.Monad.State.Class
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Data.Bitraversable
-                 ( bisequence, bitraverse )
 import           Data.Coerce
                  ( coerce )
 import           Data.Foldable
@@ -297,20 +295,21 @@ omitCell =
 
 -- | Shows all leaf nodes identifiers which are either stuck or can be
 -- evaluated further.
-showLeafs :: ReplM claim level ()
+showLeafs :: forall claim level. ReplM claim level ()
 showLeafs = do
-    graph <- getInnerGraph
-    let leafsByType =
-            groupSort
-                . catMaybes
-                . fmap (getNodeState graph)
-                . findLeafNodes
-                $ graph
-
+    leafsByType <- sortLeafsByType <$> getInnerGraph
     case foldMap showPair leafsByType of
         "" -> putStrLn' "No leafs found, proof is complete."
         xs -> putStrLn' xs
   where
+    sortLeafsByType :: InnerGraph -> [(NodeState, [Graph.Node])]
+    sortLeafsByType graph =
+        groupSort
+            . catMaybes
+            . fmap (getNodeState graph)
+            . findLeafNodes
+            $ graph
+
     findLeafNodes :: InnerGraph -> [Graph.Node]
     findLeafNodes graph =
         filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
@@ -482,13 +481,8 @@ tryAxiomClaim
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim level ()
 tryAxiomClaim eac = do
-    maybeEitherAxiomOrClaim <-
-        fmap bisequence
-            . bitraverse
-                (getAxiomByIndex . coerce)
-                (getClaimByIndex . coerce)
-             $  eac
-    case maybeEitherAxiomOrClaim of
+    maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
+    case maybeAxiomOrClaim of
         Nothing -> putStrLn' "Could not find axiom or claim."
         Just axiomOrClaim -> do
             node <- Lens.use lensNode

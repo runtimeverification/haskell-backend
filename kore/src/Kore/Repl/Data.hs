@@ -22,7 +22,7 @@ module Kore.Repl.Data
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
     , emptyExecutionGraph
-    , getClaimByIndex, getAxiomByIndex
+    , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
     , initializeProofFor
     , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
     , StepResult(..), runStepper, runStepper'
@@ -42,6 +42,8 @@ import           Control.Monad.Trans.Accum
                  ( AccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
 import qualified Control.Monad.Trans.Class as Monad.Trans
+import           Data.Bitraversable
+                 ( bisequence, bitraverse )
 import           Data.Coerce
                  ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -334,6 +336,18 @@ getAxiomByIndex
     -- ^ index in the axioms list
     -> m (Maybe (Axiom level))
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
+
+-- | Transforms an axiom or claim index into an axiom or claim if they could be
+-- found.
+getAxiomOrClaimByIndex
+    :: MonadState (ReplState claim level) m
+    => Either AxiomIndex ClaimIndex
+    -> m (Maybe (Either (Axiom level) claim))
+getAxiomOrClaimByIndex =
+    fmap bisequence
+        . bitraverse
+            (getAxiomByIndex . coerce)
+            (getClaimByIndex . coerce)
 
 -- | Initialize the execution graph with selected claim.
 initializeProofFor
