@@ -112,30 +112,31 @@ replInterpreter
     -> StateT (ReplState claim level) Simplifier Bool
 replInterpreter printFn replCmd = do
     let command = case replCmd of
-                ShowUsage         -> showUsage           $> True
-                Help              -> help                $> True
-                ShowClaim c       -> showClaim c         $> True
-                ShowAxiom a       -> showAxiom a         $> True
-                Prove i           -> prove i             $> True
-                ShowGraph         -> showGraph           $> True
-                ProveSteps n      -> proveSteps n        $> True
-                ProveStepsF n     -> proveStepsF n       $> True
-                SelectNode i      -> selectNode i        $> True
-                ShowConfig mc     -> showConfig mc       $> True
-                OmitCell c        -> omitCell c          $> True
-                ShowLeafs         -> showLeafs           $> True
-                ShowRule   mc     -> showRule mc         $> True
-                ShowPrecBranch mn -> showPrecBranch mn   $> True
-                ShowChildren mn   -> showChildren mn     $> True
-                Label ms          -> label ms            $> True
-                LabelAdd l mn     -> labelAdd l mn       $> True
-                LabelDel l        -> labelDel l          $> True
-                Redirect inn file -> redirect inn file   $> True
-                Try ac            -> tryAxiomClaim ac    $> True
-                Clear n           -> clear n             $> True
-                SaveSession file  -> saveSession file    $> True
+                ShowUsage          -> showUsage          $> True
+                Help               -> help               $> True
+                ShowClaim c        -> showClaim c        $> True
+                ShowAxiom a        -> showAxiom a        $> True
+                Prove i            -> prove i            $> True
+                ShowGraph          -> showGraph          $> True
+                ProveSteps n       -> proveSteps n       $> True
+                ProveStepsF n      -> proveStepsF n      $> True
+                SelectNode i       -> selectNode i       $> True
+                ShowConfig mc      -> showConfig mc      $> True
+                OmitCell c         -> omitCell c         $> True
+                ShowLeafs          -> showLeafs          $> True
+                ShowRule   mc      -> showRule mc        $> True
+                ShowPrecBranch mn  -> showPrecBranch mn  $> True
+                ShowChildren mn    -> showChildren mn    $> True
+                Label ms           -> label ms           $> True
+                LabelAdd l mn      -> labelAdd l mn      $> True
+                LabelDel l         -> labelDel l         $> True
+                Redirect inn file  -> redirect inn file  $> True
+                Try ac             -> tryAxiomClaim ac   $> True
+                Clear n            -> clear n            $> True
+                SaveSession file   -> saveSession file   $> True
                 Pipe inn file args -> pipe inn file args $> True
-                Exit              -> pure                   False
+                AppendTo inn file  -> appendTo inn file  $> True
+                Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
     pure shouldContinue
@@ -639,6 +640,26 @@ pipe cmd file args = do
     createProcess' exec =
         liftIO $ createProcess (proc exec args)
             { std_in = CreatePipe, std_out = CreatePipe }
+
+-- | Appends output of a command to a file.
+appendTo
+    :: forall claim level
+    .  level ~ Object
+    => Claim claim
+    => ReplCommand
+    -- ^ command
+    -> FilePath
+    -- ^ file to append to
+    -> ReplM claim level ()
+appendTo cmd file = do
+    get >>= runInterpreter >>= put
+    putStrLn' $ "Appended output to \"" <> file <> "\"."
+  where
+    runInterpreter
+        :: ReplState claim level
+        -> ReplM claim level (ReplState claim level)
+    runInterpreter = lift . execStateT (replInterpreter (appendFile file) cmd)
+
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
