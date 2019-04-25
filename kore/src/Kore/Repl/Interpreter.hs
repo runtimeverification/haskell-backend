@@ -140,7 +140,8 @@ replInterpreter output cmd =
                     Try ac             -> tryAxiomClaim ac   $> True
                     Clear n            -> clear n            $> True
                     Pipe inn file args -> pipe inn file args $> True
-                    SaveSession file   -> saveSession file  $> True
+                    SaveSession file   -> saveSession file   $> True
+                    AppendTo inn file  -> appendTo inn file  $> True
                     Exit               -> pure                  False
         (exit, st', w) <- runRWST rwst () st
         liftIO $ output w
@@ -394,7 +395,6 @@ redirect cmd path = do
     st' <- lift $ execStateT (replInterpreter redirectToFile cmd) st
     put st'
     putStrLn' "File created."
-    pure ()
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
@@ -424,6 +424,19 @@ pipe cmd file args = do
                     output <- liftIO $ hGetContents handle
                     putStrLn' output
                 Nothing -> putStrLn' "Error: couldn't access output handle of executable."
+
+appendTo
+    :: forall level claim
+    .  MetaOrObject level
+    => Claim claim
+    => ReplCommand
+    -> FilePath
+    -> ReplM claim level ()
+appendTo cmd file = do
+    st <- get
+    st' <- lift $ execStateT (replInterpreter (appendFile file) cmd) st
+    put st'
+    putStrLn' $ "Appended output to \"" <> file <> "\"."
 
 tryAxiomClaim
     :: forall level claim
