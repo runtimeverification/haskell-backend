@@ -24,10 +24,6 @@ module Kore.AST.Pure
     -- * Pure pattern heads
     , groundHead
     , constant
-    -- * Pattern stubs
-    , PurePatternStub
-    , CommonPurePatternStub
-    , applyUnsortedPurePatternStub
     -- * Re-exports
     , Base, CofreeF (..)
     , module Control.Comonad
@@ -478,27 +474,3 @@ apply patternHead patterns = ApplicationPattern Application
 constant
     :: SymbolOrAlias level -> Pattern level domain variable child
 constant patternHead = apply patternHead []
-
-type PurePatternStub level domain variable annotation =
-    PatternStub
-        level
-        domain
-        variable
-        (PurePattern level domain variable annotation)
-
-type CommonPurePatternStub level domain =
-    PurePatternStub level domain Variable (Annotation.Null level)
-
-{- | Construct a 'PurePattern' by applying a sort to an unsorted stub.
- -}
-applyUnsortedPurePatternStub
-    ::  ( Functor domain
-        , result ~ PurePattern level domain variable (Annotation.Null level)
-        )
-    => (Sort level -> Pattern level domain variable result)
-    -- ^ Unsorted pattern stub
-    -> Sort level
-    -- ^ Target sort
-    -> result
-applyUnsortedPurePatternStub stub patternSort =
-    asPurePattern (mempty :< stub patternSort)
