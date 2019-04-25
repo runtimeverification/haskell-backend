@@ -39,12 +39,7 @@ assocSymbol =
 
 -- | Kore pattern representing the @assoc@ attribute.
 assocAttribute :: AttributePattern
-assocAttribute =
-    (asAttributePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = assocSymbol
-            , applicationChildren = []
-            }
+assocAttribute = attributePattern_ assocSymbol
 
 instance ParseAttributes Assoc where
     parseAttribute =

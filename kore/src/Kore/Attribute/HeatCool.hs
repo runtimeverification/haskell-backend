@@ -47,12 +47,7 @@ heatSymbol =
 
 -- | Kore pattern representing the @heat@ attribute.
 heatAttribute :: AttributePattern
-heatAttribute =
-    (asAttributePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = heatSymbol
-            , applicationChildren = []
-            }
+heatAttribute = attributePattern_ heatSymbol
 
 -- | Kore identifier representing the @cool@ attribute symbol.
 coolId :: Id Object
@@ -68,12 +63,7 @@ coolSymbol =
 
 -- | Kore pattern representing the @cool@ attribute.
 coolAttribute :: AttributePattern
-coolAttribute =
-    (asAttributePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = coolSymbol
-            , applicationChildren = []
-            }
+coolAttribute = attributePattern_ coolSymbol
 
 instance ParseAttributes HeatCool where
     parseAttribute attr =

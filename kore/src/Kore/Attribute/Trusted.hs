@@ -43,7 +43,7 @@ trustedSymbol =
 
 -- | Kore pattern representing the @trusted@ attribute.
 trustedAttribute :: AttributePattern
-trustedAttribute = attributePattern trustedSymbol []
+trustedAttribute = attributePattern_ trustedSymbol
 
 instance ParseAttributes Trusted where
     parseAttribute =

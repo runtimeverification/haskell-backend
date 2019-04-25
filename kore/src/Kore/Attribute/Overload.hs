@@ -49,22 +49,10 @@ overloadAttribute
     -> SymbolOrAlias Object
     -> AttributePattern
 overloadAttribute symbol1 symbol2 =
-    (asAttributePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = overloadSymbol
-            , applicationChildren =
-                [ (asAttributePattern . ApplicationPattern)
-                    Application
-                        { applicationSymbolOrAlias = symbol1
-                        , applicationChildren = []
-                        }
-                , (asAttributePattern . ApplicationPattern)
-                    Application
-                        { applicationSymbolOrAlias = symbol2
-                        , applicationChildren = []
-                        }
-                ]
-            }
+    attributePattern overloadSymbol
+        [ attributePattern_ symbol1
+        , attributePattern_ symbol2
+        ]
 
 instance ParseAttributes Overload where
     parseAttribute = withApplication' parseApplication

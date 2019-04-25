@@ -62,4 +62,4 @@ unitSymbol =
 
 -- | Kore pattern representing the @unit@ attribute.
 unitAttribute :: SymbolOrAlias Object -> AttributePattern
-unitAttribute symbol = attributePattern unitSymbol [attributePattern symbol []]
+unitAttribute symbol = attributePattern unitSymbol [attributePattern_ symbol]

@@ -45,12 +45,7 @@ functionalSymbol =
 
 -- | Kore pattern representing the @functional@ attribute.
 functionalAttribute :: AttributePattern
-functionalAttribute =
-    (asAttributePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = functionalSymbol
-            , applicationChildren = []
-            }
+functionalAttribute = attributePattern_ functionalSymbol
 
 instance ParseAttributes Functional where
     parseAttribute = withApplication' parseApplication

@@ -51,7 +51,7 @@ where @Sub@ is the subsort and @Super@ is the supersort.
  -}
 subsortAttribute :: Sort Object -> Sort Object -> AttributePattern
 subsortAttribute subsort supersort =
-    attributePattern (subsortSymbol subsort supersort) []
+    attributePattern_ $ subsortSymbol subsort supersort
 
 {- | Parse @subsort@ Kore attributes, if present.
 

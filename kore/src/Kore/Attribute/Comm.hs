@@ -44,12 +44,7 @@ commSymbol =
 
 -- | Kore pattern representing the @comm@ attribute.
 commAttribute :: AttributePattern
-commAttribute =
-    (asAttributePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = commSymbol
-            , applicationChildren = []
-            }
+commAttribute = attributePattern_ commSymbol
 
 instance ParseAttributes Comm where
     parseAttribute =

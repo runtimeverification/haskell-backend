@@ -84,12 +84,7 @@ function.
  -}
 hookAttribute :: Text  -- ^ hooked function name
               -> AttributePattern
-hookAttribute builtin =
-    (asAttributePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = hookSymbol
-            , applicationChildren = [lit]
-            }
+hookAttribute builtin = attributePattern hookSymbol [lit]
   where
     lit = (asAttributePattern . StringLiteralPattern) (StringLiteral builtin)
 
