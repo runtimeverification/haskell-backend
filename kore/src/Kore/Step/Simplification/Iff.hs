@@ -17,8 +17,13 @@ import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeIffPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..), substitutionToPredicate )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -29,10 +34,13 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrOfExpandedPattern'
 children.
@@ -41,23 +49,38 @@ Right now this has special cases only for top and bottom children
 and for children with top terms.
 -}
 simplify
-    ::  ( MetaOrObject level
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => Iff level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
-        , SimplificationProof level
-        )
+    => MetadataTools Object Attribute.Symbol
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> Iff Object (OrOfExpandedPattern Object variable)
+    -> Simplifier
+        (OrOfExpandedPattern Object variable, SimplificationProof Object)
 simplify
+    tools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
     Iff
         { iffFirst = first
         , iffSecond = second
         }
   =
-    simplifyEvaluated first second
+    fmap withProof $ simplifyEvaluated
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        first
+        second
+  where
+    withProof a = (a, SimplificationProof)
 
 {-| evaluates an 'Iff' given its two 'OrOfExpandedPattern' children.
 
@@ -76,27 +99,44 @@ besides the pattern sort, which will make it even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( MetaOrObject level
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated first second
-  | OrOfExpandedPattern.isTrue first =
-    (second, SimplificationProof)
+    => MetadataTools Object Attribute.Symbol
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> OrOfExpandedPattern Object variable
+    -> OrOfExpandedPattern Object variable
+    -> Simplifier (OrOfExpandedPattern Object variable)
+simplifyEvaluated
+    tools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
+    first
+    second
+  | OrOfExpandedPattern.isTrue first = return second
   | OrOfExpandedPattern.isFalse first =
-    Not.simplifyEvaluated second
-  | OrOfExpandedPattern.isTrue second =
-    (first, SimplificationProof)
+    Not.simplifyEvaluated
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        second
+  | OrOfExpandedPattern.isTrue second = return first
   | OrOfExpandedPattern.isFalse second =
-    Not.simplifyEvaluated first
+    Not.simplifyEvaluated
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        first
   | otherwise =
-    case ( firstPatterns, secondPatterns )
-      of
+    return $ case ( firstPatterns, secondPatterns ) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
             makeEvaluate
@@ -119,18 +159,13 @@ makeEvaluate
         )
     => ExpandedPattern level variable
     -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level variable
 makeEvaluate first second
-  | ExpandedPattern.isTop first =
-    (MultiOr.make [second], SimplificationProof)
-  | ExpandedPattern.isBottom first =
-    (fst $ Not.makeEvaluate second, SimplificationProof)
-  | ExpandedPattern.isTop second =
-    (MultiOr.make [first], SimplificationProof)
-  | ExpandedPattern.isBottom second =
-    (fst $ Not.makeEvaluate first, SimplificationProof)
-  | otherwise =
-    makeEvaluateNonBoolIff first second
+  | ExpandedPattern.isTop first = MultiOr.make [second]
+  | ExpandedPattern.isBottom first = Not.makeEvaluate second
+  | ExpandedPattern.isTop second = MultiOr.make [first]
+  | ExpandedPattern.isBottom second = Not.makeEvaluate first
+  | otherwise = makeEvaluateNonBoolIff first second
 
 makeEvaluateNonBoolIff
     ::  ( MetaOrObject level
@@ -141,7 +176,7 @@ makeEvaluateNonBoolIff
         )
     => ExpandedPattern level variable
     -> ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    -> OrOfExpandedPattern level variable
 makeEvaluateNonBoolIff
     patt1@Predicated
         { term = firstTerm
@@ -156,7 +191,7 @@ makeEvaluateNonBoolIff
   | (Recursive.project -> _ :< TopPattern _) <- firstTerm
   , (Recursive.project -> _ :< TopPattern _) <- secondTerm
   =
-    ( MultiOr.make
+    MultiOr.make
         [ Predicated
             { term = firstTerm
             , predicate =
@@ -171,10 +206,8 @@ makeEvaluateNonBoolIff
             , substitution = mempty
             }
         ]
-    , SimplificationProof
-    )
   | otherwise =
-    ( MultiOr.make
+    MultiOr.make
         [ Predicated
             { term = mkIff
                 (ExpandedPattern.toMLPattern patt1)
@@ -183,5 +216,3 @@ makeEvaluateNonBoolIff
             , substitution = mempty
             }
         ]
-    , SimplificationProof
-    )

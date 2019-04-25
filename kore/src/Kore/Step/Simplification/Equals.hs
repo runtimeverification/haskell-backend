@@ -13,14 +13,15 @@ module Kore.Step.Simplification.Equals
     , simplify
     ) where
 
-import Control.Error
-       ( MaybeT (..) )
-import Control.Monad
-       ( foldM )
-import Data.List
-       ( foldl' )
-import Data.Maybe
-       ( fromMaybe )
+import           Control.Error
+                 ( MaybeT (..) )
+import           Control.Monad
+                 ( foldM )
+import           Data.List
+                 ( foldl' )
+import           Data.Maybe
+                 ( fromMaybe )
+import qualified Data.Traversable as Traversable
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
@@ -309,11 +310,22 @@ makeEvaluateFunctionalOr
             axiomIdToSimplfier
         )
         seconds
-    let
-        (secondCeils, _proofs) = unzip secondCeilsWithProofs
-        (firstNotCeil, _proof1) = Not.simplifyEvaluated firstCeil
-        secondNotCeils = map (dropProof . Not.simplifyEvaluated) secondCeils
-        oneNotBottom =
+    firstNotCeil <-
+        Not.simplifyEvaluated
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            firstCeil
+    let (secondCeils, _proofs) = unzip secondCeilsWithProofs
+    secondNotCeils <-
+        Traversable.for secondCeils
+        $ Not.simplifyEvaluated
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+    let oneNotBottom =
             foldl'
                 (dropProofFold Or.simplifyEvaluated)
                 (MultiOr.make [])
@@ -371,8 +383,14 @@ makeEvaluateFunctionalOr
                 axiomIdToSimplfier
                 firstTerm
                 secondTerm
-        let
-            (result, _proof) = Implies.simplifyEvaluated secondCeil equality
+        (result, _) <-
+            Implies.simplifyEvaluated
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplfier
+                secondCeil
+                equality
         return result
 
 {-| evaluates an 'Equals' given its two 'ExpandedPattern' children.
@@ -409,10 +427,7 @@ makeEvaluate
     second@Predicated
         { term = Top_ _ }
   =
-    let
-        (result, _proof) = Iff.makeEvaluate first second
-    in
-        return (result, SimplificationProof)
+    return (Iff.makeEvaluate first second, SimplificationProof)
 makeEvaluate
     tools
     substitutionSimplifier
@@ -465,9 +480,20 @@ makeEvaluate
             simplifier
             axiomIdToSimplfier
             second { term = if termsAreEqual then mkTop_ else secondTerm }
-    let
-        (firstCeilNegation, _proof3) = Not.simplifyEvaluated firstCeil
-        (secondCeilNegation, _proof4) = Not.simplifyEvaluated secondCeil
+    firstCeilNegation <-
+        Not.simplifyEvaluated
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            firstCeil
+    secondCeilNegation <-
+        Not.simplifyEvaluated
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplfier
+            secondCeil
     (termEquality, _proof) <-
         makeEvaluateTermsAssumesNoBottom
             tools
