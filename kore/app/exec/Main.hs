@@ -390,7 +390,6 @@ mainWithOptions
                             failure pat = (ExitFailure 1, pat)
                             success = (ExitSuccess, mkTop $ mkSortVariable "R")
                 )
-        print (show exitCode)
         let unparsed = (unparse . externalizeFreshVariables) finalPattern
         case outputFileName of
             Nothing ->
