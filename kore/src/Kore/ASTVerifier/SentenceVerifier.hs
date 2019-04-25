@@ -305,9 +305,7 @@ verifyAxiomSentence
     -> Either (Error VerifyError) Verified.SentenceAxiom
 verifyAxiomSentence axiom builtinVerifiers indexedModule =
     do
-        variables <-
-            buildDeclaredUnifiedSortVariables
-                (sentenceAxiomParameters axiom)
+        variables <- buildDeclaredSortVariables $ sentenceAxiomParameters axiom
         let context =
                 PatternVerifier.Context
                     { builtinDomainValueVerifiers =
@@ -331,18 +329,11 @@ verifySortSentence sentenceSort = do
     traverse verifyNoPatterns sentenceSort
 
 buildDeclaredSortVariables
-    :: MetaOrObject level
-    => [SortVariable level]
-    -> Either (Error VerifyError) (Set.Set (SortVariable level))
-buildDeclaredSortVariables variables =
-    buildDeclaredUnifiedSortVariables variables
-
-buildDeclaredUnifiedSortVariables
-    :: [SortVariable level]
-    -> Either (Error VerifyError) (Set.Set (SortVariable level))
-buildDeclaredUnifiedSortVariables [] = Right Set.empty
-buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
-    variables <- buildDeclaredUnifiedSortVariables list
+    :: [SortVariable Object]
+    -> Either (Error VerifyError) (Set.Set (SortVariable Object))
+buildDeclaredSortVariables [] = Right Set.empty
+buildDeclaredSortVariables (unifiedVariable : list) = do
+    variables <- buildDeclaredSortVariables list
     koreFailWithLocationsWhen
         (unifiedVariable `Set.member` variables)
         [unifiedVariable]
