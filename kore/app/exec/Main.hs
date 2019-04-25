@@ -323,7 +323,7 @@ mainWithOptions
         proveParameters <-
             case koreProveOptions of
                 Nothing -> return Nothing
-                Just KoreProveOptions { specFileName, specMainModule } ->
+                Just KoreProveOptions { specFileName, specMainModule, bmc } ->
                     do
                         specDef <- parseDefinition specFileName
                         (specDefIndexedModules, _) <-
@@ -333,7 +333,7 @@ mainWithOptions
                                 specDef
                         specDefIndexedModule <-
                             mainModule specMainModule specDefIndexedModules
-                        return (Just specDefIndexedModule)
+                        return (Just (specDefIndexedModule, bmc))
         maybePurePattern <- case patternFileName of
             Nothing -> return Nothing
             Just fileName ->
@@ -373,18 +373,22 @@ mainWithOptions
                                             searchPattern
                                             searchConfig
                                     return (ExitSuccess, pat)
-                        Just specIndexedModule ->
-                            either
-                                (\pat -> (ExitFailure 1, pat))
-                                (\_ ->
-                                        ( ExitSuccess
-                                        , mkTop $ mkSortVariable "R"
-                                        )
-                                )
+                        Just (specIndexedModule, bmc)
+                          | bmc -> do
+                            _ <- boundedModelCheck
+                                    stepLimit
+                                    indexedModule
+                                    specIndexedModule
+                            return success
+                          | otherwise ->
+                            either failure (const success)
                             <$> prove
                                     stepLimit
                                     indexedModule
                                     specIndexedModule
+                          where
+                            failure pat = (ExitFailure 1, pat)
+                            success = (ExitSuccess, mkTop $ mkSortVariable "R")
                 )
         print (show exitCode)
         let unparsed = (unparse . externalizeFreshVariables) finalPattern

@@ -14,6 +14,7 @@ module Kore.Exec
     , search
     , prove
     , proveWithRepl
+    , boundedModelCheck
     , Rewrite
     , Equality
     ) where
@@ -50,6 +51,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import           Kore.IndexedModule.Resolvers
                  ( resolveSymbol )
 import qualified Kore.Logger as Log
+import qualified Kore.ModelChecker.Bounded as Bounded
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom), Claim, defaultStrategy, verify )
 import qualified Kore.OnePath.Verification as Claim
@@ -80,7 +82,8 @@ import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubs
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), OnePathRule (..),
                  RewriteRule (RewriteRule), RulePattern (RulePattern),
-                 extractOnePathClaims, extractRewriteAxioms, getRewriteRule )
+                 extractImplicationClaims, extractOnePathClaims,
+                 extractRewriteAxioms, getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Search
@@ -279,6 +282,38 @@ proveWithRepl definitionModule specModule = do
         axiomIdToSimplifier
         axioms
         claims
+
+-- | Bounded model check a spec given as a module containing rules to be checked
+boundedModelCheck
+    :: Limit Natural
+    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The main module
+    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The spec module
+    -> Simplifier [Bounded.CheckResult]
+boundedModelCheck limit definitionModule specModule = do
+    let
+        tools = MetadataTools.build definitionModule
+    Initialized
+        { rewriteRules
+        , simplifier
+        , substitutionSimplifier
+        , axiomIdToSimplifier
+        } <-
+            initialize definitionModule tools
+    let
+        axioms = fmap Axiom rewriteRules
+        specAxioms = fmap snd $ (extractImplicationClaims specModule)
+
+    result <-
+        Bounded.check
+            tools
+            simplifier
+            substitutionSimplifier
+            axiomIdToSimplifier
+            (Bounded.bmcStrategy axioms)
+            (map (\x -> (x,limit)) specAxioms)
+    return result
 
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
