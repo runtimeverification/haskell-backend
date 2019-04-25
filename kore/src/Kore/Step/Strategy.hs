@@ -377,20 +377,19 @@ constructExecutionGraph transit instrs0 config0 = do
   where
     exe@ExecutionGraph { root, graph = initialGraph } =
         emptyExecutionGraph config0
-    initialSeed = Seq.singleton ([root], instrs0)
+    initialSeed = Seq.singleton (root, instrs0)
 
     transit' instr config =
         (Monad.Trans.lift . runTransitionT) (transit instr config)
 
     unfoldWorker
-        :: Seq ([Graph.Node], [instr])
+        :: Seq (Graph.Node, [instr])
         -> StateT (Gr config (Seq rule)) m ()
     unfoldWorker Seq.Empty = return ()
-    unfoldWorker ((nodes, instrs) Seq.:<| rest)
-      | []              <- nodes  = unfoldWorker rest
+    unfoldWorker ((node, instrs) Seq.:<| rest)
       | []              <- instrs = unfoldWorker rest
       | instr : instrs' <- instrs = do
-        nodes' <- traverse (applyInstr instr) nodes
+        nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
         -- The graph is unfolded breadth-first by appending the new seeds to the
         -- end of the todo list. The next seed is always taken from the
