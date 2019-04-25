@@ -1,11 +1,8 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 
-module Test.Kore.ASTUtils
+module Test.Kore.AST.Valid
     ( test_sortAgreement
-    , var
-    , var_
-    , mkSort
     ) where
 
 import Test.Tasty

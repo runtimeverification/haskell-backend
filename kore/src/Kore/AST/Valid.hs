@@ -1,14 +1,7 @@
 {- |
-Module      : Kore.AST.Valid
-Description : Constructors and patterns for valid Kore syntax trees
+Description : Constructors and patterns for verified Kore syntax trees
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-
-This module implements an interface analogous to
-"Kore.ASTUtils.SmartConstructors" and "Kore.ASTUtils.SmartPatterns" for 'Valid'
-patterns. Unlike the @SmartConstructors@, this module does not require
-"Kore.IndexedModule.MetadataTools".
 
  -}
 
