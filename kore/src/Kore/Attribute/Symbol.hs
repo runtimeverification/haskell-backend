@@ -50,101 +50,35 @@ module Kore.Attribute.Symbol
     , isTotal_, isTotal
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
-import qualified Control.Lens.TH.Rules as Lens
-import           Control.Monad
-                 ( (>=>) )
-import           Data.Default
 import           Data.Reflection
                  ( Given, given )
-import           GHC.Generics
-                 ( Generic )
 
 import Kore.AST.Common
        ( SymbolOrAlias )
+import Kore.AST.MetaOrObject
+       ( Object )
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
-import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
+import Kore.Attribute.Symbol.Symbol
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
-
-{- | Symbol attributes used during Kore execution.
-
-@Symbol@ records the declared attributes of a Kore symbol, but the effective
-attributes can be different; for example, constructors and sort injections are
-injective, even if their declaration is not given the @injective@ attribute. To
-view the effective attributes, use the functions defined in this module.
-
- -}
-data Symbol =
-    Symbol
-    { function      :: !Function
-      -- ^ Whether a symbol represents a function
-    , functional    :: !Functional
-      -- ^ Whether a symbol is functional
-    , constructor   :: !Constructor
-      -- ^ Whether a symbol represents a constructor
-    , injective     :: !Injective
-      -- ^ Whether a symbol represents an injective function
-    , sortInjection :: !SortInjection
-      -- ^ Whether a symbol is a sort injection
-    , hook          :: !Hook
-      -- ^ The builtin sort or symbol hooked to a sort or symbol
-    , smtlib        :: !Smtlib
-    , smthook       :: !Smthook
-    }
-    deriving (Eq, Ord, Generic, Show)
-
-type StepperAttributes = Symbol
-
-Lens.makeLenses ''Symbol
-
-instance NFData Symbol
-
-instance ParseAttributes Symbol where
-    parseAttribute attr =
-        lensFunction (parseAttribute attr)
-        >=> lensFunctional (parseAttribute attr)
-        >=> lensConstructor (parseAttribute attr)
-        >=> lensSortInjection (parseAttribute attr)
-        >=> lensInjective (parseAttribute attr)
-        >=> lensHook (parseAttribute attr)
-        >=> lensSmtlib (parseAttribute attr)
-        >=> lensSmthook (parseAttribute attr)
-
-defaultSymbolAttributes :: Symbol
-defaultSymbolAttributes =
-    Symbol
-        { function       = def
-        , functional     = def
-        , constructor    = def
-        , injective      = def
-        , sortInjection  = def
-        , hook           = def
-        , smtlib         = def
-        , smthook        = def
-        }
-
--- | See also: 'defaultSymbolAttributes'
-instance Default Symbol where
-    def = defaultSymbolAttributes
+       ( MetadataTools (..), SmtMetadataTools )
 
 -- | Is a symbol total (non-@\\bottom@)?
 isTotal_
-    :: Given (MetadataTools level StepperAttributes)
-    => SymbolOrAlias level
+    :: Given (SmtMetadataTools StepperAttributes)
+    => SymbolOrAlias Object
     -> Bool
-isTotal_ = isTotal . symAttributes given
+isTotal_ =
+    isTotal
+        . symAttributes (given :: SmtMetadataTools StepperAttributes)
 
 -- | Is a symbol total (non-@\\bottom@)?
 isTotal :: StepperAttributes -> Bool
@@ -162,10 +96,12 @@ See also: 'functionAttribute', 'isFunctional'
 
  -}
 isFunction_
-    :: Given (MetadataTools level StepperAttributes)
-    => SymbolOrAlias level
+    :: Given (SmtMetadataTools StepperAttributes)
+    => SymbolOrAlias Object
     -> Bool
-isFunction_ = isFunction . symAttributes given
+isFunction_ =
+    isFunction
+        . symAttributes (given :: SmtMetadataTools StepperAttributes)
 
 {- | Is the symbol a function?
 
@@ -190,10 +126,12 @@ See also: 'isFunctional', 'functionalAttribute', 'sortInjectionAttribute'
 
  -}
 isFunctional_
-    :: Given (MetadataTools level StepperAttributes)
-    => SymbolOrAlias level
+    :: Given (SmtMetadataTools StepperAttributes)
+    => SymbolOrAlias Object
     -> Bool
-isFunctional_ = isFunctional . symAttributes given
+isFunctional_ =
+    isFunctional
+        . symAttributes (given :: SmtMetadataTools StepperAttributes)
 
 {- | Is the symbol functional?
 
@@ -211,10 +149,12 @@ isFunctional = do
 
 -- | Is the symbol a constructor?
 isConstructor_
-    :: Given (MetadataTools level StepperAttributes)
-    => SymbolOrAlias level
+    :: Given (SmtMetadataTools StepperAttributes)
+    => SymbolOrAlias Object
     -> Bool
-isConstructor_ = isConstructor . constructor . symAttributes given
+isConstructor_ =
+    isConstructor . constructor
+        . symAttributes (given :: SmtMetadataTools StepperAttributes)
 
 {- | Is the symbol injective?
 
@@ -225,10 +165,12 @@ See also: 'isInjective', 'injectiveAttribute', 'constructorAttribute',
 'sortInjectionAttribute'
  -}
 isInjective_
-    :: Given (MetadataTools level StepperAttributes)
-    => SymbolOrAlias level
+    :: Given (SmtMetadataTools StepperAttributes)
+    => SymbolOrAlias Object
     -> Bool
-isInjective_ = isInjective . symAttributes given
+isInjective_ =
+    isInjective
+        . symAttributes (given :: SmtMetadataTools StepperAttributes)
 
 {- | Is the symbol injective?
 
@@ -251,11 +193,12 @@ See also: 'isSortInjection'
 
  -}
 isSortInjection_
-    :: (Given (MetadataTools level StepperAttributes))
-    => SymbolOrAlias level
+    :: (Given (SmtMetadataTools StepperAttributes))
+    => SymbolOrAlias Object
     -> Bool
 isSortInjection_ =
-    isSortInjection . sortInjection . symAttributes given
+    isSortInjection . sortInjection
+        . symAttributes (given :: SmtMetadataTools StepperAttributes)
 
 -- | Is a symbol not simplifiable?
 --
@@ -272,10 +215,12 @@ isSortInjection_ =
 -- Builtins like 'concat' need an additional condition, i.e. that the arguments
 -- are not .Map.
 isNonSimplifiable_
-    :: Given (MetadataTools level StepperAttributes)
-    => SymbolOrAlias level
+    :: Given (SmtMetadataTools StepperAttributes)
+    => SymbolOrAlias Object
     -> Bool
-isNonSimplifiable_ = isNonSimplifiable . symAttributes given
+isNonSimplifiable_ =
+    isNonSimplifiable
+        . symAttributes (given :: SmtMetadataTools StepperAttributes)
 
 -- | Is a symbol non-simplifiable?
 isNonSimplifiable :: StepperAttributes -> Bool

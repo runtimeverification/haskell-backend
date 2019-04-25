@@ -20,14 +20,14 @@ import Kore.AST.Pure
 import Kore.Attribute.Symbol
        ( StepperAttributes, isFunction, isFunctional, isTotal )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( MetadataTools (..), SmtMetadataTools )
 import Kore.Step.Pattern
 
 recursivelyCheckHeadProperty
     :: forall level variable .
        (MetaOrObject level)
     => (StepperAttributes -> Bool)
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> StepPattern level variable
     -> Bool
 recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
@@ -52,7 +52,7 @@ recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
 isFunctionalPattern, isFunctionPattern, isTotalPattern
     :: forall level variable .
        (MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPattern level variable
     -> Bool
 --TODO(traiansf): we assume below that the pattern does not contain

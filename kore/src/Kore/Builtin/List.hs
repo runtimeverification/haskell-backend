@@ -76,7 +76,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
@@ -178,7 +178,7 @@ expectBuiltinList ctx =
 
 returnList
     :: (Monad m, Ord (variable Object))
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Sort Object
     -> Builtin variable
     -> m (AttemptedAxiom Object variable)
@@ -202,7 +202,7 @@ evalGet =
   where
     evalGet0
         :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier Object
         -> Sort Object
         -> [StepPattern Object variable]
@@ -250,7 +250,7 @@ evalConcat =
   where
     evalConcat0
         :: Ord (variable Object)
-        => MetadataTools Object StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier Object
         -> Sort Object
         -> [StepPattern Object variable]
@@ -325,7 +325,7 @@ asPattern builtin =
  -}
 asInternal
     :: Ord (variable Object)
-    => MetadataTools Object attrs
+    => SmtMetadataTools attrs
     -> Sort Object
     -> Builtin variable
     -> StepPattern Object variable
@@ -351,7 +351,7 @@ See also: 'asPattern'
  -}
 asExpandedPattern
     ::  ( Ord (variable Object)
-        , Given (MetadataTools Object StepperAttributes)
+        , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort Object
     -> Builtin variable
@@ -359,7 +359,7 @@ asExpandedPattern
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asInternal tools resultSort
   where
-    tools :: MetadataTools Object StepperAttributes
+    tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
@@ -373,7 +373,7 @@ lookupSymbolGet = Builtin.lookupSymbol getKey
 {- | Check if the given symbol is hooked to @LIST.concat@.
 -}
 isSymbolConcat
-    :: MetadataTools Object Hook
+    :: SmtMetadataTools Hook
     -> SymbolOrAlias Object
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
@@ -381,7 +381,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
 {- | Check if the given symbol is hooked to @LIST.element@.
 -}
 isSymbolElement
-    :: MetadataTools Object Hook
+    :: SmtMetadataTools Hook
     -> SymbolOrAlias Object
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
@@ -389,7 +389,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 {- | Check if the given symbol is hooked to @LIST.unit@.
 -}
 isSymbolUnit
-    :: MetadataTools Object Hook
+    :: SmtMetadataTools Hook
     -> SymbolOrAlias Object
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
@@ -420,7 +420,7 @@ unifyEquals
         , MonadUnify unifierM
         )
     => SimplificationType
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> (p -> p -> unifier (expanded, proof))
     -> p

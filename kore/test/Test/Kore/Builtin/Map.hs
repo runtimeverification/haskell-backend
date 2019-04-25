@@ -25,7 +25,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
@@ -330,7 +330,7 @@ test_isBuiltin =
             (not (Map.isSymbolUnit mockHookTools Mock.concatMapSymbol))
     ]
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -338,8 +338,9 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
-mockHookTools :: MetadataTools Object Hook
+mockHookTools :: SmtMetadataTools Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Construct a pattern for a map which may have symbolic keys.

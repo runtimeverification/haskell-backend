@@ -40,7 +40,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, Prim, onePathFirstStep,
                  onePathFollowupStep )
@@ -144,7 +144,7 @@ If the verification succeeds, it returns ().
 -}
 verify
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
     -- ^ Simplifies normal patterns through, e.g., function evaluation
     -> PredicateSubstitutionSimplifier level
@@ -230,7 +230,7 @@ defaultStrategy
 
 verifyClaim
     :: forall level . (MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -308,7 +308,7 @@ verifyClaimStep
     .   ( MetaOrObject level
         , Claim claim
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -322,7 +322,11 @@ verifyClaimStep
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> Simplifier (ExecutionGraph (CommonStrategyPattern level) (RewriteRule level Variable))
+    -> Simplifier
+        (ExecutionGraph
+            (CommonStrategyPattern level)
+            (RewriteRule level Variable)
+        )
 verifyClaimStep
     tools
     simplifier

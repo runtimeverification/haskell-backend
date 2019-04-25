@@ -20,7 +20,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
@@ -49,9 +49,9 @@ mergeWithPredicateSubstitution
         , ShowMetaOrObject variable
         , FreshVariable variable
         , SortedVariable variable
-        , Given (MetadataTools level StepperAttributes)
+        , Given (SmtMetadataTools StepperAttributes)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSubstitutionSimplifier level
@@ -111,7 +111,7 @@ mergeWithEvaluatedCondition
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.

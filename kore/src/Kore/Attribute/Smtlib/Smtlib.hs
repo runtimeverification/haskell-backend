@@ -22,7 +22,7 @@ import Kore.AST.Identifier
        ( Id )
 import Kore.AST.MetaOrObject
        ( Object )
-import SimpleSMT
+import SMT.SimpleSMT
        ( SExpr )
 
 {- | The @smtlib@ attribute for symbols.

@@ -209,7 +209,7 @@ mockStepperAttributes patternHead =
         || isInjHead patternHead
     isSortInjection = isInjHead patternHead
 
-tools :: MetadataTools Object StepperAttributes
+tools :: SmtMetadataTools StepperAttributes
 tools = MetadataTools
     { symAttributes = mockStepperAttributes
     , symbolOrAliasType = const HeadType.Symbol
@@ -217,6 +217,7 @@ tools = MetadataTools
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     , applicationSorts = undefined
+    , smtData = undefined
     }
 
 unificationProblem
