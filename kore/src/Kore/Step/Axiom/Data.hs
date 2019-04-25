@@ -41,7 +41,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Pattern
@@ -93,7 +93,7 @@ newtype BuiltinAndAxiomSimplifier level =
             , Unparse (variable level)
             , ShowMetaOrObject variable
             )
-        => MetadataTools level StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
@@ -225,7 +225,7 @@ applicationAxiomSimplifier
             , Unparse (variable level)
             , ShowMetaOrObject variable
             )
-        => MetadataTools level StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
@@ -254,7 +254,7 @@ applicationAxiomSimplifier applicationSimplifier =
                 , Unparse (variable level)
                 , ShowMetaOrObject variable
                 )
-            => MetadataTools level StepperAttributes
+            => SmtMetadataTools StepperAttributes
             -> PredicateSubstitutionSimplifier level
             -> StepPatternSimplifier level
             -> BuiltinAndAxiomSimplifierMap level

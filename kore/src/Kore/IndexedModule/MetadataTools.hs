@@ -11,6 +11,7 @@ Portability : portable
 module Kore.IndexedModule.MetadataTools
     ( HeadType (..)
     , MetadataTools (..)
+    , SmtMetadataTools
     , extractMetadataTools
     ) where
 
@@ -31,10 +32,12 @@ import           Kore.Attribute.Subsort
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Sort
+import qualified Kore.Step.SMT.AST as SMT.AST
+                 ( SmtDeclarations )
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
-data MetadataTools level attributes = MetadataTools
+data MetadataTools level smt attributes = MetadataTools
     { symAttributes :: SymbolOrAlias level -> attributes
     -- ^ get the attributes of a symbol or alias
     , symbolOrAliasType :: SymbolOrAlias level -> HeadType
@@ -47,8 +50,14 @@ data MetadataTools level attributes = MetadataTools
     , subsorts :: Sort level -> Set (Sort level)
     -- ^ get the subsorts for a sort
     , applicationSorts :: SymbolOrAlias level -> ApplicationSorts level
+    -- ^ Sorts for a specific symbol application.
+    , smtData :: smt
+    -- ^ The SMT data for the given module.
     }
   deriving Functor
+
+type SmtMetadataTools attributes =
+    MetadataTools Object SMT.AST.SmtDeclarations attributes
 
 -- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
 -- 'KoreIndexedModule'.  The metadata tools are functions yielding information
@@ -56,19 +65,23 @@ data MetadataTools level attributes = MetadataTools
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall level declAtts axiomAtts.
+    ::  forall level declAtts axiomAtts smt.
         MetaOrObject level
     => VerifiedModule declAtts axiomAtts
-    -> MetadataTools level declAtts
-extractMetadataTools m =
-  MetadataTools
-    { symAttributes = getHeadAttributes m
-    , symbolOrAliasType = getHeadType m
-    , sortAttributes = getSortAttributes m
-    , isSubsortOf = checkSubsort
-    , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
-    , applicationSorts = getHeadApplicationSorts m
-    }
+    ->  (  VerifiedModule declAtts axiomAtts
+        -> smt
+        )
+    -> MetadataTools level smt declAtts
+extractMetadataTools m smtExtractor =
+    MetadataTools
+        { symAttributes = getHeadAttributes m
+        , symbolOrAliasType = getHeadType m
+        , sortAttributes = getSortAttributes m
+        , isSubsortOf = checkSubsort
+        , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
+        , applicationSorts = getHeadApplicationSorts m
+        , smtData = smtExtractor m
+        }
   where
     subsortTable :: Map (Sort Object) [Sort Object]
     subsortTable = Map.unionsWith (++)

@@ -44,7 +44,9 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), extractMetadataTools )
+                 ( SmtMetadataTools )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.IndexedModule.Resolvers
                  ( resolveSymbol )
 import qualified Kore.Logger as Log
@@ -121,7 +123,7 @@ data Initialized =
 -- | The products of execution: an execution graph, and assorted simplifiers.
 data Execution =
     Execution
-        { metadataTools :: !(MetadataTools Object StepperAttributes)
+        { metadataTools :: !(SmtMetadataTools StepperAttributes)
         , simplifier :: !(StepPatternSimplifier Object)
         , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
@@ -219,8 +221,7 @@ prove
     -- ^ The spec module
     -> Simplifier (Either (CommonStepPattern Object) ())
 prove limit definitionModule specModule = do
-    let
-        tools = extractMetadataTools definitionModule
+    let tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
         , simplifier
@@ -256,8 +257,7 @@ proveWithRepl
     -- ^ The spec module
     -> Simplifier ()
 proveWithRepl definitionModule specModule = do
-    let
-        tools = extractMetadataTools definitionModule
+    let tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
         , simplifier
@@ -299,7 +299,7 @@ makeClaim (attributes, rule) =
 
 simplifyRuleOnSecond
     :: Claim claim
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> (Attribute.Axiom, claim)
     -> Simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond tools (atts, rule) = do
@@ -321,7 +321,7 @@ execute
     -> Simplifier Execution
 execute verifiedModule strategy inputPattern
   = Log.withLogScope "setUpConcreteExecution" $ do
-    let metadataTools = extractMetadataTools verifiedModule
+    let metadataTools = MetadataTools.build verifiedModule
     initialized <- initialize verifiedModule metadataTools
     let
         Initialized { rewriteRules } = initialized
@@ -364,7 +364,7 @@ execute verifiedModule strategy inputPattern
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
     :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> MetadataTools Object StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> Simplifier Initialized
 initialize verifiedModule tools =
     do
@@ -408,7 +408,7 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyFunctionAxioms
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> Map.Map (AxiomIdentifier Object) [Equality]
     -> Simplifier (Map.Map (AxiomIdentifier Object) [Equality])
 simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
@@ -422,7 +422,7 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyRewriteRule
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> Rewrite
     -> Simplifier Rewrite
 simplifyRewriteRule tools (RewriteRule rule) =
@@ -435,7 +435,7 @@ narrowly-defined criteria.
 
  -}
 simplifyRulePattern
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> RulePattern Object Variable
     -> Simplifier (RulePattern Object Variable)
 simplifyRulePattern tools rulePattern = do
@@ -471,7 +471,7 @@ simplifyRulePattern tools rulePattern = do
 
 -- | Simplify a 'StepPattern' using only matching logic rules.
 simplifyPattern
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> CommonStepPattern Object
     -> Simplifier
         (OrOfExpandedPattern Object Variable, SimplificationProof Object)

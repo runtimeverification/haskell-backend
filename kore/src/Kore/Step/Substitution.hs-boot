@@ -6,7 +6,7 @@ import Kore.AST.MetaOrObject
 import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
+       ( SmtMetadataTools )
 import Kore.Predicate.Predicate
        ( Predicate )
 import Kore.Step.Axiom.Data
@@ -37,7 +37,7 @@ mergePredicatesAndSubstitutionsExcept
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level

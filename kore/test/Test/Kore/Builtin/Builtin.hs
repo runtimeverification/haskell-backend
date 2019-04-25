@@ -35,7 +35,9 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), extractMetadataTools )
+                 ( SmtMetadataTools )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.Parser.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -77,7 +79,7 @@ mkPair lSort rSort l r =
     mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
 substitutionSimplifier
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
 substitutionSimplifier tools =
     PredicateSubstitution.create tools stepSimplifier evaluators
@@ -171,8 +173,8 @@ indexedModule =
     makeIndexedModuleAttributesNull
     $ mapIndexedModulePatterns Kore.eraseAnnotations verifiedModule
 
-testMetadataTools :: MetadataTools Object StepperAttributes
-testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
+testMetadataTools :: SmtMetadataTools StepperAttributes
+testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 
 testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools

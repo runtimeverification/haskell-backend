@@ -24,7 +24,7 @@ import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
@@ -359,7 +359,7 @@ test_onePathVerification =
             actual
     ]
   where
-    metadataTools :: MetadataTools Object StepperAttributes
+    metadataTools :: SmtMetadataTools StepperAttributes
     metadataTools =
         Mock.makeMetadataTools
             Mock.attributesMapping
@@ -367,6 +367,7 @@ test_onePathVerification =
             Mock.sortAttributesMapping
             Mock.subsorts
             Mock.headSortsMapping
+            Mock.smtDeclarations
 
 simpleAxiom
     :: MetaOrObject level
@@ -418,7 +419,7 @@ runVerification
     ::  ( MetaOrObject level
         , OnePath.Claim claim
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
     -> [OnePath.Axiom level]

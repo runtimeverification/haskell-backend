@@ -34,7 +34,8 @@ import           Kore.Error
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
 import           Kore.Parser.Parser
@@ -347,9 +348,7 @@ mainWithOptions
                 $ evalSimplifier logger
                 $ do
                     give
-                        (extractMetadataTools indexedModule
-                            :: MetadataTools Object StepperAttributes
-                        )
+                        (MetadataTools.build indexedModule)
                         (declareSMTLemmas indexedModule)
                     case proveParameters of
                         Nothing -> do
@@ -387,6 +386,7 @@ mainWithOptions
                                     indexedModule
                                     specIndexedModule
                 )
+        print (show exitCode)
         let unparsed = (unparse . externalizeFreshVariables) finalPattern
         case outputFileName of
             Nothing ->

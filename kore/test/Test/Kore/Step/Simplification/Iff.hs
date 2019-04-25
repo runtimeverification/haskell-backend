@@ -13,7 +13,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
@@ -225,10 +225,9 @@ makeEvaluate
     => CommonExpandedPattern level
     -> CommonExpandedPattern level
     -> CommonOrOfExpandedPattern level
-makeEvaluate first second =
-    Iff.makeEvaluate first second
+makeEvaluate = Iff.makeEvaluate
 
-mockMetadataTools :: MetadataTools Object Attribute.Symbol
+mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -236,3 +235,4 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations

@@ -17,6 +17,8 @@ import           GHC.Stack
 
 import           Kore.AST.Common
                  ( SymbolOrAlias (..) )
+import           Kore.AST.MetaOrObject
+                 ( Object )
 import           Kore.ASTHelpers
                  ( ApplicationSorts )
 import           Kore.Attribute.Constructor
@@ -27,20 +29,23 @@ import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.SortInjection
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, MetadataTools (MetadataTools) )
+                 ( HeadType, MetadataTools (MetadataTools), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Sort
                  ( Sort )
+import qualified Kore.Step.SMT.AST as SMT.AST
+                 ( SmtDeclarations )
 
 makeMetadataTools
-    :: [(SymbolOrAlias level, StepperAttributes)]
-    -> [(SymbolOrAlias level, HeadType)]
-    -> [(Sort level, Attribute.Sort)]
-    -> [(Sort level, Sort level)]
-    -> [(SymbolOrAlias level, ApplicationSorts level)]
-    -> MetadataTools level StepperAttributes
-makeMetadataTools attr headTypes sortTypes isSubsortOf sorts =
+    :: [(SymbolOrAlias Object, StepperAttributes)]
+    -> [(SymbolOrAlias Object, HeadType)]
+    -> [(Sort Object, Attribute.Sort)]
+    -> [(Sort Object, Sort Object)]
+    -> [(SymbolOrAlias Object, ApplicationSorts Object)]
+    -> SMT.AST.SmtDeclarations
+    -> SmtMetadataTools StepperAttributes
+makeMetadataTools attr headTypes sortTypes isSubsortOf sorts declarations =
     MetadataTools
         { symAttributes = attributesFunction attr
         , symbolOrAliasType = headTypeFunction headTypes
@@ -52,17 +57,18 @@ makeMetadataTools attr headTypes sortTypes isSubsortOf sorts =
         , subsorts = \sort ->
             Set.fromList . fmap snd . filter ((==) sort . fst) $ isSubsortOf
         , applicationSorts = caseBasedFunction sorts
+        , smtData = declarations
         }
 
 attributesFunction
-    :: [(SymbolOrAlias level, StepperAttributes)]
-    -> SymbolOrAlias level
+    :: [(SymbolOrAlias Object, StepperAttributes)]
+    -> SymbolOrAlias Object
     -> StepperAttributes
 attributesFunction = caseBasedFunction
 
 headTypeFunction
-    :: [(SymbolOrAlias level, HeadType)]
-    -> SymbolOrAlias level
+    :: [(SymbolOrAlias Object, HeadType)]
+    -> SymbolOrAlias Object
     -> HeadType
 headTypeFunction = caseBasedFunction
 

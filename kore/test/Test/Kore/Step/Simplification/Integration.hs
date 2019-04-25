@@ -20,7 +20,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -394,7 +394,7 @@ test_substituteList =
   where
     mkDomainBuiltinList = Mock.builtinList
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -402,16 +402,17 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
 evaluate
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> CommonExpandedPattern Object
     -> IO (CommonOrOfExpandedPattern Object)
 evaluate tools patt =
     evaluateWithAxioms tools Map.empty patt
 
 evaluateWithAxioms
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap Object
     -> CommonExpandedPattern Object
     -> IO (CommonOrOfExpandedPattern Object)

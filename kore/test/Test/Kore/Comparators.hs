@@ -58,12 +58,46 @@ import           Kore.Step.Rule
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
+import qualified Kore.Step.SMT.AST as SMT
+                 ( Declarations (Declarations), Encodable,
+                 IndirectSymbolDeclaration (IndirectSymbolDeclaration),
+                 KoreSortDeclaration (..), KoreSymbolDeclaration (..),
+                 Sort (Sort), SortReference (SortReference), Symbol (Symbol),
+                 SymbolReference (SymbolReference) )
+import qualified Kore.Step.SMT.AST as SMT.Declarations
+                 ( Declarations (..) )
+import qualified Kore.Step.SMT.AST as SMT.Symbol
+                 ( Symbol (..) )
+import qualified Kore.Step.SMT.AST as SMT.Sort
+                 ( Sort (..) )
+import qualified Kore.Step.SMT.AST as SMT.SortReference
+                 ( SortReference (..) )
+import qualified Kore.Step.SMT.AST as SMT.SymbolReference
+                 ( SymbolReference (..) )
+import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
+                 ( IndirectSymbolDeclaration (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
 import           Kore.Variables.Target
+import qualified SMT.AST as SMT
+                 ( Constructor (Constructor),
+                 ConstructorArgument (ConstructorArgument),
+                 DataTypeDeclaration (DataTypeDeclaration),
+                 FunctionDeclaration (FunctionDeclaration), SExpr,
+                 SortDeclaration (SortDeclaration), showSExpr )
+import qualified SMT.AST as SMT.SortDeclaration
+                 ( SortDeclaration (..) )
+import qualified SMT.AST as SMT.FunctionDeclaration
+                 ( FunctionDeclaration (..) )
+import qualified SMT.AST as SMT.DataTypeDeclaration
+                 ( DataTypeDeclaration (..) )
+import qualified SMT.AST as SMT.Constructor
+                 ( Constructor (..) )
+import qualified SMT.AST as SMT.ConstructorArgument
+                 ( ConstructorArgument (..) )
 
 import Test.Tasty.HUnit.Extensions
 
@@ -1848,3 +1882,354 @@ instance
         SumConstructorSameWithArguments (EqWrap "GoalRem" goal1 goal2)
     sumConstructorPair expect           actual           =
         SumConstructorDifferent (show expect) (show actual)
+
+-- SMT.AST
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.Declarations sort symbol name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.Declarations sort symbol name)
+  where
+    structFieldsWithNames
+        expect@(SMT.Declarations _ _)
+        actual@(SMT.Declarations _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "sorts = ") SMT.Declarations.sorts
+            , Function.on (EqWrap "symbols = ") SMT.Declarations.symbols
+            ]
+    structConstructorName _ = "Declarations"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.Sort sort symbol name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.Sort sort symbol name)
+  where
+    structFieldsWithNames
+        expect@(SMT.Sort _ _)
+        actual@(SMT.Sort _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "declaration = ") SMT.Sort.declaration
+            ]
+    structConstructorName _ = "Sort"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.Symbol sort name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.Symbol sort name)
+  where
+    structFieldsWithNames
+        expect@(SMT.Symbol _ _)
+        actual@(SMT.Symbol _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "declaration = ") SMT.Symbol.declaration
+            ]
+    structConstructorName _ = "Symbol"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.KoreSymbolDeclaration sort name)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => SumEqualWithExplanation (SMT.KoreSymbolDeclaration sort name)
+  where
+    sumConstructorPair
+        (SMT.SymbolDeclaredDirectly a) (SMT.SymbolDeclaredDirectly b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SymbolDeclaredDirectly" a b)
+    sumConstructorPair a@(SMT.SymbolDeclaredDirectly _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+    sumConstructorPair
+        (SMT.SymbolDeclaredIndirectly a)
+        (SMT.SymbolDeclaredIndirectly b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SymbolDeclaredIndirectly" a b)
+    sumConstructorPair a@(SMT.SymbolDeclaredIndirectly _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.IndirectSymbolDeclaration sort name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.IndirectSymbolDeclaration sort name)
+  where
+    structFieldsWithNames
+        expect@(SMT.IndirectSymbolDeclaration _ _)
+        actual@(SMT.IndirectSymbolDeclaration _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.IndirectSymbolDeclaration.name
+            , Function.on (EqWrap "sorts = ")
+                SMT.IndirectSymbolDeclaration.sorts
+            ]
+    structConstructorName _ = "IndirectSymbolDeclaration"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.FunctionDeclaration sort name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.FunctionDeclaration sort name)
+  where
+    structFieldsWithNames
+        expect@(SMT.FunctionDeclaration _ _ _)
+        actual@(SMT.FunctionDeclaration _ _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.FunctionDeclaration.name
+            , Function.on (EqWrap "inputSorts = ")
+                SMT.FunctionDeclaration.inputSorts
+            , Function.on (EqWrap "resultSort = ")
+                SMT.FunctionDeclaration.resultSort
+            ]
+    structConstructorName _ = "FunctionDeclaration"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.KoreSortDeclaration sort symbol name)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => SumEqualWithExplanation (SMT.KoreSortDeclaration sort symbol name)
+  where
+    sumConstructorPair
+        (SMT.SortDeclarationDataType a) (SMT.SortDeclarationDataType b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SortDeclarationDataType" a b)
+    sumConstructorPair a@(SMT.SortDeclarationDataType _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+    sumConstructorPair
+        (SMT.SortDeclarationSort a) (SMT.SortDeclarationSort b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SortDeclarationSort" a b)
+    sumConstructorPair a@(SMT.SortDeclarationSort _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+    sumConstructorPair
+        (SMT.SortDeclaredIndirectly a)
+        (SMT.SortDeclaredIndirectly b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SortDeclaredIndirectly" a b)
+    sumConstructorPair a@(SMT.SortDeclaredIndirectly _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+instance
+    ( EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.SortDeclaration name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.SortDeclaration name)
+  where
+    structFieldsWithNames
+        expect@(SMT.SortDeclaration _ _)
+        actual@(SMT.SortDeclaration _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.SortDeclaration.name
+            , Function.on (EqWrap "arity = ") SMT.SortDeclaration.arity
+            ]
+    structConstructorName _ = "SortDeclaration"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.DataTypeDeclaration sort symbol name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.DataTypeDeclaration sort symbol name)
+  where
+    structFieldsWithNames
+        expect@(SMT.DataTypeDeclaration _ _ _)
+        actual@(SMT.DataTypeDeclaration _ _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.DataTypeDeclaration.name
+            , Function.on (EqWrap "typeArguments = ")
+                SMT.DataTypeDeclaration.typeArguments
+            , Function.on (EqWrap "constructors = ")
+                SMT.DataTypeDeclaration.constructors
+            ]
+    structConstructorName _ = "DataTypeDeclaration"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.Constructor sort symbol name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.Constructor sort symbol name)
+  where
+    structFieldsWithNames
+        expect@(SMT.Constructor _ _)
+        actual@(SMT.Constructor _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.Constructor.name
+            , Function.on (EqWrap "arguments = ") SMT.Constructor.arguments
+            ]
+    structConstructorName _ = "Constructor"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.ConstructorArgument sort name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.ConstructorArgument sort name)
+  where
+    structFieldsWithNames
+        expect@(SMT.ConstructorArgument _ _)
+        actual@(SMT.ConstructorArgument _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.ConstructorArgument.name
+            , Function.on (EqWrap "argType = ") SMT.ConstructorArgument.argType
+            ]
+    structConstructorName _ = "ConstructorArgument"
+
+instance EqualWithExplanation SMT.SExpr where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = SMT.showSExpr
+
+instance EqualWithExplanation SMT.SortReference
+  where
+    compareWithExplanation a@(SMT.SortReference _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation SMT.SortReference
+  where
+    wrapperField =
+        Function.on (EqWrap "getSortReference = ")
+            SMT.SortReference.getSortReference
+    wrapperConstructorName _ = "SortReference"
+
+instance EqualWithExplanation SMT.SymbolReference
+  where
+    compareWithExplanation a@(SMT.SymbolReference _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation SMT.SymbolReference
+  where
+    wrapperField =
+        Function.on (EqWrap "getSymbolReference = ")
+            SMT.SymbolReference.getSymbolReference
+    wrapperConstructorName _ = "SymbolReference"
+
+instance EqualWithExplanation SMT.Encodable where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show

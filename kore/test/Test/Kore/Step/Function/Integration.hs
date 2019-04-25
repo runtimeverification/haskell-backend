@@ -15,7 +15,7 @@ import           Kore.AST.Pure hiding
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeTruePredicate )
@@ -654,7 +654,7 @@ mapVariables =
 
 mockEvaluator
     :: AttemptedAxiom level variable
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -666,7 +666,7 @@ mockEvaluator evaluation _ _ _ _ _ =
 
 evaluate
     :: forall level . MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -> CommonStepPattern level
     -> IO (CommonExpandedPattern level)
@@ -686,7 +686,7 @@ evaluate metadataTools functionIdToEvaluator patt =
         => StepPatternSimplifier level
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -694,3 +694,4 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations

@@ -34,7 +34,7 @@ import           Kore.Attribute.Symbol
 import           Kore.Builtin.Attributes
                  ( isConstructorModulo_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Proof.Functional
@@ -70,9 +70,9 @@ mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
     certifying that.
 -}
 isFunctionalPattern
-    :: MetadataTools level StepperAttributes
-    -> StepPattern level variable
-    -> Either (FunctionalError level) [FunctionalProof level variable]
+    :: SmtMetadataTools StepperAttributes
+    -> StepPattern Object variable
+    -> Either (FunctionalError Object) [FunctionalProof Object variable]
 isFunctionalPattern tools =
     provePattern (checkFunctionalHead tools)
 
@@ -80,9 +80,9 @@ isFunctionalPattern tools =
     certifying that.
 -}
 isTotalPattern
-    :: MetadataTools level StepperAttributes
-    -> StepPattern level variable
-    -> Either (TotalError level) [TotalProof level variable]
+    :: SmtMetadataTools StepperAttributes
+    -> StepPattern Object variable
+    -> Either (TotalError Object) [TotalProof Object variable]
 isTotalPattern tools =
     provePattern (checkTotalHead tools)
 
@@ -90,8 +90,8 @@ isTotalPattern tools =
     returns a proof certifying that.
 -}
 isConstructorLikePattern
-    :: MetadataTools level StepperAttributes
-    -> StepPattern level variable
+    :: SmtMetadataTools StepperAttributes
+    -> StepPattern Object variable
     -> Either ConstructorLikeError [ConstructorLikeProof]
 isConstructorLikePattern tools =
     provePattern (checkConstructorLikeHead tools)
@@ -102,7 +102,7 @@ isConstructorLikePattern tools =
 -}
 isConstructorModuloLikePattern
     :: (MetaOrObject level, Show (variable level))
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPattern level variable
     -> Either ConstructorLikeError [ConstructorLikeProof]
 isConstructorModuloLikePattern tools =
@@ -146,11 +146,11 @@ isPreconstructedPattern err (_ :< pattern') =
         _ -> Left err
 
 checkFunctionalHead
-    :: MetadataTools level StepperAttributes
-    -> Recursive.Base (StepPattern level variable) a
+    :: SmtMetadataTools StepperAttributes
+    -> Recursive.Base (StepPattern Object variable) a
     -> Either
-        (FunctionalError level)
-        (PartialPatternProof (FunctionalProof level variable))
+        (FunctionalError Object)
+        (PartialPatternProof (FunctionalProof Object variable))
 checkFunctionalHead tools base@(_ :< pattern') =
     case pattern' of
         VariablePattern v ->
@@ -173,8 +173,8 @@ constructor / syntactic sugar for a constructor (literal / domain value)
 construct.
 -}
 isConstructorLikeTop
-    :: MetadataTools level StepperAttributes
-    -> Recursive.Base (StepPattern level variable) pat
+    :: SmtMetadataTools StepperAttributes
+    -> Recursive.Base (StepPattern Object variable) pat
     -> Bool
 isConstructorLikeTop tools base@(_ :< pattern') =
     case pattern' of
@@ -185,8 +185,8 @@ isConstructorLikeTop tools base@(_ :< pattern') =
         _ -> isRight (isPreconstructedPattern undefined base)
 
 checkConstructorLikeHead
-    :: MetadataTools level StepperAttributes
-    -> Recursive.Base (StepPattern level variable) a
+    :: SmtMetadataTools StepperAttributes
+    -> Recursive.Base (StepPattern Object variable) a
     -> Either
         ConstructorLikeError
         (PartialPatternProof ConstructorLikeProof)
@@ -208,7 +208,7 @@ checkConstructorLikeHead tools base@(_ :< pattern') =
 
 checkConstructorModuloLikeHead
     :: (MetaOrObject level, Show a, Show (variable level))
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Recursive.Base (StepPattern level variable) a
     -> Either
         ConstructorLikeError
@@ -229,18 +229,18 @@ checkConstructorModuloLikeHead tools base@(_ :< pattern') =
     a proof certifying that.
 -}
 isFunctionPattern
-    :: MetadataTools level StepperAttributes
-    -> StepPattern level variable
-    -> Either (FunctionError level) [FunctionProof level variable]
+    :: SmtMetadataTools StepperAttributes
+    -> StepPattern Object variable
+    -> Either (FunctionError Object) [FunctionProof Object variable]
 isFunctionPattern tools =
     provePattern (checkFunctionHead tools)
 
 checkFunctionHead
-    :: MetadataTools level StepperAttributes
-    -> Recursive.Base (StepPattern level variable) a
+    :: SmtMetadataTools StepperAttributes
+    -> Recursive.Base (StepPattern Object variable) a
     -> Either
-        (FunctionError level)
-        (PartialPatternProof (FunctionProof level variable))
+        (FunctionError Object)
+        (PartialPatternProof (FunctionProof Object variable))
 checkFunctionHead tools base@(_ :< pattern') =
     case pattern' of
         ApplicationPattern ap
@@ -256,11 +256,11 @@ checkFunctionHead tools base@(_ :< pattern') =
                 Left NonFunctionalPattern -> Left NonFunctionPattern
 
 checkTotalHead
-    :: MetadataTools level StepperAttributes
-    -> Recursive.Base (StepPattern level variable) a
+    :: SmtMetadataTools StepperAttributes
+    -> Recursive.Base (StepPattern Object variable) a
     -> Either
-        (TotalError level)
-        (PartialPatternProof (TotalProof level variable))
+        (TotalError Object)
+        (PartialPatternProof (TotalProof Object variable))
 checkTotalHead tools base@(_ :< pattern') =
     case pattern' of
         ApplicationPattern ap

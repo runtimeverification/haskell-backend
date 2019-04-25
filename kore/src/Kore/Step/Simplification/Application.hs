@@ -16,7 +16,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -72,7 +72,7 @@ simplify
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -129,7 +129,7 @@ makeAndEvaluateApplications
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -171,7 +171,7 @@ makeAndEvaluateSymbolApplications
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -219,7 +219,7 @@ evaluateApplicationFunction
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -255,7 +255,7 @@ makeExpandedApplication
         , FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.

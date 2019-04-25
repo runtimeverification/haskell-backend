@@ -17,7 +17,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
@@ -240,7 +240,7 @@ asSimplification
         ]
 asSimplification = id
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -248,10 +248,11 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
 evaluateWithAxiom
     :: forall level . MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> EqualityRule level Variable
     -> StepPatternSimplifier level
     -> CommonStepPattern level

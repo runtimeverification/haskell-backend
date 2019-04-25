@@ -14,7 +14,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -72,7 +72,7 @@ equalsXB_ :: Predicate Object Variable
 equalsXB_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
 
 notEqualsXA :: ExpandedPattern Object Variable
-notEqualsXA = fromPredicate $ Predicate.makeNotPredicate $ equalsXA_
+notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
 
 neitherXAB :: ExpandedPattern Object Variable
 neitherXAB =
@@ -108,7 +108,7 @@ simplifyEvaluated =
         (Simplifier.create mockMetadataTools Map.empty)
         Map.empty
 
-mockMetadataTools :: MetadataTools Object Attribute.Symbol
+mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -116,3 +116,4 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
