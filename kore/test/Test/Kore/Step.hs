@@ -16,7 +16,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Predicate.Predicate
@@ -406,7 +406,7 @@ mockSymbolAttributes patternHead =
     isDeclaredFunction = patternHead /= iSymbol
     isDeclaredInjective = patternHead /= iSymbol
 
-mockMetadataTools :: MetadataTools Meta StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = mockSymbolAttributes
     , symbolOrAliasType = const HeadType.Symbol
@@ -414,6 +414,7 @@ mockMetadataTools = MetadataTools
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     , applicationSorts = undefined
+    , smtData = undefined
     }
 
 sigmaSymbol :: SymbolOrAlias Meta
@@ -491,7 +492,7 @@ metaI p = mkApp Mock.testSort iSymbol [p]
 
 runStep
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
@@ -515,7 +516,7 @@ runStep metadataTools configuration axioms =
 
 runSteps
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification

@@ -107,7 +107,7 @@ eraseSortInjection (Recursive.project -> ann :< value) =
 
  -}
 fromPattern
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> Base (ConcreteStepPattern Object) (Maybe (Value Object))
     -> Maybe (Value Object)
 fromPattern tools (ann :< pat) =
@@ -147,7 +147,7 @@ See also: 'fromPattern'
 
  -}
 fromConcreteStepPattern
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> ConcreteStepPattern Object
     -> Maybe (Value Object)
 fromConcreteStepPattern tools =

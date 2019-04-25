@@ -9,7 +9,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, MetadataTools )
+                 ( HeadType, SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.Proof.Value as Value
@@ -19,6 +19,7 @@ import           Test.Kore
 import           Test.Kore.Builtin.Definition
                  ( intSort )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 unit_constructorUnit :: Assertion
 unit_constructorUnit = assertValue unitPattern
@@ -149,7 +150,7 @@ symbolOrAliasType =
     , (funSymbol, HeadType.Symbol)
     ]
 
-tools :: MetadataTools Object StepperAttributes
+tools :: SmtMetadataTools StepperAttributes
 tools =
     Mock.makeMetadataTools
         symbolOrAliasAttrs
@@ -157,6 +158,7 @@ tools =
         []
         []
         []
+        Mock.emptySmtDeclarations
 
 assertValue :: CommonStepPattern Object -> Assertion
 assertValue purePattern =

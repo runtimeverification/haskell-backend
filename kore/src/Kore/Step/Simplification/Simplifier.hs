@@ -16,7 +16,7 @@ import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
@@ -26,7 +26,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 
 create
     ::  ( MetaOrObject level )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> StepPatternSimplifier level

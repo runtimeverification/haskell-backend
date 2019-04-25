@@ -27,7 +27,9 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), extractMetadataTools )
+                 ( SmtMetadataTools )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -285,8 +287,8 @@ testEvaluators
 testEvaluators =
     axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
-testMetadataTools :: MetadataTools Object StepperAttributes
-testMetadataTools = extractMetadataTools testIndexedModule
+testMetadataTools :: SmtMetadataTools StepperAttributes
+testMetadataTools = MetadataTools.build testIndexedModule
 
 test_functionRegistry :: [TestTree]
 test_functionRegistry =

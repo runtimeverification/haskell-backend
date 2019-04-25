@@ -16,6 +16,13 @@ module SMT
     , defaultConfig
     , TimeOut (..)
     , Result (..)
+    , Constructor (..)
+    , ConstructorArgument (..)
+    , DataTypeDeclaration (..)
+    , SmtDataTypeDeclaration
+    , FunctionDeclaration (..)
+    , SortDeclaration (..)
+    , SmtSortDeclaration
     , escapeId
     , declare
     , declareDatatype
@@ -30,6 +37,7 @@ module SMT
     , inNewScope
     -- * Expressions
     , SExpr (..)
+    , SimpleSMT.nameFromSExpr
     , SimpleSMT.showSExpr
     , SimpleSMT.tBool
     , SimpleSMT.tInt
@@ -66,9 +74,13 @@ import           Data.Text
                  ( Text )
 
 import           ListT
-import           SimpleSMT
-                 ( Result (..), SExpr (..), Solver )
-import qualified SimpleSMT
+import           SMT.SimpleSMT
+                 ( Constructor (..), ConstructorArgument (..),
+                 DataTypeDeclaration (..), FunctionDeclaration (..),
+                 Result (..), SExpr (..), SmtDataTypeDeclaration,
+                 SmtFunctionDeclaration, SmtSortDeclaration, Solver,
+                 SortDeclaration (..) )
+import qualified SMT.SimpleSMT as SimpleSMT
 
 -- | Time-limit for SMT queries.
 newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
@@ -217,45 +229,38 @@ declare name typ =
         SimpleSMT.declare solver name typ
 
 -- | Declares a function symbol to SMT.
-declareFun :: MonadSMT m => Text -> [SExpr] -> SExpr -> m SExpr
-declareFun name inputTypes outputType =
+declareFun :: MonadSMT m => SmtFunctionDeclaration -> m SExpr
+declareFun declaration =
     liftSMT $ withSolver $ \solver ->
-        SimpleSMT.declareFun solver name inputTypes outputType
+        SimpleSMT.declareFun solver declaration
 
 -- | Declares a function symbol to SMT, returning ().
-declareFun_ :: MonadSMT m => Text -> [SExpr] -> SExpr -> m ()
-declareFun_ name inputTypes outputType =
-    Monad.void $ declareFun name inputTypes outputType
+declareFun_ :: MonadSMT m => SmtFunctionDeclaration -> m ()
+declareFun_ declaration =
+    Monad.void $ declareFun declaration
 
--- | Declares a sort to SMT. Its arity is the # of sort parameters.
-declareSort :: MonadSMT m => Text -> Int -> m SExpr
-declareSort name arity =
+-- | Declares a sort to SMT.
+declareSort
+    :: MonadSMT m
+    => SmtSortDeclaration
+    -> m SExpr
+declareSort declaration =
     liftSMT $ withSolver $ \solver ->
-        SimpleSMT.declareSort solver name arity
+        SimpleSMT.declareSort solver declaration
 
 -- | Declares a constructor-based sort to SMT.
 declareDatatype
     :: MonadSMT m
-    => Text
-    -- ^ Sort name
-    -> [Text]
-    -- ^ Sort arguments
-    -> [(Text, [(Text, SExpr)])]
-    -- ^ Constructors: name (argName argType)
+    => SmtDataTypeDeclaration
     -> m ()
-declareDatatype name arguments constructors =
+declareDatatype declaration =
     liftSMT $ withSolver $ \solver ->
-        SimpleSMT.declareDatatype solver name arguments constructors
+        SimpleSMT.declareDatatype solver declaration
 
 -- | Declares a constructor-based sort to SMT.
 declareDatatypes
     :: MonadSMT m
-    =>  [   ( Text  -- Sort name
-            , [Text]  -- Sort arguments
-            , [(Text, [(Text, SExpr)])]  -- Constructors: name (argName argType)
-            )
-        ]
-    -- ^ Constructors: name (argName argType)
+    =>  [ SmtDataTypeDeclaration ]
     -> m ()
 declareDatatypes datatypes =
     liftSMT $ withSolver $ \solver ->

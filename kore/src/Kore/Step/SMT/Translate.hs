@@ -45,10 +45,8 @@ import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
-import           Kore.Step.SMT.Symbols
-                 ( SymbolTranslation (SymbolTranslation), translateSymbol )
-import qualified Kore.Step.SMT.Symbols as SymbolTranslation
-                 ( SymbolTranslation (..) )
+import           Kore.Step.SMT.Resolvers
+                 ( translateSymbol )
 import           Kore.Unparser
 import           SMT
                  ( SExpr (..), SMT )
@@ -70,7 +68,7 @@ translatePredicate
     :: forall p variable .
         ( Ord (variable Object)
         , Unparse (variable Object)
-        , Given (MetadataTools Object StepperAttributes)
+        , Given (SmtMetadataTools StepperAttributes)
         , p ~ StepPattern Object variable
         )
     => (SExpr -> p -> Translator p SExpr)
@@ -112,6 +110,7 @@ translatePredicate translateUninterpreted predicate =
             NextPattern _ -> empty
             RewritesPattern _ -> empty
             VariablePattern _ -> empty
+            SetVariablePattern _ -> empty
             StringLiteralPattern _ -> empty
             CharLiteralPattern _ -> empty
 
@@ -160,7 +159,7 @@ translatePredicate translateUninterpreted predicate =
 
     -- | Translate a functional pattern in the builtin Int sort for SMT.
     translateInt
-        ::  ( Given (MetadataTools Object StepperAttributes)
+        ::  ( Given (SmtMetadataTools StepperAttributes)
             , Ord (variable Object)
             , p ~ StepPattern Object variable
             )
@@ -180,7 +179,7 @@ translatePredicate translateUninterpreted predicate =
 
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
     translateBool
-        ::  ( Given (MetadataTools Object StepperAttributes)
+        ::  ( Given (SmtMetadataTools StepperAttributes)
             , Ord (variable Object)
             , p ~ StepPattern Object variable
             )
@@ -204,7 +203,7 @@ translatePredicate translateUninterpreted predicate =
             _ -> empty
 
     translateApplication
-        ::  ( Given (MetadataTools Object StepperAttributes)
+        ::  ( Given (SmtMetadataTools StepperAttributes)
             , Ord (variable Object)
             , p ~ StepPattern Object variable
             )
@@ -215,18 +214,19 @@ translatePredicate translateUninterpreted predicate =
             { applicationSymbolOrAlias
             , applicationChildren
             }
-      = case translateSymbol applicationSymbolOrAlias of
+      = do
+        sexpr <- case translateSymbol applicationSymbolOrAlias of
             Nothing -> empty  -- The symbol was not declared, give up.
-            Just SymbolTranslation {name} -> shortenSExpr <$>
-                applySExpr (SMT.Atom name)
-                    <$> zipWithM translatePattern
-                        applicationChildrenSorts
-                        applicationChildren
+            Just sexpr -> return sexpr
+        children <- zipWithM translatePattern
+            applicationChildrenSorts
+            applicationChildren
+        return $ shortenSExpr (applySExpr sexpr children)
       where
         applicationChildrenSorts = getSort <$> applicationChildren
 
     translatePattern
-        ::  ( Given (MetadataTools Object StepperAttributes)
+        ::  ( Given (SmtMetadataTools StepperAttributes)
             , p ~ StepPattern Object variable
             )
         => Sort Object
@@ -242,7 +242,7 @@ translatePredicate translateUninterpreted predicate =
                         translateApplication app
                     _ -> empty
       where
-        tools :: MetadataTools Object StepperAttributes
+        tools :: SmtMetadataTools StepperAttributes
         tools = given
         Attribute.Sort { hook = Hook { getHook } } =
             sortAttributes tools sort

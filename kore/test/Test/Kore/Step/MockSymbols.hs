@@ -24,6 +24,8 @@ import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import           Data.Sup
 import           Kore.AST.Common
@@ -52,7 +54,11 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Sort
 import           Kore.Step.Pattern
-import qualified SimpleSMT as SMT
+import qualified Kore.Step.SMT.AST as SMT
+import qualified Kore.Step.SMT.Representation.Resolve as SMT
+                 ( resolve )
+import qualified SMT.AST as SMT
+import qualified SMT.SimpleSMT as SMT
 
 import           Test.Kore
                  ( testId )
@@ -430,12 +436,12 @@ sortInjectionSubToTopSymbol = SymbolOrAlias
 sortInjectionSubSubToTopSymbol :: SymbolOrAlias Object
 sortInjectionSubSubToTopSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [subSubSort, topSort]
+    , symbolOrAliasParams      = [subSubsort, topSort]
     }
 sortInjectionSubSubToSubSymbol :: SymbolOrAlias Object
 sortInjectionSubSubToSubSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [subSubSort, subSort]
+    , symbolOrAliasParams      = [subSubsort, subSort]
     }
 sortInjectionOtherToTopSymbol :: SymbolOrAlias Object
 sortInjectionOtherToTopSymbol = SymbolOrAlias
@@ -543,7 +549,7 @@ aSubsort :: Ord (variable Object) => StepPattern Object variable
 aSubsort = mkApp subSort aSubsortSymbol []
 
 aSubSubsort :: Ord (variable Object) => StepPattern Object variable
-aSubSubsort = mkApp subSubSort aSubSubsortSymbol []
+aSubSubsort = mkApp subSubsort aSubSubsortSymbol []
 
 aOtherSort :: Ord (variable Object) => StepPattern Object variable
 aOtherSort = mkApp otherSort aOtherSortSymbol []
@@ -602,7 +608,7 @@ plain00Subsort :: Ord (variable Object) => StepPattern Object variable
 plain00Subsort = mkApp subSort plain00SubsortSymbol []
 
 plain00SubSubsort :: Ord (variable Object) => StepPattern Object variable
-plain00SubSubsort = mkApp subSubSort plain00SubSubsortSymbol []
+plain00SubSubsort = mkApp subSubsort plain00SubSubsortSymbol []
 
 plain10, plain11
     :: Ord (variable Object)
@@ -666,7 +672,7 @@ functional20
 functional20 arg1 arg2 = mkApp testSort functional20Symbol [arg1, arg2]
 
 functional00SubSubSort :: Ord (variable Object) => StepPattern Object variable
-functional00SubSubSort = mkApp subSubSort functional00SubSubSortSymbol []
+functional00SubSubSort = mkApp subSubsort functional00SubSubSortSymbol []
 
 functionalConstr10
     :: Ord (variable Object)
@@ -1248,7 +1254,7 @@ sortAttributesMapping =
     ,   ( subSort
         , Default.def
         )
-    ,   ( subSubSort
+    ,   ( subSubsort
         , Default.def
         )
     ,   ( otherSort
@@ -1315,7 +1321,7 @@ headSortsMapping =
     ,   ( aSubSubsortSymbol
         , ApplicationSorts
             { applicationSortsOperands = []
-            , applicationSortsResult   = subSubSort
+            , applicationSortsResult   = subSubsort
             }
         )
     ,   ( aOtherSortSymbol
@@ -1429,7 +1435,7 @@ headSortsMapping =
     ,   ( plain00SubSubsortSymbol
         , ApplicationSorts
             { applicationSortsOperands = []
-            , applicationSortsResult   = subSubSort
+            , applicationSortsResult   = subSubsort
             }
         )
     ,   ( plain10Symbol
@@ -1507,7 +1513,7 @@ headSortsMapping =
     ,   ( functional00SubSubSortSymbol
         , ApplicationSorts
              { applicationSortsOperands = []
-             , applicationSortsResult   = subSubSort
+             , applicationSortsResult   = subSubsort
              }
         )
     ,   ( functionalConstr10Symbol
@@ -1590,13 +1596,13 @@ headSortsMapping =
         )
     ,   ( sortInjectionSubSubToTopSymbol
         , ApplicationSorts
-             { applicationSortsOperands = [subSubSort]
+             { applicationSortsOperands = [subSubsort]
              , applicationSortsResult   = testSort
              }
         )
     ,   ( sortInjectionSubSubToSubSymbol
         , ApplicationSorts
-             { applicationSortsOperands = [subSubSort]
+             { applicationSortsOperands = [subSubsort]
              , applicationSortsResult   = subSort
              }
         )
@@ -1680,52 +1686,191 @@ headSortsMapping =
         )
     ]
 
+zeroarySmtSort :: Id Object -> SMT.UnresolvedSort
+zeroarySmtSort sortId =
+    SMT.Sort
+        { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
+        , declaration = SMT.SortDeclarationSort SMT.SortDeclaration
+            { name = SMT.encodable sortId
+            , arity = 0
+            }
+        }
+  where
+    encodedId = SMT.encode (SMT.encodable sortId)
+
+builtinZeroarySmtSort :: SMT.SExpr -> SMT.UnresolvedSort
+builtinZeroarySmtSort sExpr =
+    SMT.Sort
+        { smtFromSortArgs = const (const (Just sExpr))
+        , declaration =
+            SMT.SortDeclaredIndirectly
+                (SMT.AlreadyEncoded (SMT.nameFromSExpr sExpr))
+        }
+
+smtConstructor
+    :: Id Object -> [Sort Object] -> Sort Object -> SMT.UnresolvedSymbol
+smtConstructor symbolId argumentSorts resultSort =
+    SMT.Symbol
+        { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
+        , declaration =
+            SMT.SymbolDeclaredIndirectly SMT.IndirectSymbolDeclaration
+                { name = encodableId
+                , sorts = map SMT.SortReference (resultSort : argumentSorts)
+                }
+        }
+  where
+    encodableId = SMT.encodable symbolId
+    encodedId = SMT.encode encodableId
+
+smtBuiltinSymbol
+    :: Text -> [Sort Object] -> Sort Object -> SMT.UnresolvedSymbol
+smtBuiltinSymbol builtin argumentSorts resultSort =
+    SMT.Symbol
+        { smtFromSortArgs = const (const (Just (SMT.Atom builtin)))
+        , declaration =
+            SMT.SymbolDeclaredIndirectly SMT.IndirectSymbolDeclaration
+                { name = SMT.AlreadyEncoded builtin
+                , sorts = map SMT.SortReference (resultSort : argumentSorts)
+                }
+        }
+
+emptySmtDeclarations :: SMT.SmtDeclarations
+emptySmtDeclarations =
+    SMT.Declarations
+        { sorts = Map.empty
+        , symbols = Map.empty
+        }
+
+smtDeclarations :: SMT.SmtDeclarations
+smtDeclarations = SMT.resolve smtUnresolvedDeclarations
+
+smtUnresolvedDeclarations :: SMT.UnresolvedDeclarations
+smtUnresolvedDeclarations = SMT.Declarations
+    { sorts = Map.fromList
+        [ (testSort0Id, zeroarySmtSort testSort0Id)
+        , (testSort1Id, zeroarySmtSort testSort1Id)
+        , (topSortId, zeroarySmtSort topSortId)
+        , (topSortId, zeroarySmtSort subSortId)
+        , (topSortId, zeroarySmtSort subSubsortId)
+        , (topSortId, zeroarySmtSort otherSortId)
+        -- TODO(virgil): testSort has constructors, it should have a
+        -- constructor-based definition. The same for others.
+        , (testSortId, zeroarySmtSort testSortId)
+        , (intSortId, builtinZeroarySmtSort SMT.tInt)
+        , (boolSortId, builtinZeroarySmtSort SMT.tBool)
+        ]
+    , symbols = Map.fromList
+        [ (aId, smtConstructor aId [] testSort)
+        , ( aSort0Id, smtConstructor aSort0Id [] testSort1)
+        , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
+        , ( aSubsortId, smtConstructor aSubsortId [] subSort)
+        , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
+        , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
+        , ( bId, smtConstructor bId [] testSort)
+        , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
+        , ( cId, smtConstructor cId [] testSort)
+        , ( dId, smtConstructor dId [] testSort)
+        , ( eId, smtConstructor eId [] testSort)
+        , ( constr10Id, smtConstructor constr10Id [testSort] testSort)
+        , ( constr11Id, smtConstructor constr11Id [testSort] testSort)
+        , ( constr20Id, smtConstructor constr20Id [testSort, testSort] testSort)
+        ,   ( functionalConstr10Id
+            , smtConstructor functionalConstr10Id [testSort] testSort
+            )
+        ,   ( functionalConstr11Id
+            , smtConstructor functionalConstr11Id [testSort] testSort
+            )
+        ,   ( functionalConstr12Id
+            , smtConstructor functionalConstr12Id [testSort] testSort
+            )
+        ,   ( functionalConstr20Id
+            , smtConstructor functionalConstr20Id [testSort, testSort] testSort
+            )
+        ,   ( functionalConstr30Id
+            , smtConstructor
+                functionalConstr30Id
+                [testSort, testSort, testSort]
+                testSort
+            )
+        ,   ( functionalTopConstr20Id
+            , smtConstructor
+                functionalTopConstr21Id [testSort, testSort] testSort
+            )
+        ,   ( functionalTopConstr21Id
+            , smtConstructor
+                functionalTopConstr21Id [testSort, testSort] testSort
+            )
+        , ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
+        , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
+        , ( sigmaId, smtConstructor sigmaId [testSort, testSort] testSort)
+        ]
+    }
+
+testSortId :: Id Object
+testSortId = testId "testSort"
+testSort0Id :: Id Object
+testSort0Id = testId "testSort0"
+testSort1Id :: Id Object
+testSort1Id = testId "testSort1"
+topSortId :: Id Object
+topSortId = testId "topSort"
+subSortId :: Id Object
+subSortId = testId "subSort"
+subSubsortId :: Id Object
+subSubsortId = testId "subSubsort"
+otherSortId :: Id Object
+otherSortId = testId "otherSort"
+intSortId :: Id Object
+intSortId = testId "intSort"
+boolSortId :: Id Object
+boolSortId = testId "boolSort"
+
 testSort :: Sort Object
 testSort =
     SortActualSort SortActual
-        { sortActualName  = testId "testSort"
+        { sortActualName  = testSortId
         , sortActualSorts = []
         }
 
 testSort0 :: Sort Object
 testSort0 =
     SortActualSort SortActual
-        { sortActualName  = testId "testSort0"
+        { sortActualName  = testSort0Id
         , sortActualSorts = []
         }
 
 testSort1 :: Sort Object
 testSort1 =
     SortActualSort SortActual
-        { sortActualName  = testId "testSort1"
+        { sortActualName  = testSort1Id
         , sortActualSorts = []
         }
 
 topSort :: Sort Object
 topSort =
     SortActualSort SortActual
-        { sortActualName  = testId "topSort"
+        { sortActualName  = topSortId
         , sortActualSorts = []
         }
 
 subSort :: Sort Object
 subSort =
     SortActualSort SortActual
-        { sortActualName  = testId "subSort"
+        { sortActualName  = subSortId
         , sortActualSorts = []
         }
 
-subSubSort :: Sort Object
-subSubSort =
+subSubsort :: Sort Object
+subSubsort =
     SortActualSort SortActual
-        { sortActualName  = testId "subSubSort"
+        { sortActualName  = subSubsortId
         , sortActualSorts = []
         }
 
 otherSort :: Sort Object
 otherSort =
     SortActualSort SortActual
-        { sortActualName = testId "otherSort"
+        { sortActualName = otherSortId
         , sortActualSorts = []
         }
 
@@ -1753,23 +1898,23 @@ listSort =
 intSort :: Sort Object
 intSort =
     SortActualSort SortActual
-        { sortActualName  = testId "intSort"
+        { sortActualName  = intSortId
         , sortActualSorts = []
         }
 
 boolSort :: Sort Object
 boolSort =
     SortActualSort SortActual
-        { sortActualName  = testId "boolSort"
+        { sortActualName  = boolSortId
         , sortActualSorts = []
         }
 
 subsorts :: [(Sort Object, Sort Object)]
 subsorts =
-    [ (subSubSort, subSort)
-    , (subSubSort, topSort)
+    [ (subSubsort, subSort)
+    , (subSubsort, topSort)
     , (subSort, topSort)
-    , (subSubSort, otherSort)
+    , (subSubsort, otherSort)
     , (otherSort, topSort)
     ]
 

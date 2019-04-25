@@ -45,7 +45,7 @@ import           Kore.Step.Axiom.UserDefined
 import           Kore.Step.Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
-                 QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
+                 QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Verified as Verified
@@ -108,6 +108,7 @@ axiomToIdAxiomPatternPair axiom =
         Right (RewriteAxiomPattern _) -> Nothing
         Right (OnePathClaimPattern _) -> Nothing
         Right (AllPathClaimPattern _) -> Nothing
+        Right (ImplicationAxiomPattern _) -> Nothing
 
 -- |Converts a registry of 'RulePattern's to one of
 -- 'BuiltinAndAxiomSimplifier's

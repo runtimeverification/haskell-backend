@@ -278,6 +278,13 @@ instance MetaOrObject level => PrettyPrint (Variable level) where
             , writeFieldNewLine "variableSort" variableSort var
             ]
 
+instance PrettyPrint (variable level)
+    => PrettyPrint (SetVariable variable level)
+  where
+    prettyPrint _ svar@(SetVariable _) =
+        writeStructure "SetVariable"
+            [writeFieldNewLine "getVariable" getVariable svar]
+
 instance
     ( PrettyPrint child
     , MetaOrObject level
@@ -565,6 +572,8 @@ instance
         writeOneFieldStruct flags "TopPattern" p
     prettyPrint flags (VariablePattern p)      =
         writeOneFieldStruct flags "VariablePattern" p
+    prettyPrint flags (SetVariablePattern p)      =
+        writeOneFieldStruct flags "SetVariablePattern" p
 
 instance
     ( self ~ CofreeT f w a
@@ -783,11 +792,6 @@ instance (MetaOrObject level, PrettyPrint (variable level))
         writeThreeFieldStruct flags "Proposition_5_24_3" funProof var pat
     prettyPrint flags (SubstitutionMerge var pat1 pat2) =
         writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
-
--- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
-instance PrettyPrint UnificationError where
-    prettyPrint _ UnsupportedPatterns = "UnsupportedPatterns"
-    prettyPrint _ UnsupportedSymbolic = "UnsupportedSymbolic"
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance MetaOrObject level => PrettyPrint (ClashReason level) where

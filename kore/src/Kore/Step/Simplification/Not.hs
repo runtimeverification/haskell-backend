@@ -13,26 +13,35 @@ module Kore.Step.Simplification.Not
     , simplifyEvaluated
     ) where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.AST.Pure
-import           Kore.AST.Valid
+import           Kore.AST.Valid hiding
+                 ( mkAnd )
+import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.IndexedModule.MetadataTools
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
+                 ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( toMLPattern, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
+                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, toExpandedPattern )
+import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+                 ( PredicateSubstitutionSimplifier, Simplifier,
+                 StepPatternSimplifier, gather )
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrOfExpandedPattern'
 child.
@@ -44,20 +53,31 @@ Right now this uses the following:
 
 -}
 simplify
-    ::  ( MetaOrObject level
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => Not level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
-        , SimplificationProof level
-        )
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> Not Object (OrOfExpandedPattern Object variable)
+    -> Simplifier (OrOfExpandedPattern Object variable)
 simplify
+    tools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
     Not { notChild = child }
   =
-    simplifyEvaluated child
+    simplifyEvaluated
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        child
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrOfExpandedPattern' child.
@@ -77,31 +97,38 @@ besides the pattern sort, which will make it even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( MetaOrObject level
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
-simplifyEvaluated simplified
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> OrOfExpandedPattern Object variable
+    -> Simplifier (OrOfExpandedPattern Object variable)
+simplifyEvaluated
+    tools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
+    simplified
   | OrOfExpandedPattern.isFalse simplified =
-    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
+    return (MultiOr.make [ExpandedPattern.top])
   | OrOfExpandedPattern.isTrue simplified =
-    (MultiOr.make [], SimplificationProof)
+    return (MultiOr.make [])
   | otherwise =
-    case MultiOr.extractPatterns simplified of
-        [patt] -> makeEvaluate patt
-        _ ->
-            ( makeFromSinglePurePattern
-                (mkNot
-                    (ExpandedPattern.toMLPattern
-                        (OrOfExpandedPattern.toExpandedPattern simplified)
-                    )
-                )
-            , SimplificationProof
-            )
+    fmap MultiOr.make . gather
+    $ Foldable.foldrM mkAnd ExpandedPattern.top (simplified >>= makeEvaluate)
+  where
+    mkAnd =
+        And.makeEvaluate
+            tools
+            predicateSimplifier
+            termSimplifier
+            axiomSimplifiers
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'ExpandedPattern'
 child.
@@ -116,29 +143,23 @@ makeEvaluate
         , Unparse (variable level)
         )
     => ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
-makeEvaluate
-    Predicated {term, predicate, substitution}
-  =
-    ( MultiOr.make
+    -> OrOfExpandedPattern level variable
+makeEvaluate Predicated { term, predicate, substitution } =
+    MultiOr.make
         [ Predicated
             { term = makeTermNot term
             , predicate = makeTruePredicate
             , substitution = mempty
             }
         , Predicated
-            { term = mkTop_
+            { term = mkTop (getSort term)
             , predicate =
                 makeNotPredicate
-                    (makeAndPredicate
-                        predicate
-                        (substitutionToPredicate substitution)
-                    )
+                $ makeAndPredicate predicate
+                $ Predicate.fromSubstitution substitution
             , substitution = mempty
             }
         ]
-    , SimplificationProof
-    )
 
 makeTermNot
     ::  ( MetaOrObject level

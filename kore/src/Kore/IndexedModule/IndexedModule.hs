@@ -34,8 +34,9 @@ module Kore.IndexedModule.IndexedModule
     , indexedModulesInScope
     , toVerifiedPureModule
     , toVerifiedPureDefinition
-    , recursiveIndexedModuleSortDescriptions
     , recursiveIndexedModuleAxioms
+    , recursiveIndexedModuleSortDescriptions
+    , recursiveIndexedModuleSymbolSentences
     -- * Implicit Kore
     , implicitModuleName
     , implicitNames
@@ -75,7 +76,10 @@ import           Kore.Attribute.Parser
                  ( ParseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
+                 ( Sort )
 import           Kore.Attribute.Subsort
+import qualified Kore.Attribute.Symbol.Symbol as Attribute
+                 ( Symbol )
 import           Kore.Error
 import           Kore.Parser
                  ( ParsedPattern )
@@ -140,6 +144,13 @@ recursiveIndexedModuleSortDescriptions
     -> Map.Map (Id Object) (Attribute.Sort, SentenceSort Object pat)
 recursiveIndexedModuleSortDescriptions =
     recursiveIndexedModuleStuff indexedModuleSortDescriptions
+
+recursiveIndexedModuleSymbolSentences
+    :: forall param pat axiomAtts
+    .  IndexedModule param pat Attribute.Symbol axiomAtts
+    -> Map.Map (Id Object) (Attribute.Symbol, SentenceSymbol Object pat)
+recursiveIndexedModuleSymbolSentences =
+    recursiveIndexedModuleStuff indexedModuleSymbolSentences
 
 recursiveIndexedModuleAxioms
     :: forall param pat declAtts axiomAtts

@@ -16,7 +16,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
@@ -109,12 +109,13 @@ mkListDomainValue children =
         , builtinListChild = Seq.fromList children
         }
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
-mockMetadataTools = Mock.makeMetadataTools [] [] [] [] []
+mockMetadataTools :: SmtMetadataTools StepperAttributes
+mockMetadataTools =
+    Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
 evaluate
     :: (MetaOrObject Object)
-    => MetadataTools Object attrs
+    => SmtMetadataTools attrs
     -> Domain.Builtin (CommonOrOfExpandedPattern Object)
     -> CommonOrOfExpandedPattern Object
 evaluate tools domainValue =

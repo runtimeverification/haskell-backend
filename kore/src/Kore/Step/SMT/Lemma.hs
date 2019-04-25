@@ -33,8 +33,8 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
-import qualified Kore.Step.SMT.Sorts as Sorts
-import qualified Kore.Step.SMT.Symbols as Symbols
+import qualified Kore.Step.SMT.Declaration.All as SMT.All
+                 ( declare )
 import           Kore.Step.SMT.Translate
 import           Kore.Unparser
 import           SMT
@@ -49,17 +49,19 @@ import qualified SMT
 declareSMTLemmas
     :: forall m
     .   ( MonadSMT m
-        , Given (MetadataTools Object StepperAttributes)
+        , Given (SmtMetadataTools StepperAttributes)
         )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> m ()
 declareSMTLemmas m = SMT.liftSMT $ do
-    Sorts.declareSorts m
-    Symbols.declareSymbols m
+    SMT.All.declare (smtData tools)
     mapM_ declareRule (indexedModuleAxioms m)
   where
+    tools :: SmtMetadataTools StepperAttributes
+    tools = given
+
     declareRule
-        :: forall sortParam . (Given (MetadataTools Object StepperAttributes))
+        :: forall sortParam . (Given (SmtMetadataTools StepperAttributes))
         => ( Attribute.Axiom
            , SentenceAxiom sortParam (StepPattern Object Variable)
            )

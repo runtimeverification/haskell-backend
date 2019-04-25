@@ -82,7 +82,7 @@ import           Kore.Error
                  ( Error, castError )
 import qualified Kore.Error
 import           Kore.Sort
-import           SimpleSMT
+import           SMT.SimpleSMT
                  ( SExpr, readSExprs )
 
 data ParseError

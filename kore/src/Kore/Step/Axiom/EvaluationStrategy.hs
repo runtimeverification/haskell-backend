@@ -17,9 +17,11 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
+import qualified Data.Foldable as Foldable
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Common
                  ( SortedVariable (..), Variable )
@@ -33,7 +35,7 @@ import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -65,7 +67,7 @@ import           Kore.Step.Step
 import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( Unparse, unparseToString )
+                 ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -120,7 +122,7 @@ totalDefinitionEvaluation rules =
             , Unparse (variable level)
             , ShowMetaOrObject variable
             )
-        => MetadataTools level StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
@@ -196,7 +198,7 @@ evaluateBuiltin
         , ShowMetaOrObject variable
         )
     => BuiltinAndAxiomSimplifier level
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -255,7 +257,7 @@ applyFirstSimplifierThatWorks
         )
     => [BuiltinAndAxiomSimplifier level]
     -> AcceptsMultipleResults
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -311,10 +313,16 @@ applyFirstSimplifierThatWorks
                     --
                     -- Until we have a clear example that this can actually
                     -- happen, we throw an error.
-                    ((error . unlines)
+                    ((error . show . Pretty.vsep)
                         [ "Unexpected simplification result with remainder:"
-                        , "  input: " ++ unparseToString patt
-                        , "  result: " ++ show applicationResult
+                        , Pretty.indent 2 "input:"
+                        , Pretty.indent 4 (unparse patt)
+                        , Pretty.indent 2 "results:"
+                        , (Pretty.indent 4 . Pretty.vsep)
+                            (unparse <$> Foldable.toList orResults)
+                        , Pretty.indent 2 "remainders:"
+                        , (Pretty.indent 4 . Pretty.vsep)
+                            (unparse <$> Foldable.toList orRemainders)
                         ]
                     )
                 return (applicationResult, SimplificationProof)
@@ -341,7 +349,7 @@ evaluateWithDefinitionAxioms
         , ShowMetaOrObject variable
         )
     => [EqualityRule level Variable]
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -377,11 +385,10 @@ evaluateWithDefinitionAxioms
             expanded
             (map unwrapEqualityRule definitionRules)
 
-    let Step.Results { results, remainders } = result
     return
         ( AttemptedAxiom.Applied AttemptedAxiomResults
-            { results = Step.result <$> results
-            , remainders = remainders
+            { results = Step.gatherResults result
+            , remainders = Step.remainders result
             }
         , SimplificationProof
         )

@@ -83,7 +83,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
@@ -197,7 +197,7 @@ expectBuiltinMap ctx _map =
 
 returnMap
     :: (Monad m, Ord (variable Object))
-    => MetadataTools Object attrs
+    => SmtMetadataTools attrs
     -> Sort Object
     -> Builtin variable
     -> m (AttemptedAxiom Object variable)
@@ -377,7 +377,7 @@ See also: 'sort'
  -}
 asInternal
     :: Ord (variable Object)
-    => MetadataTools Object attrs
+    => SmtMetadataTools attrs
     -> Sort Object
     -> Builtin variable
     -> StepPattern Object variable
@@ -429,7 +429,7 @@ asPattern builtin =
  -}
 asExpandedPattern
     ::  ( Ord (variable Object)
-        , Given (MetadataTools Object StepperAttributes)
+        , Given (SmtMetadataTools StepperAttributes)
         )
     => Kore.Sort Object
     -> Builtin variable
@@ -437,7 +437,7 @@ asExpandedPattern
 asExpandedPattern resultSort =
     ExpandedPattern.fromPurePattern . asInternal tools resultSort
   where
-    tools :: MetadataTools Object StepperAttributes
+    tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given
 
 concatKey :: IsString s => s
@@ -496,7 +496,7 @@ lookupSymbolKeys = Builtin.lookupSymbol keysKey
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat
-    :: MetadataTools Object Hook
+    :: SmtMetadataTools Hook
     -> SymbolOrAlias Object
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
@@ -504,7 +504,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
 {- | Check if the given symbol is hooked to @MAP.element@.
  -}
 isSymbolElement
-    :: MetadataTools Object Hook
+    :: SmtMetadataTools Hook
     -> SymbolOrAlias Object
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
@@ -512,7 +512,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 {- | Check if the given symbol is hooked to @MAP.unit@.
 -}
 isSymbolUnit
-    :: MetadataTools Object Hook
+    :: SmtMetadataTools Hook
     -> SymbolOrAlias Object
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
@@ -564,7 +564,7 @@ unifyEquals
         , MonadUnify unifierM
         )
     => SimplificationType
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.

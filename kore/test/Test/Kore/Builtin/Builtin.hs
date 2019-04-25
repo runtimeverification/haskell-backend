@@ -34,7 +34,9 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), extractMetadataTools )
+                 ( SmtMetadataTools )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -76,7 +78,7 @@ mkPair lSort rSort l r =
     mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
 substitutionSimplifier
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
 substitutionSimplifier tools =
     PredicateSubstitution.create tools stepSimplifier evaluators
@@ -170,8 +172,8 @@ indexedModule =
     makeIndexedModuleAttributesNull
     $ mapIndexedModulePatterns eraseAnnotations verifiedModule
 
-testMetadataTools :: MetadataTools Object StepperAttributes
-testMetadataTools = extractMetadataTools (constructorFunctions verifiedModule)
+testMetadataTools :: SmtMetadataTools StepperAttributes
+testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 
 testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
@@ -227,7 +229,7 @@ runStep
         )
 runStep configuration axiom = do
     result <- runStepResult configuration axiom
-    return (extractResults <$> result)
+    return (Step.gatherResults <$> result)
 
 runStepResult
     :: CommonExpandedPattern Object
@@ -268,12 +270,7 @@ runStepWith
         )
 runStepWith solver configuration axiom = do
     result <- runStepResultWith solver configuration axiom
-    return (extractResults <$> result)
-
-extractResults
-    :: Step.Results Variable
-    -> MultiOr (CommonExpandedPattern Object)
-extractResults Step.Results { results } = Step.result <$> results
+    return (Step.gatherResults <$> result)
 
 runStepResultWith
     :: MVar Solver

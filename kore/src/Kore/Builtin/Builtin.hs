@@ -115,7 +115,7 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, SortDescription, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
@@ -662,7 +662,7 @@ unaryOperator
     get = extractVal ctx
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
-        => MetadataTools level StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
@@ -715,7 +715,7 @@ binaryOperator
     get = extractVal ctx
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
-        => MetadataTools level StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
@@ -768,7 +768,7 @@ ternaryOperator
     get = extractVal ctx
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)
-        => MetadataTools level StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier level
         -> Sort level
         -> [StepPattern level variable]
@@ -785,7 +785,7 @@ ternaryOperator
 type FunctionImplementation
     = forall variable
         .  Ord (variable Object)
-        => MetadataTools Object StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier Object
         -> Sort Object
         -> [StepPattern Object variable]
@@ -797,7 +797,7 @@ functionEvaluator impl =
   where
     evaluator
         :: (Ord (variable Object), Show (variable Object))
-        => MetadataTools Object StepperAttributes
+        => SmtMetadataTools StepperAttributes
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier Object
         -> BuiltinAndAxiomSimplifierMap level
@@ -910,7 +910,7 @@ lookupSymbolConcat theSort attrs =
  -}
 isSymbol
     :: Text  -- ^ Builtin symbol
-    -> MetadataTools Object Hook
+    -> SmtMetadataTools Hook
     -> SymbolOrAlias Object  -- ^ Kore symbol
     -> Bool
 isSymbol builtinName MetadataTools { symAttributes } sym =
@@ -926,7 +926,7 @@ isSymbol builtinName MetadataTools { symAttributes } sym =
  -}
 expectNormalConcreteTerm
     :: Monad m
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPattern Object variable
     -> MaybeT m (ConcreteStepPattern Object)
 expectNormalConcreteTerm tools purePattern =

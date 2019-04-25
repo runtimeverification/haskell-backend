@@ -14,6 +14,7 @@ module Kore.Exec
     , search
     , prove
     , proveWithRepl
+    , boundedModelCheck
     , Rewrite
     , Equality
     ) where
@@ -44,10 +45,13 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), extractMetadataTools )
+                 ( SmtMetadataTools )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+                 ( build )
 import           Kore.IndexedModule.Resolvers
                  ( resolveSymbol )
 import qualified Kore.Logger as Log
+import qualified Kore.ModelChecker.Bounded as Bounded
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom), Claim, defaultStrategy, verify )
 import qualified Kore.OnePath.Verification as Claim
@@ -78,7 +82,8 @@ import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubs
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), OnePathRule (..),
                  RewriteRule (RewriteRule), RulePattern (RulePattern),
-                 extractOnePathClaims, extractRewriteAxioms, getRewriteRule )
+                 extractImplicationClaims, extractOnePathClaims,
+                 extractRewriteAxioms, getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Search
@@ -121,7 +126,7 @@ data Initialized =
 -- | The products of execution: an execution graph, and assorted simplifiers.
 data Execution =
     Execution
-        { metadataTools :: !(MetadataTools Object StepperAttributes)
+        { metadataTools :: !(SmtMetadataTools StepperAttributes)
         , simplifier :: !(StepPatternSimplifier Object)
         , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
@@ -219,8 +224,7 @@ prove
     -- ^ The spec module
     -> Simplifier (Either (CommonStepPattern Object) ())
 prove limit definitionModule specModule = do
-    let
-        tools = extractMetadataTools definitionModule
+    let tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
         , simplifier
@@ -256,8 +260,7 @@ proveWithRepl
     -- ^ The spec module
     -> Simplifier ()
 proveWithRepl definitionModule specModule = do
-    let
-        tools = extractMetadataTools definitionModule
+    let tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
         , simplifier
@@ -280,6 +283,38 @@ proveWithRepl definitionModule specModule = do
         axioms
         claims
 
+-- | Bounded model check a spec given as a module containing rules to be checked
+boundedModelCheck
+    :: Limit Natural
+    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The main module
+    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The spec module
+    -> Simplifier [Bounded.CheckResult]
+boundedModelCheck limit definitionModule specModule = do
+    let
+        tools = MetadataTools.build definitionModule
+    Initialized
+        { rewriteRules
+        , simplifier
+        , substitutionSimplifier
+        , axiomIdToSimplifier
+        } <-
+            initialize definitionModule tools
+    let
+        axioms = fmap Axiom rewriteRules
+        specAxioms = fmap snd $ (extractImplicationClaims specModule)
+
+    result <-
+        Bounded.check
+            tools
+            simplifier
+            substitutionSimplifier
+            axiomIdToSimplifier
+            (Bounded.bmcStrategy axioms)
+            (map (\x -> (x,limit)) specAxioms)
+    return result
+
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
     Monad.when (null claims) . error
@@ -299,7 +334,7 @@ makeClaim (attributes, rule) =
 
 simplifyRuleOnSecond
     :: Claim claim
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> (Attribute.Axiom, claim)
     -> Simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond tools (atts, rule) = do
@@ -321,7 +356,7 @@ execute
     -> Simplifier Execution
 execute verifiedModule strategy inputPattern
   = Log.withLogScope "setUpConcreteExecution" $ do
-    let metadataTools = extractMetadataTools verifiedModule
+    let metadataTools = MetadataTools.build verifiedModule
     initialized <- initialize verifiedModule metadataTools
     let
         Initialized { rewriteRules } = initialized
@@ -364,7 +399,7 @@ execute verifiedModule strategy inputPattern
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
     :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> MetadataTools Object StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> Simplifier Initialized
 initialize verifiedModule tools =
     do
@@ -408,7 +443,7 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyFunctionAxioms
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> Map.Map (AxiomIdentifier Object) [Equality]
     -> Simplifier (Map.Map (AxiomIdentifier Object) [Equality])
 simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
@@ -422,7 +457,7 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyRewriteRule
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> Rewrite
     -> Simplifier Rewrite
 simplifyRewriteRule tools (RewriteRule rule) =
@@ -435,7 +470,7 @@ narrowly-defined criteria.
 
  -}
 simplifyRulePattern
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> RulePattern Object Variable
     -> Simplifier (RulePattern Object Variable)
 simplifyRulePattern tools rulePattern = do
@@ -471,7 +506,7 @@ simplifyRulePattern tools rulePattern = do
 
 -- | Simplify a 'StepPattern' using only matching logic rules.
 simplifyPattern
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> CommonStepPattern Object
     -> Simplifier
         (OrOfExpandedPattern Object Variable, SimplificationProof Object)

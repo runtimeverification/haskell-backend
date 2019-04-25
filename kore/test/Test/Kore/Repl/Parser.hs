@@ -12,26 +12,30 @@ import Test.Kore.Parser
 
 test_replParser :: [TestTree]
 test_replParser =
-    [ helpTests        `tests` "help"
-    , claimTests       `tests` "claim"
-    , axiomTests       `tests` "axiom"
-    , proveTests       `tests` "prove"
-    , graphTests       `tests` "graph"
-    , stepTests        `tests` "step"
-    , selectTests      `tests` "select"
-    , configTests      `tests` "config"
-    , leafsTests       `tests` "leafs"
-    , precBranchTests  `tests` "prec-branch"
-    , childrenTests    `tests` "children"
-    , exitTests        `tests` "exit"
-    , omitTests        `tests` "omit"
-    , labelTests       `tests` "label"
-    , tryTests         `tests` "try"
-    , redirectTests    `tests` "redirect"
-    , ruleTests        `tests` "rule"
-    , stepfTests       `tests` "stepf"
-    , clearTests       `tests` "clear"
-    , saveSessionTests `tests` "save-session"
+    [ helpTests         `tests` "help"
+    , claimTests        `tests` "claim"
+    , axiomTests        `tests` "axiom"
+    , proveTests        `tests` "prove"
+    , graphTests        `tests` "graph"
+    , stepTests         `tests` "step"
+    , selectTests       `tests` "select"
+    , configTests       `tests` "config"
+    , leafsTests        `tests` "leafs"
+    , precBranchTests   `tests` "prec-branch"
+    , childrenTests     `tests` "children"
+    , exitTests         `tests` "exit"
+    , omitTests         `tests` "omit"
+    , labelTests        `tests` "label"
+    , tryTests          `tests` "try"
+    , redirectTests     `tests` "redirect"
+    , ruleTests         `tests` "rule"
+    , stepfTests        `tests` "stepf"
+    , clearTests        `tests` "clear"
+    , pipeTests         `tests` "pipe"
+    , pipeRedirectTests `tests` "pipe redirect"
+    , saveSessionTests  `tests` "save-session"
+    , appendTests       `tests` "append"
+    , pipeAppendTests   `tests` "pipe append"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -186,11 +190,82 @@ exitTests =
 
 redirectTests :: [ParserTest ReplCommand]
 redirectTests =
-    [ "config > file"   `parsesTo_` Redirect (ShowConfig Nothing)  "file"
-    , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
-    , "config 5 > file" `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
-    , "claim 3 > cf"    `parsesTo_` Redirect (ShowClaim 3)         "cf"
+    [ "config > file"     `parsesTo_` Redirect (ShowConfig Nothing)  "file"
+    , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
+    , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
+    , "claim 3 > cf"      `parsesTo_` Redirect (ShowClaim 3) "cf"
+    , "claim 3 > \"c f\"" `parsesTo_` Redirect (ShowClaim 3) "c f"
+    , "config 5 > "       `fails`     "no file name"
     ]
+
+pipeTests :: [ParserTest ReplCommand]
+pipeTests =
+    [ "config | script"                     `parsesTo_` pipeConfig Nothing "script" []
+    , "config 5 | script"                   `parsesTo_` pipeConfig (Just 5) "script" []
+    , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just 5) "script" ["arg1", "arg2"]
+    , "step 5 | script"                     `parsesTo_` pipeStep 5 "script" []
+    , "step 5 | \"s c ri p t\""             `parsesTo_` pipeStep 5 "s c ri p t" []
+    , "config 5 | "                         `fails`     "no script name"
+    ]
+  where
+    pipeConfig
+        :: Maybe Int
+        -> String
+        -> [String]
+        -> ReplCommand
+    pipeConfig mi s xs =
+        Pipe (ShowConfig mi) s xs
+    pipeStep
+        :: Int
+        -> String
+        -> [String]
+        -> ReplCommand
+    pipeStep i s xs =
+        Pipe (ProveSteps i) s xs
+
+
+pipeRedirectTests :: [ParserTest ReplCommand]
+pipeRedirectTests =
+    [ "config | script > file"                          `parsesTo_` pipeRedirectConfig Nothing "script" [] "file"
+    , "config | \"s cript\" \"arg 1\" arg2 > \"f ile\"" `parsesTo_` pipeRedirectConfig Nothing "s cript" ["arg 1", "arg2"] "f ile"
+    , "config 5 | script \"a r g 1\" arg2 > file"       `parsesTo_` pipeRedirectConfig (Just 5) "script" ["a r g 1", "arg2"] "file"
+    , "config 5 | > "                                   `fails`     "no script or file name"
+    , "config 5 | script > "                            `fails`     "no file name"
+    , "config 5 | > file"                               `fails`     "no script name"
+    ]
+  where
+    pipeRedirectConfig
+        :: Maybe Int
+        -> String
+        -> [String]
+        -> String
+        -> ReplCommand
+    pipeRedirectConfig mi s xs file =
+        Redirect (Pipe (ShowConfig mi) s xs) file
+
+appendTests :: [ParserTest ReplCommand]
+appendTests =
+    [ "config >> file"        `parsesTo_` AppendTo (ShowConfig Nothing) "file"
+    , "config >> \"f i l e\"" `parsesTo_` AppendTo (ShowConfig Nothing) "f i l e"
+    , "config >> "            `fails`     "no file name"
+    ]
+
+pipeAppendTests :: [ParserTest ReplCommand]
+pipeAppendTests =
+    [ "config | script >> file"                           `parsesTo_` pipeAppendConfig Nothing "script" [] "file"
+    , "config 5 | \"sc ript\" arg1 \"a rg\" >> \"f ile\"" `parsesTo_` pipeAppendConfig (Just 5) "sc ript" ["arg1", "a rg"] "f ile"
+    , "config | > >> file"                                `fails` "incorrect script name"
+    , "config | s >> "                                    `fails` "no file name"
+    ]
+  where
+    pipeAppendConfig
+        :: Maybe Int
+        -> String
+        -> [String]
+        -> String
+        -> ReplCommand
+    pipeAppendConfig mi s xs file =
+        AppendTo (Pipe (ShowConfig mi) s xs) file
 
 ruleTests :: [ParserTest ReplCommand]
 ruleTests =

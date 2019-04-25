@@ -40,7 +40,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Proof
@@ -93,7 +93,7 @@ rewriteStep a =
  -}
 transitionRule
     :: (HasCallStack, MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
@@ -146,9 +146,9 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , unparse config
                     , "Un-implemented unification case; aborting execution."
                     ]
-            Right Step.Results { results } ->
+            Right results ->
                 (Foldable.asum . fmap pure)
-                    (withProof . Step.result <$> results)
+                    (withProof <$> Step.gatherResults results)
               where
                 withProof result' = (result', proof)
 

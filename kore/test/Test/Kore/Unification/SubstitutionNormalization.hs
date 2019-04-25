@@ -15,7 +15,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Step.Pattern
@@ -204,7 +204,7 @@ runNormalizeSubstitutionObject substitution =
     . Except.runExcept
     $ normalizeSubstitution mockMetadataToolsO (Map.fromList substitution)
   where
-    mockMetadataToolsO :: MetadataTools Object StepperAttributes
+    mockMetadataToolsO :: SmtMetadataTools StepperAttributes
     mockMetadataToolsO =
         Mock.makeMetadataTools
             Mock.attributesMapping
@@ -212,8 +212,9 @@ runNormalizeSubstitutionObject substitution =
             Mock.sortAttributesMapping
             Mock.subsorts
             Mock.headSortsMapping
+            Mock.smtDeclarations
 
-mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
+mockMetadataTools :: MetaOrObject level => SmtMetadataTools StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.functionalAttributes
     , symbolOrAliasType = const HeadType.Symbol
@@ -221,4 +222,5 @@ mockMetadataTools = MetadataTools
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     , applicationSorts = undefined
+    , smtData = undefined
     }

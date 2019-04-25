@@ -32,13 +32,13 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 
 -- | Is the symbol a constructor modulo associativity, commutativity and
 -- neutral element?
 isConstructorModulo_
     :: forall level .
-        (MetaOrObject level, Given (MetadataTools level StepperAttributes))
+        (MetaOrObject level, Given (SmtMetadataTools StepperAttributes))
     => SymbolOrAlias level
     -> Bool
 isConstructorModulo_ symbolOrAlias =
@@ -54,7 +54,7 @@ isConstructorModulo_ symbolOrAlias =
 
 isConstructorModuloLike_
     :: forall level .
-        (MetaOrObject level, Given (MetadataTools level StepperAttributes))
+        (MetaOrObject level, Given (SmtMetadataTools StepperAttributes))
     => SymbolOrAlias level
     -> Bool
 isConstructorModuloLike_ appHead =

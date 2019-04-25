@@ -1,0 +1,40 @@
+[]
+module TEST1-SPEC
+
+// imports
+import VERIFICATION []
+
+
+// claims
+// (<k> #execute </k> <state> "x" |-> 6 </state>) -> AG (forall X.((<k> #execute </k> <state> "x" |-> X </state>) -> X <Int 10))
+  claim{} \implies{SortGeneratedTopCell{}} (
+    \and{SortGeneratedTopCell{}} (
+      \top{SortGeneratedTopCell{}}(),
+      Lbl'-LT-'generatedTop'-GT-'{}(
+        Lbl'-LT-'T'-GT-'{}(
+          Lbl'-LT-'k'-GT-'{}(
+            kseq{}(Lbl'Hash'execute'Unds'BMC-SYNTAX'Unds'{}(),dotk{}())),
+          Lbl'-LT-'state'-GT-'{}(
+            Lbl'UndsPipe'-'-GT-Unds'{}(
+              inj{SortString{}, SortKItem{}}(\dv{SortString{}}("x")),
+              inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("6"))))),
+        VarDotVar0:SortGeneratedCounterCell{})),
+    ag{SortGeneratedTopCell{}}(
+      \forall{SortGeneratedTopCell{}}(
+        VarX:SortInt{},
+        \implies{SortGeneratedTopCell{}}(
+          Lbl'-LT-'generatedTop'-GT-'{}(
+            Lbl'-LT-'T'-GT-'{}(
+              Lbl'-LT-'k'-GT-'{}(
+                kseq{}(Lbl'Hash'execute'Unds'BMC-SYNTAX'Unds'{}(),dotk{}())),
+              Lbl'-LT-'state'-GT-'{}(
+                Lbl'UndsPipe'-'-GT-Unds'{}(
+                  inj{SortString{}, SortKItem{}}(\dv{SortString{}}("x")),
+                  inj{SortInt{}, SortKItem{}}(VarX:SortInt{})))),
+            VarDotVar0:SortGeneratedCounterCell{}),
+          \equals{SortBool{},SortGeneratedTopCell{}}(
+            Lbl'Unds-LT-'Int'UndsUnds'INT-COMMON'UndsUnds'Int'Unds'Int{}(VarX:SortInt{},\dv{SortInt{}}("10")),
+            \dv{SortBool{}}("true"))))))
+  [org'Stop'kframework'Stop'attributes'Stop'Source{}(), contentStartLine{}(), contentStartColumn{}(), org'Stop'kframework'Stop'definition'Stop'Production{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}()]
+
+endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}()]

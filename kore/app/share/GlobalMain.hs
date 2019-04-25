@@ -44,7 +44,7 @@ import           Development.GitRev
 import           Options.Applicative
                  ( InfoMod, Parser, argument, disabled, execParser, flag,
                  flag', help, helper, hidden, info, internal, long, metavar,
-                 strOption, (<**>), (<|>) )
+                 strOption, switch, (<**>), (<|>) )
 import           System.Clock
                  ( Clock (Monotonic), diffTimeSpec, getTime )
 import           System.IO
@@ -77,6 +77,8 @@ data KoreProveOptions =
         -- ^ Name of file containing the spec to be proven
         , specMainModule :: !ModuleName
         -- ^ The main module of the spec to be proven
+        , bmc :: !Bool
+        -- ^ Whether to use bounded model checker
         }
 
 parseKoreProveOptions :: Parser KoreProveOptions
@@ -95,6 +97,9 @@ parseKoreProveOptions =
             <> help "The name of the main module in the spec to be proven."
             )
         )
+    <*> switch
+        ( long "bmc"
+        <> help "Whether to use the bounded model checker." )
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}

@@ -18,7 +18,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.Pattern
@@ -765,7 +765,7 @@ plain0OfB = Mock.plain10 Mock.b
 plain1OfB :: CommonStepPattern Object
 plain1OfB = Mock.plain11 Mock.b
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -773,9 +773,11 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
-mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] [] []
+mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
+mockMetaMetadataTools =
+    Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
 aDomainValue :: CommonStepPattern Object
 aDomainValue =
@@ -793,7 +795,7 @@ bDomainValue =
 
 simplifyUnify
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (CommonExpandedPattern level, Maybe (CommonExpandedPattern level))
@@ -805,7 +807,7 @@ simplifyUnify tools first second =
 
 unify
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonExpandedPattern level))
@@ -831,7 +833,7 @@ unify tools first second =
 
 simplify
     :: MetaOrObject level
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (CommonExpandedPattern level)
