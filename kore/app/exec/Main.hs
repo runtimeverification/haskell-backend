@@ -373,26 +373,22 @@ mainWithOptions
                                             searchPattern
                                             searchConfig
                                     return (ExitSuccess, pat)
-                        Just (specIndexedModule, bmc) ->
-                            if bmc
-                                then
-                                    (\_ -> (ExitSuccess, mkTop $ mkSortVariable "R" ))
-                                    <$> boundedModelCheck
-                                            stepLimit
-                                            indexedModule
-                                            specIndexedModule
-                                else
-                                    either
-                                        (\pat -> (ExitFailure 1, pat))
-                                        (\_ ->
-                                                ( ExitSuccess
-                                                , mkTop $ mkSortVariable "R"
-                                                )
-                                        )
-                                    <$> prove
-                                            stepLimit
-                                            indexedModule
-                                            specIndexedModule
+                        Just (specIndexedModule, bmc)
+                          | bmc -> do
+                            _ <- boundedModelCheck
+                                    stepLimit
+                                    indexedModule
+                                    specIndexedModule
+                            return success
+                          | otherwise ->
+                            either failure (const success)
+                            <$> prove
+                                    stepLimit
+                                    indexedModule
+                                    specIndexedModule
+                          where
+                            failure pat = (ExitFailure 1, pat)
+                            success = (ExitSuccess, mkTop $ mkSortVariable "R")
                 )
         print (show exitCode)
         let unparsed = (unparse . externalizeFreshVariables) finalPattern

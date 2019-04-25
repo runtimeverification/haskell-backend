@@ -1,6 +1,5 @@
 {-|
-Module      : Kore.ModelChecker.Simplification
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 
