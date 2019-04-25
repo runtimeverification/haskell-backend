@@ -109,7 +109,7 @@ test_ignore =
             Just _ -> assertFailure "Should ignore overloaded production axiom"
   where
     evaluators =
-        axiomPatternsToEvaluators $ extractEqualityAxioms Object indexedModule
+        axiomPatternsToEvaluators $ extractEqualityAxioms indexedModule
       where
         Just indexedModule = Map.lookup testModuleName verifiedModules
           where

@@ -15,8 +15,8 @@ module Kore.Step.Rule
     , isNormalRule
     , QualifiedAxiomPattern (..)
     , AxiomPatternError (..)
-    , verifiedKoreSentenceToAxiomPattern
-    , koreSentenceToAxiomPattern
+    , fromSentenceAxiom
+    , fromSentence
     , extractRewriteAxioms
     , extractOnePathClaims
     , extractAllPathClaims
@@ -167,32 +167,22 @@ isNormalRule RulePattern { attributes } =
         _ -> False
 
 
--- | Extracts all 'RewriteRule' axioms matching a given @level@ from
--- a verified definition.
+-- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
 extractRewriteAxioms
-    :: MetaOrObject level
-    => level -- ^expected level for the axiom pattern
-    -> VerifiedModule declAtts axiomAtts
-    -- ^'IndexedModule' containing the definition
-    -> [RewriteRule level Variable]
-extractRewriteAxioms level idxMod =
-    mapMaybe
-        ( extractRewriteAxiomFrom level
-        . getIndexedSentence
-        )
+    :: VerifiedModule declAtts axiomAtts
+    -> [RewriteRule Object Variable]
+extractRewriteAxioms idxMod =
+    mapMaybe (extractRewriteAxiomFrom. getIndexedSentence)
         (indexedModuleAxioms idxMod)
 
 extractRewriteAxiomFrom
-    :: Object
-    -> Verified.SentenceAxiom
+    :: Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (RewriteRule Object Variable)
-extractRewriteAxiomFrom level sentence =
-    case verifiedKoreSentenceToAxiomPattern level koreSentence of
+extractRewriteAxiomFrom sentence =
+    case fromSentenceAxiom sentence of
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
-  where
-    koreSentence = SentenceAxiomSentence sentence
 
 -- | Extracts all One-Path claims from a verified module.
 extractOnePathClaims
@@ -211,11 +201,9 @@ extractOnePathClaimFrom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (OnePathRule Object Variable)
 extractOnePathClaimFrom sentence =
-    case verifiedKoreSentenceToAxiomPattern Object koreSentence of
-        Right (OnePathClaimPattern axiomPat) -> Just axiomPat
+    case fromSentenceAxiom sentence of
+        Right (OnePathClaimPattern claim) -> Just claim
         _ -> Nothing
-  where
-    koreSentence = SentenceAxiomSentence sentence
 
 -- | Extracts all All-Path claims from a verified definition.
 extractAllPathClaims
@@ -234,46 +222,28 @@ extractAllPathClaimFrom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (AllPathRule Object Variable)
 extractAllPathClaimFrom sentence =
-    case verifiedKoreSentenceToAxiomPattern Object koreSentence of
-        Right (AllPathClaimPattern axiomPat) -> Just axiomPat
+    case fromSentenceAxiom sentence of
+        Right (AllPathClaimPattern claim) -> Just claim
         _ -> Nothing
-  where
-    koreSentence = SentenceAxiomSentence sentence
 
--- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
--- a given 'KoreSentence'.
-verifiedKoreSentenceToAxiomPattern
-    :: Object
-    -> Verified.Sentence
+-- | Attempts to extract a rule from the 'Verified.Sentence'.
+fromSentence
+    :: Verified.Sentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
-verifiedKoreSentenceToAxiomPattern = sentenceToAxiomPattern
+fromSentence (SentenceAxiomSentence sentenceAxiom) =
+    fromSentenceAxiom sentenceAxiom
+fromSentence _ =
+    koreFail "Only axiom sentences can be translated to rules"
 
--- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
--- a given 'KoreSentence'.
-koreSentenceToAxiomPattern
-    :: Object
-    -> Verified.Sentence
+-- | Attempts to extract a rule from the 'Verified.SentenceAxiom'.
+fromSentenceAxiom
+    :: Verified.SentenceAxiom
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
-koreSentenceToAxiomPattern = sentenceToAxiomPattern
-
-sentenceToAxiomPattern
-    :: Object
-    -> Verified.Sentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
-sentenceToAxiomPattern
-    _
-    (SentenceAxiomSentence SentenceAxiom
-        { sentenceAxiomPattern
-        , sentenceAxiomAttributes
-        }
-    )
-  = do
+fromSentenceAxiom sentenceAxiom = do
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
-            sentenceAxiomAttributes
-    patternToAxiomPattern attributes sentenceAxiomPattern
-sentenceToAxiomPattern _ _ =
-    koreFail "Only axiom sentences can be translated to AxiomPatterns"
+            (sentenceAxiomAttributes sentenceAxiom)
+    patternToAxiomPattern attributes (sentenceAxiomPattern sentenceAxiom)
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 

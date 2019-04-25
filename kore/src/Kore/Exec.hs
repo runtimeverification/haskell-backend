@@ -370,10 +370,10 @@ initialize verifiedModule tools =
     do
         functionAxioms <-
             simplifyFunctionAxioms tools
-                (extractEqualityAxioms Object verifiedModule)
+                (extractEqualityAxioms verifiedModule)
         rewriteRules <-
             mapM (simplifyRewriteRule tools)
-                (extractRewriteAxioms Object verifiedModule)
+                (extractRewriteAxioms verifiedModule)
         let
             functionEvaluators :: BuiltinAndAxiomSimplifierMap Object
             functionEvaluators =

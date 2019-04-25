@@ -283,8 +283,7 @@ testId name =
 testEvaluators
     :: BuiltinAndAxiomSimplifierMap Object
 testEvaluators =
-    axiomPatternsToEvaluators
-    $ extractEqualityAxioms Object testIndexedModule
+    axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
 testMetadataTools :: MetadataTools Object StepperAttributes
 testMetadataTools = extractMetadataTools testIndexedModule
@@ -325,7 +324,7 @@ test_functionRegistry =
     , testCase "Checking that the indexed module contains a rewrite axiom"
         (assertEqual ""
             (1::Int)
-            (length (extractRewriteAxioms Object testIndexedModule))
+            (length (extractRewriteAxioms testIndexedModule))
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApp sortS sHead []

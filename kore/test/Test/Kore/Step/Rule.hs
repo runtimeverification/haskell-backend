@@ -61,9 +61,7 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (koreSentenceToAxiomPattern Object
-                    (mkRewriteAxiom varI1 varI2 Nothing)
-                )
+                (Rule.fromSentence $ mkRewriteAxiom varI1 varI2 Nothing)
             )
         ,   let
                 axiom1, axiom2 :: Verified.Sentence
@@ -109,14 +107,14 @@ axiomPatternsUnitTests =
                         , attributes = def
                         }
                     ]
-                    (extractRewriteAxioms Object
+                    (extractRewriteAxioms
                         (extractIndexedModule "TEST" indexedDefinition)
                     )
         , testCase "(I1:AInt => I2:AInt)::KItem"
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
-                (koreSentenceToAxiomPattern Object
-                    ((SentenceAxiomSentence . mkAxiom_)
+                (Rule.fromSentenceAxiom
+                    (mkAxiom_
                         (applySymbol
                             symbolInj
                             [sortAInt, sortKItem]
@@ -222,7 +220,7 @@ axiomPatternsIntegrationTests =
                                     , Variable "VarDotVar1" mempty sortK
                                     , Variable "VarDotVar0" mempty sortStateCell
                                     ]
-                    koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
+                    Rule.fromSentence ((<$) valid <$> parsed)
                 )
             )
         ]
