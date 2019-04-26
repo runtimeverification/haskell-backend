@@ -97,6 +97,10 @@ instance
         \case
             UnifiedObject object -> unparse object
 
+    unparse2 =
+        \case
+            UnifiedObject object -> unparse2 object
+
 {-|Given a function transforming objects of 'Meta' type and another transforming
 objects of 'Object' type, 'applyUnified' builds the corresponding direct sum
 function combining their effects to transform an 'Unified' object.

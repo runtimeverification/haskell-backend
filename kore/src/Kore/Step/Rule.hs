@@ -58,7 +58,7 @@ import           Kore.Step.Pattern
                  ( CommonStepPattern, StepPattern )
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Unparser
-                 ( Unparse, unparse )
+                 ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
 
 newtype AxiomPatternError = AxiomPatternError ()
@@ -114,6 +114,13 @@ instance (Unparse (variable level), Ord (variable level)) => Unparse (RewriteRul
             $ Valid.mkImplies
                 (Valid.mkAnd left (Predicate.unwrapPredicate requires))
                 right
+
+    unparse2 (RewriteRule RulePattern { left, right, requires } ) =
+        unparse2
+            $ Valid.mkImplies
+                (Valid.mkAnd left (Predicate.unwrapPredicate requires))
+                right
+
 
 qualifiedAxiomOpToConstructor
     :: SymbolOrAlias Object

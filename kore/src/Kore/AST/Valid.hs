@@ -45,6 +45,7 @@ module Kore.AST.Valid
     , mkCharLiteral
     , mkSort
     , mkSortVariable
+    , mkInhabitantPattern
     , varS
     , symS
     -- * Predicate constructors
@@ -218,6 +219,7 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 CharLiteralPattern _ -> illSorted
                 StringLiteralPattern _ -> illSorted
                 VariablePattern _ -> illSorted
+                InhabitantPattern _ -> illSorted
                 SetVariablePattern _ -> illSorted
 
 {- | Call the argument function with two patterns whose sorts agree.
@@ -1000,6 +1002,19 @@ mkCharLiteral char =
   where
     valid = Valid { patternSort = charMetaSort, freeVariables = Set.empty }
     charLiteral = CharLiteral char
+
+mkInhabitantPattern
+    ::  ( Functor domain
+        , valid ~ Valid (variable level) level
+        )
+    => Sort level
+    -> PurePattern level domain variable valid
+mkInhabitantPattern s =
+    asPurePattern (valid :< InhabitantPattern s)
+  where
+    freeVariables = Set.empty
+    patternSort = s
+    valid = Valid { patternSort, freeVariables }
 
 mkSort :: Id level -> Sort level
 mkSort name = SortActualSort $ SortActual name []

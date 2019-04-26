@@ -129,9 +129,11 @@ newtype W level = W String
 
 instance Unparse (V level) where
     unparse (V n) = "V" <> pretty n <> ":" <> unparse sortVariable
+    unparse2 = error "Not implemented"
 
 instance Unparse (W level) where
     unparse (W name) = "W" <> pretty name <> ":" <> unparse sortVariable
+    unparse2 = error "Not implemented"
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVariable

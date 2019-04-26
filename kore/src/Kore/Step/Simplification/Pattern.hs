@@ -57,6 +57,8 @@ import qualified Kore.Step.Simplification.Implies as Implies
                  ( simplify )
 import qualified Kore.Step.Simplification.In as In
                  ( simplify )
+import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
+                 ( simplify )
 import qualified Kore.Step.Simplification.Next as Next
                  ( simplify )
 import qualified Kore.Step.Simplification.Not as Not
@@ -217,6 +219,7 @@ simplifyInternal
         CharLiteralPattern p -> return $ CharLiteral.simplify p
         TopPattern p -> return $ Top.simplify p
         VariablePattern p -> return $ Variable.simplify p
+        InhabitantPattern s -> return $ Inhabitant.simplify s
         SetVariablePattern p -> return $ SetVariable.simplify p
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

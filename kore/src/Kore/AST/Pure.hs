@@ -171,6 +171,8 @@ instance
     Unparse (PurePattern level domain variable annotation)
   where
     unparse (Recursive.project -> _ :< pat) = unparse pat
+    unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
+
 
 type instance Base (PurePattern level domain variable annotation) =
     CofreeF (Pattern level domain variable) annotation

@@ -161,6 +161,26 @@ instance
             "\\and" <> parameters' ["_"] <> arguments' [first, second]
         below first second =
             (Pretty.align . Pretty.vsep) [first, second]
+    unparse2 Predicated { term, predicate, substitution } =
+        unparseAnd2
+            (below "/* term: */" (unparse2 term))
+            (unparseAnd2
+                (below
+                    "/* predicate: */"
+                    (unparse2 predicate)
+                )
+                (below
+                    "/* substitution: */"
+                    (unparse2 $ Predicate.fromSubstitution substitution)
+                )
+            )
+      where
+        unparseAnd2 first second =
+            "\\and2" <> parameters' ["_"] <> arguments' [first, second]
+        below first second =
+            (Pretty.align . Pretty.vsep) [first, second]
+
+
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}
