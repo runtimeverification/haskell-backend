@@ -51,7 +51,6 @@ import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
@@ -59,6 +58,8 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.Predicated as Predicated
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
@@ -275,7 +276,7 @@ evalSimplifier logger (Simplifier simpl) =
 
 -- * Implementation
 
-{-| Wraps a function that evaluates Kore functions on StepPatterns.
+{-| Wraps a function that evaluates Kore functions on TermLikes.
 -}
 newtype StepPatternSimplifier level =
     StepPatternSimplifier
@@ -290,7 +291,7 @@ newtype StepPatternSimplifier level =
             , SortedVariable variable
             )
         => PredicateSubstitutionSimplifier level
-        -> StepPattern level variable
+        -> TermLike variable
         -> PredicateSubstitution level variable
         -> BranchT Simplifier (ExpandedPattern level variable)
         )
@@ -310,7 +311,7 @@ simplifyTerm
         )
     => StepPatternSimplifier Object
     -> PredicateSubstitutionSimplifier Object
-    -> StepPattern Object variable
+    -> TermLike variable
     -> Simplifier
         ( OrOfExpandedPattern Object variable
         , SimplificationProof Object
@@ -340,7 +341,7 @@ simplifyConditionalTerm
         )
     => StepPatternSimplifier Object
     -> PredicateSubstitutionSimplifier Object
-    -> StepPattern Object variable
+    -> TermLike variable
     -> PredicateSubstitution Object variable
     -> BranchT Simplifier (ExpandedPattern Object variable)
 simplifyConditionalTerm (StepPatternSimplifier simplify) = simplify
@@ -360,7 +361,7 @@ stepPatternSimplifier
             , SortedVariable variable
             )
         => PredicateSubstitutionSimplifier Object
-        -> StepPattern Object variable
+        -> TermLike variable
         -> Simplifier
             ( OrOfExpandedPattern Object variable
             , SimplificationProof Object
@@ -379,7 +380,7 @@ stepPatternSimplifier simplifier =
             , SortedVariable variable
             )
         => PredicateSubstitutionSimplifier Object
-        -> StepPattern Object variable
+        -> TermLike variable
         -> PredicateSubstitution Object variable
         -> BranchT Simplifier (ExpandedPattern Object variable)
     stepPatternSimplifierWorker

@@ -78,11 +78,11 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
+import           Kore.Step.TermLike
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -150,7 +150,7 @@ symbolVerifiers =
       )
     ]
 
-type Builtin variable = Seq (StepPattern Object variable)
+type Builtin variable = Seq (TermLike variable)
 
 {- | Abort function evaluation if the argument is not a List domain value.
 
@@ -162,7 +162,7 @@ type Builtin variable = Seq (StepPattern Object variable)
 expectBuiltinList
     :: Monad m
     => Text  -- ^ Context for error message
-    -> StepPattern Object variable  -- ^ Operand pattern
+    -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
 expectBuiltinList ctx =
     \case
@@ -205,7 +205,7 @@ evalGet =
         => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier Object
         -> Sort Object
-        -> [StepPattern Object variable]
+        -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
     evalGet0 _ _ _ = \arguments ->
         Builtin.getAttemptedAxiom
@@ -253,7 +253,7 @@ evalConcat =
         => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier Object
         -> Sort Object
-        -> [StepPattern Object variable]
+        -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
     evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
@@ -305,8 +305,8 @@ See also: 'sort'
  -}
 asPattern
     :: Ord (variable Object)
-    => Domain.InternalList (StepPattern Object variable)
-    -> StepPattern Object variable
+    => Domain.InternalList (TermLike variable)
+    -> TermLike variable
 asPattern builtin =
     foldr concat' unit (element <$> list)
   where
@@ -328,7 +328,7 @@ asInternal
     => SmtMetadataTools attrs
     -> Sort Object
     -> Builtin variable
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal tools builtinListSort builtinListChild =
     (mkDomainValue . Domain.BuiltinList)
         Domain.InternalList
@@ -413,7 +413,7 @@ unifyEquals
         , SortedVariable variable
         , MetaOrObject level
         , FreshVariable variable
-        , p ~ StepPattern level variable
+        , p ~ TermLike variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         , unifier ~ unifierM variable
@@ -448,8 +448,8 @@ unifyEquals
     discardProofs = (<$>) fst
 
     unifyEquals0
-        :: StepPattern level variable
-        -> StepPattern level variable
+        :: TermLike variable
+        -> TermLike variable
         -> MaybeT unifier (expanded, proof)
 
     unifyEquals0 dv1@(DV_ _ (Domain.BuiltinList builtin1)) =

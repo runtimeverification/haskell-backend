@@ -22,9 +22,9 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.TermLike
 
 import           Test.Kore
                  ( testId )
@@ -197,8 +197,8 @@ mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern
     :: Foldable f
-    => f (CommonStepPattern Object)
-    -> CommonStepPattern Object
+    => f (TermLike Variable)
+    -> TermLike Variable
 asPattern =
     Reflection.give testMetadataTools List.asPattern
     . builtinList
@@ -207,8 +207,8 @@ asPattern =
 -- | Specialize 'List.asInternal' to the builtin sort 'listSort'.
 asInternal
     :: Foldable f
-    => f (CommonStepPattern Object)
-    -> CommonStepPattern Object
+    => f (TermLike Variable)
+    -> TermLike Variable
 asInternal =
     List.asInternal testMetadataTools listSort
     . Seq.fromList
@@ -217,7 +217,7 @@ asInternal =
 -- | Specialize 'List.asExpandedPattern' to the builtin sort 'listSort'.
 asExpandedPattern
     :: Foldable f
-    => f (CommonStepPattern Object)
+    => f (TermLike Variable)
     -> CommonExpandedPattern Object
 asExpandedPattern =
     Reflection.give testMetadataTools List.asExpandedPattern listSort

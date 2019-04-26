@@ -22,7 +22,6 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
@@ -36,6 +35,7 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PSSimplifier
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -313,7 +313,7 @@ makeEvaluator
             , SortedVariable variable
             , ShowMetaOrObject variable
             )
-        => [(StepPattern Object variable, StepPattern Object variable)]
+        => [(TermLike variable, TermLike variable)]
         )
     -> BuiltinAndAxiomSimplifier Object
 makeEvaluator mapping =
@@ -326,8 +326,8 @@ simpleEvaluator
         , SortedVariable variable
         , ShowMetaOrObject variable
         )
-    => [(StepPattern Object variable, StepPattern Object variable)]
-    -> StepPattern Object variable
+    => [(TermLike variable, TermLike variable)]
+    -> TermLike variable
     -> Simplifier
         ( AttemptedAxiom Object variable
         , SimplificationProof Object

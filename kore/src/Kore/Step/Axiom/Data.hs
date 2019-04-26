@@ -44,8 +44,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import           Kore.Step.Pattern
-                 ( StepPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, merge )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -53,6 +51,8 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -72,7 +72,7 @@ the post-processing of the function application results.
 * BuiltinAndAxiomSimplifierMap is a map from pattern identifiers to the
 'BuiltinAndAxiomSimplifier's that handle those patterns.
 
-* 'StepPattern' is the pattern to be evaluated.
+* 'TermLike' is the pattern to be evaluated.
 
 Return value:
 
@@ -97,7 +97,7 @@ newtype BuiltinAndAxiomSimplifier level =
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
-        -> StepPattern level variable
+        -> TermLike variable
         -> Simplifier
             ( AttemptedAxiom level variable
             , SimplificationProof level
@@ -119,12 +119,15 @@ data AttemptedAxiomResults level variable =
         , remainders :: !(OrOfExpandedPattern level variable)
         -- ^ The part of the pattern that was not rewritten by the axiom.
         }
-  deriving (Eq, Generic, Show)
+    deriving Generic
 
-instance (NFData (variable level))
+deriving instance Eq (variable Object) => Eq (AttemptedAxiomResults level variable)
+deriving instance Show (variable Object) => Show (AttemptedAxiomResults level variable)
+
+instance (NFData (variable Object))
     => NFData (AttemptedAxiomResults level variable)
 
-instance (Ord level, Ord (variable level))
+instance Ord (variable Object)
     => Semigroup (AttemptedAxiomResults level variable)
   where
     (<>)
@@ -143,7 +146,7 @@ instance (Ord level, Ord (variable level))
                     MultiOr.merge firstRemainders secondRemainders
             }
 
-instance (Ord level, Ord (variable level))
+instance Ord (variable Object)
     => Monoid (AttemptedAxiomResults level variable)
   where
     mempty =
@@ -158,9 +161,12 @@ a case for axioms that can't be applied.
 data AttemptedAxiom level variable
     = NotApplicable
     | Applied !(AttemptedAxiomResults level variable)
-  deriving (Eq, Generic, Show)
+    deriving Generic
 
-instance (NFData (variable level))
+deriving instance Eq (variable Object) => Eq (AttemptedAxiom level variable)
+deriving instance Show (variable Object) => Show (AttemptedAxiom level variable)
+
+instance (NFData (variable Object))
     => NFData (AttemptedAxiom level variable)
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
@@ -194,10 +200,10 @@ notApplicableAxiomEvaluator
         (AttemptedAxiom level1 variable, SimplificationProof level2)
 notApplicableAxiomEvaluator = pure (NotApplicable, SimplificationProof)
 
--- |Yields a pure 'Simplifier' which produces a given 'StepPattern'
+-- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
     :: (MetaOrObject level, Ord (variable level))
-    => StepPattern level variable
+    => TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 purePatternAxiomEvaluator p =
@@ -232,7 +238,7 @@ applicationAxiomSimplifier
         -> CofreeF
             (Application level)
             (Valid (variable level) level)
-            (StepPattern level variable)
+            (TermLike variable)
         -> Simplifier
             ( AttemptedAxiom level variable
             , SimplificationProof level
@@ -258,7 +264,7 @@ applicationAxiomSimplifier applicationSimplifier =
             -> PredicateSubstitutionSimplifier level
             -> StepPatternSimplifier level
             -> BuiltinAndAxiomSimplifierMap level
-            -> StepPattern level variable
+            -> TermLike variable
             -> Simplifier
                 ( AttemptedAxiom level variable
                 , SimplificationProof level

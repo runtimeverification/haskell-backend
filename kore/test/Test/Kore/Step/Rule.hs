@@ -29,11 +29,11 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Parser.Parser
 import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern hiding
-                 ( freeVariables )
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
+import           Kore.Step.TermLike hiding
+                 ( freeVariables )
 import qualified Kore.Verified as Verified
 
 import           Test.Kore
@@ -243,7 +243,7 @@ sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
     (asSentence sentence)
   where
-    sentence :: SentenceSort Object (CommonStepPattern Object)
+    sentence :: SentenceSort Object (TermLike Variable)
     sentence =
         SentenceSort
             { sentenceSortName = testId "AInt"
@@ -255,7 +255,7 @@ sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
     (asSentence sentence)
   where
-    sentence :: SentenceSort Object (CommonStepPattern Object)
+    sentence :: SentenceSort Object (TermLike Variable)
     sentence =
         SentenceSort
             { sentenceSortName = testId "KItem"
@@ -269,23 +269,23 @@ sortParam name = SortVariable (testId name)
 sortParamSort :: Text -> Sort Object
 sortParamSort = SortVariableSort . sortParam
 
-symbolTCell, symbolKCell :: SentenceSymbol Object (CommonStepPattern Object)
+symbolTCell, symbolKCell :: SentenceSymbol Object (TermLike Variable)
 symbolTCell = mkSymbol_ (testId "T") [sortKCell, sortStateCell] sortTCell
 -- symbol T{}(KCell{}, StateCell{}) : TCell{} []
 applyTCell
-    :: CommonStepPattern Object  -- ^ K cell
-    -> CommonStepPattern Object  -- ^ State cell
-    -> CommonStepPattern Object
+    :: TermLike Variable  -- ^ K cell
+    -> TermLike Variable  -- ^ State cell
+    -> TermLike Variable
 applyTCell kCell stateCell =
     applySymbol_ symbolTCell [kCell, stateCell]
 
 symbolKCell = mkSymbol_ (testId "k") [sortK] sortKCell
 applyKCell
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
 applyKCell child = applySymbol_ symbolKCell [child]
 
-symbolKSeq, symbolInj :: SentenceSymbol Object (CommonStepPattern Object)
+symbolKSeq, symbolInj :: SentenceSymbol Object (TermLike Variable)
 symbolKSeq = mkSymbol_ (testId "kseq") [sortKItem, sortK] sortK
 
 symbolInj =
@@ -296,46 +296,46 @@ symbolInj =
         (sortParamSort "To")
 
 applyKSeq
-    :: CommonStepPattern Object  -- ^ head
-    -> CommonStepPattern Object  -- ^ tail
-    -> CommonStepPattern Object
+    :: TermLike Variable  -- ^ head
+    -> TermLike Variable  -- ^ tail
+    -> TermLike Variable
 applyKSeq kHead kTail =
     applySymbol_ symbolKSeq [kHead, kTail]
 
 applyInj
     :: Sort Object  -- ^ destination sort
-    -> CommonStepPattern Object  -- ^ argument
-    -> CommonStepPattern Object
+    -> TermLike Variable  -- ^ argument
+    -> TermLike Variable
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
     Valid { patternSort = sortFrom } = extract child
 
 symbolSentenceInj
-    :: Sentence Object (SortVariable Object) (CommonStepPattern Object)
+    :: Sentence Object (SortVariable Object) (TermLike Variable)
 symbolSentenceInj = asSentence symbolInj
 -- symbol inj{From,To}(From) : To []
 
-symbolLeqAExp :: SentenceSymbol Object (CommonStepPattern Object)
+symbolLeqAExp :: SentenceSymbol Object (TermLike Variable)
 symbolLeqAExp = mkSymbol_ (testId "leqAExp") [sortAExp, sortAExp] sortBExp
 
 applyLeqAExp
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 applyLeqAExp child1 child2 =
     applySymbol_ symbolLeqAExp [child1, child2]
 
-symbolLeqAInt :: SentenceSymbol Object (CommonStepPattern Object)
+symbolLeqAInt :: SentenceSymbol Object (TermLike Variable)
 symbolLeqAInt = mkSymbol_ (testId "leqAInt") [sortAInt, sortAInt] sortABool
 
 applyLeqAInt
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 applyLeqAInt child1 child2 = applySymbol_ symbolLeqAInt [child1, child2]
 
-varI1, varI2, varKRemainder, varStateCell :: CommonStepPattern Object
+varI1, varI2, varKRemainder, varStateCell :: TermLike Variable
 
 varI1 =
     mkVar Variable

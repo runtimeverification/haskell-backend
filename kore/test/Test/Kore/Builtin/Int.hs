@@ -2,7 +2,8 @@
 
 module Test.Kore.Builtin.Int where
 
-import           Hedgehog
+import           Hedgehog hiding
+                 ( Concrete )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
@@ -24,8 +25,8 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.TermLike
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -36,10 +37,10 @@ import           Test.SMT
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
-genIntegerPattern :: Gen (CommonStepPattern Object)
+genIntegerPattern :: Gen (TermLike Variable)
 genIntegerPattern = asInternal <$> genInteger
 
-genConcreteIntegerPattern :: Gen (ConcreteStepPattern Object)
+genConcreteIntegerPattern :: Gen (TermLike Concrete)
 genConcreteIntegerPattern = asInternal <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
@@ -334,15 +335,15 @@ test_emod =
     ]
 
 -- | Another name for asInternal.
-intLiteral :: Integer -> CommonStepPattern Object
+intLiteral :: Integer -> TermLike Variable
 intLiteral = asInternal
 
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
-asInternal :: Ord (variable Object) => Integer -> StepPattern Object variable
+asInternal :: Ord (variable Object) => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
 -- | Specialize 'Int.asConcretePattern' to the builtin sort 'intSort'.
-asConcretePattern :: Integer -> ConcreteStepPattern Object
+asConcretePattern :: Integer -> TermLike Concrete
 asConcretePattern = Int.asConcretePattern intSort
 
 -- | Specialize 'Int.asExpandedPattern' to the builtin sort 'intSort'.
@@ -356,7 +357,7 @@ asPartialExpandedPattern = Int.asPartialExpandedPattern intSort
 testInt
     :: String
     -> SymbolOrAlias Object
-    -> [CommonStepPattern Object]
+    -> [TermLike Variable]
     -> CommonExpandedPattern Object
     -> TestTree
 testInt name = testSymbolWithSolver evaluate name intSort

@@ -25,7 +25,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
-import           Kore.Step.Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -36,6 +35,7 @@ import qualified Kore.Step.Representation.PredicateSubstitution as Predicated
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution
@@ -885,24 +885,24 @@ mockMetaMetadataTools =
 matchDefinition
     :: forall level . ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
 matchDefinition = match
 
 matchSimplification
     :: forall level . ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
 matchSimplification = match
 
 unificationWithMatch
     :: forall level . ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
@@ -922,8 +922,8 @@ unificationWithMatch tools first second = do
 match
     :: forall level . ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
 match tools first second =
     matchAsEither >>= return . \case

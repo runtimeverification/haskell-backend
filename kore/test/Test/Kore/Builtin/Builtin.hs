@@ -41,7 +41,6 @@ import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Representation.MultiOr
@@ -53,6 +52,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Step as Step
+import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
@@ -71,9 +71,9 @@ import           Test.SMT
 mkPair
     :: Sort Object
     -> Sort Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 mkPair lSort rSort l r =
     mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
@@ -86,7 +86,7 @@ substitutionSimplifier tools =
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
     ::  ( HasCallStack
-        , p ~ CommonStepPattern Object
+        , p ~ TermLike Variable
         , expanded ~ CommonExpandedPattern Object
         )
     => (p -> SMT expanded)
@@ -199,7 +199,7 @@ stepSimplifier =
 
 evaluate
     :: MonadSMT m
-    => CommonStepPattern Object
+    => TermLike Variable
     -> m (CommonExpandedPattern Object)
 evaluate =
     (<$>) fst
@@ -212,7 +212,7 @@ evaluate =
 
 evaluateWith
     :: MVar Solver
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -> IO (CommonExpandedPattern Object)
 evaluateWith solver patt =
     runReaderT (SMT.getSMT $ evaluate patt) solver
@@ -300,7 +300,7 @@ runStepResultWith solver configuration axiom =
 
 -- | Test unparsing internalized patterns.
 hpropUnparse
-    :: Hedgehog.Gen (CommonStepPattern Object)
+    :: Hedgehog.Gen (TermLike Variable)
     -- ^ Generate patterns with internal representations
     -> Hedgehog.Property
 hpropUnparse gen = Hedgehog.property $ do

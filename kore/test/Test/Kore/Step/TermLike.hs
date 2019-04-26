@@ -1,4 +1,4 @@
-module Test.Kore.Step.Pattern where
+module Test.Kore.Step.TermLike where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -9,7 +9,7 @@ import qualified Data.Set as Set
 import Data.Sup
 import Kore.AST.Common
 import Kore.AST.Valid
-import Kore.Step.Pattern
+import Kore.Step.TermLike
 import Kore.Variables.Fresh
 
 import           Test.Kore.Comparators ()

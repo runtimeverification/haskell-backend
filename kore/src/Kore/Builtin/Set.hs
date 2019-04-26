@@ -91,7 +91,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools, sortAttributes )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -99,6 +98,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), SimplificationType,
                  StepPatternSimplifier )
+import           Kore.Step.TermLike
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -176,7 +176,7 @@ symbolVerifiers =
       )
     ]
 
-type Builtin = Set (ConcreteStepPattern Object)
+type Builtin = Set (TermLike Concrete)
 
 {- | Abort function evaluation if the argument is not a @Set@ domain value.
 
@@ -189,7 +189,7 @@ expectBuiltinSet
     :: Monad m
     => Text  -- ^ Context for error message
     -> SmtMetadataTools StepperAttributes
-    -> StepPattern Object variable  -- ^ Operand pattern
+    -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Builtin
 expectBuiltinSet ctx tools _set =
     do
@@ -380,7 +380,7 @@ asInternal
     => SmtMetadataTools attrs
     -> Sort Object
     -> Builtin
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal tools builtinSetSort builtinSetChild =
     (mkDomainValue . Domain.BuiltinSet)
         Domain.InternalSet
@@ -406,7 +406,7 @@ See also: 'sort'
 asPattern
     :: Ord (variable Object)
     => Domain.InternalSet
-    -> StepPattern Object variable
+    -> TermLike variable
 asPattern builtin =
     foldr concat' unit (element <$> Foldable.toList set)
   where
@@ -516,7 +516,7 @@ unifyEquals
         , Unparse (variable level)
         , MetaOrObject level
         , FreshVariable variable
-        , p ~ StepPattern level variable
+        , p ~ TermLike variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         , unifier ~ unifierM variable
@@ -557,8 +557,8 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: StepPattern level variable
-        -> StepPattern level variable
+        :: TermLike variable
+        -> TermLike variable
         -> MaybeT unifier (expanded, proof)
     unifyEquals0
         (DV_ _ (Domain.BuiltinSet builtin1))
@@ -614,7 +614,7 @@ unifyEquals
             :: Domain.InternalSet          -- ^ concrete set
             -> SymbolOrAlias Object        -- ^ 'element' symbol
             -> p                           -- ^ key
-            -> StepPattern Object variable -- ^ framing variable
+            -> TermLike variable -- ^ framing variable
             -> unifier (expanded, proof)
         unifyEqualsSelect builtin1' _ key2 set2
           | set1 == Set.empty = bottomWithExplanation
@@ -668,10 +668,10 @@ unifyEquals
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
-        :: (level ~ Object, k ~ ConcreteStepPattern Object)
+        :: (level ~ Object, k ~ TermLike Concrete)
         => Domain.InternalSet  -- ^ concrete set
         -> Domain.InternalSet -- ^ framed concrete set
-        -> StepPattern level variable  -- ^ framing variable
+        -> TermLike variable  -- ^ framing variable
         -> unifier (expanded, proof)
     unifyEqualsFramed builtin1 builtin2 var
       | Set.isSubsetOf set2 set1 =
@@ -735,8 +735,8 @@ errorIfIncompletelyUnified
         , Unparse (variable Object)
         , HasCallStack
         )
-    => StepPattern Object variable
-    -> StepPattern Object variable
+    => TermLike variable
+    -> TermLike variable
     -> ExpandedPattern Object variable
     -> m ()
 errorIfIncompletelyUnified expected patt unifiedExpandedPattern =

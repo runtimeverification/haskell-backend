@@ -21,9 +21,6 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( CommonStepPattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -32,21 +29,23 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 checkImplicationIsTop
-    :: forall level . (MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> CommonExpandedPattern level
-    -> CommonStepPattern level
+    -> CommonExpandedPattern Object
+    -> TermLike Variable
     -> Simplifier Bool
 checkImplicationIsTop
     tools
@@ -59,8 +58,8 @@ checkImplicationIsTop
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
                 subst = mkVar <$> rename
-                implicationLHS' = Pattern.substitute subst implicationLHS
-                implicationRHS' = Pattern.substitute subst implicationRHS
+                implicationLHS' = TermLike.substitute subst implicationLHS
+                implicationRHS' = TermLike.substitute subst implicationRHS
                 resultTerm = mkCeil_
                                 (mkAnd
                                     (mkAnd lhsMLPatt implicationLHS')
@@ -85,8 +84,8 @@ checkImplicationIsTop
         lhsMLPatt = ExpandedPattern.toMLPattern lhs
 
 stripForallQuantifiers
-    :: CommonStepPattern level
-    -> (Set.Set (Variable level), CommonStepPattern level)
+    :: TermLike Variable
+    -> (Set.Set (Variable Object), TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

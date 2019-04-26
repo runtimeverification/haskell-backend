@@ -72,10 +72,10 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.TermLike
 
 {- | Builtin name of the @String@ sort.
  -}
@@ -172,7 +172,7 @@ parse = Text.pack <$> Parsec.many Parsec.anySingle
 expectBuiltinString
     :: Monad m
     => Text  -- ^ Context for error message
-    -> StepPattern Object variable  -- ^ Operand pattern
+    -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Text
 expectBuiltinString ctx =
     \case
@@ -202,7 +202,7 @@ asPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
-    -> StepPattern Object variable
+    -> TermLike variable
 asPattern resultSort result =
     fromConcreteStepPattern (asConcretePattern resultSort result)
 
@@ -217,7 +217,7 @@ asPattern resultSort result =
 asConcretePattern
     :: Sort Object  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
-    -> ConcreteStepPattern Object
+    -> TermLike Concrete
 asConcretePattern domainValueSort builtinStringChild =
     (mkDomainValue . Domain.BuiltinExternal)
         Domain.External

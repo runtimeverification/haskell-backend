@@ -41,8 +41,8 @@ mergePredicatesAndSubstitutionsExcept
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> [Predicate level variable]
-    -> [Substitution level variable]
+    -> [Predicate variable]
+    -> [Substitution variable]
     -> unifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable

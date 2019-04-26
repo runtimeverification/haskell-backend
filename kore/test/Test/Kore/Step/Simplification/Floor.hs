@@ -12,7 +12,6 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
                  makeTruePredicate )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -23,6 +22,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore
@@ -138,9 +138,9 @@ test_floorSimplification =
         , symbolOrAliasParams      = []
         }
     x = Variable (testId "x") mempty testSort
-    a :: CommonStepPattern Object
+    a :: TermLike Variable
     a = mkApp testSort aSymbol []
-    b :: CommonStepPattern Object
+    b :: TermLike Variable
     b = mkApp testSort bSymbol []
     fOfA = mkApp testSort fSymbol [a]
     fOfB = mkApp testSort fSymbol [b]

@@ -29,8 +29,6 @@ import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-                 ( CommonStepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (Predicated) )
 import           Kore.Step.Representation.ExpandedPattern as Predicated
@@ -48,6 +46,8 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.TermLike
+                 ( TermLike )
 import qualified SMT
 
 import           Test.Kore
@@ -371,24 +371,24 @@ test_onePathVerification =
 
 simpleAxiom
     :: MetaOrObject level
-    => CommonStepPattern level
-    -> CommonStepPattern level
+    => TermLike Variable
+    -> TermLike Variable
     -> OnePath.Axiom level
 simpleAxiom left right =
     OnePath.Axiom $ simpleRewrite left right
 
 simpleClaim
     :: MetaOrObject level
-    => CommonStepPattern level
-    -> CommonStepPattern level
+    => TermLike Variable
+    -> TermLike Variable
     -> OnePathRule level Variable
 simpleClaim left right =
     OnePathRule . getRewriteRule $ simpleRewrite left right
 
 simpleTrustedClaim
     :: MetaOrObject level
-    => CommonStepPattern level
-    -> CommonStepPattern level
+    => TermLike Variable
+    -> TermLike Variable
     -> OnePathRule level Variable
 simpleTrustedClaim left right =
     OnePathRule
@@ -403,8 +403,8 @@ simpleTrustedClaim left right =
 
 simpleRewrite
     :: MetaOrObject level
-    => CommonStepPattern level
-    -> CommonStepPattern level
+    => TermLike Variable
+    -> TermLike Variable
     -> RewriteRule level Variable
 simpleRewrite left right =
     RewriteRule RulePattern

@@ -46,8 +46,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
-import           Kore.Step.Pattern
-                 ( StepPattern, asConcreteStepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -65,6 +63,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
+import           Kore.Step.TermLike
+                 ( TermLike, asConcreteStepPattern )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
@@ -126,7 +126,7 @@ totalDefinitionEvaluation rules =
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
-        -> StepPattern level variable
+        -> TermLike variable
         -> Simplifier
             ( AttemptedAxiom level variable
             , SimplificationProof level
@@ -203,7 +203,7 @@ evaluateBuiltin
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 evaluateBuiltin
@@ -262,7 +262,7 @@ applyFirstSimplifierThatWorks
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
@@ -354,7 +354,7 @@ evaluateWithDefinitionAxioms
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 evaluateWithDefinitionAxioms

@@ -23,7 +23,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
@@ -39,6 +38,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, StepPatternSimplifier )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
+import           Kore.Step.TermLike
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Unify
@@ -72,9 +72,9 @@ unificationProcedure
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
+    -> TermLike variable
     -- ^left-hand-side of unification
-    -> StepPattern level variable
+    -> TermLike variable
     -> unifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable

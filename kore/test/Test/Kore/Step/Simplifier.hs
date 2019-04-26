@@ -7,9 +7,6 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
-import           Kore.Step.Pattern
-import qualified Kore.Step.Pattern as Pattern
-                 ( mapVariables )
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -21,21 +18,24 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier, stepPatternSimplifier )
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
 mockSimplifier
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( MetaOrObject Object
+        , Ord (variable Object)
         , SortedVariable variable
         )
-    =>  [   ( StepPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  [   ( TermLike variable
+            , ([ExpandedPattern Object variable], SimplificationProof Object)
             )
         ]
-    -> StepPatternSimplifier level
+    -> StepPatternSimplifier Object
 mockSimplifier values =
     stepPatternSimplifier
         ( mockSimplifierHelper
@@ -49,15 +49,15 @@ mockSimplifier values =
         )
 
 mockPredicateSimplifier
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( MetaOrObject Object
+        , Ord (variable Object)
         , SortedVariable variable
         )
-    =>  [   ( StepPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  [   ( TermLike variable
+            , ([ExpandedPattern Object variable], SimplificationProof Object)
             )
         ]
-    -> StepPatternSimplifier level
+    -> StepPatternSimplifier Object
 mockPredicateSimplifier values =
     stepPatternSimplifier
         (mockSimplifierHelper
@@ -72,25 +72,25 @@ mockPredicateSimplifier values =
 
 mockSimplifierHelper
     ::  ( FreshVariable variable0
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable0 level)
+        , MetaOrObject Object
+        , Ord (variable Object)
+        , Ord (variable0 Object)
         , OrdMetaOrObject variable0
-        , Show (variable0 level)
+        , Show (variable0 Object)
         , ShowMetaOrObject variable0
-        , Unparse (variable0 level)
+        , Unparse (variable0 Object)
         , SortedVariable variable
         , SortedVariable variable0
         )
-    =>  (StepPattern level variable -> ExpandedPattern level variable)
-    ->  [   ( StepPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  (TermLike variable -> ExpandedPattern Object variable)
+    ->  [   ( TermLike variable
+            , ([ExpandedPattern Object variable], SimplificationProof Object)
             )
         ]
-    -> PredicateSubstitutionSimplifier level
-    -> StepPattern level variable0
+    -> PredicateSubstitutionSimplifier Object
+    -> TermLike variable0
     -> Simplifier
-        (OrOfExpandedPattern level variable0, SimplificationProof level)
+        (OrOfExpandedPattern Object variable0, SimplificationProof Object)
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
         ( MultiOr.make
@@ -118,20 +118,20 @@ mockSimplifierHelper
                 unevaluatedPatt
 
 convertPatternVariables
-    ::  ( Ord (variable0 level)
+    ::  ( Ord (variable0 Object)
         , SortedVariable variable
         , SortedVariable variable0
         )
-    => StepPattern level variable
-    -> StepPattern level variable0
-convertPatternVariables = Pattern.mapVariables (fromVariable . toVariable)
+    => TermLike variable
+    -> TermLike variable0
+convertPatternVariables = TermLike.mapVariables (fromVariable . toVariable)
 
 convertExpandedVariables
-    ::  ( Ord (variable0 level)
+    ::  ( Ord (variable0 Object)
         , SortedVariable variable
         , SortedVariable variable0
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable0
+    => ExpandedPattern Object variable
+    -> ExpandedPattern Object variable0
 convertExpandedVariables =
     ExpandedPattern.mapVariables (fromVariable . toVariable)

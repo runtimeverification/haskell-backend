@@ -57,7 +57,7 @@ decidePredicate
         , SortedVariable variable
         , MonadSMT m
         )
-    => Predicate level variable
+    => Predicate variable
     -> m (Maybe Bool)
 decidePredicate korePredicate =
     case isMetaOrObject (Proxy :: Proxy level) of
@@ -85,7 +85,7 @@ goTranslatePredicate
         , Given (SmtMetadataTools StepperAttributes)
         , Unparse (variable Object)
         )
-    => Predicate Object variable
+    => Predicate variable
     -> MaybeT SMT SExpr
 goTranslatePredicate predicate = do
     let

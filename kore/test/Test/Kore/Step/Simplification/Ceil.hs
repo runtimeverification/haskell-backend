@@ -33,7 +33,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -50,6 +49,7 @@ import           Kore.Step.Simplification.Data
                  StepPatternSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -445,9 +445,9 @@ test_ceilSimplification =
         assertEqualWithExplanation "ceil(set)" expected actual
     ]
   where
-    fOfA :: StepPattern Object Variable
+    fOfA :: TermLike Variable
     fOfA = Mock.f Mock.a
-    fOfB :: StepPattern Object Variable
+    fOfB :: TermLike Variable
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
@@ -491,7 +491,7 @@ mockEvaluator
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ _ _ =

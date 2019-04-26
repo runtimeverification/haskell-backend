@@ -17,9 +17,9 @@ import           Kore.AST.Valid hiding
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (..), allVariables, mapVariables, toMLPattern )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 
@@ -168,29 +168,29 @@ instance EqualWithExplanation (W level)
 showVar :: V level -> W level
 showVar (V i) = W (show i)
 
-var :: Integer -> StepPattern Meta V
+var :: Integer -> TermLike V
 var i = mkVar (V i)
 
-war :: String -> StepPattern Meta W
+war :: String -> TermLike W
 war s = mkVar (W s)
 
 makeEq
     :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
-    => StepPattern Meta var
-    -> StepPattern Meta var
-    -> StepPattern Meta var
+    => TermLike var
+    -> TermLike var
+    -> TermLike var
 makeEq = mkEquals sortVariable
 
 makeAnd
     :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
-    => StepPattern Meta var
-    -> StepPattern Meta var
-    -> StepPattern Meta var
+    => TermLike var
+    -> TermLike var
+    -> TermLike var
 makeAnd p1 p2 = mkAnd p1 p2
 
 makeEquals
     :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
-    => StepPattern Meta var -> StepPattern Meta var -> Predicate Meta var
+    => TermLike var -> TermLike var -> Predicate var
 makeEquals p1 p2 = makeEqualsPredicate p1 p2
 
 sortVariable :: Sort level

@@ -389,7 +389,7 @@ removalPredicate
     -- ^ Destination
     -> ExpandedPattern Object variable
     -- ^ Current configuration
-    -> Predicate Object variable
+    -> Predicate variable
 removalPredicate destination config =
     let
         -- The variables of the destination that are missing from the

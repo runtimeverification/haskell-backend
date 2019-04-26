@@ -65,10 +65,10 @@ equalsXA = fromPredicate equalsXA_
 equalsXB :: ExpandedPattern Object Variable
 equalsXB = fromPredicate equalsXB_
 
-equalsXA_ :: Predicate Object Variable
+equalsXA_ :: Predicate Variable
 equalsXA_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
 
-equalsXB_ :: Predicate Object Variable
+equalsXB_ :: Predicate Variable
 equalsXB_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
 
 notEqualsXA :: ExpandedPattern Object Variable
@@ -84,13 +84,13 @@ neitherXAB =
 substXA :: ExpandedPattern Object Variable
 substXA = fromSubstitution $ Substitution.unsafeWrap [(Mock.x, Mock.a)]
 
-fromPredicate :: Predicate Object Variable -> ExpandedPattern Object Variable
+fromPredicate :: Predicate Variable -> ExpandedPattern Object Variable
 fromPredicate =
     ExpandedPattern.fromPredicateSubstitution
     . PredicateSubstitution.fromPredicate
 
 fromSubstitution
-    :: Substitution Object Variable
+    :: Substitution Variable
     -> ExpandedPattern Object Variable
 fromSubstitution =
     ExpandedPattern.fromPredicateSubstitution

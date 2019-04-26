@@ -68,7 +68,6 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
-import           Kore.Step.Pattern
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern
@@ -97,6 +96,7 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 -- | Configuration used in symbolic execution.
@@ -139,9 +139,9 @@ exec
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -- ^ The input pattern
-    -> Simplifier (CommonStepPattern Object)
+    -> Simplifier (TermLike Variable)
 exec indexedModule strategy purePattern = do
     execution <- execute indexedModule strategy purePattern
     let
@@ -157,7 +157,7 @@ execGetExitCode
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -- ^ The final pattern (top cell) to extract the exit code
     -> Simplifier ExitCode
 execGetExitCode indexedModule strategy' purePattern =
@@ -180,13 +180,13 @@ search
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -- ^ The input pattern
     -> CommonExpandedPattern Object
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
-    -> Simplifier (CommonStepPattern Object)
+    -> Simplifier (TermLike Variable)
 search verifiedModule strategy purePattern searchPattern searchConfig = do
     execution <- execute verifiedModule strategy purePattern
     let
@@ -222,7 +222,7 @@ prove
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> Simplifier (Either (CommonStepPattern Object) ())
+    -> Simplifier (Either (TermLike Variable) ())
 prove limit definitionModule specModule = do
     let tools = MetadataTools.build definitionModule
     Initialized
@@ -351,7 +351,7 @@ execute
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -- ^ The input pattern
     -> Simplifier Execution
 execute verifiedModule strategy inputPattern
@@ -504,10 +504,10 @@ simplifyRulePattern tools rulePattern = do
             -- later.
             return rulePattern
 
--- | Simplify a 'StepPattern' using only matching logic rules.
+-- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern
     :: SmtMetadataTools StepperAttributes
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -> Simplifier
         (OrOfExpandedPattern Object Variable, SimplificationProof Object)
 simplifyPattern tools =

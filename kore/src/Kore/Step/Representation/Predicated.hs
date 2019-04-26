@@ -52,20 +52,32 @@ There is intentionally no 'Monad' instance; such an instance would have
 quadratic complexity.
 
  -}
-data Predicated level variable child = Predicated
-    { term :: child
-    , predicate :: !(Predicate level variable)
-    , substitution :: !(Substitution level variable)
-    }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+data Predicated level variable child =
+    Predicated
+        { term :: child
+        , predicate :: !(Predicate variable)
+        , substitution :: !(Substitution variable)
+        }
+    deriving (Foldable, Functor, Generic, Traversable)
+
+deriving instance
+    (Eq child, Eq (variable Object)) =>
+    Eq (Predicated level variable child)
+
+deriving instance
+    (Ord child, Ord (variable Object)) =>
+    Ord (Predicated level variable child)
+
+deriving instance
+    (Show child, Show (variable Object)) =>
+    Show (Predicated level variable child)
 
 instance
-    (Hashable child
-    , Hashable (variable level)
-    ) => Hashable (Predicated level variable child)
+    (Hashable child, Hashable (variable Object)) =>
+    Hashable (Predicated level variable child)
 
 instance
-    (NFData child, NFData (variable level)) =>
+    (NFData child, NFData (variable Object)) =>
     NFData (Predicated level variable child)
 
 instance
@@ -164,16 +176,16 @@ instance
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}
-withoutTerm :: Predicated level variable term -> Predicated level variable ()
+withoutTerm :: Predicated Object variable term -> Predicated Object variable ()
 withoutTerm predicated = predicated { term = () }
 
 {- | Attach the condition to the given 'term'.
  -}
 withCondition
     :: term
-    -> Predicated level variable ()
+    -> Predicated Object variable ()
     -- ^ Condition
-    -> Predicated level variable term
+    -> Predicated Object variable term
 withCondition term predicated = predicated { term }
 
 {- | Combine the conditions of both arguments, taking the 'term' of the first.
@@ -195,9 +207,9 @@ The result has an empty 'Substitution'.
 
  -}
 fromPredicate
-    :: Ord (variable level)
-    => Predicate level variable
-    -> Predicated level variable ()
+    :: Ord (variable Object)
+    => Predicate variable
+    -> Predicated Object variable ()
 fromPredicate predicate =
     Predicated { term = (), predicate, substitution = mempty }
 
@@ -208,7 +220,7 @@ The result has a true 'Predicate'.
  -}
 fromSubstitution
     :: Ord (variable Object)
-    => Substitution Object variable
+    => Substitution variable
     -> Predicated Object variable ()
 fromSubstitution substitution =
     Predicated
@@ -226,7 +238,7 @@ andPredicate
         , SortedVariable variable
         )
     => Predicated Object variable term
-    -> Predicate Object variable
+    -> Predicate variable
     -> Predicated Object variable term
 andPredicate config predicate = config `andCondition` fromPredicate predicate
 
@@ -235,16 +247,16 @@ andPredicate config predicate = config `andCondition` fromPredicate predicate
 See also: 'Predicate.freeVariables'.
 -}
 freeVariables
-    :: ( MetaOrObject level
-       , Ord (variable level)
-       , Show (variable level)
-       , Unparse (variable level)
+    :: ( MetaOrObject Object
+       , Ord (variable Object)
+       , Show (variable Object)
+       , Unparse (variable Object)
        , SortedVariable variable
        )
-    => (term -> Set (variable level))
+    => (term -> Set (variable Object))
     -- ^ Extract the free variables of @term@.
-    -> Predicated level variable term
-    -> Set (variable level)
+    -> Predicated Object variable term
+    -> Set (variable Object)
 freeVariables getFreeVariables Predicated { term, predicate, substitution } =
     getFreeVariables term
     <> Predicate.freeVariables predicate
@@ -255,7 +267,7 @@ freeVariables getFreeVariables Predicated { term, predicate, substitution } =
 @toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
 a 'PredicateSubstition' into only a 'Predicate'; i.e. when @term ~ ()@,
 
-> Predicated level variable term ~ PredicateSubstitution level variable
+> Predicated Object variable term ~ PredicateSubstitution Object variable
 
 @toPredicate@ is also used to extract the 'Predicate' and 'Substitution' while
 discarding the 'term'.
@@ -264,14 +276,14 @@ See also: 'substitutionToPredicate'.
 
 -}
 toPredicate
-    :: ( MetaOrObject level
+    :: ( MetaOrObject Object
        , SortedVariable variable
-       , Ord (variable level)
-       , Show (variable level)
-       , Unparse (variable level)
+       , Ord (variable Object)
+       , Show (variable Object)
+       , Unparse (variable Object)
        )
-    => Predicated level variable term
-    -> Predicate level variable
+    => Predicated Object variable term
+    -> Predicate variable
 toPredicate Predicated { predicate, substitution } =
     Predicate.makeAndPredicate
         predicate
@@ -281,11 +293,11 @@ toPredicate Predicated { predicate, substitution } =
 
 -}
 mapVariables
-    :: Ord (variableTo level)
-    => ((variableFrom level -> variableTo level) -> termFrom -> termTo)
-    -> (variableFrom level -> variableTo level)
-    -> Predicated level variableFrom termFrom
-    -> Predicated level variableTo   termTo
+    :: Ord (variableTo Object)
+    => ((variableFrom Object -> variableTo Object) -> termFrom -> termTo)
+    -> (variableFrom Object -> variableTo Object)
+    -> Predicated Object variableFrom termFrom
+    -> Predicated Object variableTo   termTo
 mapVariables
     mapTermVariables
     mapVariable

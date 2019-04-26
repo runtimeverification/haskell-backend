@@ -14,8 +14,8 @@ import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.TermLike
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -54,7 +54,7 @@ test_implies = testBinary impliesBoolSymbol implies
     implies u v = not u || v
 
 -- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
-asInternal :: Bool -> CommonStepPattern Object
+asInternal :: Bool -> TermLike Variable
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asExpandedPattern' to the builtin sort 'boolSort'.
@@ -117,7 +117,7 @@ test_simplification =
         _False = asInternal False
 
         becomes :: HasCallStack
-                => CommonStepPattern Object
+                => TermLike Variable
                 -> CommonExpandedPattern Object
                 -> TestTree
         becomes makerInput =

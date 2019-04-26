@@ -43,7 +43,7 @@ simplifyPartial
         )
     => PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
-    -> Predicate level variable
+    -> Predicate variable
     -> BranchT Simplifier (PredicateSubstitution level variable)
 simplifyPartial
     substitutionSimplifier

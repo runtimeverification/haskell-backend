@@ -36,7 +36,7 @@ import           Numeric.Natural
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
+                 ( MetaOrObject, Object )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -92,18 +92,18 @@ rewriteStep a =
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: (HasCallStack, MetaOrObject level)
+    :: (HasCallStack, MetaOrObject Object)
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSubstitutionSimplifier Object
+    -> StepPatternSimplifier Object
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (RewriteRule level Variable)
-    -> (CommonExpandedPattern level, StepProof level Variable)
+    -> Prim (RewriteRule Object Variable)
+    -> (CommonExpandedPattern Object, StepProof Object Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule level Variable) Simplifier
-        (CommonExpandedPattern level, StepProof level Variable)
+    -> TransitionT (RewriteRule Object Variable) Simplifier
+        (CommonExpandedPattern Object, StepProof Object Variable)
 transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
@@ -190,8 +190,8 @@ anyRewrite rewrites =
 heatingCooling
     :: (forall rewrite. [rewrite] -> Strategy (Prim rewrite))
     -- ^ 'allRewrites' or 'anyRewrite'
-    -> [RewriteRule level Variable]
-    -> Strategy (Prim (RewriteRule level Variable))
+    -> [RewriteRule Object Variable]
+    -> Strategy (Prim (RewriteRule Object Variable))
 heatingCooling rewriteStrategy rewrites =
     Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where

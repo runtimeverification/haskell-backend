@@ -95,10 +95,12 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -231,7 +233,7 @@ by a 'BuiltinDomainMap', it is a bug.
 expectBuiltinInt
     :: Monad m
     => Text  -- ^ Context for error message
-    -> StepPattern Object variable  -- ^ Operand pattern
+    -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Integer
 expectBuiltinInt ctx =
     \case
@@ -264,9 +266,9 @@ asInternal
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal builtinIntSort builtinIntValue =
-    (fromConcreteStepPattern . mkDomainValue . Domain.BuiltinInt)
+    (TermLike.fromConcreteStepPattern . mkDomainValue . Domain.BuiltinInt)
         Domain.InternalInt
             { builtinIntSort
             , builtinIntValue
@@ -283,7 +285,7 @@ asInternal builtinIntSort builtinIntValue =
 asPattern
     :: Ord (variable Object)
     => Domain.InternalInt  -- ^ builtin value to render
-    -> StepPattern Object variable
+    -> TermLike variable
 asPattern builtin =
     (mkDomainValue . Domain.BuiltinExternal)
         Domain.External
@@ -305,7 +307,7 @@ asPattern builtin =
 asConcretePattern
     :: Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> ConcreteStepPattern Object
+    -> TermLike Concrete
 asConcretePattern domainValueSort builtinIntChild =
     (mkDomainValue . Domain.BuiltinExternal)
         Domain.External

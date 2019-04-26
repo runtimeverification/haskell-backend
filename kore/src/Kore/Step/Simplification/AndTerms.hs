@@ -53,7 +53,6 @@ import           Kore.Predicate.Predicate
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
 import           Kore.Step.RecursiveAttributes
@@ -77,6 +76,7 @@ import           Kore.Step.Substitution
                  ( PredicateSubstitutionMerger (PredicateSubstitutionMerger),
                  createLiftedPredicatesAndSubstitutionsMerger,
                  createPredicatesAndSubstitutionsMergerExcept )
+import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -92,8 +92,8 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
 data SimplificationTarget = AndT | EqualsT | BothT
 
 type TermSimplifier level variable m =
-    (  StepPattern level variable
-    -> StepPattern level variable
+    (  TermLike variable
+    -> TermLike variable
     -> m (ExpandedPattern level variable, SimplificationProof level)
     )
 
@@ -122,8 +122,8 @@ termEquals
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT
         Simplifier
         (OrOfPredicateSubstitution level variable, SimplificationProof level)
@@ -161,8 +161,8 @@ termEqualsAnd
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT
         Simplifier
         (ExpandedPattern level variable, SimplificationProof level)
@@ -200,8 +200,8 @@ termEqualsAnd
     termEqualsAndWorker
         :: MonadUnify unifierM
         => unifier ~ unifierM variable
-        => StepPattern level variable
-        -> StepPattern level variable
+        => TermLike variable
+        -> TermLike variable
         -> unifier (ExpandedPattern level variable, SimplificationProof level)
     termEqualsAndWorker first second = Monad.Unify.liftSimplifier $ do
         eitherMaybeTermEqualsAndChild <- Monad.Unify.runUnifier $ runMaybeT $
@@ -254,8 +254,8 @@ maybeTermEquals
     -> PredicateSubstitutionMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm "and".
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier (ExpandedPattern level variable, SimplificationProof level)
 maybeTermEquals = maybeTransformTerm equalsFunctions
 
@@ -290,15 +290,15 @@ termUnification
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> unifier (ExpandedPattern level variable, SimplificationProof level)
 termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
     termUnificationWorker
   where
     termUnificationWorker
-        :: StepPattern level variable
-        -> StepPattern level variable
+        :: TermLike variable
+        -> TermLike variable
         -> unifier (ExpandedPattern level variable, SimplificationProof level)
     termUnificationWorker pat1 pat2 = do
         let
@@ -350,8 +350,8 @@ termAnd
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
     eitherResult <- Error.runExceptT $ Monad.Unify.getUnifier $
@@ -364,8 +364,8 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
         Right result -> return result
   where
     termAndWorker
-        :: StepPattern level variable
-        -> StepPattern level variable
+        :: TermLike variable
+        -> TermLike variable
         -> Unifier variable
             (ExpandedPattern level variable, SimplificationProof level)
     termAndWorker first second = do
@@ -411,8 +411,8 @@ maybeTermAnd
     -> PredicateSubstitutionMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm "and".
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier (ExpandedPattern level variable, SimplificationProof level)
 maybeTermAnd = maybeTransformTerm andFunctions
 
@@ -575,8 +575,8 @@ andEqualsFunctions =
         ::  (  SmtMetadataTools StepperAttributes
             -> PredicateSubstitutionMerger level variable unifier
             -> TermSimplifier level variable unifier
-            -> StepPattern level variable
-            -> StepPattern level variable
+            -> TermLike variable
+            -> TermLike variable
             -> MaybeT unifier
                 (ExpandedPattern level variable , SimplificationProof level)
             )
@@ -642,8 +642,8 @@ type TermTransformation level variable unifier =
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitutionMerger level variable unifier
     -> TermSimplifier level variable unifier
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable , SimplificationProof level)
 type TermTransformationOld level variable unifier =
@@ -653,8 +653,8 @@ type TermTransformationOld level variable unifier =
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateSubstitutionMerger level variable unifier
     -> TermSimplifier level variable unifier
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 
@@ -677,8 +677,8 @@ maybeTransformTerm
     -> PredicateSubstitutionMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm pairs.
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 maybeTransformTerm
@@ -710,14 +710,14 @@ maybeTransformTerm
         )
 
 addToolsArg
-    ::  (  StepPattern level variable
-        -> StepPattern level variable
-        -> Maybe (StepPattern level variable, SimplificationProof level)
+    ::  (  TermLike variable
+        -> TermLike variable
+        -> Maybe (TermLike variable, SimplificationProof level)
         )
     ->  (  SmtMetadataTools StepperAttributes
-        -> StepPattern level variable
-        -> StepPattern level variable
-        -> Maybe (StepPattern level variable, SimplificationProof level)
+        -> TermLike variable
+        -> TermLike variable
+        -> Maybe (TermLike variable, SimplificationProof level)
         )
 addToolsArg = pure
 
@@ -728,13 +728,13 @@ toExpanded
     , Ord (variable Object)
     )
     =>  (  SmtMetadataTools StepperAttributes
-        -> StepPattern Object variable
-        -> StepPattern Object variable
-        -> Maybe (StepPattern Object variable, SimplificationProof Object)
+        -> TermLike variable
+        -> TermLike variable
+        -> Maybe (TermLike variable, SimplificationProof Object)
         )
     ->  (  SmtMetadataTools StepperAttributes
-        -> StepPattern Object variable
-        -> StepPattern Object variable
+        -> TermLike variable
+        -> TermLike variable
         -> Maybe (ExpandedPattern Object variable, SimplificationProof Object)
         )
 toExpanded transformer tools first second =
@@ -754,8 +754,8 @@ toExpanded transformer tools first second =
 transformerLiftOld
     :: Monad unifier
     =>  (  SmtMetadataTools StepperAttributes
-        -> StepPattern level variable
-        -> StepPattern level variable
+        -> TermLike variable
+        -> TermLike variable
         -> Maybe (ExpandedPattern level variable, SimplificationProof level)
         )
     -> TermTransformationOld level variable unifier
@@ -780,9 +780,9 @@ liftExpandedPattern = MaybeT . return
 
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
-    :: StepPattern level variable
-    -> StepPattern level variable
-    -> Maybe (StepPattern level variable, SimplificationProof level)
+    :: TermLike variable
+    -> TermLike variable
+    -> Maybe (TermLike variable, SimplificationProof level)
 boolAnd first second =
     case first of
         Bottom_ _ -> return (first, SimplificationProof)
@@ -798,9 +798,9 @@ equalAndEquals
         , Eq (variable Object)
         , MetaOrObject level
         )
-    => StepPattern level variable
-    -> StepPattern level variable
-    -> Maybe (StepPattern level variable, SimplificationProof level)
+    => TermLike variable
+    -> TermLike variable
+    -> Maybe (TermLike variable, SimplificationProof level)
 equalAndEquals first second
   | first == second =
     return (first, SimplificationProof)
@@ -825,8 +825,8 @@ bottomTermEquals
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 bottomTermEquals
@@ -893,8 +893,8 @@ termBottomEquals
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 termBottomEquals
@@ -928,8 +928,8 @@ variableFunctionAndEquals
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitutionMerger level variable unifier
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 variableFunctionAndEquals
@@ -1042,8 +1042,8 @@ functionVariableAndEquals
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> PredicateSubstitutionMerger level variable unifier
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 functionVariableAndEquals
@@ -1090,8 +1090,8 @@ equalInjectiveHeadsAndEquals
     -> PredicateSubstitutionMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm "and".
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 equalInjectiveHeadsAndEquals
@@ -1154,8 +1154,8 @@ sortInjectionAndEqualsAssumesDifferentHeads
         )
     => SmtMetadataTools StepperAttributes
     -> TermSimplifier level variable unifier
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (ExpandedPattern level variable, SimplificationProof level)
 sortInjectionAndEqualsAssumesDifferentHeads
@@ -1207,8 +1207,8 @@ data SortInjectionMatch level variable =
     SortInjectionMatch
         { injectionHead :: !(SymbolOrAlias level)
         , sort :: !(Sort level)
-        , firstChild :: !(StepPattern level variable)
-        , secondChild :: !(StepPattern level variable)
+        , firstChild :: !(TermLike variable)
+        , secondChild :: !(TermLike variable)
         }
 
 data SortInjectionSimplification level variable
@@ -1222,8 +1222,8 @@ simplifySortInjections
         , MetaOrObject level
         )
     => SmtMetadataTools StepperAttributes
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Maybe (SortInjectionSimplification level variable)
 simplifySortInjections
     tools
@@ -1318,8 +1318,8 @@ simplifySortInjections
     sortInjection
         :: Sort level
         -> Sort level
-        -> StepPattern level variable
-        -> StepPattern level variable
+        -> TermLike variable
+        -> TermLike variable
     sortInjection originSort destinationSort term =
         mkApp
             destinationSort
@@ -1349,9 +1349,9 @@ constructorSortInjectionAndEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> StepPattern level variable
-    -> StepPattern level variable
-    -> MaybeT unifier (StepPattern level variable, SimplificationProof level)
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (TermLike variable, SimplificationProof level)
 constructorSortInjectionAndEquals
     tools
     first@(App_ firstHead _)
@@ -1387,9 +1387,9 @@ constructorAndEqualsAssumesDifferentHeads
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> StepPattern level variable
-    -> StepPattern level variable
-    -> MaybeT unifier (StepPattern level variable, SimplificationProof level)
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (TermLike variable, SimplificationProof level)
 constructorAndEqualsAssumesDifferentHeads
     tools
     first@(App_ firstHead _)
@@ -1421,9 +1421,9 @@ domainValueAndConstructorErrors
        , MetaOrObject level
        )
     => SmtMetadataTools StepperAttributes
-    -> StepPattern level variable
-    -> StepPattern level variable
-    -> Maybe (StepPattern level variable, SimplificationProof level)
+    -> TermLike variable
+    -> TermLike variable
+    -> Maybe (TermLike variable, SimplificationProof level)
 domainValueAndConstructorErrors
     tools
     (DV_ _ _)
@@ -1453,9 +1453,9 @@ domainValueAndEqualsAssumesDifferent
     => Unparse (variable Object)
     => MonadUnify unifierM
     => unifier ~ unifierM variable
-    => StepPattern Object variable
-    -> StepPattern Object variable
-    -> MaybeT unifier (StepPattern Object variable, SimplificationProof Object)
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (TermLike variable, SimplificationProof Object)
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ (Domain.BuiltinExternal _))
     second@(DV_ _ (Domain.BuiltinExternal _))
@@ -1475,9 +1475,9 @@ cannotUnifyDomainValues
     => Unparse (variable Object)
     => MonadUnify unifierM
     => unifier ~ unifierM variable
-    => StepPattern Object variable
-    -> StepPattern Object variable
-    -> unifier (StepPattern Object variable, SimplificationProof Object)
+    => TermLike variable
+    -> TermLike variable
+    -> unifier (TermLike variable, SimplificationProof Object)
 cannotUnifyDomainValues first second = do
     assert (first /= second) $ do
         Monad.Unify.explainBottom
@@ -1499,9 +1499,9 @@ stringLiteralAndEqualsAssumesDifferent
     => Unparse (variable Object)
     => MonadUnify unifierM
     => unifier ~ unifierM variable
-    => StepPattern Object variable
-    -> StepPattern Object variable
-    -> MaybeT unifier (StepPattern Object variable, SimplificationProof Object)
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (TermLike variable, SimplificationProof Object)
 stringLiteralAndEqualsAssumesDifferent
     first@(StringLiteral_ _)
     second@(StringLiteral_ _)
@@ -1521,9 +1521,9 @@ charLiteralAndEqualsAssumesDifferent
     => Unparse (variable Object)
     => MonadUnify unifierM
     => unifier ~ unifierM variable
-    => StepPattern Object variable
-    -> StepPattern Object variable
-    -> MaybeT unifier (StepPattern Object variable, SimplificationProof Object)
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (TermLike variable, SimplificationProof Object)
 charLiteralAndEqualsAssumesDifferent
     first@(CharLiteral_ _)
     second@(CharLiteral_ _)
@@ -1543,8 +1543,8 @@ functionAnd
         , Unparse (variable level)
         )
     => SmtMetadataTools StepperAttributes
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Maybe (ExpandedPattern level variable, SimplificationProof level)
 functionAnd
     tools

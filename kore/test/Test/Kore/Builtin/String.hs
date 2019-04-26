@@ -1,6 +1,7 @@
 module Test.Kore.Builtin.String where
 
-import           Hedgehog
+import           Hedgehog hiding
+                 ( Concrete )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
@@ -13,8 +14,8 @@ import GHC.Stack
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.String as String
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.TermLike
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
@@ -314,15 +315,15 @@ test_string2Int =
     ]
 
 -- | Another name for asPattern.
-stringLiteral :: Text -> CommonStepPattern Object
+stringLiteral :: Text -> TermLike Variable
 stringLiteral = asPattern
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
-asPattern :: Text -> CommonStepPattern Object
+asPattern :: Text -> TermLike Variable
 asPattern = String.asPattern stringSort
 
 -- | Specialize 'String.asConcretePattern' to the builtin sort 'stringSort'.
-asConcretePattern :: Text -> ConcreteStepPattern Object
+asConcretePattern :: Text -> TermLike Concrete
 asConcretePattern = String.asConcretePattern stringSort
 
 -- | Specialize 'String.asExpandedPattern' to the builtin sort 'stringSort'.
@@ -337,7 +338,7 @@ testString
     :: HasCallStack
     => String
     -> SymbolOrAlias Object
-    -> [CommonStepPattern Object]
+    -> [TermLike Variable]
     -> CommonExpandedPattern Object
     -> TestTree
 testString name = testSymbolWithSolver evaluate name stringSort

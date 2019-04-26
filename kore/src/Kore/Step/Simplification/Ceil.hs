@@ -36,7 +36,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
-import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import           Kore.Step.Representation.ExpandedPattern
@@ -53,6 +52,7 @@ import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -242,7 +242,7 @@ makeEvaluateNonBoolCeil
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
-{-| Evaluates the ceil of a StepPattern, see 'simplify' for details.
+{-| Evaluates the ceil of a TermLike, see 'simplify' for details.
 -}
 -- NOTE (hs-boot): Please update Ceil.hs-boot file when changing the
 -- signature.
@@ -263,7 +263,7 @@ makeEvaluateTerm
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (OrOfPredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateTerm
@@ -364,7 +364,7 @@ makeEvaluateBuiltin
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Domain.Builtin (StepPattern level variable)
+    -> Domain.Builtin (TermLike variable)
     -> Simplifier
         (OrOfPredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateBuiltin
@@ -409,7 +409,7 @@ makeEvaluateBuiltin
         axiomIdToEvaluator
         (MultiAnd.make ceils)
   where
-    values :: [StepPattern level variable]
+    values :: [TermLike variable]
     -- Maps assume that their keys are relatively functional.
     values = Map.elems m
 makeEvaluateBuiltin

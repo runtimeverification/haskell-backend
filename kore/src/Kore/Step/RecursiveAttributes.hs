@@ -21,14 +21,14 @@ import Kore.Attribute.Symbol
        ( StepperAttributes, isFunction, isFunctional, isTotal )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..), SmtMetadataTools )
-import Kore.Step.Pattern
+import Kore.Step.TermLike
 
 recursivelyCheckHeadProperty
     :: forall level variable .
        (MetaOrObject level)
     => (StepperAttributes -> Bool)
     -> SmtMetadataTools StepperAttributes
-    -> StepPattern level variable
+    -> TermLike variable
     -> Bool
 recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
     Recursive.fold checkProperty
@@ -53,7 +53,7 @@ isFunctionalPattern, isFunctionPattern, isTotalPattern
     :: forall level variable .
        (MetaOrObject level)
     => SmtMetadataTools StepperAttributes
-    -> StepPattern level variable
+    -> TermLike variable
     -> Bool
 --TODO(traiansf): we assume below that the pattern does not contain
 --sort injection symbols where the parameter sorts are not in subsort relation.

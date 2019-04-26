@@ -22,7 +22,6 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step
-import           Kore.Step.Pattern
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -34,6 +33,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import           Kore.Step.Simplification.Data as Simplification
+import           Kore.Step.TermLike
 
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Strategy as Strategy
@@ -117,15 +117,15 @@ compareTo (Expect expected) (actual, _ignoredProof) =
 -- Isolate knowledge of `Object` in anticipation of its removal.
 -- Should these go in some common location?
 type RewriteRule' variable = RewriteRule Object variable
-type StepPattern' variable = StepPattern Object variable
-type CommonStepPattern' = CommonStepPattern Object
+type TermLike' variable = TermLike variable
+type CommonTermLike' = TermLike Variable
 type ExpandedPattern' variable = ExpandedPattern Object variable
 type CommonExpandedPattern' = CommonExpandedPattern Object
 type Sort' = Sort Object
 type StepProof' variable = StepProof Object variable
 
 -- Test types
-type TestPattern = CommonStepPattern'
+type TestPattern = CommonTermLike'
 newtype Start = Start TestPattern
 newtype Axiom = Axiom
     { unAxiom :: RewriteRule' Variable }
@@ -424,9 +424,9 @@ sigmaSymbol = SymbolOrAlias
     }
 
 metaSigma
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
-    -> CommonStepPattern Meta
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 metaSigma p1 p2 = mkApp Mock.testSort sigmaSymbol [p1, p2]
 
 axiomMetaSigmaId :: RewriteRule Meta Variable
@@ -451,8 +451,8 @@ fSymbol = SymbolOrAlias
     }
 
 metaF
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
+    :: TermLike Variable
+    -> TermLike Variable
 metaF p = mkApp Mock.testSort fSymbol [p]
 
 
@@ -463,8 +463,8 @@ gSymbol = SymbolOrAlias
     }
 
 metaG
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
+    :: TermLike Variable
+    -> TermLike Variable
 metaG p = mkApp Mock.testSort gSymbol [p]
 
 
@@ -475,8 +475,8 @@ hSymbol = SymbolOrAlias
     }
 
 metaH
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
+    :: TermLike Variable
+    -> TermLike Variable
 metaH p = mkApp Mock.testSort hSymbol [p]
 
 iSymbol :: SymbolOrAlias Meta
@@ -486,8 +486,8 @@ iSymbol = SymbolOrAlias
     }
 
 metaI
-    :: CommonStepPattern Meta
-    -> CommonStepPattern Meta
+    :: TermLike Variable
+    -> TermLike Variable
 metaI p = mkApp Mock.testSort iSymbol [p]
 
 runStep

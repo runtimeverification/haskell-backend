@@ -3,13 +3,11 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
 
-module Kore.Step.Pattern
-    ( StepPattern
-    , CommonStepPattern
-    , ConcreteStepPattern
+module Kore.Step.TermLike
+    ( TermLike
     , module Kore.AST.MetaOrObject
     , module Kore.AST.Pure
-    , Kore.Step.Pattern.freeVariables
+    , freeVariables
     , hasFreeVariable
     , withoutFreeVariable
     , mapVariables
@@ -38,7 +36,7 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Annotation.Valid
-                 ( Valid (..) )
+                 ( Valid )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
                  ( Exists (..), Forall (..), Pattern (..),
@@ -52,24 +50,18 @@ import qualified Kore.Substitute as Substitute
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-type StepPattern level variable =
-    PurePattern level Domain.Builtin variable (Valid (variable level) level)
+type TermLike variable =
+    PurePattern Object Domain.Builtin variable (Valid (variable Object) Object)
 
-type CommonStepPattern level = StepPattern level Variable
-
-type ConcreteStepPattern level = StepPattern level Concrete
-
-freeVariables :: StepPattern level variable -> Set (variable level)
-freeVariables stepPattern =
-    let Valid { freeVariables = freeVars } = extract stepPattern
-    in freeVars
+freeVariables :: TermLike variable -> Set (variable Object)
+freeVariables stepPattern = Valid.freeVariables (extract stepPattern)
 
 hasFreeVariable
     :: Ord (variable Object)
     => variable Object
-    -> StepPattern Object variable
+    -> TermLike variable
     -> Bool
-hasFreeVariable variable = Set.member variable . Kore.Step.Pattern.freeVariables
+hasFreeVariable variable = Set.member variable . freeVariables
 
 {- | Throw an error if the variable occurs free in the pattern.
 
@@ -81,7 +73,7 @@ withoutFreeVariable
         , Unparse (variable Object)
         )
     => variable Object  -- ^ variable
-    -> StepPattern Object variable
+    -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
     -> a
 withoutFreeVariable variable stepPattern result
@@ -109,17 +101,17 @@ See also: 'traverseVariables'
 
  -}
 mapVariables
-    :: Ord (variable2 level)
-    => (variable1 level -> variable2 level)
-    -> StepPattern level variable1
-    -> StepPattern level variable2
+    :: Ord (variable2 Object)
+    => (variable1 Object -> variable2 Object)
+    -> TermLike variable1
+    -> TermLike variable2
 mapVariables mapping =
     Recursive.unfold (mapVariablesWorker . Recursive.project)
   where
     mapVariablesWorker (valid :< pat) =
         Valid.mapVariables mapping valid :< Base.mapVariables mapping pat
 
-{- | Use the provided traversal to replace all variables in a 'StepPattern'.
+{- | Use the provided traversal to replace all variables in a 'TermLike'.
 
 @traverseVariables@ is strict, i.e. its argument is fully evaluated before it
 returns. When composing multiple transformations with @traverseVariables@, the
@@ -133,11 +125,11 @@ See also: 'mapVariables'
 
  -}
 traverseVariables
-    ::  forall m level variable1 variable2.
-        (Monad m, Ord (variable2 level))
-    => (variable1 level -> m (variable2 level))
-    -> StepPattern level variable1
-    -> m (StepPattern level variable2)
+    ::  forall m variable1 variable2.
+        (Monad m, Ord (variable2 Object))
+    => (variable1 Object -> m (variable2 Object))
+    -> TermLike variable1
+    -> m (TermLike variable2)
 traverseVariables traversing =
     Recursive.fold traverseVariablesWorker
   where
@@ -149,7 +141,7 @@ traverseVariables traversing =
                 <$> Valid.traverseVariables traversing valid
                 <*> (Base.traverseVariables traversing =<< sequence pat)
 
-{- | Construct a 'ConcreteStepPattern' from a 'StepPattern'.
+{- | Construct a 'ConcreteStepPattern' from a 'TermLike'.
 
 A concrete pattern contains no variables, so @asConcreteStepPattern@ is
 fully polymorphic on the variable type in the pure pattern. If the argument
@@ -161,11 +153,11 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcreteStepPattern
-    :: StepPattern level variable
-    -> Maybe (StepPattern level Concrete)
+    :: TermLike variable
+    -> Maybe (TermLike Concrete)
 asConcreteStepPattern = traverseVariables (\case { _ -> Nothing })
 
-{- | Construct a 'StepPattern' from a 'ConcreteStepPattern'.
+{- | Construct a 'TermLike' from a 'ConcreteStepPattern'.
 
 The concrete pattern contains no variables, so the result is fully
 polymorphic in the variable type.
@@ -175,9 +167,9 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcreteStepPattern
-    :: Ord (variable level)
-    => StepPattern level Concrete
-    -> StepPattern level variable
+    :: Ord (variable Object)
+    => TermLike Concrete
+    -> TermLike variable
 fromConcreteStepPattern = mapVariables (\case {})
 
 {- | Traverse the pattern from the top down and apply substitutions.
@@ -195,12 +187,12 @@ substitute
         , Ord (variable level)
         , SortedVariable variable
         )
-    => Map (variable level) (StepPattern level variable)
-    -> StepPattern level variable
-    -> StepPattern level variable
+    => Map (variable level) (TermLike variable)
+    -> TermLike variable
+    -> TermLike variable
 substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
   where
-    getFreeVariables Valid { freeVariables = freeVars } = freeVars
+    getFreeVariables = Valid.freeVariables
     setFreeVariables valid freeVars = valid { Valid.freeVariables = freeVars }
 
 {- | Reset the 'variableCounter' of all 'Variables'.
@@ -211,8 +203,8 @@ ensuring that no 'Variable' in the result is accidentally captured.
  -}
 externalizeFreshVariables
     :: forall level. MetaOrObject level
-    => StepPattern level Variable
-    -> StepPattern level Variable
+    => TermLike Variable
+    -> TermLike Variable
 externalizeFreshVariables stepPattern =
     Reader.runReader
         (Recursive.fold externalizeFreshVariablesWorker stepPattern)
@@ -222,9 +214,7 @@ externalizeFreshVariables stepPattern =
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition Base.isOriginalVariable freeVars
-      where
-        Valid { Valid.freeVariables = freeVars } = extract stepPattern
+        Set.partition Base.isOriginalVariable (freeVariables stepPattern)
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
@@ -272,18 +262,18 @@ externalizeFreshVariables stepPattern =
 
     externalizeFreshVariablesWorker
         ::  Base
-                (CommonStepPattern level)
+                (TermLike Variable)
                 (Reader
                     (Map (Variable level) (Variable level))
-                    (CommonStepPattern level)
+                    (TermLike Variable)
                 )
         ->  (Reader
                 (Map (Variable level) (Variable level))
-                (CommonStepPattern level)
+                (TermLike Variable)
             )
     externalizeFreshVariablesWorker (valid :< patt) = do
         valid' <- Valid.traverseVariables lookupVariable valid
-        let Valid { freeVariables = freeVariables' } = valid'
+        let freeVariables' = Valid.freeVariables valid'
         patt' <-
             case patt of
                 ExistsPattern exists -> do

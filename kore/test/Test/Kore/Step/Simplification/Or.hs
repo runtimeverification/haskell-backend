@@ -14,7 +14,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..), isBottom, isTop )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -23,6 +22,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
+import           Kore.Step.TermLike
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -163,7 +163,7 @@ See also: 'orChild'
  -}
 type TestConfig = (TestTerm, TestPredicate, TestSubstitution)
 
-type TestTerm = StepPattern Object Variable
+type TestTerm = TermLike Variable
 
 tT :: TestTerm
 tT = mkTop Mock.testSort
@@ -180,7 +180,7 @@ t_ = mkBottom Mock.testSort
 testVar :: Text -> Variable Object
 testVar ident = Variable (testId ident) mempty Mock.testSort
 
-type TestPredicate = Predicate Object Variable
+type TestPredicate = Predicate Variable
 
 pT :: TestPredicate
 pT = makeTruePredicate
@@ -200,7 +200,7 @@ pM =
 p_ :: TestPredicate
 p_ = makeFalsePredicate
 
-type TestSubstitution = Substitution Object Variable
+type TestSubstitution = Substitution Variable
 
 sT :: TestSubstitution
 sT = mempty

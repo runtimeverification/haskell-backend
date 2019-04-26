@@ -34,10 +34,12 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -63,7 +65,7 @@ normalizeSubstitution
         , Show (variable Object)
         )
     => SmtMetadataTools StepperAttributes
-    -> Map (variable Object) (StepPattern Object variable)
+    -> Map (variable Object) (TermLike variable)
     -> ExceptT
         (SubstitutionError Object variable)
         m
@@ -109,7 +111,7 @@ normalizeSubstitution tools substitution =
 
     sortedSubstitution
         :: [variable Object]
-        -> [(variable Object, StepPattern Object variable)]
+        -> [(variable Object, TermLike variable)]
     sortedSubstitution = fmap (variableToSubstitution substitution)
 
     normalizeSortedSubstitution'
@@ -127,9 +129,9 @@ normalizeSubstitution tools substitution =
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))
-    => Map (variable level) (StepPattern level variable)
+    => Map (variable level) (TermLike variable)
     -> variable level
-    -> (variable level, StepPattern level variable)
+    -> (variable level, TermLike variable)
 variableToSubstitution varToPattern var =
     case Map.lookup var varToPattern of
         Just patt -> (var, patt)
@@ -143,9 +145,9 @@ normalizeSortedSubstitution
         , FreshVariable variable
         , SortedVariable variable
         )
-    => [(variable level, StepPattern level variable)]
-    -> [(variable level, StepPattern level variable)]
-    -> [(variable level, StepPattern level variable)]
+    => [(variable level, TermLike variable)]
+    -> [(variable level, TermLike variable)]
+    -> [(variable level, TermLike variable)]
     -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
     return Predicated
@@ -165,7 +167,7 @@ normalizeSortedSubstitution
             normalizeSortedSubstitution unprocessed result substitution
         _ -> do
             let substitutedVarPattern =
-                    substitute (Map.fromList substitution) varPattern
+                    TermLike.substitute (Map.fromList substitution) varPattern
             normalizeSortedSubstitution
                 unprocessed
                 ((var, substitutedVarPattern) : result)
@@ -183,7 +185,7 @@ getDependencies
         )
     => Set (variable level)  -- ^ interesting variables
     -> variable level  -- ^ substitution variable
-    -> StepPattern level variable  -- ^ substitution pattern
+    -> TermLike variable  -- ^ substitution pattern
     -> Set (variable level)
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
@@ -207,7 +209,7 @@ getNonSimplifiableDependencies
     => SmtMetadataTools StepperAttributes
     -> Set (variable level)  -- ^ interesting variables
     -> variable level  -- ^ substitution variable
-    -> StepPattern level variable  -- ^ substitution pattern
+    -> TermLike variable  -- ^ substitution pattern
     -> Set (variable level)
 getNonSimplifiableDependencies
     tools interesting var p@(Recursive.project -> _ :< h)
@@ -221,7 +223,7 @@ nonSimplifiableAbove
         (MetaOrObject level, Ord (variable level), Show (variable level))
     => SmtMetadataTools StepperAttributes
     -> Set (variable level)
-    -> Base (StepPattern level variable) (Set (variable level))
+    -> Base (TermLike variable) (Set (variable level))
     -> Set (variable level)
 nonSimplifiableAbove tools interesting p =
     case Cofree.tailF p of

@@ -16,7 +16,7 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
+                 ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
@@ -28,8 +28,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
-                 ( CommonStepPattern )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( Predicated (Predicated) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -48,6 +46,8 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
+                 ( TermLike )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -515,24 +515,24 @@ failingEvaluator =
         )
 
 axiomEvaluator
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
         (equalityRuleEvaluator (axiom left right makeTruePredicate))
 
 axiomEvaluatorWithRemainder
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluatorWithRemainder left right =
     definitionEvaluation [axiom left right makeTruePredicate]
 
 axiom
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonPredicate Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Predicate Variable
     -> EqualityRule Object Variable
 axiom left right predicate =
     EqualityRule RulePattern
@@ -557,7 +557,7 @@ evaluate
     :: forall level . MetaOrObject level
     => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifier level
-    -> CommonStepPattern level
+    -> TermLike Variable
     -> IO (CommonAttemptedAxiom level)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     (<$>) fst

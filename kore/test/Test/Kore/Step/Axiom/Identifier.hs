@@ -14,8 +14,8 @@ import           Kore.AST.Valid
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Pattern
-                 ( StepPattern )
+import           Kore.Step.TermLike
+                 ( TermLike )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -33,7 +33,7 @@ test_axiomIdentifier =
     , hasNoId $ mkAnd (Mock.f Mock.a) (Mock.g Mock.a)
     ]
 
-hasId :: StepPattern Object Variable -> AxiomIdentifier Object -> TestTree
+hasId :: TermLike Variable -> AxiomIdentifier Object -> TestTree
 hasId input expected =
     testCase "AxiomId.extract evaluation"
         (assertEqualWithExplanation "has id"
@@ -41,7 +41,7 @@ hasId input expected =
             (AxiomIdentifier.extract input)
         )
 
-hasNoId :: StepPattern Object Variable -> TestTree
+hasNoId :: TermLike Variable -> TestTree
 hasNoId input =
     testCase "AxiomId.extract evaluation"
         (assertEqualWithExplanation "has no id"

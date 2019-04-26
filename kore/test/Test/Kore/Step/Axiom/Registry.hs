@@ -36,7 +36,6 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -48,6 +47,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -180,7 +180,7 @@ testDef =
                                 )
                                 (mkTop sortVarS)
                             )
-                        :: CommonStepPattern Object)
+                        :: TermLike Variable)
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -196,7 +196,7 @@ testDef =
                                 )
                                 (mkTop sortVarS)
                             )
-                        :: CommonStepPattern Object)
+                        :: TermLike Variable)
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -221,14 +221,14 @@ testDef =
                                 )
                                 (mkTop sortVarS)
                             )
-                        :: CommonStepPattern Object)
+                        :: TermLike Variable)
                 }
         , SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                        (mkTop sortS :: CommonStepPattern Object)
+                        (mkTop sortS :: TermLike Variable)
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -255,7 +255,7 @@ testDef =
                                 )
                                 (mkTop sortVarS)
                             )
-                        :: CommonStepPattern Object)
+                        :: TermLike Variable)
                 }
         ]
 
@@ -346,7 +346,7 @@ test_functionRegistry =
     ]
   where
     makeExpandedPattern
-        :: CommonStepPattern Object
+        :: TermLike Variable
         -> CommonExpandedPattern Object
     makeExpandedPattern pat =
         Predicated

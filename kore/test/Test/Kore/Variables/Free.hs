@@ -4,7 +4,7 @@ import Hedgehog
 
 import qualified Kore.Annotation as Annotation
 import qualified Kore.Annotation.Valid as Annotation.Valid
-import           Kore.Step.Pattern
+import           Kore.Step.TermLike
 import qualified Kore.Variables.Free as Variables.Free
 
 import Test.Kore

@@ -24,7 +24,7 @@ import           Kore.Error
 import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
-import           Kore.Step.Pattern hiding
+import           Kore.Step.TermLike hiding
                  ( freeVariables )
 import qualified Kore.Verified as Verified
 
@@ -34,16 +34,16 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol Object (CommonStepPattern Object)
+objectA :: SentenceSymbol Object (TermLike Variable)
 objectA = mkSymbol_ (testId "a") [] objectS1
 
-objectB :: SentenceAlias Object (CommonStepPattern Object)
+objectB :: SentenceAlias Object (TermLike Variable)
 objectB = mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
 
-metaA :: SentenceSymbol Meta (CommonStepPattern Meta)
+metaA :: SentenceSymbol Meta (TermLike Variable)
 metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
-metaB :: SentenceAlias Meta (CommonStepPattern Meta)
+metaB :: SentenceAlias Meta (TermLike Variable)
 metaB = mkAlias_ (testId "#b") stringMetaSort [] $ mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName

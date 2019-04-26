@@ -21,7 +21,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -32,6 +31,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -744,25 +744,25 @@ test_andTermsSimplification =
     -- TODO: Add tests for set unification.
     ]
 
-fOfA :: CommonStepPattern Object
+fOfA :: TermLike Variable
 fOfA = Mock.f Mock.a
 
-fOfB :: CommonStepPattern Object
+fOfB :: TermLike Variable
 fOfB = Mock.f Mock.b
 
-gOfA :: CommonStepPattern Object
+gOfA :: TermLike Variable
 gOfA = Mock.g Mock.a
 
-plain0OfA :: CommonStepPattern Object
+plain0OfA :: TermLike Variable
 plain0OfA = Mock.plain10 Mock.a
 
-plain1OfA :: CommonStepPattern Object
+plain1OfA :: TermLike Variable
 plain1OfA = Mock.plain11 Mock.a
 
-plain0OfB :: CommonStepPattern Object
+plain0OfB :: TermLike Variable
 plain0OfB = Mock.plain10 Mock.b
 
-plain1OfB :: CommonStepPattern Object
+plain1OfB :: TermLike Variable
 plain1OfB = Mock.plain11 Mock.b
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes
@@ -779,14 +779,14 @@ mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetaMetadataTools =
     Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
-aDomainValue :: CommonStepPattern Object
+aDomainValue :: TermLike Variable
 aDomainValue =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = Mock.testSort
         , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
         }
 
-bDomainValue :: CommonStepPattern Object
+bDomainValue :: TermLike Variable
 bDomainValue =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = Mock.testSort
@@ -796,8 +796,8 @@ bDomainValue =
 simplifyUnify
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO (CommonExpandedPattern level, Maybe (CommonExpandedPattern level))
 simplifyUnify tools first second =
     (,)
@@ -808,8 +808,8 @@ simplifyUnify tools first second =
 unify
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO (Maybe (CommonExpandedPattern level))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
@@ -834,8 +834,8 @@ unify tools first second =
 simplify
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO (CommonExpandedPattern level)
 simplify tools first second =
     (<$>) fst

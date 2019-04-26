@@ -50,7 +50,7 @@ remainder
         , SortedVariable variable
         )
     => MultiOr (PredicateSubstitution Object (Target variable))
-    -> Predicate Object variable
+    -> Predicate variable
 remainder results =
     mkMultiAndPredicate $ mkNotExists conditions
   where
@@ -64,8 +64,8 @@ existentiallyQuantifyTarget
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => Predicate Object (Target variable)
-    -> Predicate Object variable
+    => Predicate (Target variable)
+    -> Predicate variable
 existentiallyQuantifyTarget predicate =
     Predicate.mapVariables Target.unwrapVariable
     $ Predicate.makeMultipleExists freeTargetVariables predicate
@@ -86,8 +86,8 @@ mkNotMultiOr
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => MultiOr  (Predicate Object variable)
-    -> MultiAnd (Predicate Object variable)
+    => MultiOr  (Predicate variable)
+    -> MultiAnd (Predicate variable)
 mkNotMultiOr = MultiAnd.make . map Predicate.makeNotPredicate . Foldable.toList
 
 mkMultiAndPredicate
@@ -96,8 +96,8 @@ mkMultiAndPredicate
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => MultiAnd (Predicate Object variable)
-    ->           Predicate Object variable
+    => MultiAnd (Predicate variable)
+    ->           Predicate variable
 mkMultiAndPredicate = Predicate.makeMultipleAndPredicate . Foldable.toList
 
 {- | Represent the unification solution as a conjunction of predicates.
@@ -110,7 +110,7 @@ unificationConditions
         )
     => PredicateSubstitution Object (Target variable)
     -- ^ Unification solution
-    -> MultiAnd (Predicate Object (Target variable))
+    -> MultiAnd (Predicate (Target variable))
 unificationConditions Predicated { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
@@ -122,8 +122,8 @@ substitutionConditions
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => Substitution Object variable
-    -> MultiAnd (Predicate Object variable)
+    => Substitution variable
+    -> MultiAnd (Predicate variable)
 substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where

@@ -24,6 +24,8 @@ import qualified Data.Sequence as Seq
 import           GHC.Generics
                  ( Generic )
 
+import Kore.AST.MetaOrObject
+       ( Object )
 import Kore.Step.Simplification.Data
        ( SimplificationProof )
 import Kore.Unification.Data
@@ -33,9 +35,12 @@ import Kore.Unification.Data
  -}
 newtype StepProof (level :: *) (variable :: * -> *) =
     StepProof { getStepProof :: Seq (StepProofAtom level variable) }
-  deriving (Eq, Show)
+    deriving Generic
 
-instance Hashable (variable level) => Hashable (StepProof level variable) where
+deriving instance Eq (variable Object) => Eq (StepProof level variable)
+deriving instance Show (variable Object) => Show (StepProof level variable)
+
+instance Hashable (variable Object) => Hashable (StepProof level variable) where
     hashWithSalt s = Foldable.foldl' hashWithSalt s . getStepProof
 
 instance Semigroup (StepProof level variable) where
@@ -64,9 +69,12 @@ data StepProofAtom (level :: *) (variable :: * -> *)
     -- ^ Proof for the remanings that happened during ther proof.
     | StepProofSimplification !(SimplificationProof level)
     -- ^ Proof for the simplification part of a step.
-    deriving (Show, Eq, Generic)
+    deriving Generic
 
-instance Hashable (variable level) => Hashable (StepProofAtom level variable)
+deriving instance Eq (variable Object) => Eq (StepProofAtom level variable)
+deriving instance Show (variable Object) => Show (StepProofAtom level variable)
+
+instance Hashable (variable Object) => Hashable (StepProofAtom level variable)
 
 {-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
 stepProofSumName :: StepProofAtom variable level -> String
@@ -77,9 +85,12 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 {-| 'VariableRenaming' represents a renaming of a variable.
 -}
 data VariableRenaming level variable = VariableRenaming
-    { variableRenamingOriginal :: variable level
-    , variableRenamingRenamed  :: variable level
+    { variableRenamingOriginal :: variable Object
+    , variableRenamingRenamed  :: variable Object
     }
-    deriving (Eq, Generic, Show)
+    deriving Generic
 
-instance Hashable (variable level) => Hashable (VariableRenaming level variable)
+deriving instance Eq (variable Object) => Eq (VariableRenaming level variable)
+deriving instance Show (variable Object) => Show (VariableRenaming level variable)
+
+instance Hashable (variable Object) => Hashable (VariableRenaming level variable)

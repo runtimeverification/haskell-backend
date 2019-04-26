@@ -17,7 +17,7 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
+                 ( Predicate, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Axiom.Data as AttemptedAxiom
@@ -29,7 +29,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( CommonExpandedPattern, ExpandedPattern,
                  Predicated (Predicated) )
@@ -51,6 +50,7 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 import qualified SMT
@@ -608,17 +608,17 @@ test_functionIntegration =
     ]
 
 axiomEvaluator
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
         (equalityRuleEvaluator (axiom left right makeTruePredicate))
 
 axiom
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonPredicate Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Predicate Variable
     -> EqualityRule Object Variable
 axiom left right predicate =
     EqualityRule RulePattern
@@ -658,7 +658,7 @@ mockEvaluator
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ _ _ =
@@ -668,7 +668,7 @@ evaluate
     :: forall level . MetaOrObject level
     => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
-    -> CommonStepPattern level
+    -> TermLike Variable
     -> IO (CommonExpandedPattern level)
 evaluate metadataTools functionIdToEvaluator patt =
     (<$>) fst

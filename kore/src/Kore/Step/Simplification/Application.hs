@@ -25,7 +25,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -39,6 +38,7 @@ import           Kore.Step.Simplification.Data
                  Simplifier, StepPatternSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -49,7 +49,7 @@ type ExpandedApplication level variable =
         (CofreeF
             (Application level)
             (Valid (variable level) level)
-            (StepPattern level variable)
+            (TermLike variable)
         )
 
 {-|'simplify' simplifies an 'Application' of 'OrOfExpandedPattern'.

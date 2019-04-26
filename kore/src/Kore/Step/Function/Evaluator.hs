@@ -42,7 +42,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -53,6 +52,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier, simplifyTerm )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -82,7 +82,7 @@ evaluateApplication
     -> CofreeF
         (Application level)
         (Valid (variable level) level)
-        (StepPattern level variable)
+        (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
@@ -160,7 +160,7 @@ evaluatePattern
     -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
-    -> StepPattern level variable
+    -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrOfExpandedPattern level variable
     -- ^ The default value
@@ -212,7 +212,7 @@ maybeEvaluatePattern
     -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -- ^ Aggregated children predicate and substitution.
-    -> StepPattern level variable
+    -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrOfExpandedPattern level variable
     -- ^ The default value
@@ -311,8 +311,8 @@ maybeEvaluatePattern
 evaluateSortInjection
     :: (MetaOrObject level, Ord (variable level))
     => SmtMetadataTools StepperAttributes
-    -> Application level (StepPattern level variable)
-    ->  ( Application level (StepPattern level variable)
+    -> Application level (TermLike variable)
+    ->  ( Application level (TermLike variable)
         , SimplificationProof level
         )
 evaluateSortInjection tools ap

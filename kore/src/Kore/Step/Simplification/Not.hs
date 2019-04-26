@@ -27,7 +27,6 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -39,6 +38,7 @@ import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier, gather )
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -168,8 +168,8 @@ makeTermNot
         , Show (variable level)
         , Unparse (variable level)
         )
-    => StepPattern level variable
-    -> StepPattern level variable
+    => TermLike variable
+    -> TermLike variable
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not

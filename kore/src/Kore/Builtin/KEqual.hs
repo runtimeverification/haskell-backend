@@ -50,7 +50,6 @@ import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), AttemptedAxiomResults (..),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -59,6 +58,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -140,7 +140,7 @@ evalKEq
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
-        (StepPattern Object variable)
+        (TermLike variable)
     -> Simplifier
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
@@ -195,7 +195,7 @@ evalKIte
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
-        (StepPattern Object variable)
+        (TermLike variable)
     -> Simplifier
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
@@ -207,7 +207,7 @@ evalKIte _ _ _ _ (_ :< app) =
         _ -> Builtin.wrongArity iteKey
   where
     evaluate
-        :: StepPattern Object variable
+        :: TermLike variable
         -> Maybe Bool
     evaluate (Recursive.project -> _ :< pat) =
         case pat of

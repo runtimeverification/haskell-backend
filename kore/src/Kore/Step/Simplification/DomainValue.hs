@@ -16,7 +16,6 @@ import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( Predicated (..) )
 import           Kore.Step.Representation.MultiOr
@@ -26,6 +25,8 @@ import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
@@ -60,7 +61,7 @@ simplifyBuiltin
     => Domain.Builtin (OrOfExpandedPattern Object variable)
     -> MultiOr
         (Predicated Object variable
-            (Domain.Builtin (StepPattern Object variable)))
+            (Domain.Builtin (TermLike variable)))
 simplifyBuiltin =
     \case
         Domain.BuiltinExternal _ext -> do

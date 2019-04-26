@@ -3,7 +3,7 @@ module Test.Kore.Builtin.Set where
 import           GHC.Stack
                  ( HasCallStack )
 import           Hedgehog hiding
-                 ( property )
+                 ( Concrete, property )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
@@ -29,7 +29,6 @@ import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
@@ -38,6 +37,7 @@ import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -60,14 +60,14 @@ import           Test.Tasty.HUnit.Extensions
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
 
-genSetConcreteIntegerPattern :: Gen (Set (ConcreteStepPattern Object))
+genSetConcreteIntegerPattern :: Gen (Set (TermLike Concrete))
 genSetConcreteIntegerPattern =
     Set.map Test.Int.asInternal <$> genSetInteger
 
 genConcreteSet :: Gen Set.Builtin
 genConcreteSet = genSetConcreteIntegerPattern
 
-genSetPattern :: Gen (CommonStepPattern Object)
+genSetPattern :: Gen (TermLike Variable)
 genSetPattern = asPattern <$> genSetConcreteIntegerPattern
 
 test_getUnit :: TestTree
@@ -242,8 +242,8 @@ test_symbolic =
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
-    :: Set (CommonStepPattern Object)
-    -> CommonStepPattern Object
+    :: Set (TermLike Variable)
+    -> TermLike Variable
 asSymbolicPattern result
     | Set.null result =
         applyUnit
@@ -325,7 +325,7 @@ selectFunctionPattern
     :: Variable Object          -- ^element variable
     -> Variable Object          -- ^set variable
     -> (forall a . [a] -> [a])  -- ^scrambling function
-    -> CommonStepPattern Object
+    -> TermLike Variable
 selectFunctionPattern elementVar setVar permutation  =
     mkApp setSort concatSetSymbol $ permutation [singleton, mkVar setVar]
   where
@@ -339,7 +339,7 @@ selectPattern
     :: Variable Object          -- ^element variable
     -> Variable Object          -- ^set variable
     -> (forall a . [a] -> [a])  -- ^scrambling function
-    -> CommonStepPattern Object
+    -> TermLike Variable
 selectPattern elementVar setVar permutation  =
     mkApp setSort concatSetSymbol $ permutation [element, mkVar setVar]
   where
@@ -406,8 +406,8 @@ test_unifySelectFromSingleton =
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
     :: HasCallStack
-    => CommonStepPattern Object
-    -> CommonStepPattern Object
+    => TermLike Variable
+    -> TermLike Variable
     -> CommonExpandedPattern Object
     -> PropertyT SMT.SMT ()
 unifiesWith pat1 pat2 Predicated { term, predicate, substitution } = do
@@ -576,8 +576,8 @@ mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
 asPattern
     :: Foldable f
-    => f (ConcreteStepPattern Object)
-    -> CommonStepPattern Object
+    => f (TermLike Concrete)
+    -> TermLike Variable
 asPattern =
     Reflection.give testMetadataTools Set.asPattern
     . builtinSet
@@ -589,11 +589,11 @@ asExpandedPattern =
     Reflection.give testMetadataTools Set.asExpandedPattern setSort
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set.Builtin -> CommonStepPattern Object
+asInternal :: Set.Builtin -> TermLike Variable
 asInternal = Set.asInternal testMetadataTools setSort
 
 -- * Constructors
 
-mkIntVar :: Id Object -> CommonStepPattern Object
+mkIntVar :: Id Object -> TermLike Variable
 mkIntVar variableName =
     mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }

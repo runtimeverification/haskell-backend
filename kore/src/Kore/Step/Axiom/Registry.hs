@@ -42,12 +42,12 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
+import           Kore.Step.TermLike
 import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
@@ -95,7 +95,7 @@ extractEqualityAxioms =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    :: SentenceAxiom (SortVariable Object) (StepPattern Object Variable)
+    :: SentenceAxiom (SortVariable Object) (TermLike Variable)
     -> Maybe (AxiomIdentifier Object, EqualityRule Object Variable)
 axiomToIdAxiomPatternPair axiom =
     case Rule.fromSentenceAxiom axiom of

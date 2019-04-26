@@ -57,8 +57,6 @@ import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( StepPattern )
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
@@ -67,6 +65,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unparser
@@ -191,8 +191,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             else pure graph
 
     unifier0
-        :: StepPattern level Variable
-        -> StepPattern level Variable
+        :: TermLike Variable
+        -> TermLike Variable
         -> UnifierWithExplanation Variable ()
     unifier0 first second =
         () <$ unificationProcedure

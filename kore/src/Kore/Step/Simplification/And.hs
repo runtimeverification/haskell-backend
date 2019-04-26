@@ -29,7 +29,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -50,6 +49,7 @@ import           Kore.Step.Simplification.Data
                  SimplificationProof (..), Simplifier, StepPatternSimplifier,
                  gather, scatter )
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -293,8 +293,8 @@ applyAndIdempotence
         , Unparse (variable level)
         , SortedVariable variable
         )
-    => StepPattern level variable
-    -> StepPattern level variable
+    => TermLike variable
+    -> TermLike variable
 applyAndIdempotence patt =
     foldl1' mkAnd (nub (children patt))
   where
@@ -317,7 +317,7 @@ makeTermAnd
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 makeTermAnd = AndTerms.termAnd

@@ -52,10 +52,11 @@ import           Kore.Parser
                  ( ParsedPattern, asParsedPattern )
 import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
+import           Kore.Step.TermLike
+                 ( TermLike )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -466,13 +467,13 @@ patternGen childGen patternSort =
 
 stepPatternGen
     :: MetaOrObject level
-    => Hedgehog.Gen (CommonStepPattern level)
+    => Hedgehog.Gen (TermLike Variable)
 stepPatternGen = standaloneGen (stepPatternChildGen =<< sortGen)
 
 stepPatternChildGen
     :: MetaOrObject level
     => Sort level
-    -> Gen (CommonStepPattern level)
+    -> Gen (TermLike Variable)
 stepPatternChildGen patternSort =
     Gen.sized stepPatternChildGenWorker
   where
@@ -631,15 +632,15 @@ korePatternUnifiedGen = korePatternChildGen =<< sortGen
 
 predicateGen
     :: MetaOrObject level
-    => Gen (CommonStepPattern level)
-    -> Hedgehog.Gen (Predicate level Variable)
+    => Gen (TermLike Variable)
+    -> Hedgehog.Gen (Predicate Variable)
 predicateGen childGen = standaloneGen (predicateChildGen childGen =<< sortGen)
 
 predicateChildGen
     :: MetaOrObject level
-    => Gen (CommonStepPattern level)
+    => Gen (TermLike Variable)
     -> Sort level
-    -> Gen (Predicate level Variable)
+    -> Gen (Predicate Variable)
 predicateChildGen childGen patternSort' =
     Gen.recursive
         Gen.choice

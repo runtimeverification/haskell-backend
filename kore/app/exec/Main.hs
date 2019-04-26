@@ -41,7 +41,6 @@ import           Kore.Parser
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Search
@@ -50,6 +49,7 @@ import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.SMT.Lemma
+import           Kore.Step.TermLike
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT
@@ -406,7 +406,7 @@ mainPatternParse = mainParse parseKorePattern
 mainPatternParseAndVerify
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
-    -> IO (CommonStepPattern Object)
+    -> IO (TermLike Variable)
 mainPatternParseAndVerify indexedModule patternFileName =
     mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 

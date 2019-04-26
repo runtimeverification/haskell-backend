@@ -62,9 +62,9 @@ import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
-import           Kore.Step.Pattern
-                 ( CommonStepPattern )
 import qualified Kore.Step.SMT.AST as AST
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified
@@ -274,7 +274,7 @@ parseNoJunkAxiom (attributes, SentenceAxiom {sentenceAxiomPattern})
   | otherwise = Nothing
 
 parseNoJunkPattern
-    :: CommonStepPattern Object
+    :: TermLike Variable
     -> Maybe (Id Object , AST.UnresolvedSort)
 parseNoJunkPattern patt = do  -- Maybe
     (name, sortBuilder, constructors) <- parseNoJunkPatternHelper patt
@@ -289,7 +289,7 @@ parseNoJunkPattern patt = do  -- Maybe
     return (name, sortBuilder constructors)
 
 parseNoJunkPatternHelper
-    :: CommonStepPattern Object
+    :: TermLike Variable
     ->  Maybe
         ( Id Object
         , [AST.UnresolvedConstructor] -> AST.UnresolvedSort
@@ -323,7 +323,7 @@ parseNoJunkPatternHelper (Or_ _ first second) = do  -- Maybe
 parseNoJunkPatternHelper _ = Nothing
 
 parseSMTConstructor
-    :: CommonStepPattern Object -> Maybe AST.UnresolvedConstructor
+    :: TermLike Variable -> Maybe AST.UnresolvedConstructor
 parseSMTConstructor patt =
     case parsedPatt of
         App_ symbol children -> do
@@ -335,8 +335,8 @@ parseSMTConstructor patt =
     (quantifiedVariables, parsedPatt) = parseExists patt
 
     parseExists
-        :: CommonStepPattern Object
-        -> (Set.Set (Variable Object), CommonStepPattern Object)
+        :: TermLike Variable
+        -> (Set.Set (Variable Object), TermLike Variable)
     parseExists (Exists_ _ variable child) =
         (Set.insert variable childVars, unquantifiedPatt)
       where
@@ -345,7 +345,7 @@ parseSMTConstructor patt =
 
     checkOnlyQuantifiedVariablesOnce
         :: Set.Set (Variable Object)
-        -> [CommonStepPattern Object]
+        -> [TermLike Variable]
         -> Maybe [Variable Object]
     checkOnlyQuantifiedVariablesOnce
         allowedVars

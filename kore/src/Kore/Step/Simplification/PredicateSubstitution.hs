@@ -44,9 +44,9 @@ import           Kore.Variables.Fresh
 -}
 create
     :: SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionSimplifier level
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSubstitutionSimplifier Object
 create tools simplifier axiomIdToSimplifier =
     PredicateSubstitutionSimplifier
         (simplify tools simplifier axiomIdToSimplifier 0)
@@ -58,22 +58,22 @@ result. The result is re-simplified once.
 
 -}
 simplify
-    ::  ( MetaOrObject level
+    ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Int
-    -> PredicateSubstitution level variable
-    -> BranchT Simplifier (PredicateSubstitution level variable)
+    -> PredicateSubstitution Object variable
+    -> BranchT Simplifier (PredicateSubstitution Object variable)
 simplify
     tools
     simplifier
@@ -126,22 +126,22 @@ simplify
             (simplify tools simplifier axiomIdToSimplifier (times + 1))
 
 assertDistinctVariables
-    :: forall level variable m
-    .   ( Show (variable level)
-        , Eq (variable level)
+    :: forall variable m
+    .   ( Show (variable Object)
+        , Eq (variable Object)
         , Monad m
         )
-    => Substitution level variable
+    => Substitution variable
     -> m ()
 assertDistinctVariables subst =
     case filter moreThanOne (group variables) of
         [] -> return ()
         (var : _) -> error ("Duplicated variable: " ++ show var)
   where
-    moreThanOne :: [variable level] -> Bool
+    moreThanOne :: [variable Object] -> Bool
     moreThanOne [] = False
     moreThanOne [_] = False
     moreThanOne _ = True
 
-    variables :: [variable level]
+    variables :: [variable Object]
     variables = Substitution.variables subst

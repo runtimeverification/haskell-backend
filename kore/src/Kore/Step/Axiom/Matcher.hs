@@ -38,7 +38,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
-import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.MultiOr
@@ -64,6 +63,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
+import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationError (..) )
 import           Kore.Unification.Procedure
@@ -113,8 +113,8 @@ matchAsUnification
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> unifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
@@ -162,8 +162,8 @@ unificationWithAppMatchOnTop
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> unifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
@@ -249,8 +249,8 @@ match
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -- TODO: Use Result here.
     -> MaybeT unifier
         (OrOfPredicateSubstitution level variable)
@@ -302,8 +302,8 @@ matchEqualHeadPatterns
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (OrOfPredicateSubstitution level variable)
 matchEqualHeadPatterns
@@ -571,7 +571,7 @@ matchJoin
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
-    -> [(StepPattern level variable, StepPattern level variable)]
+    -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier
         (OrOfPredicateSubstitution level variable)
 matchJoin
@@ -632,7 +632,7 @@ unifyJoin
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> [(StepPattern level variable, StepPattern level variable)]
+    -> [(TermLike variable, TermLike variable)]
     -> unifier
         ( OrOfPredicateSubstitution level variable
         , UnificationProof level variable
@@ -707,8 +707,8 @@ matchVariableFunction
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map (variable level) (variable level)
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT unifier
         (OrOfPredicateSubstitution level variable)
 matchVariableFunction

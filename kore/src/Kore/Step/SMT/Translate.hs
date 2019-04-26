@@ -44,9 +44,9 @@ import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
 import           Kore.Step.SMT.Resolvers
                  ( translateSymbol )
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           SMT
                  ( SExpr (..), SMT )
@@ -69,17 +69,17 @@ translatePredicate
         ( Ord (variable Object)
         , Unparse (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
-        , p ~ StepPattern Object variable
+        , p ~ TermLike variable
         )
     => (SExpr -> p -> Translator p SExpr)
-    -> Predicate Object variable
+    -> Predicate variable
     -> Translator p SExpr
 translatePredicate translateUninterpreted predicate =
     translatePredicatePattern $ unwrapPredicate predicate
   where
     translatePredicatePattern
-        :: StepPattern Object variable
-        -> Translator (StepPattern Object variable) SExpr
+        :: TermLike variable
+        -> Translator (TermLike variable) SExpr
     translatePredicatePattern pat =
         case Cofree.tailF (Recursive.project pat) of
             -- Logical connectives: translate as connectives
@@ -161,7 +161,7 @@ translatePredicate translateUninterpreted predicate =
     translateInt
         ::  ( Given (SmtMetadataTools StepperAttributes)
             , Ord (variable Object)
-            , p ~ StepPattern Object variable
+            , p ~ TermLike variable
             )
         => p
         -> Translator p SExpr
@@ -181,7 +181,7 @@ translatePredicate translateUninterpreted predicate =
     translateBool
         ::  ( Given (SmtMetadataTools StepperAttributes)
             , Ord (variable Object)
-            , p ~ StepPattern Object variable
+            , p ~ TermLike variable
             )
         => p
         -> Translator p SExpr
@@ -205,7 +205,7 @@ translatePredicate translateUninterpreted predicate =
     translateApplication
         ::  ( Given (SmtMetadataTools StepperAttributes)
             , Ord (variable Object)
-            , p ~ StepPattern Object variable
+            , p ~ TermLike variable
             )
         => Application Object p
         -> Translator p SExpr
@@ -227,7 +227,7 @@ translatePredicate translateUninterpreted predicate =
 
     translatePattern
         ::  ( Given (SmtMetadataTools StepperAttributes)
-            , p ~ StepPattern Object variable
+            , p ~ TermLike variable
             )
         => Sort Object
         -> p

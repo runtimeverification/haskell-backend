@@ -43,7 +43,6 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step
                  ( allRewrites, anyRewrite )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern, Predicated (..) )
 import           Kore.Step.Rule
@@ -52,6 +51,7 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import           Kore.Step.TermLike
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -153,7 +153,7 @@ test_search =
                 FINAL -> Set.fromList [b, d]
 
 -- | V:MySort{}
-searchVar :: CommonStepPattern Object
+searchVar :: TermLike Variable
 searchVar =
     mkVar Variable
         { variableName = Id "V" AstLocationTest
@@ -175,7 +175,7 @@ searchPattern = Predicated
 -- | Turn a disjunction of "v = ???" into Just a set of the ???. If the input is
 -- not a disjunction of "v = ???", return Nothing.
 extractSearchResults
-    :: CommonStepPattern Object -> Maybe (Set (CommonStepPattern Object))
+    :: TermLike Variable -> Maybe (Set (TermLike Variable))
 extractSearchResults =
     \case
         Equals_ operandSort resultSort first second
@@ -273,7 +273,7 @@ rewriteAxiom lhsName rhsName =
         (applyToNoArgs mySort rhsName)
         Nothing
 
-applyToNoArgs :: Sort Object -> Text -> CommonStepPattern Object
+applyToNoArgs :: Sort Object -> Text -> TermLike Variable
 applyToNoArgs sort name =
     mkApp
         sort

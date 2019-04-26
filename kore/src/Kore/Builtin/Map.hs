@@ -86,11 +86,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
+import           Kore.Step.TermLike
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -167,8 +167,7 @@ symbolVerifiers =
       )
     ]
 
-type Builtin variable =
-    Map (ConcreteStepPattern Object) (StepPattern Object variable)
+type Builtin variable = Map (TermLike Concrete) (TermLike variable)
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
@@ -180,7 +179,7 @@ type Builtin variable =
 expectBuiltinMap
     :: Monad m
     => Text  -- ^ Context for error message
-    -> StepPattern Object variable  -- ^ Operand pattern
+    -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
 expectBuiltinMap ctx _map =
     do
@@ -380,7 +379,7 @@ asInternal
     => SmtMetadataTools attrs
     -> Sort Object
     -> Builtin variable
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal tools builtinMapSort builtinMapChild =
     (mkDomainValue . Domain.BuiltinMap)
         Domain.InternalMap
@@ -405,8 +404,8 @@ See also: 'sort'
  -}
 asPattern
     :: Ord (variable Object)
-    => Domain.InternalMap (StepPattern Object variable)
-    -> StepPattern Object variable
+    => Domain.InternalMap (TermLike variable)
+    -> TermLike variable
 asPattern builtin =
     foldr concat' unit (element <$> Map.toAscList map')
   where
@@ -557,7 +556,7 @@ unifyEquals
         , FreshVariable variable
         , Show (variable level)
         , Unparse (variable level)
-        , p ~ StepPattern level variable
+        , p ~ TermLike variable
         , expanded ~ ExpandedPattern level variable
         , proof ~ SimplificationProof level
         , unifier ~ unifierM variable
@@ -602,8 +601,8 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: StepPattern level variable
-        -> StepPattern level variable
+        :: TermLike variable
+        -> TermLike variable
         -> MaybeT unifier (expanded, proof)
 
     unifyEquals0 dv1@(DV_ _ (Domain.BuiltinMap builtin1)) =
@@ -660,8 +659,8 @@ unifyEquals
     -- | Unify two concrete maps.
     unifyEqualsConcrete
         :: level ~ Object
-        => Domain.InternalMap (StepPattern level variable)
-        -> Domain.InternalMap (StepPattern level variable)
+        => Domain.InternalMap (TermLike variable)
+        -> Domain.InternalMap (TermLike variable)
         -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2 = do
         intersect <-
@@ -691,9 +690,9 @@ unifyEquals
     -- | Unify one concrete map with one framed concrete map.
     unifyEqualsFramed1
         :: level ~ Object
-        => Domain.InternalMap (StepPattern Object variable)  -- ^ concrete map
-        -> Domain.InternalMap (StepPattern Object variable)  -- ^ framed map
-        -> StepPattern Object variable  -- ^ framing variable
+        => Domain.InternalMap (TermLike variable)  -- ^ concrete map
+        -> Domain.InternalMap (TermLike variable)  -- ^ framed map
+        -> TermLike variable  -- ^ framing variable
         -> unifier (expanded, proof)
     unifyEqualsFramed1 builtin1 builtin2 x = do
         intersect <-
@@ -728,10 +727,10 @@ unifyEquals
 
     unifyEqualsElement
         :: level ~ Object
-        => Domain.InternalMap (StepPattern Object variable)  -- ^ concrete map
+        => Domain.InternalMap (TermLike variable)  -- ^ concrete map
         -> SymbolOrAlias level  -- ^ 'element' symbol
-        -> StepPattern Object variable  -- ^ key
-        -> StepPattern Object variable  -- ^ value
+        -> TermLike variable  -- ^ key
+        -> TermLike variable  -- ^ value
         -> unifier (expanded, proof)
     unifyEqualsElement builtin1 element' key2 value2 =
         case Map.toList map1 of

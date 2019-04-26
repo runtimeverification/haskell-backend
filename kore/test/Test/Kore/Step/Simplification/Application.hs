@@ -28,8 +28,6 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern hiding
-                 ( freeVariables )
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -43,6 +41,8 @@ import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
+import           Kore.Step.TermLike hiding
+                 ( freeVariables )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -291,11 +291,11 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB :: Ord (variable Object) => StepPattern Object variable
+    fOfA, fOfB :: Ord (variable Object) => TermLike variable
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
 
-    gOfA, gOfB :: Ord (variable Object) => StepPattern Object variable
+    gOfA, gOfB :: Ord (variable Object) => TermLike variable
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
 
@@ -337,7 +337,7 @@ test_applicationSimplification =
             Mock.smtDeclarations
 
     noSimplification
-        ::  [   ( StepPattern level Variable
+        ::  [   ( TermLike Variable
                 , ([ExpandedPattern level Variable], SimplificationProof level)
                 )
             ]

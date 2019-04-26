@@ -36,8 +36,6 @@ import           Kore.ModelChecker.Simplification
                  ( checkImplicationIsTop )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( StepPattern )
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -54,6 +52,8 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
+                 ( TermLike )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -71,8 +71,11 @@ data Prim patt rewrite =
 
 data ModalPattern level variable = ModalPattern
     { modalOp :: !Text
-    , term  :: !(StepPattern level variable)
-    } deriving (Eq, Show)
+    , term  :: !(TermLike variable)
+    }
+
+deriving instance Eq (variable Object) => Eq (ModalPattern level variable)
+deriving instance Show (variable Object) => Show (ModalPattern level variable)
 
 type CommonModalPattern level = ModalPattern level Variable
 

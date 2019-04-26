@@ -62,8 +62,8 @@ import           Kore.Variables.Fresh
 
 newtype PredicateSubstitutionMerger level variable m =
     PredicateSubstitutionMerger
-    (  [Predicate level variable]
-    -> [Substitution level variable]
+    (  [Predicate variable]
+    -> [Substitution variable]
     -> m (PredicateSubstitution level variable)
     )
 
@@ -208,8 +208,8 @@ mergePredicatesAndSubstitutions
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> [Predicate level variable]
-    -> [Substitution level variable]
+    -> [Predicate variable]
+    -> [Substitution variable]
     -> Simplifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
@@ -265,8 +265,8 @@ mergePredicatesAndSubstitutionsExcept
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> [Predicate level variable]
-    -> [Substitution level variable]
+    -> [Predicate variable]
+    -> [Substitution variable]
     -> unifier
         ( PredicateSubstitution level variable
         , UnificationProof level variable
@@ -329,8 +329,8 @@ createPredicatesAndSubstitutionsMergerExcept
     PredicateSubstitutionMerger worker
   where
     worker
-        :: [Predicate level variable]
-        -> [Substitution level variable]
+        :: [Predicate variable]
+        -> [Substitution variable]
         -> unifier (PredicateSubstitution level variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutionsExcept
@@ -367,8 +367,8 @@ createPredicatesAndSubstitutionsMerger
     PredicateSubstitutionMerger worker
   where
     worker
-        :: [Predicate level variable]
-        -> [Substitution level variable]
+        :: [Predicate variable]
+        -> [Substitution variable]
         -> Simplifier (PredicateSubstitution level variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutions
@@ -408,8 +408,8 @@ createLiftedPredicatesAndSubstitutionsMerger
     PredicateSubstitutionMerger worker
   where
     worker
-        :: [Predicate level variable]
-        -> [Substitution level variable]
+        :: [Predicate variable]
+        -> [Substitution variable]
         -> unifier (PredicateSubstitution level variable)
     worker predicates substitutions = Monad.Unify.liftSimplifier $ do
         (merged, _proof) <- mergePredicatesAndSubstitutions

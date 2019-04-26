@@ -127,7 +127,6 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -138,6 +137,9 @@ import           Kore.Step.Simplification.Data
                  SimplificationType, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
@@ -636,7 +638,7 @@ unaryOperator
     :: forall a b
     .   (   forall variable
         .   Text
-        ->  Domain.Builtin (StepPattern Object variable)
+        ->  Domain.Builtin (TermLike variable)
         ->  a
         )
     -- ^ Parse operand
@@ -658,14 +660,14 @@ unaryOperator
   =
     functionEvaluator unaryOperator0
   where
-    get :: Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier level
         -> Sort level
-        -> [StepPattern level variable]
+        -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
@@ -690,7 +692,7 @@ binaryOperator
     :: forall a b
     .   (  forall variable
         .  Text
-        -> Domain.Builtin (StepPattern Object variable)
+        -> Domain.Builtin (TermLike variable)
         -> a
         )
     -- ^ Extract domain value
@@ -711,14 +713,14 @@ binaryOperator
   =
     functionEvaluator binaryOperator0
   where
-    get :: Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier level
         -> Sort level
-        -> [StepPattern level variable]
+        -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
@@ -743,7 +745,7 @@ ternaryOperator
     :: forall a b
     .   (  forall variable
         .  Text
-        -> Domain.Builtin (StepPattern Object variable)
+        -> Domain.Builtin (TermLike variable)
         -> a
         )
     -- ^ Extract domain value
@@ -764,14 +766,14 @@ ternaryOperator
   =
     functionEvaluator ternaryOperator0
   where
-    get :: Domain.Builtin (StepPattern Object variable) -> a
+    get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier level
         -> Sort level
-        -> [StepPattern level variable]
+        -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
@@ -788,7 +790,7 @@ type FunctionImplementation
         => SmtMetadataTools StepperAttributes
         -> StepPatternSimplifier Object
         -> Sort Object
-        -> [StepPattern Object variable]
+        -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
 
 functionEvaluator :: FunctionImplementation -> Function
@@ -804,7 +806,7 @@ functionEvaluator impl =
         -> CofreeF
             (Application Object)
             (Valid (variable Object) Object)
-            (StepPattern Object variable)
+            (TermLike variable)
         -> Simplifier
             ( AttemptedAxiom Object variable
             , SimplificationProof Object
@@ -927,11 +929,11 @@ isSymbol builtinName MetadataTools { symAttributes } sym =
 expectNormalConcreteTerm
     :: Monad m
     => SmtMetadataTools StepperAttributes
-    -> StepPattern Object variable
-    -> MaybeT m (ConcreteStepPattern Object)
+    -> TermLike variable
+    -> MaybeT m (TermLike Concrete)
 expectNormalConcreteTerm tools purePattern =
     MaybeT $ return $ do
-        p <- asConcreteStepPattern purePattern
+        p <- TermLike.asConcreteStepPattern purePattern
         -- TODO (thomas.tuegel): Use the return value as the term.
         _ <- Value.fromConcreteStepPattern tools p
         return p
@@ -954,7 +956,7 @@ unifyEqualsUnsolved
         , Unparse (variable level)
         , level ~ Object
         , expanded ~ ExpandedPattern level variable
-        , patt ~ StepPattern level variable
+        , patt ~ TermLike variable
         , proof ~ SimplificationProof level
         )
     => SimplificationType

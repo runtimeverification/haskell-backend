@@ -12,8 +12,8 @@ import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.Pattern
-       ( StepPattern )
+import Kore.Step.TermLike
+       ( TermLike )
 import Kore.Step.Representation.OrOfExpandedPattern
        ( OrOfPredicateSubstitution )
 import Kore.Step.Simplification.Data
@@ -41,6 +41,6 @@ makeEvaluateTerm
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (OrOfPredicateSubstitution level variable, SimplificationProof level)

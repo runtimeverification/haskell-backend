@@ -26,7 +26,6 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -43,6 +42,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.Step.TermLike as Pattern
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -251,7 +251,7 @@ makeEvaluateBoundLeft
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable level  -- ^ quantified variable
-    -> StepPattern level variable  -- ^ substituted term
+    -> TermLike variable  -- ^ substituted term
     -> ExpandedPattern level variable
     -> BranchT Simplifier (ExpandedPattern level variable)
 makeEvaluateBoundLeft
@@ -301,7 +301,7 @@ makeEvaluateBoundRight
         , SortedVariable variable
         )
     => variable Object  -- ^ variable to be quantified
-    -> Substitution Object variable  -- ^ free substitution
+    -> Substitution variable  -- ^ free substitution
     -> ExpandedPattern Object variable  -- ^ pattern to quantify
     -> BranchT Simplifier (ExpandedPattern Object variable)
 makeEvaluateBoundRight
@@ -333,9 +333,9 @@ The result is a pair of:
 splitSubstitution
     :: (HasCallStack, Ord (variable Object))
     => variable Object
-    -> Substitution Object variable
-    ->  ( Either (StepPattern Object variable) (Substitution Object variable)
-        , Substitution Object variable
+    -> Substitution variable
+    ->  ( Either (TermLike variable) (Substitution variable)
+        , Substitution variable
         )
 splitSubstitution variable substitution =
     (bound, independent)

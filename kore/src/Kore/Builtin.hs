@@ -65,11 +65,11 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern
+import           Kore.Step.TermLike
 
 {- | The default type of builtin domain values.
  -}
-type Builtin = DomainValue Object Domain.Builtin (CommonStepPattern Object)
+type Builtin = DomainValue Object Domain.Builtin (TermLike Variable)
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -186,14 +186,14 @@ See also: 'asPattern'
 -- TODO (thomas.tuegel): Transform from Domain.Internal to Domain.External.
 externalizePattern
     ::  forall variable. Ord (variable Object)
-    =>  StepPattern Object variable
-    ->  StepPattern Object variable
+    =>  TermLike variable
+    ->  TermLike variable
 externalizePattern =
     Recursive.unfold externalizePatternWorker
   where
     externalizePatternWorker
-        ::  StepPattern Object variable
-        ->  Base (StepPattern Object variable) (StepPattern Object variable)
+        ::  TermLike variable
+        ->  Base (TermLike variable) (TermLike variable)
     externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
         case pat of
             DomainValuePattern domain ->

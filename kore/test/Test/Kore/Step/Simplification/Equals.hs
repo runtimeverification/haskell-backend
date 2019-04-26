@@ -22,7 +22,6 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as Predicated
@@ -40,6 +39,7 @@ import           Kore.Step.Simplification.Equals
                  simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
@@ -853,8 +853,8 @@ assertTermEquals
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
     -> CommonPredicateSubstitution Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO ()
 assertTermEquals = assertTermEqualsGeneric
 
@@ -862,8 +862,8 @@ assertTermEqualsGeneric
     :: (MetaOrObject level, HasCallStack)
     => SmtMetadataTools StepperAttributes
     -> CommonPredicateSubstitution level
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> Assertion
 assertTermEqualsGeneric tools expectPure =
     assertTermEqualsMultiGeneric tools [expectPure]
@@ -873,8 +873,8 @@ assertTermEqualsMulti
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
     -> [CommonPredicateSubstitution Object]
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO ()
 assertTermEqualsMulti = assertTermEqualsMultiGeneric
 
@@ -882,8 +882,8 @@ assertTermEqualsMultiGeneric
     :: (MetaOrObject level, HasCallStack)
     => SmtMetadataTools StepperAttributes
     -> [CommonPredicateSubstitution level]
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> Assertion
 assertTermEqualsMultiGeneric tools expectPure first second = do
     let expectExpanded =
@@ -906,7 +906,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
   where
     termToExpandedPattern
         :: MetaOrObject level
-        => CommonStepPattern level
+        => TermLike Variable
         -> CommonExpandedPattern level
     termToExpandedPattern (Bottom_ _) =
         Predicated.bottom
@@ -933,40 +933,40 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
             , substitution = substitution
             }
 
-fOfA :: CommonStepPattern Object
+fOfA :: TermLike Variable
 fOfA = Mock.f Mock.a
 
-fOfB :: CommonStepPattern Object
+fOfB :: TermLike Variable
 fOfB = Mock.f Mock.b
 
-gOfA :: CommonStepPattern Object
+gOfA :: TermLike Variable
 gOfA = Mock.g Mock.a
 
-gOfB :: CommonStepPattern Object
+gOfB :: TermLike Variable
 gOfB = Mock.g Mock.b
 
-hOfA :: CommonStepPattern Object
+hOfA :: TermLike Variable
 hOfA = Mock.h Mock.a
 
-hOfB :: CommonStepPattern Object
+hOfB :: TermLike Variable
 hOfB = Mock.h Mock.b
 
-functionalOfA :: CommonStepPattern Object
+functionalOfA :: TermLike Variable
 functionalOfA = Mock.functional10 Mock.a
 
-constructor1OfA :: CommonStepPattern Object
+constructor1OfA :: TermLike Variable
 constructor1OfA = Mock.constr10 Mock.a
 
-constructor2OfA :: CommonStepPattern Object
+constructor2OfA :: TermLike Variable
 constructor2OfA = Mock.constr11 Mock.a
 
-functionalConstructor1OfA :: CommonStepPattern Object
+functionalConstructor1OfA :: TermLike Variable
 functionalConstructor1OfA = Mock.functionalConstr10 Mock.a
 
-functionalConstructor2OfA :: CommonStepPattern Object
+functionalConstructor2OfA :: TermLike Variable
 functionalConstructor2OfA = Mock.functionalConstr11 Mock.a
 
-plain1OfA :: CommonStepPattern Object
+plain1OfA :: TermLike Variable
 plain1OfA = Mock.plain10 Mock.a
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes
@@ -1036,8 +1036,8 @@ evaluateGeneric tools first second =
 evaluateTermsGeneric
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
+    -> TermLike Variable
+    -> TermLike Variable
     -> IO (CommonOrOfPredicateSubstitution level)
 evaluateTermsGeneric tools first second =
     (<$>) fst

@@ -41,7 +41,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution,
                  Predicated (Predicated) )
@@ -52,6 +51,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.TermLike
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
@@ -69,8 +69,8 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 applyInj
     :: Sort Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    -> TermLike Variable
+    -> TermLike Variable
 applyInj sortTo pat =
     applySymbol symbolInj [sortFrom, sortTo] [pat]
   where
@@ -82,49 +82,49 @@ s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
 s4 = simpleSort (SortName "s4")
 
-a1, a2, a3, a4, a5 :: SentenceSymbol Object (CommonStepPattern Object)
+a1, a2, a3, a4, a5 :: SentenceSymbol Object (TermLike Variable)
 a1 = mkSymbol_ (testId "a1") [] s1
 a2 = mkSymbol_ (testId "a2") [] s1
 a3 = mkSymbol_ (testId "a3") [] s1
 a4 = mkSymbol_ (testId "a4") [] s1
 a5 = mkSymbol_ (testId "a5") [] s1
 
-a, b, f :: SentenceSymbol Object (CommonStepPattern Object)
+a, b, f :: SentenceSymbol Object (TermLike Variable)
 a = mkSymbol_ (testId "a") [] s1
 b = mkSymbol_ (testId "b") [] s2
 f = mkSymbol_ (testId "f") [s1] s2
 
-ef, eg, eh :: SentenceSymbol Object (CommonStepPattern Object)
+ef, eg, eh :: SentenceSymbol Object (TermLike Variable)
 ef = mkSymbol_ (testId "ef") [s1, s1, s1] s1
 eg = mkSymbol_ (testId "eg") [s1] s1
 eh = mkSymbol_ (testId "eh") [s1] s1
 
-nonLinF, nonLinG, nonLinAS :: SentenceSymbol Object (CommonStepPattern Object)
+nonLinF, nonLinG, nonLinAS :: SentenceSymbol Object (TermLike Variable)
 nonLinF  = mkSymbol_ (testId "nonLinF") [s1, s1] s1
 nonLinG  = mkSymbol_ (testId "nonLinG") [s1] s1
 nonLinAS = mkSymbol_ (testId "nonLinA") [] s1
 
-nonLinA, nonLinX, nonLinY :: CommonStepPattern Object
+nonLinA, nonLinX, nonLinY :: TermLike Variable
 nonLinA = applySymbol_ nonLinAS []
 nonLinX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
 nonLinY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
 
-expBin :: SentenceSymbol Object (CommonStepPattern Object)
+expBin :: SentenceSymbol Object (TermLike Variable)
 expBin = mkSymbol_ (testId "times") [s1, s1] s1
 
-expA, expX, expY :: CommonStepPattern Object
+expA, expX, expY :: TermLike Variable
 expA = mkVar Variable { variableName = testId "a", variableCounter = mempty, variableSort = s1 }
 expX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
 expY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
 
-ex1, ex2, ex3, ex4 :: CommonStepPattern Object
+ex1, ex2, ex3, ex4 :: TermLike Variable
 ex1 = mkVar Variable { variableName = testId "ex1", variableCounter = mempty, variableSort = s1 }
 ex2 = mkVar Variable { variableName = testId "ex2", variableCounter = mempty, variableSort = s1 }
 ex3 = mkVar Variable { variableName = testId "ex3", variableCounter = mempty, variableSort = s1 }
 ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, variableSort = s1 }
 
 
-dv1, dv2 :: CommonStepPattern Object
+dv1, dv2 :: TermLike Variable
 dv1 =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
@@ -136,31 +136,31 @@ dv2 =
         , domainValueChild = eraseAnnotations $ mkStringLiteral "dv."
         }
 
-aA :: CommonStepPattern Object
+aA :: TermLike Variable
 aA = applySymbol_ a []
 
-a1A :: CommonStepPattern Object
+a1A :: TermLike Variable
 a1A = applySymbol_ a1 []
 
-a2A :: CommonStepPattern Object
+a2A :: TermLike Variable
 a2A = applySymbol_ a2 []
 
-a3A :: CommonStepPattern Object
+a3A :: TermLike Variable
 a3A = applySymbol_ a3 []
 
-a4A :: CommonStepPattern Object
+a4A :: TermLike Variable
 a4A = applySymbol_ a4 []
 
-a5A :: CommonStepPattern Object
+a5A :: TermLike Variable
 a5A = applySymbol_ a5 []
 
-bA :: CommonStepPattern Object
+bA :: TermLike Variable
 bA = applySymbol_ b []
 
-x :: CommonStepPattern Object
+x :: TermLike Variable
 x = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
 
-xs2 :: CommonStepPattern Object
+xs2 :: TermLike Variable
 xs2 = mkVar Variable { variableName = testId "xs2", variableCounter = mempty, variableSort = s2 }
 
 sortParam :: Text -> SortVariable level
@@ -172,7 +172,7 @@ sortParamSort = SortVariableSort . sortParam
 injName :: Text
 injName = "inj"
 
-symbolInj :: SentenceSymbol Object (CommonStepPattern Object)
+symbolInj :: SentenceSymbol Object (TermLike Variable)
 symbolInj =
     mkSymbol
         (testId injName)
@@ -224,15 +224,15 @@ unificationProblem
     :: MetaOrObject level
     => UnificationTerm level
     -> UnificationTerm level
-    -> CommonStepPattern level
+    -> TermLike Variable
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     mkAnd term1 term2
 
-type Substitution level = [(Text, CommonStepPattern level)]
+type Substitution = [(Text, TermLike Variable)]
 
 unificationSubstitution
-    :: Substitution Object
-    -> [ (Variable Object, CommonStepPattern Object) ]
+    :: Substitution
+    -> [ (Variable Object, TermLike Variable) ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
@@ -242,8 +242,8 @@ unificationSubstitution = map trans
 
 unificationResult
     :: UnificationResultTerm Object
-    -> Substitution Object
-    -> Predicate Object Variable
+    -> Substitution
+    -> Predicate Variable
     -> ExpandedPattern Object Variable
 unificationResult (UnificationResultTerm term) sub predicate =
     Predicated
@@ -252,17 +252,17 @@ unificationResult (UnificationResultTerm term) sub predicate =
         , substitution = Substitution.wrap $ unificationSubstitution sub
         }
 
-newtype UnificationTerm level = UnificationTerm (CommonStepPattern level)
+newtype UnificationTerm level = UnificationTerm (TermLike Variable)
 newtype UnificationResultTerm level =
-    UnificationResultTerm (CommonStepPattern level)
+    UnificationResultTerm (TermLike Variable)
 
 andSimplifySuccess
     :: HasCallStack
     => UnificationTerm Object
     -> UnificationTerm Object
     -> UnificationResultTerm Object
-    -> Substitution Object
-    -> Predicate Object Variable
+    -> Substitution
+    -> Predicate Variable
     -> UnificationProof Object Variable
     -> Assertion
 andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
@@ -343,7 +343,7 @@ unificationProcedureSuccess
     => TestName
     -> UnificationTerm Object
     -> UnificationTerm Object
-    -> [(Substitution Object, Predicate Object Variable)]
+    -> [(Substitution, Predicate Variable)]
     -> UnificationProof Object Variable
     -> TestTree
 unificationProcedureSuccess
@@ -368,8 +368,8 @@ unificationProcedureSuccess
         let
             normalize
                 :: PredicateSubstitution Object Variable
-                ->  ( [ (Variable Object, CommonStepPattern Object) ]
-                    , Predicate Object Variable
+                ->  ( [ (Variable Object, TermLike Variable) ]
+                    , Predicate Variable
                     )
             normalize Predicated { substitution, predicate } =
                 ( sortBy (compare `on` fst) $ Substitution.unwrap substitution
@@ -646,10 +646,10 @@ instance EqualWithExplanation (W level)
 showVar :: V level -> W level
 showVar (V i) = W (show i)
 
-var' :: Integer -> StepPattern Meta V
+var' :: Integer -> TermLike V
 var' i = mkVar (V i)
 
-war' :: String -> StepPattern Meta W
+war' :: String -> TermLike W
 war' s = mkVar (W s)
 
 sortVar :: Sort level
@@ -768,9 +768,9 @@ simplifyPattern (UnificationTerm term) = do
         }
 
 makeEqualsPredicate
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> Predicate Object Variable
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Predicate Variable
 makeEqualsPredicate t1 t2 = Predicate.makeEqualsPredicate t1 t2
 
 runSMT :: SMT a -> IO a

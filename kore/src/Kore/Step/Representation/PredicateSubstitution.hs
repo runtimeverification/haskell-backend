@@ -42,15 +42,15 @@ type CommonPredicateSubstitution level = PredicateSubstitution level Variable
 
 -- | Erase the @Predicated@ 'term' to yield a 'PredicateSubstitution'.
 erasePredicatedTerm
-    :: Predicated level variable child
-    -> PredicateSubstitution level variable
+    :: Predicated Object variable child
+    -> PredicateSubstitution Object variable
 erasePredicatedTerm = Predicated.withoutTerm
 
 top
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( MetaOrObject Object
+        , Ord (variable Object)
         )
-    => PredicateSubstitution level variable
+    => PredicateSubstitution Object variable
 top =
     Predicated
         { term = ()
@@ -59,10 +59,10 @@ top =
         }
 
 bottom
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( MetaOrObject Object
+        , Ord (variable Object)
         )
-    => PredicateSubstitution level variable
+    => PredicateSubstitution Object variable
 bottom =
     Predicated
         { term = ()
@@ -71,17 +71,17 @@ bottom =
         }
 
 topPredicate
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( MetaOrObject Object
+        , Ord (variable Object)
         )
-    => PredicateSubstitution level variable
+    => PredicateSubstitution Object variable
 topPredicate = top
 
 bottomPredicate
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( MetaOrObject Object
+        , Ord (variable Object)
         )
-    => PredicateSubstitution level variable
+    => PredicateSubstitution Object variable
 bottomPredicate = bottom
 
 {- | Extract the set of free variables from a predicate and substitution.
@@ -90,14 +90,14 @@ bottomPredicate = bottom
 -}
 
 freeVariables
-    :: ( MetaOrObject level
-       , Ord (variable level)
-       , Show (variable level)
-       , Unparse (variable level)
+    :: ( MetaOrObject Object
+       , Ord (variable Object)
+       , Show (variable Object)
+       , Unparse (variable Object)
        , SortedVariable variable
        )
-    => PredicateSubstitution level variable
-    -> Set (variable level)
+    => PredicateSubstitution Object variable
+    -> Set (variable Object)
 freeVariables = Predicated.freeVariables (const Set.empty)
 
 {- | Transform a predicate and substitution into a predicate only.
@@ -109,19 +109,19 @@ See also: 'substitutionToPredicate'.
 
 -}
 toPredicate
-    :: ( MetaOrObject level
+    :: ( MetaOrObject Object
        , SortedVariable variable
-       , Ord (variable level)
-       , Show (variable level)
-       , Unparse (variable level)
+       , Ord (variable Object)
+       , Show (variable Object)
+       , Unparse (variable Object)
        )
-    => PredicateSubstitution level variable
-    -> Predicate level variable
+    => PredicateSubstitution Object variable
+    -> Predicate variable
 toPredicate = Predicated.toPredicate
 
 mapVariables
-    :: Ord (variable2 level)
-    => (variable1 level -> variable2 level)
-    -> PredicateSubstitution level variable1
-    -> PredicateSubstitution level variable2
+    :: Ord (variable2 Object)
+    => (variable1 Object -> variable2 Object)
+    -> PredicateSubstitution Object variable1
+    -> PredicateSubstitution Object variable2
 mapVariables = Predicated.mapVariables (\_ () -> ())

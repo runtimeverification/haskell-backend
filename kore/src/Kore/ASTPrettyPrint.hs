@@ -821,13 +821,13 @@ instance (MetaOrObject level, PrettyPrint (variable level))
         writeOneFieldStruct flags "FunctionalCharLiteral" l
 
 instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (Predicate level variable)
+    => PrettyPrint (Predicate variable)
   where
     prettyPrint flags pat =
         prettyPrint flags (unwrapPredicate pat)
 
 instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (Substitution level variable)
+    => PrettyPrint (Substitution variable)
   where
       prettyPrint flags = prettyPrint flags . Substitution.unwrap
 

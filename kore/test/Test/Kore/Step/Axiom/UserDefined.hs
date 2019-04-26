@@ -30,7 +30,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( ExpandedPattern, Predicated (..), bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -42,6 +41,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -222,7 +222,7 @@ test_userDefinedFunction =
     ]
 
 noSimplification
-    ::  [   ( StepPattern level Variable
+    ::  [   ( TermLike Variable
             , ([ExpandedPattern level Variable], SimplificationProof level)
             )
         ]
@@ -230,11 +230,11 @@ noSimplification = []
 
 
 asSimplification
-    ::  [   ( StepPattern level Variable
+    ::  [   ( TermLike Variable
             , ([ExpandedPattern level Variable], SimplificationProof level)
             )
         ]
-    ->  [   ( StepPattern level Variable
+    ->  [   ( TermLike Variable
             , ([ExpandedPattern level Variable], SimplificationProof level)
             )
         ]
@@ -255,7 +255,7 @@ evaluateWithAxiom
     => SmtMetadataTools StepperAttributes
     -> EqualityRule level Variable
     -> StepPatternSimplifier level
-    -> CommonStepPattern level
+    -> TermLike Variable
     -> IO (CommonAttemptedAxiom level)
 evaluateWithAxiom
     metadataTools

@@ -59,10 +59,11 @@ import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.TermLike
+                 ( TermLike )
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -160,7 +161,7 @@ asInternal
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
     (mkDomainValue . Domain.BuiltinBool)
         Domain.InternalBool
@@ -179,7 +180,7 @@ asInternal builtinBoolSort builtinBoolValue =
 asPattern
     :: Ord (variable Object)
     => Domain.InternalBool  -- ^ builtin value to render
-    -> StepPattern Object variable
+    -> TermLike variable
 asPattern builtin =
     (mkDomainValue . Domain.BuiltinExternal)
         Domain.External

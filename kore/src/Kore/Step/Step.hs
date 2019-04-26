@@ -57,7 +57,6 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
@@ -80,6 +79,7 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.Step.TermLike as TermLike
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof )
@@ -116,8 +116,8 @@ newtype UnificationProcedure level =
         -> PredicateSubstitutionSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
-        -> StepPattern level variable
-        -> StepPattern level variable
+        -> TermLike variable
+        -> TermLike variable
         -> unifier
             ( OrOfPredicateSubstitution level variable
             , UnificationProof level variable
@@ -149,16 +149,16 @@ type Results variable =
 {- | Unwrap the variables in a 'RulePattern'.
  -}
 unwrapRule
-    :: Ord (variable level)
-    => RulePattern level (Target variable) -> RulePattern level variable
+    :: Ord (variable Object)
+    => RulePattern Object (Target variable) -> RulePattern Object variable
 unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
 unwrapConfiguration
-    :: Ord (variable level)
-    => ExpandedPattern level (Target variable)
-    -> ExpandedPattern level variable
+    :: Ord (variable Object)
+    => ExpandedPattern Object (Target variable)
+    -> ExpandedPattern Object variable
 unwrapConfiguration config@Predicated { substitution } =
     ExpandedPattern.mapVariables Target.unwrapVariable
         config { ExpandedPattern.substitution = substitution' }
@@ -227,8 +227,8 @@ unifyRule
     return (rule' `Predicated.withCondition` unification')
   where
     unifyPatterns
-        :: StepPattern Object variable
-        -> StepPattern Object variable
+        :: TermLike variable
+        -> TermLike variable
         -> BranchT unifier (Predicated Object variable ())
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
@@ -362,7 +362,7 @@ finalizeAppliedRule
             Predicated { substitution } = finalCondition
             substitution' = Substitution.toMap substitution
             RulePattern { right = finalTerm } = renamedRule
-            finalTerm' = Pattern.substitute substitution' finalTerm
+            finalTerm' = TermLike.substitute substitution' finalTerm
         return finalCondition { ExpandedPattern.term = finalTerm' }
 
     normalize condition =
@@ -393,7 +393,7 @@ applyRemainder
 
     -> ExpandedPattern Object variable
     -- ^ Initial configuration
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Remainder
     -> BranchT unifier (ExpandedPattern Object variable)
 applyRemainder
@@ -421,15 +421,15 @@ applyRemainder
             condition
 
 toAxiomVariables
-    :: Ord (variable level)
-    => RulePattern level variable
-    -> RulePattern level (Target variable)
+    :: Ord (variable Object)
+    => RulePattern Object variable
+    -> RulePattern Object (Target variable)
 toAxiomVariables = RulePattern.mapVariables Target.Target
 
 toConfigurationVariables
-    :: Ord (variable level)
-    => ExpandedPattern level variable
-    -> ExpandedPattern level (Target variable)
+    :: Ord (variable Object)
+    => ExpandedPattern Object variable
+    -> ExpandedPattern Object (Target variable)
 toConfigurationVariables = ExpandedPattern.mapVariables Target.NonTarget
 
 {- | Fully apply a single rule to the initial configuration.
@@ -579,22 +579,22 @@ variables have been instantiated by the substitution.
 
  -}
 checkSubstitutionCoverage
-    ::  ( MetaOrObject level
+    ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Ord     (variable level)
-        , Show    (variable level)
-        , Unparse (variable level)
+        , Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
     => SmtMetadataTools StepperAttributes
-    -> ExpandedPattern level (Target variable)
+    -> ExpandedPattern Object (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
-    -> ExpandedPattern level (Target variable)
+    -> ExpandedPattern Object (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier (ExpandedPattern level variable)
+    -> BranchT unifier (ExpandedPattern Object variable)
 checkSubstitutionCoverage tools initial unified final
   | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
   | isSymbolic =
@@ -638,7 +638,7 @@ checkSubstitutionCoverage tools initial unified final
     Predicated { term = axiom } = unified
     unification = Predicated.toPredicate (Predicated.withoutTerm unified)
     leftAxiomVariables =
-        Pattern.freeVariables leftAxiom
+        TermLike.freeVariables leftAxiom
       where
         RulePattern { left = leftAxiom } = axiom
     Predicated { substitution } = final

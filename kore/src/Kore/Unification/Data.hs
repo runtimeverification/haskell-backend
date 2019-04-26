@@ -22,7 +22,9 @@ import           Kore.AST.Pure
 import           Kore.Proof.Functional
                  ( FunctionalProof (..) )
 import qualified Kore.Proof.Functional as Proof.Functional
-import           Kore.Step.Pattern as Pattern
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
 
 -- |'UnificationProof' is meant to represent proof term stubs for various
 -- steps performed during unification
@@ -33,19 +35,19 @@ data UnificationProof level variable
     -- ^Empty proof (nothing to prove)
     | CombinedUnificationProof [UnificationProof level variable]
     -- ^Putting multiple proofs together
-    | ConjunctionIdempotency (StepPattern level variable)
+    | ConjunctionIdempotency (TermLike variable)
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
-        [FunctionalProof level variable]
-        (variable level)
-        (StepPattern level variable)
+        [FunctionalProof Object variable]
+        (variable Object)
+        (TermLike variable)
     -- ^Used to specify the application of Proposition 5.24 (3)
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- if ϕ and ϕ' are functional patterns, then
     -- |= (ϕ ∧ ϕ') = (ϕ ∧ (ϕ = ϕ'))
     | AndDistributionAndConstraintLifting
-        (SymbolOrAlias level)
-        [UnificationProof level variable]
+        (SymbolOrAlias Object)
+        [UnificationProof Object variable]
     -- ^Used to specify both the application of the constructor axiom
     -- c(x1, .., xn) /\ c(y1, ..., yn) -> c(x1 /\ y1, ..., xn /\ yn)
     -- and of Proposition 5.12 (Constraint propagation) after unification:
@@ -53,9 +55,9 @@ data UnificationProof level variable
     -- if ϕ is a predicate, then:
     -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
     | SubstitutionMerge
-        (variable level)
-        (StepPattern level variable)
-        (StepPattern level variable)
+        (variable Object)
+        (TermLike variable)
+        (TermLike variable)
     -- ^Specifies the merging of (x = t1) /\ (x = t2) into x = (t1 /\ t2)
     -- Semantics of K, 7.7.1:
     -- (Equality Elimination). |- (ϕ1 = ϕ2) → (ψ[ϕ1/v] → ψ[ϕ2/v])
@@ -67,9 +69,13 @@ data UnificationProof level variable
     -- ((x = t1) /\ (t1 = t2)) = (x = (t1 /\ (t1 = t2)))
     -- then, applying Proposition 5.24(3), this further gets to
     -- (x = (t1 /\ t2))
-  deriving (Eq, Generic, Show)
+  deriving Generic
 
-instance Hashable (variable level) => Hashable (UnificationProof level variable)
+deriving instance Eq (variable Object) => Eq (UnificationProof level variable)
+deriving instance Ord (variable Object) => Ord (UnificationProof level variable)
+deriving instance Show (variable Object) => Show (UnificationProof level variable)
+
+instance Hashable (variable Object) => Hashable (UnificationProof level variable)
 
 instance Semigroup (UnificationProof level variable) where
     (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]
@@ -79,10 +85,10 @@ instance Monoid (UnificationProof level variable) where
     mconcat = CombinedUnificationProof
 
 mapVariables
-    :: Ord (variable2 level)
-    => (variable1 level -> variable2 level)
-    -> UnificationProof level variable1
-    -> UnificationProof level variable2
+    :: Ord (variable2 Object)
+    => (variable1 Object -> variable2 Object)
+    -> UnificationProof Object variable1
+    -> UnificationProof Object variable2
 mapVariables mapping = mapVariablesWorker
   where
     mapVariablesWorker =
@@ -91,12 +97,12 @@ mapVariables mapping = mapVariablesWorker
             CombinedUnificationProof proofs ->
                 CombinedUnificationProof (map mapVariablesWorker proofs)
             ConjunctionIdempotency patt ->
-                ConjunctionIdempotency (Pattern.mapVariables mapping patt)
+                ConjunctionIdempotency (TermLike.mapVariables mapping patt)
             Proposition_5_24_3 proofs variable patt ->
                 Proposition_5_24_3
                     (map (Proof.Functional.mapVariables mapping) proofs)
                     (mapping variable)
-                    (Pattern.mapVariables mapping patt)
+                    (TermLike.mapVariables mapping patt)
             AndDistributionAndConstraintLifting symbol proofs ->
                 AndDistributionAndConstraintLifting
                     symbol
@@ -104,5 +110,5 @@ mapVariables mapping = mapVariablesWorker
             SubstitutionMerge variable patt1 patt2 ->
                 SubstitutionMerge
                     (mapping variable)
-                    (Pattern.mapVariables mapping patt1)
-                    (Pattern.mapVariables mapping patt2)
+                    (TermLike.mapVariables mapping patt1)
+                    (TermLike.mapVariables mapping patt2)

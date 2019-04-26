@@ -7,10 +7,10 @@ import Prelude hiding
 
 import qualified Kore.AST.Valid as AST
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate )
+                 ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
-                 ( CommonStepPattern, Object )
+import           Kore.Step.TermLike
+                 ( TermLike, Variable )
 import qualified Kore.TopBottom as TopBottom
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -18,23 +18,23 @@ import qualified Test.Terse as Terse
 
 -- TODO (thomas.tuegel): Add tests for other instances.
 -- The other instances are not very interesting because they delegate all the
--- work to the instances of StepPattern and Predicate.
+-- work to the instances of TermLike and Predicate.
 
-test_StepPattern :: [Tasty.TestTree]
-test_StepPattern =
+test_TermLike :: [Tasty.TestTree]
+test_TermLike =
     [ Tasty.testGroup "mkTop"    $ testIsTop     (AST.mkTop    Mock.testSort)
     , Tasty.testGroup "mkBottom" $ testIsBottom  (AST.mkBottom Mock.testSort)
     , Tasty.testGroup "mkVar"    $ testIsNeither (AST.mkVar    Mock.x       )
     , Tasty.testGroup "mkApp"    $ testIsNeither Mock.a
     ]
   where
-    isTop :: CommonStepPattern Object -> Bool
+    isTop :: TermLike Variable -> Bool
     isTop = TopBottom.isTop
 
-    isBottom :: CommonStepPattern Object -> Bool
+    isBottom :: TermLike Variable -> Bool
     isBottom = TopBottom.isBottom
 
-    testIsTop :: CommonStepPattern Object -> [Tasty.TestTree]
+    testIsTop :: TermLike Variable -> [Tasty.TestTree]
     testIsTop stepPattern =
         [ satisfies isTop            "satisfies isTop"
         , satisfies (not . isBottom) "satisfies (not . isBottom)"
@@ -42,7 +42,7 @@ test_StepPattern =
       where
         satisfies = Terse.satisfies stepPattern
 
-    testIsBottom :: CommonStepPattern Object -> [Tasty.TestTree]
+    testIsBottom :: TermLike Variable -> [Tasty.TestTree]
     testIsBottom stepPattern =
         [ satisfies isBottom         "satisfies isBottom"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"
@@ -50,7 +50,7 @@ test_StepPattern =
       where
         satisfies = Terse.satisfies stepPattern
 
-    testIsNeither :: CommonStepPattern Object -> [Tasty.TestTree]
+    testIsNeither :: TermLike Variable -> [Tasty.TestTree]
     testIsNeither stepPattern =
         [ satisfies (not . isBottom) "satisfies (not . isBottom)"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"
@@ -80,10 +80,10 @@ test_Predicate =
     , Tasty.testGroup "\\implies(\\equals(x, a), \\equals(x, b))" $ testIsNeither implies
     ]
   where
-    isTop :: CommonPredicate Object -> Bool
+    isTop :: Predicate Variable -> Bool
     isTop = TopBottom.isTop
 
-    isBottom :: CommonPredicate Object -> Bool
+    isBottom :: Predicate Variable -> Bool
     isBottom = TopBottom.isBottom
 
     top     = Predicate.makeTruePredicate
@@ -101,7 +101,7 @@ test_Predicate =
     iff     = Predicate.makeIffPredicate     equalsA equalsB
     implies = Predicate.makeImpliesPredicate equalsA equalsB
 
-    testIsTop :: CommonPredicate Object -> [Tasty.TestTree]
+    testIsTop :: Predicate Variable -> [Tasty.TestTree]
     testIsTop predicate =
         [ satisfies isTop            "satisfies isTop"
         , satisfies (not . isBottom) "satisfies (not . isBottom)"
@@ -109,7 +109,7 @@ test_Predicate =
       where
         satisfies = Terse.satisfies predicate
 
-    testIsBottom :: CommonPredicate Object -> [Tasty.TestTree]
+    testIsBottom :: Predicate Variable -> [Tasty.TestTree]
     testIsBottom predicate =
         [ satisfies isBottom         "satisfies isBottom"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"
@@ -117,7 +117,7 @@ test_Predicate =
       where
         satisfies = Terse.satisfies predicate
 
-    testIsNeither :: CommonPredicate Object -> [Tasty.TestTree]
+    testIsNeither :: Predicate Variable -> [Tasty.TestTree]
     testIsNeither predicate =
         [ satisfies (not . isBottom) "satisfies (not . isBottom)"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"

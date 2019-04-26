@@ -1,6 +1,7 @@
 module Test.Kore.Builtin.Map where
 
-import           Hedgehog
+import           Hedgehog hiding
+                 ( Concrete )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
@@ -27,13 +28,13 @@ import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
@@ -55,11 +56,11 @@ genMapInteger :: Gen a -> Gen (Map Integer a)
 genMapInteger genElement =
     Gen.map (Range.linear 0 32) ((,) <$> genInteger <*> genElement)
 
-genConcreteMap :: Gen a -> Gen (Map (ConcreteStepPattern Object) a)
+genConcreteMap :: Gen a -> Gen (Map (TermLike Concrete) a)
 genConcreteMap genElement =
     Map.mapKeys Test.Int.asInternal <$> genMapInteger genElement
 
-genMapPattern :: Gen (CommonStepPattern Object)
+genMapPattern :: Gen (TermLike Variable)
 genMapPattern = asPattern <$> genConcreteMap genIntegerPattern
 
 genMapSortedVariable
@@ -345,8 +346,8 @@ mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
-    :: Map (CommonStepPattern Object) (CommonStepPattern Object)
-    -> CommonStepPattern Object
+    :: Map (TermLike Variable) (TermLike Variable)
+    -> TermLike Variable
 asSymbolicPattern result
     | Map.null result =
         applyUnit
@@ -490,7 +491,7 @@ hprop_unparse =
     genValue = Test.Int.asInternal <$> genInteger
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map.Builtin Variable -> CommonStepPattern Object
+asPattern :: Map.Builtin Variable -> TermLike Variable
 asPattern =
     Reflection.give testMetadataTools Map.asPattern
     . builtinMap
@@ -504,12 +505,12 @@ asExpandedPattern =
 -- | Specialize 'Map.asInternal' to the builtin sort 'listSort'.
 asInternal
     :: Map.Builtin Variable
-    -> CommonStepPattern Object
+    -> TermLike Variable
 asInternal = Map.asInternal testMetadataTools mapSort
 
 -- * Constructors
 
-mkIntVar :: Id Object -> CommonStepPattern Object
+mkIntVar :: Id Object -> TermLike Variable
 mkIntVar variableName =
     mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
 

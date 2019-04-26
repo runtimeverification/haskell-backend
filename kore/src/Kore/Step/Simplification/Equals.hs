@@ -34,7 +34,6 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeNotPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.ExpandedPattern
@@ -64,6 +63,7 @@ import qualified Kore.Step.Simplification.Not as Not
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -549,8 +549,8 @@ makeEvaluateTermsAssumesNoBottom
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
@@ -602,8 +602,8 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottomMaybe
@@ -653,8 +653,8 @@ makeEvaluateTermsToPredicateSubstitution
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Simplifier
         (OrOfPredicateSubstitution level variable, SimplificationProof level)
 makeEvaluateTermsToPredicateSubstitution

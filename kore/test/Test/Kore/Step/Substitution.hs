@@ -20,8 +20,6 @@ import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
-                 ( StepPattern )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -33,6 +31,8 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -344,8 +344,8 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 merge
-    :: [(Variable Object, StepPattern Object Variable)]
-    -> [(Variable Object, StepPattern Object Variable)]
+    :: [(Variable Object, TermLike Variable)]
+    -> [(Variable Object, TermLike Variable)]
     -> IO
         (Either
             ( UnificationOrSubstitutionError Object Variable )

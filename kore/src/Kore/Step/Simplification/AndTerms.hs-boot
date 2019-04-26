@@ -10,8 +10,8 @@ import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.Pattern
-       ( StepPattern )
+import Kore.Step.TermLike
+       ( TermLike )
 import Kore.Step.Representation.ExpandedPattern
        ( ExpandedPattern )
 import Kore.Step.Simplification.Data
@@ -38,8 +38,8 @@ termAnd
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
 
 termUnification
@@ -59,6 +59,6 @@ termUnification
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> unifier (ExpandedPattern level variable, SimplificationProof level)

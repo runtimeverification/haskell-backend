@@ -29,13 +29,14 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate, makeMultipleOrPredicate, makeTruePredicate )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, Predicated (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -47,7 +48,7 @@ type OrOfPredicated level variable term =
 most common case.
 -}
 type OrOfExpandedPattern level variable
-    = OrOfPredicated level variable (StepPattern level variable)
+    = OrOfPredicated level variable (TermLike variable)
 
 {-| 'OrOfPredicateSubstitution' is a 'MultiOr' of 'PredicateSubstitution'.
 -}
@@ -56,8 +57,8 @@ type OrOfPredicateSubstitution level variable
 
 {-| 'OrOfPredicate' is a 'MultiOr' of 'Predicate'.
 -}
-type OrOfPredicate level variable =
-    MultiOr (Predicate level variable)
+type OrOfPredicate variable =
+    MultiOr (Predicate variable)
 
 {-| 'CommonOrOfExpandedPattern' particularizes 'OrOfExpandedPattern' to
 'Variable', following the same convention as the other Common* types.
@@ -72,11 +73,11 @@ type CommonOrOfPredicateSubstitution level =
     OrOfPredicateSubstitution level Variable
 
 {-| Constructs a normalized 'OrOfExpandedPattern' from
-'StepPatterns'.
+'TermLikes'.
 -}
 makeFromSinglePurePattern
     :: (MetaOrObject level, Ord (variable level))
-    => StepPattern level variable
+    => TermLike variable
     -> OrOfExpandedPattern level variable
 makeFromSinglePurePattern patt =
     MultiOr.make [ ExpandedPattern.fromPurePattern patt ]
@@ -123,7 +124,7 @@ toExpandedPattern multiOr
             , substitution = mempty
             }
 
-{-| Transforms an 'OrOfExpandedPattern' into a 'StepPattern'.
+{-| Transforms an 'OrOfExpandedPattern' into a 'TermLike'.
 -}
 toStepPattern
     ::  ( MetaOrObject level
@@ -132,7 +133,7 @@ toStepPattern
         , Show (variable level)
         , Unparse (variable level)
         )
-    => OrOfExpandedPattern level variable -> StepPattern level variable
+    => OrOfExpandedPattern level variable -> TermLike variable
 toStepPattern multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> mkBottom_
@@ -151,6 +152,6 @@ toPredicate
         , Show (variable level)
         , Unparse (variable level)
         )
-    => OrOfPredicate level variable -> Predicate level variable
+    => OrOfPredicate variable -> Predicate variable
 toPredicate multiOr =
     makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)

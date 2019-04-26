@@ -30,7 +30,6 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
-import           Kore.Step.Pattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -44,6 +43,7 @@ import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )
@@ -73,7 +73,7 @@ equalityRuleEvaluator
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
+    -> TermLike variable
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)

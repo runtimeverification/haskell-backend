@@ -29,10 +29,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
+                 ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-                 ( CommonStepPattern )
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -47,6 +45,8 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
+                 ( TermLike )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -395,8 +395,8 @@ test_onePathStrategy =
 
 simpleRewrite
     :: MetaOrObject level
-    => CommonStepPattern level
-    -> CommonStepPattern level
+    => TermLike Variable
+    -> TermLike Variable
     -> RewriteRule level Variable
 simpleRewrite left right =
     RewriteRule RulePattern
@@ -409,9 +409,9 @@ simpleRewrite left right =
 
 rewriteWithPredicate
     :: MetaOrObject level
-    => CommonStepPattern level
-    -> CommonStepPattern level
-    -> CommonPredicate level
+    => TermLike Variable
+    -> TermLike Variable
+    -> Predicate Variable
     -> RewriteRule level Variable
 rewriteWithPredicate left right predicate =
     RewriteRule RulePattern
@@ -463,7 +463,7 @@ runOnePathSteps
     -> Limit Natural
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
-    -> CommonStepPattern level
+    -> TermLike Variable
     -> [RewriteRule level Variable]
     -> [RewriteRule level Variable]
     -> IO [CommonStrategyPattern level]

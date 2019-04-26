@@ -20,7 +20,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -73,13 +72,14 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
 
-{-|'simplify' simplifies a StepPattern level variable, returning an
+{-|'simplify' simplifies a TermLike variable, returning an
 'ExpandedPattern'.
 -}
 simplify
@@ -96,7 +96,7 @@ simplify
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         ( ExpandedPattern level variable
         , SimplificationProof level
@@ -109,7 +109,7 @@ simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
         , proof
         )
 
-{-|'simplifyToOr' simplifies a StepPattern level variable, returning an
+{-|'simplifyToOr' simplifies a TermLike variable, returning an
 'OrOfExpandedPattern'.
 -}
 simplifyToOr
@@ -126,7 +126,7 @@ simplifyToOr
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitutionSimplifier level
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
@@ -157,7 +157,7 @@ simplifyInternal
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Base (StepPattern level variable) (StepPattern level variable)
+    -> Base (TermLike variable) (TermLike variable)
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
