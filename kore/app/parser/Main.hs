@@ -30,7 +30,6 @@ import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
----                 ( VerifiedModule, toVerifiedPureDefinition )
 import Kore.Parser.Parser
        ( parseKoreDefinition, parseKorePattern )
 ---import           Kore.Unparser as Unparser
