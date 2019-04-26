@@ -11,22 +11,14 @@ module Kore.Attribute.Location
     , LineColumn (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Default
 import qualified Data.Text as Text
-import           GHC.Generics
-                 ( Generic )
 import           Text.Megaparsec
                  ( Parsec, parseMaybe )
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer
                  ( decimal )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as AttributeParser
+import           Kore.Attribute.Parser as AttributeParser
 import qualified Kore.Error
 
 data LineColumn = LineColumn
@@ -55,7 +47,7 @@ instance ParseAttributes Location where
       where
         parseApplication
             :: [Sort Object]
-            -> [CommonKorePattern]
+            -> [AttributePattern]
             -> Location
             -> AttributeParser.Parser Location
         parseApplication params args l@(Location Nothing Nothing) = do

@@ -11,17 +11,9 @@ module Kore.Attribute.Function
     , functionId, functionSymbol, functionAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 -- | @Function@ represents the @function@ attribute for symbols.
 newtype Function = Function { isDeclaredFunction :: Bool }
@@ -51,22 +43,16 @@ functionSymbol =
         }
 
 -- | Kore pattern representing the @function@ attribute.
-functionAttribute :: CommonKorePattern
-functionAttribute =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = functionSymbol
-            , applicationChildren = []
-            }
+functionAttribute :: AttributePattern
+functionAttribute = attributePattern_ functionSymbol
 
 instance ParseAttributes Function where
-    parseAttribute =
-        withApplication parseApplication
+    parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Function { isDeclaredFunction } = do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isDeclaredFunction failDuplicate
+            Monad.when isDeclaredFunction failDuplicate'
             return Function { isDeclaredFunction = True }
-        withApplication = Parser.withApplication functionId
-        failDuplicate = Parser.failDuplicate functionId
+        withApplication' = Parser.withApplication functionId
+        failDuplicate' = Parser.failDuplicate functionId

@@ -27,7 +27,7 @@ import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Parser.Parser
+import           Kore.Parser
 
 import qualified Paths
 
@@ -70,11 +70,11 @@ goldenFromInputFileName (InputFileName inputFile) =
         (directory </> addExtension inputFileName ".golden")
   where (directory, inputFileName) = splitFileName inputFile
 
-toByteString :: Either String KoreDefinition -> ByteString
+toByteString :: Either String ParsedDefinition -> ByteString
 toByteString (Left err) = ByteString.Lazy.Char8.pack err
 toByteString (Right _) = ByteString.Lazy.Char8.empty
 
-verify :: KoreDefinition -> Either String KoreDefinition
+verify :: ParsedDefinition -> Either String ParsedDefinition
 verify definition =
     case
         verifyDefinition

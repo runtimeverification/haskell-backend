@@ -12,8 +12,8 @@ import System.IO
        ( stdout )
 
 import Kore.AST.Sentence
-       ( KoreDefinition )
-import Kore.Parser.Parser
+       ( ParsedDefinition )
+import Kore.Parser
        ( parseKoreDefinition )
 import Kore.Unparser
 
@@ -66,6 +66,6 @@ main =
                     renderIO stdout (layoutPretty layoutOptions $ unparse defn)
 
 -- | Read a 'KoreDefinition' from the given file name or signal an error.
-readKoreOrDie :: FilePath -> IO KoreDefinition
+readKoreOrDie :: FilePath -> IO ParsedDefinition
 readKoreOrDie fileName =
     readFile fileName >>= either error return . parseKoreDefinition fileName

@@ -11,17 +11,9 @@ module Kore.Attribute.Constructor
     , constructorId, constructorSymbol, constructorAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 -- | @Constructor@ represents the @constructor@ attribute for symbols.
 newtype Constructor = Constructor { isConstructor :: Bool }
@@ -51,21 +43,16 @@ constructorSymbol =
         }
 
 -- | Kore pattern representing the @constructor@ attribute.
-constructorAttribute :: CommonKorePattern
-constructorAttribute =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = constructorSymbol
-            , applicationChildren = []
-            }
+constructorAttribute :: AttributePattern
+constructorAttribute = attributePattern_ constructorSymbol
 
 instance ParseAttributes Constructor where
-    parseAttribute = withApplication parseApplication
+    parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Constructor { isConstructor } = do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isConstructor failDuplicate
+            Monad.when isConstructor failDuplicate'
             return Constructor { isConstructor = True }
-        withApplication = Parser.withApplication constructorId
-        failDuplicate = Parser.failDuplicate constructorId
+        withApplication' = Parser.withApplication constructorId
+        failDuplicate' = Parser.failDuplicate constructorId

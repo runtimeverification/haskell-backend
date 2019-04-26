@@ -13,7 +13,6 @@ import           Data.Proxy
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -49,23 +48,21 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import qualified Kore.Verified as Verified
 import qualified SMT
 
 import           Test.Kore
-                 ( emptyLogger )
+                 ( asParsedPattern, emptyLogger )
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
-updateAttributes :: Attributes -> VerifiedKoreSentence -> VerifiedKoreSentence
-updateAttributes attrs = applyUnifiedSentence updateAttrs updateAttrs
+updateAttributes :: Attributes -> Verified.Sentence -> Verified.Sentence
+updateAttributes attrs = updateAttrs
   where
-    updateAttrs
-        :: MetaOrObject level
-        => Sentence level UnifiedSortVariable VerifiedKorePattern
-        -> VerifiedKoreSentence
+    updateAttrs :: Verified.Sentence -> Verified.Sentence
     updateAttrs (SentenceSymbolSentence ss) =
-        constructUnifiedSentence SentenceSymbolSentence
+        SentenceSymbolSentence
             (ss { sentenceSymbolAttributes = attrs })
     updateAttrs _ = error "unsupported non-symbol sentence"
 
@@ -99,7 +96,7 @@ injHead s1 s2 = SymbolOrAlias
     }
 
 
-testDef :: VerifiedKoreDefinition
+testDef :: Definition Verified.Sentence
 testDef =
     simpleDefinitionFromSentences
         (ModuleName "test")
@@ -117,12 +114,11 @@ testDef =
         , updateAttributes
             (Attributes [functionAttribute, constructorAttribute])
             (simpleObjectSymbolSentence (SymbolName "g") (SortName "S"))
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
-                { sentenceAxiomParameters = [asUnified sortVar]
+                { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -137,12 +133,11 @@ testDef =
                             )
                         )
                 }
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
-                { sentenceAxiomParameters = [asUnified sortVar]
+                { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -155,12 +150,11 @@ testDef =
                             )
                         )
                 }
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
-                { sentenceAxiomParameters = [asUnified sortVar]
+                { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -172,12 +166,11 @@ testDef =
                             )
                         )
                 }
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
-                { sentenceAxiomParameters = [asUnified sortVar]
+                { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -189,12 +182,11 @@ testDef =
                             )
                         :: CommonStepPattern Object)
                 }
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
-                { sentenceAxiomParameters = [asUnified sortVar]
+                { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -206,12 +198,12 @@ testDef =
                             )
                         :: CommonStepPattern Object)
                 }
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
-                { sentenceAxiomParameters = [asUnified sortVar]
+                { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes =
                     Attributes
-                        [ asCommonKorePattern
+                        [ asParsedPattern
                             (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     simplificationSymbol
@@ -220,7 +212,6 @@ testDef =
                             )
                         ]
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -232,32 +223,29 @@ testDef =
                             )
                         :: CommonStepPattern Object)
                 }
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
-                { sentenceAxiomParameters = [asUnified sortVar]
+                { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkTop sortS :: CommonStepPattern Object)
                 }
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
-                { sentenceAxiomParameters = [asUnified sortVar]
+                { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkRewrites
                             (mkAnd mkTop_ (mkApp sortS fHead []))
                             (mkAnd mkTop_ (mkApp sortS tHead []))
                         )
                 }
-        , asKoreAxiomSentence
+        , SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters =
-                    [asUnified sortVar, asUnified sortVar1]
+                    [sortVar, sortVar1]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkImplies
                             (mkTop sortVarS)
                             (mkAnd
@@ -278,7 +266,7 @@ testIndexedModule =
         verifyResult = verifyAndIndexDefinition
             attributesVerification
             Builtin.koreVerifiers
-            (eraseUnifiedSentenceAnnotations <$> testDef)
+            (eraseSentenceAnnotations <$> testDef)
     in
         case verifyResult of
             Left err1            -> error (printError err1)
@@ -297,8 +285,7 @@ testId name =
 testEvaluators
     :: BuiltinAndAxiomSimplifierMap Object
 testEvaluators =
-    axiomPatternsToEvaluators
-    $ extractEqualityAxioms Object testIndexedModule
+    axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build testIndexedModule
@@ -339,7 +326,7 @@ test_functionRegistry =
     , testCase "Checking that the indexed module contains a rewrite axiom"
         (assertEqual ""
             (1::Int)
-            (length (extractRewriteAxioms Object testIndexedModule))
+            (length (extractRewriteAxioms testIndexedModule))
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApp sortS sHead []

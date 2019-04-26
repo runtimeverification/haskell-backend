@@ -5,45 +5,39 @@ License     : NCSA
 module Kore.AST.ApplicativeKore
     ( completeDefinition ) where
 
-import Control.Comonad
-import Data.Foldable
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
-import Kore.AST.Sentence
-import Kore.AST.Valid
-import Kore.Step.Pattern hiding
-       ( freeVariables )
+import           Control.Comonad
+import           Data.Foldable
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.AST.Sentence
+import           Kore.AST.Valid
+import           Kore.Step.Pattern hiding
+                 ( freeVariables )
+import qualified Kore.Verified as Verified
 
-completeDefinition :: VerifiedPureDefinition Object -> VerifiedPureDefinition Object
+completeDefinition :: Definition Verified.Sentence -> Definition Verified.Sentence
 completeDefinition Definition { definitionAttributes, definitionModules } =
     Definition
     { definitionAttributes
     , definitionModules = map completeModule definitionModules
     }
 
-completeModule :: VerifiedPureModule Object -> VerifiedPureModule Object
+completeModule :: Module Verified.Sentence -> Module Verified.Sentence
 completeModule Module { moduleName, moduleSentences, moduleAttributes } =
     Module
     { moduleName
-    , moduleSentences = concat (map completeSentence moduleSentences)
+    , moduleSentences = concatMap completeSentence moduleSentences
     , moduleAttributes
     }
 
-completeSentence :: VerifiedPureSentence Object -> [VerifiedPureSentence Object]
-completeSentence ( SentenceAxiomSentence
-                     SentenceAxiom
-                     { sentenceAxiomParameters
-                     , sentenceAxiomPattern
-                     , sentenceAxiomAttributes
-                     } ) =
-    [ SentenceAxiomSentence
-        SentenceAxiom
-        { sentenceAxiomParameters
-        , sentenceAxiomPattern = quantifiedAxiomPattern
-        , sentenceAxiomAttributes
-        } ]
+completeSentence :: Verified.Sentence -> [Verified.Sentence]
+completeSentence (SentenceAxiomSentence sentenceAxiom) =
+    [ SentenceAxiomSentence sentenceAxiom
+        { sentenceAxiomPattern = quantifiedAxiomPattern }
+    ]
  where
-   quantifiedAxiomPattern = quantifyFreeVariables sentenceAxiomPattern
+   quantifiedAxiomPattern =
+       quantifyFreeVariables (sentenceAxiomPattern sentenceAxiom)
 completeSentence s = [s]
 
 quantifyFreeVariables

@@ -11,14 +11,14 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Implicit.ImplicitSorts
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
 import qualified Kore.Unification.Substitution as Substitution
 
-import Test.Kore
-import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import           Test.Kore
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Tasty.HUnit.Extensions
 
 test_predicate :: [TestTree]
 test_predicate =
@@ -278,8 +278,8 @@ test_predicate =
                 )
             assertEqual "equals predicate has two variables"
                 (Set.fromList
-                    [ a patternMetaSort
-                    , b patternMetaSort
+                    [ a Mock.testSort
+                    , b Mock.testSort
                     ]
                 )
                 (Predicate.freeVariables pr1)
@@ -287,7 +287,7 @@ test_predicate =
                 Set.empty
                 (Predicate.freeVariables
                     (makeExistsPredicate
-                        (a patternMetaSort)
+                        (a Mock.testSort)
                         makeTruePredicate
                     )
                 )
@@ -300,12 +300,12 @@ test_predicate =
             assertEqual "a = b"
                 (makeAndPredicate pr1 makeTruePredicate)
                 (substitutionToPredicate $ Substitution.wrap
-                    [(a patternMetaSort, mkVar $ b patternMetaSort)]
+                    [(a Mock.testSort, mkVar $ b Mock.testSort)]
                 )
         )
     , let
         makeExists :: CommonPredicate Meta -> CommonPredicate Meta
-        makeExists p = makeExistsPredicate (a patternMetaSort) p
+        makeExists p = makeExistsPredicate (a Mock.testSort) p
       in
         testCase "Exists truth table"
             (do
@@ -318,7 +318,7 @@ test_predicate =
             )
     , let
         makeForall :: CommonPredicate Meta -> CommonPredicate Meta
-        makeForall p = makeForallPredicate (a patternMetaSort) p
+        makeForall p = makeForallPredicate (a Mock.testSort) p
       in
         testCase "Forall truth table"
             (do
@@ -339,8 +339,8 @@ test_predicate =
                 , ("Iff", mkIff pa1 pa2)
                 , ("Implies", mkImplies pa1 pa2)
                 , ("Not", mkNot pa1)
-                , ("Exists", mkExists (a patternMetaSort) pa1)
-                , ("Forall", mkForall (a patternMetaSort) pa1)
+                , ("Exists", mkExists (a Mock.testSort) pa1)
+                , ("Forall", mkForall (a Mock.testSort) pa1)
                 , ("Equals", pa1)
                 , ("Ceil", ceilA)
                 , ("Floor", floorA)
@@ -365,40 +365,40 @@ makePredicateYieldsWrapPredicate msg p =
 pr1 :: CommonPredicate Meta
 pr1 =
     makeEqualsPredicate
-        (mkVar $ a patternMetaSort)
-        (mkVar $ b patternMetaSort)
+        (mkVar $ a Mock.testSort)
+        (mkVar $ b Mock.testSort)
 
 pr2 :: CommonPredicate Meta
 pr2 =
     makeEqualsPredicate
-        (mkVar $ c patternMetaSort)
-        (mkVar $ d patternMetaSort)
+        (mkVar $ c Mock.testSort)
+        (mkVar $ d Mock.testSort)
 
 pa1 :: CommonStepPattern Meta
 pa1 =
     mkEquals_
-        (mkVar $ a patternMetaSort)
-        (mkVar $ b patternMetaSort)
+        (mkVar $ a Mock.testSort)
+        (mkVar $ b Mock.testSort)
 
 pa2 :: CommonStepPattern Meta
 pa2 =
     mkEquals_
-        (mkVar $ c patternMetaSort)
-        (mkVar $ d patternMetaSort)
+        (mkVar $ c Mock.testSort)
+        (mkVar $ d Mock.testSort)
 
 ceilA :: CommonStepPattern Meta
 ceilA =
     mkCeil_
-        (mkVar $ a patternMetaSort)
+        (mkVar $ a Mock.testSort)
 
 inA :: CommonStepPattern Meta
 inA =
     mkIn_
-        (mkVar $ a patternMetaSort)
-        (mkVar $ b patternMetaSort)
+        (mkVar $ a Mock.testSort)
+        (mkVar $ b Mock.testSort)
 
 floorA :: CommonStepPattern Meta
-floorA = mkFloor_ (mkVar $ a patternMetaSort)
+floorA = mkFloor_ (mkVar $ a Mock.testSort)
 
 makeAnd
     :: CommonPredicate Meta

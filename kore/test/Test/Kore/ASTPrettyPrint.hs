@@ -5,7 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.ASTPrettyPrint
 import qualified Kore.Domain.Builtin as Domain
 
@@ -20,7 +20,7 @@ test_astPrettyPrint =
         )
     , testCase "Object unified variable"
         (assertEqual ""
-            (  "UnifiedObject Variable\n"
+            (  "Variable\n"
             ++ "    { variableName = (Id \"v\" AstLocationNone) :: Id Object\n"
             ++ "    , variableCounter = Nothing\n"
             ++ "    , variableSort =\n"
@@ -28,7 +28,7 @@ test_astPrettyPrint =
             ++ "    }"
             )
             (prettyPrintToString
-                (UnifiedObject Variable
+                (Variable
                     { variableName = testId "v"
                     , variableCounter = mempty
                     , variableSort =
@@ -53,6 +53,6 @@ test_astPrettyPrint =
 
 prettyPrintPattern
     :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable CommonKorePattern
+    => Pattern level Domain.Builtin Variable ParsedPattern
     -> String
 prettyPrintPattern = prettyPrintToString

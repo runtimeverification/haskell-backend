@@ -21,7 +21,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -38,7 +37,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Parser.Parser
+import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
@@ -114,7 +113,7 @@ testSymbolWithSolver eval title resultSort symbol args expected =
 -- * Evaluation
 
 verify
-    :: KoreDefinition
+    :: ParsedDefinition
     -> Either
         (Kore.Error.Error VerifyError)
         (Map
@@ -171,7 +170,7 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
 indexedModule =
     makeIndexedModuleAttributesNull
-    $ mapIndexedModulePatterns Kore.eraseAnnotations verifiedModule
+    $ mapIndexedModulePatterns eraseAnnotations verifiedModule
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
@@ -307,7 +306,5 @@ hpropUnparse
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
     let syntax = unparseToString builtin
-        expected =
-            (Kore.eraseAnnotations . toKorePattern)
-                (Builtin.externalizePattern builtin)
+        expected = eraseAnnotations (Builtin.externalizePattern builtin)
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

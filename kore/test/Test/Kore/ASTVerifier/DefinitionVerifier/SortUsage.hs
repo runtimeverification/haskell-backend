@@ -12,15 +12,14 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
-import Kore.AST.Kore
-import Kore.AST.Sentence
-import Kore.AST.Valid
-       ( mkTop )
-import Kore.Error
-import Kore.Implicit.ImplicitSorts
-import Kore.IndexedModule.Error
-       ( noSort )
-import Kore.Step.Pattern
+import           Kore.AST.Pure
+import           Kore.AST.Sentence
+import           Kore.AST.Valid
+                 ( mkTop )
+import           Kore.Error
+import           Kore.IndexedModule.Error
+                 ( noSort )
+import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -32,26 +31,26 @@ data TestFlag
 
 data AdditionalTestConfiguration
     = SkipTest
-    | AdditionalSentences [VerifiedKoreSentence]
+    | AdditionalSentences [Verified.Sentence]
 
-data TestConfiguration level = TestConfiguration
+data TestConfiguration = TestConfiguration
     { testConfigurationDescription :: !String
-    , testConfigurationAdditionalSentences :: ![VerifiedKoreSentence]
-    , testConfigurationAdditionalSortVariables :: ![SortVariable level]
+    , testConfigurationAdditionalSentences :: ![Verified.Sentence]
+    , testConfigurationAdditionalSortVariables :: ![SortVariable Object]
     , testConfigurationCaseBasedConfiguration
         :: ![([TestFlag], AdditionalTestConfiguration)]
     }
 
-data SuccessConfiguration level
-    = SuccessConfiguration (TestConfiguration level)
+data SuccessConfiguration
+    = SuccessConfiguration TestConfiguration
     | SuccessConfigurationSkipAll
-data FailureConfiguration level
-    = FailureConfiguration (TestConfiguration level)
+data FailureConfiguration
+    = FailureConfiguration TestConfiguration
     | FailureConfigurationSkipAll
 
 data FlaggedTestData = FlaggedTestData
     { flaggedTestDataFlags    :: ![TestFlag]
-    , flaggedTestDataTestData :: !([VerifiedKoreSentence] -> TestData)
+    , flaggedTestDataTestData :: !([Verified.Sentence] -> TestData)
     }
 
 test_sortUsage :: [TestTree]
@@ -67,7 +66,7 @@ test_sortUsage =
     , expectSuccess "Definition with meta alias"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
-                (AliasName "#a") charListMetaSort []
+                (AliasName "#a") stringMetaSort []
             ]
         )
     , testsForObjectSort
@@ -148,18 +147,6 @@ test_sortUsage =
                     (simpleSortActual additionalSortName))
                 (NamePrefix "internal")
             )
-    , successTestsForMetaSort
-        (CommonDescription "Referencing simple sort")
-        (SuccessConfiguration TestConfiguration
-            { testConfigurationDescription = "The sort is declared"
-            , testConfigurationAdditionalSentences = []
-            , testConfigurationAdditionalSortVariables = []
-            , testConfigurationCaseBasedConfiguration = []
-            }
-        )
-        (TestedSort (simpleSort (SortName "#CharList")))
-        (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))
-        (NamePrefix "#internal")
     , failureTestsForMetaSort
         (CommonDescription "Referencing simple sort")
         (FailureConfiguration TestConfiguration
@@ -201,7 +188,7 @@ test_sortUsage =
                         , sentenceSortAttributes =
                             Attributes []
                         }
-                    :: VerifiedKoreSentenceSort Object)
+                    :: Verified.SentenceSort)
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -233,7 +220,7 @@ test_sortUsage =
                         , sentenceSortAttributes =
                             Attributes []
                         }
-                    :: VerifiedKoreSentenceSort Object)
+                    :: Verified.SentenceSort)
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -261,8 +248,8 @@ newtype CommonDescription = CommonDescription String
 testsForObjectSort
     :: HasCallStack
     => CommonDescription
-    -> SuccessConfiguration Object
-    -> FailureConfiguration Object
+    -> SuccessConfiguration
+    -> FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
     -> TestedSort Object
@@ -324,9 +311,9 @@ testsForObjectSort
         addSentenceToTestConfiguration additionalSortSentence
 
 addSentenceToTestConfiguration
-    :: VerifiedKoreSentence
-    -> TestConfiguration level
-    -> TestConfiguration level
+    :: Verified.Sentence
+    -> TestConfiguration
+    -> TestConfiguration
 addSentenceToTestConfiguration
     sentence
     configuration@TestConfiguration
@@ -337,7 +324,7 @@ addSentenceToTestConfiguration
 
 successTestsForMetaSort
     :: CommonDescription
-    -> SuccessConfiguration Meta
+    -> SuccessConfiguration
     -> TestedSort Meta
     -> SortActualThatIsDeclared Meta
     -> NamePrefix
@@ -365,7 +352,7 @@ successTestsForMetaSort
 
 failureTestsForMetaSort
     :: CommonDescription
-    -> FailureConfiguration Meta
+    -> FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
     -> TestedSort Meta
@@ -398,7 +385,7 @@ failureTestsForMetaSort
   = testGroup commonDescription []
 
 expectSuccessFlaggedTests
-    :: SuccessConfiguration level
+    :: SuccessConfiguration
     -> [FlaggedTestData]
     -> TestTree
 expectSuccessFlaggedTests
@@ -413,7 +400,7 @@ expectSuccessFlaggedTests SuccessConfigurationSkipAll _ = testGroup "" []
 
 expectFailureWithErrorFlaggedTests
     :: HasCallStack
-    => FailureConfiguration level
+    => FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
     -> [FlaggedTestData]
@@ -433,7 +420,7 @@ expectFailureWithErrorFlaggedTests FailureConfigurationSkipAll _ _ _ =
     testGroup "" []
 
 flaggedObjectTestsForSort
-    :: TestConfiguration Object
+    :: TestConfiguration
     -> TestedSort Object
     -> SortActualThatIsDeclared Object
     -> NamePrefix
@@ -461,7 +448,7 @@ flaggedObjectTestsForSort
         testConfigurationAdditionalSortVariables testConfiguration
 
 flaggedMetaTestsForSort
-    :: TestConfiguration Meta
+    :: TestConfiguration
     -> TestedSort Meta
     -> SortActualThatIsDeclared Meta
     -> NamePrefix
@@ -481,14 +468,14 @@ flaggedMetaTestsForSort
         asSentence
 
 applyTestConfiguration
-    :: TestConfiguration level
+    :: TestConfiguration
     -> [FlaggedTestData]
     -> [TestData]
 applyTestConfiguration testConfiguration =
     mapMaybe (applyOneTestConfiguration testConfiguration)
 
 applyOneTestConfiguration
-    :: TestConfiguration level
+    :: TestConfiguration
     -> FlaggedTestData
     -> Maybe TestData
 applyOneTestConfiguration testConfiguration flaggedTestData =
@@ -521,8 +508,8 @@ unfilteredTestExamplesForSort
     -> SortActualThatIsDeclared level
     -> [SortVariable level]
     -> NamePrefix
-    -> (VerifiedKoreSentenceAlias level -> VerifiedKoreSentence)
-    -> (VerifiedKoreSentenceSymbol level -> VerifiedKoreSentence)
+    -> (Verified.SentenceAlias -> Verified.Sentence)
+    -> (Verified.SentenceSymbol -> Verified.Sentence)
     -> [FlaggedTestData]
 unfilteredTestExamplesForSort
     _x
@@ -553,7 +540,7 @@ unfilteredTestExamplesForSort
                             aliasName
                             sort
                             sortVariables
-                            (toKorePattern $ mkTop sort)
+                            (mkTop sort)
                         )
                     : additionalSentences
                     )
@@ -580,7 +567,7 @@ unfilteredTestExamplesForSort
                             sort
                             additionalSort
                             sortVariables
-                            (toKorePattern $ mkTop additionalSort)
+                            (mkTop additionalSort)
                         )
                     : additionalSentences
                     )
@@ -605,7 +592,7 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
                         (simpleExistsUnifiedPattern variableName1 sort)
-                        (map asUnified sortVariables)
+                        sortVariables
                     : additionalSentences
                     )
             }
@@ -633,7 +620,7 @@ unfilteredTestExamplesForSort
                             (OperandSort sort)
                             (ResultSort additionalSort)
                         )
-                        (map asUnified sortVariables)
+                        sortVariables
                     : additionalSentences
                     )
             }
@@ -661,7 +648,7 @@ unfilteredTestExamplesForSort
                             (OperandSort additionalSort)
                             (ResultSort sort)
                         )
-                        (map asUnified sortVariables)
+                        sortVariables
                     : additionalSentences
                     )
             }
@@ -688,7 +675,7 @@ unfilteredTestExamplesForSort
                             (SymbolName rawAliasName)
                             [sort]
                         )
-                        (map asUnified sortVariables)
+                        sortVariables
                     : sentenceSymbolSentence
                         (symbolSentenceWithSortParameters
                             (SymbolName rawAliasName)
@@ -751,7 +738,7 @@ unfilteredTestExamplesForObjectSort
                                 }
                             ]
                         )
-                        (map asUnified sortVariables)
+                        sortVariables
                     : symbolSentenceWithResultSort
                         (SymbolName "a")
                         resultSort

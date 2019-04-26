@@ -44,7 +44,7 @@ import           GHC.Stack
 
 import           Kore.AST.Error
                  ( koreFailWithLocations )
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence hiding
                  ( Alias (..), Symbol (..) )
 import           Kore.ASTHelpers as AST

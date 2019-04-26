@@ -20,8 +20,18 @@ module Kore.Sort
     , metaSortsList
     , metaSortTypeString
     , metaSortsListWithString
+    , charMetaSortId
+    , charMetaSortActual
+    , charMetaSort
+    , stringMetaSortId
+    , stringMetaSortActual
+    , stringMetaSort
+    , predicateSortId
+    , predicateSortActual
+    , predicateSort
     -- * Re-exports
     , module Kore.AST.Identifier
+    , module Kore.AST.MetaOrObject
     ) where
 
 import           Control.DeepSeq
@@ -33,6 +43,7 @@ import           GHC.Generics
                  ( Generic )
 
 import Kore.AST.Identifier
+import Kore.AST.MetaOrObject
 import Kore.Unparser
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
@@ -138,53 +149,79 @@ representation instead.
 -}
 data MetaBasicSortType
     = CharSort
-    | PatternSort
-    | SortSort
-    | SymbolSort
-    | VariableSort
-    | UserSort String -- arbitrary MetaSort
     deriving (Generic)
 
 instance Hashable MetaBasicSortType
 
 data MetaSortType
     = MetaBasicSortType MetaBasicSortType
-    | MetaListSortType MetaBasicSortType
     | StringSort
     deriving(Generic)
 
 instance Hashable MetaSortType
 
 metaBasicSortsList :: [MetaBasicSortType]
-metaBasicSortsList =
-    [ CharSort
-    , PatternSort
-    , SortSort
-    , SymbolSort
-    , VariableSort
-    ]
+metaBasicSortsList = [ CharSort ]
 
 metaSortsList :: [MetaSortType]
-metaSortsList =
-    map MetaBasicSortType metaBasicSortsList
-    ++ map MetaListSortType metaBasicSortsList
+metaSortsList = map MetaBasicSortType metaBasicSortsList
 
 metaSortsListWithString :: [MetaSortType]
 metaSortsListWithString = StringSort : metaSortsList
 
 metaBasicSortTypeString :: MetaBasicSortType -> String
 metaBasicSortTypeString CharSort        = "Char"
-metaBasicSortTypeString PatternSort     = "Pattern"
-metaBasicSortTypeString SortSort        = "Sort"
-metaBasicSortTypeString SymbolSort      = "Symbol"
-metaBasicSortTypeString VariableSort    = "Variable"
-metaBasicSortTypeString (UserSort name) =  name
 
 metaSortTypeString :: MetaSortType -> String
 metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
-metaSortTypeString (MetaListSortType s)  =
-    metaBasicSortTypeString s ++ "List"
 metaSortTypeString StringSort            = "String"
 
 instance Show MetaSortType where
     show sortType = '#' : metaSortTypeString sortType
+
+charMetaSortId :: Id Meta
+charMetaSortId = implicitId "#Char"
+
+charMetaSortActual :: SortActual Meta
+charMetaSortActual = SortActual charMetaSortId []
+
+charMetaSort :: Sort Meta
+charMetaSort = SortActualSort charMetaSortActual
+
+stringMetaSortId :: Id Meta
+stringMetaSortId = implicitId "#String"
+
+stringMetaSortActual :: SortActual Meta
+stringMetaSortActual = SortActual stringMetaSortId []
+
+stringMetaSort :: Sort Meta
+stringMetaSort = SortActualSort stringMetaSortActual
+
+predicateSortId :: Id level
+predicateSortId = implicitId "_PREDICATE"
+
+predicateSortActual :: SortActual level
+predicateSortActual = SortActual predicateSortId []
+
+{- | Placeholder sort for constructing new predicates.
+
+The final predicate sort is unknown until the predicate is attached to a
+pattern.
+ -}
+predicateSort :: Sort level
+{- TODO PREDICATE (thomas.tuegel):
+
+Add a constructor
+
+> data Sort level = ... | FlexibleSort
+
+to use internally as a placeholder where the predicate sort is not yet
+known. Using the sort _PREDICATE{} is a kludge; the backend will melt down if
+the user tries to define a sort named _PREDICATE{}. (At least, this is not
+actually a valid identifier in Kore.)
+
+Until this is fixed, the identifier _PREDICATE is reserved in
+Kore.ASTVerifier.DefinitionVerifier.indexImplicitModule.
+
+-}
+predicateSort = SortActualSort predicateSortActual

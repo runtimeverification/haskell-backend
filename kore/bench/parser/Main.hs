@@ -13,7 +13,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
-import           Kore.Parser.Parser
+import           Kore.Parser
                  ( parseKoreDefinition )
 
 import qualified Paths

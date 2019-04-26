@@ -22,10 +22,8 @@ import           Text.Megaparsec
                  ( Parsec, noneOf, parseMaybe )
 import           Text.Megaparsec.Char
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as AttributeParser
+import           Kore.AST.Common
+import           Kore.Attribute.Parser as AttributeParser
 import qualified Kore.Error
 
 newtype Source = Source
@@ -47,7 +45,7 @@ instance ParseAttributes Source where
 
         parseApplication
             :: [Sort Object]
-            -> [CommonKorePattern]
+            -> [AttributePattern]
             -> Source
             -> AttributeParser.Parser Source
         parseApplication params args s@(Source Nothing) = do

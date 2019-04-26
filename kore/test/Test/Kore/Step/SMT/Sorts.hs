@@ -5,15 +5,12 @@ import Test.Tasty
 import Data.Text
        ( Text )
 
-import           Kore.AST.Kore
-                 ( CommonKorePattern )
 import           Kore.AST.Sentence
-                 ( Attributes (Attributes), KoreSentence,
-                 ModuleName (ModuleName), SentenceImport (SentenceImport),
-                 asSentence )
 import qualified Kore.AST.Sentence as SentenceImport
                  ( SentenceImport (..) )
 import qualified Kore.Builtin.Int as Int
+import           Kore.Parser
+                 ( ParsedPattern )
 import qualified Kore.Step.SMT.Declaration.All as Declaration
                  ( declare )
 import           Kore.Step.SMT.Encoder
@@ -329,14 +326,14 @@ test_sortDeclaration =
         ]
     ]
   where
-    importModule :: Text -> KoreSentence
+    importModule :: Text -> ParsedSentence
     importModule name =
         asSentence
             (SentenceImport
                 { sentenceImportModuleName = ModuleName name
                 , sentenceImportAttributes = Attributes []
                 }
-            :: SentenceImport CommonKorePattern
+            :: SentenceImport ParsedPattern
             )
 
     testsForModule name =

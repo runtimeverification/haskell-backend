@@ -6,16 +6,11 @@ import Test.Tasty
 import Data.Text
        ( Text )
 
-import           Kore.AST.Builders
-                 ( sort_ )
-import           Kore.AST.Kore
 import           Kore.AST.Pure
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Implicit.ImplicitSorts
-import           Kore.Parser.ParserImpl
+import           Kore.Parser.Parser
 
 import Test.Kore hiding
        ( sortVariable, sortVariableSort )
@@ -35,7 +30,6 @@ test_koreParser =
     , testGroup
         "metaInCurlyBracesSortVariableListParser"
         metaInCurlyBracesSortVariableListParserTest
-    , testGroup "sortVariableParser" sortVariableParserTests
     , testGroup "objectAliasParser" objectAliasParserTests
     , testGroup "objectSymbolParser" objectSymbolParserTests
     , testGroup "metaAliasParser" metaAliasParserTests
@@ -117,17 +111,7 @@ metaSortConverterTests =
         [ success "#var"
             (SortVariableSort (SortVariable (testId "#var")))
         , success "#Char{}" charMetaSort
-        , success "#CharList{}" charListMetaSort
-        , success "#Pattern{}" patternMetaSort
-        , success "#PatternList{}" patternListMetaSort
-        , success "#Sort{}" sortMetaSort
-        , success "#SortList{}" sortListMetaSort
-        , success "#String{}" charListMetaSort
-        , success "#Symbol{}" symbolMetaSort
-        , success "#SymbolList{}" symbolListMetaSort
-        , success "#Variable{}" variableMetaSort
-        , success "#VariableList{}" variableListMetaSort
-        , success "#User{}" (sort_ $ MetaBasicSortType $ UserSort "User")
+        , success "#String{}" stringMetaSort
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
             ]
@@ -212,20 +196,6 @@ metaInCurlyBracesSortVariableListParserTest =
             ]
         , FailureWithoutMessage
             [ "{#var1 #var2}", "{#var, #Char{}}" ]
-        ]
-
-sortVariableParserTests :: [TestTree]
-sortVariableParserTests =
-    parseTree unifiedSortVariableParser
-        [ success "var"
-            ( UnifiedObject
-                (SortVariable (testId "var"))
-            )
-        , success "#var"
-            ( UnifiedObject
-                (SortVariable (testId "#var"))
-            )
-        , FailureWithoutMessage ["", "#"]
         ]
 
 objectAliasParserTests :: [TestTree]
@@ -358,12 +328,12 @@ andPatternParserTests :: [TestTree]
 andPatternParserTests =
     parseTree korePatternParser
         [ success "\\and{s}(\"a\", \"b\")"
-            ( asCommonKorePattern $ AndPattern And
+            ( asParsedPattern $ AndPattern And
                 { andSort = sortVariableSort "s" :: Sort Object
                 , andFirst =
-                    asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                    asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                 , andSecond =
-                    asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                    asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                 }
             )
         , FailureWithoutMessage
@@ -379,14 +349,14 @@ applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree korePatternParser
         [ success "#v:#Char"
-            ( asCommonKorePattern . SetVariablePattern . SetVariable $ Variable
+            ( asParsedPattern . SetVariablePattern . SetVariable $ Variable
                 { variableName = testId "#v"
                 , variableSort = sortVariableSort "#Char"
                 , variableCounter = mempty
                 }
             )
         , success "v:s1{s2}"
-            ( asCommonKorePattern $ VariablePattern Variable
+            ( asParsedPattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort =
                     SortActualSort SortActual
@@ -397,7 +367,7 @@ applicationPatternParserTests =
                 }
             )
         , success "c{s1,s2}(v1:s1, v2:s2)"
-            ( asCommonKorePattern $ ApplicationPattern Application
+            ( asParsedPattern $ ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
                         { symbolOrAliasConstructor = testId "c" :: Id Object
@@ -406,12 +376,12 @@ applicationPatternParserTests =
                             , sortVariableSort "s2" ]
                         }
                 , applicationChildren =
-                    [ asCommonKorePattern $ VariablePattern Variable
+                    [ asParsedPattern $ VariablePattern Variable
                         { variableName = testId "v1" :: Id Object
                         , variableSort = sortVariableSort "s1"
                         , variableCounter = mempty
                         }
-                    , asCommonKorePattern $ VariablePattern Variable
+                    , asParsedPattern $ VariablePattern Variable
                         { variableName = testId "v2" :: Id Object
                         , variableSort = sortVariableSort "s2"
                         , variableCounter = mempty
@@ -420,7 +390,7 @@ applicationPatternParserTests =
                 }
             )
         , success "c{}()"
-            ( asCommonKorePattern $ ApplicationPattern Application
+            ( asParsedPattern $ ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
                         { symbolOrAliasConstructor = testId "c" :: Id Object
@@ -435,7 +405,7 @@ bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
     parseTree korePatternParser
         [ success "\\bottom{#Sort}()"
-            (asCommonKorePattern $ BottomPattern $ Bottom
+            (asParsedPattern $ BottomPattern $ Bottom
                 (sortVariableSort "#Sort" :: Sort Meta)
             )
         , FailureWithoutMessage
@@ -450,11 +420,11 @@ ceilPatternParserTests :: [TestTree]
 ceilPatternParserTests =
     parseTree korePatternParser
         [ success "\\ceil{s1, s2}(\"a\")"
-            (asCommonKorePattern $ CeilPattern Ceil
+            (asParsedPattern $ CeilPattern Ceil
                     { ceilOperandSort = sortVariableSort "s1" :: Sort Object
                     , ceilResultSort = sortVariableSort "s2"
                     , ceilChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )
         , FailureWithoutMessage
@@ -469,8 +439,7 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
-            $ Kore.AST.Kore.eraseAnnotations
-            $ patternPureToKore
+            $ eraseAnnotations
             $ mkDomainValue
             $ Domain.BuiltinExternal Domain.External
                 { domainValueSort = sortVariableSort "s1"
@@ -489,13 +458,13 @@ equalsPatternParserTests :: [TestTree]
 equalsPatternParserTests =
     parseTree korePatternParser
         [ success "\\equals{s1, s2}(\"a\", \"b\")"
-            ( asCommonKorePattern $ EqualsPattern Equals
+            ( asParsedPattern $ EqualsPattern Equals
                     { equalsOperandSort = sortVariableSort "s1" :: Sort Object
                     , equalsResultSort = sortVariableSort "s2"
                     , equalsFirst =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , equalsSecond =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -511,7 +480,7 @@ existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
     parseTree korePatternParser
         [ success "\\exists{#s}(#v:#Char, \"b\")"
-            (asCommonKorePattern $ ExistsPattern Exists
+            (asParsedPattern $ ExistsPattern Exists
                     { existsSort = sortVariableSort "#s" :: Sort Meta
                     , existsVariable =
                         Variable
@@ -520,7 +489,7 @@ existsPatternParserTests =
                             , variableCounter = mempty
                             }
                     , existsChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -542,11 +511,11 @@ floorPatternParserTests :: [TestTree]
 floorPatternParserTests =
     parseTree korePatternParser
         [ success "\\floor{s1, s2}(\"a\")"
-            ( asCommonKorePattern $ FloorPattern Floor
+            ( asParsedPattern $ FloorPattern Floor
                     { floorOperandSort = sortVariableSort "s1" :: Sort Object
                     , floorResultSort = sortVariableSort "s2"
                     , floorChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )
         , FailureWithoutMessage
@@ -561,7 +530,7 @@ forallPatternParserTests :: [TestTree]
 forallPatternParserTests =
     parseTree korePatternParser
         [ success "\\forall{s}(v:s1, \"b\")"
-            ( asCommonKorePattern $ ForallPattern Forall
+            ( asParsedPattern $ ForallPattern Forall
                     { forallSort = sortVariableSort "s" :: Sort Object
                     , forallVariable =
                         Variable
@@ -570,7 +539,7 @@ forallPatternParserTests =
                             , variableCounter = mempty
                             }
                     , forallChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -592,12 +561,12 @@ iffPatternParserTests :: [TestTree]
 iffPatternParserTests =
     parseTree korePatternParser
         [ success "\\iff{s}(\"a\", \"b\")"
-            ( asCommonKorePattern $ IffPattern Iff
+            ( asParsedPattern $ IffPattern Iff
                     { iffSort = sortVariableSort "s" :: Sort Object
                     , iffFirst =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , iffSecond =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -612,12 +581,12 @@ impliesPatternParserTests :: [TestTree]
 impliesPatternParserTests =
     parseTree korePatternParser
         [ success "\\implies{s}(\"a\", \"b\")"
-            ( asCommonKorePattern $ ImpliesPattern Implies
+            ( asParsedPattern $ ImpliesPattern Implies
                     { impliesSort = sortVariableSort "s" :: Sort Object
                     , impliesFirst =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , impliesSecond =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -632,27 +601,27 @@ memPatternParserTests :: [TestTree]
 memPatternParserTests =
     parseTree korePatternParser
         [ success "\\in{s1,s2}(v:s3, \"b\")"
-            ( asCommonKorePattern $ InPattern In
+            ( asParsedPattern $ InPattern In
                     { inOperandSort = sortVariableSort "s1" :: Sort Object
                     , inResultSort = sortVariableSort "s2"
-                    , inContainedChild = asCommonKorePattern $
+                    , inContainedChild = asParsedPattern $
                         VariablePattern Variable
                             { variableName = testId "v" :: Id Object
                             , variableSort = sortVariableSort "s3"
                             , variableCounter = mempty
                             }
                     , inContainingChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , success "\\in{s1,s2}(\"a\", \"b\")"
-            ( asCommonKorePattern $ InPattern In
+            ( asParsedPattern $ InPattern In
                     { inOperandSort = sortVariableSort "s1" :: Sort Object
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , inContainingChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -674,10 +643,10 @@ notPatternParserTests :: [TestTree]
 notPatternParserTests =
     parseTree korePatternParser
         [ success "\\not{s}(\"a\")"
-            ( asCommonKorePattern $ NotPattern Not
+            ( asParsedPattern $ NotPattern Not
                     { notSort = sortVariableSort "s" :: Sort Object
                     , notChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )
         , FailureWithoutMessage
@@ -694,10 +663,10 @@ nextPatternParserTests :: [TestTree]
 nextPatternParserTests =
     parseTree korePatternParser
         [ success "\\next{s}(\"a\")"
-            ( asCommonKorePattern $ NextPattern Next
+            ( asParsedPattern $ NextPattern Next
                     { nextSort = sortVariableSort "s"
                     , nextChild =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )
         , FailureWithoutMessage
@@ -714,12 +683,12 @@ orPatternParserTests :: [TestTree]
 orPatternParserTests =
     parseTree korePatternParser
         [ success "\\or{s}(\"a\", \"b\")"
-            ( asCommonKorePattern $ OrPattern Or
+            ( asParsedPattern $ OrPattern Or
                     { orSort = sortVariableSort "s" :: Sort Object
                     , orFirst =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , orSecond =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -734,12 +703,12 @@ rewritesPatternParserTests :: [TestTree]
 rewritesPatternParserTests =
     parseTree korePatternParser
         [ success "\\rewrites{s}(\"a\", \"b\")"
-            ( asCommonKorePattern $ RewritesPattern Rewrites
+            ( asParsedPattern $ RewritesPattern Rewrites
                     { rewritesSort = sortVariableSort "s"
                     , rewritesFirst =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , rewritesSecond =
-                        asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                        asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -754,18 +723,18 @@ stringLiteralPatternParserTests :: [TestTree]
 stringLiteralPatternParserTests =
     parseTree korePatternParser
         [ success "\"hello\""
-            (asCommonKorePattern $ StringLiteralPattern (StringLiteral "hello"))
+            (asParsedPattern $ StringLiteralPattern (StringLiteral "hello"))
         , success "\"\""
-            (asCommonKorePattern $ StringLiteralPattern (StringLiteral ""))
+            (asParsedPattern $ StringLiteralPattern (StringLiteral ""))
         , success "\"\\\"\""
-            (asCommonKorePattern $ StringLiteralPattern (StringLiteral "\""))
+            (asParsedPattern $ StringLiteralPattern (StringLiteral "\""))
         , FailureWithoutMessage ["", "\""]
         ]
 topPatternParserTests :: [TestTree]
 topPatternParserTests =
     parseTree korePatternParser
         [ success "\\top{s}()"
-            (asCommonKorePattern $ TopPattern $ Top
+            (asParsedPattern $ TopPattern $ Top
                 (sortVariableSort "s" :: Sort Object)
             )
         , FailureWithoutMessage
@@ -775,14 +744,14 @@ variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
     parseTree korePatternParser
         [ success "v:s"
-            ( asCommonKorePattern $ VariablePattern Variable
+            ( asParsedPattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort = sortVariableSort "s"
                 , variableCounter = mempty
                 }
             )
         , success "v:s1{s2}"
-            ( asCommonKorePattern $ VariablePattern Variable
+            ( asParsedPattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort = SortActualSort SortActual
                     { sortActualName=testId "s1"
@@ -799,7 +768,7 @@ sentenceAliasParserTests =
     parseTree koreSentenceParser
         [
           success "alias a{s1}(s2) : s3 where a{s1}(X:s2) := g{}() [\"a\"]"
-            ( constructUnifiedSentence SentenceAliasSentence $
+            (SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "a"
@@ -822,7 +791,7 @@ sentenceAliasParserTests =
                             ]
                         }
                     , sentenceAliasRightPattern =
-                        asCommonKorePattern $ ApplicationPattern Application
+                        asParsedPattern $ ApplicationPattern Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor = testId "g" :: Id Object
@@ -832,13 +801,13 @@ sentenceAliasParserTests =
                             }
                     , sentenceAliasAttributes =
                         Attributes
-                            [asCommonKorePattern $
+                            [asParsedPattern $
                                 StringLiteralPattern (StringLiteral "a")]
                     }
-                :: KoreSentenceAlias Object)
+                :: ParsedSentenceAlias)
             )
         , success "alias a { s1 , s2 } ( s3, s4 ) : s5 where a { s1 , s2 } ( X:s3, Y:s4 ) := b { s1 , s2 } ( X:s3, Y:s4 ) [ \"a\" , \"b\" ]"
-            ( constructUnifiedSentence SentenceAliasSentence $
+            (SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "a"
@@ -877,19 +846,19 @@ sentenceAliasParserTests =
                                 ]
                             }
                     , sentenceAliasRightPattern =
-                        asCommonKorePattern $ ApplicationPattern Application
+                        asParsedPattern $ ApplicationPattern Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor = testId "b" :: Id Object
                                     , symbolOrAliasParams = [ sortVariableSort "s1", sortVariableSort "s2" ]
                                     }
                             , applicationChildren =
-                                [ asCommonKorePattern $ VariablePattern Variable
+                                [ asParsedPattern $ VariablePattern Variable
                                     { variableName = testId "X" :: Id Object
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
-                                , asCommonKorePattern $ VariablePattern Variable
+                                , asParsedPattern $ VariablePattern Variable
                                     { variableName = testId "Y" :: Id Object
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
@@ -898,16 +867,16 @@ sentenceAliasParserTests =
                             }
                     , sentenceAliasAttributes =
                         Attributes
-                            [ asCommonKorePattern $
+                            [ asParsedPattern $
                                 StringLiteralPattern (StringLiteral "a")
-                            , asCommonKorePattern $
+                            , asParsedPattern $
                                 StringLiteralPattern (StringLiteral "b")
                             ]
                     }
-                :: KoreSentenceAlias Object)
+                :: ParsedSentenceAlias)
             )
         , success "alias #a{}() : #Char where #a{}() := #b{}() []"
-            ( constructUnifiedSentence SentenceAliasSentence $
+            (SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "#a" :: Id Meta
@@ -926,7 +895,7 @@ sentenceAliasParserTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        (asCommonKorePattern . ApplicationPattern)
+                        (asParsedPattern . ApplicationPattern)
                             Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
@@ -938,7 +907,7 @@ sentenceAliasParserTests =
                                 }
                     , sentenceAliasAttributes = Attributes []
                     }
-                :: KoreSentenceAlias Meta)
+                :: ParsedSentenceAlias)
             )
         , success "alias f{s}() : s where f{s}() := \\dv{s}(\"f\") []"
             (   let
@@ -964,8 +933,7 @@ sentenceAliasParserTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        Kore.AST.Kore.eraseAnnotations
-                        $ patternPureToKore
+                        eraseAnnotations
                         $ mkDomainValue
                         $ Domain.BuiltinExternal Domain.External
                             { domainValueSort = resultSort
@@ -1013,9 +981,7 @@ sentenceAliasParserTests =
                             , applicationChildren = [varA, varB]
                             }
                     , sentenceAliasRightPattern =
-                        Kore.AST.Kore.eraseAnnotations
-                        $ patternPureToKore
-                        $ mkRewrites argA argB
+                        eraseAnnotations $ mkRewrites argA argB
                     , sentenceAliasAttributes = Attributes []
                     }
             )
@@ -1052,9 +1018,7 @@ sentenceAliasParserTests =
                             , applicationChildren = [var]
                             }
                     , sentenceAliasRightPattern =
-                        Kore.AST.Kore.eraseAnnotations
-                        $ patternPureToKore
-                        $ mkNext arg
+                        eraseAnnotations $ mkNext arg
                     , sentenceAliasAttributes = Attributes []
                     }
             )
@@ -1076,58 +1040,55 @@ sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
     parseTree koreSentenceParser
         [ success "axiom{sv1}\"a\"[\"b\"]"
-            ( constructUnifiedSentence SentenceAxiomSentence $
+            (SentenceAxiomSentence $
                 (SentenceAxiom
                     { sentenceAxiomParameters =
-                        [UnifiedObject
-                            (SortVariable (testId "sv1"))]
+                        [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
-                        asCommonKorePattern
+                        asParsedPattern
                         $ StringLiteralPattern (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
-                            [ asCommonKorePattern
+                            [ asParsedPattern
                               $ StringLiteralPattern (StringLiteral "b")
                             ]
                     }
-                :: KoreSentenceAxiom)
+                :: ParsedSentenceAxiom)
             )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "axiom{}\"a\"[\"b\"]"
-            ( constructUnifiedSentence SentenceAxiomSentence $
+            (SentenceAxiomSentence $
                 (SentenceAxiom
-                    { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
+                    { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
-                        asCommonKorePattern
+                        asParsedPattern
                         $ StringLiteralPattern (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
-                            [ asCommonKorePattern
+                            [ asParsedPattern
                               $ StringLiteralPattern (StringLiteral "b")
                             ]
                     }
-                :: KoreSentenceAxiom)
+                :: ParsedSentenceAxiom)
             )
         , success "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
-            ( constructUnifiedSentence SentenceAxiomSentence $
+            (SentenceAxiomSentence $
                 (SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ UnifiedObject
-                            (SortVariable (testId "sv1"))
-                        , UnifiedObject
-                            (SortVariable (testId "sv2"))
+                        [ SortVariable (testId "sv1")
+                        , SortVariable (testId "sv2")
                         ]
                     , sentenceAxiomPattern =
-                        asCommonKorePattern
+                        asParsedPattern
                         $ StringLiteralPattern (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
-                            [ asCommonKorePattern
+                            [ asParsedPattern
                               $ StringLiteralPattern (StringLiteral "b")
                             ]
                     }
-                :: KoreSentenceAxiom)
+                :: ParsedSentenceAxiom)
             )
         , FailureWithoutMessage
             [ ""
@@ -1143,58 +1104,54 @@ sentenceClaimParserTests :: [TestTree]
 sentenceClaimParserTests =
     parseTree koreSentenceParser
         [ success "claim{sv1}\"a\"[\"b\"]"
-            ( constructUnifiedSentence SentenceClaimSentence $
+            (SentenceClaimSentence $
                 (SentenceAxiom
-                    { sentenceAxiomParameters =
-                        [UnifiedObject
-                            (SortVariable (testId "sv1"))]
+                    { sentenceAxiomParameters = [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
-                        asCommonKorePattern
+                        asParsedPattern
                         $ StringLiteralPattern (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
-                            [ asCommonKorePattern
+                            [ asParsedPattern
                               $ StringLiteralPattern (StringLiteral "b")
                             ]
                     }
-                :: KoreSentenceAxiom)
+                :: ParsedSentenceAxiom)
             )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "claim{}\"a\"[\"b\"]"
-            ( constructUnifiedSentence SentenceClaimSentence $
+            (SentenceClaimSentence $
                 (SentenceAxiom
-                    { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
+                    { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
-                        asCommonKorePattern
+                        asParsedPattern
                         $ StringLiteralPattern (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
-                            [ asCommonKorePattern
+                            [ asParsedPattern
                               $ StringLiteralPattern (StringLiteral "b")
                             ]
                     }
-                :: KoreSentenceAxiom)
+                :: ParsedSentenceAxiom)
             )
         , success "claim { sv1 , sv2 } \"a\" [ \"b\" ] "
-            ( constructUnifiedSentence SentenceClaimSentence $
+            (SentenceClaimSentence $
                 (SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ UnifiedObject
-                            (SortVariable (testId "sv1"))
-                        , UnifiedObject
-                            (SortVariable (testId "sv2"))
+                        [ SortVariable (testId "sv1")
+                        , SortVariable (testId "sv2")
                         ]
                     , sentenceAxiomPattern =
-                        asCommonKorePattern
+                        asParsedPattern
                         $ StringLiteralPattern (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
-                            [ asCommonKorePattern
+                            [ asParsedPattern
                               $ StringLiteralPattern (StringLiteral "b")
                             ]
                     }
-                :: KoreSentenceAxiom)
+                :: ParsedSentenceAxiom)
             )
         , FailureWithoutMessage
             [ ""
@@ -1210,16 +1167,16 @@ sentenceImportParserTests :: [TestTree]
 sentenceImportParserTests =
     parseTree koreSentenceParser
         [ success "import M[\"b\"]"
-            ( constructUnifiedSentence SentenceImportSentence $
+            (SentenceImportSentence $
                 (SentenceImport
                     { sentenceImportModuleName = ModuleName "M"
                     , sentenceImportAttributes =
                         Attributes
-                            [ asCommonKorePattern
+                            [ asParsedPattern
                               $ StringLiteralPattern (StringLiteral "b")
                             ]
                     }
-                :: KoreSentenceImport)
+                :: ParsedSentenceImport)
             )
         , FailureWithoutMessage
             [ ""
@@ -1233,28 +1190,28 @@ sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
     parseTree koreSentenceParser
         [ success "sort s1 { sv1 } [ \"a\" ]"
-            ( constructUnifiedSentence SentenceSortSentence $
+            (SentenceSortSentence $
                 (SentenceSort
                     { sentenceSortName = testId "s1"
                     , sentenceSortParameters = [ sortVariable "sv1" ]
                     , sentenceSortAttributes =
                         Attributes
-                            [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                            [asParsedPattern $ StringLiteralPattern (StringLiteral "a")]
                     }
-                :: KoreSentenceSort Object)
+                :: ParsedSentenceSort)
             )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "sort s1 {} [ \"a\" ]"
-            ( constructUnifiedSentence SentenceSortSentence $
+            (SentenceSortSentence $
                 (SentenceSort
                     { sentenceSortName = testId "s1"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes
-                            [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                            [asParsedPattern $ StringLiteralPattern (StringLiteral "a")]
                     }
-                :: KoreSentenceSort Object)
+                :: ParsedSentenceSort)
             )
         , FailureWithoutMessage
             [ ""
@@ -1271,7 +1228,7 @@ sentenceSymbolParserTests :: [TestTree]
 sentenceSymbolParserTests =
     parseTree koreSentenceParser
         [ success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-            ( constructUnifiedSentence SentenceSymbolSentence $
+            (SentenceSymbolSentence $
                 (SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = testId "sy1"
@@ -1281,13 +1238,13 @@ sentenceSymbolParserTests =
                     , sentenceSymbolResultSort = sortVariableSort "s1"
                     , sentenceSymbolAttributes =
                         Attributes
-                            [asCommonKorePattern $
+                            [asParsedPattern $
                                 StringLiteralPattern (StringLiteral "a")]
                     }
-                :: KoreSentenceSymbol Object)
+                :: ParsedSentenceSymbol)
             )
         , success "symbol sy1 {} () : s1 [] "
-            ( constructUnifiedSentence SentenceSymbolSentence $
+            (SentenceSymbolSentence $
                 (SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = testId "sy1"
@@ -1297,7 +1254,7 @@ sentenceSymbolParserTests =
                     , sentenceSymbolResultSort = sortVariableSort "s1"
                     , sentenceSymbolAttributes = Attributes []
                     }
-                :: KoreSentenceSymbol Object)
+                :: ParsedSentenceSymbol)
             )
         , FailureWithoutMessage
             [ ""
@@ -1316,31 +1273,31 @@ sentenceHookedSortParserTests :: [TestTree]
 sentenceHookedSortParserTests =
     parseTree koreSentenceParser
         [ success "hooked-sort s1 { sv1 } [ \"a\" ]"
-            ( constructUnifiedSentence SentenceHookSentence $
+            (SentenceHookSentence $
                 (SentenceHookedSort
                     SentenceSort
                         { sentenceSortName = testId "s1"
                         , sentenceSortParameters = [ sortVariable "sv1" ]
                         , sentenceSortAttributes =
                             Attributes
-                                [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                                [asParsedPattern $ StringLiteralPattern (StringLiteral "a")]
                         }
 
-                :: KoreSentenceHook)
+                :: ParsedSentenceHook)
             )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "hooked-sort s1 {} [ \"a\" ]"
-            ( constructUnifiedSentence SentenceHookSentence $
+            (SentenceHookSentence $
                 (SentenceHookedSort
                     SentenceSort
                         { sentenceSortName = testId "s1"
                         , sentenceSortParameters = []
                         , sentenceSortAttributes =
                             Attributes
-                                [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                                [asParsedPattern $ StringLiteralPattern (StringLiteral "a")]
                         }
-                    :: KoreSentenceHook
+                    :: ParsedSentenceHook
                 )
             )
         , FailureWithoutMessage
@@ -1358,7 +1315,7 @@ sentenceHookedSymbolParserTests :: [TestTree]
 sentenceHookedSymbolParserTests =
     parseTree koreSentenceParser
         [ success "hooked-symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-            ( constructUnifiedSentence SentenceHookSentence $
+            (SentenceHookSentence $
                 (SentenceHookedSymbol
                     SentenceSymbol
                         { sentenceSymbolSymbol = Symbol
@@ -1369,14 +1326,14 @@ sentenceHookedSymbolParserTests =
                         , sentenceSymbolResultSort = sortVariableSort "s1"
                         , sentenceSymbolAttributes =
                             Attributes
-                                [asCommonKorePattern $
+                                [asParsedPattern $
                                     StringLiteralPattern (StringLiteral "a")]
                         }
-                    :: KoreSentenceHook
+                    :: ParsedSentenceHook
                 )
             )
         , success "hooked-symbol sy1 {} () : s1 [] "
-            ( constructUnifiedSentence SentenceHookSentence $
+            (SentenceHookSentence $
                 (SentenceHookedSymbol
                     SentenceSymbol
                         { sentenceSymbolSymbol = Symbol
@@ -1387,7 +1344,7 @@ sentenceHookedSymbolParserTests =
                         , sentenceSymbolResultSort = sortVariableSort "s1"
                         , sentenceSymbolAttributes = Attributes []
                         }
-                    :: KoreSentenceHook
+                    :: ParsedSentenceHook
                 )
             )
         , FailureWithoutMessage
@@ -1408,12 +1365,12 @@ attributesParserTests =
     parseTree attributesParser
         [ success "[\"a\"]"
             (Attributes
-                [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")])
+                [asParsedPattern $ StringLiteralPattern (StringLiteral "a")])
         , success "[]" (Attributes [])
         , success "[\"a\", \"b\"]"
             (Attributes
-                [ asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")
-                , asCommonKorePattern $ StringLiteralPattern (StringLiteral "b")
+                [ asParsedPattern $ StringLiteralPattern (StringLiteral "a")
+                , asParsedPattern $ StringLiteralPattern (StringLiteral "b")
                 ])
         , FailureWithoutMessage ["", "a", "\"a\"", "[\"a\" \"a\"]"]
         ]
@@ -1432,34 +1389,34 @@ moduleParserTests =
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
-                        :: KoreSentenceSort Object)
+                        :: ParsedSentenceSort)
                     ]
                 , moduleAttributes =
                     Attributes
-                        [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                        [asParsedPattern $ StringLiteralPattern (StringLiteral "a")]
                 }
         , success "module MN sort c{}[] sort c{}[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
-                    [ constructUnifiedSentence SentenceSortSentence $
+                    [ SentenceSortSentence $
                         (SentenceSort
                             { sentenceSortName = testId "c"
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
-                        :: KoreSentenceSort Object)
-                    , constructUnifiedSentence SentenceSortSentence $
+                        :: ParsedSentenceSort)
+                    , SentenceSortSentence $
                         (SentenceSort
                             { sentenceSortName = testId "c"
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
-                        :: KoreSentenceSort Object)
+                        :: ParsedSentenceSort)
                     ]
                 , moduleAttributes =
                     Attributes
-                        [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                        [asParsedPattern $ StringLiteralPattern (StringLiteral "a")]
                 }
         , success "module MN endmodule []"
             Module
@@ -1483,7 +1440,7 @@ definitionParserTests =
             Definition
                 { definitionAttributes =
                     Attributes
-                        [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                        [asParsedPattern $ StringLiteralPattern (StringLiteral "a")]
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M"
@@ -1494,11 +1451,11 @@ definitionParserTests =
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
-                                :: KoreSentenceSort Object)
+                                :: ParsedSentenceSort)
                             ]
                         , moduleAttributes =
                             Attributes
-                                [asCommonKorePattern $
+                                [asParsedPattern $
                                     StringLiteralPattern (StringLiteral "b")]
                         }
                     ]
@@ -1511,7 +1468,7 @@ definitionParserTests =
             Definition
                 { definitionAttributes =
                     Attributes
-                        [asCommonKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                        [asParsedPattern $ StringLiteralPattern (StringLiteral "a")]
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M"
@@ -1522,11 +1479,11 @@ definitionParserTests =
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
-                                :: KoreSentenceSort Object)
+                                :: ParsedSentenceSort)
                             ]
                         , moduleAttributes =
                             Attributes
-                                [asCommonKorePattern $
+                                [asParsedPattern $
                                     StringLiteralPattern (StringLiteral "b")]
                         }
                     , Module
@@ -1538,11 +1495,11 @@ definitionParserTests =
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
-                                :: KoreSentenceSort Object)
+                                :: ParsedSentenceSort)
                             ]
                         , moduleAttributes =
                             Attributes
-                                [asCommonKorePattern $
+                                [asParsedPattern $
                                     StringLiteralPattern (StringLiteral "e")]
                         }
                     ]

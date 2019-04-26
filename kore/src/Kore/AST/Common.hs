@@ -2,15 +2,8 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 {-|
-Module      : Kore.AST.Common
-Description : Data Structures for representing the Kore language AST that do not
-              need unified constructs (see "Kore.AST.Kore" for the unified
-              ones).
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : traian.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 
 This module includes all the data structures necessary for representing
 the syntactic categories of a Kore definition that do not need unified
@@ -1446,61 +1439,6 @@ instance
             InhabitantPattern s          -> unparse s
             SetVariablePattern p   -> unparse p
 
-data SortedPattern level domain variable child = SortedPattern
-    { sortedPatternPattern :: !(Pattern level domain variable child)
-    , sortedPatternSort    :: !(Sort level)
-    }
-    deriving (Eq, Show, Generic)
-
-instance (NFData child, NFData (variable level), NFData (domain child))
-    => NFData (SortedPattern level domain variable child)
-
-instance
-    ( Hashable child
-    , Hashable (variable level)
-    , Hashable (domain child)
-    ) =>
-    Hashable (SortedPattern level domain variable child)
-
-{-|'PatternStub' is either a pattern with a known sort, or a function that
-builds a pattern from a sort.
--}
-data PatternStub level domain variable child
-    = SortedPatternStub !(SortedPattern level domain variable child)
-    | UnsortedPatternStub (Sort level -> Pattern level domain variable child)
-    deriving(Generic)
-
-instance (NFData child, NFData (variable level), NFData (domain child))
-    => NFData (PatternStub level domain variable child)
-
--- cannot hash.
-
-{-|'withSort' transforms an 'UnsortedPatternStub' in a 'SortedPatternStub'.
--}
-withSort
-    :: Sort level
-    -> PatternStub level domain variable child
-    -> PatternStub level domain variable child
-withSort s (UnsortedPatternStub p) =
-    SortedPatternStub SortedPattern
-        { sortedPatternPattern = p s
-        , sortedPatternSort = s
-        }
-withSort
-    s
-    p@(SortedPatternStub SortedPattern { sortedPatternSort = existingSort })
-  =
-    if s == existingSort
-        then p
-        else
-            error
-                (  "Unmatched sorts: "
-                ++ show s
-                ++ " and "
-                ++ show existingSort
-                ++ "."
-                )
-
 {-|'dummySort' is used in error messages when we want to convert an
 'UnsortedPatternStub' to a pattern that can be displayed.
 -}
@@ -1514,45 +1452,6 @@ getMetaOrObjectPatternType
     :: MetaOrObject level
     => Pattern level domain variable child -> IsMetaOrObject level
 getMetaOrObjectPatternType _ = isMetaOrObject (Proxy :: Proxy level)
-
-{-|The 'UnifiedPatternInterface' class provides a common interface for
-algorithms providing common functionality for 'KorePattern' and 'PurePattern'.
--}
-class UnifiedPatternInterface pat where
-    -- |View a 'Meta' 'Pattern' as the parameter @pat@ of the class.
-    unifyMetaPattern
-        :: Pattern Meta domain variable child
-        -> pat domain variable child
-    unifyMetaPattern = unifyPattern
-
-    -- |View an 'Object' 'Pattern' as the parameter @pat@ of the class.
-    unifyObjectPattern
-        :: Pattern Object domain variable child
-        -> pat domain variable child
-    unifyObjectPattern = unifyPattern
-
-    -- |View a 'Meta' or an 'Object' 'Pattern' as the parameter of the class.
-    unifyPattern
-        :: MetaOrObject level
-        => Pattern level domain variable child
-        -> pat domain variable child
-    unifyPattern p = unifyObjectPattern p
-
-    -- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
-    -- apply it on an object of the parameter @pat@ of the class.
-    unifiedPatternApply
-        ::  (forall level . MetaOrObject level =>
-                Pattern level domain variable child -> result
-            )
-        -> (pat domain variable child -> result)
-
-instance
-    forall level . MetaOrObject level =>
-    UnifiedPatternInterface (Pattern level)
-  where
-    unifyMetaPattern _ = error "Expecting Meta pattern"
-    unifyObjectPattern p = p
-    unifiedPatternApply = id
 
 {- | Use the provided mapping to replace all variables in a 'Pattern' head.
 

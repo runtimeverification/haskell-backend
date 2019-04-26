@@ -5,7 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.ASTHelpers
 import Kore.Error
@@ -112,10 +112,10 @@ applicationSorts operandSorts resultSort =
         }
 
 symbolSentence
-    :: [SortVariable level]
-    -> [Sort level]
-    -> Sort level
-    -> KoreSentenceSymbol level
+    :: [SortVariable Object]
+    -> [Sort Object]
+    -> Sort Object
+    -> ParsedSentenceSymbol
 symbolSentence sortParameters operandSorts resultSort =
     SentenceSymbol
         { sentenceSymbolSymbol     = Symbol

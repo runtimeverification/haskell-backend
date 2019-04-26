@@ -1,18 +1,38 @@
 {-|
-Module      : Kore.Attribute.Sort.Element
-Description : Element sort attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
 module Kore.Attribute.Sort.Element
     ( Element (..)
     , elementId, elementSymbol, elementAttribute
     ) where
 
-import Kore.AST.Kore
-import Kore.Attribute.Sort.Element.Element
+import Control.DeepSeq
+       ( NFData )
+import Data.Default
+import GHC.Generics
+       ( Generic )
+
+import Kore.AST.Common
+import Kore.AST.Identifier
+import Kore.AST.MetaOrObject
+import Kore.Attribute.Parser
+
+-- | @Element@ represents the @element@ attribute for sorts.
+newtype Element = Element { getElement :: Maybe (SymbolOrAlias Object) }
+    deriving (Generic, Eq, Ord, Show)
+
+instance Semigroup Element where
+    (<>) a@(Element (Just _))  _ = a
+    (<>) _                     b = b
+
+instance Monoid Element where
+    mempty = Element { getElement = Nothing }
+
+instance Default Element where
+    def = mempty
+
+instance NFData Element
 
 -- | Kore identifier representing the @element@ attribute symbol.
 elementId :: Id Object
@@ -27,18 +47,19 @@ elementSymbol =
         }
 
 -- | Kore pattern representing the @element@ attribute.
-elementAttribute
-    :: SymbolOrAlias Object
-    -> CommonKorePattern
+elementAttribute :: SymbolOrAlias Object -> AttributePattern
 elementAttribute symbol =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = elementSymbol
-            , applicationChildren =
-                [ (asCommonKorePattern . ApplicationPattern)
-                    Application
-                        { applicationSymbolOrAlias = symbol
-                        , applicationChildren = []
-                        }
-                ]
-            }
+    attributePattern elementSymbol [attributePattern_ symbol]
+
+instance ParseAttributes Element where
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Element { getElement }
+          | Just _ <- getElement = failDuplicate'
+          | otherwise = do
+            getZeroParams params
+            arg <- getOneArgument args
+            symbol <- getSymbolOrAlias arg
+            return Element { getElement = Just symbol }
+        withApplication' = withApplication elementId
+        failDuplicate' = failDuplicate elementId

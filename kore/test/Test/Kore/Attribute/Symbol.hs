@@ -11,12 +11,11 @@ import           Data.Default
 import           Data.Function
                  ( (&) )
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.AST.Sentence
        ( Attributes (..) )
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser
-       ( ParseError, parseAttributes )
 import Kore.Attribute.Symbol
 import Kore.Error
        ( Error )
@@ -24,13 +23,13 @@ import Kore.Error
 import Test.Kore.Comparators ()
 
 parse
-    :: [CommonKorePattern]
+    :: [AttributePattern]
     -> Either (Error ParseError) StepperAttributes
 parse = parseAttributes . Attributes
 
-testAttribute :: CommonKorePattern
+testAttribute :: AttributePattern
 testAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias =
                 SymbolOrAlias
@@ -40,9 +39,9 @@ testAttribute =
             , applicationChildren = []
             }
 
-badHookAttribute :: CommonKorePattern
+badHookAttribute :: AttributePattern
 badHookAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = hookSymbol :: SymbolOrAlias Object
             , applicationChildren = []

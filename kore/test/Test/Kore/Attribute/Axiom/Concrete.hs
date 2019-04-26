@@ -3,11 +3,10 @@ module Test.Kore.Attribute.Axiom.Concrete where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Kore hiding
-       ( Concrete )
 import Kore.Attribute.Axiom.Concrete
 
-import Test.Kore.Attribute.Parser
+import Test.Kore.Attribute.Parser hiding
+       ( Concrete )
 
 parseConcrete :: Attributes -> Parser Concrete
 parseConcrete = parseAttributes
@@ -38,11 +37,11 @@ test_arguments =
         $ parseConcrete $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias = concreteSymbol
                 , applicationChildren =
-                    [ (asCommonKorePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralPattern)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -54,7 +53,7 @@ test_parameters =
         $ parseConcrete $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asCommonKorePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationPattern)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

@@ -11,17 +11,9 @@ module Kore.Attribute.Injective
     , injectiveId, injectiveSymbol, injectiveAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | @Injective@ represents the @injective@ attribute for symbols.
  -}
@@ -52,22 +44,16 @@ injectiveSymbol =
         }
 
 -- | Kore pattern representing the @injective@ attribute.
-injectiveAttribute :: CommonKorePattern
-injectiveAttribute =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = injectiveSymbol
-            , applicationChildren = []
-            }
+injectiveAttribute :: AttributePattern
+injectiveAttribute = attributePattern_ injectiveSymbol
 
 instance ParseAttributes Injective where
-    parseAttribute =
-        withApplication parseApplication
+    parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Injective { isDeclaredInjective } = do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isDeclaredInjective failDuplicate
+            Monad.when isDeclaredInjective failDuplicate'
             return Injective { isDeclaredInjective = True }
-        withApplication = Parser.withApplication injectiveId
-        failDuplicate = Parser.failDuplicate injectiveId
+        withApplication' = Parser.withApplication injectiveId
+        failDuplicate' = Parser.failDuplicate injectiveId

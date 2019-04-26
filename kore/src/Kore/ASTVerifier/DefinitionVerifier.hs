@@ -13,25 +13,20 @@ module Kore.ASTVerifier.DefinitionVerifier
     , verifyDefinition
     , verifyAndIndexDefinition
     , verifyAndIndexDefinitionWithBase
-    , verifyImplicitKoreDefinition
-    , verifyNormalKoreDefinition
+    , verifyImplicitParsedDefinition
+    , verifyNormalParsedDefinition
     , AttributesVerification (..)
     ) where
 
 import           Control.Monad
                  ( foldM )
-import           Data.Map
-                 ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 
-import           Kore.AST.Kore
-import qualified Kore.AST.Pure as AST.Pure
-import           Kore.AST.PureToKore
+import           Kore.AST.Pure as AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
@@ -41,12 +36,8 @@ import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.ImplicitKore
-                 ( uncheckedKoreModule )
-import           Kore.Implicit.ImplicitSorts
-                 ( predicateSortActual )
 import           Kore.IndexedModule.IndexedModule
-import           Kore.Unparser
+import qualified Kore.Verified as Verified
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
@@ -71,7 +62,7 @@ verifyDefinition
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
     => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> KoreDefinition
+    -> ParsedDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification builtinVerifiers definition = do
     _ <- verifyAndIndexDefinition attributesVerification builtinVerifiers definition
@@ -84,7 +75,7 @@ verifyAndIndexDefinition
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
     => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> KoreDefinition
+    -> ParsedDefinition
     -> Either
         (Error VerifyError)
         (Map.Map ModuleName (VerifiedModule declAtts axiomAtts))
@@ -97,7 +88,7 @@ verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
             definition
     return indexedModules
 
-{-|Verifies a `KoreDefinition` against a preverified definition, consisting of
+{-|Verifies a `ParsedDefinition` against a preverified definition, consisting of
 map of indexed modules and a map of defined names.
 
 If verification is successfull, it returns the updated maps op indexed modules
@@ -112,7 +103,7 @@ verifyAndIndexDefinitionWithBase
         )
     -> AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> KoreDefinition
+    -> ParsedDefinition
     -> Either (Error VerifyError)
         ( Map.Map ModuleName (VerifiedModule declAtts axiomAtts)
         , Map.Map Text AstLocation
@@ -123,15 +114,10 @@ verifyAndIndexDefinitionWithBase
     builtinVerifiers
     definition
   = do
-    (implicitModules, implicitDefaultModule, defaultNames) <-
-        withContext "Indexing unverified implicit Kore modules"
-        $ indexImplicitModule
-        $ modulePureToKore $ castModuleDomainValues
-        $ eraseSentenceAnnotations <$> uncheckedKoreModule
     let
         (baseIndexedModules, baseNames) =
             case maybeBaseDefinition of
-                Nothing -> (implicitModules, defaultNames)
+                Nothing -> (implicitModules, implicitNames)
                 Just (baseIndexedModules', baseNames') ->
                     ( (<$>)
                         (mapIndexedModulePatterns eraseAnnotations)
@@ -142,16 +128,16 @@ verifyAndIndexDefinitionWithBase
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
     let
-        ImplicitIndexedModule defaultModule = implicitDefaultModule
+        defaultModule = ImplicitIndexedModule implicitIndexedModule
         indexModules
-            :: [KoreModule]
+            :: [ParsedModule]
             -> Either
                 (Error VerifyError)
                 (Map.Map ModuleName (KoreIndexedModule declAtts axiomAtts))
         indexModules modules =
             castError $ foldM
                 (indexModuleIfNeeded
-                    (Just implicitDefaultModule)
+                    (Just defaultModule)
                     unverifiedModulesByName
                 )
                 baseIndexedModules
@@ -162,11 +148,6 @@ verifyAndIndexDefinitionWithBase
 
         verifyModule' = verifyModule attributesVerification builtinVerifiers
         verifyModules = traverse verifyModule'
-
-    -- Verify and index the implicit modules
-    (verifiedImplicitModules, verifiedDefaultModule, _) <-
-        withContext "Indexing verified implicit Kore modules"
-        $ indexImplicitModule =<< verifyModule' defaultModule
 
     -- Index the unverified modules.
     indexedModules <- indexModules (definitionModules definition)
@@ -179,17 +160,17 @@ verifyAndIndexDefinitionWithBase
 
     let
         indexVerifiedModules
-            :: [Module VerifiedKoreSentence]
+            :: [Module Verified.Sentence]
             -> Either
                 (Error VerifyError)
                 (Map.Map ModuleName (VerifiedModule declAtts axiomAtts))
         indexVerifiedModules modules =
             castError $ foldM
                 (indexModuleIfNeeded
-                    (Just verifiedDefaultModule)
+                    (Just defaultModule)
                     verifiedModulesByName
                 )
-                verifiedImplicitModules
+                implicitModules
                 modules
           where
             verifiedModulesByName = modulesByName modules
@@ -199,7 +180,6 @@ verifyAndIndexDefinitionWithBase
     return (reindexedModules, names)
   where
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
-    castModuleDomainValues = (fmap . fmap) AST.Pure.castVoidDomainValues
 
 defaultAttributesVerification
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
@@ -217,52 +197,11 @@ defaultNullAttributesVerification =
     proxy :: Proxy Attribute.Null
     proxy = Proxy
 
-indexImplicitModule
-    :: (Unparse sortParam, Unparse patternType, ParseAttributes declAtts, ParseAttributes axAtts)
-    => Module (UnifiedSentence sortParam patternType)
-    -> Either
-        (Error VerifyError)
-        ( Map ModuleName (IndexedModule sortParam patternType declAtts axAtts)
-        , ImplicitIndexedModule sortParam patternType declAtts axAtts
-        , Map Text AstLocation
-        )
-indexImplicitModule implicitModule = do
-    defaultNames <- verifyUniqueNames preImplicitNames implicitModule
-    indexedModules <-
-        castError $ indexModuleIfNeeded
-            Nothing
-            modulesByName
-            Map.empty
-            implicitModule
-    defaultModule <- lookupDefaultModule indexedModules
-    return (indexedModules, ImplicitIndexedModule defaultModule, defaultNames)
-  where
-    -- Names which are hard-coded into Kore that do not even appear in the
-    -- implicit definition.
-    preImplicitNames =
-        Map.fromList ((,) <$> names <*> pure AstLocationImplicit)
-      where
-        names =
-            [ Text.pack (show StringSort)
-            -- Reserved for internal use.
-            -- See TODO PREDICATE in Kore.ASTUtils.SmartConstructors
-            , getId (sortActualName predicateSortActual)
-            ]
-    implicitModuleName = moduleName implicitModule
-    moduleNameForError = getModuleNameForError implicitModuleName
-    modulesByName = Map.singleton implicitModuleName implicitModule
-    lookupDefaultModule indexedModules =
-        case Map.lookup (moduleName implicitModule) indexedModules of
-            Just defaultModule -> return defaultModule
-            Nothing ->
-                koreFail
-                    ("Missing default module '" ++ moduleNameForError ++ "'.")
-
-{-|'verifyNormalKoreDefinition' is meant to be used only in the
+{-|'verifyNormalParsedDefinition' is meant to be used only in the
 "Kore.Implicit" package. It verifies the correctness of a definition
 containing only the 'kore' default module.
 -}
-verifyNormalKoreDefinition
+verifyNormalParsedDefinition
     ::  ( ParseAttributes declAtts
         , Show declAtts
         , ParseAttributes axiomAtts
@@ -270,9 +209,9 @@ verifyNormalKoreDefinition
         )
     => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> KoreDefinition
+    -> ParsedDefinition
     -> Either (Error VerifyError) (VerifiedModule declAtts axiomAtts)
-verifyNormalKoreDefinition
+verifyNormalParsedDefinition
     attributesVerification
     builtinVerifiers
     definition
@@ -286,17 +225,17 @@ verifyNormalKoreDefinition
     name <- extractSingleModuleNameFromDefinition definition
     findModule name modules
 
-{-|'verifyImplicitKoreDefinition' is meant to be used only in the
+{-|'verifyImplicitParsedDefinition' is meant to be used only in the
 "Kore.Implicit" package. It verifies the correctness of a definition
 containing only the 'kore' default module.
 -}
-verifyImplicitKoreDefinition
+verifyImplicitParsedDefinition
     :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
     => AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> KoreDefinition
+    -> ParsedDefinition
     -> Either (Error VerifyError) (VerifiedModule declAtts axiomAtts)
-verifyImplicitKoreDefinition
+verifyImplicitParsedDefinition
     attributesVerification
     builtinVerifiers
     definition
@@ -310,7 +249,7 @@ verifyImplicitKoreDefinition
     findModule name modules
 
 extractSingleModuleNameFromDefinition
-    :: KoreDefinition
+    :: ParsedDefinition
     -> Either (Error VerifyError) ModuleName
 extractSingleModuleNameFromDefinition definition =
     case definitionModules definition of

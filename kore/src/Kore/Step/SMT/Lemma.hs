@@ -24,12 +24,11 @@ import qualified Data.Map.Strict as Map
 import           Data.Reflection
 import qualified Data.Text as Text
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.SmtLemma
 import           Kore.Attribute.Symbol
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
@@ -48,17 +47,11 @@ import qualified SMT
 -- It assumes that all symbols in all smt-lemma rules either have been
 -- declared in the smt prelude or they have an smtlib attribute.
 declareSMTLemmas
-    :: forall m param dom .
-        ( MonadSMT m
-        , Traversable dom
-        , dom ~ Domain.Builtin
+    :: forall m
+    .   ( MonadSMT m
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => IndexedModule
-            param
-            (KorePattern dom Variable (Unified (Valid (Unified Variable))))
-            StepperAttributes
-            Attribute.Axiom
+    => VerifiedModule StepperAttributes Attribute.Axiom
     -> m ()
 declareSMTLemmas m = SMT.liftSMT $ do
     SMT.All.declare (smtData tools)
@@ -70,24 +63,15 @@ declareSMTLemmas m = SMT.liftSMT $ do
     declareRule
         :: forall sortParam . (Given (SmtMetadataTools StepperAttributes))
         => ( Attribute.Axiom
-           , SentenceAxiom
-                sortParam
-                (KorePattern
-                    Domain.Builtin
-                    Variable
-                    (Unified (Valid (Unified Variable)))
-                )
+           , SentenceAxiom sortParam (StepPattern Object Variable)
            )
         -> SMT (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)
-        pat <- getRight
-            $ fromKorePattern Object
-            $ sentenceAxiomPattern axiomDeclaration
         (lemma, vars) <-
             runTranslator
             $ translatePredicate translateUninterpreted
-            $ wrapPredicate pat
+            $ wrapPredicate $ sentenceAxiomPattern axiomDeclaration
         SMT.assert (addQuantifiers vars lemma)
 
     addQuantifiers vars lemma | null vars = lemma
@@ -97,10 +81,6 @@ declareSMTLemmas m = SMT.liftSMT $ do
             [ SMT.List [sexpr, t] | (sexpr, t) <- Map.elems vars ]
         , lemma
         ]
-
-getRight :: Alternative m => Either a b -> m b
-getRight (Right a) = pure a
-getRight _ = empty
 
 translateUninterpreted
     :: ( Ord p

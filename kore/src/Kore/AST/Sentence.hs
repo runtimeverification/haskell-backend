@@ -1,13 +1,6 @@
 {-|
-Module      : Kore.AST.Sentence
-Description : Data Structures for representing the Kore language AST that do not
-              need unified constructs (see Kore.AST.Kore for the unified
-              ones).
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : traian.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 
 This module includes all the data structures necessary for representing
 the syntactic categories of a Kore definition that do not need unified
@@ -48,52 +41,26 @@ module Kore.AST.Sentence
     , PureModule
     , PureDefinition
     , castDefinitionDomainValues
-    , VerifiedPureSentenceSymbol
-    , VerifiedPureSentenceAlias
-    , VerifiedPureSentenceImport
-    , VerifiedPureSentenceAxiom
-    , VerifiedPureSentenceSort
-    , VerifiedPureSentenceHook
-    , VerifiedPureSentence
-    , VerifiedPureModule
-    , VerifiedPureDefinition
-    , UnifiedSentence (..)
-    , constructUnifiedSentence
-    , applyUnifiedSentence
-    , eraseUnifiedSentenceAnnotations
-    , KoreSentenceSymbol
-    , KoreSentenceAlias
-    , KoreSentenceImport
-    , KoreSentenceAxiom
-    , KoreSentenceSort
-    , KoreSentenceHook
-    , KoreSentence
-    , KoreModule
-    , KoreDefinition
-    , asKoreAxiomSentence
-    , asKoreClaimSentence
-    , VerifiedKoreSentenceSymbol
-    , VerifiedKoreSentenceAlias
-    , VerifiedKoreSentenceImport
-    , VerifiedKoreSentenceAxiom
-    , VerifiedKoreSentenceSort
-    , VerifiedKoreSentenceHook
-    , VerifiedKoreSentence
-    , VerifiedKoreModule
-    , VerifiedKoreDefinition
+    , ParsedSentenceAlias
+    , ParsedSentenceSymbol
+    , ParsedSentenceImport
+    , ParsedSentenceAxiom
+    , ParsedSentenceSort
+    , ParsedSentenceHook
+    , ParsedSentence
+    , ParsedModule
+    , ParsedDefinition
     , Attributes (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Default
 import           Data.Functor.Const
                  ( Const )
 import           Data.Hashable
                  ( Hashable (..) )
 import           Data.Maybe
                  ( catMaybes )
-import           Data.Proxy
 import           Data.String
                  ( IsString )
 import           Data.Text
@@ -106,8 +73,8 @@ import           GHC.Generics
                  ( Generic )
 
 import qualified Kore.Annotation.Null as Annotation
-import           Kore.AST.Kore as Kore
 import           Kore.AST.Pure as Pure
+import           Kore.Attribute.Attributes
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Unparser
 
@@ -172,30 +139,8 @@ instance Unparse (Alias level) where
     unparse Alias { aliasConstructor, aliasParams } =
         unparse aliasConstructor
         <> parameters aliasParams
-
     unparse2 Alias { aliasConstructor } =
         unparse2 aliasConstructor
-
-
-{-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
-It is parameterized by the types of Patterns, @pat@.
--}
-
-newtype Attributes =
-    Attributes { getAttributes :: [CommonKorePattern] }
-    deriving (Eq, Ord, Generic, Show)
-
-instance Hashable Attributes
-
-instance NFData Attributes
-
-instance Unparse Attributes where
-    unparse = attributes . getAttributes
-    unparse2 = attributes . getAttributes
-
-
-instance Default Attributes where
-    def = Attributes []
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -786,174 +731,6 @@ instance SentenceSymbolOrAlias SentenceSymbol where
 class AsSentence sentenceType s | s -> sentenceType where
     asSentence :: s -> sentenceType
 
--- |'KoreSentenceAlias' is the Kore ('Meta' and 'Object') version of
--- 'SentenceAlias'
-type KoreSentenceAlias level = SentenceAlias level CommonKorePattern
-
-type VerifiedKoreSentenceAlias level = SentenceAlias level VerifiedKorePattern
-
--- |'KoreSentenceSymbol' is the Kore ('Meta' and 'Object') version of
--- 'SentenceSymbol'
-type KoreSentenceSymbol level = SentenceSymbol level CommonKorePattern
-
-type VerifiedKoreSentenceSymbol level = SentenceSymbol level VerifiedKorePattern
-
--- |'KoreSentenceImport' is the Kore ('Meta' and 'Object') version of
--- 'SentenceImport'
-type KoreSentenceImport = SentenceImport CommonKorePattern
-
-type VerifiedKoreSentenceImport = SentenceImport VerifiedKorePattern
-
--- |'KoreSentenceAxiom' is the Kore ('Meta' and 'Object') version of
--- 'SentenceAxiom'
-type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable CommonKorePattern
-
-type VerifiedKoreSentenceAxiom =
-    SentenceAxiom UnifiedSortVariable VerifiedKorePattern
-
--- |'KoreSentenceSort' is the Kore ('Meta' and 'Object') version of
--- 'SentenceSort'
-type KoreSentenceSort level = SentenceSort level CommonKorePattern
-
-type VerifiedKoreSentenceSort level = SentenceSort level VerifiedKorePattern
-
--- |'KoreSentenceHook' Kore ('Meta' and 'Object') version of
--- 'SentenceHook'
-type KoreSentenceHook = SentenceHook CommonKorePattern
-
-type VerifiedKoreSentenceHook = SentenceHook VerifiedKorePattern
-
-{-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
-to allow using toghether both 'Meta' and 'Object' sentences.
--}
-newtype UnifiedSentence sortParam patternType =
-    UnifiedObjectSentence (Sentence Object sortParam patternType)
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
-
-instance
-    (NFData sortParam, NFData patternType) =>
-    NFData (UnifiedSentence sortParam patternType)
-
-instance
-    (Unparse sortParam, Unparse patternType) =>
-    Unparse (UnifiedSentence sortParam patternType)
-  where
-    unparse (UnifiedObjectSentence sentence) = unparse sentence
-    unparse2 (UnifiedObjectSentence sentence) = unparse2 sentence
-
-
--- |'KoreSentence' instantiates 'UnifiedSentence' to describe sentences fully
--- corresponding to the @declaration@ syntactic category
--- from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-type KoreSentence = UnifiedSentence UnifiedSortVariable CommonKorePattern
-
-type VerifiedKoreSentence =
-    UnifiedSentence UnifiedSortVariable VerifiedKorePattern
-
-type VerifiedKoreModule = Module VerifiedKoreSentence
-
-type VerifiedKoreDefinition = Definition VerifiedKoreSentence
-
-constructUnifiedSentence
-    ::  forall a level sortParam patternType.
-        MetaOrObject level
-    => (a -> Sentence level sortParam patternType)
-    -> (a -> UnifiedSentence sortParam patternType)
-constructUnifiedSentence ctor =
-    case isMetaOrObject (Proxy :: Proxy level) of
-        IsObject -> UnifiedObjectSentence . ctor
-
--- |Given functions appliable to 'Meta' 'Sentence's and 'Object' 'Sentences's,
--- builds a combined function which can be applied on 'UnifiedSentence's.
-applyUnifiedSentence
-    :: (Sentence Meta sortParam patternType -> b)
-    -> (Sentence Object sortParam patternType -> b)
-    -> (UnifiedSentence sortParam patternType -> b)
-applyUnifiedSentence _ objectT (UnifiedObjectSentence objectS) = objectT objectS
-
--- | Erase the pattern annotations within a 'UnifiedSentence'.
-eraseUnifiedSentenceAnnotations
-    :: Functor domain
-    => UnifiedSentence
-        sortParam
-        (KorePattern domain variable erased)
-    -> UnifiedSentence
-        sortParam
-        (KorePattern domain variable (Unified Annotation.Null))
-eraseUnifiedSentenceAnnotations sentence = Kore.eraseAnnotations <$> sentence
-
--- |'KoreModule' fully instantiates 'Module' to correspond to the second, third,
--- and forth non-terminals of the @definition@ syntactic category from the
--- Semantics of K, Section 9.1.6 (Declaration and Definitions).
-type KoreModule = Module KoreSentence
-
-type KoreDefinition = Definition KoreSentence
-
-instance
-    ( MetaOrObject level
-    , sortParam ~ UnifiedSortVariable
-    ) =>
-    AsSentence
-        (UnifiedSentence sortParam (KorePattern domain variable annotation))
-        (SentenceAlias level (KorePattern domain variable annotation))
-  where
-    asSentence = constructUnifiedSentence SentenceAliasSentence
-
-instance
-    ( MetaOrObject level
-    , sortParam ~ UnifiedSortVariable
-    ) =>
-    AsSentence
-        (UnifiedSentence sortParam (KorePattern domain variable annotation))
-        (SentenceSymbol level (KorePattern domain variable annotation))
-  where
-    asSentence = constructUnifiedSentence SentenceSymbolSentence
-
-instance
-    (sortParam ~ UnifiedSortVariable) =>
-    AsSentence
-        (UnifiedSentence sortParam (KorePattern domain variable annotation))
-        (SentenceImport (KorePattern domain variable annotation))
-  where
-    asSentence = constructUnifiedSentence SentenceImportSentence
-
-asKoreAxiomSentence
-    :: SentenceAxiom
-        UnifiedSortVariable
-        (KorePattern domain variable annotation)
-    -> UnifiedSentence
-        UnifiedSortVariable
-        (KorePattern domain variable annotation)
-asKoreAxiomSentence = constructUnifiedSentence SentenceAxiomSentence
-
-asKoreClaimSentence
-    :: SentenceAxiom
-        UnifiedSortVariable
-        (KorePattern domain variable annotation)
-    -> UnifiedSentence
-        UnifiedSortVariable
-        (KorePattern domain variable annotation)
-asKoreClaimSentence = constructUnifiedSentence SentenceClaimSentence
-
-instance
-    ( MetaOrObject level
-    , sortParam ~ UnifiedSortVariable
-    ) =>
-    AsSentence
-        (UnifiedSentence sortParam (KorePattern domain variable annotation))
-        (SentenceSort level (KorePattern domain variable annotation))
-  where
-    asSentence = constructUnifiedSentence SentenceSortSentence
-
-
-instance
-    (sortParam ~ UnifiedSortVariable) =>
-    AsSentence
-        (UnifiedSentence sortParam (KorePattern domain variable annotation))
-        (SentenceHook (KorePattern domain variable annotation))
-  where
-    asSentence = constructUnifiedSentence SentenceHookSentence
-
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level domain =
     SentenceAxiom (SortVariable level) (ParsedPurePattern level domain)
@@ -976,65 +753,6 @@ type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level domain =
     Sentence level (SortVariable level) (ParsedPurePattern level domain)
-
-{- | A 'PureSentenceSymbol' which has passed verification.
- -}
-type VerifiedPureSentenceSymbol level =
-    SentenceSymbol level (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentenceAlias' which has passed verification.
-
-The patterns contained are annotated by 'Valid'.
-
- -}
-type VerifiedPureSentenceAlias level =
-    SentenceAlias level (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentenceImport' which has passed verification.
- -}
-type VerifiedPureSentenceImport level =
-    SentenceImport (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentenceAxiom' which has passed verification.
-
-The patterns contained are annotated by 'Valid'.
-
- -}
-type VerifiedPureSentenceAxiom level =
-    SentenceAxiom
-        (SortVariable level)
-        (VerifiedPurePattern level Domain.Builtin)
-
-type VerifiedPureSentenceSort level =
-    SentenceSort level (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentenceHook' which has passed verification.
-
-The contained patterns are annotated by 'Valid'.
-
- -}
-type VerifiedPureSentenceHook level =
-    SentenceHook (VerifiedPurePattern level Domain.Builtin)
-
-{- | A 'PureSentence' which has passed verification.
-
-The contained patterns are annotated by 'Valid'.
-
- -}
-type VerifiedPureSentence level =
-    Sentence
-        level
-        (SortVariable level)
-        (PurePattern
-            level
-            Domain.Builtin
-            Variable
-            (Valid (Variable level) level)
-        )
-
-type VerifiedPureModule level = Module (VerifiedPureSentence level)
-
-type VerifiedPureDefinition level = Definition (VerifiedPureSentence level)
 
 instance
     ( MetaOrObject level
@@ -1126,6 +844,36 @@ type PureModule level domain = Module (PureSentence level domain)
 
 -- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
 type PureDefinition level domain = Definition (PureSentence level domain)
+
+type ParsedSentenceSort =
+    SentenceSort Object (ParsedPurePattern Object Domain.Builtin)
+
+type ParsedSentenceSymbol =
+    SentenceSymbol Object (ParsedPurePattern Object Domain.Builtin)
+
+type ParsedSentenceAlias =
+    SentenceAlias Object (ParsedPurePattern Object Domain.Builtin)
+
+type ParsedSentenceImport =
+    SentenceImport (ParsedPurePattern Object Domain.Builtin)
+
+type ParsedSentenceAxiom =
+    SentenceAxiom
+        (SortVariable Object)
+        (ParsedPurePattern Object Domain.Builtin)
+
+type ParsedSentenceHook =
+    SentenceHook (ParsedPurePattern Object Domain.Builtin)
+
+type ParsedSentence =
+    Sentence
+        Object
+        (SortVariable Object)
+        (ParsedPurePattern Object Domain.Builtin)
+
+type ParsedModule = Module ParsedSentence
+
+type ParsedDefinition = Definition ParsedSentence
 
 castDefinitionDomainValues
     :: Functor domain

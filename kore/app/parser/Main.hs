@@ -14,8 +14,6 @@ import           Options.Applicative
                  metavar, progDesc, str, strOption, value )
 
 import           Kore.AST.ApplicativeKore
-import           Kore.AST.Kore
-                 ( CommonKorePattern )
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
                  ( prettyPrintToString )
@@ -29,9 +27,9 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule, toVerifiedPureDefinition )
-import           Kore.Parser.Parser
-                 ( parseKoreDefinition, parseKorePattern )
+                 ( VerifiedModule, toVerifiedDefinition )
+import           Kore.Parser
+                 ( ParsedPattern, parseKoreDefinition, parseKorePattern )
 import           Kore.Unparser as Unparser
 
 import GlobalMain
@@ -120,8 +118,12 @@ main = do
         indexedModules <- if willVerify
             then mainVerify willChkAttr parsedDefinition
             else return Map.empty
-        when willPrintDefinition $ if appKore
-            then putStrLn (unparseToString2 (completeDefinition (toVerifiedPureDefinition indexedModules)))
+        when willPrintDefinition
+            $ if appKore
+                then putStrLn
+                    $ unparseToString2
+                    $ completeDefinition
+                    $ toVerifiedDefinition indexedModules
             else putStrLn (prettyPrintToString parsedDefinition)
 
         when (patternFileName /= "") $ do
@@ -136,19 +138,19 @@ main = do
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
-mainDefinitionParse :: String -> IO KoreDefinition
+mainDefinitionParse :: String -> IO ParsedDefinition
 mainDefinitionParse = mainParse parseKoreDefinition
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
-mainPatternParse :: String -> IO CommonKorePattern
+mainPatternParse :: String -> IO ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
 -- | IO action verifies well-formedness of Kore definition and prints
 -- timing information.
 mainVerify
     :: Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> KoreDefinition -- ^ Parsed definition to check well-formedness
+    -> ParsedDefinition -- ^ Parsed definition to check well-formedness
     -> IO
         (Map.Map
             ModuleName
@@ -170,4 +172,3 @@ mainVerify willChkAttr definition =
       case verifyResult of
         Left err1            -> error (printError err1)
         Right indexedModules -> return indexedModules
-

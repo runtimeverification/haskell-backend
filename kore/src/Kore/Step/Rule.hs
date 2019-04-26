@@ -17,8 +17,8 @@ module Kore.Step.Rule
     , isNormalRule
     , QualifiedAxiomPattern (..)
     , AxiomPatternError (..)
-    , verifiedKoreSentenceToAxiomPattern
-    , koreSentenceToAxiomPattern
+    , fromSentenceAxiom
+    , fromSentence
     , extractRewriteAxioms
     , extractOnePathClaims
     , extractAllPathClaims
@@ -41,8 +41,7 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Kore hiding
-                 ( freeVariables )
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid hiding
                  ( freeVariables )
@@ -60,6 +59,7 @@ import qualified Kore.Step.Pattern as Pattern
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
+import qualified Kore.Verified as Verified
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -183,33 +183,22 @@ isNormalRule RulePattern { attributes } =
         _ -> False
 
 
--- | Extracts all 'RewriteRule' axioms matching a given @level@ from
--- a verified definition.
+-- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
 extractRewriteAxioms
-    :: MetaOrObject level
-    => level -- ^expected level for the axiom pattern
-    -> VerifiedModule declAtts axiomAtts
-    -- ^'IndexedModule' containing the definition
-    -> [RewriteRule level Variable]
-extractRewriteAxioms level idxMod =
-    mapMaybe
-        ( extractRewriteAxiomFrom level
-        . getIndexedSentence
-        )
+    :: VerifiedModule declAtts axiomAtts
+    -> [RewriteRule Object Variable]
+extractRewriteAxioms idxMod =
+    mapMaybe (extractRewriteAxiomFrom. getIndexedSentence)
         (indexedModuleAxioms idxMod)
 
 extractRewriteAxiomFrom
-    :: MetaOrObject level
-    => level -- ^expected level for the axiom pattern
-    -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    :: Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (RewriteRule level Variable)
-extractRewriteAxiomFrom level sentence =
-    case verifiedKoreSentenceToAxiomPattern level koreSentence of
+    -> Maybe (RewriteRule Object Variable)
+extractRewriteAxiomFrom sentence =
+    case fromSentenceAxiom sentence of
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
-  where
-    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
 
 -- | Extracts all One-Path claims from a verified module.
 extractOnePathClaims
@@ -224,15 +213,13 @@ extractOnePathClaims idxMod =
     $ (indexedModuleClaims idxMod)
 
 extractOnePathClaimFrom
-    :: SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    :: Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (OnePathRule Object Variable)
 extractOnePathClaimFrom sentence =
-    case verifiedKoreSentenceToAxiomPattern Object koreSentence of
-        Right (OnePathClaimPattern axiomPat) -> Just axiomPat
+    case fromSentenceAxiom sentence of
+        Right (OnePathClaimPattern claim) -> Just claim
         _ -> Nothing
-  where
-    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
 
 -- | Extracts all All-Path claims from a verified definition.
 extractAllPathClaims
@@ -244,18 +231,16 @@ extractAllPathClaims idxMod =
         ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
         . fmap extractAllPathClaimFrom         -- applying on second component
         )
-    $ (indexedModuleClaims idxMod)
+    (indexedModuleClaims idxMod)
 
 extractAllPathClaimFrom
-    :: SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    :: Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (AllPathRule Object Variable)
 extractAllPathClaimFrom sentence =
-    case verifiedKoreSentenceToAxiomPattern Object koreSentence of
-        Right (AllPathClaimPattern axiomPat) -> Just axiomPat
+    case fromSentenceAxiom sentence of
+        Right (AllPathClaimPattern claim) -> Just claim
         _ -> Nothing
-  where
-    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
 
 -- | Extract all 'ImplicationRule' claims matching a given @level@ from
 -- a verified definition.
@@ -271,58 +256,32 @@ extractImplicationClaims idxMod =
     $ (indexedModuleClaims idxMod)
 
 extractImplicationClaimFrom
-    :: SentenceAxiom UnifiedSortVariable VerifiedKorePattern
+    :: Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (ImplicationRule Object Variable)
 extractImplicationClaimFrom sentence =
-    case verifiedKoreSentenceToAxiomPattern Object koreSentence of
+    case fromSentenceAxiom sentence of
         Right (ImplicationAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
-  where
-    koreSentence = constructUnifiedSentence SentenceAxiomSentence sentence
 
--- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
--- a given 'KoreSentence'.
-verifiedKoreSentenceToAxiomPattern
-    :: MetaOrObject level
-    => level
-    -> VerifiedKoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
-verifiedKoreSentenceToAxiomPattern level =
-    \case
-        UnifiedObjectSentence object -> sentenceToAxiomPattern level object
+-- | Attempts to extract a rule from the 'Verified.Sentence'.
+fromSentence
+    :: Verified.Sentence
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
+fromSentence (SentenceAxiomSentence sentenceAxiom) =
+    fromSentenceAxiom sentenceAxiom
+fromSentence _ =
+    koreFail "Only axiom sentences can be translated to rules"
 
--- | Attempts to extract a 'QualifiedAxiomPattern' of the given @level@ from
--- a given 'KoreSentence'.
-koreSentenceToAxiomPattern
-    :: MetaOrObject level
-    => level
-    -> VerifiedKoreSentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
-koreSentenceToAxiomPattern level =
-    \case
-        UnifiedObjectSentence object -> sentenceToAxiomPattern level object
-
-sentenceToAxiomPattern
-    :: MetaOrObject level
-    => level
-    -> Sentence level' UnifiedSortVariable VerifiedKorePattern
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
-sentenceToAxiomPattern
-    level
-    (SentenceAxiomSentence SentenceAxiom
-        { sentenceAxiomPattern
-        , sentenceAxiomAttributes
-        }
-    )
-  = do
+-- | Attempts to extract a rule from the 'Verified.SentenceAxiom'.
+fromSentenceAxiom
+    :: Verified.SentenceAxiom
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
+fromSentenceAxiom sentenceAxiom = do
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
-            sentenceAxiomAttributes
-    stepPattern <- Pattern.fromKorePattern level sentenceAxiomPattern
-    patternToAxiomPattern attributes stepPattern
-sentenceToAxiomPattern _ _ =
-    koreFail "Only axiom sentences can be translated to AxiomPatterns"
+            (sentenceAxiomAttributes sentenceAxiom)
+    patternToAxiomPattern attributes (sentenceAxiomPattern sentenceAxiom)
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
@@ -330,10 +289,9 @@ sentenceToAxiomPattern _ _ =
 not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
-    :: MetaOrObject level
-    => Attribute.Axiom
-    -> CommonStepPattern level
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern level Variable)
+    :: Attribute.Axiom
+    -> CommonStepPattern Object
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
 patternToAxiomPattern attributes pat =
     case pat of
         -- normal rewrite axioms
@@ -405,9 +363,9 @@ mkRewriteAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
-    -> VerifiedKoreSentence
+    -> Verified.Sentence
 mkRewriteAxiom lhs rhs requires =
-    (asKoreAxiomSentence . Pattern.toKoreSentenceAxiom . mkAxiom_)
+    (SentenceAxiomSentence . mkAxiom_)
         (mkRewrites
             (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
             (mkAnd (mkTop patternSort) rhs)
@@ -424,10 +382,9 @@ mkEqualityAxiom
     :: CommonStepPattern Object  -- ^ left-hand side
     -> CommonStepPattern Object  -- ^ right-hand side
     -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
-    -> VerifiedKoreSentence
+    -> Verified.Sentence
 mkEqualityAxiom lhs rhs requires =
-    asKoreAxiomSentence
-    $ Pattern.toKoreSentenceAxiom
+    SentenceAxiomSentence
     $ mkAxiom [sortVariableR]
     $ case requires of
         Just requires' ->

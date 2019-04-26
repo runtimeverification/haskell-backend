@@ -26,10 +26,8 @@ import qualified Kore.AST.Common as Variable
                  ( Variable (..) )
 import           Kore.AST.Identifier
                  ( Id )
-import           Kore.AST.Kore
-                 ( VerifiedKorePattern )
 import           Kore.AST.MetaOrObject
-                 ( Object (Object) )
+                 ( Object )
 import           Kore.AST.Sentence
                  ( SentenceAxiom (SentenceAxiom), SentenceSort (SentenceSort) )
 import qualified Kore.AST.Sentence as SentenceSort
@@ -44,9 +42,9 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
                  ( constructor )
 import qualified Kore.Attribute.Axiom.Constructor as Axiom.Constructor
-import           Kore.Attribute.Hook.Hook
+import           Kore.Attribute.Hook
                  ( Hook (Hook) )
-import qualified Kore.Attribute.Hook.Hook as Hook
+import qualified Kore.Attribute.Hook as Hook
 import           Kore.Attribute.Smtlib
                  ( applySExpr )
 import           Kore.Attribute.Smtlib.Smtlib
@@ -58,17 +56,18 @@ import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule, recursiveIndexedModuleAxioms,
+                 ( VerifiedModule, recursiveIndexedModuleAxioms,
                  recursiveIndexedModuleSortDescriptions )
 import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
 import           Kore.Step.Pattern
-                 ( CommonStepPattern, fromKorePattern )
+                 ( CommonStepPattern )
 import qualified Kore.Step.SMT.AST as AST
 import           Kore.Unparser
                  ( unparseToString )
+import qualified Kore.Verified as Verified
 import qualified SMT
                  ( Constructor (Constructor),
                  ConstructorArgument (ConstructorArgument),
@@ -104,15 +103,8 @@ May ignore sorts that we don't handle yet (e.g. parameterized sorts).
 All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations
-    :: forall indexedModule param symbolAttribute
-    .   ( indexedModule ~
-            IndexedModule
-                param
-                VerifiedKorePattern
-                symbolAttribute
-                Attribute.Axiom
-        )
-    => indexedModule
+    :: forall symbolAttribute
+    .  VerifiedModule symbolAttribute Attribute.Axiom
     -> AST.UnresolvedDeclarations
 buildRepresentations indexedModule =
     builtinAndSmtLibDeclarations
@@ -165,7 +157,7 @@ buildRepresentations indexedModule =
 
     extractDefinitionsFromSentences
         ::  (   ( Attribute.Sort
-                , SentenceSort Object VerifiedKorePattern
+                , Verified.SentenceSort
                 )
             -> Maybe (Id Object, AST.UnresolvedSort)
             )
@@ -177,7 +169,7 @@ buildRepresentations indexedModule =
 
 builtinSortDeclaration
     ::  ( Attribute.Sort
-        , SentenceSort Object VerifiedKorePattern
+        , Verified.SentenceSort
         )
     -> Maybe (Id Object, AST.UnresolvedSort)
 builtinSortDeclaration
@@ -202,7 +194,7 @@ builtinSortDeclaration
 
 smtlibSortDeclaration
     ::  ( Attribute.Sort
-        , SentenceSort Object VerifiedKorePattern
+        , Verified.SentenceSort
         )
     -> Maybe (Id Object, AST.UnresolvedSort)
 smtlibSortDeclaration
@@ -233,7 +225,7 @@ smtlibSortDeclaration
 
 simpleSortDeclaration
     ::  ( Attribute.Sort
-        , SentenceSort Object VerifiedKorePattern
+        , Verified.SentenceSort
         )
     -> Maybe (Id Object, AST.UnresolvedSort)
 simpleSortDeclaration
@@ -273,19 +265,12 @@ emptySortArgsToSmt representation _ args = (error . unlines)
 
 parseNoJunkAxiom
     ::  ( Attribute.Axiom
-        , SentenceAxiom param VerifiedKorePattern
+        , Verified.SentenceAxiom
         )
     -> Maybe (Id Object, AST.UnresolvedSort)
 parseNoJunkAxiom (attributes, SentenceAxiom {sentenceAxiomPattern})
   | Axiom.Constructor.isConstructor (Attribute.Axiom.constructor attributes)
-  = case fromKorePattern Object sentenceAxiomPattern of
-    Left err -> (error . unlines)
-        [ "Unexpected error transforming kore pattern to pure pattern."
-        , "All patterns should be pure."
-        , "err=" ++ show err
-        , "pattern=" ++ show sentenceAxiomPattern
-        ]
-    Right patt -> parseNoJunkPattern patt
+  = parseNoJunkPattern sentenceAxiomPattern
   | otherwise = Nothing
 
 parseNoJunkPattern

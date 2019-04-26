@@ -8,9 +8,9 @@ module Kore.IndexedModule.Error
     , noHead
     , noAlias
     , noSymbol
-    )
-where
-import Kore.AST.Kore
+    ) where
+
+import Kore.AST.Pure
 
 -- | A message declaring that a Sort is undefined
 noSort :: MetaOrObject level => Id level -> String

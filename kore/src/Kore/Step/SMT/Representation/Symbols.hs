@@ -16,8 +16,6 @@ import           Data.Maybe
 
 import           Kore.AST.Identifier
                  ( Id )
-import           Kore.AST.Kore
-                 ( VerifiedKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -45,6 +43,7 @@ import           Kore.Sort
 import qualified Kore.Step.SMT.AST as AST
 import           Kore.Unparser
                  ( unparseToString )
+import qualified Kore.Verified as Verified
 import qualified SMT
 
 {-| Builds smt representations for symbols in the given module.
@@ -59,7 +58,7 @@ buildRepresentations
     .   ( indexedModule ~
             IndexedModule
                 param
-                VerifiedKorePattern
+                Verified.Pattern
                 Attribute.Symbol
                 axiom
         )
@@ -80,10 +79,8 @@ buildRepresentations indexedModule =
             }
 
     extractDefinitionsFromSentences
-        ::  (   ( Attribute.Symbol
-                , SentenceSymbol Object VerifiedKorePattern
-                )
-            -> Maybe (Id Object, AST.UnresolvedSymbol)
+        ::  (   (Attribute.Symbol, Verified.SentenceSymbol)
+            ->  Maybe (Id Object, AST.UnresolvedSymbol)
             )
         -> [(Id Object, AST.UnresolvedSymbol)]
     extractDefinitionsFromSentences definitionExtractor =
@@ -104,9 +101,7 @@ buildRepresentations indexedModule =
         extractDefinitionsFromSentences constructorDeclaration
 
 builtinDeclaration
-    ::  ( Attribute.Symbol
-        , SentenceSymbol Object VerifiedKorePattern
-        )
+    :: (Attribute.Symbol, Verified.SentenceSymbol)
     -> Maybe (Id Object, AST.UnresolvedSymbol)
 builtinDeclaration
     ( attributes
@@ -135,9 +130,7 @@ builtinDeclaration
     Attribute.Smthook {getSmthook} = Attribute.Symbol.smthook attributes
 
 smtlibDeclaration
-    ::  ( Attribute.Symbol
-        , SentenceSymbol Object VerifiedKorePattern
-        )
+    :: (Attribute.Symbol, Verified.SentenceSymbol)
     -> Maybe (Id Object, AST.UnresolvedSymbol)
 smtlibDeclaration
     ( attributes
@@ -166,9 +159,7 @@ smtlibDeclaration
     Attribute.Smtlib { getSmtlib } = Attribute.Symbol.smtlib attributes
 
 constructorDeclaration
-    ::  ( Attribute.Symbol
-        , SentenceSymbol Object VerifiedKorePattern
-        )
+    :: (Attribute.Symbol, Verified.SentenceSymbol)
     -> Maybe (Id Object, AST.UnresolvedSymbol)
 constructorDeclaration
     ( attributes

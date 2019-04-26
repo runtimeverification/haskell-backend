@@ -14,6 +14,7 @@ module Kore.AST.Identifier
       Id (..)
     , getIdForError
     , noLocationId
+    , implicitId
     , unparseIdLower
     -- * Locations
     , AstLocation (..)
@@ -140,6 +141,10 @@ noLocationId value = Id
     { getId = value
     , idLocation = AstLocationNone
     }
+
+-- | Create an implicit 'Id'.
+implicitId :: Text -> Id level
+implicitId name = Id name AstLocationImplicit
 
 getIdForError :: Id level -> String
 getIdForError = Text.unpack . getId

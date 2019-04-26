@@ -26,7 +26,7 @@ import Data.List
        ( intercalate )
 
 import Kore.AST.AstWithLocation
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.Error
 

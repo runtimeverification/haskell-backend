@@ -50,9 +50,9 @@ import           System.Clock
 import           System.IO
                  ( hPutStrLn, stderr )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
-                 ( KoreDefinition, ModuleName (..), getModuleNameForError )
+                 ( ModuleName (..), ParsedDefinition, getModuleNameForError )
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification,
@@ -65,8 +65,9 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule,
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
-import           Kore.Parser.Parser
-                 ( parseKoreDefinition )
+import           Kore.Parser
+                 ( ParsedPattern, parseKoreDefinition )
+import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
                  ( version )
 
@@ -232,8 +233,8 @@ clockSomethingIO description something = do
 mainPatternVerify
     :: VerifiedModule declAttrs axiomAttrs
     -- ^ Module containing definitions visible in the pattern
-    -> CommonKorePattern -- ^ Parsed pattern to check well-formedness
-    -> IO VerifiedKorePattern
+    -> ParsedPattern -- ^ Parsed pattern to check well-formedness
+    -> IO Verified.Pattern
 mainPatternVerify verifiedModule patt = do
     verifyResult <-
         clockSomething "Verifying the pattern"
@@ -317,7 +318,7 @@ verifyDefinitionWithBase
         )
     -- ^ base definition to use for verification
     -> Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> KoreDefinition -- ^ Parsed definition to check well-formedness
+    -> ParsedDefinition -- ^ Parsed definition to check well-formedness
     -> IO
         ( Map.Map
             ModuleName
@@ -347,7 +348,7 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
 Also prints timing information; see 'mainParse'.
 
  -}
-parseDefinition :: FilePath -> IO KoreDefinition
+parseDefinition :: FilePath -> IO ParsedDefinition
 parseDefinition = mainParse parseKoreDefinition
 
 mainParse

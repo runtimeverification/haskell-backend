@@ -15,7 +15,6 @@ module Kore.AST.AstWithLocation
 import qualified Control.Lens as Lens
 
 import Kore.AST.Common
-import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Domain.Class
 import Kore.Sort
@@ -31,14 +30,6 @@ prettyPrintLocationFromAst
     :: AstWithLocation astWithLocation
     => astWithLocation -> String
 prettyPrintLocationFromAst = prettyPrintAstLocation . locationFromAst
-
-instance
-    (AstWithLocation (thing Object), AstWithLocation (thing Meta))
-    => AstWithLocation (Unified thing)
-  where
-    locationFromAst (UnifiedObject t) = locationFromAst t
-    updateAstLocation (UnifiedObject t) loc =
-        UnifiedObject (updateAstLocation t loc)
 
 instance AstWithLocation AstLocation where
     locationFromAst = id

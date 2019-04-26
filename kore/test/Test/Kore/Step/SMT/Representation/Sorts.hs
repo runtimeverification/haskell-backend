@@ -46,15 +46,7 @@ test_sortParsing =
         [declarationsAre
             (emptyDeclarations
                 `with` unresolvedSortMap "#Char"
-                `with` unresolvedSortMap "#CharList"
-                `with` unresolvedSortMap "#Pattern"
-                `with` unresolvedSortMap "#PatternList"
-                `with` unresolvedSortMap "#Sort"
-                `with` unresolvedSortMap "#SortList"
-                `with` unresolvedSortMap "#Symbol"
-                `with` unresolvedSortMap "#SymbolList"
-                `with` unresolvedSortMap "#Variable"
-                `with` unresolvedSortMap "#VariableList"
+                `with` unresolvedSortMap "#String"
             )
         ]
     , testsForModule "Definition with simple sorts"

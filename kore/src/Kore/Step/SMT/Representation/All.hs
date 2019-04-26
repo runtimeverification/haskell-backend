@@ -10,14 +10,12 @@ module Kore.Step.SMT.Representation.All
     ( build
     ) where
 
-import           Kore.AST.Kore
-                 ( VerifiedKorePattern )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule )
+                 ( VerifiedModule )
 import qualified Kore.Step.SMT.AST as AST
 import           Kore.Step.SMT.Representation.Resolve
                  ( resolve )
@@ -33,15 +31,7 @@ It may ignore sorts and symbols that it can't handle yet (e.g. parameterized
 sorts).
 -}
 build
-    :: forall indexedModule param
-    .   ( indexedModule ~
-            IndexedModule
-                param
-                VerifiedKorePattern
-                Attribute.Symbol
-                Attribute.Axiom
-        )
-    => indexedModule
+    :: VerifiedModule Attribute.Symbol Attribute.Axiom
     -> AST.SmtDeclarations
 build indexedModule =
     resolve (sorts `AST.mergePreferFirst` symbols)

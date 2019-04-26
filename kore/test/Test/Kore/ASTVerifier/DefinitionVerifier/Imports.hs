@@ -8,14 +8,13 @@ import Test.Tasty
 import GHC.Stack
        ( HasCallStack )
 
-import Kore.AST.Kore
-import Kore.AST.Sentence
-import Kore.AST.Valid
-import Kore.Error
-import Kore.Implicit.ImplicitSorts
-import Kore.IndexedModule.Error
-       ( noSort )
-import Kore.Step.Pattern
+import           Kore.AST.Pure
+import           Kore.AST.Sentence
+import           Kore.AST.Valid
+import           Kore.Error
+import           Kore.IndexedModule.Error
+                 ( noSort )
+import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -323,7 +322,7 @@ sortVisibilityTests =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: VerifiedKoreSentenceSort Object)
+        :: Verified.SentenceSort)
     anotherSort = SortActualSort SortActual
         { sortActualName = testId "sort3"
         , sortActualSorts = []
@@ -334,20 +333,20 @@ sortVisibilityTests =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: VerifiedKoreSentenceSort Object)
-    topSortPattern = toKorePattern $ mkTop sort
-    metaTopSortPattern = toKorePattern $ mkTop charMetaSort
+        :: Verified.SentenceSort)
+    topSortPattern = mkTop sort
+    metaTopSortPattern = mkTop charMetaSort
     sortReferenceInSort =
         SortActualSort SortActual
             { sortActualName = testId "sort2"
             , sortActualSorts = [ sort ]
             } :: Sort Object
     sortReferenceInSortSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern $ mkTop sortReferenceInSort
+                    mkTop sortReferenceInSort
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInSortSupportingSentences =
@@ -357,28 +356,27 @@ sortVisibilityTests =
                 , sentenceSortParameters = [SortVariable (testId "x")]
                 , sentenceSortAttributes = Attributes []
                 }
-            :: VerifiedKoreSentenceSort Object)
+            :: Verified.SentenceSort)
         ]
     sortReferenceInTopPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = topSortPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     metaSortReferenceInTopPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern = metaTopSortPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInExistsPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkExists existsVariable (mkVar existsVariable))
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -390,28 +388,26 @@ sortVisibilityTests =
                 , variableSort = sort
                 }
     sortReferenceInAndPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern $ mkAnd (mkTop sort) mkTop_
+                    mkAnd (mkTop sort) mkTop_
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInNextPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkNext (mkTop sort))
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInPatternInPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkNext
                             (mkEquals
                                 anotherSort
@@ -434,7 +430,7 @@ sortVisibilityTests =
                 , sentenceSymbolResultSort = sort
                 , sentenceSymbolAttributes = Attributes []
                 }
-            :: VerifiedKoreSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
     sortReferenceInSentenceSymbolSortsSentence =
         asSentence
             (SentenceSymbol
@@ -446,7 +442,7 @@ sortVisibilityTests =
                 , sentenceSymbolResultSort = anotherSort
                 , sentenceSymbolAttributes = Attributes []
                 }
-            :: VerifiedKoreSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
     sortReferenceInSentenceSymbolSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSentenceAliasResultSortSentence =
@@ -468,10 +464,10 @@ sortVisibilityTests =
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    toKorePattern $ mkTop sort
+                    mkTop sort
                 , sentenceAliasAttributes = Attributes []
                 }
-            :: VerifiedKoreSentenceAlias Object)
+            :: Verified.SentenceAlias)
     sortReferenceInSentenceAliasSortsSentence =
         asSentence
             (SentenceAlias
@@ -497,18 +493,17 @@ sortVisibilityTests =
                             ]
                         }
                 , sentenceAliasRightPattern =
-                    toKorePattern $ mkTop anotherSort
+                    mkTop anotherSort
                 , sentenceAliasAttributes = Attributes []
                 }
-            :: VerifiedKoreSentenceAlias Object)
+            :: Verified.SentenceAlias)
     sortReferenceInSentenceAliasSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSymbolOrAliasSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkApp
                             sort
                             SymbolOrAlias
@@ -531,7 +526,7 @@ sortVisibilityTests =
                     SortVariableSort (SortVariable (testId "sv1"))
                 , sentenceSymbolAttributes = Attributes []
                 }
-            :: VerifiedKoreSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
         ]
 
 symbolVisibilityTests :: [TestTree]
@@ -633,7 +628,7 @@ symbolVisibilityTests =
                 SortVariableSort (SortVariable (testId "sv1"))
             , sentenceSymbolAttributes = Attributes []
             }
-        :: VerifiedKoreSentenceSymbol Object)
+        :: Verified.SentenceSymbol)
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
     metaSymbolPattern =
         mkApp
@@ -654,37 +649,36 @@ symbolVisibilityTests =
                 SortVariableSort (SortVariable (testId "#sv1"))
             , sentenceSymbolAttributes = Attributes []
             }
-        :: VerifiedKoreSentenceSymbol Meta)
+        :: Verified.SentenceSymbol)
     symbolReferenceInAxiomSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern symbolPattern
+                    symbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     metaSymbolReferenceInAxiomSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern metaSymbolPattern
+                    metaSymbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInAndPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern (mkAnd symbolPattern mkTop_)
+                    (mkAnd symbolPattern mkTop_)
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInExistsPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkExists
                             Variable
                                 { variableName = testId "var"
@@ -696,19 +690,18 @@ symbolVisibilityTests =
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInNextPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern (mkNext symbolPattern)
+                    (mkNext symbolPattern)
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInSymbolOrAliasSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkApp
                             defaultSort
                             SymbolOrAlias
@@ -732,7 +725,7 @@ symbolVisibilityTests =
                     SortVariableSort (SortVariable (testId "sv1"))
                 , sentenceSymbolAttributes = Attributes []
                 }
-            :: VerifiedKoreSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
         : defaultSymbolSupportSentences
 
 aliasVisibilityTests :: [TestTree]
@@ -829,7 +822,7 @@ aliasVisibilityTests =
             sentenceAliasResultSort :: Sort Object
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
-        in (UnifiedObjectSentence . SentenceAliasSentence)
+        in SentenceAliasSentence
             SentenceAlias
                 { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts = []
@@ -845,7 +838,7 @@ aliasVisibilityTests =
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    toKorePattern $ mkTop sentenceAliasResultSort
+                    mkTop sentenceAliasResultSort
                 , sentenceAliasAttributes = Attributes []
                 }
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
@@ -864,7 +857,7 @@ aliasVisibilityTests =
             sentenceAliasResultSort :: Sort Meta
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "#sv1"))
-        in (UnifiedObjectSentence . SentenceAliasSentence)
+        in SentenceAliasSentence
             SentenceAlias
                 { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts = []
@@ -879,38 +872,36 @@ aliasVisibilityTests =
                         , applicationChildren = []
                         }
                 , sentenceAliasRightPattern =
-                    toKorePattern $ mkTop sentenceAliasResultSort
+                    mkTop sentenceAliasResultSort
                 , sentenceAliasAttributes = Attributes []
                 }
     aliasReferenceInAxiomSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = toKorePattern aliasPattern
+                , sentenceAxiomPattern = aliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     metaAliasReferenceInAxiomSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
-                , sentenceAxiomPattern = toKorePattern metaAliasPattern
+                , sentenceAxiomPattern = metaAliasPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAndPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkAnd aliasPattern mkTop_)
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInExistsPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
                         (mkExists
                             Variable
                                 { variableName = testId "var"
@@ -922,31 +913,29 @@ aliasVisibilityTests =
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInNextPatternSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern (mkNext aliasPattern)
+                    (mkNext aliasPattern)
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAliasOrAliasSentence =
-        asKoreAxiomSentence
+        SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    toKorePattern
-                        (mkApp
-                            defaultSort
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "alias2"
-                                , symbolOrAliasParams = [ defaultSort ]
-                                }
-                            [aliasPattern]
-                        )
+                    mkApp
+                        defaultSort
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = testId "alias2"
+                            , symbolOrAliasParams = [ defaultSort ]
+                            }
+                        [aliasPattern]
                 , sentenceAxiomAttributes = Attributes []
                 }
     aliasReferenceInAliasOrAliasSupportSentences
-        :: [VerifiedKoreSentence]
+        :: [Verified.Sentence]
     aliasReferenceInAliasOrAliasSupportSentences =
         let aliasConstructor :: Id Object
             aliasConstructor = testId "alias2" :: Id Object
@@ -954,7 +943,7 @@ aliasVisibilityTests =
             sentenceAliasResultSort :: Sort Object
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
-        in (toKoreSentence . SentenceAliasSentence)
+        in SentenceAliasSentence
             SentenceAlias
                 { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts =
@@ -992,18 +981,18 @@ defaultSort = SortActualSort SortActual
     , sortActualSorts = []
     }
 
-defaultSortDeclaration :: VerifiedKoreSentence
+defaultSortDeclaration :: Verified.Sentence
 defaultSortDeclaration = asSentence
     (SentenceSort
         { sentenceSortName = testId "sort1"
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes []
         }
-    :: VerifiedKoreSentenceSort Object)
+    :: Verified.SentenceSort)
 
-newtype DeclaringSentence = DeclaringSentence VerifiedKoreSentence
-newtype UsingSentence = UsingSentence VerifiedKoreSentence
-newtype SupportingSentences = SupportingSentences [VerifiedKoreSentence]
+newtype DeclaringSentence = DeclaringSentence Verified.Sentence
+newtype UsingSentence = UsingSentence Verified.Sentence
+newtype SupportingSentences = SupportingSentences [Verified.Sentence]
 
 nameReferenceTests
     :: HasCallStack
@@ -1291,7 +1280,7 @@ nameDuplicationTests =
                         , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
                         }
-                    :: VerifiedKoreSentenceSort Object)
+                    :: Verified.SentenceSort)
                 ]
             , moduleAttributes = Attributes []
             }
@@ -1310,7 +1299,7 @@ nameDuplicationTests =
                             SortVariableSort (SortVariable (testId "sv1"))
                         , sentenceSymbolAttributes = Attributes []
                         }
-                    :: VerifiedKoreSentenceSymbol Object)
+                    :: Verified.SentenceSymbol)
                 ]
             , moduleAttributes = Attributes []
             }
@@ -1320,7 +1309,7 @@ nameDuplicationTests =
         in Module
             { moduleName = modName
             , moduleSentences =
-                [ (toKoreSentence . asSentence)
+                [ asSentence
                     SentenceAlias
                         { sentenceAliasAlias = Alias
                             { aliasConstructor
@@ -1348,7 +1337,11 @@ nameDuplicationTests =
             }
 
 duplicatedNameFailureTest
-    :: String -> String -> VerifiedKoreModule -> VerifiedKoreModule -> TestTree
+    :: String
+    -> String
+    -> Module Verified.Sentence
+    -> Module Verified.Sentence
+    -> TestTree
 duplicatedNameFailureTest message duplicatedName module1 module2 =
     expectFailureWithError
         message

@@ -89,9 +89,9 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
-                 ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
+                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
 import           Kore.AST.Valid
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
@@ -139,6 +139,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Unparser
+import qualified Kore.Verified as Verified
 
 type Parser = Parsec Void Text
 
@@ -150,7 +151,7 @@ type HookedSortDescription = SortDescription Object Domain.Builtin
 type SortDeclVerifier =
         KoreIndexedModule Attribute.Null Attribute.Null
     -- ^ Indexed module, to look up symbol declarations
-    ->  KoreSentenceSort Object
+    ->  ParsedSentenceSort
     -- ^ Sort declaration to verify
     ->  Attribute.Sort
     -- ^ Declared sort attributes
@@ -169,7 +170,7 @@ type SortDeclVerifiers = HashMap Text SortDeclVerifier
 type SymbolVerifier =
         (Id Object -> Either (Error VerifyError) HookedSortDescription)
     -- ^ Find a sort declaration
-    -> KoreSentenceSymbol Object
+    -> ParsedSentenceSymbol
     -- ^ Symbol declaration to verify
     -> Either (Error VerifyError) ()
 
@@ -194,7 +195,7 @@ type DomainValueVerifiers child = (HashMap Text (DomainValueVerifier child))
 data Verifiers = Verifiers
     { sortDeclVerifiers    :: SortDeclVerifiers
     , symbolVerifiers      :: SymbolVerifiers
-    , domainValueVerifiers :: DomainValueVerifiers VerifiedKorePattern
+    , domainValueVerifiers :: DomainValueVerifiers Verified.Pattern
     }
 
 {- | Look up and apply a builtin sort declaration verifier.

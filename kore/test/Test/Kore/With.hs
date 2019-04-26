@@ -9,8 +9,6 @@ import qualified Data.Map.Strict as Map
 
 import qualified Kore.AST.Identifier as Kore
                  ( Id )
-import           Kore.AST.Kore
-                 ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -20,8 +18,7 @@ import           Kore.AST.Sentence
                  SentenceAlias (SentenceAlias), SentenceAxiom (SentenceAxiom),
                  SentenceHook (SentenceHookedSort, SentenceHookedSymbol),
                  SentenceImport (SentenceImport), SentenceSort (SentenceSort),
-                 SentenceSymbol (SentenceSymbol),
-                 UnifiedSentence (UnifiedObjectSentence) )
+                 SentenceSymbol (SentenceSymbol) )
 import qualified Kore.AST.Sentence as Definition
                  ( Definition (..) )
 import qualified Kore.AST.Sentence as Module
@@ -36,6 +33,8 @@ import qualified Kore.AST.Sentence as SentenceSort
                  ( SentenceSort (..) )
 import qualified Kore.AST.Sentence as SentenceSymbol
                  ( SentenceSymbol (..) )
+import           Kore.Attribute.Attributes
+                 ( AttributePattern )
 import qualified Kore.Sort as Kore
                  ( Sort )
 import qualified Kore.Step.SMT.AST as AST
@@ -64,7 +63,7 @@ import qualified SMT.AST as AST.Constructor
 class With a b where
     with :: a -> b -> a
 
-newtype Attribute = Attribute {getAttribute :: CommonKorePattern}
+newtype Attribute = Attribute { getAttribute :: AttributePattern }
 
 instance With [a] a where
     with as a = a : as
@@ -87,13 +86,6 @@ instance With (Definition sentence) Attribute where
         }
 
 instance With (Definition sentence) [Attribute] where
-    with = foldl' with
-
-instance With (UnifiedSentence variable patt) Attribute where
-    (UnifiedObjectSentence s) `with` attribute =
-        UnifiedObjectSentence (s `with` attribute)
-
-instance With (UnifiedSentence variable patt) [Attribute] where
     with = foldl' with
 
 instance With (Sentence level sort patt) Attribute where
