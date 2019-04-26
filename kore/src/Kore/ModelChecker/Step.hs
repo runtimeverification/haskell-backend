@@ -10,12 +10,16 @@ module Kore.ModelChecker.Step
     , CommonModalPattern
     , ProofState (..)
     , CommonProofState
+    , BMCTransition
     , transitionRule
     , defaultOneStepStrategy
     ) where
 
 import           Control.Applicative
                  ( Alternative (..) )
+import           Control.Monad.State.Strict
+                 ( StateT )
+import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
@@ -103,7 +107,7 @@ unroll = Unroll
 computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
-type Transition = TransitionT (RewriteRule Object Variable) Simplifier
+type BMCTransition = TransitionT (RewriteRule Object Variable) (StateT (Maybe ()) Simplifier)
 
 transitionRule
     :: forall level . (MetaOrObject level)
@@ -115,8 +119,7 @@ transitionRule
     -- ^ Map from symbol IDs to defined functions
     -> Prim (CommonModalPattern level) (RewriteRule level Variable)
     -> CommonProofState level
-    -> Transition
-        (CommonProofState level)
+    -> BMCTransition (CommonProofState level)
 transitionRule
     tools
     predicateSimplifier
@@ -124,25 +127,26 @@ transitionRule
     axiomSimplifiers
     strategyPrim
     proofState
-  =
-    case strategyPrim of
-        CheckProofState -> transitionCheckProofState proofState
-        Simplify -> transitionSimplify proofState
-        Unroll goalrhs -> transitionUnroll goalrhs proofState
-        ComputeWeakNext rewrites -> transitionComputeWeakNext rewrites proofState
+  = do
+    execState <- Monad.Trans.lift State.get
+    case execState of
+        Nothing -> empty
+        Just () -> case strategyPrim of
+                    CheckProofState -> transitionCheckProofState proofState
+                    Simplify -> transitionSimplify proofState
+                    Unroll goalrhs -> transitionUnroll goalrhs proofState
+                    ComputeWeakNext rewrites -> transitionComputeWeakNext rewrites proofState
   where
     transitionCheckProofState
         :: CommonProofState level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level )
+        -> BMCTransition (CommonProofState level)
     transitionCheckProofState Proven = empty
     transitionCheckProofState Unprovable = empty
     transitionCheckProofState ps = return ps
 
     transitionSimplify
         :: CommonProofState level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level )
+        -> BMCTransition (CommonProofState level)
     transitionSimplify Proven = return Proven
     transitionSimplify Unprovable = return Unprovable
     transitionSimplify (GoalLHS config) =
@@ -153,7 +157,7 @@ transitionRule
     applySimplify wrapper config =
         do
             (configs, _) <-
-                Monad.Trans.lift
+                (Monad.Trans.lift . Monad.Trans.lift)
                 $ ExpandedPattern.simplify
                     tools
                     predicateSimplifier
@@ -170,8 +174,7 @@ transitionRule
     transitionUnroll
         :: CommonModalPattern level
         -> CommonProofState level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level )
+        -> BMCTransition (CommonProofState level)
     transitionUnroll _ Proven = empty
     transitionUnroll _ Unprovable = empty
     transitionUnroll goalrhs (GoalLHS config)
@@ -185,7 +188,7 @@ transitionRule
       = case modalOp of
             "ag" -> do
                 result <-
-                    Monad.Trans.lift
+                    (Monad.Trans.lift . Monad.Trans.lift)
                     $ checkImplicationIsTop
                         tools
                         predicateSimplifier
@@ -196,6 +199,7 @@ transitionRule
                 if result
                     then return (wrapper config)
                     else do
+                        (Monad.Trans.lift . State.put) Nothing
                         trace
                             (show . Pretty.vsep
                                 $ [ "config failed to prove the invariant:"
@@ -212,8 +216,7 @@ transitionRule
     transitionComputeWeakNext
         :: [RewriteRule level Variable]
         -> CommonProofState level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level)
+        -> BMCTransition (CommonProofState level)
     transitionComputeWeakNext _ Proven = return Proven
     transitionComputeWeakNext _ Unprovable = return Unprovable
     transitionComputeWeakNext rules (GoalLHS config)
@@ -224,13 +227,12 @@ transitionRule
     transitionComputeWeakNextHelper
         :: [RewriteRule level Variable]
         -> (CommonExpandedPattern level)
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level)
+        -> BMCTransition (CommonProofState level)
     transitionComputeWeakNextHelper _ config
         | ExpandedPattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do
         result <-
-            Monad.Trans.lift
+            (Monad.Trans.lift . Monad.Trans.lift)
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
                 tools

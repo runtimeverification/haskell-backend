@@ -9,6 +9,7 @@ module Kore.ModelChecker.Bounded
     , check
     ) where
 
+import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import           Data.Limit
                  ( Limit )
@@ -27,8 +28,8 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.ModelChecker.Step
-                 ( CommonModalPattern, CommonProofState, ModalPattern (..),
-                 Prim (..), defaultOneStepStrategy )
+                 ( BMCTransition, CommonModalPattern, CommonProofState,
+                 ModalPattern (..), Prim (..), defaultOneStepStrategy )
 import qualified Kore.ModelChecker.Step as ProofState
                  ( ProofState (..) )
 import qualified Kore.ModelChecker.Step as ModelChecker
@@ -49,7 +50,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
 import           Kore.Step.Strategy
-                 ( Strategy, TransitionT, pickFinal, runStrategy )
+                 ( Strategy, pickFinal, runStrategy )
 import           Numeric.Natural
                  ( Natural )
 
@@ -158,7 +159,9 @@ checkClaim
                 ProofState.GoalLHS
                     Predicated
                         {term = left, predicate = Predicate.makeTruePredicate, substitution = mempty}
-        executionGraph <- runStrategy transitionRule' strategy startState
+        executionGraph <- State.evalStateT
+                            (runStrategy transitionRule' strategy startState)
+                            (Just ())
         let
             finalResult = (checkFinalNodes . pickFinal) executionGraph
         trace (show finalResult) (return finalResult)
@@ -166,8 +169,7 @@ checkClaim
     transitionRule'
         :: Prim (CommonModalPattern level) (RewriteRule level Variable)
         -> (CommonProofState level)
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level)
+        -> BMCTransition (CommonProofState level)
     transitionRule' =
         ModelChecker.transitionRule
             metadataTools
