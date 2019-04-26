@@ -35,11 +35,11 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
+import qualified Kore.Step.Or as Or
+                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
@@ -511,7 +511,7 @@ mapVariables =
 makeCeil
     :: Ord (variable Object)
     => [Pattern Object variable]
-    -> Ceil Object (OrOfExpandedPattern Object variable)
+    -> Ceil Object (Or.Pattern Object variable)
 makeCeil patterns =
     Ceil
         { ceilOperandSort = testSort
@@ -523,8 +523,8 @@ evaluate
     ::  ( MetaOrObject level
         )
     => SmtMetadataTools StepperAttributes
-    -> Ceil level (CommonOrOfExpandedPattern level)
-    -> IO (CommonOrOfExpandedPattern level)
+    -> Ceil level (Or.Pattern Object Variable)
+    -> IO (Or.Pattern Object Variable)
 evaluate tools ceil =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -540,7 +540,7 @@ makeEvaluate
     ::  ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
     -> Pattern Object Variable
-    -> IO (CommonOrOfExpandedPattern level)
+    -> IO (Or.Pattern Object Variable)
 makeEvaluate tools child =
     makeEvaluateWithAxioms tools Map.empty child
 
@@ -550,7 +550,7 @@ makeEvaluateWithAxioms
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> Pattern Object Variable
-    -> IO (CommonOrOfExpandedPattern level)
+    -> IO (Or.Pattern Object Variable)
 makeEvaluateWithAxioms tools axiomIdToSimplifier child =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

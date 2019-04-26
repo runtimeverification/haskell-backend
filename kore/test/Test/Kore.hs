@@ -18,7 +18,7 @@ module Test.Kore
     , sortVariableSort
     , stepPatternGen
     , expandedPatternGen
-    , orOfExpandedPatternGen
+    , orPatternGen
     , predicateGen
     , predicateChildGen
     , variableGen
@@ -54,9 +54,9 @@ import           Kore.Parser
 import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
 import           Kore.Sort
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.TermLike as TermLike
 
 {- | @Context@ stores the variables and sort variables in scope.
@@ -853,8 +853,6 @@ expandedPatternGen = do
         , substitution = mempty
         }
 
-orOfExpandedPatternGen
-    :: MetaOrObject level
-    => Gen (CommonOrOfExpandedPattern level)
-orOfExpandedPatternGen =
+orPatternGen :: Gen (Or.Pattern Object Variable)
+orPatternGen =
     MultiOr.make <$> Gen.list (Range.linear 0 64) expandedPatternGen

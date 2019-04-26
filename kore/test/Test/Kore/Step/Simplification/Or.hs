@@ -15,10 +15,10 @@ import           Kore.AST.Common
                  ( Or (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
+import qualified Kore.Step.Or as Or
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
@@ -37,8 +37,8 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 
 {-
 
-`SimplifyEvaluated` is the core function. It converts two `OrOfExpandedPattern`
-values into a simplifier that is to produce a single `OrOfExpandedPattern`. We
+`SimplifyEvaluated` is the core function. It converts two `Or.Pattern`
+values into a simplifier that is to produce a single `Or.Pattern`. We
 run the simplifier to check correctness.
 
 -}
@@ -129,16 +129,16 @@ test_simplify =
             (simplifyEvaluated          orPattern1 orPattern2 )
         ]
   where
-    orPattern1 :: OrOfExpandedPattern Object Variable
+    orPattern1 :: Or.Pattern Object Variable
     orPattern1 = wrapInOrPattern (tM, pM, sM)
 
-    orPattern2 :: OrOfExpandedPattern Object Variable
+    orPattern2 :: Or.Pattern Object Variable
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 
     binaryOr
-      :: OrOfExpandedPattern Object Variable
-      -> OrOfExpandedPattern Object Variable
-      -> Or Object (OrOfExpandedPattern Object Variable)
+      :: Or.Pattern Object Variable
+      -> Or.Pattern Object Variable
+      -> Or Object (Or.Pattern Object Variable)
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
@@ -147,7 +147,7 @@ test_simplify =
 
 {-
 Key for variable names:
-1. `OrOfExpandedPattern` values are represented by a tuple containing
+1. `Or.Pattern` values are represented by a tuple containing
    the term, predicate, and substitution, in that order. They're
    also tagged with `t`, `p`, and `s`.
 2. The second character has this meaning:
@@ -307,8 +307,8 @@ orChild (term, predicate, substitution) =
     Conditional { term, predicate, substitution }
 
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
--- during conversion of a Conditional into an OrOfExpandedPattern
+-- during conversion of a Conditional into an Or.Pattern
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> OrOfExpandedPattern Object Variable
+    -> Or.Pattern Object Variable
 wrapInOrPattern tuple = MultiOr.make [orChild tuple]

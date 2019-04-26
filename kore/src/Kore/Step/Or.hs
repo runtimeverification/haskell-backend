@@ -4,49 +4,51 @@ License     : NCSA
 
 -}
 module Kore.Step.Or
-    ( Pattern
+    ( Conditional
+    , Pattern
     , PredicateSubstitution
     , isFalse
     , isTrue
     , makeFromSinglePurePattern
     , toExpandedPattern
-    , toStepPattern
+    , toTermLike
     , toPredicate
     ) where
 
 import Data.List
        ( foldl' )
 
+import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( Predicate, makeMultipleOrPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Conditional as Conditional
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
 
+{-| The disjunction of 'Conditional'.
+-}
 type Conditional level variable term =
     MultiOr (Conditional.Conditional level variable term)
 
-{-| 'Pattern' is a 'MultiOr' of 'Patterns', which is the
-most common case.
+{-| The disjunction of 'Pattern'.
 -}
 type Pattern level variable = MultiOr (Pattern.Pattern level variable)
 
-{-| 'PredicateSubstitution' is a 'MultiOr' of 'PredicateSubstitution.PredicateSubstitution'.
+{-| The disjunction of 'PredicateSubstitution.PredicateSubstitution'.
 -}
 type PredicateSubstitution level variable =
     MultiOr (PredicateSubstitution.PredicateSubstitution level variable)
 
-{-| 'OrOfPredicate' is a 'MultiOr' of 'Predicate'.
+{-| The disjunction of 'Predicate'.
 -}
-type Predicate variable = MultiOr (Predicate variable)
+type Predicate variable = MultiOr (Predicate.Predicate variable)
 
 {-| Constructs a normalized 'Pattern' from
 'TermLike's.
@@ -75,8 +77,8 @@ isTrue
     -> Bool
 isTrue = isTop
 
-{-| 'toExpandedPattern' transforms an 'OrOfExpandedPattern' into
-an 'ExpandedPattern'.
+{-| 'toExpandedPattern' transforms an 'Pattern' into
+an 'Pattern.Pattern'.
 -}
 toExpandedPattern
     ::  ( SortedVariable variable
@@ -84,47 +86,49 @@ toExpandedPattern
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => OrOfExpandedPattern Object variable -> Pattern Object variable
+    => Pattern Object variable -> Pattern.Pattern Object variable
 toExpandedPattern multiOr
   =
     case MultiOr.extractPatterns multiOr of
-        [] -> ExpandedPattern.bottom
+        [] -> Pattern.bottom
         [patt] -> patt
-        patt : patts -> Conditional
-            { term = foldl'
-                (\x y -> mkOr x (ExpandedPattern.toMLPattern y))
-                (ExpandedPattern.toMLPattern patt)
-                patts
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
+        patt : patts ->
+            Conditional.Conditional
+                { term =
+                    foldl'
+                        (\x y -> mkOr x (Pattern.toMLPattern y))
+                        (Pattern.toMLPattern patt)
+                        patts
+                , predicate = Predicate.makeTruePredicate
+                , substitution = mempty
+                }
 
-{-| Transforms an 'OrOfExpandedPattern' into a 'TermLike'.
+{-| Transforms a 'Pattern' into a 'TermLike'.
 -}
-toStepPattern
+toTermLike
     ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => OrOfExpandedPattern Object variable -> TermLike variable
-toStepPattern multiOr =
+    => Pattern Object variable -> TermLike variable
+toTermLike multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> mkBottom_
-        [patt] -> ExpandedPattern.toMLPattern patt
+        [patt] -> Pattern.toMLPattern patt
         patt : patts ->
             foldl'
-                (\x y -> mkOr x (ExpandedPattern.toMLPattern y))
-                (ExpandedPattern.toMLPattern patt)
+                (\x y -> mkOr x (Pattern.toMLPattern y))
+                (Pattern.toMLPattern patt)
                 patts
 
-{-| Transforms an 'OrOfPredicate' into a 'Predicate'. -}
+{-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
     ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => OrOfPredicate variable -> Predicate variable
+    => Predicate variable -> Predicate.Predicate variable
 toPredicate multiOr =
-    makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
+    Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)

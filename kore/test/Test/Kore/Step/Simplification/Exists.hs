@@ -20,11 +20,11 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Sort
+import qualified Kore.Step.Or as Or
+                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
@@ -266,7 +266,7 @@ makeExists
     :: Ord (variable Object)
     => variable Object
     -> [Pattern Object variable]
-    -> Exists Object variable (OrOfExpandedPattern Object variable)
+    -> Exists Object variable (Or.Pattern Object variable)
 makeExists variable patterns =
     Exists
         { existsSort = testSort
@@ -284,8 +284,8 @@ testSort =
 simplify
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> Exists level Variable (CommonOrOfExpandedPattern level)
-    -> IO (CommonOrOfExpandedPattern level)
+    -> Exists level Variable (Or.Pattern Object Variable)
+    -> IO (Or.Pattern Object Variable)
 simplify tools exists =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -302,7 +302,7 @@ makeEvaluate
     => SmtMetadataTools StepperAttributes
     -> Variable level
     -> Pattern Object Variable
-    -> IO (CommonOrOfExpandedPattern level)
+    -> IO (Or.Pattern Object Variable)
 makeEvaluate tools variable child =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

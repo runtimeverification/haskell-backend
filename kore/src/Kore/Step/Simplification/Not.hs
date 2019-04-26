@@ -27,10 +27,10 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Or as Or
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
@@ -41,7 +41,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-|'simplify' simplifies a 'Not' pattern with an 'OrOfExpandedPattern'
+{-|'simplify' simplifies a 'Not' pattern with an 'Or.Pattern'
 child.
 
 Right now this uses the following:
@@ -61,8 +61,8 @@ simplify
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Not Object (OrOfExpandedPattern Object variable)
-    -> Simplifier (OrOfExpandedPattern Object variable)
+    -> Not Object (Or.Pattern Object variable)
+    -> Simplifier (Or.Pattern Object variable)
 simplify
     tools
     predicateSimplifier
@@ -78,7 +78,7 @@ simplify
         child
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
-'OrOfExpandedPattern' child.
+'Or.Pattern' child.
 
 See 'simplify' for details.
 -}
@@ -87,9 +87,9 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Not level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (Not level) (Valid level) (Or.Pattern level variable)
 
-instead of an 'OrOfExpandedPattern' argument. The type of 'makeEvaluate' may
+instead of an 'Or.Pattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -105,8 +105,8 @@ simplifyEvaluated
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrOfExpandedPattern Object variable
-    -> Simplifier (OrOfExpandedPattern Object variable)
+    -> Or.Pattern Object variable
+    -> Simplifier (Or.Pattern Object variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -141,7 +141,7 @@ makeEvaluate
         , Unparse (variable level)
         )
     => Pattern level variable
-    -> OrOfExpandedPattern level variable
+    -> Or.Pattern level variable
 makeEvaluate Conditional { term, predicate, substitution } =
     MultiOr.make
         [ Conditional

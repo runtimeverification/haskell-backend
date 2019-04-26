@@ -16,14 +16,11 @@ import           Kore.AST.Common
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -41,8 +38,8 @@ simplify
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Rewrites Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Rewrites Object (Or.Pattern Object variable)
+    ->  ( Or.Pattern Object variable
         , SimplificationProof Object
         )
 simplify
@@ -58,9 +55,9 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedRewrites' take an argument of type
 
-> CofreeF (Or Object) (Valid Object) (OrOfExpandedPattern Object variable)
+> CofreeF (Or Object) (Valid Object) (Or.Pattern Object variable)
 
-instead of two 'OrOfExpandedPattern' arguments. The type of
+instead of two 'Or.Pattern' arguments. The type of
 'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
@@ -72,13 +69,13 @@ simplifyEvaluatedRewrites
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => Or.Pattern Object variable
+    -> Or.Pattern Object variable
+    -> (Or.Pattern Object variable, SimplificationProof Object)
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
-        (OrOfExpandedPattern.toExpandedPattern first)
-        (OrOfExpandedPattern.toExpandedPattern second)
+        (Or.toExpandedPattern first)
+        (Or.toExpandedPattern second)
 
 makeEvaluateRewrites
     ::  ( SortedVariable variable
@@ -88,7 +85,7 @@ makeEvaluateRewrites
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    -> (Or.Pattern Object variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
     ( MultiOr.make
         [ Conditional

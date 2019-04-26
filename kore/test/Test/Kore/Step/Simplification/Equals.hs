@@ -25,12 +25,12 @@ import           Kore.Predicate.Predicate
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
 import           Kore.Sort
+import qualified Kore.Step.Or as Or
+                 ( CommonOrOfExpandedPattern, CommonOrOfPredicateSubstitution )
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, CommonOrOfPredicateSubstitution )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Representation.PredicateSubstitution
                  ( CommonPredicateSubstitution, Conditional (..) )
@@ -998,8 +998,8 @@ testSort2 =
 
 evaluateOr
     :: SmtMetadataTools StepperAttributes
-    -> Equals Object (CommonOrOfExpandedPattern Object)
-    -> IO (CommonOrOfExpandedPattern Object)
+    -> Equals Object (Or.Pattern Object Variable)
+    -> IO (Or.Pattern Object Variable)
 evaluateOr tools equals =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -1015,7 +1015,7 @@ evaluate
     :: SmtMetadataTools StepperAttributes
     -> Pattern Object Variable
     -> Pattern Object Variable
-    -> IO (CommonOrOfExpandedPattern Object)
+    -> IO (Or.Pattern Object Variable)
 evaluate = evaluateGeneric
 
 evaluateGeneric
@@ -1023,7 +1023,7 @@ evaluateGeneric
     => SmtMetadataTools StepperAttributes
     -> Pattern Object Variable
     -> Pattern Object Variable
-    -> IO (CommonOrOfExpandedPattern level)
+    -> IO (Or.Pattern Object Variable)
 evaluateGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

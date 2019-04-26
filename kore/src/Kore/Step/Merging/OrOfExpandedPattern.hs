@@ -24,14 +24,13 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.Pattern as Pattern
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional, PredicateSubstitution )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -65,10 +64,10 @@ mergeWithPredicateSubstitution
     -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -- ^ PredicateSubstitution to add.
-    -> OrOfExpandedPattern level variable
+    -> Or.Pattern level variable
     -- ^ Pattern to which the condition should be added.
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (Or.Pattern level variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     substitutionSimplifier

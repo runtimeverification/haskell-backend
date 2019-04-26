@@ -22,10 +22,10 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeImpliesPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Or as Or
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
@@ -37,7 +37,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-|'simplify' simplifies an 'Implies' pattern with 'OrOfExpandedPattern'
+{-|'simplify' simplifies an 'Implies' pattern with 'Or.Pattern'
 children.
 
 Right now this uses the following simplifications:
@@ -60,9 +60,9 @@ simplify
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Implies Object (OrOfExpandedPattern Object variable)
+    -> Implies Object (Or.Pattern Object variable)
     -> Simplifier
-        (OrOfExpandedPattern Object variable , SimplificationProof Object)
+        (Or.Pattern Object variable , SimplificationProof Object)
 simplify
     tools
     predicateSimplifier
@@ -81,7 +81,7 @@ simplify
         first
         second
 
-{-| simplifies an Implies given its two 'OrOfExpandedPattern' children.
+{-| simplifies an Implies given its two 'Or.Pattern' children.
 
 See 'simplify' for details.
 -}
@@ -91,9 +91,9 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Implies Object) (Valid Object) (OrOfExpandedPattern Object variable)
+> CofreeF (Implies Object) (Valid Object) (Or.Pattern Object variable)
 
-instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluate' may
+instead of two 'Or.Pattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -108,10 +108,10 @@ simplifyEvaluated
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
+    -> Or.Pattern Object variable
+    -> Or.Pattern Object variable
     -> Simplifier
-        (OrOfExpandedPattern Object variable, SimplificationProof Object)
+        (Or.Pattern Object variable, SimplificationProof Object)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -155,9 +155,9 @@ simplifyEvaluateHalfImplies
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrOfExpandedPattern Object variable
+    -> Or.Pattern Object variable
     -> Pattern Object variable
-    -> Simplifier (OrOfExpandedPattern Object variable)
+    -> Simplifier (Or.Pattern Object variable)
 simplifyEvaluateHalfImplies
     tools
     predicateSimplifier
@@ -195,7 +195,7 @@ makeEvaluateImplies
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> OrOfExpandedPattern Object variable
+    -> Or.Pattern Object variable
 makeEvaluateImplies
     first second
   | Pattern.isTop first =
@@ -217,7 +217,7 @@ makeEvaluateImpliesNonBool
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> OrOfExpandedPattern Object variable
+    -> Or.Pattern Object variable
 makeEvaluateImpliesNonBool
     pattern1@Conditional
         { term = firstTerm

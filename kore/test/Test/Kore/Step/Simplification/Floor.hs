@@ -13,14 +13,13 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
                  makeTruePredicate )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
                  ( bottom, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
 import           Kore.Step.TermLike
@@ -160,7 +159,7 @@ test_floorSimplification =
 makeFloor
     :: Ord (variable Object)
     => [Pattern Object variable]
-    -> Floor Object (OrOfExpandedPattern Object variable)
+    -> Floor Object (Or.Pattern Object variable)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
@@ -170,8 +169,8 @@ makeFloor patterns =
 
 evaluate
     :: MetaOrObject level
-    => Floor level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    => Floor level (Or.Pattern Object Variable)
+    -> Or.Pattern Object Variable
 evaluate floor' =
     case simplify floor' of
         (result, _proof) -> result
@@ -180,7 +179,7 @@ evaluate floor' =
 makeEvaluate
     :: MetaOrObject level
     => Pattern Object Variable
-    -> CommonOrOfExpandedPattern level
+    -> Or.Pattern Object Variable
 makeEvaluate child =
     case makeEvaluateFloor child of
         (result, _proof) -> result

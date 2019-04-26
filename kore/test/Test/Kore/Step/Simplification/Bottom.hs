@@ -8,14 +8,13 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import           Kore.AST.Common
-                 ( Bottom (..) )
+                 ( Bottom (..), Variable (..) )
 import           Kore.AST.MetaOrObject
+import qualified Kore.Step.Or as Or
 import qualified Kore.Step.Pattern as Pattern
                  ( bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Simplification.Bottom
                  ( simplify )
 
@@ -38,8 +37,8 @@ test_bottomSimplification =
 
 evaluate
     ::  ( MetaOrObject level)
-    => Bottom level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    => Bottom level (Or.Pattern level Variable)
+    -> Or.Pattern level Variable
 evaluate bottom =
     case simplify bottom of
         (result, _proof) -> result

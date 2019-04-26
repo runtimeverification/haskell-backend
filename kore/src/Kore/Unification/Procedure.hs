@@ -23,13 +23,12 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -76,7 +75,7 @@ unificationProcedure
     -- ^left-hand-side of unification
     -> TermLike variable
     -> unifier
-        ( OrOfPredicateSubstitution level variable
+        ( Or.PredicateSubstitution level variable
         , UnificationProof level variable
         )
 unificationProcedure

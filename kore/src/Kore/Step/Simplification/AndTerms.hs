@@ -52,6 +52,7 @@ import           Kore.Predicate.Predicate
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
@@ -61,10 +62,6 @@ import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toPredicate )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
@@ -125,7 +122,7 @@ termEquals
     -> TermLike variable
     -> MaybeT
         Simplifier
-        (OrOfPredicateSubstitution level variable, SimplificationProof level)
+        (Or.PredicateSubstitution level variable, SimplificationProof level)
 termEquals
     tools
     substitutionSimplifier
@@ -860,7 +857,7 @@ bottomTermEquals
                 { term = mkTop_
                 , predicate =
                     makeNotPredicate
-                        (OrOfExpandedPattern.toPredicate
+                        (Or.toPredicate
                             (fmap PredicateSubstitution.toPredicate secondCeil)
                         )
                 , substitution = mempty

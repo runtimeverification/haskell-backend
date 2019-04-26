@@ -15,12 +15,11 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -30,7 +29,7 @@ an or containing a term made of that variable.
 simplify
     :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
     => variable level
-    -> ( OrOfExpandedPattern level variable
+    -> ( Or.Pattern level variable
        , SimplificationProof level
        )
 simplify var =

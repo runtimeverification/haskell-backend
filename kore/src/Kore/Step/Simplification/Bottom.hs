@@ -14,20 +14,17 @@ module Kore.Step.Simplification.Bottom
 import           Kore.AST.Common
                  ( Bottom (..) )
 import           Kore.AST.MetaOrObject
+import qualified Kore.Step.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
 simplify
-    :: (MetaOrObject level, Ord (variable level))
-    => Bottom level child
-    -> ( OrOfExpandedPattern level variable
-       , SimplificationProof level
-       )
+    :: Ord (variable Object)
+    => Bottom Object child
+    -> (Or.Pattern Object variable, SimplificationProof Object)
 simplify Bottom {} =
     (MultiOr.make [], SimplificationProof)

@@ -67,14 +67,14 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
+import qualified Kore.Step.Or as Or
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
@@ -508,7 +508,7 @@ simplifyPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> Simplifier
-        (OrOfExpandedPattern Object Variable, SimplificationProof Object)
+        (Or.Pattern Object Variable, SimplificationProof Object)
 simplifyPattern tools =
     Pattern.simplify
         tools

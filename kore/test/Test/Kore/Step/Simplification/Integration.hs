@@ -29,11 +29,11 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators )
+import qualified Kore.Step.Or as Or
+                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -404,7 +404,7 @@ mockMetadataTools =
 evaluate
     :: SmtMetadataTools StepperAttributes
     -> Pattern Object Variable
-    -> IO (CommonOrOfExpandedPattern Object)
+    -> IO (Or.Pattern Object Variable)
 evaluate tools patt =
     evaluateWithAxioms tools Map.empty patt
 
@@ -412,7 +412,7 @@ evaluateWithAxioms
     :: SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap Object
     -> Pattern Object Variable
-    -> IO (CommonOrOfExpandedPattern Object)
+    -> IO (Or.Pattern Object Variable)
 evaluateWithAxioms tools axioms patt =
     (<$>) fst
         $ SMT.runSMT SMT.defaultConfig

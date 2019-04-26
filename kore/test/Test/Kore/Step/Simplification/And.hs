@@ -15,13 +15,13 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
+import qualified Kore.Step.Or as Or
+                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (MultiOr) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Simplification.And
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier, gather )
@@ -404,7 +404,7 @@ test_andSimplification =
 makeAnd
     :: [Pattern Object Variable]
     -> [Pattern Object Variable]
-    -> And Object (CommonOrOfExpandedPattern Object)
+    -> And Object (Or.Pattern Object)
 makeAnd first second =
     And
         { andSort = findSort (first ++ second)
@@ -417,8 +417,8 @@ findSort [] = testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
 evaluate
-    :: And Object (CommonOrOfExpandedPattern Object)
-    -> IO (CommonOrOfExpandedPattern Object)
+    :: And Object (Or.Pattern Object)
+    -> IO (Or.Pattern Object)
 evaluate patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -433,7 +433,7 @@ evaluate patt =
 evaluatePatterns
     :: Pattern Object Variable
     -> Pattern Object Variable
-    -> IO (CommonOrOfExpandedPattern Object)
+    -> IO (Or.Pattern Object)
 evaluatePatterns first second =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig

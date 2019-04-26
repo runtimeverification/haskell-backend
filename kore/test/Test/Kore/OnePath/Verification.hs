@@ -29,6 +29,8 @@ import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
+import qualified Kore.Step.Or as Or
+                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Step.Pattern as Conditional
@@ -36,8 +38,6 @@ import           Kore.Step.Pattern as Conditional
 import           Kore.Step.Pattern as Pattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..),
                  RulePattern (RulePattern) )
@@ -424,7 +424,7 @@ runVerification
     -> Limit Natural
     -> [OnePath.Axiom level]
     -> [claim]
-    -> IO (Either (CommonOrOfExpandedPattern level) ())
+    -> IO (Either (Or.Pattern level) ())
 runVerification
     metadataTools
     stepLimit

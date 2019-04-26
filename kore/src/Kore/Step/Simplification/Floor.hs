@@ -17,18 +17,15 @@ import           Kore.AST.Common
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
 
-{-| 'simplify' simplifies a 'Floor' of 'OrOfExpandedPattern'.
+{-| 'simplify' simplifies a 'Floor' of 'Or.Pattern'.
 
 We also take into account that
 * floor(top) = top
@@ -45,8 +42,8 @@ simplify
         , Show (variable Object)
         , Ord (variable Object)
         )
-    => Floor Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Floor Object (Or.Pattern Object variable)
+    ->  ( Or.Pattern Object variable
         , SimplificationProof Object
         )
 simplify
@@ -59,9 +56,9 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Floor Object) (Valid Object) (OrOfExpandedPattern Object variable)
+> CofreeF (Floor Object) (Valid Object) (Or.Pattern Object variable)
 
-instead of an 'OrOfExpandedPattern' argument. The type of 'makeEvaluateFloor'
+instead of an 'Or.Pattern' argument. The type of 'makeEvaluateFloor'
 may be changed analogously. The 'Valid' annotation will eventually cache
 information besides the pattern sort, which will make it even more useful to
 carry around.
@@ -73,14 +70,14 @@ simplifyEvaluatedFloor
         , Ord (variable Object)
         , Unparse (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => Or.Pattern Object variable
+    -> (Or.Pattern Object variable, SimplificationProof Object)
 simplifyEvaluatedFloor child =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
         _ ->
             makeEvaluateFloor
-                (OrOfExpandedPattern.toExpandedPattern child)
+                (Or.toExpandedPattern child)
 
 {-| 'makeEvaluateFloor' simplifies a 'Floor' of 'Pattern'.
 
@@ -93,7 +90,7 @@ makeEvaluateFloor
         , Unparse (variable Object)
         )
     => Pattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    -> (Or.Pattern Object variable, SimplificationProof Object)
 makeEvaluateFloor child
   | Pattern.isTop child =
     (MultiOr.make [Pattern.top], SimplificationProof)
@@ -109,7 +106,7 @@ makeEvaluateNonBoolFloor
         , Unparse (variable Object)
         )
     => Pattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    -> (Or.Pattern Object variable, SimplificationProof Object)
 makeEvaluateNonBoolFloor
     patt@Conditional { term = Top_ _ }
   =

@@ -29,11 +29,11 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
+import qualified Kore.Step.Or as Or
+                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), StepPatternSimplifier,
@@ -379,8 +379,8 @@ evaluate
     -> CofreeF
         (Application level)
         (Valid (Variable level) level)
-        (CommonOrOfExpandedPattern level)
-    -> IO (CommonOrOfExpandedPattern level)
+        (Or.Pattern level)
+    -> IO (Or.Pattern level)
 evaluate
     tools
     simplifier

@@ -22,15 +22,12 @@ import           Kore.Predicate.Predicate
                  ( makeInPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( crossProductGeneric, flatten, make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
@@ -39,7 +36,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-|'simplify' simplifies an 'In' pattern with 'OrOfExpandedPattern'
+{-|'simplify' simplifies an 'In' pattern with 'Or.Pattern'
 children.
 
 Right now this uses the following simplifications:
@@ -64,9 +61,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> In Object (OrOfExpandedPattern Object variable)
+    -> In Object (Or.Pattern Object variable)
     -> Simplifier
-        ( OrOfExpandedPattern Object variable
+        ( Or.Pattern Object variable
         , SimplificationProof Object
         )
 simplify
@@ -87,9 +84,9 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedIn' take an argument of type
 
-> CofreeF (In Object) (Valid Object) (OrOfExpandedPattern Object variable)
+> CofreeF (In Object) (Valid Object) (Or.Pattern Object variable)
 
-instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluateIn' may
+instead of two 'Or.Pattern' arguments. The type of 'makeEvaluateIn' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -108,21 +105,21 @@ simplifyEvaluatedIn
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
+    -> Or.Pattern Object variable
+    -> Or.Pattern Object variable
     -> Simplifier
-        (OrOfExpandedPattern Object variable, SimplificationProof Object)
+        (Or.Pattern Object variable, SimplificationProof Object)
 simplifyEvaluatedIn
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
-  | OrOfExpandedPattern.isFalse first =
+  | Or.isFalse first =
     return (MultiOr.make [], SimplificationProof)
-  | OrOfExpandedPattern.isFalse second =
+  | Or.isFalse second =
     return (MultiOr.make [], SimplificationProof)
 
-  | OrOfExpandedPattern.isTrue first =
+  | Or.isTrue first =
     Ceil.simplifyEvaluated
         tools substitutionSimplifier simplifier axiomIdToSimplifier second
-  | OrOfExpandedPattern.isTrue second =
+  | Or.isTrue second =
     Ceil.simplifyEvaluated
         tools substitutionSimplifier simplifier axiomIdToSimplifier first
 
@@ -131,7 +128,7 @@ simplifyEvaluatedIn
         crossProduct
             :: MultiOr
                 (Simplifier
-                    ( OrOfExpandedPattern Object variable
+                    ( Or.Pattern Object variable
                     , SimplificationProof Object
                     )
                 )
@@ -144,14 +141,14 @@ simplifyEvaluatedIn
                 second
     orOfOrProof <- sequence crossProduct
     let
-        orOfOr :: MultiOr (OrOfExpandedPattern Object variable)
+        orOfOr :: MultiOr (Or.Pattern Object variable)
         orOfOr = fmap dropProof orOfOrProof
     -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
     return (MultiOr.flatten orOfOr, SimplificationProof)
   where
     dropProof
-        :: (OrOfExpandedPattern Object variable, SimplificationProof Object)
-        -> OrOfExpandedPattern Object variable
+        :: (Or.Pattern Object variable, SimplificationProof Object)
+        -> Or.Pattern Object variable
     dropProof = fst
 
     {-
@@ -180,7 +177,7 @@ makeEvaluateIn
     -> Pattern Object variable
     -> Pattern Object variable
     -> Simplifier
-        (OrOfExpandedPattern Object variable, SimplificationProof Object)
+        (Or.Pattern Object variable, SimplificationProof Object)
 makeEvaluateIn
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | Pattern.isTop first =
@@ -201,7 +198,7 @@ makeEvaluateNonBoolIn
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    -> (Or.Pattern Object variable, SimplificationProof Object)
 makeEvaluateNonBoolIn patt1 patt2 =
     ( MultiOr.make
         [ Conditional

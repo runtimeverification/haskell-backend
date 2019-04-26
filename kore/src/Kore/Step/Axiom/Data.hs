@@ -44,10 +44,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
+import qualified Kore.Step.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, merge )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, makeFromSinglePurePattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -114,9 +113,9 @@ type BuiltinAndAxiomSimplifierMap level =
 -}
 data AttemptedAxiomResults level variable =
     AttemptedAxiomResults
-        { results :: !(OrOfExpandedPattern level variable)
+        { results :: !(Or.Pattern level variable)
         -- ^ The result of applying the axiom
-        , remainders :: !(OrOfExpandedPattern level variable)
+        , remainders :: !(Or.Pattern level variable)
         -- ^ The part of the pattern that was not rewritten by the axiom.
         }
     deriving Generic
@@ -209,7 +208,7 @@ purePatternAxiomEvaluator
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
-            { results = makeFromSinglePurePattern p
+            { results = Or.makeFromSinglePurePattern p
             , remainders = MultiOr.make []
             }
         , SimplificationProof

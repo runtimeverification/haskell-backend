@@ -23,11 +23,11 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeIffPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Or as Or
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
@@ -39,7 +39,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-|'simplify' simplifies an 'Iff' pattern with 'OrOfExpandedPattern'
+{-|'simplify' simplifies an 'Iff' pattern with 'Or.Pattern'
 children.
 
 Right now this has special cases only for top and bottom children
@@ -56,9 +56,9 @@ simplify
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Iff Object (OrOfExpandedPattern Object variable)
+    -> Iff Object (Or.Pattern Object variable)
     -> Simplifier
-        (OrOfExpandedPattern Object variable, SimplificationProof Object)
+        (Or.Pattern Object variable, SimplificationProof Object)
 simplify
     tools
     predicateSimplifier
@@ -79,7 +79,7 @@ simplify
   where
     withProof a = (a, SimplificationProof)
 
-{-| evaluates an 'Iff' given its two 'OrOfExpandedPattern' children.
+{-| evaluates an 'Iff' given its two 'Or.Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
@@ -88,9 +88,9 @@ See 'simplify' for detailed documentation.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Iff Object) (Valid Object) (OrOfExpandedPattern Object variable)
+> CofreeF (Iff Object) (Valid Object) (Or.Pattern Object variable)
 
-instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluate' may
+instead of two 'Or.Pattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -106,9 +106,9 @@ simplifyEvaluated
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
-    -> Simplifier (OrOfExpandedPattern Object variable)
+    -> Or.Pattern Object variable
+    -> Or.Pattern Object variable
+    -> Simplifier (Or.Pattern Object variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -155,7 +155,7 @@ makeEvaluate
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> OrOfExpandedPattern Object variable
+    -> Or.Pattern Object variable
 makeEvaluate first second
   | Pattern.isTop first = MultiOr.make [second]
   | Pattern.isBottom first = Not.makeEvaluate second
@@ -171,7 +171,7 @@ makeEvaluateNonBoolIff
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> OrOfExpandedPattern Object variable
+    -> Or.Pattern Object variable
 makeEvaluateNonBoolIff
     patt1@Conditional
         { term = firstTerm

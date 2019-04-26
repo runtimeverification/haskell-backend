@@ -17,13 +17,10 @@ import           Kore.AST.Common
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fmapWithPairs )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -31,7 +28,7 @@ import           Kore.Unparser
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
-{-|'simplify' simplifies an 'Forall' pattern with an 'OrOfExpandedPattern'
+{-|'simplify' simplifies an 'Forall' pattern with an 'Or.Pattern'
 child.
 
 Right now this has special cases only for top and bottom children.
@@ -51,8 +48,8 @@ simplify
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Forall Object variable (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Forall Object variable (Or.Pattern Object variable)
+    ->  ( Or.Pattern Object variable
         , SimplificationProof Object
         )
 simplify
@@ -65,9 +62,9 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Forall Object) (Valid Object) (OrOfExpandedPattern Object variable)
+> CofreeF (Forall Object) (Valid Object) (Or.Pattern Object variable)
 
-instead of a 'variable Object' and an 'OrOfExpandedPattern' argument. The type of
+instead of a 'variable Object' and an 'Or.Pattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
@@ -80,11 +77,11 @@ simplifyEvaluated
         , Unparse (variable Object)
         )
     => variable Object
-    -> OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    -> Or.Pattern Object variable
+    -> (Or.Pattern Object variable, SimplificationProof Object)
 simplifyEvaluated variable simplified
-  | OrOfExpandedPattern.isTrue simplified = (simplified, SimplificationProof)
-  | OrOfExpandedPattern.isFalse simplified = (simplified, SimplificationProof)
+  | Or.isTrue simplified = (simplified, SimplificationProof)
+  | Or.isFalse simplified = (simplified, SimplificationProof)
   | otherwise =
     let
         (patt, _proofs) =

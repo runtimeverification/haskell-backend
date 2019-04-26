@@ -34,11 +34,11 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Conditional as Conditional
+import qualified Kore.Step.Or as Or
+                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -52,7 +52,7 @@ import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-|'simplify' simplifies an 'And' of 'OrOfExpandedPattern'.
+{-|'simplify' simplifies an 'And' of 'Or.Pattern'.
 
 To do that, it first distributes the terms, making it an Or of And patterns,
 each And having 'Pattern's as children, then it simplifies each of
@@ -104,9 +104,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> And level (OrOfExpandedPattern level variable)
+    -> And level (Or.Pattern level variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( Or.Pattern level variable
         , SimplificationProof level
         )
 simplify
@@ -127,7 +127,7 @@ simplify
         first
         second
 
-{-| simplifies an And given its two 'OrOfExpandedPattern' children.
+{-| simplifies an And given its two 'Or.Pattern' children.
 
 See 'simplify' for details.
 -}
@@ -136,9 +136,9 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (And level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (And level) (Valid level) (Or.Pattern level variable)
 
-instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluate' may
+instead of two 'Or.Pattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -159,10 +159,10 @@ simplifyEvaluated
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    -> Or.Pattern level variable
+    -> Or.Pattern level variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (Or.Pattern level variable, SimplificationProof level)
 simplifyEvaluated
     tools
     substitutionSimplifier

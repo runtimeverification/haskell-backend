@@ -25,10 +25,10 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
+import qualified Kore.Step.Or as Or
+                 ( CommonOrOfPredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfPredicateSubstitution )
 import           Kore.Step.Representation.PredicateSubstitution
                  ( Conditional (..) )
 import qualified Kore.Step.Representation.PredicateSubstitution as Conditional

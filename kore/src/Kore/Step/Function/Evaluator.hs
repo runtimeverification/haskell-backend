@@ -46,12 +46,11 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( flatten, make, merge, traverseWithPairs )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier, simplifyTerm )
@@ -89,7 +88,7 @@ evaluateApplication
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (Or.Pattern level variable, SimplificationProof level)
 evaluateApplication
     tools
     substitutionSimplifier
@@ -167,10 +166,10 @@ evaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrOfExpandedPattern level variable
+    -> Or.Pattern level variable
     -- ^ The default value
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (Or.Pattern level variable, SimplificationProof level)
 evaluatePattern
     tools
     substitutionSimplifier
@@ -219,11 +218,11 @@ maybeEvaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrOfExpandedPattern level variable
+    -> Or.Pattern level variable
     -- ^ The default value
     -> Maybe
         (Simplifier
-            (OrOfExpandedPattern level variable, SimplificationProof level)
+            (Or.Pattern level variable, SimplificationProof level)
         )
 maybeEvaluatePattern
     tools
@@ -301,7 +300,7 @@ maybeEvaluatePattern
 
     simplifyIfNeeded
         :: Pattern level variable
-        -> Simplifier (OrOfExpandedPattern level variable)
+        -> Simplifier (Or.Pattern level variable)
     simplifyIfNeeded toSimplify =
         if toSimplify == unchangedPatt
             then return (MultiOr.make [unchangedPatt])
@@ -374,7 +373,7 @@ reevaluateFunctions
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern level variable
     -- ^ Function evaluation result.
-    -> Simplifier (OrOfExpandedPattern level variable)
+    -> Simplifier (Or.Pattern level variable)
 reevaluateFunctions
     tools
     substitutionSimplifier

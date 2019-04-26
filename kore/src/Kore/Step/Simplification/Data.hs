@@ -52,11 +52,10 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
+import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Pattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.TermLike
                  ( TermLike )
@@ -313,7 +312,7 @@ simplifyTerm
     -> PredicateSubstitutionSimplifier Object
     -> TermLike variable
     -> Simplifier
-        ( OrOfExpandedPattern Object variable
+        ( Or.Pattern Object variable
         , SimplificationProof Object
         )
 simplifyTerm
@@ -363,7 +362,7 @@ stepPatternSimplifier
         => PredicateSubstitutionSimplifier Object
         -> TermLike variable
         -> Simplifier
-            ( OrOfExpandedPattern Object variable
+            ( Or.Pattern Object variable
             , SimplificationProof Object
             )
         )

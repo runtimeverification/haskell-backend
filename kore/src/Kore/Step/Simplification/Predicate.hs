@@ -54,7 +54,7 @@ simplifyPartial
         Monad.Trans.lift
         $ simplifyTerm' (unwrapPredicate predicate)
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
-    -- for \bottom because patternOr is an OrOfExpandedPattern.
+    -- for \bottom because patternOr is an Or.Pattern.
     scatter (eraseTerm <$> patternOr)
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier

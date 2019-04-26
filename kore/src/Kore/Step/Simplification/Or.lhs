@@ -26,8 +26,7 @@ import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
+import qualified Kore.Step.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge )
 import           Kore.Step.Simplification.Data
@@ -38,7 +37,7 @@ import           Kore.Unparser
 == Driver
 
 \begin{code}
-{-|'simplify' simplifies an 'Or' pattern with 'OrOfExpandedPattern'
+{-|'simplify' simplifies an 'Or' pattern with 'Or.Pattern'
 children by merging the two children.
 -}
 simplify
@@ -47,8 +46,8 @@ simplify
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Or Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Or Object (Or.Pattern Object variable)
+    ->  ( Or.Pattern Object variable
         , SimplificationProof Object
         )
 \end{code}
@@ -65,7 +64,7 @@ simplify
   =
     simplifyEvaluated first second
 
-{-| simplifies an 'Or' given its two 'OrOfExpandedPattern' children.
+{-| simplifies an 'Or' given its two 'Or.Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
@@ -75,9 +74,9 @@ simplifyEvaluated
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
-    ->  ( OrOfExpandedPattern Object variable
+    => Or.Pattern Object variable
+    -> Or.Pattern Object variable
+    ->  ( Or.Pattern Object variable
         , SimplificationProof Object
         )
 \end{code}
@@ -86,9 +85,9 @@ simplifyEvaluated
 One way to preserve the required sort annotations is to make `simplifyEvaluated`
 take an argument of type
 ``` haskell
-CofreeF (Or Object) (Valid Object) (OrOfExpandedPattern Object variable)
+CofreeF (Or Object) (Valid Object) (Or.Pattern Object variable)
 ```
-instead of two `OrOfExpandedPattern` arguments. The type of `makeEvaluate` may
+instead of two `Or.Pattern` arguments. The type of `makeEvaluate` may
 be changed analogously. The `Valid` annotation will eventually cache
 information besides the pattern sort, which will make it even more useful to
 carry around.
