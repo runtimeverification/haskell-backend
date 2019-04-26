@@ -14,6 +14,7 @@ module Kore.Step.Function.Evaluator
 
 import           Control.Exception
                  ( assert )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
@@ -21,7 +22,10 @@ import           Data.Reflection
                  ( give )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Application (..) )
+import qualified Kore.AST.Common as Common
+import           Kore.AST.Identifier
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes, isSortInjection_ )
@@ -43,7 +47,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern, PredicateSubstitution )
+                 ( Conditional (..), Pattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( flatten, make, merge, traverseWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -99,7 +103,7 @@ evaluateApplication
           , not(null axiomIdToEvaluator) ->
             error
                 (   "Attempting to evaluate unimplemented hooked operation "
-                ++  hook ++ ".\nSymbol: " ++ show (getId symbolId)
+                ++  hook ++ ".\nSymbol: " ++ getIdForError symbolId
                 )
           | otherwise ->
             return unchanged
@@ -120,7 +124,8 @@ evaluateApplication
     Application { applicationSymbolOrAlias = appHead } = afterInj
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
 
-    appPurePattern = asPurePattern (valid :< ApplicationPattern afterInj)
+    appPurePattern =
+        Recursive.embed (valid :< Common.ApplicationPattern afterInj)
 
     unchangedPatt =
         Conditional
@@ -295,7 +300,7 @@ maybeEvaluatePattern
             childrenPredicateSubstitution
 
     simplifyIfNeeded
-        :: ExpandedPattern level variable
+        :: Pattern level variable
         -> Simplifier (OrOfExpandedPattern level variable)
     simplifyIfNeeded toSimplify =
         if toSimplify == unchangedPatt
@@ -367,7 +372,7 @@ reevaluateFunctions
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedPattern level variable
+    -> Pattern level variable
     -- ^ Function evaluation result.
     -> Simplifier (OrOfExpandedPattern level variable)
 reevaluateFunctions

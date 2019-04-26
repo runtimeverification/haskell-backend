@@ -200,15 +200,15 @@ externalizePattern =
                 case domain of
                     Domain.BuiltinExternal _ -> original
                     Domain.BuiltinMap  builtin ->
-                        Recursive.project (Map.asPattern builtin)
+                        Recursive.project (Map.asTermLike builtin)
                     Domain.BuiltinList builtin ->
-                        Recursive.project (List.asPattern builtin)
+                        Recursive.project (List.asTermLike builtin)
                     Domain.BuiltinSet  builtin ->
-                        Recursive.project (Set.asPattern builtin)
+                        Recursive.project (Set.asTermLike builtin)
                     Domain.BuiltinInt  builtin ->
-                        Recursive.project (Int.asPattern builtin)
+                        Recursive.project (Int.asTermLike builtin)
                     Domain.BuiltinBool builtin ->
-                        Recursive.project (Bool.asPattern builtin)
+                        Recursive.project (Bool.asTermLike builtin)
             _ -> original
 
 {- | Extract the meta-level pattern argument of a domain value.

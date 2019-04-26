@@ -24,7 +24,7 @@ module Kore.Builtin.List
     , returnList
     , asPattern
     , asInternal
-    , asExpandedPattern
+    , asTermLike
       -- * Symbols
     , lookupSymbolGet
     , isSymbolConcat
@@ -59,7 +59,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
@@ -79,8 +78,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
 import           Kore.Unification.Unify
@@ -185,7 +184,7 @@ returnList
 returnList tools builtinListSort builtinListChild =
     Builtin.appliedFunction
     $ Reflection.give tools
-    $ asExpandedPattern builtinListSort builtinListChild
+    $ asPattern builtinListSort builtinListChild
 
 evalElement :: Builtin.Function
 evalElement =
@@ -217,7 +216,7 @@ evalGet =
                 emptyList = do
                     _list <- expectBuiltinList getKey _list
                     if Seq.null _list
-                        then Builtin.appliedFunction ExpandedPattern.bottom
+                        then Builtin.appliedFunction Pattern.bottom
                         else empty
                 bothConcrete = do
                     _list <- expectBuiltinList getKey _list
@@ -233,7 +232,7 @@ evalGet =
         )
       where
         maybeBottom =
-            maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
+            maybe Pattern.bottom Pattern.fromPurePattern
 
 evalUnit :: Builtin.Function
 evalUnit =
@@ -267,7 +266,7 @@ evalConcat =
                     if Seq.null _list1
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _list2
+                            $ Pattern.fromPurePattern _list2
                         else
                             empty
                 rightIdentity = do
@@ -275,7 +274,7 @@ evalConcat =
                     if Seq.null _list2
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _list1
+                            $ Pattern.fromPurePattern _list1
                         else
                             empty
                 bothConcrete = do
@@ -296,18 +295,14 @@ builtinFunctions =
         , (getKey, evalGet)
         ]
 
-{- | Render a 'Seq' as a domain value pattern of the given sort.
-
-The result sort must be hooked to the builtin @List@ sort.
-
-See also: 'sort'
+{- | Render an 'Domain.InternalList' as a 'TermLike' domain value pattern.
 
  -}
-asPattern
+asTermLike
     :: Ord (variable Object)
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
-asPattern builtin =
+asTermLike builtin =
     foldr concat' unit (element <$> list)
   where
     Domain.InternalList { builtinListSort = builtinSort } = builtin
@@ -349,15 +344,15 @@ asInternal tools builtinListSort builtinListChild =
 See also: 'asPattern'
 
  -}
-asExpandedPattern
+asPattern
     ::  ( Ord (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort Object
     -> Builtin variable
-    -> ExpandedPattern Object variable
-asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asInternal tools resultSort
+    -> Pattern Object variable
+asPattern resultSort =
+    Pattern.fromPurePattern . asInternal tools resultSort
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given
@@ -414,7 +409,7 @@ unifyEquals
         , MetaOrObject level
         , FreshVariable variable
         , p ~ TermLike variable
-        , expanded ~ ExpandedPattern level variable
+        , expanded ~ Pattern level variable
         , proof ~ SimplificationProof level
         , unifier ~ unifierM variable
         , MonadUnify unifierM
@@ -577,7 +572,7 @@ unifyEquals
             "Cannot unify lists of different length."
             first
             second
-        return (ExpandedPattern.bottom, SimplificationProof)
+        return (Pattern.bottom, SimplificationProof)
 
 concatKey :: IsString s => s
 concatKey = "LIST.concat"

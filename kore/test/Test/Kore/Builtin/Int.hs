@@ -19,7 +19,6 @@ import           GHC.Integer.GMP.Internals
 import           GHC.Integer.Logarithms
                  ( integerLog2# )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
@@ -53,7 +52,7 @@ testUnary
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
-        let expect = asExpandedPattern $ impl a
+        let expect = asPattern $ impl a
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
@@ -75,7 +74,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = asExpandedPattern $ impl a b
+        let expect = asPattern $ impl a b
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -97,7 +96,7 @@ testComparison symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = Test.Bool.asExpandedPattern $ impl a b
+        let expect = Test.Bool.asPattern $ impl a b
         actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -118,7 +117,7 @@ testPartialUnary
 testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
-        let expect = asPartialExpandedPattern $ impl a
+        let expect = asPartialPattern $ impl a
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
@@ -140,7 +139,7 @@ testPartialBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = asPartialExpandedPattern $ impl a b
+        let expect = asPartialPattern $ impl a b
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -162,7 +161,7 @@ testPartialBinaryZero
 testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
-        let expect = asPartialExpandedPattern $ impl a 0
+        let expect = asPartialPattern $ impl a 0
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, 0])
         (===) expect actual
   where
@@ -185,7 +184,7 @@ testPartialTernary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         c <- forAll genInteger
-        let expect = asPartialExpandedPattern $ impl a b c
+        let expect = asPartialPattern $ impl a b c
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
@@ -311,22 +310,22 @@ test_emod =
         "emod normal"
         emodIntSymbol
         (asInternal <$> [193, 12])
-        (asExpandedPattern 1)
+        (asPattern 1)
     , testInt
         "emod negative lhs"
         emodIntSymbol
         (asInternal <$> [-193, 12])
-        (asExpandedPattern 11)
+        (asPattern 11)
     , testInt
         "emod negative rhs"
         emodIntSymbol
         (asInternal <$> [193, -12])
-        (asExpandedPattern 1)
+        (asPattern 1)
     , testInt
         "emod both negative"
         emodIntSymbol
         (asInternal <$> [-193, -12])
-        (asExpandedPattern (-1))
+        (asPattern (-1))
     , testInt
         "emod bottom"
         emodIntSymbol
@@ -346,19 +345,19 @@ asInternal = Int.asInternal intSort
 asConcretePattern :: Integer -> TermLike Concrete
 asConcretePattern = Int.asConcretePattern intSort
 
--- | Specialize 'Int.asExpandedPattern' to the builtin sort 'intSort'.
-asExpandedPattern :: Integer -> CommonExpandedPattern Object
-asExpandedPattern = Int.asExpandedPattern intSort
+-- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
+asPattern :: Integer -> Pattern Object Variable
+asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
-asPartialExpandedPattern :: Maybe Integer -> CommonExpandedPattern Object
-asPartialExpandedPattern = Int.asPartialExpandedPattern intSort
+asPartialPattern :: Maybe Integer -> Pattern Object Variable
+asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
     -> SymbolOrAlias Object
     -> [TermLike Variable]
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -> TestTree
 testInt name = testSymbolWithSolver evaluate name intSort
 

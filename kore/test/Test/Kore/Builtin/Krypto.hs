@@ -20,12 +20,12 @@ import           Test.SMT
 testKeyRecover :: Text -> Integer -> Text -> Text -> Text -> TestTree
 testKeyRecover messageHash v r s result =
     testPropertyWithSolver (Text.unpack name) $ do
-        let expect = String.asExpandedPattern stringSort result
+        let expect = String.asPattern stringSort result
         actual <- evaluate $ mkApp stringSort ecdsaRecoverSymbol
-            [ String.asPattern stringSort messageHash
+            [ String.asTermLike stringSort messageHash
             , Test.Int.asInternal v
-            , String.asPattern stringSort r
-            , String.asPattern stringSort s
+            , String.asTermLike stringSort r
+            , String.asTermLike stringSort s
             ]
         (===) expect actual
   where
@@ -39,9 +39,9 @@ testKeyRecover messageHash v r s result =
 testKeccak :: Text -> Text -> TestTree
 testKeccak input result =
     testPropertyWithSolver (Text.unpack name) $ do
-        let expect = String.asExpandedPattern stringSort result
+        let expect = String.asPattern stringSort result
         actual <- evaluate $ mkApp stringSort keccakSymbol
-            [ String.asPattern stringSort input
+            [ String.asTermLike stringSort input
             ]
         (===) expect actual
   where

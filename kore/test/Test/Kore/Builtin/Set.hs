@@ -18,7 +18,6 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -29,8 +28,7 @@ import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
 import           Kore.Step.Rule
@@ -68,7 +66,7 @@ genConcreteSet :: Gen Set.Builtin
 genConcreteSet = genSetConcreteIntegerPattern
 
 genSetPattern :: Gen (TermLike Variable)
-genSetPattern = asPattern <$> genSetConcreteIntegerPattern
+genSetPattern = asTermLike <$> genSetConcreteIntegerPattern
 
 test_getUnit :: TestTree
 test_getUnit =
@@ -85,8 +83,8 @@ test_getUnit =
                         ]
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
-            (===) (Test.Bool.asExpandedPattern False) =<< evaluate patIn
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) (Test.Bool.asPattern False) =<< evaluate patIn
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_inElement :: TestTree
@@ -99,8 +97,8 @@ test_inElement =
                 patElement = mkApp setSort elementSetSymbol [ patKey ]
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patIn patTrue
-            (===) (Test.Bool.asExpandedPattern True) =<< evaluate patIn
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) (Test.Bool.asPattern True) =<< evaluate patIn
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_inConcat :: TestTree
@@ -111,12 +109,12 @@ test_inConcat =
             elem' <- forAll genConcreteIntegerPattern
             values <- forAll genSetConcreteIntegerPattern
             let patIn = mkApp boolSort inSetSymbol [ patElem , patSet ]
-                patSet = asPattern $ Set.insert elem' values
+                patSet = asTermLike $ Set.insert elem' values
                 patElem = fromConcreteStepPattern elem'
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
-            (===) (Test.Bool.asExpandedPattern True) =<< evaluate patIn
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) (Test.Bool.asPattern True) =<< evaluate patIn
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_concatUnit :: TestTree
@@ -135,8 +133,8 @@ test_concatUnit =
             expect <- evaluate patValues
             (===) expect =<< evaluate patConcat1
             (===) expect =<< evaluate patConcat2
-            (===) ExpandedPattern.top =<< evaluate predicate1
-            (===) ExpandedPattern.top =<< evaluate predicate2
+            (===) Pattern.top =<< evaluate predicate1
+            (===) Pattern.top =<< evaluate predicate2
         )
 
 test_concatAssociates :: TestTree
@@ -155,7 +153,7 @@ test_concatAssociates =
             concat12_3 <- evaluate patConcat12_3
             concat1_23 <- evaluate patConcat1_23
             (===) concat12_3 concat1_23
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_difference :: TestTree
@@ -166,16 +164,16 @@ test_difference =
             set1 <- forAll genSetConcreteIntegerPattern
             set2 <- forAll genSetConcreteIntegerPattern
             let set3 = Set.difference set1 set2
-                patSet3 = asPattern set3
+                patSet3 = asTermLike set3
                 patDifference =
                     mkApp
                         setSort
                         differenceSetSymbol
-                        [ asPattern set1, asPattern set2 ]
+                        [ asTermLike set1, asTermLike set2 ]
                 predicate = mkEquals_ patSet3 patDifference
             expect <- evaluate patSet3
             (===) expect =<< evaluate patDifference
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_toList :: TestTree
@@ -187,16 +185,16 @@ test_toList =
             let set2 =
                     fmap fromConcreteStepPattern
                     . Seq.fromList . Set.toList $ set1
-                patSet2 = Test.List.asPattern set2
+                patSet2 = Test.List.asTermLike set2
                 patToList =
                     mkApp
                         listSort
                         toListSetSymbol
-                        [ asPattern set1 ]
+                        [ asTermLike set1 ]
                 predicate = mkEquals_ patSet2 patToList
             expect <- evaluate patSet2
             (===) expect =<< evaluate patToList
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_size :: TestTree
@@ -212,11 +210,11 @@ test_size =
                     mkApp
                         intSort
                         sizeSetSymbol
-                        [ asPattern set ]
+                        [ asTermLike set ]
                 predicate = mkEquals_ patExpected patActual
             expect <- evaluate patExpected
             (===) expect =<< evaluate patActual
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 setVariableGen
@@ -234,7 +232,7 @@ test_symbolic =
         (do
             values <- forAll (setVariableGen intSort)
             let patMap = asSymbolicPattern (Set.map mkVar values)
-                expect = ExpandedPattern.fromPurePattern patMap
+                expect = Pattern.fromPurePattern patMap
             if Set.null values
                 then discard
                 else (===) expect =<< evaluate patMap
@@ -266,7 +264,7 @@ test_unifyConcreteIdem =
                 predicate = mkEquals_ patSet patAnd
             expect <- evaluate patSet
             (===) expect =<< evaluate patAnd
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_unifyConcreteDistinct :: TestTree
@@ -278,12 +276,12 @@ test_unifyConcreteDistinct =
             patElem <- forAll genConcreteIntegerPattern
             Monad.when (Set.member patElem set1) discard
             let set2 = Set.insert patElem set1
-                patSet1 = asPattern set1
-                patSet2 = asPattern set2
+                patSet1 = asTermLike set1
+                patSet2 = asTermLike set2
                 conjunction = mkAnd patSet1 patSet2
                 predicate = mkEquals_ patSet1 conjunction
-            (===) ExpandedPattern.bottom =<< evaluate conjunction
-            (===) ExpandedPattern.bottom =<< evaluate predicate
+            (===) Pattern.bottom =<< evaluate conjunction
+            (===) Pattern.bottom =<< evaluate predicate
         )
 
 test_unifyFramingVariable :: TestTree
@@ -298,10 +296,10 @@ test_unifyFramingVariable =
                     (forAll genSetConcreteIntegerPattern)
             frameVar <- forAll (standaloneGen $ variableGen setSort)
             let framedSet = Set.singleton framedElem
-                patConcreteSet = asPattern concreteSet
+                patConcreteSet = asTermLike concreteSet
                 patFramedSet =
                     mkApp setSort concatSetSymbol
-                        [ asPattern framedSet
+                        [ asTermLike framedSet
                         , mkVar frameVar
                         ]
                 remainder = Set.delete framedElem concreteSet
@@ -368,9 +366,9 @@ test_unifySelectFromEmpty =
         emptySet `doesNotUnifyWith` fnSelectPatRev
         fnSelectPatRev `doesNotUnifyWith` emptySet
   where
-    emptySet = asPattern Set.empty
+    emptySet = asTermLike Set.empty
     doesNotUnifyWith pat1 pat2 =
-            (===) ExpandedPattern.bottom =<< evaluate (mkAnd pat1 pat2)
+            (===) Pattern.bottom =<< evaluate (mkAnd pat1 pat2)
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
@@ -408,7 +406,7 @@ unifiesWith
     :: HasCallStack
     => TermLike Variable
     -> TermLike Variable
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -> PropertyT SMT.SMT ()
 unifiesWith pat1 pat2 Conditional { term, predicate, substitution } = do
     Conditional { term = uTerm, predicate = uPred, substitution = uSubst } <-
@@ -474,7 +472,7 @@ test_concretizeKeys =
     key = 1
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key
-    concreteSet = asPattern $ Set.fromList [concreteKey]
+    concreteSet = asTermLike $ Set.fromList [concreteKey]
     symbolic = asSymbolicPattern $ Set.fromList [mkVar x]
     original =
         mkAnd
@@ -521,7 +519,7 @@ test_concretizeKeysAxiom =
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key
     symbolicSet = asSymbolicPattern $ Set.fromList [x]
-    concreteSet = asPattern $ Set.fromList [concreteKey]
+    concreteSet = asTermLike $ Set.fromList [concreteKey]
     axiom =
         RewriteRule RulePattern
             { left = mkPair intSort setSort x symbolicSet
@@ -573,20 +571,20 @@ mockMetadataTools =
 mockHookTools :: SmtMetadataTools Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
--- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
-asPattern
+-- | Specialize 'Set.asTermLike' to the builtin sort 'setSort'.
+asTermLike
     :: Foldable f
     => f (TermLike Concrete)
     -> TermLike Variable
-asPattern =
-    Reflection.give testMetadataTools Set.asPattern
+asTermLike =
+    Reflection.give testMetadataTools Set.asTermLike
     . builtinSet
     . Foldable.toList
 
--- | Specialize 'Set.asExpandedPattern' to the builtin sort 'setSort'.
-asExpandedPattern :: Set.Builtin -> CommonExpandedPattern Object
-asExpandedPattern =
-    Reflection.give testMetadataTools Set.asExpandedPattern setSort
+-- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
+asPattern :: Set.Builtin -> Pattern Object Variable
+asPattern =
+    Reflection.give testMetadataTools Set.asPattern setSort
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal :: Set.Builtin -> TermLike Variable

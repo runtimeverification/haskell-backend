@@ -14,8 +14,7 @@ module Kore.Step.Simplification.Top
 import           Kore.AST.Common
                  ( Top (..) )
 import           Kore.AST.MetaOrObject
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( top )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -33,4 +32,4 @@ simplify
        , SimplificationProof level
        )
 simplify _ =
-    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
+    (MultiOr.make [Pattern.top], SimplificationProof)

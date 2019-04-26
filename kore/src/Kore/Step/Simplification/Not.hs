@@ -14,9 +14,9 @@ module Kore.Step.Simplification.Not
     ) where
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Not (..) )
 import           Kore.AST.Valid hiding
                  ( mkAnd )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -27,9 +27,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
@@ -116,12 +114,12 @@ simplifyEvaluated
     axiomSimplifiers
     simplified
   | OrOfExpandedPattern.isFalse simplified =
-    return (MultiOr.make [ExpandedPattern.top])
+    return (MultiOr.make [Pattern.top])
   | OrOfExpandedPattern.isTrue simplified =
     return (MultiOr.make [])
   | otherwise =
     fmap MultiOr.make . gather
-    $ Foldable.foldrM mkAnd ExpandedPattern.top (simplified >>= makeEvaluate)
+    $ Foldable.foldrM mkAnd Pattern.top (simplified >>= makeEvaluate)
   where
     mkAnd =
         And.makeEvaluate
@@ -130,7 +128,7 @@ simplifyEvaluated
             termSimplifier
             axiomSimplifiers
 
-{-|'makeEvaluate' simplifies a 'Not' pattern given its 'ExpandedPattern'
+{-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.
 
 See 'simplify' for details.
@@ -142,7 +140,7 @@ makeEvaluate
         , Show (variable level)
         , Unparse (variable level)
         )
-    => ExpandedPattern level variable
+    => Pattern level variable
     -> OrOfExpandedPattern level variable
 makeEvaluate Conditional { term, predicate, substitution } =
     MultiOr.make
@@ -173,7 +171,7 @@ makeTermNot
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
-makeTermNot term@(Recursive.project -> _ :< projected)
-  | BottomPattern _ <- projected = mkTop (getSort term)
-  | TopPattern _ <- projected = mkBottom (getSort term)
+makeTermNot term
+  | isBottom term = mkTop    (getSort term)
+  | isTop term    = mkBottom (getSort term)
   | otherwise = mkNot term

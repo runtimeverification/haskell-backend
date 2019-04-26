@@ -22,7 +22,7 @@ module Kore.Builtin.Map
     , Builtin
     , asPattern
     , asInternal
-    , asExpandedPattern
+    , asTermLike
       -- * Symbols
     , lookupSymbolUpdate
     , lookupSymbolLookup
@@ -65,7 +65,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure as Kore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
@@ -87,8 +86,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
 import           Kore.Unification.Unify
@@ -202,7 +201,7 @@ returnMap
     -> m (AttemptedAxiom Object variable)
 returnMap tools resultSort map' =
     Builtin.appliedFunction
-    $ ExpandedPattern.fromPurePattern
+    $ Pattern.fromPurePattern
     $ asInternal tools resultSort map'
 
 evalLookup :: Builtin.Function
@@ -220,7 +219,7 @@ evalLookup =
                 emptyMap = do
                     _map <- expectBuiltinMap lookupKey _map
                     if Map.null _map
-                        then Builtin.appliedFunction ExpandedPattern.bottom
+                        then Builtin.appliedFunction Pattern.bottom
                         else empty
                 bothConcrete = do
                     _key <- Builtin.expectNormalConcreteTerm tools _key
@@ -230,7 +229,7 @@ evalLookup =
         )
       where
         maybeBottom =
-            maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
+            maybe Pattern.bottom Pattern.fromPurePattern
 
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function
@@ -265,7 +264,7 @@ evalConcat =
                     if Map.null _map1
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _map2
+                            $ Pattern.fromPurePattern _map2
                         else
                             empty
                 rightIdentity = do
@@ -273,7 +272,7 @@ evalConcat =
                     if Map.null _map2
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _map1
+                            $ Pattern.fromPurePattern _map1
                         else
                             empty
                 bothConcrete = do
@@ -289,7 +288,7 @@ evalConcat =
                         then
                             -- Result is ‘\bottom{}()’ when there is overlap
                             -- between the keys of the operands.
-                            Builtin.appliedFunction ExpandedPattern.bottom
+                            Builtin.appliedFunction Pattern.bottom
                         else
                             returnMap tools resultSort (Map.union _map1 _map2)
             leftIdentity <|> rightIdentity <|> bothConcrete
@@ -334,7 +333,7 @@ evalInKeys =
             _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinMap in_keysKey _map
             Builtin.appliedFunction
-                $ Bool.asExpandedPattern resultSort
+                $ Bool.asPattern resultSort
                 $ Map.member _key _map
         )
 
@@ -395,18 +394,13 @@ asInternal tools builtinMapSort builtinMapChild =
   where
     attrs = sortAttributes tools builtinMapSort
 
-{- | Render a 'Map' as a domain value pattern of the given sort.
-
-The result sort must be hooked to the builtin @Map@ sort.
-
-See also: 'sort'
-
+{- | Render an 'Domain.InternalMap' as a 'TermLike' domain value pattern.
  -}
-asPattern
+asTermLike
     :: Ord (variable Object)
     => Domain.InternalMap (TermLike variable)
     -> TermLike variable
-asPattern builtin =
+asTermLike builtin =
     foldr concat' unit (element <$> Map.toAscList map')
   where
     Domain.InternalMap { builtinMapSort = builtinSort } = builtin
@@ -421,20 +415,20 @@ asPattern builtin =
         apply elementSymbol [fromConcreteStepPattern key, value]
     concat' map1 map2 = apply concatSymbol [map1, map2]
 
-{- | Render a 'Map' as an extended domain value pattern.
+{- | Render a 'Map' a domain value 'Pattern'.
 
-    See also: 'asPattern'
+See also: 'asPattern'
 
  -}
-asExpandedPattern
+asPattern
     ::  ( Ord (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => Kore.Sort Object
+    => Sort Object
     -> Builtin variable
-    -> ExpandedPattern Object variable
-asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asInternal tools resultSort
+    -> Pattern Object variable
+asPattern resultSort =
+    Pattern.fromPurePattern . asInternal tools resultSort
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given
@@ -557,7 +551,7 @@ unifyEquals
         , Show (variable level)
         , Unparse (variable level)
         , p ~ TermLike variable
-        , expanded ~ ExpandedPattern level variable
+        , expanded ~ Pattern level variable
         , proof ~ SimplificationProof level
         , unifier ~ unifierM variable
         , MonadUnify unifierM
@@ -703,7 +697,7 @@ unifyEquals
         (frame, _) <- unifyEqualsChildren x (asBuiltinMap remainder1)
         let
             -- The concrete part of the unification result.
-            concrete :: ExpandedPattern level variable
+            concrete :: Pattern level variable
             concrete =
                 asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
 
@@ -711,7 +705,7 @@ unifyEquals
               | not (Map.null remainder2) = bottomWithExplanation
               | otherwise =
                 return $
-                    Reflection.give tools asExpandedPattern builtinMapSort map1
+                    Reflection.give tools asPattern builtinMapSort map1
                     <* concrete
                     <* frame
               where
@@ -752,6 +746,6 @@ unifyEquals
             "Cannot unify a non-element map with an element map."
             first
             second
-        return ExpandedPattern.bottom
+        return Pattern.bottom
     withProof :: Applicative f => f a -> f (a, proof)
     withProof fa = (,) <$> fa <*> pure SimplificationProof

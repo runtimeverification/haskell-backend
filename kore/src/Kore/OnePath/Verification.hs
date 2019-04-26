@@ -51,8 +51,8 @@ import qualified Kore.OnePath.Step as OnePath
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (Conditional) )
-import           Kore.Step.Pattern as ExpandedPattern
+                 ( Conditional (Conditional), Pattern )
+import           Kore.Step.Pattern as Pattern
                  ( fromPurePattern )
 import           Kore.Step.Pattern as Conditional
                  ( Conditional (..) )
@@ -151,10 +151,10 @@ verify
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonExpandedPattern level
+    ->  (  Pattern Object Variable
         -> [Strategy
             (Prim
-                (CommonExpandedPattern level)
+                (Pattern Object Variable)
                 (RewriteRule level Variable)
             )
            ]
@@ -201,10 +201,10 @@ defaultStrategy
     => [claim]
     -- The claims that we want to prove
     -> [Axiom level]
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
     -> [Strategy
         (Prim
-            (CommonExpandedPattern level)
+            (Pattern Object Variable)
             (RewriteRule level Variable)
         )
        ]
@@ -235,10 +235,10 @@ verifyClaim
     -> PredicateSubstitutionSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonExpandedPattern level
+    ->  (  Pattern Object Variable
         -> [Strategy
             (Prim
-                (CommonExpandedPattern level)
+                (Pattern Object Variable)
                 (RewriteRule level Variable)
             )
            ]
@@ -280,7 +280,7 @@ verifyClaim
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
-        :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+        :: Prim (Pattern Object Variable) (RewriteRule level Variable)
         -> (CommonStrategyPattern level, StepProof level Variable)
         -> TransitionT (RewriteRule level Variable) Simplifier
             (CommonStrategyPattern level, StepProof level Variable)
@@ -344,7 +344,7 @@ verifyClaimStep
         node
   where
     transitionRule'
-        :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+        :: Prim (Pattern Object Variable) (RewriteRule level Variable)
         -> CommonStrategyPattern level
         -> TransitionT (RewriteRule level Variable) Simplifier
             (CommonStrategyPattern level)
@@ -358,7 +358,7 @@ verifyClaimStep
 
     strategy'
         :: Strategy
-            (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
+            (Prim (Pattern Object Variable) (RewriteRule level Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites
@@ -371,9 +371,9 @@ verifyClaimStep
     rewrites :: [RewriteRule level Variable]
     rewrites = coerce <$> axioms
 
-    targetPattern :: CommonExpandedPattern level
+    targetPattern :: Pattern Object Variable
     targetPattern =
-        ExpandedPattern.fromPurePattern
+        Pattern.fromPurePattern
             . right
             . coerce
             $ target

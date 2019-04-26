@@ -32,7 +32,6 @@ import           System.Exit
 
 import           Data.Limit
                  ( Limit (..) )
-import           Kore.AST.Common
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
                  ( Object (..) )
@@ -69,8 +68,8 @@ import           Kore.Step.Axiom.Identifier
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -100,7 +99,7 @@ import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 -- | Configuration used in symbolic execution.
-type Config = CommonExpandedPattern Object
+type Config = Pattern Object Variable
 
 -- | Proof returned by symbolic execution.
 type Proof = StepProof Object Variable
@@ -147,7 +146,7 @@ exec indexedModule strategy purePattern = do
     let
         Execution { executionGraph } = execution
         (finalConfig, _) = pickLongest executionGraph
-    return (forceSort patternSort $ ExpandedPattern.toMLPattern finalConfig)
+    return (forceSort patternSort $ Pattern.toMLPattern finalConfig)
   where
     Valid { patternSort } = extract purePattern
 
@@ -182,7 +181,7 @@ search
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
@@ -369,11 +368,11 @@ execute verifiedModule strategy inputPattern
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            (ExpandedPattern.fromPurePattern inputPattern)
+            (Pattern.fromPurePattern inputPattern)
     let
         initialPattern =
             case MultiOr.extractPatterns simplifiedPatterns of
-                [] -> ExpandedPattern.bottomOf patternSort
+                [] -> Pattern.bottomOf patternSort
                 (config : _) -> config
           where
             Valid { patternSort } = extract inputPattern
@@ -516,7 +515,7 @@ simplifyPattern tools =
         emptySubstitutionSimplifier
         emptySimplifier
         Map.empty
-    . ExpandedPattern.fromPurePattern
+    . Pattern.fromPurePattern
   where
     emptySimplifier :: StepPatternSimplifier Object
     emptySimplifier = Simplifier.create tools Map.empty

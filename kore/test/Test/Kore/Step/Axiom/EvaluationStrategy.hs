@@ -28,9 +28,9 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
                  ( Conditional (Conditional) )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )

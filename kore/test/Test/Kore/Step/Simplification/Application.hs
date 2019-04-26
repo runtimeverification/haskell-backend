@@ -13,7 +13,8 @@ import qualified Data.Set as Set
 
 import           Data.Sup
 import qualified Kore.Annotation.Valid as Valid
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( SortedVariable (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -28,21 +29,16 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( bottom )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Simplification.Application
-                 ( simplify )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), StepPatternSimplifier,
                  evalSimplifier )
-import           Kore.Step.TermLike hiding
-                 ( freeVariables )
+import           Kore.Step.TermLike as TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -105,7 +101,7 @@ test_applicationSimplification =
 
     , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
-        let expect = MultiOr.make [ ExpandedPattern.bottom ]
+        let expect = MultiOr.make [ Pattern.bottom ]
         actual <-
             evaluate
                 mockMetadataTools
@@ -320,7 +316,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: Ord (variable Object) => ExpandedPattern Object variable
+    gOfAExpanded :: Ord (variable Object) => Pattern Object variable
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
@@ -338,7 +334,7 @@ test_applicationSimplification =
 
     noSimplification
         ::  [   ( TermLike Variable
-                , ([ExpandedPattern level Variable], SimplificationProof level)
+                , ([Pattern level Variable], SimplificationProof level)
                 )
             ]
     noSimplification = []
@@ -349,14 +345,14 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: (MetaOrObject level, Ord (variable level), HasCallStack)
-    => Sort level
-    -> SymbolOrAlias level
-    -> [[ExpandedPattern level variable]]
+    :: (Ord (variable Object), Show (variable Object), HasCallStack)
+    => Sort Object
+    -> SymbolOrAlias Object
+    -> [[Pattern Object variable]]
     -> CofreeF
-        (Application level)
-        (Valid (variable level) level)
-        (OrOfExpandedPattern level variable)
+        (Application Object)
+        (Valid (variable Object) Object)
+        (OrOfExpandedPattern Object variable)
 makeApplication patternSort symbol patterns =
     (:<)
         valid
@@ -365,10 +361,13 @@ makeApplication patternSort symbol patterns =
             , applicationChildren = map MultiOr.make patterns
             }
   where
-    valid = Valid { patternSort, freeVariables }
-    expandedFreeVariables = (<$>) (Valid.freeVariables . extract . term)
-    freeVariables =
-        Set.unions (Set.unions . expandedFreeVariables <$> patterns)
+    termFreeVariables = TermLike.freeVariables . Pattern.term
+    valid =
+        Valid
+            { patternSort
+            , freeVariables =
+                Set.unions (Set.unions . map termFreeVariables <$> patterns)
+            }
 
 evaluate
     ::  ( MetaOrObject level)

@@ -13,7 +13,7 @@ import Kore.Step.Axiom.Data
 import Kore.Step.TermLike
        ( TermLike )
 import Kore.Step.Pattern
-       ( ExpandedPattern )
+       ( Pattern )
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
        StepPatternSimplifier )
@@ -40,7 +40,7 @@ termAnd
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (Pattern level variable, SimplificationProof level)
 
 termUnification
     :: forall level variable unifier unifierM .
@@ -61,4 +61,4 @@ termUnification
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable
-    -> unifier (ExpandedPattern level variable, SimplificationProof level)
+    -> unifier (Pattern level variable, SimplificationProof level)

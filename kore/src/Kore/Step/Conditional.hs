@@ -247,12 +247,7 @@ andPredicate config predicate = config `andCondition` fromPredicate predicate
 See also: 'Predicate.freeVariables'.
 -}
 freeVariables
-    :: ( MetaOrObject Object
-       , Ord (variable Object)
-       , Show (variable Object)
-       , Unparse (variable Object)
-       , SortedVariable variable
-       )
+    :: Ord (variable Object)
     => (term -> Set (variable Object))
     -- ^ Extract the free variables of @term@.
     -> Conditional Object variable term

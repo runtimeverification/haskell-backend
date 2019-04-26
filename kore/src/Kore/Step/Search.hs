@@ -41,7 +41,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Pattern
-                 ( ExpandedPattern, PredicateSubstitution )
+                 ( Pattern, PredicateSubstitution )
 import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
@@ -140,8 +140,8 @@ matchWith
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
+    -> Pattern level variable
+    -> Pattern level variable
     -> MaybeT Simplifier (OrOfPredicateSubstitution level variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-

@@ -7,7 +7,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -16,9 +15,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (MultiOr) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -26,7 +23,6 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
 import           Kore.Step.Simplification.And
-                 ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier, gather )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -52,13 +48,13 @@ test_andSimplification =
             =<< evaluate (makeAnd [] [])
         assertEqualWithExplanation "false and true = false"
             (MultiOr.make [])
-            =<< evaluate (makeAnd [] [ExpandedPattern.top])
+            =<< evaluate (makeAnd [] [Pattern.top])
         assertEqualWithExplanation "true and false = false"
             (MultiOr.make [])
-            =<< evaluate (makeAnd [ExpandedPattern.top] [])
+            =<< evaluate (makeAnd [Pattern.top] [])
         assertEqualWithExplanation "true and true = true"
-            (MultiOr.make [ExpandedPattern.top])
-            =<< evaluate (makeAnd [ExpandedPattern.top] [ExpandedPattern.top])
+            (MultiOr.make [Pattern.top])
+            =<< evaluate (makeAnd [Pattern.top] [Pattern.top])
 
     , testCase "And with booleans" $ do
         assertEqualWithExplanation "false and something = false"
@@ -69,10 +65,10 @@ test_andSimplification =
             =<< evaluate (makeAnd [fOfXExpanded] [])
         assertEqualWithExplanation "true and something = something"
             (MultiOr.make [fOfXExpanded])
-            =<< evaluate (makeAnd [ExpandedPattern.top] [fOfXExpanded])
+            =<< evaluate (makeAnd [Pattern.top] [fOfXExpanded])
         assertEqualWithExplanation "something and true = something"
             (MultiOr.make [fOfXExpanded])
-            =<< evaluate (makeAnd [fOfXExpanded] [ExpandedPattern.top])
+            =<< evaluate (makeAnd [fOfXExpanded] [Pattern.top])
 
     , testCase "And with partial booleans" $ do
         assertEqualWithExplanation "false term and something = false"
@@ -226,7 +222,7 @@ test_andSimplification =
 
             assertEqualWithExplanation
                 "Combines conditions with substitution merge condition"
-                ExpandedPattern
+                Pattern
                     { term = mkTop_
                     , predicate =
                         fst $ makeAndPredicate
@@ -241,12 +237,12 @@ test_andSimplification =
                     [ (fSymbol, mock.functionAttributes)
                     , (gSymbol, mock.functionAttributes)
                     ]
-                    ExpandedPattern
+                    Pattern
                         { term = mkTop_
                         , predicate = makeCeilPredicate fOfX
                         , substitution = [(y, fOfX)]
                         }
-                    ExpandedPattern
+                    Pattern
                         { term = mkTop_
                         , predicate = makeCeilPredicate gOfX
                         , substitution = [(y, gOfX)]
@@ -406,8 +402,8 @@ test_andSimplification =
         }
 
 makeAnd
-    :: [CommonExpandedPattern Object]
-    -> [CommonExpandedPattern Object]
+    :: [Pattern Object Variable]
+    -> [Pattern Object Variable]
     -> And Object (CommonOrOfExpandedPattern Object)
 makeAnd first second =
     And
@@ -416,7 +412,7 @@ makeAnd first second =
         , andSecond = MultiOr.make second
         }
 
-findSort :: [CommonExpandedPattern Object] -> Sort Object
+findSort :: [Pattern Object Variable] -> Sort Object
 findSort [] = testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
@@ -435,8 +431,8 @@ evaluate patt =
         patt
 
 evaluatePatterns
-    :: CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
+    :: Pattern Object Variable
+    -> Pattern Object Variable
     -> IO (CommonOrOfExpandedPattern Object)
 evaluatePatterns first second =
     fmap MultiOr.make

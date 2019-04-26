@@ -27,7 +27,7 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
+                 ( Conditional (..), Pattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -40,7 +40,7 @@ import           Kore.Step.Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-| Simplifies an 'ExpandedPattern', returning an 'OrOfExpandedPattern'.
+{-| Simplifies an 'Pattern', returning an 'OrOfExpandedPattern'.
 -}
 simplify
     ::  ( MetaOrObject level
@@ -58,7 +58,7 @@ simplify
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedPattern level variable
+    -> Pattern level variable
     -> Simplifier
         ( OrOfExpandedPattern level variable
         , SimplificationProof level
@@ -89,7 +89,7 @@ simplify
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
-{-| Simplifies the predicate inside an 'ExpandedPattern'.
+{-| Simplifies the predicate inside an 'Pattern'.
 -}
 simplifyPredicate
     ::  ( MetaOrObject level
@@ -109,9 +109,9 @@ simplifyPredicate
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedPattern level variable
+    -> Pattern level variable
     -- ^ The condition to be evaluated.
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (Pattern level variable, SimplificationProof level)
 simplifyPredicate
     tools
     substitutionSimplifier

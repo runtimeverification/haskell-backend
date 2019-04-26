@@ -47,8 +47,8 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import           Kore.Step.Pattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
@@ -369,8 +369,8 @@ evaluateWithDefinitionAxioms
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
-        expanded :: ExpandedPattern level variable
-        expanded = ExpandedPattern.fromPurePattern patt
+        expanded :: Pattern level variable
+        expanded = Pattern.fromPurePattern patt
 
     let unwrapEqualityRule =
             \(EqualityRule rule) ->

@@ -20,14 +20,12 @@ module Kore.Step.Simplification.Or
 import           Control.Applicative
                  ( Alternative (..) )
 import qualified Data.Function as Function
-import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.AST.Pure
+import           Kore.AST.Common (Or(..))
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
-import           Kore.Step.Pattern
-                 ( ExpandedPattern, Conditional (..) )
-import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.Conditional as Conditional
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -44,15 +42,14 @@ import           Kore.Unparser
 children by merging the two children.
 -}
 simplify
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => Or level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
-        , SimplificationProof level
+    => Or Object (OrOfExpandedPattern Object variable)
+    ->  ( OrOfExpandedPattern Object variable
+        , SimplificationProof Object
         )
 \end{code}
 
@@ -73,16 +70,15 @@ simplify
 See 'simplify' for detailed documentation.
 -}
 simplifyEvaluated
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
-    ->  ( OrOfExpandedPattern level variable
-        , SimplificationProof level
+    => OrOfExpandedPattern Object variable
+    -> OrOfExpandedPattern Object variable
+    ->  ( OrOfExpandedPattern Object variable
+        , SimplificationProof Object
         )
 \end{code}
 
@@ -90,7 +86,7 @@ simplifyEvaluated
 One way to preserve the required sort annotations is to make `simplifyEvaluated`
 take an argument of type
 ``` haskell
-CofreeF (Or level) (Valid level) (OrOfExpandedPattern level variable)
+CofreeF (Or Object) (Valid Object) (OrOfExpandedPattern Object variable)
 ```
 instead of two `OrOfExpandedPattern` arguments. The type of `makeEvaluate` may
 be changed analogously. The `Valid` annotation will eventually cache
@@ -128,17 +124,16 @@ This simplification case is only applied if the configurations have the same
 
  -}
 disjoinPredicates
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
+    => Pattern Object variable
     -- ^ Configuration
-    -> ExpandedPattern level variable
+    -> Pattern Object variable
     -- ^ Disjunction
-    -> Maybe (ExpandedPattern level variable, SimplificationProof level)
+    -> Maybe (Pattern Object variable, SimplificationProof Object)
 \end{code}
 
 When two configurations have the same substitution, it may be possible to
@@ -238,17 +233,16 @@ configuration. Nevertheless, this simplification is required by
 {- | 'Top' patterns are the annihilator of 'Or'.
  -}
 topAnnihilates
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
+    => Pattern Object variable
     -- ^ Configuration
-    -> ExpandedPattern level variable
+    -> Pattern Object variable
     -- ^ Disjunction
-    -> Maybe (ExpandedPattern level variable, SimplificationProof level)
+    -> Maybe (Pattern Object variable, SimplificationProof Object)
 \end{code}
 
 `⊤` is the annihilator of `∨`; when two configurations have the same
@@ -288,12 +282,12 @@ topAnnihilates
   -- The 'term's are checked first because checking the equality of predicates
   -- and substitutions could be expensive.
 
-  | _ :< TopPattern _ <- Recursive.project term1
+  | isTop term1
   , predicate1    == predicate2
   , substitution1 == substitution2
   = Just (predicated1, SimplificationProof)
 
-  | _ :< TopPattern _ <- Recursive.project term2
+  | isTop term2
   , predicate1    == predicate2
   , substitution1 == substitution2
   = Just (predicated2, SimplificationProof)

@@ -21,7 +21,7 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Pure
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -42,7 +42,7 @@ import           Kore.Parser
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
+                 ( Conditional (..), Pattern )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -87,7 +87,7 @@ substitutionSimplifier tools =
 testSymbolWithSolver
     ::  ( HasCallStack
         , p ~ TermLike Variable
-        , expanded ~ CommonExpandedPattern Object
+        , expanded ~ Pattern Object Variable
         )
     => (p -> SMT expanded)
     -- ^ evaluator function for the builtin
@@ -170,7 +170,7 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
 indexedModule =
     makeIndexedModuleAttributesNull
-    $ mapIndexedModulePatterns eraseAnnotations verifiedModule
+    $ mapIndexedModulePatterns AST.eraseAnnotations verifiedModule
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
@@ -200,7 +200,7 @@ stepSimplifier =
 evaluate
     :: MonadSMT m
     => TermLike Variable
-    -> m (CommonExpandedPattern Object)
+    -> m (Pattern Object Variable)
 evaluate =
     (<$>) fst
     . liftSMT
@@ -213,26 +213,26 @@ evaluate =
 evaluateWith
     :: MVar Solver
     -> TermLike Variable
-    -> IO (CommonExpandedPattern Object)
+    -> IO (Pattern Object Variable)
 evaluateWith solver patt =
     runReaderT (SMT.getSMT $ evaluate patt) solver
 
 runStep
-    :: CommonExpandedPattern Object
+    :: Pattern Object Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (CommonExpandedPattern Object))
+            (MultiOr (Pattern Object Variable))
         )
 runStep configuration axiom = do
     result <- runStepResult configuration axiom
     return (Step.gatherResults <$> result)
 
 runStepResult
-    :: CommonExpandedPattern Object
+    :: Pattern Object Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
@@ -259,14 +259,14 @@ runSMT = SMT.runSMT SMT.defaultConfig
 
 runStepWith
     :: MVar Solver
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (CommonExpandedPattern Object))
+            (MultiOr (Pattern Object Variable))
         )
 runStepWith solver configuration axiom = do
     result <- runStepResultWith solver configuration axiom
@@ -274,7 +274,7 @@ runStepWith solver configuration axiom = do
 
 runStepResultWith
     :: MVar Solver
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
@@ -306,5 +306,5 @@ hpropUnparse
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
     let syntax = unparseToString builtin
-        expected = eraseAnnotations (Builtin.externalizePattern builtin)
+        expected = AST.eraseAnnotations (Builtin.externalizePattern builtin)
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

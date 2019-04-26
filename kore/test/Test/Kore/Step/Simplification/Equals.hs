@@ -1,5 +1,5 @@
 module Test.Kore.Step.Simplification.Equals
-    ( test_equalsSimplification_ExpandedPatterns
+    ( test_equalsSimplification_TermLike
     , test_equalsSimplification_OrOfExpandedPatterns
     , test_equalsSimplification_Patterns
     ) where
@@ -10,7 +10,9 @@ import Test.Tasty.HUnit
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Equals (..) )
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -22,8 +24,9 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
+import           Kore.Sort
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern )
+                 ( Pattern )
 import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -303,8 +306,8 @@ test_equalsSimplification_OrOfExpandedPatterns =
         assertEqualWithExplanation "g[x = a] or h or f" expect actual2
     ]
 
-test_equalsSimplification_ExpandedPatterns :: [TestTree]
-test_equalsSimplification_ExpandedPatterns =
+test_equalsSimplification_Patterns :: [TestTree]
+test_equalsSimplification_Patterns =
     [ testCase "predicate-substitution vs predicate-substitution" $ do
         let expect =
                 MultiOr.make
@@ -385,8 +388,8 @@ test_equalsSimplification_ExpandedPatterns =
         assertEqualWithExplanation "" expect actual
     ]
 
-test_equalsSimplification_Patterns :: [TestTree]
-test_equalsSimplification_Patterns =
+test_equalsSimplification_TermLike :: [TestTree]
+test_equalsSimplification_TermLike =
     [ testCase "bottom == bottom"
         (assertTermEquals
             mockMetadataTools
@@ -401,14 +404,14 @@ test_equalsSimplification_Patterns =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
@@ -420,14 +423,14 @@ test_equalsSimplification_Patterns =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
+                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
                     }
                 )
             )
@@ -439,14 +442,14 @@ test_equalsSimplification_Patterns =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort2
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
@@ -888,14 +891,14 @@ assertTermEqualsMultiGeneric
 assertTermEqualsMultiGeneric tools expectPure first second = do
     let expectExpanded =
             MultiOr.make
-                (map predSubstToExpandedPattern expectPure)
+                (map predSubstToPattern expectPure)
     actualExpanded <-
         evaluateGeneric
             tools
-            (termToExpandedPattern first)
-            (termToExpandedPattern second)
+            (termToPattern first)
+            (termToPattern second)
     assertEqualWithExplanation
-        "ExpandedPattern"
+        "Pattern"
         expectExpanded
         actualExpanded
     actualPure <- evaluateTermsGeneric tools first second
@@ -904,27 +907,27 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
         (MultiOr.make expectPure)
         actualPure
   where
-    termToExpandedPattern
+    termToPattern
         :: MetaOrObject level
         => TermLike Variable
-        -> CommonExpandedPattern level
-    termToExpandedPattern (Bottom_ _) =
+        -> Pattern Object Variable
+    termToPattern (Bottom_ _) =
         Conditional.bottom
-    termToExpandedPattern term =
+    termToPattern term =
         Conditional
             { term = term
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-    predSubstToExpandedPattern
+    predSubstToPattern
         :: MetaOrObject level
         => CommonPredicateSubstitution level
-        -> CommonExpandedPattern level
-    predSubstToExpandedPattern
+        -> Pattern Object Variable
+    predSubstToPattern
         Conditional {predicate = PredicateFalse}
       =
         Conditional.bottom
-    predSubstToExpandedPattern
+    predSubstToPattern
         Conditional {predicate, substitution}
       =
         Conditional
@@ -1010,16 +1013,16 @@ evaluateOr tools equals =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> CommonExpandedPattern Object
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
+    -> Pattern Object Variable
     -> IO (CommonOrOfExpandedPattern Object)
 evaluate = evaluateGeneric
 
 evaluateGeneric
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> CommonExpandedPattern level
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
+    -> Pattern Object Variable
     -> IO (CommonOrOfExpandedPattern level)
 evaluateGeneric tools first second =
     (<$>) fst

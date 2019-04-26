@@ -28,6 +28,8 @@ import           Numeric.Natural
 
 import           Data.Sup
 import qualified Kore.Annotation.Null as Annotation
+import           Kore.AST.Identifier
+import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -35,7 +37,9 @@ import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
-import           Kore.Step.Pattern
+import           Kore.Step.Conditional
+import qualified Kore.Step.Pattern as Step
+                 ( Pattern )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -832,7 +836,7 @@ instance (MetaOrObject level, PrettyPrint (variable level))
       prettyPrint flags = prettyPrint flags . Substitution.unwrap
 
 instance (MetaOrObject level, PrettyPrint (variable level))
-    => PrettyPrint (ExpandedPattern level variable)
+    => PrettyPrint (Step.Pattern level variable)
   where
     prettyPrint flags (Conditional t p s) =
         writeThreeFieldStruct flags "Conditional" t p s

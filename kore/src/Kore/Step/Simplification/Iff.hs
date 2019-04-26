@@ -13,9 +13,8 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
-import qualified Data.Functor.Foldable as Recursive
-
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Iff (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
@@ -24,9 +23,7 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeIffPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern, substitutionToPredicate )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -91,7 +88,7 @@ See 'simplify' for detailed documentation.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Iff level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (Iff Object) (Valid Object) (OrOfExpandedPattern Object variable)
 
 instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -146,37 +143,35 @@ simplifyEvaluated
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
 
-{-| evaluates an 'Iff' given its two 'ExpandedPattern' children.
+{-| evaluates an 'Iff' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    => Pattern Object variable
+    -> Pattern Object variable
+    -> OrOfExpandedPattern Object variable
 makeEvaluate first second
-  | ExpandedPattern.isTop first = MultiOr.make [second]
-  | ExpandedPattern.isBottom first = Not.makeEvaluate second
-  | ExpandedPattern.isTop second = MultiOr.make [first]
-  | ExpandedPattern.isBottom second = Not.makeEvaluate first
+  | Pattern.isTop first = MultiOr.make [second]
+  | Pattern.isBottom first = Not.makeEvaluate second
+  | Pattern.isTop second = MultiOr.make [first]
+  | Pattern.isBottom second = Not.makeEvaluate first
   | otherwise = makeEvaluateNonBoolIff first second
 
 makeEvaluateNonBoolIff
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    => Pattern Object variable
+    -> Pattern Object variable
+    -> OrOfExpandedPattern Object variable
 makeEvaluateNonBoolIff
     patt1@Conditional
         { term = firstTerm
@@ -188,8 +183,7 @@ makeEvaluateNonBoolIff
         , predicate = secondPredicate
         , substitution = secondSubstitution
         }
-  | (Recursive.project -> _ :< TopPattern _) <- firstTerm
-  , (Recursive.project -> _ :< TopPattern _) <- secondTerm
+  | isTop firstTerm, isTop secondTerm
   =
     MultiOr.make
         [ Conditional
@@ -210,8 +204,8 @@ makeEvaluateNonBoolIff
     MultiOr.make
         [ Conditional
             { term = mkIff
-                (ExpandedPattern.toMLPattern patt1)
-                (ExpandedPattern.toMLPattern patt2)
+                (Pattern.toMLPattern patt1)
+                (Pattern.toMLPattern patt2)
             , predicate = makeTruePredicate
             , substitution = mempty
             }

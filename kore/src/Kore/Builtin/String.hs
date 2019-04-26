@@ -23,11 +23,10 @@ module Kore.Builtin.String
     , patternVerifier
     , builtinFunctions
     , expectBuiltinString
-    , asMetaPattern
     , asPattern
     , asConcretePattern
-    , asExpandedPattern
-    , asPartialExpandedPattern
+    , asTermLike
+    , asPartialPattern
     , parse
       -- * keys
     , ltKey
@@ -65,16 +64,15 @@ import           Numeric
                  ( readOct )
 import qualified Text.Megaparsec as Parsec
 
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Step.Pattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike
 
 {- | Builtin name of the @String@ sort.
@@ -198,12 +196,12 @@ expectBuiltinString ctx =
   See also: 'sort'
 
  -}
-asPattern
+asTermLike
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> TermLike variable
-asPattern resultSort result =
+asTermLike resultSort result =
     fromConcreteStepPattern (asConcretePattern resultSort result)
 
 {- | Render a 'String' as a concrete domain value pattern of the given sort.
@@ -223,30 +221,24 @@ asConcretePattern domainValueSort builtinStringChild =
         Domain.External
             { domainValueSort
             , domainValueChild =
-                eraseAnnotations $ asMetaPattern builtinStringChild
+                AST.eraseAnnotations $ mkStringLiteral builtinStringChild
             }
 
-asMetaPattern
-    :: Functor domain
-    => Text
-    -> PurePattern Meta domain variable (Valid (variable Meta) Meta)
-asMetaPattern = mkStringLiteral
-
-asExpandedPattern
+asPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
-    -> ExpandedPattern Object variable
-asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asPattern resultSort
+    -> Pattern Object variable
+asPattern resultSort =
+    Pattern.fromPurePattern . asTermLike resultSort
 
-asPartialExpandedPattern
+asPartialPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Maybe Text  -- ^ builtin value to render
-    -> ExpandedPattern Object variable
-asPartialExpandedPattern resultSort =
-    maybe ExpandedPattern.bottom (asExpandedPattern resultSort)
+    -> Pattern Object variable
+asPartialPattern resultSort =
+    maybe Pattern.bottom (asPattern resultSort)
 
 ltKey :: IsString s => s
 ltKey = "STRING.lt"
@@ -291,7 +283,7 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
             _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
             _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
             Builtin.appliedFunction
-                . asExpandedPattern resultSort
+                . asPattern resultSort
                 $ substr _start _end _str
 
 evalLength :: Builtin.Function
@@ -305,7 +297,7 @@ evalLength = Builtin.functionEvaluator evalLength0
                         _      -> Builtin.wrongArity lengthKey
             _str <- expectBuiltinString lengthKey _str
             Builtin.appliedFunction
-                . Int.asExpandedPattern resultSort
+                . Int.asPattern resultSort
                 . toInteger
                 $ Text.length _str
 
@@ -324,7 +316,7 @@ evalFind = Builtin.functionEvaluator evalFind0
             _substr <- expectBuiltinString findKey _substr
             _idx <- fromInteger <$> Int.expectBuiltinInt substrKey _idx
             Builtin.appliedFunction
-                . Int.asExpandedPattern resultSort
+                . Int.asPattern resultSort
                 . maybeNotFound
                 $ findIndex (Text.isPrefixOf _substr) (Text.tails . Text.drop _idx $ _str)
 
@@ -352,10 +344,10 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
             case readN _str of
                 Right (result, Text.unpack -> "") ->
                     Builtin.appliedFunction
-                        . Int.asExpandedPattern resultSort
+                        . Int.asPattern resultSort
                         $ result
                 _ ->
-                    Builtin.appliedFunction ExpandedPattern.bottom
+                    Builtin.appliedFunction Pattern.bottom
 
 evalString2Int :: Builtin.Function
 evalString2Int = Builtin.functionEvaluator evalString2Int0
@@ -370,10 +362,10 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
             case Text.signed Text.decimal _str of
                 Right (result, Text.unpack -> "") ->
                     Builtin.appliedFunction
-                    . Int.asExpandedPattern resultSort
+                    . Int.asPattern resultSort
                     $ result
                 _ ->
-                    Builtin.appliedFunction ExpandedPattern.bottom
+                    Builtin.appliedFunction Pattern.bottom
 
 evalChr :: Builtin.Function
 evalChr = Builtin.functionEvaluator evalChr0
@@ -386,7 +378,7 @@ evalChr = Builtin.functionEvaluator evalChr0
                         _    -> Builtin.wrongArity chrKey
             _n <- Int.expectBuiltinInt chrKey _n
             Builtin.appliedFunction
-                . asExpandedPattern resultSort
+                . asPattern resultSort
                 $ Text.singleton $ chr $ fromIntegral _n
 
 evalOrd :: Builtin.Function
@@ -400,13 +392,13 @@ evalOrd = Builtin.functionEvaluator evalOrd0
                         _    -> Builtin.wrongArity ordKey
             _str <- expectBuiltinString ordKey _str
             Builtin.appliedFunction
-                . maybe ExpandedPattern.bottom charToOrdInt
+                . maybe Pattern.bottom charToOrdInt
                 $ if Text.length _str == 1
                       then Just (Text.head _str)
                       else Nothing
       where
         charToOrdInt =
-            Int.asExpandedPattern resultSort
+            Int.asPattern resultSort
             . toInteger
             . ord
 
@@ -428,7 +420,7 @@ builtinFunctions =
   where
     comparator name op =
         ( name, Builtin.binaryOperator extractStringDomainValue
-            Bool.asExpandedPattern name op )
+            Bool.asPattern name op )
     binaryOperator name op =
         ( name, Builtin.binaryOperator extractStringDomainValue
-            asExpandedPattern name op )
+            asPattern name op )

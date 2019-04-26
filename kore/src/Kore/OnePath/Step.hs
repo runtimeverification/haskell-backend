@@ -48,8 +48,8 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Proof as Step.Proof
@@ -173,8 +173,8 @@ strategyPattern
         Stuck patt -> stuckTransformer patt
         Bottom -> bottomValue
 
--- | A 'StrategyPattern' instantiated to 'CommonExpandedPattern' for convenience.
-type CommonStrategyPattern level = StrategyPattern (CommonExpandedPattern level)
+-- | A 'StrategyPattern' instantiated to 'Pattern Object Variable' for convenience.
+type CommonStrategyPattern level = StrategyPattern (Pattern Object Variable)
 
 instance Hashable patt => Hashable (StrategyPattern patt)
 
@@ -236,7 +236,7 @@ transitionRule
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+    -> Prim (Pattern Object Variable) (RewriteRule level Variable)
     -> (CommonStrategyPattern  level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule level Variable) Simplifier
@@ -300,11 +300,11 @@ transitionRule
 
     transitionMultiApplyWithRemainders
         :: [RewriteRule level Variable]
-        -> (CommonExpandedPattern level, StepProof level Variable)
+        -> (Pattern Object Variable, StepProof level Variable)
         -> Transition
             (CommonStrategyPattern level, StepProof level Variable)
     transitionMultiApplyWithRemainders _ (config, _)
-        | ExpandedPattern.isBottom config = empty
+        | Pattern.isBottom config = empty
     transitionMultiApplyWithRemainders rules (config, proof) = do
         result <-
             Monad.Trans.lift
@@ -343,7 +343,7 @@ transitionRule
                 Result.transitionResults (mapConfigs $ mapRules results)
 
     transitionRemoveDestination
-        :: CommonExpandedPattern level
+        :: Pattern Object Variable
         ->  ( CommonStrategyPattern level
             , StepProof level Variable
             )
@@ -385,9 +385,9 @@ removalPredicate
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => ExpandedPattern Object variable
+    => Pattern Object variable
     -- ^ Destination
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Current configuration
     -> Predicate variable
 removalPredicate destination config =
@@ -397,16 +397,16 @@ removalPredicate destination config =
         -- quantified in the removal predicate.
         extraVariables =
             Set.difference
-                (ExpandedPattern.freeVariables destination)
-                (ExpandedPattern.freeVariables config)
+                (Pattern.freeVariables destination)
+                (Pattern.freeVariables config)
         quantifyPredicate = Predicate.makeMultipleExists extraVariables
     in
         Predicate.makeNotPredicate
         $ quantifyPredicate
         $ Predicate.makeCeilPredicate
         $ mkAnd
-            (ExpandedPattern.toStepPattern destination)
-            (ExpandedPattern.toStepPattern config)
+            (Pattern.toStepPattern destination)
+            (Pattern.toStepPattern config)
 
 
 {-| A strategy for doing the first step of a one-path verification.

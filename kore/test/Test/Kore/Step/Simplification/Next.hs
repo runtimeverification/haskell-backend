@@ -7,12 +7,12 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Next (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -80,7 +80,7 @@ test_nextSimplification =
         )
     ]
 
-findSort :: [CommonExpandedPattern Object] -> Sort Object
+findSort :: [Pattern Object Variable] -> Sort Object
 findSort [] = Mock.testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
@@ -92,7 +92,7 @@ evaluate next =
         (result, _proof) -> result
 
 makeNext
-    :: [CommonExpandedPattern Object]
+    :: [Pattern Object Variable]
     -> Next Object (CommonOrOfExpandedPattern Object)
 makeNext child =
     Next

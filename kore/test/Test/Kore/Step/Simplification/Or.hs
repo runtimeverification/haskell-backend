@@ -11,11 +11,11 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Or (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern, isBottom, isTop )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
@@ -157,7 +157,7 @@ Key for variable names:
             named `pm` and `pM` are expected to be unequal.
 -}
 
-{- | Short-hand for: @ExpandedPattern Object Variable@
+{- | Short-hand for: @Pattern Object Variable@
 
 See also: 'orChild'
  -}
@@ -239,7 +239,7 @@ test_valueProperties =
 becomes
   :: HasCallStack
   => (TestConfig, TestConfig)
-  -> [ExpandedPattern Object Variable]
+  -> [Pattern Object Variable]
   -> TestTree
 becomes (orChild -> or1, orChild -> or2) (MultiOr.make . List.sort -> expected) =
     actual_expected_name_intention
@@ -288,15 +288,13 @@ doesNotSimplify (orChild -> or1, orChild -> or2) =
 -- * Support Functions
 
 prettyOr
-    :: ExpandedPattern Object Variable
-    -> ExpandedPattern Object Variable
+    :: Pattern Object Variable
+    -> Pattern Object Variable
     -> Pretty.Doc a
 prettyOr orFirst orSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
   where
-    Valid { patternSort = orSort } = extract term
-      where
-        Conditional { term } = orFirst
+    orSort = getSort (Pattern.term orFirst)
 
 stateIntention :: [Pretty.Doc ann] -> String
 stateIntention actualAndSoOn =
@@ -304,7 +302,7 @@ stateIntention actualAndSoOn =
 
 orChild
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> ExpandedPattern Object Variable
+    -> Pattern Object Variable
 orChild (term, predicate, substitution) =
     Conditional { term, predicate, substitution }
 

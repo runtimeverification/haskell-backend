@@ -88,8 +88,12 @@ import           Text.Megaparsec
                  ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
+import           Kore.AST.Common
+                 ( Application (..), DomainValue (..) )
+import qualified Kore.AST.Common as Common
+                 ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Pure
+import           Kore.AST.Identifier
 import           Kore.AST.Sentence
                  ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
@@ -120,6 +124,7 @@ import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
+import           Kore.Sort
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -128,8 +133,8 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import           Kore.Step.Pattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import           Kore.Step.Pattern as Pattern
                  ( top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
@@ -138,7 +143,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.TermLike
-                 ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
@@ -613,11 +617,11 @@ parseString parser lit =
 
   No substitution or predicate is applied.
 
-  See also: 'ExpandedPattern'
+  See also: 'Pattern'
  -}
 appliedFunction
     :: (Monad m, Ord (variable level), level ~ Object)
-    => ExpandedPattern level variable
+    => Pattern level variable
     -> m (AttemptedAxiom level variable)
 appliedFunction epat =
     return $ Applied AttemptedAxiomResults
@@ -644,7 +648,7 @@ unaryOperator
     -- ^ Parse operand
     ->  (   forall variable.
             Ord (variable Object)
-        => Sort Object -> b -> ExpandedPattern Object variable
+        => Sort Object -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -671,7 +675,7 @@ unaryOperator
         -> Simplifier (AttemptedAxiom level variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [DomainValuePattern a] -> do
+            [Common.DomainValuePattern a] -> do
                 -- Apply the operator to a domain value
                 let r = op (get a)
                 (appliedFunction . asPattern resultSort) r
@@ -697,7 +701,7 @@ binaryOperator
         )
     -- ^ Extract domain value
     ->  (  forall variable . Ord (variable Object)
-        => Sort Object -> b -> ExpandedPattern Object variable
+        => Sort Object -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -724,7 +728,7 @@ binaryOperator
         -> Simplifier (AttemptedAxiom level variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [DomainValuePattern a, DomainValuePattern b] -> do
+            [Common.DomainValuePattern a, Common.DomainValuePattern b] -> do
                 -- Apply the operator to two domain values
                 let r = op (get a) (get b)
                 (appliedFunction . asPattern resultSort) r
@@ -750,7 +754,7 @@ ternaryOperator
         )
     -- ^ Extract domain value
     ->  (  forall variable. Ord (variable Object)
-        => Sort Object -> b -> ExpandedPattern Object variable
+        => Sort Object -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -777,7 +781,7 @@ ternaryOperator
         -> Simplifier (AttemptedAxiom level variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [DomainValuePattern a, DomainValuePattern b, DomainValuePattern c] -> do
+            [Common.DomainValuePattern a, Common.DomainValuePattern b, Common.DomainValuePattern c] -> do
                 -- Apply the operator to three domain values
                 let r = op (get a) (get b) (get c)
                 (appliedFunction . asPattern resultSort) r
@@ -955,7 +959,7 @@ unifyEqualsUnsolved
         , Show (variable level)
         , Unparse (variable level)
         , level ~ Object
-        , expanded ~ ExpandedPattern level variable
+        , expanded ~ Pattern level variable
         , patt ~ TermLike variable
         , proof ~ SimplificationProof level
         )
@@ -972,6 +976,6 @@ unifyEqualsUnsolved SimplificationType.And a b =
         return (expanded, SimplificationProof)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return
-        ( ExpandedPattern.top {predicate = makeEqualsPredicate a b}
+        ( Pattern.top {predicate = makeEqualsPredicate a b}
         , SimplificationProof
         )

@@ -22,7 +22,6 @@ import System.IO
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
@@ -42,7 +41,7 @@ import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
+                 ( Conditional (..), Pattern )
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
@@ -413,7 +412,7 @@ mainPatternParseAndVerify indexedModule patternFileName =
 mainParseSearchPattern
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
-    -> IO (CommonExpandedPattern Object)
+    -> IO (Pattern Object Variable)
 mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of

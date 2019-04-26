@@ -11,6 +11,7 @@ module Kore.Step.Simplification.And
     ( makeEvaluate
     , simplify
     , simplifyEvaluated
+    , And (..)
     ) where
 
 import           Control.Applicative
@@ -21,7 +22,8 @@ import           Data.List
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( And (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -32,10 +34,7 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( isBottom, isTop )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -56,11 +55,11 @@ import           Kore.Variables.Fresh
 {-|'simplify' simplifies an 'And' of 'OrOfExpandedPattern'.
 
 To do that, it first distributes the terms, making it an Or of And patterns,
-each And having 'ExpandedPattern's as children, then it simplifies each of
+each And having 'Pattern's as children, then it simplifies each of
 those.
 
-Since an ExpandedPattern is of the form term /\ predicate /\ substitution,
-making an and between two ExpandedPatterns roughly means and-ing each of their
+Since an Pattern is of the form term /\ predicate /\ substitution,
+making an and between two Patterns roughly means and-ing each of their
 components separately.
 
 This means that a bottom component anywhere makes the result bottom, while
@@ -195,7 +194,7 @@ simplifyEvaluated
                 second1
     return (MultiOr.make result, SimplificationProof)
 
-{-|'makeEvaluate' simplifies an 'And' of 'ExpandedPattern's.
+{-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 
 See the comment for 'simplify' to find more details.
 -}
@@ -216,14 +215,14 @@ makeEvaluate
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> BranchT Simplifier (ExpandedPattern level variable)
+    -> Pattern level variable
+    -> Pattern level variable
+    -> BranchT Simplifier (Pattern level variable)
 makeEvaluate
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
-  | ExpandedPattern.isBottom first || ExpandedPattern.isBottom second = empty
-  | ExpandedPattern.isTop first = return second
-  | ExpandedPattern.isTop second = return first
+  | Pattern.isBottom first || Pattern.isBottom second = empty
+  | Pattern.isTop first = return second
+  | Pattern.isTop second = return first
   | otherwise =
     makeEvaluateNonBool
         tools
@@ -250,9 +249,9 @@ makeEvaluateNonBool
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> BranchT Simplifier (ExpandedPattern level variable)
+    -> Pattern level variable
+    -> Pattern level variable
+    -> BranchT Simplifier (Pattern level variable)
 makeEvaluateNonBool
     tools
     substitutionSimplifier
@@ -319,5 +318,5 @@ makeTermAnd
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (Pattern level variable, SimplificationProof level)
 makeTermAnd = AndTerms.termAnd

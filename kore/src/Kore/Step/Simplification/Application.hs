@@ -9,9 +9,11 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Application
     ( simplify
+    , Application (..)
     ) where
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Application (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -26,8 +28,8 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import           Kore.Step.Pattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import           Kore.Step.Pattern as Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
@@ -55,12 +57,12 @@ type ExpandedApplication level variable =
 {-|'simplify' simplifies an 'Application' of 'OrOfExpandedPattern'.
 
 To do that, it first distributes the terms, making it an Or of Application
-patterns, each Application having 'ExpandedPattern's as children,
+patterns, each Application having 'Pattern's as children,
 then it simplifies each of those.
 
-Simplifying an Application of ExpandedPattern means merging the children
+Simplifying an Application of Pattern means merging the children
 predicates ans substitutions, applying functions on the Application(terms),
-then merging everything into an ExpandedPattern.
+then merging everything into an Pattern.
 -}
 simplify
     ::  ( MetaOrObject level
@@ -137,7 +139,7 @@ makeAndEvaluateApplications
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
-    -> [ExpandedPattern level variable]
+    -> [Pattern level variable]
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeAndEvaluateApplications
@@ -179,7 +181,7 @@ makeAndEvaluateSymbolApplications
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
-    -> [ExpandedPattern level variable]
+    -> [Pattern level variable]
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeAndEvaluateSymbolApplications
@@ -263,7 +265,7 @@ makeExpandedApplication
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
-    -> [ExpandedPattern level variable]
+    -> [Pattern level variable]
     -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
 makeExpandedApplication
@@ -285,8 +287,8 @@ makeExpandedApplication
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
-                (map ExpandedPattern.predicate children)
-                (map ExpandedPattern.substitution children)
+                (map Pattern.predicate children)
+                (map Pattern.substitution children)
     return
         ( Conditional
             { term =
@@ -294,7 +296,7 @@ makeExpandedApplication
                     Application
                         { applicationSymbolOrAlias = symbol
                         , applicationChildren =
-                            map ExpandedPattern.term children
+                            map Pattern.term children
                         }
             , predicate = mergedPredicate
             , substitution = mergedSubstitution

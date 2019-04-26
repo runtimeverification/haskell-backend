@@ -44,7 +44,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern )
+                 ( Pattern )
 import           Kore.Step.Proof
                  ( StepProof (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -79,7 +79,7 @@ simplify = Simplify
 {- | A single-step strategy which applies the given rewrite rule.
 
 If the rewrite is successful, the built-in simplification rules and function
-evaluator are applied (see 'ExpandedPattern.simplify' for details).
+evaluator are applied (see 'Pattern.simplify' for details).
 
  -}
 rewriteStep :: rewrite -> Strategy (Prim rewrite)
@@ -100,10 +100,10 @@ transitionRule
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> Prim (RewriteRule Object Variable)
-    -> (CommonExpandedPattern Object, StepProof Object Variable)
+    -> (Pattern Object Variable, StepProof Object Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Object Variable) Simplifier
-        (CommonExpandedPattern Object, StepProof Object Variable)
+        (Pattern Object Variable, StepProof Object Variable)
 transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
@@ -156,7 +156,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
 {- | A strategy that applies all the rewrites in parallel.
 
 After each successful rewrite, the built-in simplification rules and function
-evaluator are applied (see 'ExpandedPattern.simplify' for details).
+evaluator are applied (see 'Pattern.simplify' for details).
 
 See also: 'Strategy.all'
 
@@ -171,7 +171,7 @@ allRewrites rewrites =
 
 The rewrites are attempted in order until one succeeds. After a successful
 rewrite, the built-in simplification rules and function evaluator are applied
-(see 'ExpandedPattern.simplify' for details).
+(see 'Pattern.simplify' for details).
 
 See also: 'Strategy.any'
 

@@ -23,7 +23,8 @@ import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Traversable as Traversable
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Equals (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -34,9 +35,7 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeNotPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -222,7 +221,7 @@ simplifyEvaluated
     first
     second
   | first == second =
-    return (MultiOr.make [ExpandedPattern.top], SimplificationProof)
+    return (MultiOr.make [Pattern.top], SimplificationProof)
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
@@ -283,8 +282,8 @@ makeEvaluateFunctionalOr
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
-    -> [ExpandedPattern level variable]
+    -> Pattern level variable
+    -> [Pattern level variable]
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateFunctionalOr
@@ -340,7 +339,7 @@ makeEvaluateFunctionalOr
                     axiomIdToSimplfier
                 )
             )
-            (MultiOr.make [ExpandedPattern.top])
+            (MultiOr.make [Pattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
         mapM
@@ -393,7 +392,7 @@ makeEvaluateFunctionalOr
                 equality
         return result
 
-{-| evaluates an 'Equals' given its two 'ExpandedPattern' children.
+{-| evaluates an 'Equals' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
@@ -413,8 +412,8 @@ makeEvaluate
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
+    -> Pattern level variable
+    -> Pattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
@@ -453,7 +452,7 @@ makeEvaluate
             firstTerm
             secondTerm
     return
-        ( fmap ExpandedPattern.fromPredicateSubstitution result
+        ( fmap Pattern.fromPredicateSubstitution result
         , SimplificationProof
         )
 makeEvaluate
@@ -623,7 +622,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
             first
             second
     return
-        ( fmap ExpandedPattern.fromPredicateSubstitution result
+        ( fmap Pattern.fromPredicateSubstitution result
         , SimplificationProof
         )
 

@@ -26,7 +26,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern, PredicateSubstitution )
+                 ( Conditional (..), Pattern, PredicateSubstitution )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
@@ -61,9 +61,9 @@ mergeWithPredicateSubstitution
     -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSubstitution level variable
     -- ^ Condition and substitution to add.
-    -> ExpandedPattern level variable
+    -> Pattern level variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (Pattern level variable, SimplificationProof level)
 mergeWithPredicateSubstitution
     tools
     substitutionSimplifier
@@ -117,9 +117,9 @@ mergeWithEvaluatedCondition
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedPattern level variable
+    -> Pattern level variable
     -> PredicateSubstitution level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> Simplifier (Pattern level variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
     substitutionSimplifier

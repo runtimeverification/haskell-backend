@@ -66,7 +66,7 @@ unitPattern = mkApp unitSort unitSymbol []
 
 onePattern :: TermLike Variable
 onePattern =
-    Builtin.Int.asPattern
+    Builtin.Int.asTermLike
         Domain.InternalInt
             { builtinIntSort = intSort
             , builtinIntValue = 1
@@ -74,7 +74,7 @@ onePattern =
 
 zeroPattern :: TermLike Variable
 zeroPattern =
-    Builtin.Int.asPattern
+    Builtin.Int.asTermLike
         Domain.InternalInt
             { builtinIntSort = intSort
             , builtinIntValue = 0

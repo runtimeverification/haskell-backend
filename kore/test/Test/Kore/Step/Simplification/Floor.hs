@@ -7,14 +7,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Floor (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
                  makeTruePredicate )
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
                  ( bottom, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
@@ -56,11 +57,11 @@ test_floorSimplification =
             -- floor(top) = top
             assertEqualWithExplanation "floor(top)"
                 (MultiOr.make
-                    [ ExpandedPattern.top ]
+                    [ Pattern.top ]
                 )
                 (evaluate
                     (makeFloor
-                        [ExpandedPattern.top]
+                        [Pattern.top]
                     )
                 )
             -- floor(bottom) = bottom
@@ -79,10 +80,10 @@ test_floorSimplification =
             -- floor(top) = top
             assertEqualWithExplanation "floor(top)"
                 (MultiOr.make
-                    [ ExpandedPattern.top ]
+                    [ Pattern.top ]
                 )
                 (makeEvaluate
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
+                    (Pattern.top :: Pattern Object Variable)
                 )
             -- floor(bottom) = bottom
             assertEqualWithExplanation "floor(bottom)"
@@ -90,7 +91,7 @@ test_floorSimplification =
                     []
                 )
                 (makeEvaluate
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
+                    (Pattern.bottom :: Pattern Object Variable)
                 )
         )
     , testCase "floor with predicates and substitutions"
@@ -119,14 +120,14 @@ test_floorSimplification =
     -- floor moves predicates and substitutions up
     ]
   where
-    fId = Id "f" AstLocationTest
-    gId = Id "g" AstLocationTest
+    fId = testId "f"
+    gId = testId "g"
     aSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "a" AstLocationTest
+        { symbolOrAliasConstructor = testId "a"
         , symbolOrAliasParams      = []
         }
     bSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "b" AstLocationTest
+        { symbolOrAliasConstructor = testId "b"
         , symbolOrAliasParams      = []
         }
     fSymbol = SymbolOrAlias
@@ -158,7 +159,7 @@ test_floorSimplification =
 
 makeFloor
     :: Ord (variable Object)
-    => [ExpandedPattern Object variable]
+    => [Pattern Object variable]
     -> Floor Object (OrOfExpandedPattern Object variable)
 makeFloor patterns =
     Floor
@@ -178,7 +179,7 @@ evaluate floor' =
 
 makeEvaluate
     :: MetaOrObject level
-    => CommonExpandedPattern level
+    => Pattern Object Variable
     -> CommonOrOfExpandedPattern level
 makeEvaluate child =
     case makeEvaluateFloor child of

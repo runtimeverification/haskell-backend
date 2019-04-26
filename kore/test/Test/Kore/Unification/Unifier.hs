@@ -22,7 +22,9 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( SortedVariable (..) )
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Sentence
 import           Kore.AST.Valid hiding
                  ( V )
@@ -41,11 +43,8 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
-import           Kore.Step.Pattern
-                 ( Conditional (Conditional), ExpandedPattern,
-                 PredicateSubstitution )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( Conditional (..), bottom )
+import           Kore.Sort
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -74,7 +73,7 @@ applyInj
 applyInj sortTo pat =
     applySymbol symbolInj [sortFrom, sortTo] [pat]
   where
-    Valid { patternSort = sortFrom } = extract pat
+    sortFrom = getSort pat
 
 s1, s2, s3, s4 :: Sort Object
 s1 = simpleSort (SortName "s1")
@@ -128,12 +127,12 @@ dv1, dv2 :: TermLike Variable
 dv1 =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
-        , domainValueChild = eraseAnnotations $ mkStringLiteral "dv1"
+        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "dv1"
         }
 dv2 =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
-        , domainValueChild = eraseAnnotations $ mkStringLiteral "dv."
+        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "dv."
         }
 
 aA :: TermLike Variable
@@ -244,7 +243,7 @@ unificationResult
     :: UnificationResultTerm Object
     -> Substitution
     -> Predicate Variable
-    -> ExpandedPattern Object Variable
+    -> Pattern Object Variable
 unificationResult (UnificationResultTerm term) sub predicate =
     Conditional
         { term
@@ -280,11 +279,11 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
     let
         subst'' =
             subst'
-                { ExpandedPattern.substitution =
+                { Pattern.substitution =
                     sortBy
                         (compare `on` fst)
                     `Substitution.modify`
-                    ExpandedPattern.substitution subst'
+                    Pattern.substitution subst'
                 }
     assertEqualWithExplanation "" expect (subst'', proof')
 
@@ -758,7 +757,7 @@ simplifyPattern (UnificationTerm term) = do
         case
             MultiOr.extractPatterns
                 (fst simplifiedPatterns) of
-            [] -> return ExpandedPattern.bottom
+            [] -> return Pattern.bottom
             (config : _) -> return config
     functionRegistry = Map.empty
     expandedPattern = Conditional

@@ -30,7 +30,7 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
@@ -113,13 +113,13 @@ equalityRuleEvaluator
             axiomIdToSimplifier
             unificationProcedure
             [RulePattern.mapVariables fromVariable rule']
-            (ExpandedPattern.fromPurePattern patt')
+            (Pattern.fromPurePattern patt')
 
     simplifyOrOfExpandedPattern unsimplified =
         MultiOr.filterOr
-        <$> traverse simplifyExpandedPattern unsimplified
+        <$> traverse simplifyPattern unsimplified
 
-    simplifyExpandedPattern config = do
+    simplifyPattern config = do
         (config', _) <-
             ExpandedPattern.simplifyPredicate
                 tools

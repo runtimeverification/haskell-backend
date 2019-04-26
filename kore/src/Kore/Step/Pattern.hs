@@ -5,8 +5,7 @@ License     : NCSA
 Representation of program configurations as conditional patterns.
 -}
 module Kore.Step.Pattern
-    ( ExpandedPattern
-    , CommonExpandedPattern
+    ( Pattern
     , fromPredicateSubstitution
     , toPredicate
     , Kore.Step.Pattern.allVariables
@@ -25,6 +24,7 @@ module Kore.Step.Pattern
     -- * Re-exports
     , Conditional (..)
     , PredicateSubstitution
+    , module Kore.Step.TermLike
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -37,7 +37,8 @@ import           GHC.Stack
                  ( HasCallStack )
 
 import           Kore.Annotation.Valid
-import           Kore.AST.Pure
+import qualified Kore.AST.Common as Common.Pattern
+                 ( Pattern (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Conditional
@@ -46,7 +47,8 @@ import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import           Kore.Step.TermLike
-                 ( TermLike )
+                 ( CofreeF (..), Object, Sort, SortedVariable, TermLike,
+                 Variable )
 import qualified Kore.Step.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -57,42 +59,32 @@ import           Kore.Variables.Free
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
-The form of @ExpandedPattern@ is intended to be a convenient representation of a
+The form of @Pattern@ is intended to be a convenient representation of a
 program configuration for Kore execution.
 
  -}
-type ExpandedPattern level variable =
+type Pattern level variable =
     Conditional level variable (TermLike variable)
 
-{- | 'CommonExpandedPattern' instantiates 'ExpandedPattern' at 'Variable'.
--}
-type CommonExpandedPattern level = ExpandedPattern level Variable
-
 fromPredicateSubstitution
-    :: MetaOrObject Object
-    => PredicateSubstitution Object variable
-    -> ExpandedPattern Object variable
+    :: PredicateSubstitution Object variable
+    -> Pattern Object variable
 fromPredicateSubstitution = (<$) mkTop_
 
 freeVariables
-    :: ( MetaOrObject Object
-       , Ord (variable Object)
-       , Show (variable Object)
-       , Unparse (variable Object)
-       , SortedVariable variable
-       )
-    => ExpandedPattern Object variable
+    :: Ord (variable Object)
+    => Pattern Object variable
     -> Set (variable Object)
 freeVariables = Conditional.freeVariables TermLike.freeVariables
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
-in an ExpandedPattern.
+in an Pattern.
 -}
 mapVariables
     :: Ord (variableTo Object)
     => (variableFrom Object -> variableTo Object)
-    -> ExpandedPattern Object variableFrom
-    -> ExpandedPattern Object variableTo
+    -> Pattern Object variableFrom
+    -> Pattern Object variableTo
 mapVariables
     variableMapper
     Conditional { term, predicate, substitution }
@@ -105,11 +97,11 @@ mapVariables
         }
 
 {-|'allVariables' extracts all variables, including the quantified ones,
-from an ExpandedPattern.
+from an Pattern.
 -}
 allVariables
     :: (Ord (variable Object), Unparse (variable Object))
-    => ExpandedPattern Object variable
+    => Pattern Object variable
     -> Set.Set (variable Object)
 allVariables
     Conditional { term, predicate, substitution }
@@ -128,9 +120,9 @@ allVariables
             Set.empty
             sub
 
-{- | Convert an 'ExpandedPattern' to an ordinary 'TermLike'.
+{- | Convert an 'Pattern' to an ordinary 'TermLike'.
 
-Conversion relies on the interpretation of 'ExpandedPattern' as a conjunction of
+Conversion relies on the interpretation of 'Pattern' as a conjunction of
 patterns. Conversion erases the distinction between terms, predicates, and
 substitutions; this function should be used with care where that distinction is
 important.
@@ -138,14 +130,13 @@ important.
  -}
 toStepPattern
     ::  forall variable.
-        ( MetaOrObject Object
-        , SortedVariable variable
+        ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         , HasCallStack
         )
-    => ExpandedPattern Object variable -> TermLike variable
+    => Pattern Object variable -> TermLike variable
 toStepPattern
     Conditional { term, predicate, substitution }
   =
@@ -164,33 +155,28 @@ toStepPattern
             PredicateFalse -> mkBottom patternSort
             predicate' ->
                 case projected of
-                    TopPattern _ ->
+                    Common.Pattern.TopPattern _ ->
                         Predicate.fromPredicate patternSort predicate'
-                    BottomPattern _ -> pattern'
+                    Common.Pattern.BottomPattern _ -> pattern'
                     _ -> mkAnd pattern' (Predicate.fromPredicate patternSort predicate')
       where
         Valid { patternSort } = valid
 
 toMLPattern
     ::  forall variable.
-        ( MetaOrObject Object
-        , SortedVariable variable
+        ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         , HasCallStack
         )
-    => ExpandedPattern Object variable -> TermLike variable
+    => Pattern Object variable -> TermLike variable
 toMLPattern = toStepPattern
 
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
 -}
-bottom
-    ::  ( MetaOrObject Object
-        , Ord (variable Object)
-        )
-    => ExpandedPattern Object variable
+bottom :: Ord (variable Object) => Pattern Object variable
 bottom =
     Conditional
         { term      = mkBottom_
@@ -198,17 +184,12 @@ bottom =
         , substitution = mempty
         }
 
-{- | An 'ExpandedPattern' where the 'term' is 'Bottom' of the given 'Sort'.
+{- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.
 
 The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
-bottomOf
-    ::  ( MetaOrObject Object
-        , Ord (variable Object)
-        )
-    => Sort Object
-    -> ExpandedPattern Object variable
+bottomOf :: Ord (variable Object) => Sort Object -> Pattern Object variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
@@ -219,11 +200,7 @@ bottomOf resultSort =
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
-top
-    ::  ( MetaOrObject Object
-        , Ord (variable Object)
-        )
-    => ExpandedPattern Object variable
+top :: Ord (variable Object) => Pattern Object variable
 top =
     Conditional
         { term      = mkTop_
@@ -231,14 +208,9 @@ top =
         , substitution = mempty
         }
 
-{- | An 'ExpandedPattern' where the 'term' is 'Top' of the given 'Sort'.
+{- | An 'Pattern' where the 'term' is 'Top' of the given 'Sort'.
  -}
-topOf
-    ::  ( MetaOrObject Object
-        , Ord (variable Object)
-        )
-    => Sort Object
-    -> ExpandedPattern Object variable
+topOf :: Ord (variable Object) => Sort Object -> Pattern Object variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
@@ -246,21 +218,21 @@ topOf resultSort =
         , substitution = mempty
         }
 
-{- | Construct an 'ExpandedPattern' from a 'StepPattern'.
+{- | Construct an 'Pattern' from a 'StepPattern'.
 
-  The resulting @ExpandedPattern@ has a true predicate and an empty
+  The resulting @Pattern@ has a true predicate and an empty
   substitution.
 
   See also: 'makeTruePredicate', 'pure'
 
  -}
 fromPurePattern
-    :: (MetaOrObject Object, Ord (variable Object))
+    :: Ord (variable Object)
     => TermLike variable
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
 fromPurePattern term@(Recursive.project -> _ :< projected) =
     case projected of
-        BottomPattern _ -> bottom
+        Common.Pattern.BottomPattern _ -> bottom
         _ ->
             Conditional
                 { term
@@ -269,12 +241,11 @@ fromPurePattern term@(Recursive.project -> _ :< projected) =
                 }
 
 toPredicate
-    :: ( MetaOrObject Object
-       , SortedVariable variable
-       , Ord (variable Object)
-       , Show (variable Object)
-       , Unparse (variable Object)
-       )
-    => ExpandedPattern Object variable
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        )
+    => Pattern Object variable
     -> Predicate variable
 toPredicate = Conditional.toPredicate

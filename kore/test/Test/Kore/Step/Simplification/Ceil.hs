@@ -10,7 +10,9 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Ceil (..), SortedVariable (..) )
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -33,10 +35,7 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( bottom, mapVariables, top )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -91,11 +90,11 @@ test_ceilSimplification =
             -- ceil(top) = top
             actual1 <- evaluate mockMetadataTools
                 (makeCeil
-                    [ExpandedPattern.top]
+                    [Pattern.top]
                 )
             assertEqualWithExplanation "ceil(top)"
                 (MultiOr.make
-                    [ ExpandedPattern.top ]
+                    [ Pattern.top ]
                 )
                 actual1
             -- ceil(bottom) = bottom
@@ -113,15 +112,15 @@ test_ceilSimplification =
         (do
             -- ceil(top) = top
             actual1 <- makeEvaluate mockMetadataTools
-                (ExpandedPattern.top :: CommonExpandedPattern Object)
+                (Pattern.top :: Pattern Object Variable)
             assertEqualWithExplanation "ceil(top)"
                 (MultiOr.make
-                    [ ExpandedPattern.top ]
+                    [ Pattern.top ]
                 )
                 actual1
             -- ceil(bottom) = bottom
             actual2 <- makeEvaluate mockMetadataTools
-                (ExpandedPattern.bottom :: CommonExpandedPattern Object)
+                (Pattern.bottom :: Pattern Object Variable)
             assertEqualWithExplanation "ceil(bottom)"
                 (MultiOr.make
                     []
@@ -186,7 +185,7 @@ test_ceilSimplification =
                 actual
     , testCase "ceil of constructors is top" $ do
         let
-            expected = MultiOr.make [ExpandedPattern.top]
+            expected = MultiOr.make [Pattern.top]
         actual <- makeEvaluate mockMetadataTools
             Conditional
                 { term = Mock.constr10 Mock.a
@@ -381,7 +380,7 @@ test_ceilSimplification =
                         (Domain.BuiltinExternal Domain.External
                             { domainValueSort = Mock.testSort
                             , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "a"
+                                AST.eraseAnnotations $ mkStringLiteral "a"
                             }
                         )
                 , predicate = makeTruePredicate
@@ -435,7 +434,7 @@ test_ceilSimplification =
         -- sets assume that their elements are relatively functional,
         -- so ceil({a, b}) = top
         let
-            expected = MultiOr.make [ ExpandedPattern.top ]
+            expected = MultiOr.make [ Pattern.top ]
         actual <- makeEvaluate mockMetadataTools
             Conditional
                 { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
@@ -475,7 +474,7 @@ test_ceilSimplification =
         let Just r = asConcreteStepPattern p in r
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> BuiltinAndAxiomSimplifier level
+    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier level
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -503,15 +502,15 @@ mapVariables
         , MetaOrObject level
         , Ord (variable level)
         )
-    => CommonExpandedPattern level
-    -> ExpandedPattern level variable
+    => Pattern Object Variable
+    -> Pattern level variable
 mapVariables =
-    ExpandedPattern.mapVariables $ \v ->
+    Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Sup.Element 1) }
 
 makeCeil
     :: Ord (variable Object)
-    => [ExpandedPattern Object variable]
+    => [Pattern Object variable]
     -> Ceil Object (OrOfExpandedPattern Object variable)
 makeCeil patterns =
     Ceil
@@ -540,7 +539,7 @@ evaluate tools ceil =
 makeEvaluate
     ::  ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
     -> IO (CommonOrOfExpandedPattern level)
 makeEvaluate tools child =
     makeEvaluateWithAxioms tools Map.empty child
@@ -550,7 +549,7 @@ makeEvaluateWithAxioms
     => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
     -> IO (CommonOrOfExpandedPattern level)
 makeEvaluateWithAxioms tools axiomIdToSimplifier child =
     (<$>) fst

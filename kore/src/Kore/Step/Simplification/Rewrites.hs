@@ -11,14 +11,13 @@ module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Rewrites (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( toMLPattern )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -37,8 +36,7 @@ Right now this does not do any actual simplification.
 TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
@@ -60,7 +58,7 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedRewrites' take an argument of type
 
-> CofreeF (Or level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (Or Object) (Valid Object) (OrOfExpandedPattern Object variable)
 
 instead of two 'OrOfExpandedPattern' arguments. The type of
 'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
@@ -69,8 +67,7 @@ more useful to carry around.
 
 -}
 simplifyEvaluatedRewrites
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
@@ -84,21 +81,20 @@ simplifyEvaluatedRewrites first second =
         (OrOfExpandedPattern.toExpandedPattern second)
 
 makeEvaluateRewrites
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => ExpandedPattern Object variable
-    -> ExpandedPattern Object variable
+    => Pattern Object variable
+    -> Pattern Object variable
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
     ( MultiOr.make
         [ Conditional
             { term = mkRewrites
-                (ExpandedPattern.toMLPattern first)
-                (ExpandedPattern.toMLPattern second)
+                (Pattern.toMLPattern first)
+                (Pattern.toMLPattern second)
             , predicate = makeTruePredicate
             , substitution = mempty
             }

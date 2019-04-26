@@ -17,7 +17,8 @@ import qualified Data.Map.Strict as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Exists (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -27,8 +28,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
@@ -164,7 +164,7 @@ simplifyEvaluated
             simplified
     return ( evaluated, SimplificationProof )
 
-{-| evaluates an 'Exists' given its two 'ExpandedPattern' children.
+{-| evaluates an 'Exists' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
@@ -185,7 +185,7 @@ makeEvaluate
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable level
-    -> ExpandedPattern level variable
+    -> Pattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate
@@ -222,16 +222,16 @@ makeEvaluate
             simplifier
             axiomIdToSimplifier
 
-{- | Existentially quantify a variable in the given 'ExpandedPattern'.
+{- | Existentially quantify a variable in the given 'Pattern'.
 
 The variable was found on the left-hand side of a substitution and the given
 term will be substituted everywhere. The variable may occur anywhere in the
-'term' or 'predicate' of the 'ExpandedPattern', but not in the
+'term' or 'predicate' of the 'Pattern', but not in the
 'substitution'. The quantified variable must not occur free in the substituted
  term; an error is thrown if it is found.  The final result will not contain the
  quantified variable and thus the quantifier will actually be omitted.
 
-See also: 'quantifyExpandedPattern'
+See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundLeft
@@ -252,8 +252,8 @@ makeEvaluateBoundLeft
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable level  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
-    -> ExpandedPattern level variable
-    -> BranchT Simplifier (ExpandedPattern level variable)
+    -> Pattern level variable
+    -> BranchT Simplifier (Pattern level variable)
 makeEvaluateBoundLeft
     tools
     substitutionSimplifier
@@ -284,14 +284,14 @@ makeEvaluateBoundLeft
             simplifier
             axiomIdToSimplifier
 
-{- | Existentially quantify a variable in the given 'ExpandedPattern'.
+{- | Existentially quantify a variable in the given 'Pattern'.
 
 The variable does not occur in the any equality in the free substitution. The
 variable may occur anywhere in the 'term' or 'predicate' of the
-'ExpandedPattern', but only on the right-hand side of an equality in the
+'Pattern', but only on the right-hand side of an equality in the
 'substitution'.
 
-See also: 'quantifyExpandedPattern'
+See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundRight
@@ -302,8 +302,8 @@ makeEvaluateBoundRight
         )
     => variable Object  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
-    -> ExpandedPattern Object variable  -- ^ pattern to quantify
-    -> BranchT Simplifier (ExpandedPattern Object variable)
+    -> Pattern Object variable  -- ^ pattern to quantify
+    -> BranchT Simplifier (Pattern Object variable)
 makeEvaluateBoundRight
     variable
     freeSubstitution
@@ -314,7 +314,7 @@ makeEvaluateBoundRight
   where
     simplifiedPattern =
         Conditional.andCondition
-            (quantifyExpandedPattern variable normalized)
+            (quantifyPattern variable normalized)
             (PredicateSubstitution.fromSubstitution freeSubstitution)
 
 {- | Split the substitution on the given variable.
@@ -347,22 +347,22 @@ splitSubstitution variable substitution =
         maybe (Right dependent) Left
         $ Map.lookup variable (Substitution.toMap dependent)
 
-{- | Existentially quantify the variable an 'ExpandedPattern'.
+{- | Existentially quantify the variable an 'Pattern'.
 
 The substitution is assumed to depend on the quantified variable. The quantifier
 is lowered onto the 'term' or 'predicate' alone, or omitted, if possible.
 
  -}
-quantifyExpandedPattern
+quantifyPattern
     ::  ( Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         , SortedVariable variable
         )
     => variable Object
-    -> ExpandedPattern Object variable
-    -> ExpandedPattern Object variable
-quantifyExpandedPattern variable Conditional { term, predicate, substitution }
+    -> Pattern Object variable
+    -> Pattern Object variable
+quantifyPattern variable Conditional { term, predicate, substitution }
   | quantifyTerm, quantifyPredicate =
       Conditional
         { term =

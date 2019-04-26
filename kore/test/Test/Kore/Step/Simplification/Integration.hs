@@ -14,7 +14,6 @@ import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -30,9 +29,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators )
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -99,7 +96,7 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
 
     , testCase "owise condition - owise case" $ do
-        let expect = MultiOr.make [ExpandedPattern.top]
+        let expect = MultiOr.make [Pattern.top]
         actual <-
             evaluate
                 mockMetadataTools
@@ -264,7 +261,7 @@ test_substitute =
     [ testCase "Substitution under unary functional constructor" $ do
         let expect =
                 MultiOr.make
-                    [ ExpandedPattern.Conditional
+                    [ Pattern.Conditional
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
@@ -279,7 +276,7 @@ test_substitute =
         actual <-
             evaluate
                 mockMetadataTools
-                (ExpandedPattern.fromPurePattern
+                (Pattern.fromPurePattern
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
@@ -296,7 +293,7 @@ test_substitute =
     , testCase "Substitution" $ do
         let expect =
                 MultiOr.make
-                    [ ExpandedPattern.Conditional
+                    [ Pattern.Conditional
                         { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
@@ -308,7 +305,7 @@ test_substitute =
         actual <-
             evaluate
                 mockMetadataTools
-                (ExpandedPattern.fromPurePattern
+                (Pattern.fromPurePattern
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
@@ -325,7 +322,7 @@ test_substituteMap =
     [ testCase "Substitution applied to Map elements" $ do
         let expect =
                 MultiOr.make
-                    [ ExpandedPattern.Conditional
+                    [ Pattern.Conditional
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
@@ -340,7 +337,7 @@ test_substituteMap =
         actual <-
             evaluate
                 mockMetadataTools
-                (ExpandedPattern.fromPurePattern
+                (Pattern.fromPurePattern
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
@@ -362,7 +359,7 @@ test_substituteList =
     [ testCase "Substitution applied to List elements" $ do
         let expect =
                 MultiOr.make
-                    [ ExpandedPattern.Conditional
+                    [ Pattern.Conditional
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
@@ -377,7 +374,7 @@ test_substituteList =
         actual <-
             evaluate
                 mockMetadataTools
-                ( ExpandedPattern.fromPurePattern
+                ( Pattern.fromPurePattern
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
@@ -406,7 +403,7 @@ mockMetadataTools =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -> IO (CommonOrOfExpandedPattern Object)
 evaluate tools patt =
     evaluateWithAxioms tools Map.empty patt
@@ -414,7 +411,7 @@ evaluate tools patt =
 evaluateWithAxioms
     :: SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap Object
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -> IO (CommonOrOfExpandedPattern Object)
 evaluateWithAxioms tools axioms patt =
     (<$>) fst

@@ -23,7 +23,6 @@ import           Data.Text
 import           System.Exit
                  ( ExitCode (..) )
 
-import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -41,10 +40,10 @@ import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Sort
 import           Kore.Step
                  ( allRewrites, anyRewrite )
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
 import           Kore.Step.Search
                  ( SearchType (..) )
@@ -165,7 +164,7 @@ searchVar =
 --  \and{MySort{}}(
 --      V:MySort{},
 --      \top{MySort{}}())
-searchPattern :: CommonExpandedPattern Object
+searchPattern :: Pattern Object Variable
 searchPattern = Conditional
     { term = searchVar
     , predicate = makeTruePredicate

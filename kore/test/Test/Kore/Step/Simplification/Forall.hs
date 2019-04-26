@@ -7,14 +7,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Forall (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( bottom, top )
+import           Kore.Sort
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -57,12 +56,12 @@ test_forallSimplification =
             -- forall(top) = top
             assertEqualWithExplanation "forall(top)"
                 (MultiOr.make
-                    [ ExpandedPattern.top ]
+                    [ Pattern.top ]
                 )
                 (evaluate
                     (makeForall
                         Mock.x
-                        [ExpandedPattern.top]
+                        [Pattern.top]
                     )
                 )
             -- forall(bottom) = bottom
@@ -81,17 +80,17 @@ test_forallSimplification =
         (do
             -- forall(top) = top
             assertEqualWithExplanation "forall(top)"
-                ExpandedPattern.top
+                Pattern.top
                 (makeEvaluate
                     Mock.x
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
+                    (Pattern.top :: Pattern Object Variable)
                 )
             -- forall(bottom) = bottom
             assertEqualWithExplanation "forall(bottom)"
-                ExpandedPattern.bottom
+                Pattern.bottom
                 (makeEvaluate
                     Mock.x
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
+                    (Pattern.bottom :: Pattern Object Variable)
                 )
         )
     , testCase "forall applies substitution if possible"
@@ -205,10 +204,10 @@ test_forallSimplification =
         -- forall x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
         (assertEqualWithExplanation "forall reevaluates"
-            ExpandedPattern.top
+            Pattern.top
             (makeEvaluate
                 Mock.x
-                ExpandedPattern
+                Pattern
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution = [(Mock.x, gOfA)]
@@ -238,7 +237,7 @@ test_forallSimplification =
 makeForall
     :: Ord (variable Object)
     => variable Object
-    -> [ExpandedPattern Object variable]
+    -> [Pattern Object variable]
     -> Forall Object variable (OrOfExpandedPattern Object variable)
 makeForall variable patterns =
     Forall
@@ -264,7 +263,7 @@ evaluate forall =
 makeEvaluate
     :: MetaOrObject level
     => Variable level
-    -> CommonExpandedPattern level
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
+    -> Pattern Object Variable
 makeEvaluate variable child =
     fst $ Forall.makeEvaluate variable child

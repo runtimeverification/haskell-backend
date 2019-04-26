@@ -10,7 +10,7 @@ import Test.Tasty.HUnit
 import           Kore.AST.Common
                  ( Bottom (..) )
 import           Kore.AST.MetaOrObject
-import qualified Kore.Step.Pattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
                  ( bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
@@ -28,7 +28,7 @@ test_bottomSimplification =
     [ testCase "Bottom evaluates to bottom"
         (assertEqualWithExplanation ""
             (MultiOr.make
-                [ ExpandedPattern.bottom ]
+                [ Pattern.bottom ]
             )
             (evaluate
                 Bottom {bottomSort = Mock.testSort}

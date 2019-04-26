@@ -11,7 +11,6 @@ import           Data.List
                  ( sort )
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
@@ -30,8 +29,8 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern as ExpandedPattern
-                 ( Conditional (..), ExpandedPattern, bottom )
+import           Kore.Step.Pattern as Pattern
+                 ( Conditional (..), Pattern, bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Rule
@@ -148,7 +147,7 @@ test_userDefinedFunction =
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results =
-                        MultiOr.make [ ExpandedPattern.bottom ]
+                        MultiOr.make [ Pattern.bottom ]
                     , remainders = MultiOr.make []
                     }
         actual <-
@@ -223,7 +222,7 @@ test_userDefinedFunction =
 
 noSimplification
     ::  [   ( TermLike Variable
-            , ([ExpandedPattern level Variable], SimplificationProof level)
+            , ([Pattern level Variable], SimplificationProof level)
             )
         ]
 noSimplification = []
@@ -231,11 +230,11 @@ noSimplification = []
 
 asSimplification
     ::  [   ( TermLike Variable
-            , ([ExpandedPattern level Variable], SimplificationProof level)
+            , ([Pattern level Variable], SimplificationProof level)
             )
         ]
     ->  [   ( TermLike Variable
-            , ([ExpandedPattern level Variable], SimplificationProof level)
+            , ([Pattern level Variable], SimplificationProof level)
             )
         ]
 asSimplification = id

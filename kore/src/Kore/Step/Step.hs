@@ -45,7 +45,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Pure
 import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -60,9 +59,7 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
@@ -139,12 +136,12 @@ withoutUnification = Conditional.term
 type Result variable =
     Step.Result
         (UnifiedRule (Target variable))
-        (ExpandedPattern Object variable)
+        (Pattern Object variable)
 
 type Results variable =
     Step.Results
         (UnifiedRule (Target variable))
-        (ExpandedPattern Object variable)
+        (Pattern Object variable)
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
@@ -157,11 +154,11 @@ unwrapRule = Rule.mapVariables Target.unwrapVariable
  -}
 unwrapConfiguration
     :: Ord (variable Object)
-    => ExpandedPattern Object (Target variable)
-    -> ExpandedPattern Object variable
+    => Pattern Object (Target variable)
+    -> Pattern Object variable
 unwrapConfiguration config@Conditional { substitution } =
-    ExpandedPattern.mapVariables Target.unwrapVariable
-        config { ExpandedPattern.substitution = substitution' }
+    Pattern.mapVariables Target.unwrapVariable
+        config { Pattern.substitution = substitution' }
   where
     substitution' = Substitution.filter Target.isNonTarget substitution
 
@@ -194,7 +191,7 @@ unifyRule
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Initial configuration
     -> RulePattern Object variable
     -- ^ Rule
@@ -212,7 +209,7 @@ unifyRule
     -- Rename free axiom variables to avoid free variables from the initial
     -- configuration.
     let
-        configVariables = ExpandedPattern.freeVariables initial
+        configVariables = Pattern.freeVariables initial
         (_, rule') = RulePattern.refreshRulePattern configVariables rule
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
@@ -363,7 +360,7 @@ finalizeAppliedRule
             substitution' = Substitution.toMap substitution
             RulePattern { right = finalTerm } = renamedRule
             finalTerm' = TermLike.substitute substitution' finalTerm
-        return finalCondition { ExpandedPattern.term = finalTerm' }
+        return finalCondition { Pattern.term = finalTerm' }
 
     normalize condition =
         Substitution.normalizeExcept
@@ -391,11 +388,11 @@ applyRemainder
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Initial configuration
     -> Predicate variable
     -- ^ Remainder
-    -> BranchT unifier (ExpandedPattern Object variable)
+    -> BranchT unifier (Pattern Object variable)
 applyRemainder
     metadataTools
     predicateSimplifier
@@ -428,9 +425,9 @@ toAxiomVariables = RulePattern.mapVariables Target.Target
 
 toConfigurationVariables
     :: Ord (variable Object)
-    => ExpandedPattern Object variable
-    -> ExpandedPattern Object (Target variable)
-toConfigurationVariables = ExpandedPattern.mapVariables Target.NonTarget
+    => Pattern Object variable
+    -> Pattern Object (Target variable)
+toConfigurationVariables = Pattern.mapVariables Target.NonTarget
 
 {- | Fully apply a single rule to the initial configuration.
 
@@ -456,7 +453,7 @@ applyRule
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten.
     -> RulePattern Object variable
     -- ^ Rewriting axiom
@@ -539,7 +536,7 @@ applyRewriteRule
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten.
     -> RewriteRule Object variable
     -- ^ Rewriting axiom
@@ -588,13 +585,13 @@ checkSubstitutionCoverage
         , unifier ~ unifierM (Target variable)
         )
     => SmtMetadataTools StepperAttributes
-    -> ExpandedPattern Object (Target variable)
+    -> Pattern Object (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
-    -> ExpandedPattern Object (Target variable)
+    -> Pattern Object (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier (ExpandedPattern Object variable)
+    -> BranchT unifier (Pattern Object variable)
 checkSubstitutionCoverage tools initial unified final
   | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
   | isSymbolic =
@@ -691,7 +688,7 @@ applyRulesInParallel
 
     -> [RulePattern Object variable]
     -- ^ Rewrite rules
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesInParallel
@@ -756,7 +753,7 @@ applyRewriteRules
 
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRewriteRules
@@ -800,7 +797,7 @@ sequenceRules
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten
     -> [RulePattern Object variable]
     -- ^ Rewrite rules
@@ -818,11 +815,11 @@ sequenceRules
     -- The single remainder of the input configuration after rewriting to
     -- produce the disjunction of results.
     remainingAfter
-        :: ExpandedPattern Object variable
+        :: Pattern Object variable
         -- ^ initial configuration
         -> [Result variable]
         -- ^ results
-        -> unifier (MultiOr (ExpandedPattern Object variable))
+        -> unifier (MultiOr (Pattern Object variable))
     remainingAfter config results = do
         let remainder =
                 Remainder.remainder
@@ -887,7 +884,7 @@ sequenceRewriteRules
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules

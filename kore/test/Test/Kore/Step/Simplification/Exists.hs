@@ -8,7 +8,8 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Exists (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -18,9 +19,8 @@ import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Sort
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -28,7 +28,6 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
-                 ( makeEvaluate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Unification.Substitution as Substitution
@@ -52,13 +51,12 @@ test_simplify =
     , [substOfX]         `simplifies` [quantifySubstitution substOfX] $ "substitution"
     ]
   where
-    top = ExpandedPattern.top
     plain10 = pure $ Mock.plain10 (mkVar Mock.x)
     plain11 = pure $ Mock.plain11 (mkVar Mock.x)
     plain10' = mkExists Mock.x <$> plain10
     plain11' = mkExists Mock.x <$> plain11
     equals =
-        (ExpandedPattern.topOf Mock.testSort)
+        (Pattern.topOf Mock.testSort)
             { predicate =
                 Predicate.makeEqualsPredicate
                     (Mock.sigma (mkVar Mock.x) (mkVar Mock.z))
@@ -76,21 +74,21 @@ test_simplify =
             , substitution = mempty
             }
     substForX =
-        (ExpandedPattern.topOf Mock.testSort)
+        (Pattern.topOf Mock.testSort)
             { substitution =
                 Substitution.unsafeWrap
                     [(Mock.x, Mock.sigma (mkVar Mock.y) (mkVar Mock.z))]
             }
     substOfX =
-        (ExpandedPattern.topOf Mock.testSort)
+        (Pattern.topOf Mock.testSort)
             { substitution =
                 Substitution.unsafeWrap
                     [(Mock.y, Mock.sigma (mkVar Mock.x) (mkVar Mock.z))]
             }
     simplifies
         :: HasCallStack
-        => [CommonExpandedPattern Object]
-        -> [CommonExpandedPattern Object]
+        => [Pattern Object Variable]
+        -> [Pattern Object Variable]
         -> String
         -> TestTree
     simplifies original expected message =
@@ -103,11 +101,11 @@ test_makeEvaluate :: [TestTree]
 test_makeEvaluate =
     [ testGroup "Exists - Predicates"
         [ testCase "Top" $ do
-            let expect = MultiOr.make [ ExpandedPattern.top ]
+            let expect = MultiOr.make [ Pattern.top ]
             actual <-
                 makeEvaluate mockMetadataTools
                     Mock.x
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
+                    (Pattern.top :: Pattern Object Variable)
             assertEqualWithExplanation "" expect actual
 
         , testCase " Bottom" $ do
@@ -115,7 +113,7 @@ test_makeEvaluate =
             actual <-
                 makeEvaluate mockMetadataTools
                     Mock.x
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
+                    (Pattern.bottom :: Pattern Object Variable)
             assertEqualWithExplanation "" expect actual
         ]
 
@@ -237,7 +235,7 @@ test_makeEvaluate =
     , testCase "exists reevaluates" $ do
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
-        let expect = MultiOr.make [ ExpandedPattern.top ]
+        let expect = MultiOr.make [ Pattern.top ]
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
@@ -267,7 +265,7 @@ mockMetadataTools =
 makeExists
     :: Ord (variable Object)
     => variable Object
-    -> [ExpandedPattern Object variable]
+    -> [Pattern Object variable]
     -> Exists Object variable (OrOfExpandedPattern Object variable)
 makeExists variable patterns =
     Exists
@@ -303,7 +301,7 @@ makeEvaluate
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
     -> Variable level
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
     -> IO (CommonOrOfExpandedPattern level)
 makeEvaluate tools variable child =
     (<$>) fst

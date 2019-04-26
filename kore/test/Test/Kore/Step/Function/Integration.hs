@@ -10,8 +10,8 @@ import           Data.Default
 import qualified Data.Map as Map
 
 import           Data.Sup
-import           Kore.AST.Pure hiding
-                 ( mapVariables )
+import           Kore.AST.Common
+                 ( SortedVariable (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -29,11 +29,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern as ExpandedPattern
-                 ( CommonExpandedPattern, Conditional (Conditional),
-                 ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( Conditional (..), mapVariables )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Rule
@@ -630,7 +626,7 @@ axiom left right predicate =
         }
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> BuiltinAndAxiomSimplifier level
+    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier level
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -646,10 +642,10 @@ mapVariables
         , MetaOrObject level
         , Ord (variable level)
         )
-    => CommonExpandedPattern level
-    -> ExpandedPattern level variable
+    => Pattern Object Variable
+    -> Pattern level variable
 mapVariables =
-    ExpandedPattern.mapVariables $ \v ->
+    Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Element 1) }
 
 mockEvaluator
@@ -669,7 +665,7 @@ evaluate
     => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike Variable
-    -> IO (CommonExpandedPattern level)
+    -> IO (Pattern Object Variable)
 evaluate metadataTools functionIdToEvaluator patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

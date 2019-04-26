@@ -20,7 +20,7 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
                  ( PredicateSubstitution )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
                  ( Conditional (..) )
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
@@ -85,6 +85,6 @@ simplifyEvaluatedMultiPredicateSubstitution
             substitutionSimplifier
             simplifier
             axiomIdToSubstitution
-            (map ExpandedPattern.predicate predicateSubstitutions0)
-            (map ExpandedPattern.substitution predicateSubstitutions0)
+            (map Pattern.predicate predicateSubstitutions0)
+            (map Pattern.substitution predicateSubstitutions0)
         return result

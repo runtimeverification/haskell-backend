@@ -17,7 +17,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Pattern
                  ( Conditional (..) )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -66,7 +66,7 @@ simplifyEvaluated simplified =
         [ Conditional
             { term =
                 mkNext
-                    $ ExpandedPattern.toMLPattern
+                    $ Pattern.toMLPattern
                     $ OrOfExpandedPattern.toExpandedPattern simplified
             , predicate = makeTruePredicate
             , substitution = mempty

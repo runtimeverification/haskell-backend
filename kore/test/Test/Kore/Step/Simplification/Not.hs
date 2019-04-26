@@ -19,8 +19,8 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
@@ -43,8 +43,8 @@ import           Test.Tasty.HUnit.Extensions
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
-    [ [ExpandedPattern.top] `becomes_` []
-    , [] `becomes_` [ExpandedPattern.top]
+    [ [Pattern.top] `becomes_` []
+    , [] `becomes_` [Pattern.top]
     , [termX] `becomes_` [mkNot <$> termX]
     , [equalsXA] `becomes_` [notEqualsXA]
     , [substXA] `becomes_` [notEqualsXA]
@@ -56,13 +56,13 @@ test_simplifyEvaluated =
             actual <- simplifyEvaluated (MultiOr.make original)
             assertEqualWithExplanation "" (MultiOr.make expected) actual
 
-termX :: ExpandedPattern Object Variable
-termX = ExpandedPattern.fromPurePattern (mkVar Mock.x)
+termX :: Pattern Object Variable
+termX = Pattern.fromPurePattern (mkVar Mock.x)
 
-equalsXA :: ExpandedPattern Object Variable
+equalsXA :: Pattern Object Variable
 equalsXA = fromPredicate equalsXA_
 
-equalsXB :: ExpandedPattern Object Variable
+equalsXB :: Pattern Object Variable
 equalsXB = fromPredicate equalsXB_
 
 equalsXA_ :: Predicate Variable
@@ -71,29 +71,29 @@ equalsXA_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
 equalsXB_ :: Predicate Variable
 equalsXB_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
 
-notEqualsXA :: ExpandedPattern Object Variable
+notEqualsXA :: Pattern Object Variable
 notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
 
-neitherXAB :: ExpandedPattern Object Variable
+neitherXAB :: Pattern Object Variable
 neitherXAB =
     fromPredicate
     $ Predicate.makeAndPredicate
         (Predicate.makeNotPredicate equalsXA_)
         (Predicate.makeNotPredicate equalsXB_)
 
-substXA :: ExpandedPattern Object Variable
+substXA :: Pattern Object Variable
 substXA = fromSubstitution $ Substitution.unsafeWrap [(Mock.x, Mock.a)]
 
-fromPredicate :: Predicate Variable -> ExpandedPattern Object Variable
+fromPredicate :: Predicate Variable -> Pattern Object Variable
 fromPredicate =
-    ExpandedPattern.fromPredicateSubstitution
+    Pattern.fromPredicateSubstitution
     . PredicateSubstitution.fromPredicate
 
 fromSubstitution
     :: Substitution Variable
-    -> ExpandedPattern Object Variable
+    -> Pattern Object Variable
 fromSubstitution =
-    ExpandedPattern.fromPredicateSubstitution
+    Pattern.fromPredicateSubstitution
     . PredicateSubstitution.fromSubstitution
 
 simplifyEvaluated

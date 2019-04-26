@@ -9,7 +9,8 @@ import Test.Tasty.HUnit
 import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Iff (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
@@ -17,10 +18,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( bottom, top )
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -159,8 +157,8 @@ testSimplifyBoolean a b =
       | x = "⊤"
       | otherwise = "⊥"
     value x
-      | x = ExpandedPattern.top
-      | otherwise = ExpandedPattern.bottom
+      | x = Pattern.top
+      | otherwise = Pattern.bottom
     r = a == b
 
 testEvaluateBoolean :: HasCallStack => Bool -> Bool -> TestTree
@@ -174,11 +172,11 @@ testEvaluateBoolean a b =
       | x = "⊤"
       | otherwise = "⊥"
     value x
-      | x = ExpandedPattern.top
-      | otherwise = ExpandedPattern.bottom
+      | x = Pattern.top
+      | otherwise = Pattern.bottom
     r = a == b
 
-termA :: CommonExpandedPattern Object
+termA :: Pattern Object Variable
 termA =
     Conditional
         { term = Mock.a
@@ -186,17 +184,13 @@ termA =
         , substitution = mempty
         }
 
-termNotA :: CommonExpandedPattern Object
+termNotA :: Pattern Object Variable
 termNotA = mkNot <$> termA
-
-top, bottom :: CommonExpandedPattern Object
-top = ExpandedPattern.top
-bottom = ExpandedPattern.bottom
 
 makeIff
     :: (Ord (variable Object))
-    => [ExpandedPattern Object variable]
-    -> [ExpandedPattern Object variable]
+    => [Pattern Object variable]
+    -> [Pattern Object variable]
     -> Iff Object (OrOfExpandedPattern Object variable)
 makeIff first second =
     Iff
@@ -206,9 +200,8 @@ makeIff first second =
         }
 
 simplify
-    :: MetaOrObject level
-    => Iff level (CommonOrOfExpandedPattern level)
-    -> IO (CommonOrOfExpandedPattern level)
+    :: Iff Object (CommonOrOfExpandedPattern Object)
+    -> IO (CommonOrOfExpandedPattern Object)
 simplify iff0 =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -221,10 +214,9 @@ simplify iff0 =
         iff0
 
 makeEvaluate
-    :: MetaOrObject level
-    => CommonExpandedPattern level
-    -> CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    :: Pattern Object Variable
+    -> Pattern Object Variable
+    -> CommonOrOfExpandedPattern Object
 makeEvaluate = Iff.makeEvaluate
 
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol

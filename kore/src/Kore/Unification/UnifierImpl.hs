@@ -21,7 +21,9 @@ import           Data.List
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( And (..) )
+import qualified Kore.AST.Common as Common
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
@@ -29,9 +31,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.PredicateSubstitution
                  ( Conditional (..), PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
@@ -94,13 +94,8 @@ simplifyCombinedItems =
 
 simplifyAnds
     ::  forall variable unifier unifierM .
-        ( MetaOrObject Object
-        , Eq Object
-        , Ord (variable Object)
-        , Show (variable Object)
+        ( Show (variable Object)
         , Unparse (variable Object)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
         , unifier ~ unifierM variable
@@ -111,7 +106,7 @@ simplifyAnds
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> NonEmpty (TermLike variable)
-    -> unifier (ExpandedPattern Object variable, UnificationProof Object variable)
+    -> unifier (Pattern Object variable, UnificationProof Object variable)
 simplifyAnds
     tools
     substitutionSimplifier
@@ -119,18 +114,18 @@ simplifyAnds
     axiomIdToSimplifier
     patterns
   = do
-    result <- foldM simplifyAnds' ExpandedPattern.top patterns
-    if Predicate.isFalse . ExpandedPattern.predicate $ result
-        then return ( ExpandedPattern.bottom, EmptyUnificationProof )
+    result <- foldM simplifyAnds' Pattern.top patterns
+    if Predicate.isFalse . Pattern.predicate $ result
+        then return ( Pattern.bottom, EmptyUnificationProof )
         else return ( result, EmptyUnificationProof )
   where
     simplifyAnds'
-        :: ExpandedPattern Object variable
+        :: Pattern Object variable
         -> TermLike variable
-        -> unifier (ExpandedPattern Object variable)
+        -> unifier (Pattern Object variable)
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
-            AndPattern And { andFirst = lhs, andSecond = rhs } ->
+            Common.AndPattern And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
                 (result, _) <-
@@ -139,7 +134,7 @@ simplifyAnds
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
-                        (ExpandedPattern.term intermediate)
+                        (Pattern.term intermediate)
                         pat
                 (predSubst, _) <-
                     mergePredicatesAndSubstitutionsExcept
@@ -147,14 +142,14 @@ simplifyAnds
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
-                        [ ExpandedPattern.predicate result
-                        , ExpandedPattern.predicate intermediate
+                        [ Pattern.predicate result
+                        , Pattern.predicate intermediate
                         ]
-                        [ ExpandedPattern.substitution result
-                        , ExpandedPattern.substitution intermediate
+                        [ Pattern.substitution result
+                        , Pattern.substitution intermediate
                         ]
-                return ExpandedPattern.Conditional
-                    { term = ExpandedPattern.term result
+                return Pattern.Conditional
+                    { term = Pattern.term result
                     , predicate = Conditional.predicate predSubst
                     , substitution = Conditional.substitution predSubst
                     }
@@ -167,22 +162,17 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Recursive.project -> ann :< VariablePattern var')
+    sortRenaming (var, Recursive.project -> ann :< Common.VariablePattern var')
         | var' < var =
-          (var', Recursive.embed (ann :< VariablePattern var))
+          (var', Recursive.embed (ann :< Common.VariablePattern var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: ( MetaOrObject Object
-       , Eq Object
-       , Ord (variable Object)
-       , Show (variable Object)
+    :: ( Show (variable Object)
        , Unparse (variable Object)
-       , OrdMetaOrObject variable
-       , ShowMetaOrObject variable
        , SortedVariable variable
        , FreshVariable variable
        , MonadUnify unifierM
@@ -216,15 +206,15 @@ solveGroupedSubstitution
     return
         ( Conditional
             { term = ()
-            , predicate = ExpandedPattern.predicate predSubst
+            , predicate = Pattern.predicate predSubst
             , substitution = Substitution.wrap $ termAndSubstitution predSubst
             }
         , proof
         )
   where
     termAndSubstitution s =
-        (var, ExpandedPattern.term s)
-        : Substitution.unwrap (ExpandedPattern.substitution s)
+        (var, Pattern.term s)
+        : Substitution.unwrap (Pattern.substitution s)
 
 -- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
@@ -234,13 +224,8 @@ solveGroupedSubstitution
 -- stabilizes.
 normalizeSubstitutionDuplication
     :: forall variable unifier unifierM
-    .   ( MetaOrObject Object
-        , Eq Object
-        , Ord (variable Object)
-        , Show (variable Object)
+    .   ( Show (variable Object)
         , Unparse (variable Object)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
         , SortedVariable variable
         , FreshVariable variable
         , MonadUnify unifierM
@@ -320,13 +305,10 @@ normalizeSubstitutionDuplication
 
 
 mergePredicateSubstitutionList
-    :: ( MetaOrObject Object
-       , Eq Object
-       , Ord (variable Object)
-       , OrdMetaOrObject variable
-       , SortedVariable variable
+    :: ( Ord (variable Object)
        , Show (variable Object)
        , Unparse (variable Object)
+       , SortedVariable variable
        )
     => [(PredicateSubstitution Object variable, UnificationProof Object variable)]
     -> (PredicateSubstitution Object variable, UnificationProof Object variable)

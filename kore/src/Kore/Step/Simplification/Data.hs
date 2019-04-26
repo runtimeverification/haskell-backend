@@ -53,7 +53,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern
-                 ( ExpandedPattern, PredicateSubstitution )
+                 ( Pattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
@@ -293,7 +293,7 @@ newtype StepPatternSimplifier level =
         => PredicateSubstitutionSimplifier level
         -> TermLike variable
         -> PredicateSubstitution level variable
-        -> BranchT Simplifier (ExpandedPattern level variable)
+        -> BranchT Simplifier (Pattern level variable)
         )
 
 {- | Use a 'StepPatternSimplifier' to simplify a pattern.
@@ -343,7 +343,7 @@ simplifyConditionalTerm
     -> PredicateSubstitutionSimplifier Object
     -> TermLike variable
     -> PredicateSubstitution Object variable
-    -> BranchT Simplifier (ExpandedPattern Object variable)
+    -> BranchT Simplifier (Pattern Object variable)
 simplifyConditionalTerm (StepPatternSimplifier simplify) = simplify
 
 {- | Construct a 'StepPatternSimplifier' from a term simplifier.
@@ -382,7 +382,7 @@ stepPatternSimplifier simplifier =
         => PredicateSubstitutionSimplifier Object
         -> TermLike variable
         -> PredicateSubstitution Object variable
-        -> BranchT Simplifier (ExpandedPattern Object variable)
+        -> BranchT Simplifier (Pattern Object variable)
     stepPatternSimplifierWorker
         predicateSimplifier
         stepPattern

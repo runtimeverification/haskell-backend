@@ -21,7 +21,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Pattern
                  ( Conditional (..) )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -85,7 +85,7 @@ test_domainValueSimplification =
         )
     ]
   where
-    bottom = MultiOr.make [ExpandedPattern.bottom]
+    bottom = MultiOr.make [Pattern.bottom]
 
 mkMapDomainValue
     :: [(Domain.Key, child)]

@@ -22,8 +22,8 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
-import qualified Kore.Step.Pattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
@@ -44,7 +44,7 @@ checkImplicationIsTop
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -> TermLike Variable
     -> Simplifier Bool
 checkImplicationIsTop
@@ -80,8 +80,8 @@ checkImplicationIsTop
              , Pretty.indent 4 (unparse rhs)
              ]
       where
-        lhsFreeVariables = ExpandedPattern.freeVariables lhs
-        lhsMLPatt = ExpandedPattern.toMLPattern lhs
+        lhsFreeVariables = Pattern.freeVariables lhs
+        lhsMLPatt = Pattern.toMLPattern lhs
 
 stripForallQuantifiers
     :: TermLike Variable

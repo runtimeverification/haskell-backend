@@ -17,7 +17,6 @@ import qualified Data.Set as Set
 import           Prelude hiding
                  ( concatMap )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -29,7 +28,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
-import qualified Kore.Step.Pattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
 import           Kore.Step.Rule
@@ -61,7 +60,7 @@ genConcreteMap genElement =
     Map.mapKeys Test.Int.asInternal <$> genMapInteger genElement
 
 genMapPattern :: Gen (TermLike Variable)
-genMapPattern = asPattern <$> genConcreteMap genIntegerPattern
+genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
 
 genMapSortedVariable
     :: MetaOrObject level
@@ -81,8 +80,8 @@ test_lookupUnit =
             key <- forAll genIntegerPattern
             let patLookup = lookupMap unitMap key
                 predicate = mkEquals_ mkBottom_ patLookup
-            (===) ExpandedPattern.bottom =<< evaluate patLookup
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.bottom =<< evaluate patLookup
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_lookupUpdate :: TestTree
@@ -95,9 +94,9 @@ test_lookupUpdate =
             patMap <- forAll genMapPattern
             let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
                 predicate = mkEquals_ patLookup patVal
-                expect = ExpandedPattern.fromPurePattern patVal
+                expect = Pattern.fromPurePattern patVal
             (===) expect =<< evaluate patLookup
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_concatUnit :: TestTree
@@ -114,8 +113,8 @@ test_concatUnit =
             expect <- evaluate patMap
             (===) expect =<< evaluate patConcat1
             (===) expect =<< evaluate patConcat2
-            (===) ExpandedPattern.top =<< evaluate predicate1
-            (===) ExpandedPattern.top =<< evaluate predicate2
+            (===) Pattern.top =<< evaluate predicate1
+            (===) Pattern.top =<< evaluate predicate2
         )
 
 test_lookupConcatUniqueKeys :: TestTree
@@ -140,11 +139,11 @@ test_lookupConcatUniqueKeys =
                             (mkEquals_ patLookup1 patVal1)
                             (mkEquals_ patLookup2 patVal2)
                         )
-                expect1 = ExpandedPattern.fromPurePattern patVal1
-                expect2 = ExpandedPattern.fromPurePattern patVal2
+                expect1 = Pattern.fromPurePattern patVal1
+                expect2 = Pattern.fromPurePattern patVal2
             (===) expect1 =<< evaluate patLookup1
             (===) expect2 =<< evaluate patLookup2
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_concatDuplicateKeys :: TestTree
@@ -159,8 +158,8 @@ test_concatDuplicateKeys =
                 patMap2 = elementMap patKey patVal2
                 patConcat = concatMap patMap1 patMap2
                 predicate = mkEquals_ mkBottom_ patConcat
-            (===) ExpandedPattern.bottom =<< evaluate patConcat
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.bottom =<< evaluate patConcat
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_concatCommutes :: TestTree
@@ -176,7 +175,7 @@ test_concatCommutes =
             actual1 <- evaluate patConcat1
             actual2 <- evaluate patConcat2
             (===) actual1 actual2
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_concatAssociates :: TestTree
@@ -195,7 +194,7 @@ test_concatAssociates =
             actual12_3 <- evaluate patConcat12_3
             actual1_23 <- evaluate patConcat1_23
             (===) actual12_3 actual1_23
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_inKeysUnit :: TestTree
@@ -207,8 +206,8 @@ test_inKeysUnit =
             let patUnit = unitMap
                 patInKeys = inKeysMap patKey patUnit
                 predicate = mkEquals_ (Test.Bool.asInternal False) patInKeys
-            (===) (Test.Bool.asExpandedPattern False) =<< evaluate patInKeys
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) (Test.Bool.asPattern False) =<< evaluate patInKeys
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_keysUnit :: TestTree
@@ -219,11 +218,11 @@ test_keysUnit =
             let
                 patUnit = unitMap
                 patKeys = keysMap patUnit
-                patExpect = Test.Set.asPattern Set.empty
+                patExpect = Test.Set.asTermLike Set.empty
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluateWith solver patExpect
             assertEqualWithExplanation "" expect =<< evaluateWith solver patKeys
-            assertEqualWithExplanation "" ExpandedPattern.top =<< evaluateWith solver predicate
+            assertEqualWithExplanation "" Pattern.top =<< evaluateWith solver predicate
         )
 
 test_keysElement :: TestTree
@@ -233,13 +232,13 @@ test_keysElement =
         (do
             key <- forAll genConcreteIntegerPattern
             val <- forAll genIntegerPattern
-            let patMap = asPattern $ Map.singleton key val
-                patKeys = Test.Set.asPattern $ Set.singleton key
+            let patMap = asTermLike $ Map.singleton key val
+                patKeys = Test.Set.asTermLike $ Set.singleton key
                 patSymbolic = keysMap patMap
                 predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluate patKeys
             (===) expect =<< evaluate patSymbolic
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_keys :: TestTree
@@ -249,13 +248,13 @@ test_keys =
         (do
             map1 <- forAll (genConcreteMap genIntegerPattern)
             let keys1 = Map.keysSet map1
-                patConcreteKeys = Test.Set.asPattern keys1
-                patMap = asPattern map1
+                patConcreteKeys = Test.Set.asTermLike keys1
+                patMap = asTermLike map1
                 patSymbolicKeys = keysMap patMap
                 predicate = mkEquals_ patConcreteKeys patSymbolicKeys
             expect <- evaluate patConcreteKeys
             (===) expect =<< evaluate patSymbolicKeys
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 test_inKeysElement :: TestTree
@@ -268,8 +267,8 @@ test_inKeysElement =
             let patMap = elementMap patKey patVal
                 patInKeys = inKeysMap patKey patMap
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInKeys
-            (===) (Test.Bool.asExpandedPattern True) =<< evaluate patInKeys
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) (Test.Bool.asPattern True) =<< evaluate patInKeys
+            (===) Pattern.top =<< evaluate predicate
         )
 
 -- | Check that simplification is carried out on map elements.
@@ -286,8 +285,8 @@ test_simplify =
                         , variableSort = intSort
                         }
                 key = Test.Int.asInternal 1
-                original = asPattern $ Map.fromList [(key, mkAnd x mkTop_)]
-                expected = asExpandedPattern $ Map.fromList [(key, x)]
+                original = asTermLike $ Map.fromList [(key, mkAnd x mkTop_)]
+                expected = asPattern $ Map.fromList [(key, x)]
             actual <- evaluateWith solver original
             assertEqualWithExplanation "expected simplified Map" expected actual
         )
@@ -300,7 +299,7 @@ test_symbolic =
         (do
             elements <- forAll $ genMapSortedVariable intSort genIntegerPattern
             let patMap = asSymbolicPattern (Map.mapKeys mkVar elements)
-                expect = ExpandedPattern.fromPurePattern patMap
+                expect = Pattern.fromPurePattern patMap
             if Map.null elements
                 then discard
                 else (===) expect =<< evaluate patMap
@@ -373,13 +372,13 @@ test_unifyConcrete =
             map12 <- forAll (genConcreteMap genVariablePair)
             let map1 = fst <$> map12
                 map2 = snd <$> map12
-                patExpect = asPattern $ uncurry mkAnd <$> map12
-                patActual = mkAnd (asPattern map1) (asPattern map2)
+                patExpect = asTermLike $ uncurry mkAnd <$> map12
+                patActual = mkAnd (asTermLike map1) (asTermLike map2)
                 predicate = mkEquals_ patExpect patActual
             expect <- evaluate patExpect
             actual <- evaluate patActual
             (===) expect actual
-            (===) ExpandedPattern.top =<< evaluate predicate
+            (===) Pattern.top =<< evaluate predicate
         )
 
 {- | Unify a concrete map with symbolic-keyed map.
@@ -417,7 +416,7 @@ test_concretizeKeys =
     key = Test.Int.asInternal 1
     symbolicKey = fromConcreteStepPattern key
     val = Test.Int.asInternal 2
-    concreteMap = asPattern $ Map.fromList [(key, val)]
+    concreteMap = asTermLike $ Map.fromList [(key, val)]
     symbolic = asSymbolicPattern $ Map.fromList [(mkVar x, mkVar v)]
     original =
         mkAnd
@@ -462,7 +461,7 @@ test_concretizeKeysAxiom =
             let pair =
                     mkPair intSort mapSort
                         symbolicKey
-                        (asPattern $ Map.fromList [(key, val)])
+                        (asTermLike $ Map.fromList [(key, val)])
             config <- evaluateWith solver pair
             actual <- runStepWith solver config axiom
             assertEqualWithExplanation "expected MAP.lookup" expected actual
@@ -490,17 +489,17 @@ hprop_unparse =
   where
     genValue = Test.Int.asInternal <$> genInteger
 
--- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map.Builtin Variable -> TermLike Variable
-asPattern =
-    Reflection.give testMetadataTools Map.asPattern
+-- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
+asTermLike :: Map.Builtin Variable -> TermLike Variable
+asTermLike =
+    Reflection.give testMetadataTools Map.asTermLike
     . builtinMap
     . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asExpandedPattern :: Map.Builtin Variable -> CommonExpandedPattern Object
-asExpandedPattern =
-    Reflection.give testMetadataTools Map.asExpandedPattern mapSort
+asPattern :: Map.Builtin Variable -> Pattern Object Variable
+asPattern =
+    Reflection.give testMetadataTools Map.asPattern mapSort
 
 -- | Specialize 'Map.asInternal' to the builtin sort 'listSort'.
 asInternal

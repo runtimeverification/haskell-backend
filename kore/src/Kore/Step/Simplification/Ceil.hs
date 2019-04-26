@@ -12,13 +12,16 @@ module Kore.Step.Simplification.Ceil
     , makeEvaluate
     , makeEvaluateTerm
     , simplifyEvaluated
+    , Ceil (..)
     ) where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Application (..), Ceil (..) )
+import qualified Kore.AST.Common as Common
 import           Kore.AST.Valid
                  ( pattern Top_, mkCeil_, mkTop_ )
 import           Kore.Attribute.Symbol
@@ -36,9 +39,7 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
-import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Pattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
@@ -150,7 +151,7 @@ simplifyEvaluated
             child
     return ( evaluated, SimplificationProof )
 
-{-| Evaluates a ceil given its child as an ExpandedPattern, see 'simplify'
+{-| Evaluates a ceil given its child as an Pattern, see 'simplify'
 for details.
 -}
 makeEvaluate
@@ -172,13 +173,13 @@ makeEvaluate
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
+    -> Pattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluate tools substitutionSimplifier simplifier axiomIdToEvaluator child
-  | ExpandedPattern.isTop child =
-    return (MultiOr.make [ExpandedPattern.top], SimplificationProof)
-  | ExpandedPattern.isBottom child =
+  | Pattern.isTop child =
+    return (MultiOr.make [Pattern.top], SimplificationProof)
+  | Pattern.isBottom child =
     return (MultiOr.make [], SimplificationProof)
   | otherwise =
         makeEvaluateNonBoolCeil
@@ -207,7 +208,7 @@ makeEvaluateNonBoolCeil
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
+    -> Pattern level variable
     -> Simplifier
         (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolCeil
@@ -216,7 +217,7 @@ makeEvaluateNonBoolCeil
     simplifier
     axiomIdToEvaluator
     patt@Conditional {term}
-  | (Recursive.project -> _ :< TopPattern _) <- term =
+  | isTop term =
     return
         ( MultiOr.make [patt]
         , SimplificationProof
@@ -238,7 +239,7 @@ makeEvaluateNonBoolCeil
             , termCeil
             ]
         )
-    return (fmap ExpandedPattern.fromPredicateSubstitution result, proof)
+    return (fmap Pattern.fromPredicateSubstitution result, proof)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -272,12 +273,12 @@ makeEvaluateTerm
     simplifier
     axiomIdToEvaluator
     term@(Recursive.project -> _ :< projected)
-  | TopPattern _ <- projected =
+  | isTop term =
     return
         ( MultiOr.make [PredicateSubstitution.top]
         , SimplificationProof
         )
-  | BottomPattern _ <- projected =
+  | isBottom term =
     return (MultiOr.make [], SimplificationProof)
   | isTotalPattern tools term =
     return
@@ -286,7 +287,7 @@ makeEvaluateTerm
         )
   | otherwise =
     case projected of
-        ApplicationPattern app
+        Common.ApplicationPattern app
           | StepperAttributes.isTotal headAttributes -> do
             simplifiedChildren <- mapM
                 (makeEvaluateTerm
@@ -305,7 +306,7 @@ makeEvaluateTerm
             Application { applicationSymbolOrAlias = patternHead } = app
             Application { applicationChildren = children } = app
             headAttributes = MetadataTools.symAttributes tools patternHead
-        DomainValuePattern child ->
+        Common.DomainValuePattern child ->
             makeEvaluateBuiltin
                 tools
                 substitutionSimplifier
@@ -375,7 +376,7 @@ makeEvaluateBuiltin
     (Domain.BuiltinExternal Domain.External { domainValueChild = p })
   =
     case Recursive.project p of
-        _ :< StringLiteralPattern _ ->
+        _ :< Common.StringLiteralPattern _ ->
             -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return

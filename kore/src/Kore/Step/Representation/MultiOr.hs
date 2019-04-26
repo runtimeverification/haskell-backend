@@ -147,7 +147,7 @@ singleton
     -> MultiOr term
 singleton patt = make [patt]
 
-{-| 'extractPatterns' instantiates 'getMultiOr' at 'ExpandedPattern'.
+{-| 'extractPatterns' instantiates 'getMultiOr' at 'Pattern'.
 
 It returns the patterns inside an @\or@.
 -}
@@ -370,7 +370,7 @@ mergeGeneric
     -> MultiOr child
 -- TODO(virgil): All *Generic functions should also receive a filter,
 -- otherwise we could have unexpected results when a caller uses the generic
--- version but produces a result with ExpandedPatterns.
+-- version but produces a result with Patterns.
 mergeGeneric (MultiOr patts1) (MultiOr patts2) =
     MultiOr (patts1 ++ patts2)
 

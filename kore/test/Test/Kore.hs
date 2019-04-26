@@ -42,7 +42,8 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
+import qualified Kore.AST.Common as Common
+import qualified Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
@@ -52,29 +53,25 @@ import           Kore.Parser
                  ( ParsedPattern, asParsedPattern )
 import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
+import           Kore.Sort
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
-import           Kore.Step.TermLike
-                 ( TermLike )
+import           Kore.Step.TermLike as TermLike
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
 data Context =
     Context
         { objectVariables :: ![Variable Object]
-        , metaVariables :: ![Variable Meta]
         , objectSortVariables :: ![SortVariable Object]
-        , metaSortVariables :: ![SortVariable Meta]
         }
 
 emptyContext :: Context
 emptyContext =
     Context
         { objectVariables = []
-        , metaVariables = []
         , objectSortVariables = []
-        , metaSortVariables = []
         }
 
 standaloneGen :: Gen a -> Hedgehog.Gen a
@@ -146,10 +143,11 @@ objectIdGen =
         (Gen.element $ idFirstChars ++ idOtherChars)
 
 stringLiteralGen :: MonadGen m => m StringLiteral
-stringLiteralGen = StringLiteral <$> Gen.text (Range.linear 0 256) charGen
+stringLiteralGen =
+    Common.StringLiteral <$> Gen.text (Range.linear 0 256) charGen
 
 charLiteralGen :: MonadGen m => m CharLiteral
-charLiteralGen = CharLiteral <$> charGen
+charLiteralGen = Common.CharLiteral <$> charGen
 
 charGen :: MonadGen m => m Char
 charGen =
@@ -315,7 +313,7 @@ andGen
     => (Sort level -> Gen child)
     -> Sort level
     -> Gen (And level child)
-andGen = binaryOperatorGen And
+andGen = binaryOperatorGen Common.And
 
 applicationGen
     :: MetaOrObject level
@@ -323,26 +321,26 @@ applicationGen
     -> Sort level
     -> Gen (Application level child)
 applicationGen childGen _ =
-    Application
+    Common.Application
         <$> Gen.small symbolOrAliasGen
         <*> couple (Gen.small (childGen =<< sortGen))
 
 bottomGen :: Sort level -> Gen (Bottom level child)
-bottomGen = topBottomGen Bottom
+bottomGen = topBottomGen Common.Bottom
 
 ceilGen
     :: MetaOrObject level
     => (Sort level -> Gen child)
     -> Sort level
     -> Gen (Ceil level child)
-ceilGen = ceilFloorGen Ceil
+ceilGen = ceilFloorGen Common.Ceil
 
 equalsGen
     :: MetaOrObject level
     => (Sort level -> Gen child)
     -> Sort level
     -> Gen (Equals level child)
-equalsGen = equalsInGen Equals
+equalsGen = equalsInGen Common.Equals
 
 genBuiltinExternal :: Sort Object -> Gen (Domain.Builtin child)
 genBuiltinExternal domainValueSort =
@@ -371,7 +369,7 @@ genExternal domainValueSort =
         domainValueSort
         . Kore.AST.Pure.eraseAnnotations
         . mkStringLiteral
-        . getStringLiteral
+        . Common.getStringLiteral
         <$> stringLiteralGen
 
 existsGen
@@ -379,90 +377,90 @@ existsGen
     => (Sort level -> Gen child)
     -> Sort level
     -> Gen (Exists level Variable child)
-existsGen = existsForallGen Exists
+existsGen = existsForallGen Common.Exists
 
 floorGen
     :: MetaOrObject level
     => (Sort level -> Gen child)
     -> Sort level
     -> Gen (Floor level child)
-floorGen = ceilFloorGen Floor
+floorGen = ceilFloorGen Common.Floor
 
 forallGen
     :: MetaOrObject level
     => (Sort level -> Gen child)
     -> Sort level
     -> Gen (Forall level Variable child)
-forallGen = existsForallGen Forall
+forallGen = existsForallGen Common.Forall
 
 iffGen
     :: (Sort level -> Gen child)
     -> Sort level
     -> Gen (Iff level child)
-iffGen = binaryOperatorGen Iff
+iffGen = binaryOperatorGen Common.Iff
 
 impliesGen
     :: (Sort level -> Gen child)
     -> Sort level
     -> Gen (Implies level child)
-impliesGen = binaryOperatorGen Implies
+impliesGen = binaryOperatorGen Common.Implies
 
 inGen
     :: MetaOrObject level
     => (Sort level -> Gen child)
     -> Sort level
     -> Gen (In level child)
-inGen = equalsInGen In
+inGen = equalsInGen Common.In
 
 nextGen
     :: (Sort level -> Gen child)
     -> Sort level
     -> Gen (Next level child)
-nextGen = unaryOperatorGen Next
+nextGen = unaryOperatorGen Common.Next
 
 notGen
     :: (Sort level -> Gen child)
     -> Sort level
     -> Gen (Not level child)
-notGen = unaryOperatorGen Not
+notGen = unaryOperatorGen Common.Not
 
 orGen
     :: (Sort level -> Gen child)
     -> Sort level
     -> Gen (Or level child)
-orGen = binaryOperatorGen Or
+orGen = binaryOperatorGen Common.Or
 
 rewritesGen
     :: (Sort level -> Gen child)
     -> Sort level
     -> Gen (Rewrites level child)
-rewritesGen = binaryOperatorGen Rewrites
+rewritesGen = binaryOperatorGen Common.Rewrites
 
 topGen :: Sort level -> Gen (Top level child)
-topGen = topBottomGen Top
+topGen = topBottomGen Common.Top
 
 patternGen
     :: MetaOrObject level
     => (Sort level -> Gen child)
     -> Sort level
-    -> Gen (Pattern level dom Variable child)
+    -> Gen (Common.Pattern level dom Variable child)
 patternGen childGen patternSort =
     Gen.frequency
-        [ (1, AndPattern <$> andGen childGen patternSort)
-        , (1, ApplicationPattern <$> applicationGen childGen patternSort)
-        , (1, BottomPattern <$> bottomGen patternSort)
-        , (1, CeilPattern <$> ceilGen childGen patternSort)
-        , (1, EqualsPattern <$> equalsGen childGen patternSort)
-        , (1, ExistsPattern <$> existsGen childGen patternSort)
-        , (1, FloorPattern <$> floorGen childGen patternSort)
-        , (1, ForallPattern <$> forallGen childGen patternSort)
-        , (1, IffPattern <$> iffGen childGen patternSort)
-        , (1, ImpliesPattern <$> impliesGen childGen patternSort)
-        , (1, InPattern <$> inGen childGen patternSort)
-        , (1, NotPattern <$> notGen childGen patternSort)
-        , (1, OrPattern <$> orGen childGen patternSort)
-        , (1, TopPattern <$> topGen patternSort)
-        , (5, VariablePattern <$> variableGen patternSort)
+        [ (1, Common.AndPattern <$> andGen childGen patternSort)
+        , (1, Common.ApplicationPattern <$> applicationGen childGen patternSort)
+        , (1, Common.BottomPattern <$> bottomGen patternSort)
+        , (1, Common.CeilPattern <$> ceilGen childGen patternSort)
+        , (1, Common.EqualsPattern <$> equalsGen childGen patternSort)
+        , (1, Common.ExistsPattern <$> existsGen childGen patternSort)
+        , (1, Common.FloorPattern <$> floorGen childGen patternSort)
+        , (1, Common.ForallPattern <$> forallGen childGen patternSort)
+        , (1, Common.IffPattern <$> iffGen childGen patternSort)
+        , (1, Common.ImpliesPattern <$> impliesGen childGen patternSort)
+        , (1, Common.InPattern <$> inGen childGen patternSort)
+        , (1, Common.NotPattern <$> notGen childGen patternSort)
+        , (1, Common.OrPattern <$> orGen childGen patternSort)
+        , (1, Common.TopPattern <$> topGen patternSort)
+        , (5, Common.VariablePattern <$> variableGen patternSort)
         ]
 
 stepPatternGen
@@ -482,9 +480,9 @@ stepPatternChildGen patternSort =
         case isMetaOrObject patternSort of
             IsObject
               | patternSort == stringMetaSort ->
-                mkStringLiteral . getStringLiteral <$> stringLiteralGen
+                mkStringLiteral . Common.getStringLiteral <$> stringLiteralGen
               | patternSort == charMetaSort ->
-                mkCharLiteral . getCharLiteral <$> charLiteralGen
+                mkCharLiteral . Common.getCharLiteral <$> charLiteralGen
               | otherwise ->
                 Gen.choice
                     [ mkVar <$> variableGen patternSort
@@ -602,30 +600,30 @@ korePatternChildGen patternSort' =
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . StringLiteralPattern <$> stringLiteralGen
+        asParsedPattern . Common.StringLiteralPattern <$> stringLiteralGen
 
     korePatternGenCharLiteral :: Gen ParsedPattern
     korePatternGenCharLiteral =
-        asParsedPattern . CharLiteralPattern <$> charLiteralGen
+        asParsedPattern . Common.CharLiteralPattern <$> charLiteralGen
 
     korePatternGenDomainValue :: level ~ Object => Gen ParsedPattern
     korePatternGenDomainValue =
-        asParsedPattern . DomainValuePattern
+        asParsedPattern . Common.DomainValuePattern
             <$> genBuiltinExternal patternSort'
 
     korePatternGenNext :: level ~ Object => Gen ParsedPattern
     korePatternGenNext =
-        asParsedPattern . NextPattern
+        asParsedPattern . Common.NextPattern
             <$> nextGen korePatternChildGen patternSort'
 
     korePatternGenRewrites :: level ~ Object => Gen ParsedPattern
     korePatternGenRewrites =
-        asParsedPattern . RewritesPattern
+        asParsedPattern . Common.RewritesPattern
             <$> rewritesGen korePatternChildGen patternSort'
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . VariablePattern <$> variableGen patternSort'
+        asParsedPattern . Common.VariablePattern <$> variableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen
@@ -716,7 +714,7 @@ sentenceAliasGen patGen =
             variables <- traverse variableGen sentenceAliasSorts
             let Alias { aliasConstructor } = sentenceAliasAlias
                 sentenceAliasLeftPattern =
-                    Application
+                    Common.Application
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
                                 { symbolOrAliasConstructor = aliasConstructor
@@ -846,7 +844,7 @@ sortActual name sorts =
         , sortActualSorts = sorts
         }
 
-expandedPatternGen :: MetaOrObject level => Gen (CommonExpandedPattern level)
+expandedPatternGen :: MetaOrObject level => Gen (Pattern Object Variable)
 expandedPatternGen = do
     term <- stepPatternChildGen =<< sortGen
     return Conditional

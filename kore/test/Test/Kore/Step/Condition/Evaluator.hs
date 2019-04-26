@@ -10,14 +10,12 @@ import           Data.Reflection
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
 import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import           Kore.Step.TermLike
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -74,7 +72,7 @@ evaluate predicate =
 
 noSimplification
     ::  [   ( TermLike Variable
-            , ([ExpandedPattern level Variable], SimplificationProof level)
+            , ([Pattern level Variable], SimplificationProof level)
             )
         ]
 noSimplification = []

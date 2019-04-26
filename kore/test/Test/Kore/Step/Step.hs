@@ -16,7 +16,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -24,8 +23,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern
-                 ( Conditional (..), ExpandedPattern, PredicateSubstitution )
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -165,7 +163,7 @@ test_applyInitialConditions =
     ]
 
 unifyRule
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -> RulePattern Object Variable
     -> IO
         (Either
@@ -248,7 +246,7 @@ test_unifyRule =
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
 applyRewriteRule_
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -- ^ Configuration
     -> RewriteRule Object Variable
     -- ^ Rewrite rule
@@ -678,7 +676,7 @@ test_applyRewriteRule_ =
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRules
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
@@ -715,7 +713,7 @@ applyRewriteRules initial rules =
 
 checkResults
     :: HasCallStack
-    => MultiOr (ExpandedPattern Object Variable)
+    => MultiOr (Pattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkResults expect actual =
@@ -725,7 +723,7 @@ checkResults expect actual =
 
 checkRemainders
     :: HasCallStack
-    => MultiOr (ExpandedPattern Object Variable)
+    => MultiOr (Pattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkRemainders expect actual =
@@ -1053,7 +1051,7 @@ axiomsCase = [axiomCaseA, axiomCaseB]
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 sequenceRewriteRules
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
@@ -1176,7 +1174,7 @@ axiomFunctionalSigma =
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 sequenceMatchingRules
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -- ^ Configuration
     -> [EqualityRule Object Variable]
     -- ^ Rewrite rule

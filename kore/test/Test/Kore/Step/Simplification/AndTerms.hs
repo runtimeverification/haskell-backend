@@ -12,7 +12,7 @@ import           Control.Error
 import qualified Control.Error as Error
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -21,10 +21,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-                 ( CommonExpandedPattern, Conditional (..) )
-import qualified Kore.Step.Pattern as ExpandedPattern
-                 ( bottom )
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
 import           Kore.Step.Simplification.Data
@@ -69,16 +66,16 @@ test_andTermsSimplification =
 
         , testCase "\\and{s}(f{}(a), \\bottom{s}())" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <- simplifyUnify mockMetadataTools fOfA mkBottom_
             assertEqualWithExplanation "" expect actual
 
         , testCase "\\and{s}(\\bottom{s}(), f{}(a))" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -206,7 +203,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" (expect, Just expect) actual
         , testCase "different head, not subsort" $ do
             let expect =
-                    (ExpandedPattern.bottom, Just ExpandedPattern.bottom)
+                    (Pattern.bottom, Just Pattern.bottom)
             actual <-
                 simplifyUnify
                     mockMetadataTools
@@ -259,8 +256,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors not subsort" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -270,8 +267,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors subsort" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -281,8 +278,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -292,8 +289,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort reversed" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -338,8 +335,8 @@ test_andTermsSimplification =
 
         , testCase "different head" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -351,8 +348,8 @@ test_andTermsSimplification =
 
     , testCase "constructor-sortinjection and" $ do
         let expect =
-                ( ExpandedPattern.bottom
-                , Just ExpandedPattern.bottom
+                ( Pattern.bottom
+                , Just Pattern.bottom
                 )
         actual <-
             simplifyUnify
@@ -379,8 +376,8 @@ test_andTermsSimplification =
 
         , testCase "different values" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -408,8 +405,8 @@ test_andTermsSimplification =
 
         , testCase "different values" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -438,8 +435,8 @@ test_andTermsSimplification =
 
         , testCase "different values" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -567,7 +564,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map, different keys" $ do
-            let expect = Just ExpandedPattern.bottom
+            let expect = Just Pattern.bottom
             actual <-
                 unify
                     mockMetadataTools
@@ -735,7 +732,7 @@ test_andTermsSimplification =
         , testCase "different lengths" $ do
             let term7 = Mock.builtinList [Mock.a, Mock.a]
                 term8 = Mock.builtinList [Mock.a]
-                expect = Just ExpandedPattern.bottom
+                expect = Just Pattern.bottom
             actual <- unify mockMetadataTools term7 term8
             assertEqualWithExplanation "" expect actual
 
@@ -783,14 +780,14 @@ aDomainValue :: TermLike Variable
 aDomainValue =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = Mock.testSort
-        , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
         }
 
 bDomainValue :: TermLike Variable
 bDomainValue =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = Mock.testSort
-        , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
+        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
         }
 
 simplifyUnify
@@ -798,7 +795,7 @@ simplifyUnify
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (CommonExpandedPattern level, Maybe (CommonExpandedPattern level))
+    -> IO (Pattern Object Variable, Maybe (Pattern Object Variable))
 simplifyUnify tools first second =
     (,)
         <$> simplify tools first second
@@ -810,7 +807,7 @@ unify
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (CommonExpandedPattern level))
+    -> IO (Maybe (Pattern Object Variable))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
@@ -836,7 +833,7 @@ simplify
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (CommonExpandedPattern level)
+    -> IO (Pattern Object Variable)
 simplify tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
