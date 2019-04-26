@@ -45,7 +45,7 @@ import           Kore.Step.Rule
                  ( extractRewriteAxioms )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
@@ -323,7 +323,7 @@ test_functionRegistry =
         (simplified, _) <-
             SMT.runSMT SMT.defaultConfig
             $ evalSimplifier emptyLogger
-            $ ExpandedPattern.simplify
+            $ Pattern.simplify
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)
                 (Simplifier.create testMetadataTools testEvaluators)

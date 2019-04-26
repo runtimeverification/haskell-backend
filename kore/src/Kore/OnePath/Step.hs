@@ -60,7 +60,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
@@ -268,7 +268,7 @@ transitionRule
         do
             (configs, proof') <-
                 Monad.Trans.lift
-                $ ExpandedPattern.simplify
+                $ Pattern.simplify
                     tools
                     substitutionSimplifier
                     simplifier
@@ -357,7 +357,7 @@ transitionRule
             result = patt `Conditional.andPredicate` removal
         (orResult, proof) <-
             Monad.Trans.lift
-            $ ExpandedPattern.simplify
+            $ Pattern.simplify
                 tools
                 substitutionSimplifier
                 simplifier

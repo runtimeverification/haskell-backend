@@ -39,7 +39,7 @@ import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSubstitutionSimplifier,
                  SimplificationProof (..), Simplifier, StepPatternSimplifier,
                  gather, scatter )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Step.TermLike as Pattern
@@ -278,7 +278,7 @@ makeEvaluateBoundLeft
         scatter results
   where
     simplify' =
-        ExpandedPattern.simplify
+        Pattern.simplify
             tools
             substitutionSimplifier
             simplifier

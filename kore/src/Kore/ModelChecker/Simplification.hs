@@ -27,7 +27,7 @@ import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
                  StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.Step.TermLike
                  ( TermLike )
@@ -67,7 +67,7 @@ checkImplicationIsTop
                                 )
                 result = Conditional
                             { term = resultTerm, predicate = Predicate.makeTruePredicate, substitution = mempty}
-            (orResult, _) <- ExpandedPattern.simplify
+            (orResult, _) <- Pattern.simplify
                                 tools
                                 predicateSimplifier
                                 patternSimplifier

@@ -39,7 +39,7 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
@@ -121,7 +121,7 @@ equalityRuleEvaluator
 
     simplifyPattern config = do
         (config', _) <-
-            ExpandedPattern.simplifyPredicate
+            Pattern.simplifyPredicate
                 tools
                 substitutionSimplifier
                 simplifier

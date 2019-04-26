@@ -40,7 +40,7 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier, evalSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -417,7 +417,7 @@ evaluateWithAxioms tools axioms patt =
     (<$>) fst
         $ SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
-        $ ExpandedPattern.simplify
+        $ Pattern.simplify
             tools
             (PredicateSubstitution.create tools simplifier axiomIdToSimplifier)
             simplifier

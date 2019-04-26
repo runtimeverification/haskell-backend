@@ -48,7 +48,7 @@ import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.TermLike
 import           Kore.Unification.Data
@@ -748,7 +748,7 @@ simplifyPattern (UnificationTerm term) = do
   where
     simplifier = do
         simplifiedPatterns <-
-            ExpandedPattern.simplify
+            Pattern.simplify
                 tools
                 (Mock.substitutionSimplifier tools)
                 (Simplifier.create tools functionRegistry)

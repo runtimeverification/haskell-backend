@@ -55,7 +55,7 @@ import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier, simplifyTerm )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -401,7 +401,7 @@ reevaluateFunctions
             pattOr
     (evaluatedPatt, _) <-
         MultiOr.traverseWithPairs
-            (ExpandedPattern.simplifyPredicate
+            (Pattern.simplifyPredicate
                 tools
                 substitutionSimplifier
                 termSimplifier

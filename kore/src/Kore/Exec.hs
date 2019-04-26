@@ -90,7 +90,7 @@ import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier, StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
@@ -363,7 +363,7 @@ execute verifiedModule strategy inputPattern
         Initialized { substitutionSimplifier } = initialized
         Initialized { axiomIdToSimplifier } = initialized
     (simplifiedPatterns, _) <-
-        ExpandedPattern.simplify
+        Pattern.simplify
             metadataTools
             substitutionSimplifier
             simplifier
@@ -510,7 +510,7 @@ simplifyPattern
     -> Simplifier
         (OrOfExpandedPattern Object Variable, SimplificationProof Object)
 simplifyPattern tools =
-    ExpandedPattern.simplify
+    Pattern.simplify
         tools
         emptySubstitutionSimplifier
         emptySimplifier

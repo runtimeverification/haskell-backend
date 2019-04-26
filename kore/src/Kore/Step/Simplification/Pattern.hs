@@ -1,13 +1,9 @@
-{-|
-Module      : Kore.Step.Simplification.ExpandedPattern
-Description : Tools for ExpandedPattern simplification.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
-module Kore.Step.Simplification.ExpandedPattern
+module Kore.Step.Simplification.Pattern
     ( simplify
     , simplifyPredicate
     ) where
