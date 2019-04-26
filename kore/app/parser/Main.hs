@@ -32,7 +32,6 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import Kore.Parser.Parser
        ( parseKoreDefinition, parseKorePattern )
----import           Kore.Unparser as Unparser
 
 
 import GlobalMain
