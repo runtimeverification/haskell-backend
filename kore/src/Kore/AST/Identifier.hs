@@ -129,8 +129,7 @@ instance Unparse (Id level) where
 -}
 unparseIdLower :: Id leve -> Pretty.Doc ann
 unparseIdLower Id { getId } = Pretty.pretty (Text.toLower getId)
----unparseIdUpper :: Id leve -> Pretty.Doc ann
----unparseIdUpper Id { getId } = Pretty.pretty (Text.toUpper getId)
+
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options

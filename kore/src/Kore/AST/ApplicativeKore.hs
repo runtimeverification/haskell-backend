@@ -1,6 +1,4 @@
 {-|
-Module      : Kore.AST.ApplicativeKore
-Description : TBA.
 Copyright   : (c) Runtime Verification, 2018
 -}
 module Kore.AST.ApplicativeKore

@@ -1012,7 +1012,6 @@ mkSortPattern
 mkSortPattern s =
     asPurePattern (valid :< SortPattern s)
   where
-    -- patternSort = sortedVariableSort var
     freeVariables = Set.empty
     patternSort = s
     valid = Valid { patternSort, freeVariables }

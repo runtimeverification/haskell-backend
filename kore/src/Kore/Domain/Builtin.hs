@@ -87,19 +87,6 @@ unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
     applyElement elem' = unparse elementSymbol <> elem'
     applyConcat set1 set2 = unparse concatSymbol <> arguments' [set1, set2]
 
-{- unparseCollection2
-    :: SymbolOrAlias Object  -- ^ unit symbol
-    -> SymbolOrAlias Object  -- ^ element symbol
-    -> SymbolOrAlias Object  -- ^ concat symbol
-    -> [Pretty.Doc ann]      -- ^ children
-    -> Pretty.Doc ann
-unparseCollection2 unitSymbol elementSymbol concatSymbol builtinChildren =
-    foldr applyConcat applyUnit (applyElement <$> builtinChildren)
-  where
-    applyUnit = unparse2 unitSymbol <> noArguments
-    applyElement elem' = unparse2 elementSymbol <> elem'
-    applyConcat set1 set2 = unparse2 concatSymbol <> arguments' [set1, set2] -}
-
 -- * Builtin Map
 
 {- | Internal representation of the builtin @MAP.Map@ domain.
