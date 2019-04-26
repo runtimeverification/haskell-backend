@@ -57,7 +57,6 @@ data KoreParserOptions = KoreParserOptions
     , willChkAttr         :: !Bool   -- ^ Option to check attributes during verification
     }
 
-
 -- | Command Line Argument Parser
 commandLineParser :: Parser KoreParserOptions
 commandLineParser =
