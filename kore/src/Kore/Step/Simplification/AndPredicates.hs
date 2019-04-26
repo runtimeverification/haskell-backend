@@ -18,9 +18,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( PredicateSubstitution )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
                  ( Conditional (..) )
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )

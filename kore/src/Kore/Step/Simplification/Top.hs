@@ -14,7 +14,7 @@ module Kore.Step.Simplification.Top
 import           Kore.AST.Common
                  ( Top (..) )
 import           Kore.AST.MetaOrObject
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
                  ( top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )

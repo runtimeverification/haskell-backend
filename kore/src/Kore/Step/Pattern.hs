@@ -4,24 +4,24 @@ License     : NCSA
 
 Representation of program configurations as conditional patterns.
 -}
-module Kore.Step.Representation.ExpandedPattern
+module Kore.Step.Pattern
     ( ExpandedPattern
     , CommonExpandedPattern
     , fromPredicateSubstitution
     , toPredicate
-    , Kore.Step.Representation.ExpandedPattern.allVariables
+    , Kore.Step.Pattern.allVariables
     , bottom
     , bottomOf
     , isBottom
     , isTop
-    , Kore.Step.Representation.ExpandedPattern.mapVariables
+    , Kore.Step.Pattern.mapVariables
     , substitutionToPredicate
     , toMLPattern
     , toStepPattern
     , top
     , topOf
-    , Kore.Step.Representation.ExpandedPattern.fromPurePattern
-    , Kore.Step.Representation.ExpandedPattern.freeVariables
+    , Kore.Step.Pattern.fromPurePattern
+    , Kore.Step.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
     , PredicateSubstitution

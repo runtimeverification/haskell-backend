@@ -30,7 +30,7 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern as ExpandedPattern
                  ( Conditional (..), ExpandedPattern, bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )

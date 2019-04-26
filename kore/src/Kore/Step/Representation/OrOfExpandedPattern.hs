@@ -29,9 +29,9 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate, makeMultipleOrPredicate, makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

@@ -29,9 +29,9 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
 import           Kore.Step.Representation.PredicateSubstitution
                  ( Conditional (..), PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution

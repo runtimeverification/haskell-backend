@@ -28,8 +28,8 @@ import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Representation.ExpandedPattern
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
+import qualified Kore.Step.Pattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
 import           Kore.Step.Rule

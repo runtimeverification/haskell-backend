@@ -52,7 +52,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import           Kore.Step.Representation.OrOfExpandedPattern

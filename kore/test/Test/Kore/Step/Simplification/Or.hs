@@ -14,7 +14,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (..), ExpandedPattern, isBottom, isTop )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern

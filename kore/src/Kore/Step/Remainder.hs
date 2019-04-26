@@ -21,7 +21,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Conditional
                  ( Conditional (Conditional) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd

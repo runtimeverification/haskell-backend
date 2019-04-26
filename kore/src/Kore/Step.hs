@@ -43,10 +43,10 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Pattern
+                 ( CommonExpandedPattern )
 import           Kore.Step.Proof
                  ( StepProof (..) )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,

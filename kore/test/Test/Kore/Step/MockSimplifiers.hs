@@ -11,9 +11,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( wrapPredicate )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (Conditional) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
                  ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )

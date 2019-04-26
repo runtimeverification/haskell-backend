@@ -24,7 +24,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (..), ExpandedPattern, PredicateSubstitution )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )

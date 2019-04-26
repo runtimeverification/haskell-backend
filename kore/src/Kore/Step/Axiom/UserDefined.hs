@@ -30,7 +30,7 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule

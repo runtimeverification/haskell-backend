@@ -59,9 +59,9 @@ import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
 import           Kore.Step.TermLike
                  ( TermLike )
 

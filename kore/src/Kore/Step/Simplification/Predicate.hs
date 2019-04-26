@@ -18,7 +18,7 @@ import Kore.AST.Pure
 import Kore.AST.Valid
 import Kore.Predicate.Predicate
        ( Predicate, unwrapPredicate )
-import Kore.Step.Representation.ExpandedPattern
+import Kore.Step.Pattern
        ( Conditional (..), PredicateSubstitution )
 import Kore.Step.Simplification.Data
 import Kore.Unparser

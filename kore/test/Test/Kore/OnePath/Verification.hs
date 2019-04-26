@@ -29,11 +29,11 @@ import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (Conditional) )
-import           Kore.Step.Representation.ExpandedPattern as Conditional
+import           Kore.Step.Pattern as Conditional
                  ( Conditional (..) )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern as ExpandedPattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern

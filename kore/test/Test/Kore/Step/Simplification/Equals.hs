@@ -22,9 +22,9 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( CommonExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as Conditional
+import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern, CommonOrOfPredicateSubstitution )

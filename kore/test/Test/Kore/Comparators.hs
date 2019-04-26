@@ -47,10 +47,10 @@ import           Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import           Kore.Step.Pattern
+                 ( Conditional (..) )
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Proof
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Conditional (..) )
 import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Rule
                  ( RulePattern (..) )

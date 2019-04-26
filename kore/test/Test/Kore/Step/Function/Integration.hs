@@ -29,10 +29,10 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern as ExpandedPattern
                  ( CommonExpandedPattern, Conditional (Conditional),
                  ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
                  ( Conditional (..), mapVariables )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )

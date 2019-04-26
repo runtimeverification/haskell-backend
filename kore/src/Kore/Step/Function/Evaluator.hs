@@ -42,7 +42,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (..), ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( flatten, make, merge, traverseWithPairs )

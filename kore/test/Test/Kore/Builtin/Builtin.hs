@@ -41,7 +41,7 @@ import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( CommonExpandedPattern, Conditional (..) )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )

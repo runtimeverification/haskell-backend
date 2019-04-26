@@ -25,7 +25,7 @@ import qualified Data.Functor.Foldable as Recursive
 import           Kore.AST.Pure
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( ExpandedPattern, Conditional (..) )
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.OrOfExpandedPattern

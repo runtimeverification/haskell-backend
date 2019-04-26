@@ -68,11 +68,11 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
+import           Kore.Step.Pattern
+                 ( CommonExpandedPattern, Conditional (..) )
+import qualified Kore.Step.Pattern as ExpandedPattern
 import           Kore.Step.Proof
                  ( StepProof )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Conditional (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )

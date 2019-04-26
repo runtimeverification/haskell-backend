@@ -36,11 +36,11 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
+import           Kore.Step.Pattern
+                 ( Conditional (..), ExpandedPattern )
+import qualified Kore.Step.Pattern as ExpandedPattern
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Conditional (..), ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
                  ( make )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

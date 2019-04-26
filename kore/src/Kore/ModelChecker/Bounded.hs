@@ -38,9 +38,9 @@ import           Kore.OnePath.Verification
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (Conditional) )
-import           Kore.Step.Representation.ExpandedPattern as Conditional
+import           Kore.Step.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,

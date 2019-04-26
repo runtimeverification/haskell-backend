@@ -26,7 +26,7 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )

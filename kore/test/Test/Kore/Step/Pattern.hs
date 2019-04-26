@@ -1,4 +1,4 @@
-module Test.Kore.Step.Representation.ExpandedPattern
+module Test.Kore.Step.Pattern
     ( test_expandedPattern
     ) where
 
@@ -17,7 +17,7 @@ import           Kore.AST.Valid hiding
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern as ExpandedPattern
                  ( Conditional (..), allVariables, mapVariables, toMLPattern )
 import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution

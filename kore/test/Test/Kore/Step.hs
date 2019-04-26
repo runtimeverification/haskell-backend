@@ -22,10 +22,10 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step
+import           Kore.Step.Pattern as ExpandedPattern
+                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
 import           Kore.Step.Proof
                  ( StepProof )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern

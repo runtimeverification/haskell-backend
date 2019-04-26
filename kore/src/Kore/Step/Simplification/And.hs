@@ -32,9 +32,9 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
                  ( isBottom, isTop )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )

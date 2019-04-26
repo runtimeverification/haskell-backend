@@ -18,7 +18,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Conditional
+import qualified Kore.Step.Pattern as Conditional
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Unification.Error

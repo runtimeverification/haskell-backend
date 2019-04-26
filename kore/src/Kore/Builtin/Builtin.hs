@@ -127,9 +127,9 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (..), ExpandedPattern )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern as ExpandedPattern
                  ( top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data

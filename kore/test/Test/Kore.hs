@@ -52,7 +52,7 @@ import           Kore.Parser
                  ( ParsedPattern, asParsedPattern )
 import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
 import           Kore.Step.TermLike

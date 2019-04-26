@@ -10,7 +10,7 @@ import Test.Tasty.HUnit
 import           Kore.AST.Common
                  ( Bottom (..) )
 import           Kore.AST.MetaOrObject
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as ExpandedPattern
                  ( bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )

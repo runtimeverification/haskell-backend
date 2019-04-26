@@ -43,7 +43,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step
                  ( allRewrites, anyRewrite )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( CommonExpandedPattern, Conditional (..) )
 import           Kore.Step.Rule
 import           Kore.Step.Search

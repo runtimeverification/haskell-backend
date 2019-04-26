@@ -26,7 +26,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution,
                  mergeWithPredicateSubstitutionAssumesEvaluated )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional, PredicateSubstitution )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )

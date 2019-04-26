@@ -31,10 +31,10 @@ import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
+import           Kore.Step.Pattern as ExpandedPattern
+                 ( CommonExpandedPattern, Conditional (..), fromPurePattern )
 import           Kore.Step.Proof
                  ( StepProof )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, Conditional (..), fromPurePattern )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern

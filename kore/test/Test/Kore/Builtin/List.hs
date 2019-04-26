@@ -22,8 +22,8 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Step.Representation.ExpandedPattern
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern
+import qualified Kore.Step.Pattern as ExpandedPattern
 import           Kore.Step.TermLike
 
 import           Test.Kore

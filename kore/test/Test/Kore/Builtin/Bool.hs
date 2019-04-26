@@ -14,7 +14,7 @@ import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.TermLike
 
 import Test.Kore.Builtin.Builtin

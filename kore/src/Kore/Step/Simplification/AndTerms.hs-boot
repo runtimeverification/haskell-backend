@@ -12,7 +12,7 @@ import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.TermLike
        ( TermLike )
-import Kore.Step.Representation.ExpandedPattern
+import Kore.Step.Pattern
        ( ExpandedPattern )
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,

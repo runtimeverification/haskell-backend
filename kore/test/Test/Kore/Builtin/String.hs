@@ -14,7 +14,7 @@ import GHC.Stack
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Builtin.String as String
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
 import           Kore.Step.TermLike
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool

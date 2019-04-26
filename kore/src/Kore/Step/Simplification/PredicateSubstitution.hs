@@ -26,7 +26,7 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.Pattern
                  ( Conditional (..), PredicateSubstitution )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate

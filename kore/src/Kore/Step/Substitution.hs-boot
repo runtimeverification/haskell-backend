@@ -11,7 +11,7 @@ import Kore.Predicate.Predicate
        ( Predicate )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.Representation.ExpandedPattern
+import Kore.Step.Pattern
        ( PredicateSubstitution )
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, StepPatternSimplifier )

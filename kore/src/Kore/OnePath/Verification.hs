@@ -50,14 +50,14 @@ import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Pattern
+                 ( CommonExpandedPattern, Conditional (Conditional) )
+import           Kore.Step.Pattern as ExpandedPattern
+                 ( fromPurePattern )
+import           Kore.Step.Pattern as Conditional
+                 ( Conditional (..) )
 import           Kore.Step.Proof
                  ( StepProof )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Conditional (Conditional) )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
-import           Kore.Step.Representation.ExpandedPattern as Conditional
-                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
