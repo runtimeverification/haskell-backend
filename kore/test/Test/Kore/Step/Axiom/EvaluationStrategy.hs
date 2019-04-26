@@ -29,9 +29,9 @@ import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (Predicated) )
+                 ( Conditional (Conditional) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Rule as RulePattern
@@ -65,7 +65,7 @@ test_definitionEvaluation =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.g Mock.c
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -90,7 +90,7 @@ test_definitionEvaluation =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = Substitution.wrap
@@ -98,7 +98,7 @@ test_definitionEvaluation =
                                 }
                             ]
                         , remainders = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate =
                                     makeNotPredicate
@@ -128,7 +128,7 @@ test_definitionEvaluation =
                     AttemptedAxiomResults
                         { results = MultiOr.make []
                         , remainders = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.functionalConstr10 Mock.b
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -152,13 +152,13 @@ test_definitionEvaluation =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = Substitution.wrap
                                     [(Mock.x, Mock.a)]
                                 }
-                            , Predicated
+                            , Conditional
                                 { term = Mock.g Mock.b
                                 , predicate = makeTruePredicate
                                 , substitution = Substitution.wrap
@@ -166,7 +166,7 @@ test_definitionEvaluation =
                                 }
                             ]
                         , remainders = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate = makeAndPredicate
                                     (makeNotPredicate
@@ -210,7 +210,7 @@ test_firstFullEvaluation =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.g Mock.c
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -234,7 +234,7 @@ test_firstFullEvaluation =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -264,7 +264,7 @@ test_firstFullEvaluation =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -356,7 +356,7 @@ test_simplifierWithFallback =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -384,7 +384,7 @@ test_simplifierWithFallback =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = Substitution.wrap
@@ -392,7 +392,7 @@ test_simplifierWithFallback =
                                 }
                             ]
                         , remainders = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate =
                                     makeNotPredicate
@@ -424,7 +424,7 @@ test_simplifierWithFallback =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -475,7 +475,7 @@ test_builtinEvaluation =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty

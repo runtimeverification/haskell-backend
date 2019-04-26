@@ -20,7 +20,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
@@ -41,7 +41,7 @@ test_domainValueSimplification =
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqualWithExplanation ""
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term =
                         mkDomainValue
                             (Domain.BuiltinExternal Domain.External

@@ -24,8 +24,8 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+                 ( Conditional (..) )
+import qualified Kore.Step.Representation.ExpandedPattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -93,8 +93,8 @@ unificationProcedure
                 axiomIdToSimplifier
                 p1
                 p2
-    (pat@Predicated { term, predicate, substitution }, _) <- getUnifiedTerm
-    if Predicated.isBottom pat
+    (pat@Conditional { term, predicate, substitution }, _) <- getUnifiedTerm
+    if Conditional.isBottom pat
         then return
             (MultiOr.make [], EmptyUnificationProof)
         else Monad.Unify.liftSimplifier $ do
@@ -113,7 +113,7 @@ unificationProcedure
                         simplifier
                         axiomIdToSimplifier
                     )
-                    Predicated
+                    Conditional
                         { term = ()
                         , predicate
                         , substitution

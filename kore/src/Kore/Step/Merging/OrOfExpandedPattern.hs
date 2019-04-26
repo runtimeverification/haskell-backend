@@ -27,7 +27,7 @@ import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution,
                  mergeWithPredicateSubstitutionAssumesEvaluated )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution, Predicated )
+                 ( Conditional, PredicateSubstitution )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -112,10 +112,10 @@ mergeWithPredicateSubstitutionAssumesEvaluated
     => PredicateSubstitutionMerger level variable m
     -> PredicateSubstitution level variable
     -- ^ PredicateSubstitution to add.
-    -> MultiOr (Predicated level variable term)
+    -> MultiOr (Conditional level variable term)
     -- ^ Pattern to which the condition should be added.
     -> m
-        (MultiOr (Predicated level variable term), SimplificationProof level)
+        (MultiOr (Conditional level variable term), SimplificationProof level)
 mergeWithPredicateSubstitutionAssumesEvaluated
     substitutionMerger
     toMerge

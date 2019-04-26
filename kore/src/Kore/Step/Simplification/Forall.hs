@@ -17,7 +17,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fmapWithPairs )
@@ -119,7 +119,7 @@ makeEvaluate variable patt
     , SimplificationProof
     )
   | otherwise =
-    ( Predicated
+    ( Conditional
         { term = mkForall
             variable
             (ExpandedPattern.toMLPattern patt)

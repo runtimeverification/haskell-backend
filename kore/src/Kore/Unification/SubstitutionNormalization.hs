@@ -35,7 +35,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.TermLike
                  ( TermLike )
@@ -150,7 +150,7 @@ normalizeSortedSubstitution
     -> [(variable level, TermLike variable)]
     -> m (PredicateSubstitution level variable)
 normalizeSortedSubstitution [] result _ =
-    return Predicated
+    return Conditional
         { term = ()
         , predicate = makeTruePredicate
         , substitution = Substitution.unsafeWrap result

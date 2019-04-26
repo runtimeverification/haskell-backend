@@ -412,7 +412,7 @@ test_unifyAnd_Fn =
         let dv = asInternal 2
             fnPat = mkApp intSort absIntSymbol  [mkVar var]
             expect =
-                Predicated
+                Conditional
                     { term = dv
                     , predicate = makeEqualsPredicate dv fnPat
                     , substitution = mempty

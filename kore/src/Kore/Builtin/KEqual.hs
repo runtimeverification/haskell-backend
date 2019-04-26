@@ -51,7 +51,7 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -156,14 +156,14 @@ evalKEq true _ _ _ _ (valid :< app) =
     evalEq t1 t2 = do
         let (expr, _proof) = Or.simplifyEvaluated
                 (MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         (Bool.asInternal patternSort true)
                         (Predicate.makeEqualsPredicate t1 t2)
                         mempty
                     ]
                 )
                 (MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         (Bool.asInternal patternSort false)
                         ( Predicate.makeNotPredicate $
                             Predicate.makeEqualsPredicate t1 t2

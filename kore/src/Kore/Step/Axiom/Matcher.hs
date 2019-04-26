@@ -46,8 +46,8 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfPredicateSubstitution )
-import           Kore.Step.Representation.PredicateSubstitution as Predicated
-                 ( PredicateSubstitution, Predicated (..) )
+import           Kore.Step.Representation.PredicateSubstitution as Conditional
+                 ( Conditional (..), PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
@@ -606,8 +606,8 @@ matchJoin
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-                (map Predicated.predicate items)
-                (map Predicated.substitution items)
+                (map Conditional.predicate items)
+                (map Conditional.substitution items)
             return result
     MultiOr.filterOr <$> traverse (lift . merge) crossProduct
 
@@ -665,8 +665,8 @@ unifyJoin
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-                (map Predicated.predicate items)
-                (map Predicated.substitution items)
+                (map Conditional.predicate items)
+                (map Conditional.substitution items)
             return result
     mergedItems <- mapM merge (MultiOr.extractPatterns crossProduct)
     return
@@ -737,7 +737,7 @@ matchVariableFunction
                 simplifier
                 axiomIdToSimplifier
             )
-            Predicated
+            Conditional
                 { term = ()
                 , predicate = makeTruePredicate
                 , substitution = Substitution.wrap [(var, second)]

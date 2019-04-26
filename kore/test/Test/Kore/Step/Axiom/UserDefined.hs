@@ -31,7 +31,7 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), bottom )
+                 ( Conditional (..), ExpandedPattern, bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Rule
@@ -61,7 +61,7 @@ test_userDefinedFunction =
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.functionalConstr11 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -122,7 +122,7 @@ test_userDefinedFunction =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = MultiOr.make []
                     , remainders = MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.functionalConstr10 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -173,7 +173,7 @@ test_userDefinedFunction =
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.g (mkVar Mock.z)
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap
@@ -181,7 +181,7 @@ test_userDefinedFunction =
                             }
                         ]
                     , remainders = MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.functionalConstr20
                                 (mkVar Mock.y)
                                 (mkVar Mock.z)
@@ -278,8 +278,8 @@ evaluateWithAxiom
                         }
             result -> result
 
-    sortSubstitution Predicated {term, predicate, substitution} =
-        Predicated
+    sortSubstitution Conditional {term, predicate, substitution} =
+        Conditional
             { term = term
             , predicate = predicate
             , substitution = Substitution.modify sort substitution

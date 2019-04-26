@@ -42,7 +42,7 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.ExpandedPattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -167,24 +167,24 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
-                    [ Predicated.predicate predSubst
-                    , Predicated.predicate e1
-                    , Predicated.predicate e2
+                    [ Conditional.predicate predSubst
+                    , Conditional.predicate e1
+                    , Conditional.predicate e2
                     ]
-                    [ Predicated.substitution predSubst]
+                    [ Conditional.substitution predSubst]
             (evaluated, _proof) <-
                 give tools
                 $ Predicate.evaluate substitutionSimplifier simplifier
-                $ Predicated.predicate merged
+                $ Conditional.predicate merged
             mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-                [ Predicated.predicate evaluated
+                [ Conditional.predicate evaluated
                 ]
-                [ Predicated.substitution merged
-                , Predicated.substitution evaluated
+                [ Conditional.substitution merged
+                , Conditional.substitution evaluated
                 ]
     (result, _proof) <-
         lift $ MultiOr.traverseWithPairs mergeAndEvaluate unifier
@@ -192,5 +192,5 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
         then nothing
         else return result
   where
-    t1 = Predicated.term e1
-    t2 = Predicated.term e2
+    t1 = Conditional.term e1
+    t2 = Conditional.term e2

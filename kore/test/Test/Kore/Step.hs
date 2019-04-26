@@ -25,7 +25,7 @@ import           Kore.Step
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -235,7 +235,7 @@ rewriteImplies =
 expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta Variable)]
 expectTwoAxioms =
     [   ( pure (mkVar $ v1 Mock.testSort), mempty )
-    ,   ( Predicated
+    ,   ( Conditional
             { term =
                 mkImplies
                     (mkVar $ v1 Mock.testSort)
@@ -251,7 +251,7 @@ actualTwoAxioms :: IO [(CommonExpandedPattern Meta, StepProof Meta Variable)]
 actualTwoAxioms =
     runStep
         mockMetadataTools
-        Predicated
+        Conditional
             { term = mkVar (v1 Mock.testSort)
             , predicate = makeTruePredicate
             , substitution = mempty
@@ -262,7 +262,7 @@ actualTwoAxioms =
 
 initialFailSimple :: ExpandedPattern Meta Variable
 initialFailSimple =
-    Predicated
+    Conditional
         { term =
             metaSigma
                 (metaG (mkVar $ a1 Mock.testSort))
@@ -294,7 +294,7 @@ actualFailSimple =
 
 initialFailCycle :: ExpandedPattern Meta Variable
 initialFailCycle =
-    Predicated
+    Conditional
         { term =
             metaSigma
                 (mkVar $ a1 Mock.testSort)
@@ -326,7 +326,7 @@ actualFailCycle =
 
 initialIdentity :: ExpandedPattern Meta Variable
 initialIdentity =
-    Predicated
+    Conditional
         { term = mkVar (v1 Mock.testSort)
         , predicate = makeTruePredicate
         , substitution = mempty
@@ -382,7 +382,7 @@ actualUnificationError
 actualUnificationError =
     runStep
         mockMetadataTools
-        Predicated
+        Conditional
             { term =
                 metaSigma
                     (mkVar $ a1 Mock.testSort)

@@ -18,7 +18,7 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
                  ( isFalse, isTrue, toExpandedPattern )
@@ -89,12 +89,12 @@ asPredicateSubstitution
     => ExpandedPattern level variable
     -> (PredicateSubstitution level variable, SimplificationProof level)
 asPredicateSubstitution
-    Predicated {term, predicate, substitution}
+    Conditional {term, predicate, substitution}
   =
     let
         andPatt = makeAndPredicate predicate (wrapPredicate term)
     in
-        ( Predicated
+        ( Conditional
             { term = ()
             , predicate = andPatt
             , substitution = substitution

@@ -128,7 +128,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

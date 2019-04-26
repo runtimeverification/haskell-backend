@@ -42,7 +42,7 @@ import           Kore.Parser
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -187,7 +187,7 @@ stepSimplifier =
         (\_ p ->
             return
                 ( MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = mkTop_
                         , predicate = Predicate.wrapPredicate p
                         , substitution = mempty

@@ -27,7 +27,7 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
 import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -68,7 +68,7 @@ simplify
     substitutionSimplifier
     termSimplifier
     axiomIdToSimplifier
-    Predicated {term, predicate, substitution}
+    Conditional {term, predicate, substitution}
   = do
     (simplifiedTerm, _) <- simplifyTerm' term
     (simplifiedPatt, _) <-
@@ -78,7 +78,7 @@ simplify
                 substitutionSimplifier
                 termSimplifier
                 axiomIdToSimplifier
-                Predicated
+                Conditional
                     { term = ()
                     , predicate
                     , substitution
@@ -117,7 +117,7 @@ simplifyPredicate
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    Predicated {term, predicate, substitution}
+    Conditional {term, predicate, substitution}
   = do
     (evaluated, _proof) <-
         give tools
@@ -125,8 +125,8 @@ simplifyPredicate
                 substitutionSimplifier
                 simplifier
                 predicate
-    let Predicated { predicate = evaluatedPredicate } = evaluated
-        Predicated { substitution = evaluatedSubstitution } = evaluated
+    let Conditional { predicate = evaluatedPredicate } = evaluated
+        Conditional { substitution = evaluatedSubstitution } = evaluated
     (merged, _proof) <-
         mergePredicatesAndSubstitutions
             tools
@@ -135,11 +135,11 @@ simplifyPredicate
             axiomIdToSimplifier
             [evaluatedPredicate]
             [substitution, evaluatedSubstitution]
-    let Predicated { predicate = mergedPredicate } = merged
-        Predicated { substitution = mergedSubstitution } = merged
+    let Conditional { predicate = mergedPredicate } = merged
+        Conditional { substitution = mergedSubstitution } = merged
     -- TODO(virgil): Do I need to re-evaluate the predicate?
     return
-        ( Predicated
+        ( Conditional
             { term = term
             , predicate = mergedPredicate
             , substitution = mergedSubstitution

@@ -18,7 +18,7 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -74,7 +74,7 @@ test_makeEvaluate =
         --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
         (assertEqualWithExplanation "iff(top and predicate, top and predicate)"
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeIffPredicate
@@ -91,12 +91,12 @@ test_makeEvaluate =
                 ]
             )
             ( makeEvaluate
-                Predicated
+                Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                     }
-                Predicated
+                Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution = Substitution.wrap [(Mock.y, Mock.b)]
@@ -106,7 +106,7 @@ test_makeEvaluate =
     , testCase "iff with generic patterns"
         (assertEqualWithExplanation "iff(generic, generic)"
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term =
                         mkIff
                             (mkAnd
@@ -129,12 +129,12 @@ test_makeEvaluate =
                 ]
             )
             ( makeEvaluate
-                Predicated
+                Conditional
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                     }
-                Predicated
+                Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution = Substitution.wrap [(Mock.y, Mock.b)]
@@ -180,7 +180,7 @@ testEvaluateBoolean a b =
 
 termA :: CommonExpandedPattern Object
 termA =
-    Predicated
+    Conditional
         { term = Mock.a
         , predicate = makeTruePredicate
         , substitution = mempty

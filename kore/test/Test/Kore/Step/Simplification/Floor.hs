@@ -13,7 +13,7 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
                  makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -38,7 +38,7 @@ test_floorSimplification =
         -- floor(a or b) = (top and floor(a)) or (top and floor(b))
         (assertEqualWithExplanation ""
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate = makeFloorPredicate (mkOr a b)
                     , substitution = mempty
@@ -98,7 +98,7 @@ test_floorSimplification =
         --     = top and (floor(term) and predicate) and subst
         (assertEqualWithExplanation "floor(top)"
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -109,7 +109,7 @@ test_floorSimplification =
                 ]
             )
             (makeEvaluate
-                Predicated
+                Conditional
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.wrap [(x, fOfB)]
@@ -145,12 +145,12 @@ test_floorSimplification =
     fOfA = mkApp testSort fSymbol [a]
     fOfB = mkApp testSort fSymbol [b]
     gOfA = mkApp testSort gSymbol [a]
-    aExpanded = Predicated
+    aExpanded = Conditional
         { term = a
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    bExpanded = Predicated
+    bExpanded = Conditional
         { term = b
         , predicate = makeTruePredicate
         , substitution = mempty

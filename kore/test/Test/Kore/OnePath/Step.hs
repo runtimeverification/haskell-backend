@@ -34,7 +34,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..), fromPurePattern )
+                 ( CommonExpandedPattern, Conditional (..), fromPurePattern )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -219,17 +219,17 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
-            [ RewritePattern Predicated
+            [ RewritePattern Conditional
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                 }
-            , RewritePattern Predicated
+            , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                 }
-            , RewritePattern Predicated
+            , RewritePattern Conditional
                 { term = Mock.h (mkVar Mock.x)
                 , predicate =  -- TODO(virgil): Better and simplification.
                     makeAndPredicate
@@ -284,17 +284,17 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
-            [ RewritePattern Predicated
+            [ RewritePattern Conditional
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                 }
-            , RewritePattern Predicated
+            , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                 }
-            , Stuck Predicated
+            , Stuck Conditional
                 { term = Mock.functionalConstr11 (mkVar Mock.x)
                 , predicate =
                     makeAndPredicate
@@ -342,7 +342,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqualWithExplanation ""
-            [ Stuck Predicated
+            [ Stuck Conditional
                 { term = Mock.functionalConstr10 Mock.b
                 , predicate =
                     makeNotPredicate

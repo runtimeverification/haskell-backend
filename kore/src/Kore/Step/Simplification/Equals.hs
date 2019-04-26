@@ -37,7 +37,7 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge )
@@ -236,7 +236,7 @@ simplifyEvaluated
                 firstP
                 secondP
         ([firstP], _)
-            | isFunctionPredicated firstP ->
+            | isFunctionConditional firstP ->
                 makeEvaluateFunctionalOr
                     tools
                     substitutionSimplifier
@@ -245,7 +245,7 @@ simplifyEvaluated
                     firstP
                     secondPatterns
         (_, [secondP])
-            | isFunctionPredicated secondP ->
+            | isFunctionConditional secondP ->
                 makeEvaluateFunctionalOr
                     tools
                     substitutionSimplifier
@@ -264,7 +264,7 @@ simplifyEvaluated
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
-    isFunctionPredicated Predicated {term} = isFunctionPattern tools term
+    isFunctionConditional Conditional {term} = isFunctionPattern tools term
 
 makeEvaluateFunctionalOr
     :: forall variable level .
@@ -372,8 +372,8 @@ makeEvaluateFunctionalOr
         -> Simplifier a
     dropProofFoldM f x y = dropProofM (f x y)
     makeEvaluateEqualsIfSecondNotBottom
-        Predicated {term = firstTerm}
-        (Predicated {term = secondTerm}, secondCeil)
+        Conditional {term = firstTerm}
+        (Conditional {term = secondTerm}, secondCeil)
       = do
         (equality, _) <-
             makeEvaluateTermsAssumesNoBottom
@@ -422,9 +422,9 @@ makeEvaluate
     _
     _
     _
-    first@Predicated
+    first@Conditional
         { term = Top_ _ }
-    second@Predicated
+    second@Conditional
         { term = Top_ _ }
   =
     return (Iff.makeEvaluate first second, SimplificationProof)
@@ -433,12 +433,12 @@ makeEvaluate
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
-    Predicated
+    Conditional
         { term = firstTerm
         , predicate = PredicateTrue
         , substitution = (Substitution.unwrap -> [])
         }
-    Predicated
+    Conditional
         { term = secondTerm
         , predicate = PredicateTrue
         , substitution = (Substitution.unwrap -> [])
@@ -461,9 +461,9 @@ makeEvaluate
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
-    first@Predicated
+    first@Conditional
         { term = firstTerm }
-    second@Predicated
+    second@Conditional
         { term = secondTerm }
   = do
     (firstCeil, _proof1) <-
@@ -574,7 +574,7 @@ makeEvaluateTermsAssumesNoBottom
   where
     def =
         (MultiOr.make
-            [ Predicated
+            [ Conditional
                 { term = mkTop_
                 , predicate = makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
@@ -678,7 +678,7 @@ makeEvaluateTermsToPredicateSubstitution
         Nothing ->
             return
                 ( MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeEqualsPredicate first second
                         , substitution = mempty
@@ -703,7 +703,7 @@ makeEvaluateTermsToPredicateSubstitution
                     second
             let
                 toPredicateSafe
-                    ps@Predicated {term = (), predicate, substitution}
+                    ps@Conditional {term = (), predicate, substitution}
                   | Substitution.null substitution =
                     predicate
                   | otherwise =
@@ -728,7 +728,7 @@ makeEvaluateTermsToPredicateSubstitution
                 ( MultiOr.merge
                     predicatedOr
                     (MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = ()
                             , predicate = ceilNegationAnd
                             , substitution = mempty

@@ -21,7 +21,7 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Representation.ExpandedPattern
                  ( PredicateSubstitution )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd

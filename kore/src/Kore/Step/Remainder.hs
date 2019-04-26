@@ -20,7 +20,7 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Conditional
-                 ( Predicated (Predicated) )
+                 ( Conditional (Conditional) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
@@ -111,7 +111,7 @@ unificationConditions
     => PredicateSubstitution Object (Target variable)
     -- ^ Unification solution
     -> MultiAnd (Predicate (Target variable))
-unificationConditions Predicated { predicate, substitution } =
+unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
     substitution' = Substitution.filter Target.isNonTarget substitution

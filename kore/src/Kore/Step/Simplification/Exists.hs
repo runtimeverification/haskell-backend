@@ -26,9 +26,9 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Conditional as Predicated
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
@@ -197,7 +197,7 @@ makeEvaluate
     original
   = fmap (withProof . MultiOr.make) $ gather $ do
     normalized <- normalize original
-    let Predicated { substitution = normalizedSubstitution } = normalized
+    let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
         (Left boundTerm, freeSubstitution) ->
             makeEvaluateBoundLeft
@@ -269,10 +269,10 @@ makeEvaluateBoundLeft
                 normalized
                     { term =
                         Pattern.substitute boundSubstitution
-                        $ Predicated.term normalized
+                        $ Conditional.term normalized
                     , predicate =
                         Predicate.substitute boundSubstitution
-                        $ Predicated.predicate normalized
+                        $ Conditional.predicate normalized
                     }
         (results, _proof) <- Monad.Trans.lift $ simplify' substituted
         scatter results
@@ -313,7 +313,7 @@ makeEvaluateBoundRight
     return simplifiedPattern
   where
     simplifiedPattern =
-        Predicated.andCondition
+        Conditional.andCondition
             (quantifyExpandedPattern variable normalized)
             (PredicateSubstitution.fromSubstitution freeSubstitution)
 
@@ -362,9 +362,9 @@ quantifyExpandedPattern
     => variable Object
     -> ExpandedPattern Object variable
     -> ExpandedPattern Object variable
-quantifyExpandedPattern variable Predicated { term, predicate, substitution }
+quantifyExpandedPattern variable Conditional { term, predicate, substitution }
   | quantifyTerm, quantifyPredicate =
-      Predicated
+      Conditional
         { term =
             mkExists variable
             $ mkAnd term
@@ -373,18 +373,18 @@ quantifyExpandedPattern variable Predicated { term, predicate, substitution }
         , substitution = mempty
         }
   | quantifyTerm =
-      Predicated
+      Conditional
         { term = mkExists variable term
         , predicate
         , substitution
         }
   | quantifyPredicate =
-      Predicated
+      Conditional
         { term
         , predicate = Predicate.makeExistsPredicate variable predicate'
         , substitution = mempty
         }
-  | otherwise = Predicated { term, predicate, substitution }
+  | otherwise = Conditional { term, predicate, substitution }
   where
     quantifyTerm = Pattern.hasFreeVariable variable term
     predicate' =

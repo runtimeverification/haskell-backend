@@ -34,7 +34,7 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, mapVariables, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -70,12 +70,12 @@ test_ceilSimplification =
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfA
                     , substitution = mempty
                     }
-                , Predicated
+                , Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfB
                     , substitution = mempty
@@ -134,7 +134,7 @@ test_ceilSimplification =
         --     = top and (ceil(term) and predicate) and subst
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -144,7 +144,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = somethingOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -161,7 +161,7 @@ test_ceilSimplification =
             --     = top and (ceil(term) and predicate) and subst
             let
                 expected = MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = mkTop_
                         , predicate =
                             makeAndPredicate
@@ -175,7 +175,7 @@ test_ceilSimplification =
                         }
                     ]
             actual <- makeEvaluate mockMetadataTools
-                Predicated
+                Conditional
                     { term = constructorTerm
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -188,7 +188,7 @@ test_ceilSimplification =
         let
             expected = MultiOr.make [ExpandedPattern.top]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.constr10 Mock.a
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -200,7 +200,7 @@ test_ceilSimplification =
         --     = top and (ceil(params) and predicate) and subst
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -213,7 +213,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.functional20 somethingOfA somethingOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -228,7 +228,7 @@ test_ceilSimplification =
         --     = top and (ceil(term) and predicate) and subst
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -238,7 +238,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -253,7 +253,7 @@ test_ceilSimplification =
         --     = top and (ceil(params) and predicate) and subst
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -263,7 +263,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -278,14 +278,14 @@ test_ceilSimplification =
         --     = top and predicate and subst
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.a
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -302,7 +302,7 @@ test_ceilSimplification =
         --       subst
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -315,7 +315,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -332,7 +332,7 @@ test_ceilSimplification =
         --       subst
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -348,14 +348,14 @@ test_ceilSimplification =
                     (AxiomIdentifier.Application Mock.fId)
                 )
                 (appliedMockEvaluator
-                    Predicated
+                    Conditional
                         { term = mkTop_
                         , predicate = makeEqualsPredicate Mock.a Mock.cf
                         , substitution = mempty
                         }
                 )
             )
-            Predicated
+            Conditional
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -368,14 +368,14 @@ test_ceilSimplification =
         -- ceil(1) = top
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term =
                     mkDomainValue
                         (Domain.BuiltinExternal Domain.External
@@ -393,7 +393,7 @@ test_ceilSimplification =
         -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -403,7 +403,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term =
                     Mock.builtinMap
                         [(asConcrete fOfA, fOfB), (asConcrete gOfA, gOfB)]
@@ -415,7 +415,7 @@ test_ceilSimplification =
         -- ceil([a, b]) = ceil(a) and ceil(b)
         let
             expected = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -425,7 +425,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.builtinList [fOfA, fOfB]
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -437,7 +437,7 @@ test_ceilSimplification =
         let
             expected = MultiOr.make [ ExpandedPattern.top ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -453,12 +453,12 @@ test_ceilSimplification =
     gOfB = Mock.g Mock.b
     somethingOfA = Mock.plain10 Mock.a
     somethingOfB = Mock.plain10 Mock.b
-    somethingOfAExpanded = Predicated
+    somethingOfAExpanded = Conditional
         { term = somethingOfA
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    somethingOfBExpanded = Predicated
+    somethingOfBExpanded = Conditional
         { term = somethingOfB
         , predicate = makeTruePredicate
         , substitution = mempty

@@ -22,7 +22,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom )
 import           Kore.Step.Simplification.AndTerms
@@ -49,7 +49,7 @@ test_andTermsSimplification =
     [ testGroup "Predicates"
         [ testCase "\\and{s}(f{}(a), \\top{s}())" $ do
             let expected =
-                    Predicated
+                    Conditional
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -59,7 +59,7 @@ test_andTermsSimplification =
 
         , testCase "\\and{s}(\\top{s}(), f{}(a))" $ do
             let expected =
-                    Predicated
+                    Conditional
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -90,7 +90,7 @@ test_andTermsSimplification =
 
     , testCase "equal patterns and" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = fOfA
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -104,7 +104,7 @@ test_andTermsSimplification =
     , testGroup "variable function and"
         [ testCase "\\and{s}(x:s, f{}(a))" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution =
@@ -118,7 +118,7 @@ test_andTermsSimplification =
 
         , testCase "\\and{s}(f{}(a), x:s)" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution =
@@ -134,7 +134,7 @@ test_andTermsSimplification =
     , testGroup "injective head and"
         [ testCase "same head, different child" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term = Mock.injective10 fOfA
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution = mempty
@@ -146,7 +146,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" (expect, Just expect) actual
         , testCase "same head, same child" $ do
             let expected =
-                    Predicated
+                    Conditional
                         { term = Mock.injective10 fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -158,7 +158,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" (expected, Just expected) actual
         , testCase "different head" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term =
                             mkAnd
                                 (Mock.injective10 fOfA)
@@ -178,7 +178,7 @@ test_andTermsSimplification =
     , testGroup "sort injection and"
         [ testCase "same head, different child" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term = Mock.sortInjection10 Mock.cfSort0
                         , predicate =
                             makeEqualsPredicate Mock.cfSort0 Mock.cgSort0
@@ -192,7 +192,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" (expect, Just expect) actual
         , testCase "same head, same child" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term =
                             Mock.sortInjection10 Mock.cfSort0
                         , predicate = makeTruePredicate
@@ -215,7 +215,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head, subsort first" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term =
                             Mock.sortInjectionSubToTop
                                 (mkAnd
@@ -237,7 +237,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head, subsort second" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term =
                             Mock.sortInjectionSubToTop
                                 (mkAnd
@@ -307,7 +307,7 @@ test_andTermsSimplification =
         [ testCase "same head" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeEqualsPredicate Mock.cf Mock.cg
                             , substitution = mempty
@@ -323,7 +323,7 @@ test_andTermsSimplification =
         , testCase "same head same child" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -365,7 +365,7 @@ test_andTermsSimplification =
         [ testCase "equal values" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = aDomainValue
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -393,7 +393,7 @@ test_andTermsSimplification =
         [ testCase "equal values" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = mkStringLiteral "a"
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -423,7 +423,7 @@ test_andTermsSimplification =
         [ testCase "equal values" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = mkCharLiteral 'a'
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -453,7 +453,7 @@ test_andTermsSimplification =
         [ testCase "equal values" $ do
             let expect =
                     let
-                        expanded = Predicated
+                        expanded = Conditional
                             { term = fOfA
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -468,7 +468,7 @@ test_andTermsSimplification =
         , testCase "not equal values" $ do
             let expect =
                     let
-                        expanded = Predicated
+                        expanded = Conditional
                             { term = fOfA
                             , predicate = makeEqualsPredicate fOfA gOfA
                             , substitution = mempty
@@ -484,7 +484,7 @@ test_andTermsSimplification =
     , testGroup "unhandled cases"
         [ testCase "top level" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term = mkAnd plain0OfA plain1OfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -499,7 +499,7 @@ test_andTermsSimplification =
 
         , testCase "one level deep" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -514,7 +514,7 @@ test_andTermsSimplification =
 
         , testCase "two levels deep" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term =
                             Mock.constr10
                                 (Mock.constr10 (mkAnd plain0OfA plain1OfA))
@@ -533,7 +533,7 @@ test_andTermsSimplification =
 
     , testCase "binary constructor of non-specialcased values" $ do
         let expect =
-                ( Predicated
+                ( Conditional
                     { term =
                         Mock.functionalConstr20
                             (mkAnd plain0OfA plain1OfA)
@@ -553,7 +553,7 @@ test_andTermsSimplification =
     , testGroup "builtin Map domain"
         [ testCase "concrete Map, same keys" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term = Mock.builtinMap [(Mock.aConcrete, Mock.b)]
                         , predicate = makeTruePredicate
                         , substitution =
@@ -577,7 +577,7 @@ test_andTermsSimplification =
 
         , testCase "concrete Map with framed Map" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -605,7 +605,7 @@ test_andTermsSimplification =
 
         , testCase "concrete Map with framed Map" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -633,7 +633,7 @@ test_andTermsSimplification =
 
         , testCase "framed Map with concrete Map" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -661,7 +661,7 @@ test_andTermsSimplification =
 
         , testCase "framed Map with concrete Map" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -697,7 +697,7 @@ test_andTermsSimplification =
                         , Mock.constr11 Mock.cf
                         ]
                 expect =
-                    Just Predicated
+                    Just Conditional
                         { term = term1
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -709,7 +709,7 @@ test_andTermsSimplification =
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
                 expect =
-                    Just Predicated
+                    Just Conditional
                         { term = Mock.builtinList [Mock.a, mkBottom_]
                         , predicate = makeFalsePredicate
                         , substitution = mempty
@@ -723,7 +723,7 @@ test_andTermsSimplification =
                         (mkVar Mock.x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
                 expect =
-                    Just Predicated
+                    Just Conditional
                         { term = Mock.builtinList [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap

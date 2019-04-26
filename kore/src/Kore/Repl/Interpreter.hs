@@ -82,7 +82,7 @@ import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule

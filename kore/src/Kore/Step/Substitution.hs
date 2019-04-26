@@ -39,7 +39,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import qualified Kore.TopBottom as TopBottom
@@ -82,14 +82,14 @@ normalize
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> Predicated level variable term
-    -> BranchT Simplifier (Predicated level variable term)
+    -> Conditional level variable term
+    -> BranchT Simplifier (Conditional level variable term)
 normalize
     tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    Predicated { term, predicate, substitution }
+    Conditional { term, predicate, substitution }
   = do
     -- We collect all the results here because we should promote the
     -- substitution to the predicate when there is an error on *any* branch.
@@ -103,11 +103,11 @@ normalize
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            Predicated { term = (), predicate, substitution }
+            Conditional { term = (), predicate, substitution }
     case results of
         Right normal -> scatter (applyTerm <$> normal)
         Left _ ->
-            return Predicated
+            return Conditional
                 { term
                 , predicate =
                     makeAndPredicate
@@ -141,14 +141,14 @@ normalizeExcept
     predicateSimplifier@(PredicateSubstitutionSimplifier simplifySubstitution)
     simplifier
     axiomIdToSimplifier
-    Predicated { predicate, substitution }
+    Conditional { predicate, substitution }
   = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
     (deduplicated, _) <- normalizeSubstitutionDuplication' substitution
     let
-        Predicated { substitution = preDeduplicatedSubstitution } = deduplicated
-        Predicated { predicate = deduplicatedPredicate } = deduplicated
+        Conditional { substitution = preDeduplicatedSubstitution } = deduplicated
+        Conditional { predicate = deduplicatedPredicate } = deduplicated
         -- The substitution is not fully normalized, but it is safe to convert
         -- to a Map because it has been deduplicated.
         deduplicatedSubstitution =
@@ -156,8 +156,8 @@ normalizeExcept
 
     normalized <- normalizeSubstitution' deduplicatedSubstitution
     let
-        Predicated { substitution = normalizedSubstitution } = normalized
-        Predicated { predicate = normalizedPredicate } = normalized
+        Conditional { substitution = normalizedSubstitution } = normalized
+        Conditional { predicate = normalizedPredicate } = normalized
 
         mergedPredicate =
             makeMultipleAndPredicate
@@ -165,7 +165,7 @@ normalizeExcept
 
     TopBottom.guardAgainstBottom mergedPredicate
     Monad.Morph.hoist Monad.Unify.liftSimplifier
-        $ simplifySubstitution Predicated
+        $ simplifySubstitution Conditional
             { term = ()
             , predicate = mergedPredicate
             , substitution = normalizedSubstitution
@@ -240,7 +240,7 @@ mergePredicatesAndSubstitutions
                         )
             in
                 return
-                    ( Predicated
+                    ( Conditional
                         { term = ()
                         , predicate = mergedPredicate
                         , substitution = mempty
@@ -282,19 +282,19 @@ mergePredicatesAndSubstitutionsExcept
     let
         mergedSubstitution = Foldable.fold substitutions
         mergedPredicate = makeMultipleAndPredicate predicates
-    (Predicated {predicate, substitution}, _proof) <-
+    (Conditional {predicate, substitution}, _proof) <-
         normalizeSubstitutionAfterMerge
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            Predicated
+            Conditional
                 { term = ()
                 , predicate = mergedPredicate
                 , substitution = mergedSubstitution
                 }
     return
-        (Predicated
+        (Conditional
             { term = ()
             , predicate = predicate
             , substitution = substitution

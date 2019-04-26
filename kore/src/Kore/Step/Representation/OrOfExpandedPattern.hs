@@ -30,7 +30,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate, makeMultipleOrPredicate, makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
@@ -41,19 +41,19 @@ import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
 
-type OrOfPredicated level variable term =
-    MultiOr (Predicated level variable term)
+type OrOfConditional level variable term =
+    MultiOr (Conditional level variable term)
 
 {-| 'OrOfExpandedPattern' is a 'MultiOr' of 'ExpandedPatterns', which is the
 most common case.
 -}
 type OrOfExpandedPattern level variable
-    = OrOfPredicated level variable (TermLike variable)
+    = OrOfConditional level variable (TermLike variable)
 
 {-| 'OrOfPredicateSubstitution' is a 'MultiOr' of 'PredicateSubstitution'.
 -}
 type OrOfPredicateSubstitution level variable
-    = OrOfPredicated level variable ()
+    = OrOfConditional level variable ()
 
 {-| 'OrOfPredicate' is a 'MultiOr' of 'Predicate'.
 -}
@@ -115,7 +115,7 @@ toExpandedPattern multiOr
     case MultiOr.extractPatterns multiOr of
         [] -> ExpandedPattern.bottom
         [patt] -> patt
-        patt : patts -> Predicated
+        patt : patts -> Conditional
             { term = foldl'
                 (\x y -> mkOr x (ExpandedPattern.toMLPattern y))
                 (ExpandedPattern.toMLPattern patt)

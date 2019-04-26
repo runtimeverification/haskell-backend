@@ -30,9 +30,9 @@ import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (Predicated) )
-import           Kore.Step.Representation.ExpandedPattern as Predicated
-                 ( Predicated (..) )
+                 ( Conditional (Conditional) )
+import           Kore.Step.Representation.ExpandedPattern as Conditional
+                 ( Conditional (..) )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -192,7 +192,7 @@ test_onePathVerification =
             [simpleClaim (Mock.functionalConstr10 (mkVar Mock.x)) Mock.b]
         assertEqualWithExplanation ""
             (Left $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = Mock.functionalConstr11 (mkVar Mock.x)
                     , predicate =
                         makeNotPredicate

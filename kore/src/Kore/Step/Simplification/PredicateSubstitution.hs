@@ -27,7 +27,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), PredicateSubstitution )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import           Kore.Step.Substitution
@@ -79,7 +79,7 @@ simplify
     simplifier
     axiomIdToSimplifier
     times
-    initialValue@Predicated { predicate, substitution }
+    initialValue@Conditional { predicate, substitution }
   = do
     let substitution' = Substitution.toMap substitution
         substitutedPredicate = Predicate.substitute substitution' predicate
@@ -96,8 +96,8 @@ simplify
                     simplifier
                     substitutedPredicate
 
-            let Predicated { predicate = simplifiedPredicate } = simplified
-                Predicated { substitution = simplifiedSubstitution } =
+            let Conditional { predicate = simplifiedPredicate } = simplified
+                Conditional { substitution = simplifiedSubstitution } =
                     simplified
 
             if Substitution.null simplifiedSubstitution

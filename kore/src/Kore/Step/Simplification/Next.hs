@@ -16,7 +16,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
@@ -63,7 +63,7 @@ simplifyEvaluated
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
 simplifyEvaluated simplified =
     ( MultiOr.make
-        [ Predicated
+        [ Conditional
             { term =
                 mkNext
                     $ ExpandedPattern.toMLPattern

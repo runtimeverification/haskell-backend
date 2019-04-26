@@ -79,7 +79,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
@@ -440,8 +440,8 @@ unifyEquals
 
     propagatePredicates
         :: Traversable t
-        => t (Predicated level variable a)
-        -> Predicated level variable (t a)
+        => t (Conditional level variable a)
+        -> Conditional level variable (t a)
     propagatePredicates = sequenceA
 
     discardProofs :: Seq (expanded, proof) -> Seq expanded

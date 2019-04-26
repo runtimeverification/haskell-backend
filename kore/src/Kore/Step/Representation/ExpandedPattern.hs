@@ -23,7 +23,7 @@ module Kore.Step.Representation.ExpandedPattern
     , Kore.Step.Representation.ExpandedPattern.fromPurePattern
     , Kore.Step.Representation.ExpandedPattern.freeVariables
     -- * Re-exports
-    , Predicated (..)
+    , Conditional (..)
     , PredicateSubstitution
     ) where
 
@@ -41,8 +41,8 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Conditional
-                 ( Predicated (..) )
-import qualified Kore.Step.Conditional as Predicated
+                 ( Conditional (..) )
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import           Kore.Step.TermLike
@@ -62,7 +62,7 @@ program configuration for Kore execution.
 
  -}
 type ExpandedPattern level variable =
-    Predicated level variable (TermLike variable)
+    Conditional level variable (TermLike variable)
 
 {- | 'CommonExpandedPattern' instantiates 'ExpandedPattern' at 'Variable'.
 -}
@@ -83,7 +83,7 @@ freeVariables
        )
     => ExpandedPattern Object variable
     -> Set (variable Object)
-freeVariables = Predicated.freeVariables TermLike.freeVariables
+freeVariables = Conditional.freeVariables TermLike.freeVariables
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an ExpandedPattern.
@@ -95,9 +95,9 @@ mapVariables
     -> ExpandedPattern Object variableTo
 mapVariables
     variableMapper
-    Predicated { term, predicate, substitution }
+    Conditional { term, predicate, substitution }
   =
-    Predicated
+    Conditional
         { term = TermLike.mapVariables variableMapper term
         , predicate = Predicate.mapVariables variableMapper predicate
         , substitution =
@@ -112,7 +112,7 @@ allVariables
     => ExpandedPattern Object variable
     -> Set.Set (variable Object)
 allVariables
-    Predicated { term, predicate, substitution }
+    Conditional { term, predicate, substitution }
   =
     pureAllVariables term
     <> Predicate.allVariables predicate
@@ -147,7 +147,7 @@ toStepPattern
         )
     => ExpandedPattern Object variable -> TermLike variable
 toStepPattern
-    Predicated { term, predicate, substitution }
+    Conditional { term, predicate, substitution }
   =
     simpleAnd
         (simpleAnd term predicate)
@@ -192,7 +192,7 @@ bottom
         )
     => ExpandedPattern Object variable
 bottom =
-    Predicated
+    Conditional
         { term      = mkBottom_
         , predicate = makeFalsePredicate
         , substitution = mempty
@@ -210,7 +210,7 @@ bottomOf
     => Sort Object
     -> ExpandedPattern Object variable
 bottomOf resultSort =
-    Predicated
+    Conditional
         { term      = mkBottom resultSort
         , predicate = makeFalsePredicate
         , substitution = mempty
@@ -225,7 +225,7 @@ top
         )
     => ExpandedPattern Object variable
 top =
-    Predicated
+    Conditional
         { term      = mkTop_
         , predicate = makeTruePredicate
         , substitution = mempty
@@ -240,7 +240,7 @@ topOf
     => Sort Object
     -> ExpandedPattern Object variable
 topOf resultSort =
-    Predicated
+    Conditional
         { term      = mkTop resultSort
         , predicate = makeTruePredicate
         , substitution = mempty
@@ -262,7 +262,7 @@ fromPurePattern term@(Recursive.project -> _ :< projected) =
     case projected of
         BottomPattern _ -> bottom
         _ ->
-            Predicated
+            Conditional
                 { term
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -277,4 +277,4 @@ toPredicate
        )
     => ExpandedPattern Object variable
     -> Predicate variable
-toPredicate = Predicated.toPredicate
+toPredicate = Conditional.toPredicate

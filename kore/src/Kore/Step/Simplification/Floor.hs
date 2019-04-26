@@ -17,7 +17,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
@@ -116,7 +116,7 @@ makeEvaluateNonBoolFloor
     => ExpandedPattern level variable
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolFloor
-    patt@Predicated { term = Top_ _ }
+    patt@Conditional { term = Top_ _ }
   =
     ( MultiOr.make [patt]
     , SimplificationProof
@@ -124,10 +124,10 @@ makeEvaluateNonBoolFloor
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
-    Predicated {term, predicate, substitution}
+    Conditional {term, predicate, substitution}
   =
     ( MultiOr.make
-        [ Predicated
+        [ Conditional
             { term = mkTop_
             , predicate = makeAndPredicate (makeFloorPredicate term) predicate
             , substitution = substitution

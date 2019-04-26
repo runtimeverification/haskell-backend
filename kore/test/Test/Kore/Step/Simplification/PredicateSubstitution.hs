@@ -27,8 +27,8 @@ import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.PredicateSubstitution
-                 ( CommonPredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.PredicateSubstitution as Predicated
+                 ( CommonPredicateSubstitution, Conditional (..) )
+import qualified Kore.Step.Representation.PredicateSubstitution as Conditional
 import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PSSimplifier
@@ -51,16 +51,16 @@ import           Test.Tasty.HUnit.Extensions
 test_predicateSubstitutionSimplification :: [TestTree]
 test_predicateSubstitutionSimplification =
     [ testCase "Identity for top and bottom" $ do
-        actualBottom <- runSimplifier Map.empty Predicated.bottomPredicate
+        actualBottom <- runSimplifier Map.empty Conditional.bottomPredicate
         assertEqualWithExplanation "" mempty actualBottom
-        actualTop <- runSimplifier Map.empty Predicated.topPredicate
+        actualTop <- runSimplifier Map.empty Conditional.topPredicate
         assertEqualWithExplanation ""
-            (MultiOr.singleton Predicated.topPredicate)
+            (MultiOr.singleton Conditional.topPredicate)
             actualTop
 
     , testCase "Applies substitution to predicate" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -73,7 +73,7 @@ test_predicateSubstitutionSimplification =
                     }
         actual <-
             runSimplifier Map.empty
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -88,7 +88,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -101,7 +101,7 @@ test_predicateSubstitutionSimplification =
                     }
         actual <-
             runSimplifier Map.empty
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -116,7 +116,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate Mock.functional00 Mock.a
                     , substitution = Substitution.unsafeWrap
@@ -139,7 +139,7 @@ test_predicateSubstitutionSimplification =
                         )
                     ]
                 )
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -154,7 +154,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Merges substitution from predicate simplification" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
@@ -174,7 +174,7 @@ test_predicateSubstitutionSimplification =
                         )
                     ]
                 )
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -188,7 +188,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Reapplies substitution from predicate simplification" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -211,7 +211,7 @@ test_predicateSubstitutionSimplification =
                         )
                     ]
                 )
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
@@ -231,7 +231,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Simplifies after reapplying substitution" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -255,7 +255,7 @@ test_predicateSubstitutionSimplification =
                         )
                     ]
                 )
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate

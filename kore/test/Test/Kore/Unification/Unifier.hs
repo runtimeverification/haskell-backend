@@ -42,10 +42,10 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
                  ( makeEqualsPredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution,
-                 Predicated (Predicated) )
+                 ( Conditional (Conditional), ExpandedPattern,
+                 PredicateSubstitution )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), bottom )
+                 ( Conditional (..), bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -246,7 +246,7 @@ unificationResult
     -> Predicate Variable
     -> ExpandedPattern Object Variable
 unificationResult (UnificationResultTerm term) sub predicate =
-    Predicated
+    Conditional
         { term
         , predicate = predicate
         , substitution = Substitution.wrap $ unificationSubstitution sub
@@ -371,7 +371,7 @@ unificationProcedureSuccess
                 ->  ( [ (Variable Object, TermLike Variable) ]
                     , Predicate Variable
                     )
-            normalize Predicated { substitution, predicate } =
+            normalize Conditional { substitution, predicate } =
                 ( sortBy (compare `on` fst) $ Substitution.unwrap substitution
                 , predicate
                 )
@@ -744,7 +744,7 @@ injUnificationTests =
 
 simplifyPattern :: UnificationTerm Object -> IO (UnificationTerm Object)
 simplifyPattern (UnificationTerm term) = do
-    Predicated { term = term' } <- runSMT $ evalSimplifier emptyLogger simplifier
+    Conditional { term = term' } <- runSMT $ evalSimplifier emptyLogger simplifier
     return $ UnificationTerm term'
   where
     simplifier = do
@@ -761,7 +761,7 @@ simplifyPattern (UnificationTerm term) = do
             [] -> return ExpandedPattern.bottom
             (config : _) -> return config
     functionRegistry = Map.empty
-    expandedPattern = Predicated
+    expandedPattern = Conditional
         { term
         , predicate = makeTruePredicate
         , substitution = mempty

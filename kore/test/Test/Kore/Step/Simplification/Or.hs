@@ -15,7 +15,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), isBottom, isTop )
+                 ( Conditional (..), ExpandedPattern, isBottom, isTop )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
@@ -296,7 +296,7 @@ prettyOr orFirst orSecond =
   where
     Valid { patternSort = orSort } = extract term
       where
-        Predicated { term } = orFirst
+        Conditional { term } = orFirst
 
 stateIntention :: [Pretty.Doc ann] -> String
 stateIntention actualAndSoOn =
@@ -306,10 +306,10 @@ orChild
     :: (TestTerm, TestPredicate, TestSubstitution)
     -> ExpandedPattern Object Variable
 orChild (term, predicate, substitution) =
-    Predicated { term, predicate, substitution }
+    Conditional { term, predicate, substitution }
 
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
--- during conversion of a Predicated into an OrOfExpandedPattern
+-- during conversion of a Conditional into an OrOfExpandedPattern
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
     -> OrOfExpandedPattern Object Variable

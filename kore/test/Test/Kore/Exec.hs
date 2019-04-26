@@ -44,7 +44,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step
                  ( allRewrites, anyRewrite )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import           Kore.Step.Rule
 import           Kore.Step.Search
                  ( SearchType (..) )
@@ -166,7 +166,7 @@ searchVar =
 --      V:MySort{},
 --      \top{MySort{}}())
 searchPattern :: CommonExpandedPattern Object
-searchPattern = Predicated
+searchPattern = Conditional
     { term = searchVar
     , predicate = makeTruePredicate
     , substitution = mempty

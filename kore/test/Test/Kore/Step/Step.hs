@@ -23,9 +23,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Axiom.Matcher as Matcher
-import qualified Kore.Step.Conditional as Predicated
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern, PredicateSubstitution )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -118,7 +118,7 @@ test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
     [ testCase "\\bottom initial condition" $ do
         let unification =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
@@ -149,7 +149,7 @@ test_applyInitialConditions =
             expect =
                 MultiOr.singleton (Predicate.makeAndPredicate expect1 expect2)
         Right [applied] <- applyInitialConditions initial unification
-        let actual = Predicated.predicate <$> applied
+        let actual = Conditional.predicate <$> applied
         assertEqual "" expect actual
 
     , testCase "conflicting initial and rule conditions" $ do
@@ -170,7 +170,7 @@ unifyRule
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [Predicated Object Variable (RulePattern Object Variable)]
+            [Conditional Object Variable (RulePattern Object Variable)]
         )
 unifyRule initial rule =
     evalUnifier
@@ -210,7 +210,7 @@ test_unifyRule =
                     , attributes = Default.def
                     }
         Right unified <- unifyRule initial axiom
-        let actual = Predicated.term <$> unified
+        let actual = Conditional.term <$> unified
         assertBool ""
             $ Foldable.all (Set.notMember Mock.x)
             $ RulePattern.freeVariables <$> actual
@@ -355,7 +355,7 @@ test_applyRewriteRule_ =
     , testCase "impossible substitution (ctor)" $ do
         let expect = Right mempty
             initial =
-                Predicated
+                Conditional
                     { term =
                         Mock.sigma
                             (mkVar Mock.x)
@@ -377,7 +377,7 @@ test_applyRewriteRule_ =
                 $ SubstitutionError
                 $ NonCtorCircularVariableDependency [Mock.y]
             initial =
-                Predicated
+                Conditional
                     { term =
                         Mock.sigma
                             (mkVar Mock.x)
@@ -405,7 +405,7 @@ test_applyRewriteRule_ =
         let expect =
                 Right
                     [ MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.sigma zz zz
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap
@@ -433,7 +433,7 @@ test_applyRewriteRule_ =
             expect =
                 Right
                     [ MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.sigma fb fb
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap [(Mock.x, fb)]
@@ -456,7 +456,7 @@ test_applyRewriteRule_ =
             expect =
                 Right
                     [ MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.sigma fz fz
                             , predicate = makeTruePredicate
                             , substitution =
@@ -468,7 +468,7 @@ test_applyRewriteRule_ =
                         ]
                     ]
             initial =
-                Predicated
+                Conditional
                     { term =
                         Mock.sigma (Mock.sigma (mkVar Mock.x) fy) (mkVar Mock.x)
                     , predicate = makeTruePredicate
@@ -506,7 +506,7 @@ test_applyRewriteRule_ =
                     (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
             initial =
-                Predicated
+                Conditional
                     { term = Mock.a
                     , predicate
                     , substitution = mempty
@@ -524,7 +524,7 @@ test_applyRewriteRule_ =
             expect =
                 Right
                     [ MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.sigma fb fb
                             , predicate =
                                 makeEqualsPredicate
@@ -535,7 +535,7 @@ test_applyRewriteRule_ =
                         ]
                     ]
             initial =
-                Predicated
+                Conditional
                     { term =
                         Mock.sigma
                             (Mock.sigma (mkVar Mock.x) fb)
@@ -750,7 +750,7 @@ test_applyRewriteRules =
         --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
@@ -758,7 +758,7 @@ test_applyRewriteRules =
                     }
             remainders =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = initialTerm
                         , predicate =
                             makeNotPredicate
@@ -789,7 +789,7 @@ test_applyRewriteRules =
         --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.cg
                     , predicate =
                         makeAndPredicate
@@ -801,7 +801,7 @@ test_applyRewriteRules =
                     }
             remainders =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term =
                             Mock.functionalConstr20
                                 (mkVar Mock.x)
@@ -817,7 +817,7 @@ test_applyRewriteRules =
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial =
-                Predicated
+                Conditional
                     { term = initialTerm
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = mempty
@@ -841,13 +841,13 @@ test_applyRewriteRules =
         --   remainder: functionalConstr10(x), with ¬(f(x) == b)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.a
                     , predicate = requirement
                     , substitution = mempty
                     }
             remainders =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.functionalConstr10 (mkVar Mock.x)
                     , predicate = makeNotPredicate requirement
                     , substitution = mempty
@@ -873,7 +873,7 @@ test_applyRewriteRules =
         --   remainder: functionalConstr20(x, cg), with ¬(⌈cg⌉ and x=a)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
@@ -923,13 +923,13 @@ test_applyRewriteRules =
                     (makeCeilPredicate Mock.cg)
             results =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.cf
                         , predicate = definedBranches
                         , substitution =
                             Substitution.wrap [(Mock.x, Mock.a)]
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
@@ -976,7 +976,7 @@ test_applyRewriteRules =
         --   remainder: functionalConstr20(x, cg), with ¬(⌈cg⌉ and x=a)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
@@ -1118,13 +1118,13 @@ test_sequenceRewriteRules =
                     (makeCeilPredicate Mock.cg)
             results =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.cf
                         , predicate = definedBranches
                         , substitution =
                             Substitution.wrap [(Mock.x, Mock.a)]
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
@@ -1221,7 +1221,7 @@ test_sequenceMatchingRules =
             sigma = Mock.sigma (mkVar x') (mkVar Mock.y)
             results =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.a
                         , predicate = Predicate.makeTruePredicate
                         , substitution = Substitution.wrap [(Mock.x, sigma)]

@@ -19,7 +19,7 @@ import Kore.AST.Valid
 import Kore.Predicate.Predicate
        ( Predicate, unwrapPredicate )
 import Kore.Step.Representation.ExpandedPattern
-       ( PredicateSubstitution, Predicated (..) )
+       ( Conditional (..), PredicateSubstitution )
 import Kore.Step.Simplification.Data
 import Kore.Unparser
 import Kore.Variables.Fresh
@@ -58,7 +58,7 @@ simplifyPartial
     scatter (eraseTerm <$> patternOr)
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
-    eraseTerm predicated@Predicated { term }
+    eraseTerm predicated@Conditional { term }
       | Top_ _ <- term = predicated { term = () }
       | otherwise =
         (error . show . Pretty.vsep)

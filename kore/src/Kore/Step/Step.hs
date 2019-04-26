@@ -58,8 +58,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Conditional
-                 ( Predicated (Predicated) )
-import qualified Kore.Step.Conditional as Predicated
+                 ( Conditional (Conditional) )
+import qualified Kore.Step.Conditional as Conditional
 import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
@@ -131,10 +131,10 @@ solution and the renamed rule is wrapped with the combined condition.
 
  -}
 type UnifiedRule variable =
-    Predicated Object variable (RulePattern Object variable)
+    Conditional Object variable (RulePattern Object variable)
 
 withoutUnification :: UnifiedRule variable -> RulePattern Object variable
-withoutUnification = Predicated.term
+withoutUnification = Conditional.term
 
 type Result variable =
     Step.Result
@@ -159,7 +159,7 @@ unwrapConfiguration
     :: Ord (variable Object)
     => ExpandedPattern Object (Target variable)
     -> ExpandedPattern Object variable
-unwrapConfiguration config@Predicated { substitution } =
+unwrapConfiguration config@Conditional { substitution } =
     ExpandedPattern.mapVariables Target.unwrapVariable
         config { ExpandedPattern.substitution = substitution' }
   where
@@ -206,7 +206,7 @@ unifyRule
     patternSimplifier
     axiomSimplifiers
 
-    initial@Predicated { term = initialTerm }
+    initial@Conditional { term = initialTerm }
     rule
   = do
     -- Rename free axiom variables to avoid free variables from the initial
@@ -224,12 +224,12 @@ unifyRule
         RulePattern { requires = ruleRequires } = rule'
         requires' = PredicateSubstitution.fromPredicate ruleRequires
     unification' <- normalize (unification <> requires')
-    return (rule' `Predicated.withCondition` unification')
+    return (rule' `Conditional.withCondition` unification')
   where
     unifyPatterns
         :: TermLike variable
         -> TermLike variable
-        -> BranchT unifier (Predicated Object variable ())
+        -> BranchT unifier (Conditional Object variable ())
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
             Monad.Trans.lift
@@ -359,7 +359,7 @@ finalizeAppliedRule
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
-            Predicated { substitution } = finalCondition
+            Conditional { substitution } = finalCondition
             substitution' = Substitution.toMap substitution
             RulePattern { right = finalTerm } = renamedRule
             finalTerm' = TermLike.substitute substitution' finalTerm
@@ -405,11 +405,11 @@ applyRemainder
     initial
     (PredicateSubstitution.fromPredicate -> remainder)
   = do
-    let final = initial `Predicated.andCondition` remainder
-        finalCondition = Predicated.withoutTerm final
-        Predicated { Predicated.term = finalTerm } = final
+    let final = initial `Conditional.andCondition` remainder
+        finalCondition = Conditional.withoutTerm final
+        Conditional { Conditional.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
-    let normalized = normalizedCondition { Predicated.term = finalTerm }
+    let normalized = normalizedCondition { Conditional.term = finalTerm }
     return normalized
   where
     normalize condition =
@@ -480,11 +480,11 @@ applyRule
             rule' = toAxiomVariables rule
         unifiedRule <- unifyRule' initial' rule'
         let
-            initialCondition = Predicated.withoutTerm initial'
-            unificationCondition = Predicated.withoutTerm unifiedRule
+            initialCondition = Conditional.withoutTerm initial'
+            unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions' initialCondition unificationCondition
         let
-            renamedRule = Predicated.term unifiedRule
+            renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule' renamedRule applied
         let
             checkSubstitutionCoverage' =
@@ -635,13 +635,13 @@ checkSubstitutionCoverage tools initial unified final
         , "in the left-hand side of the axiom."
         ]
   where
-    Predicated { term = axiom } = unified
-    unification = Predicated.toPredicate (Predicated.withoutTerm unified)
+    Conditional { term = axiom } = unified
+    unification = Conditional.toPredicate (Conditional.withoutTerm unified)
     leftAxiomVariables =
         TermLike.freeVariables leftAxiom
       where
         RulePattern { left = leftAxiom } = axiom
-    Predicated { substitution } = final
+    Conditional { substitution } = final
     subst = Substitution.toMap substitution
     substitutionVariables = Map.keysSet subst
     isCoveringSubstitution =
@@ -707,7 +707,7 @@ applyRulesInParallel
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications =
             MultiOr.make
-                (Predicated.withoutTerm . Step.appliedRule <$> results)
+                (Conditional.withoutTerm . Step.appliedRule <$> results)
         remainder = Remainder.remainder unifications
     remainders' <- gather $ applyRemainder' initial remainder
     return Step.Results
@@ -827,7 +827,7 @@ sequenceRules
         let remainder =
                 Remainder.remainder
                 $ MultiOr.make
-                $ Predicated.withoutTerm . Step.appliedRule <$> results
+                $ Conditional.withoutTerm . Step.appliedRule <$> results
         Monad.liftM MultiOr.make $ gather $ applyRemainder' config remainder
 
     applyRemainder' =

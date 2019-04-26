@@ -22,7 +22,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
@@ -65,7 +65,7 @@ checkImplicationIsTop
                                     (mkAnd lhsMLPatt implicationLHS')
                                     (mkNot implicationRHS')
                                 )
-                result = Predicated
+                result = Conditional
                             { term = resultTerm, predicate = Predicate.makeTruePredicate, substitution = mempty}
             (orResult, _) <- ExpandedPattern.simplify
                                 tools

@@ -71,7 +71,7 @@ import           Kore.Step.Axiom.Registry
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -477,7 +477,7 @@ simplifyRulePattern tools rulePattern = do
     let RulePattern { left } = rulePattern
     (simplifiedLeft, _proof) <- simplifyPattern tools left
     case MultiOr.extractPatterns simplifiedLeft of
-        [ Predicated { term, predicate, substitution } ]
+        [ Conditional { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
             let subst = Substitution.toMap substitution
                 left' = substitute subst term

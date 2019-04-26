@@ -8,7 +8,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( mapVariables )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -39,7 +39,7 @@ mockSimplifier
 mockSimplifier values =
     stepPatternSimplifier
         ( mockSimplifierHelper
-            (\patt -> Predicated
+            (\patt -> Conditional
                 { term = patt
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -61,7 +61,7 @@ mockPredicateSimplifier
 mockPredicateSimplifier values =
     stepPatternSimplifier
         (mockSimplifierHelper
-            (\patt -> Predicated
+            (\patt -> Conditional
                 { term = mkTop_
                 , predicate = wrapPredicate patt
                 , substitution = mempty

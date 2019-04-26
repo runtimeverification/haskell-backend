@@ -24,7 +24,7 @@ import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -81,7 +81,7 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
         $ do
             let expect =
-                    Right Predicated
+                    Right Conditional
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
@@ -106,7 +106,7 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
         $ do
             let expect =
-                    Right Predicated
+                    Right Conditional
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
@@ -131,7 +131,7 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
         $ do
             let expect =
-                    Right Predicated
+                    Right Conditional
                         { term = ()
                         , predicate = makeFalsePredicate
                         , substitution = mempty
@@ -168,7 +168,7 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=constructor(a)] + [x=constructor(f(a))]
         $ do
             let expect =
-                    Right Predicated
+                    Right Conditional
                         { term = ()
                         , predicate = makeEqualsPredicate Mock.a (Mock.f Mock.a)
                         , substitution = Substitution.unsafeWrap
@@ -265,7 +265,7 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Normalizes substitution"
         $ do
             let expect =
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
@@ -276,7 +276,7 @@ test_mergeAndNormalizeSubstitutions =
                     ]
             actual <-
                 normalize
-                    Predicated
+                    Conditional
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
@@ -289,7 +289,7 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Predicate from normalizing substitution"
         $ do
             let expect =
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeEqualsPredicate Mock.cf Mock.cg
                         , substitution = Substitution.unsafeWrap
@@ -298,7 +298,7 @@ test_mergeAndNormalizeSubstitutions =
                     ]
             actual <-
                 normalize
-                    Predicated
+                    Conditional
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
@@ -311,7 +311,7 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Normalizes substitution and substitutes in predicate"
         $ do
             let expect =
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeCeilPredicate (Mock.f Mock.a)
                         , substitution = Substitution.unsafeWrap
@@ -322,7 +322,7 @@ test_mergeAndNormalizeSubstitutions =
                     ]
             actual <-
                 normalize
-                    Predicated
+                    Conditional
                         { term = ()
                         , predicate = makeCeilPredicate (Mock.f (mkVar Mock.y))
                         , substitution = Substitution.wrap
@@ -365,8 +365,8 @@ merge s1 s2 =
         $ Substitution.wrap <$> [s1, s2]
 
 normalize
-    :: Predicated Object Variable term
-    -> IO [Predicated Object Variable term]
+    :: Conditional Object Variable term
+    -> IO [Conditional Object Variable term]
 normalize predicated =
     runSMT
     $ evalSimplifier emptyLogger
@@ -379,8 +379,8 @@ normalize predicated =
         predicated
 
 normalizeExcept
-    :: Predicated Object Variable ()
-    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr (Predicated Object Variable ())))
+    :: Conditional Object Variable ()
+    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr (Conditional Object Variable ())))
 normalizeExcept predicated =
     runSMT
     $ evalSimplifier emptyLogger

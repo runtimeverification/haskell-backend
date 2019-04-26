@@ -19,7 +19,7 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
@@ -64,10 +64,10 @@ test_simplify =
                     (Mock.sigma (mkVar Mock.x) (mkVar Mock.z))
                     (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
             }
-    quantifyPredicate predicated@Predicated { predicate } =
+    quantifyPredicate predicated@Conditional { predicate } =
         predicated
             { predicate = Predicate.makeExistsPredicate Mock.x predicate }
-    quantifySubstitution predicated@Predicated { predicate, substitution } =
+    quantifySubstitution predicated@Conditional { predicate, substitution } =
         predicated
             { predicate =
                 Predicate.makeAndPredicate predicate
@@ -124,7 +124,7 @@ test_makeEvaluate =
         --    = t(alpha) and p(alpha) and [others]
         let expect =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.f gOfA
                         , predicate =
                             makeCeilPredicate (Mock.h gOfA)
@@ -135,7 +135,7 @@ test_makeEvaluate =
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
-                Predicated
+                Conditional
                     { term = Mock.f (mkVar Mock.x)
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution =
@@ -149,7 +149,7 @@ test_makeEvaluate =
         --    if t, p, s do not depend on x.
         let expect =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = fOfA
                         , predicate = makeCeilPredicate gOfA
                         , substitution = mempty
@@ -158,7 +158,7 @@ test_makeEvaluate =
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
-                Predicated
+                Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
@@ -171,7 +171,7 @@ test_makeEvaluate =
         --    if p, s do not depend on x.
         let expect =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = mkExists Mock.x fOfX
                         , predicate = makeCeilPredicate gOfA
                         , substitution = mempty
@@ -180,7 +180,7 @@ test_makeEvaluate =
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
-                Predicated
+                Conditional
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
@@ -193,7 +193,7 @@ test_makeEvaluate =
         --    if t, s do not depend on x.
         let expect =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = fOfA
                         , predicate =
                             makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
@@ -203,7 +203,7 @@ test_makeEvaluate =
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
-                Predicated
+                Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution = mempty
@@ -216,7 +216,7 @@ test_makeEvaluate =
         --    if s do not depend on x.
         let expect =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term =
                             mkExists Mock.x (mkAnd fOfX (mkEquals_ fOfX gOfA))
                         , predicate = makeTruePredicate
@@ -227,7 +227,7 @@ test_makeEvaluate =
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
-                Predicated
+                Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = Substitution.wrap [(Mock.y, hOfA)]
@@ -241,7 +241,7 @@ test_makeEvaluate =
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
-                Predicated
+                Conditional
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution = Substitution.wrap [(Mock.x, gOfA)]

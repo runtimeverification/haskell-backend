@@ -424,7 +424,7 @@ test_concretizeKeys =
             (mkPair intSort mapSort (Test.Int.asInternal 1) concreteMap)
             (mkPair intSort mapSort (mkVar x) symbolic)
     expected =
-        Predicated
+        Conditional
             { term =
                 mkPair intSort mapSort
                     symbolicKey

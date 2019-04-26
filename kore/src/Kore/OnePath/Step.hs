@@ -46,7 +46,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Conditional as Predicated
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Proof as Step.Proof
@@ -354,7 +354,7 @@ transitionRule
     transitionRemoveDestination destination (RewritePattern patt, proof1) = do
         let
             removal = removalPredicate destination patt
-            result = patt `Predicated.andPredicate` removal
+            result = patt `Conditional.andPredicate` removal
         (orResult, proof) <-
             Monad.Trans.lift
             $ ExpandedPattern.simplify

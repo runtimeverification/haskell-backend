@@ -12,7 +12,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -28,7 +28,7 @@ test_stringLiteralSimplification =
     [ testCase "StringLiteral evaluates to StringLiteral"
         (assertEqualWithExplanation ""
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkStringLiteral "a"
                     , predicate = makeTruePredicate
                     , substitution = mempty

@@ -17,7 +17,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -60,7 +60,7 @@ simplifyBuiltin
        )
     => Domain.Builtin (OrOfExpandedPattern Object variable)
     -> MultiOr
-        (Predicated Object variable
+        (Conditional Object variable
             (Domain.Builtin (TermLike variable)))
 simplifyBuiltin =
     \case

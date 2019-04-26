@@ -18,7 +18,7 @@ import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), allVariables, mapVariables, toMLPattern )
+                 ( Conditional (..), allVariables, mapVariables, toMLPattern )
 import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
@@ -30,13 +30,13 @@ test_expandedPattern :: [TestTree]
 test_expandedPattern =
     [ testCase "Mapping variables"
         (assertEqualWithExplanation ""
-            Predicated
+            Conditional
                 { term = war "1"
                 , predicate = makeEquals (war "2") (war "3")
                 , substitution = Substitution.wrap [(W "4", war "5")]
                 }
             (ExpandedPattern.mapVariables showVar
-                Predicated
+                Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
@@ -48,7 +48,7 @@ test_expandedPattern =
             [V 1, V 2, V 3, V 4, V 5]
             (Set.toList
                 (ExpandedPattern.allVariables
-                    Predicated
+                    Conditional
                         { term = var 1
                         , predicate = makeEquals (var 2) (var 3)
                         , substitution = Substitution.wrap [(V 4, var 5)]
@@ -66,7 +66,7 @@ test_expandedPattern =
                 (makeEq (var 4) (var 5))
             )
             (ExpandedPattern.toMLPattern
-                Predicated
+                Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
@@ -80,7 +80,7 @@ test_expandedPattern =
                 (makeEq (var 4) (var 5))
             )
             (ExpandedPattern.toMLPattern
-                Predicated
+                Conditional
                     { term = mkTop sortVariable
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
@@ -91,7 +91,7 @@ test_expandedPattern =
         (assertEqualWithExplanation ""
             (var 1)
             (ExpandedPattern.toMLPattern
-                Predicated
+                Conditional
                     { term = var 1
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -102,7 +102,7 @@ test_expandedPattern =
         (assertEqualWithExplanation ""
             (mkBottom sortVariable)
             (ExpandedPattern.toMLPattern
-                Predicated
+                Conditional
                     { term = mkBottom sortVariable
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
@@ -113,7 +113,7 @@ test_expandedPattern =
         (assertEqualWithExplanation ""
             (mkBottom sortVariable)
             (ExpandedPattern.toMLPattern
-                Predicated
+                Conditional
                     { term = var 1
                     , predicate = makeFalsePredicate
                     , substitution = mempty

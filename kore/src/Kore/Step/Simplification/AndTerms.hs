@@ -58,7 +58,7 @@ import           Kore.Step.PatternAttributes
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
@@ -144,7 +144,7 @@ termEquals
             first
             second
     return
-        (MultiOr.make [PredicateSubstitution.erasePredicatedTerm result], proof)
+        (MultiOr.make [PredicateSubstitution.eraseConditionalTerm result], proof)
 
 termEqualsAnd
     :: forall level variable .
@@ -227,7 +227,7 @@ termEqualsAnd
             )
       where
         equalsPredicate =
-            ( Predicated
+            ( Conditional
                 { term = mkTop_
                 , predicate = makeEqualsPredicate first second
                 , substitution = mempty
@@ -743,7 +743,7 @@ toExpanded transformer tools first second =
     toExpanded0 (Bottom_ _, _proof) =
         (ExpandedPattern.bottom, SimplificationProof)
     toExpanded0 (term, _proof) =
-        ( Predicated
+        ( Conditional
             { term = term
             , predicate = makeTruePredicate
             , substitution = mempty
@@ -847,7 +847,7 @@ bottomTermEquals
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return (ExpandedPattern.top, SimplificationProof)
-        [ Predicated
+        [ Conditional
             {term = (), predicate = PredicateTrue, substitution}
           ]
           | substitution == mempty -> do
@@ -857,7 +857,7 @@ bottomTermEquals
                 second
             return (ExpandedPattern.bottom, SimplificationProof)
         _ -> return
-            ( Predicated
+            ( Conditional
                 { term = mkTop_
                 , predicate =
                     makeNotPredicate
@@ -942,7 +942,7 @@ variableFunctionAndEquals
     first@(Var_ v1)
     second@(Var_ v2)
   = return
-        ( Predicated
+        ( Conditional
             { term = if v2 > v1 then second else first
             , predicate = makeTruePredicate
             , substitution = Substitution.wrap
@@ -963,7 +963,7 @@ variableFunctionAndEquals
     first@(Var_ v)
     second
   | isFunctionPattern tools second = Monad.Trans.lift $ do -- MonadUnify
-    Predicated {term = (), predicate, substitution} <-
+    Conditional {term = (), predicate, substitution} <-
         case simplificationType of -- Simplifier
             SimplificationType.And ->
                 -- Ceil predicate not needed since 'second' being bottom
@@ -1000,7 +1000,7 @@ variableFunctionAndEquals
                         ++ " defining ceil(f(x))=g(x), and the evaluation for"
                         ++ " g(x) splits the configuration."
                         )
-    Predicated
+    Conditional
         { term = ()
         , predicate = resultPredicate
         , substitution = resultSubstitution
@@ -1008,7 +1008,7 @@ variableFunctionAndEquals
             [predicate]
             [substitution, Substitution.wrap [(v, second)]]
     return
-        ( Predicated
+        ( Conditional
             { term = second  -- different for Equals
             , predicate = resultPredicate
             , substitution = resultSubstitution
@@ -1105,12 +1105,12 @@ equalInjectiveHeadsAndEquals
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let predicates = ExpandedPattern.predicate . fst <$> children
             substitutions = ExpandedPattern.substitution . fst <$> children
-        Predicated
+        Conditional
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             } <- substitutionMerger predicates substitutions
         return
-            ( Predicated
+            ( Conditional
                 { term =
                     mkApp
                         (getSort firstPattern)
@@ -1552,7 +1552,7 @@ functionAnd
     second
   | isFunctionPattern tools first && isFunctionPattern tools second =
     return
-        ( Predicated
+        ( Conditional
             { term = first  -- different for Equals
             -- Ceil predicate not needed since first being
             -- bottom will make the entire term bottom. However,

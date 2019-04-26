@@ -307,7 +307,7 @@ test_unifyFramingVariable =
                 remainder = Set.delete framedElem concreteSet
             let
                 expect =
-                    Predicated
+                    Conditional
                         { term = asInternal concreteSet
                         , predicate = makeTruePredicate
                         , substitution =
@@ -386,7 +386,7 @@ test_unifySelectFromSingleton =
                 singleton       = asInternal (Set.singleton concreteElem)
                 elemStepPattern = fromConcreteStepPattern concreteElem
                 expect =
-                    Predicated
+                    Conditional
                         { term = singleton
                         , predicate = makeTruePredicate
                         , substitution =
@@ -410,8 +410,8 @@ unifiesWith
     -> TermLike Variable
     -> CommonExpandedPattern Object
     -> PropertyT SMT.SMT ()
-unifiesWith pat1 pat2 Predicated { term, predicate, substitution } = do
-    Predicated { term = uTerm, predicate = uPred, substitution = uSubst } <-
+unifiesWith pat1 pat2 Conditional { term, predicate, substitution } = do
+    Conditional { term = uTerm, predicate = uPred, substitution = uSubst } <-
         evaluate (mkAnd pat1 pat2)
     Substitution.toMap substitution === Substitution.toMap uSubst
     predicate === uPred
@@ -432,7 +432,7 @@ test_unifyFnSelectFromSingleton =
                 elemStepPatt = fromConcreteStepPattern concreteElem
                 elementVarPatt = mkApp intSort absIntSymbol  [mkVar elementVar]
                 expect =
-                    Predicated
+                    Conditional
                         { term = singleton
                         , predicate =
                             makeEqualsPredicate elemStepPatt elementVarPatt
@@ -481,7 +481,7 @@ test_concretizeKeys =
             (mkPair intSort setSort (Test.Int.asInternal 1) concreteSet)
             (mkPair intSort setSort (mkVar x) symbolic)
     expected =
-        Predicated
+        Conditional
             { term =
                 mkPair intSort setSort
                     symbolicKey

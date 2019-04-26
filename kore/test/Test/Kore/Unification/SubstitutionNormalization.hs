@@ -18,7 +18,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Representation.ExpandedPattern as Conditional
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Unification.Error
@@ -190,7 +190,7 @@ runNormalizeSubstitution
         (SubstitutionError level Variable)
         [(Variable level, TermLike Variable)]
 runNormalizeSubstitution substitution =
-    fmap (Substitution.unwrap . Predicated.substitution)
+    fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept
     $ normalizeSubstitution mockMetadataTools (Map.fromList substitution)
 
@@ -200,7 +200,7 @@ runNormalizeSubstitutionObject
         (SubstitutionError Object Variable)
         [(Variable Object, TermLike Variable)]
 runNormalizeSubstitutionObject substitution =
-    fmap (Substitution.unwrap . Predicated.substitution)
+    fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept
     $ normalizeSubstitution mockMetadataToolsO (Map.fromList substitution)
   where

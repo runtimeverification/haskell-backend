@@ -29,7 +29,7 @@ import           Kore.Step.Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -68,22 +68,22 @@ test_applicationSimplification =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         let expect =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.sigma Mock.a Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.sigma Mock.a Mock.d
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.sigma Mock.b Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-                    ,  Predicated
+                    ,  Conditional
                         { term = Mock.sigma Mock.b Mock.d
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -158,7 +158,7 @@ test_applicationSimplification =
             --        and [x=f(a), y=g(a)]
             let expect =
                     MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
                                 makeAndPredicate
@@ -178,14 +178,14 @@ test_applicationSimplification =
                     (makeApplication
                         testSort
                         Mock.sigmaSymbol
-                        [   [ Predicated
+                        [   [ Conditional
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
                                     Substitution.wrap [ (Mock.x, fOfA) ]
                                 }
                             ]
-                        ,   [ Predicated
+                        ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
@@ -206,7 +206,7 @@ test_applicationSimplification =
             let z' = Mock.z { variableCounter = Just (Element 1) }
                 expect =
                     MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = fOfA
                             , predicate =
                                 makeAndPredicate
@@ -245,7 +245,7 @@ test_applicationSimplification =
                         => AttemptedAxiom Object variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = MultiOr.make
-                            [ Predicated
+                            [ Conditional
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate fOfA gOfA
                                 , substitution =
@@ -271,14 +271,14 @@ test_applicationSimplification =
                     (makeApplication
                         testSort
                         Mock.sigmaSymbol
-                        [   [ Predicated
+                        [   [ Conditional
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
                                     Substitution.wrap [ (Mock.x, fOfA) ]
                                 }
                             ]
-                        ,   [ Predicated
+                        ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
@@ -299,29 +299,29 @@ test_applicationSimplification =
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
 
-    aExpanded = Predicated
+    aExpanded = Conditional
         { term = Mock.a
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    bExpanded = Predicated
+    bExpanded = Conditional
         { term = Mock.b
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    cExpanded = Predicated
+    cExpanded = Conditional
         { term = Mock.c
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    dExpanded = Predicated
+    dExpanded = Conditional
         { term = Mock.d
         , predicate = makeTruePredicate
         , substitution = mempty
         }
 
     gOfAExpanded :: Ord (variable Object) => ExpandedPattern Object variable
-    gOfAExpanded = Predicated
+    gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
         , substitution = mempty

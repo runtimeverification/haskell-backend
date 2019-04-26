@@ -28,12 +28,12 @@ import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Conditional as Predicated
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
@@ -153,10 +153,10 @@ simplifyAnds
                         [ ExpandedPattern.substitution result
                         , ExpandedPattern.substitution intermediate
                         ]
-                return ExpandedPattern.Predicated
+                return ExpandedPattern.Conditional
                     { term = ExpandedPattern.term result
-                    , predicate = Predicated.predicate predSubst
-                    , substitution = Predicated.substitution predSubst
+                    , predicate = Conditional.predicate predSubst
+                    , substitution = Conditional.substitution predSubst
                     }
 
 
@@ -214,7 +214,7 @@ solveGroupedSubstitution
             axiomIdToSimplifier
             patterns
     return
-        ( Predicated
+        ( Conditional
             { term = ()
             , predicate = ExpandedPattern.predicate predSubst
             , substitution = Substitution.wrap $ termAndSubstitution predSubst
@@ -264,7 +264,7 @@ normalizeSubstitutionDuplication
   =
     if null nonSingletonSubstitutions || Substitution.isNormalized subst
         then return
-            ( Predicated () Predicate.makeTruePredicate subst
+            ( Conditional () Predicate.makeTruePredicate subst
             , EmptyUnificationProof
             )
         else do
@@ -286,18 +286,18 @@ normalizeSubstitutionDuplication
                     simplifier
                     axiomIdToSimplifier
                     (  Substitution.wrap (concat singletonSubstitutions)
-                    <> Predicated.substitution predSubst
+                    <> Conditional.substitution predSubst
                     )
             let
                 pred' =
                     Predicate.makeAndPredicate
-                        (Predicated.predicate predSubst)
-                        (Predicated.predicate finalSubst)
+                        (Conditional.predicate predSubst)
+                        (Conditional.predicate finalSubst)
             return
-                ( Predicated
+                ( Conditional
                     { term = ()
                     , predicate = pred'
-                    , substitution = Predicated.substitution finalSubst
+                    , substitution = Conditional.substitution finalSubst
                     }
                 , CombinedUnificationProof
                     [ proof'
@@ -338,9 +338,9 @@ mergePredicateSubstitutionList (p:ps) =
     foldl' mergePredicateSubstitutions p ps
   where
     mergePredicateSubstitutions
-        ( Predicated { predicate = p1, substitution = s1 }, proofs)
-        ( Predicated { predicate = p2, substitution = s2 }, proof) =
-        ( Predicated
+        ( Conditional { predicate = p1, substitution = s1 }, proofs)
+        ( Conditional { predicate = p2, substitution = s2 }, proof) =
+        ( Conditional
             { term = ()
             , predicate = Predicate.makeAndPredicate p1 p2
             , substitution = s1 <> s2

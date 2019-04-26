@@ -26,9 +26,9 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -43,7 +43,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 type ExpandedApplication level variable =
-    Predicated
+    Conditional
         level
         variable
         (CofreeF
@@ -234,7 +234,7 @@ evaluateApplicationFunction
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    Predicated
+    Conditional
         { term, predicate, substitution }
   =
     evaluateApplication
@@ -242,7 +242,7 @@ evaluateApplicationFunction
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
-        Predicated { term = (), predicate, substitution }
+        Conditional { term = (), predicate, substitution }
         term
 
 makeExpandedApplication
@@ -275,7 +275,7 @@ makeExpandedApplication
     symbol
     children
   = do
-    (   Predicated
+    (   Conditional
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
@@ -288,7 +288,7 @@ makeExpandedApplication
                 (map ExpandedPattern.predicate children)
                 (map ExpandedPattern.substitution children)
     return
-        ( Predicated
+        ( Conditional
             { term =
                 (:<) valid
                     Application

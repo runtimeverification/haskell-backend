@@ -12,7 +12,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( bottom, top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -33,12 +33,12 @@ test_forallSimplification =
         -- forall(a or b) = forall(a) or forall(b)
         (assertEqualWithExplanation ""
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkForall Mock.x something1OfX
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                , Predicated
+                , Conditional
                     { term = mkForall Mock.x something2OfX
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -97,7 +97,7 @@ test_forallSimplification =
     , testCase "forall applies substitution if possible"
         -- forall x . (t(x) and p(x) and [x = alpha, others])
         (assertEqualWithExplanation "forall with substitution"
-            Predicated
+            Conditional
                 { term =
                     mkForall Mock.x
                         (mkAnd
@@ -115,7 +115,7 @@ test_forallSimplification =
                 }
             (makeEvaluate
                 Mock.x
-                Predicated
+                Conditional
                     { term = Mock.f $ mkVar Mock.x
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution =
@@ -126,7 +126,7 @@ test_forallSimplification =
     , testCase "forall disappears if variable not used"
         -- forall x . (t and p and s)
         (assertEqualWithExplanation "forall with substitution"
-            Predicated
+            Conditional
                 { term =
                     mkForall Mock.x (mkAnd fOfA (mkCeil_ gOfA))
                 , predicate = makeTruePredicate
@@ -134,7 +134,7 @@ test_forallSimplification =
                 }
             (makeEvaluate
                 Mock.x
-                Predicated
+                Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
@@ -144,14 +144,14 @@ test_forallSimplification =
     , testCase "forall applied on term if not used elsewhere"
         -- forall x . (t(x) and p and s)
         (assertEqualWithExplanation "forall on term"
-            Predicated
+            Conditional
                 { term = mkForall Mock.x (mkAnd fOfX (mkCeil_ gOfA))
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
-                Predicated
+                Conditional
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
@@ -163,14 +163,14 @@ test_forallSimplification =
         --    = t and (forall x . p(x)) and s
         --    if t, s do not depend on x.
         (assertEqualWithExplanation "forall on predicate"
-            Predicated
+            Conditional
                 { term = mkForall Mock.x (mkAnd fOfA (mkCeil_ fOfX))
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
-                Predicated
+                Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution = mempty
@@ -180,7 +180,7 @@ test_forallSimplification =
     , testCase "forall moves substitution above"
         -- forall x . (t(x) and p(x) and s)
         (assertEqualWithExplanation "forall moves substitution"
-            Predicated
+            Conditional
                 { term =
                     mkForall Mock.x
                         (mkAnd
@@ -192,7 +192,7 @@ test_forallSimplification =
                 }
             (makeEvaluate
                 Mock.x
-                Predicated
+                Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = Substitution.wrap [(Mock.y, hOfA)]
@@ -224,12 +224,12 @@ test_forallSimplification =
     hOfA = Mock.h Mock.a
     something1OfX = Mock.plain10 (mkVar Mock.x)
     something2OfX = Mock.plain11 (mkVar Mock.x)
-    something1OfXExpanded = Predicated
+    something1OfXExpanded = Conditional
         { term = something1OfX
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    something2OfXExpanded = Predicated
+    something2OfXExpanded = Conditional
         { term = something2OfX
         , predicate = makeTruePredicate
         , substitution = mempty

@@ -24,7 +24,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
+                 ( Conditional (..), ExpandedPattern, substitutionToPredicate )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -227,12 +227,12 @@ makeEvaluateImpliesNonBool
     -> ExpandedPattern level variable
     -> OrOfExpandedPattern level variable
 makeEvaluateImpliesNonBool
-    pattern1@Predicated
+    pattern1@Conditional
         { term = firstTerm
         , predicate = firstPredicate
         , substitution = firstSubstitution
         }
-    pattern2@Predicated
+    pattern2@Conditional
         { term = secondTerm
         , predicate = secondPredicate
         , substitution = secondSubstitution
@@ -241,7 +241,7 @@ makeEvaluateImpliesNonBool
   , (Recursive.project -> _ :< TopPattern _) <- secondTerm
   =
     MultiOr.make
-        [ Predicated
+        [ Conditional
             { term = firstTerm
             , predicate =
                 makeImpliesPredicate
@@ -257,7 +257,7 @@ makeEvaluateImpliesNonBool
         ]
   | otherwise =
     MultiOr.make
-        [ Predicated
+        [ Conditional
             { term =
                 mkImplies
                     (ExpandedPattern.toMLPattern pattern1)

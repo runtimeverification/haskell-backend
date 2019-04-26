@@ -28,7 +28,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -144,14 +144,14 @@ makeEvaluate
         )
     => ExpandedPattern level variable
     -> OrOfExpandedPattern level variable
-makeEvaluate Predicated { term, predicate, substitution } =
+makeEvaluate Conditional { term, predicate, substitution } =
     MultiOr.make
-        [ Predicated
+        [ Conditional
             { term = makeTermNot term
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-        , Predicated
+        , Conditional
             { term = mkTop (getSort term)
             , predicate =
                 makeNotPredicate

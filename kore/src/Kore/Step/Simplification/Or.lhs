@@ -26,8 +26,8 @@ import           Kore.AST.Pure
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Conditional as Predicated
+                 ( ExpandedPattern, Conditional (..) )
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -184,12 +184,12 @@ useful.
 
 \begin{code}
 disjoinPredicates
-    predicated1@Predicated
+    predicated1@Conditional
         { term = term1
         , predicate = predicate1
         , substitution = substitution1
         }
-    predicated2@Predicated
+    predicated2@Conditional
         { term = term2
         , predicate = predicate2
         , substitution = substitution2
@@ -216,12 +216,12 @@ configuration. Nevertheless, this simplification is required by
 
 \begin{code}
           | otherwise =
-            Predicated
+            Conditional
                 { term = term1
                 , predicate =
                     Function.on
                         makeOrPredicate
-                        Predicated.toPredicate
+                        Conditional.toPredicate
                         predicated1
                         predicated2
                 , substitution = mempty
@@ -274,12 +274,12 @@ so that
 
 \begin{code}
 topAnnihilates
-    predicated1@Predicated
+    predicated1@Conditional
         { term = term1
         , predicate = predicate1
         , substitution = substitution1
         }
-    predicated2@Predicated
+    predicated2@Conditional
         { term = term2
         , predicate = predicate2
         , substitution = substitution2

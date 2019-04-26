@@ -42,7 +42,7 @@ import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
@@ -418,7 +418,7 @@ mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of
         And_ _ term predicateTerm -> return
-            Predicated
+            Conditional
                 { term
                 , predicate =
                     either (error . printError) id

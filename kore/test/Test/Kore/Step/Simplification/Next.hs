@@ -12,7 +12,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -29,7 +29,7 @@ test_nextSimplification =
     [ testCase "Next evaluates to Next"
         (assertEqualWithExplanation ""
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkNext Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -38,7 +38,7 @@ test_nextSimplification =
             )
             (evaluate
                 (makeNext
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.a
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -50,7 +50,7 @@ test_nextSimplification =
     , testCase "Next collapses or"
         (assertEqualWithExplanation ""
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term =
                         mkNext
                             (mkOr
@@ -64,12 +64,12 @@ test_nextSimplification =
             )
             (evaluate
                 (makeNext
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.a
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.b
                         , predicate = makeEqualsPredicate Mock.a Mock.b
                         , substitution = mempty
@@ -82,7 +82,7 @@ test_nextSimplification =
 
 findSort :: [CommonExpandedPattern Object] -> Sort Object
 findSort [] = Mock.testSort
-findSort ( Predicated {term} : _ ) = getSort term
+findSort ( Conditional {term} : _ ) = getSort term
 
 evaluate
     :: Next Object (CommonOrOfExpandedPattern Object)

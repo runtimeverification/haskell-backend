@@ -849,7 +849,7 @@ sortActual name sorts =
 expandedPatternGen :: MetaOrObject level => Gen (CommonExpandedPattern level)
 expandedPatternGen = do
     term <- stepPatternChildGen =<< sortGen
-    return Predicated
+    return Conditional
         { term
         , predicate = makeTruePredicate
         , substitution = mempty

@@ -39,7 +39,7 @@ import qualified Kore.Step.Function.Evaluator as Axiom
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
                  ( make )
@@ -215,7 +215,7 @@ makeEvaluateNonBoolCeil
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    patt@Predicated {term}
+    patt@Conditional {term}
   | (Recursive.project -> _ :< TopPattern _) <- term =
     return
         ( MultiOr.make [patt]
@@ -234,7 +234,7 @@ makeEvaluateNonBoolCeil
         simplifier
         axiomIdToEvaluator
         (MultiAnd.make
-            [ MultiOr.make [PredicateSubstitution.erasePredicatedTerm patt]
+            [ MultiOr.make [PredicateSubstitution.eraseConditionalTerm patt]
             , termCeil
             ]
         )
@@ -318,14 +318,14 @@ makeEvaluateTerm
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
-                Predicated
+                Conditional
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 (mkCeil_ term)
                 (MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = mkTop_
                         , predicate = makeCeilPredicate term
                         , substitution = mempty
@@ -335,9 +335,9 @@ makeEvaluateTerm
             return (fmap toPredicateSubstitution evaluation, proof)
   where
     toPredicateSubstitution
-        Predicated {term = Top_ _, predicate, substitution}
+        Conditional {term = Top_ _, predicate, substitution}
       =
-        Predicated {term = (), predicate, substitution}
+        Conditional {term = (), predicate, substitution}
     toPredicateSubstitution patt =
         error
             (  "Ceil simplification is expected to result ai a predicate, but"

@@ -26,7 +26,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern, PredicateSubstitution )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
@@ -69,16 +69,16 @@ mergeWithPredicateSubstitution
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    Predicated
+    Conditional
         { predicate = conditionToMerge
         , substitution = substitutionToMerge
         }
-    patt@Predicated
+    patt@Conditional
         { predicate = pattPredicate
         , substitution = pattSubstitution
         }
   = do
-    (   Predicated
+    (   Conditional
             { predicate = mergedCondition
             , substitution = mergedSubstitution
             }
@@ -125,14 +125,14 @@ mergeWithEvaluatedCondition
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    Predicated
+    Conditional
         { term = pattTerm
         , substitution = pattSubstitution
         }  -- The predicate was already included in the PredicateSubstitution
-    Predicated
+    Conditional
         { predicate = predPredicate, substitution = predSubstitution }
   = do
-    (   Predicated
+    (   Conditional
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
@@ -145,7 +145,7 @@ mergeWithEvaluatedCondition
             [predPredicate]
             [pattSubstitution, predSubstitution]
     return
-        ( Predicated
+        ( Conditional
             { term = pattTerm
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
@@ -171,22 +171,22 @@ mergeWithPredicateSubstitutionAssumesEvaluated
         )
     => PredicateSubstitutionMerger level variable m
     -> PredicateSubstitution level variable
-    -> Predicated level variable term
-    -> m (Predicated level variable term, SimplificationProof level)
+    -> Conditional level variable term
+    -> m (Conditional level variable term, SimplificationProof level)
 mergeWithPredicateSubstitutionAssumesEvaluated
     (PredicateSubstitutionMerger substitutionMerger)
-    Predicated
+    Conditional
         { term = ()
         , predicate = predPredicate
         , substitution = predSubstitution
         }
-    Predicated
+    Conditional
         { term = pattTerm
         , predicate = pattPredicate
         , substitution = pattSubstitution
         }  -- The predicate was already included in the PredicateSubstitution
   = do
-    Predicated
+    Conditional
         { term = ()
         , predicate = mergedPredicate
         , substitution = mergedSubstitution
@@ -195,7 +195,7 @@ mergeWithPredicateSubstitutionAssumesEvaluated
                 [pattPredicate, predPredicate]
                 [pattSubstitution, predSubstitution]
     return
-        ( Predicated
+        ( Conditional
             { term = pattTerm
             , predicate = mergedPredicate
             , substitution = mergedSubstitution

@@ -39,9 +39,9 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (Predicated) )
-import           Kore.Step.Representation.ExpandedPattern as Predicated
-                 ( Predicated (..) )
+                 ( Conditional (Conditional) )
+import           Kore.Step.Representation.ExpandedPattern as Conditional
+                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
                  RulePattern (..) )
@@ -156,7 +156,7 @@ checkClaim
             startState :: CommonProofState level
             startState =
                 ProofState.GoalLHS
-                    Predicated
+                    Conditional
                         {term = left, predicate = Predicate.makeTruePredicate, substitution = mempty}
         executionGraph <- runStrategy transitionRule' strategy startState
         let

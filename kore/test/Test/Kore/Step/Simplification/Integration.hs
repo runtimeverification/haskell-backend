@@ -31,7 +31,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
@@ -65,7 +65,7 @@ test_simplificationIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                Predicated
+                Conditional
                     { term =
                         -- Use the exact form we expect from an owise condition
                         -- for f(constr10(x)) = something
@@ -103,7 +103,7 @@ test_simplificationIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                Predicated
+                Conditional
                     { term =
                         -- Use the exact form we expect from an owise condition
                         -- for f(constr10(x)) = something
@@ -139,7 +139,7 @@ test_simplificationIntegration =
      , testCase "map-like simplification" $ do
         let expect =
                 MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = mkTop_
                         , predicate = makeCeilPredicate
                             (mkAnd
@@ -153,7 +153,7 @@ test_simplificationIntegration =
         actual <-
             evaluate
                 mockMetadataTools
-                Predicated
+                Conditional
                     { term = mkCeil_
                         (mkAnd
                             (Mock.constr20
@@ -172,7 +172,7 @@ test_simplificationIntegration =
     , testCase "map function, non-matching" $ do
         let
             expect = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -206,7 +206,7 @@ test_simplificationIntegration =
                         ]
                     )
                 )
-                Predicated
+                Conditional
                     { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -215,7 +215,7 @@ test_simplificationIntegration =
     , testCase "map function, matching" $ do
         let
             expect = MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -249,7 +249,7 @@ test_simplificationIntegration =
                         ]
                     )
                 )
-                Predicated
+                Conditional
                     { term =
                         Mock.function20MapTest
                             (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
@@ -264,7 +264,7 @@ test_substitute =
     [ testCase "Substitution under unary functional constructor" $ do
         let expect =
                 MultiOr.make
-                    [ ExpandedPattern.Predicated
+                    [ ExpandedPattern.Conditional
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
@@ -296,7 +296,7 @@ test_substitute =
     , testCase "Substitution" $ do
         let expect =
                 MultiOr.make
-                    [ ExpandedPattern.Predicated
+                    [ ExpandedPattern.Conditional
                         { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
@@ -325,7 +325,7 @@ test_substituteMap =
     [ testCase "Substitution applied to Map elements" $ do
         let expect =
                 MultiOr.make
-                    [ ExpandedPattern.Predicated
+                    [ ExpandedPattern.Conditional
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
@@ -362,7 +362,7 @@ test_substituteList =
     [ testCase "Substitution applied to List elements" $ do
         let expect =
                 MultiOr.make
-                    [ ExpandedPattern.Predicated
+                    [ ExpandedPattern.Conditional
                         { term =
                             Mock.functionalConstr20
                                 Mock.a

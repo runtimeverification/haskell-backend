@@ -30,8 +30,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Conditional
-                 ( Predicated (..) )
-import qualified Kore.Step.Conditional as Predicated
+                 ( Conditional (..) )
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -258,8 +258,8 @@ makeEvaluateNonBool
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    first@Predicated { term = firstTerm }
-    second@Predicated { term = secondTerm }
+    first@Conditional { term = firstTerm }
+    second@Conditional { term = secondTerm }
   = do
     (terms, _proof) <-
         Monad.Trans.lift $ makeTermAnd
@@ -269,10 +269,10 @@ makeEvaluateNonBool
             axiomIdToSimplifier
             firstTerm
             secondTerm
-    let firstCondition = Predicated.withoutTerm first
-        secondCondition = Predicated.withoutTerm second
+    let firstCondition = Conditional.withoutTerm first
+        secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
-        merged = Predicated.andCondition terms initialConditions
+        merged = Conditional.andCondition terms initialConditions
     normalized <-
         Substitution.normalize
             tools
@@ -283,7 +283,7 @@ makeEvaluateNonBool
     return
         (applyAndIdempotence <$> normalized)
             { predicate =
-                applyAndIdempotence <$> Predicated.predicate normalized
+                applyAndIdempotence <$> Conditional.predicate normalized
             }
 
 applyAndIdempotence

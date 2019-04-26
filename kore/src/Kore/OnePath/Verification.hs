@@ -53,11 +53,11 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (Predicated) )
+                 ( CommonExpandedPattern, Conditional (Conditional) )
 import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( fromPurePattern )
-import           Kore.Step.Representation.ExpandedPattern as Predicated
-                 ( Predicated (..) )
+import           Kore.Step.Representation.ExpandedPattern as Conditional
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( CommonOrOfExpandedPattern )
@@ -261,7 +261,7 @@ verifyClaim
             Limit.takeWithin
                 stepLimit
                 (strategyBuilder
-                    Predicated
+                    Conditional
                     { term = right
                     , predicate = ensures
                     , substitution = mempty
@@ -270,7 +270,7 @@ verifyClaim
         startPattern :: CommonStrategyPattern level
         startPattern =
             StrategyPattern.RewritePattern
-                Predicated
+                Conditional
                     {term = left, predicate = requires, substitution = mempty}
     executionGraph <- Monad.Trans.lift $ runStrategy
         transitionRule'

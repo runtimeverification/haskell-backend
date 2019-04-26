@@ -51,7 +51,7 @@ import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
-import qualified Kore.Step.Conditional as Predicated
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
@@ -392,7 +392,7 @@ stepPatternSimplifier simplifier =
             Monad.Trans.lift
             $ simplifier predicateSimplifier stepPattern
         result <- scatter results
-        return (result `Predicated.andCondition` initialCondition)
+        return (result `Conditional.andCondition` initialCondition)
 
 {-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies
 'PredicateSubstitution's. The minimal requirement from this function is

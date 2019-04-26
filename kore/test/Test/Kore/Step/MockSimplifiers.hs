@@ -12,9 +12,9 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
                  ( wrapPredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (Predicated) )
+                 ( Conditional (Conditional) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -34,7 +34,7 @@ substitutionSimplifier tools =
             (\_ p ->
                 return
                     ( MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = mkTop_
                             , predicate = Predicate.wrapPredicate p
                             , substitution = mempty

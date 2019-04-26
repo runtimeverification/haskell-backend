@@ -43,7 +43,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitution )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern, PredicateSubstitution )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( flatten, make, merge, traverseWithPairs )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -123,13 +123,13 @@ evaluateApplication
     appPurePattern = asPurePattern (valid :< ApplicationPattern afterInj)
 
     unchangedPatt =
-        Predicated
+        Conditional
             { term         = appPurePattern
             , predicate    = predicate
             , substitution = substitution
             }
       where
-        Predicated { term = (), predicate, substitution } =
+        Conditional { term = (), predicate, substitution } =
             childrenPredicateSubstitution
     unchangedOr = MultiOr.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
@@ -285,13 +285,13 @@ maybeEvaluatePattern
         Map.lookup identifier' axiomIdToEvaluator
 
     unchangedPatt =
-        Predicated
+        Conditional
             { term         = patt
             , predicate    = predicate
             , substitution = substitution
             }
       where
-        Predicated { term = (), predicate, substitution } =
+        Conditional { term = (), predicate, substitution } =
             childrenPredicateSubstitution
 
     simplifyIfNeeded
@@ -375,7 +375,7 @@ reevaluateFunctions
     substitutionSimplifier
     termSimplifier
     axiomIdToEvaluator
-    Predicated
+    Conditional
         { term   = rewrittenPattern
         , predicate = rewritingCondition
         , substitution = rewrittenSubstitution
@@ -388,7 +388,7 @@ reevaluateFunctions
             substitutionSimplifier
             termSimplifier
             axiomIdToEvaluator
-            Predicated
+            Conditional
                 { term = ()
                 , predicate = rewritingCondition
                 , substitution = rewrittenSubstitution

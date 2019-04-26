@@ -22,7 +22,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
@@ -215,7 +215,7 @@ makeEvaluateNonBoolIn
     -> (OrOfExpandedPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolIn patt1 patt2 =
     ( MultiOr.make
-        [ Predicated
+        [ Conditional
             { term = mkTop_
             , predicate =
                 makeInPredicate

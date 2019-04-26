@@ -75,7 +75,7 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -323,7 +323,7 @@ emptyExecutionGraph =
         :: RewriteRule level Variable
         -> CommonStrategyPattern level
     extractConfig (RewriteRule RulePattern { left, requires }) =
-        RewritePattern $ Predicated left requires mempty
+        RewritePattern $ Conditional left requires mempty
 
 -- | Get nth claim from the claims list.
 getClaimByIndex

@@ -16,7 +16,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -35,7 +35,7 @@ simplify
        )
 simplify (CharLiteral char) =
     ( MultiOr.make
-        [Predicated
+        [Conditional
             { term = mkCharLiteral char
             , predicate = makeTruePredicate
             , substitution = mempty

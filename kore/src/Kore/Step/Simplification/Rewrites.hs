@@ -16,7 +16,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
                  ( toMLPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -95,7 +95,7 @@ makeEvaluateRewrites
     -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
     ( MultiOr.make
-        [ Predicated
+        [ Conditional
             { term = mkRewrites
                 (ExpandedPattern.toMLPattern first)
                 (ExpandedPattern.toMLPattern second)

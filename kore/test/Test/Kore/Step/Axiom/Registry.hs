@@ -37,7 +37,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
 import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( CommonExpandedPattern, Conditional (..) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
@@ -349,7 +349,7 @@ test_functionRegistry =
         :: TermLike Variable
         -> CommonExpandedPattern Object
     makeExpandedPattern pat =
-        Predicated
+        Conditional
         { term = pat
         , predicate = makeTruePredicate
         , substitution = mempty

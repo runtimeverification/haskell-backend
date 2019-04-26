@@ -6,19 +6,19 @@ License     : NCSA
 module Kore.Step.Representation.PredicateSubstitution
     ( PredicateSubstitution
     , CommonPredicateSubstitution
-    , erasePredicatedTerm
+    , eraseConditionalTerm
     , top
     , bottom
     , topPredicate
     , bottomPredicate
     , fromPurePattern
-    , Predicated.fromPredicate
-    , Predicated.fromSubstitution
+    , Conditional.fromPredicate
+    , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
     , Kore.Step.Representation.PredicateSubstitution.mapVariables
     -- * Re-exports
-    , Predicated (..)
+    , Conditional (..)
     ) where
 
 import           Data.Set
@@ -30,21 +30,21 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Conditional
-                 ( Predicated (..) )
-import qualified Kore.Step.Conditional as Predicated
+                 ( Conditional (..) )
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Unparser
 
 -- | A predicate and substitution without an accompanying term.
-type PredicateSubstitution level variable = Predicated level variable ()
+type PredicateSubstitution level variable = Conditional level variable ()
 
 -- | A 'PredicateSubstitution' of the 'Variable' type.
 type CommonPredicateSubstitution level = PredicateSubstitution level Variable
 
--- | Erase the @Predicated@ 'term' to yield a 'PredicateSubstitution'.
-erasePredicatedTerm
-    :: Predicated Object variable child
+-- | Erase the @Conditional@ 'term' to yield a 'PredicateSubstitution'.
+eraseConditionalTerm
+    :: Conditional Object variable child
     -> PredicateSubstitution Object variable
-erasePredicatedTerm = Predicated.withoutTerm
+eraseConditionalTerm = Conditional.withoutTerm
 
 top
     ::  ( MetaOrObject Object
@@ -52,7 +52,7 @@ top
         )
     => PredicateSubstitution Object variable
 top =
-    Predicated
+    Conditional
         { term = ()
         , predicate = Predicate.makeTruePredicate
         , substitution = mempty
@@ -64,7 +64,7 @@ bottom
         )
     => PredicateSubstitution Object variable
 bottom =
-    Predicated
+    Conditional
         { term = ()
         , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
@@ -98,7 +98,7 @@ freeVariables
        )
     => PredicateSubstitution Object variable
     -> Set (variable Object)
-freeVariables = Predicated.freeVariables (const Set.empty)
+freeVariables = Conditional.freeVariables (const Set.empty)
 
 {- | Transform a predicate and substitution into a predicate only.
 
@@ -117,11 +117,11 @@ toPredicate
        )
     => PredicateSubstitution Object variable
     -> Predicate variable
-toPredicate = Predicated.toPredicate
+toPredicate = Conditional.toPredicate
 
 mapVariables
     :: Ord (variable2 Object)
     => (variable1 Object -> variable2 Object)
     -> PredicateSubstitution Object variable1
     -> PredicateSubstitution Object variable2
-mapVariables = Predicated.mapVariables (\_ () -> ())
+mapVariables = Conditional.mapVariables (\_ () -> ())

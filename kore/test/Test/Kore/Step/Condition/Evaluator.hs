@@ -53,7 +53,7 @@ test_andNegation =
                 )
         expected === actual
     expected =
-        Predicated
+        Conditional
             { term = ()
             , predicate = makeFalsePredicate
             , substitution = mempty

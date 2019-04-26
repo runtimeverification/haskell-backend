@@ -50,7 +50,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Proof
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Rule
                  ( RulePattern (..) )
@@ -1182,10 +1182,10 @@ instance
     , EqualWithExplanation child
     , EqualWithExplanation (TermLike variable)
     )
-    => StructEqualWithExplanation (Predicated Object variable child)
+    => StructEqualWithExplanation (Conditional Object variable child)
   where
     structFieldsWithNames
-        expected@(Predicated _ _ _) actual@(Predicated _ _ _)
+        expected@(Conditional _ _ _) actual@(Conditional _ _ _)
       =
         [ EqWrap
             "term = "
@@ -1200,7 +1200,7 @@ instance
             (substitution expected)
             (substitution actual)
         ]
-    structConstructorName _ = "Predicated"
+    structConstructorName _ = "Conditional"
 
 instance
     ( Show Object, Show (variable Object), Show child
@@ -1209,7 +1209,7 @@ instance
     , EqualWithExplanation child
     , EqualWithExplanation (TermLike variable)
     )
-    => EqualWithExplanation (Predicated Object variable child)
+    => EqualWithExplanation (Conditional Object variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

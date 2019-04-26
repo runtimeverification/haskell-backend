@@ -12,7 +12,7 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Representation.OrOfExpandedPattern
@@ -28,7 +28,7 @@ test_charLiteralSimplification =
     [ testCase "CharLiteral evaluates to CharLiteral"
         (assertEqualWithExplanation ""
             (MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate
                     , substitution = mempty

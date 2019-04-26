@@ -92,7 +92,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
+                 ( Conditional (..), ExpandedPattern )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
@@ -547,12 +547,12 @@ unifyEquals
   where
     hookTools = StepperAttributes.hook <$> tools
 
-    -- | Given a collection 't' of 'Predicated' values, propagate all the
-    -- predicates to the top level, returning a 'Predicated' collection.
+    -- | Given a collection 't' of 'Conditional' values, propagate all the
+    -- predicates to the top level, returning a 'Conditional' collection.
     propagatePredicates
         :: (level ~ Object, Traversable t)
-        => t (Predicated level variable a)
-        -> Predicated level variable (t a)
+        => t (Conditional level variable a)
+        -> Conditional level variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
