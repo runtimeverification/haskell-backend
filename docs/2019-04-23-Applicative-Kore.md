@@ -23,29 +23,109 @@ parse(def.fullkore) = parse2(tr(def.fullkore))
 
 ## AppKore syntax
 
-### Primitive patterns
+### Keywords
 
 ```
-<primitive-pattern> ::=
-| <element-variable>    // lowercase x, y, x1, x', var
-| <set-variable>        // uppercase X, Y, X1, X', VAR
-| <constant>            // any identifiers (ambiguity?)
-| "\bottom"
-| "\implies" <primitive-pattern> <primitive-pattern>   // right associative
-| "\forall" <element-variable> <primitive-pattern>     // scope goes far right
-| "\mu" <set-variable> <primitive-pattern>             // scope goes far right
-| <primitive-pattern> <primitive-pattern>              // left associative
-| "(" <primitive-pattern> ")"
+module import axiom symbol endmodule
+notation assoc assoc-left assoc-right
+```
+
+### Identifiers
+
+```
+<id> ::= ...   // TBD. Ideally, it should allow anything except those starting with a #.
+               // For example, X, X1, X2, X_1, _1, _2, ...
+               //              x, x1, x2, x_1, Xx, XX, ...
+               //              Int, Nat, List, plus, mult, ...
+               //              \and, \or, \iff, \equals, \ceil, ...
+               //              _+_, _plus_, Nat+Nat:Nat, ...
+               //              "abc", "ABC", "\n", "\"", "", ...
+               //              1, 2, -1, -2, 0, 0xF, ...
+<sharp-id> ::= // "#", or "#" followed by <id> (no space between them)
 ```
 
 ### Patterns
 
 ```
+<atom-pattern> ::=
+| <id>        // can be either <element-variable> or <symbol>, decided by verifier
+| <sharp-id>  // <set-variable>
+| "\bottom"
+| "(" <pattern> ")"
+
+<app-pattern> ::=
+| <atom-pattern>
+| <app-pattern> <atom-pattern> // i.e., application is right associative
+
 <pattern> ::=
-| <primitive-pattern>
-| "\subst" <pattern> <pattern> <element-variable>  // substitution
-| "\subst" <pattern> <pattern> <set-variable>      // substitution
-| (extended with alias definitions)                // see below
+| "\implies" <atom-pattern> <atom-pattern>
+| "\forall" <element-variable> <atom-pattern>
+| "\mu" <set-variable> <atom-pattern>
+```
+
+Some examples:
+
+```
+\implies a        ... ... not wellformed; not enough argument
+\implies a b      ... ... wellformed
+\implies a b c    ... ... not wellformed; too many arguments
+\implies (a b) c  ... ... wellformed; (a b) is an application
+```
+
+It takes two process to fully parse an AppKore definition. The _parser_ simply parse the definition by the above grammar, without distinguishing element variables from symbols. After that, the _verifier_ reads the symbol declarations and figure out what are element variables and what are symbols. Those identifiers that have been declared as a symbol (see below) are symbols, and the rest identifiers are element variables. Note that set variables always start with a "#" so there is no chance to confuse them with the other identifiers.
+
+_Verifier_ is also responsible for checking _notation definitions_, which we introduce below. Intuitively, all derived constructs are defined as notations (i.e., aliases), and the verifier should check that all notation definitions are _well-founded_ and any pattern written with notations can be unique desugared to a vanilla pattern without any notations/aliases in finitely many steps. All notations have correct number of arguments, etc.
+
+### Notation definitions
+
+A (basic) notation definition has the following form:
+
+```
+notation foo X1 X2 ... Xn = <pattern>
+```
+
+where `foo` is a notation expecting `n` arguments where `n` is called its arity. Using this syntax, we can define many derived constructs in AppKore. For example,
+
+```
+notation \neg P = \implies P \bottom
+```
+
+By default, we keep the notations instead of desugaring them immediately. 
+
+Sometimes, it is convenient to define _volatile notations_ with an arbitrarily number of arguments. For example, `\or P1 P2 ... Pn` for any `n >= 2`. We achieve this by defining a binary notation `\or P Q` and specify that this notation is _(left/right-)associative_. 
+
+```
+notation \or P Q = \implies (\neg P) Q
+left-assoc-notation \or
+```
+
+The line `left-assoc-notation \or` tells the verifier to accept patterns of the form `\or P1 P2 ... Pn`, and desugar it (if required), uniquely, to `(\or ... (\or P1 P2) ... Pn)`. Note that there is nothing related to the semantics; it is merely a notation about the syntax.
+
+Similarly, we can define volatile `\and` as
+
+```
+notation \and P Q = \neg (\or (\neg P) (\neg Q))
+left-assoc-notation \and
+```
+
+Volatile `\forall` can be defined as
+
+```
+right-assoc-notation \forall
+```
+
+which tells the verifier to accept patterns of the form `\forall X1 X2 ... Xn P` and desugar it (if required), uniquely, to `(\forall X1 ... (\forall Xn P) ...)`.
+
+
+
+```
+notation \neg P = \implies P \bot                             [basic]
+notation \iff P Q = \and (\implies P Q) (\implies Q P)        [basic]
+notation \top = \neg \bot                                     [basic]
+notation \exists x P = \neg \forall x \neg P                  [basic]
+notation \nu X P = \neg \mu X (\neg (\subst P (\neg X) X))    [basic]
+notation \and P Q ... = \and2 P (\and Q ...)                  [basic]
+notation \or P Q ... = \or2 P (\or Q ...)                     [basic]
 ```
 
 ### Basic derived constructs
