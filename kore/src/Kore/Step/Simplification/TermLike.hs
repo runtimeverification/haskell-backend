@@ -1,13 +1,9 @@
-{-|
-Module      : Kore.Step.Simplification.Pattern
-Description : Tools for Pattern simplification.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
-module Kore.Step.Simplification.Pattern
+module Kore.Step.Simplification.TermLike
     ( simplify
     , simplifyToOr
     ) where

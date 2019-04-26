@@ -21,7 +21,7 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier, stepPatternSimplifier )
-import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplifyToOr )
 
 create
@@ -35,4 +35,4 @@ create
     axiomIdToEvaluator
   =
     stepPatternSimplifier
-        (Pattern.simplifyToOr tools axiomIdToEvaluator)
+        (TermLike.simplifyToOr tools axiomIdToEvaluator)

@@ -40,12 +40,12 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier (..),
                  SimplificationProof (..), Simplifier, StepPatternSimplifier,
                  evalSimplifier )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import qualified Kore.Step.Simplification.TermLike as TermLike
+                 ( simplify )
 import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
@@ -670,7 +670,7 @@ evaluate metadataTools functionIdToEvaluator patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ Pattern.simplify
+    $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
     substitutionSimplifier :: PredicateSubstitutionSimplifier level

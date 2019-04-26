@@ -49,8 +49,8 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import           Kore.Step.TermLike
 import           Kore.Unification.Error
@@ -205,7 +205,7 @@ evaluate =
     (<$>) fst
     . liftSMT
     . evalSimplifier emptyLogger
-    . Pattern.simplify
+    . TermLike.simplify
         testMetadataTools
         testSubstitutionSimplifier
         evaluators
