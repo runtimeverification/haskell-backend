@@ -60,7 +60,6 @@ import Kore.Unparser
 import Template.Tools
        ( newDefinitionGroup )
 
-
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
@@ -73,7 +72,7 @@ instance NFData StringLiteral
 
 instance Unparse StringLiteral where
     unparse = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral
-    unparse2 = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral
+    unparse2 = unparse
 
 {-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
@@ -87,7 +86,7 @@ instance NFData CharLiteral
 
 instance Unparse CharLiteral where
     unparse = Pretty.squotes . fromString . escapeChar . getCharLiteral
-    unparse2 = Pretty.squotes . fromString . escapeChar . getCharLiteral
+    unparse2 = unparse
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
@@ -120,11 +119,9 @@ instance Unparse (SymbolOrAlias level) where
             { symbolOrAliasConstructor
             , symbolOrAliasParams
             }
-      = "("
-        <> unparse2 symbolOrAliasConstructor
-        <> " "
-        <> parameters2 symbolOrAliasParams
-        <> ")"
+      = Pretty.parens (Pretty.fillSep [ unparse2 symbolOrAliasConstructor
+                                      , parameters2 symbolOrAliasParams
+                                      ])
 
 unparseSymbolOrAliasNoSortParams :: SymbolOrAlias level -> Pretty.Doc ann
 unparseSymbolOrAliasNoSortParams
@@ -166,17 +163,14 @@ instance Unparse (Variable level) where
         <> Pretty.pretty variableCounter
         <> Pretty.colon
         <> unparse variableSort
-    unparse2 Variable { variableName, variableCounter, variableSort } =
+    unparse2 Variable { variableName, variableCounter } =
         unparseIdLower variableName
         <> Pretty.pretty variableCounter
-        <> Pretty.colon
-        <> unparse2 variableSort
     unparse2BindingVariables Variable { variableName, variableCounter, variableSort } =
         unparseIdLower variableName
         <> Pretty.pretty variableCounter
         <> Pretty.colon
         <> unparse2 variableSort
-
 
 {- | Is the variable original (as opposed to generated)?
  -}
@@ -212,7 +206,6 @@ externalizeFreshVariable variable@Variable { variableName, variableCounter } =
             , idLocation = AstLocationGeneratedVariable
             }
 
-
 -- |Wrapper for set variables
 newtype SetVariable variable level
     = SetVariable { getVariable :: variable level }
@@ -244,7 +237,6 @@ instance NFData (Concrete level)
 instance Unparse (Concrete level) where
     unparse = \case {}
     unparse2 = \case {}
-
 
 {- | 'SortedVariable' is a Kore variable with a known sort.
 
@@ -303,7 +295,6 @@ instance Hashable MLPatternType
 instance Unparse MLPatternType where
     unparse = ("\\" <>) . fromString . patternString
     unparse2 = ("\\" <>) . fromString . patternString
-
 
 allPatternTypes :: [MLPatternType]
 allPatternTypes =
@@ -396,14 +387,11 @@ instance Unparse child => Unparse (And level child) where
 
     unparse2
         And { andFirst, andSecond }
-      =
-        "("
-        <> "\\and"
-        <> unparse2 andFirst
-        <> " "
-        <> unparse2 andSecond
-        <> ")"
-
+      = Pretty.parens (Pretty.fillSep
+            [ "\\and"
+            , unparse2 andFirst
+            , unparse2 andSecond
+            ])
 
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
 @object-pattern@ and @meta-pattern@ syntactic categories from
@@ -456,16 +444,12 @@ instance Unparse child => Unparse (Application level child) where
       =
         case applicationChildren of
             [] ->
-                "("
-                <> unparse2 applicationSymbolOrAlias
-                <> ")"
+                Pretty.parens (unparse2 applicationSymbolOrAlias)
             children ->
-                "("
-                <> unparseSymbolOrAliasNoSortParams applicationSymbolOrAlias
-                <> " "
-                <> arguments2 children
-                <> ")"
-
+                Pretty.parens (Pretty.fillSep
+                    [ unparseSymbolOrAliasNoSortParams applicationSymbolOrAlias
+                    , arguments2 children
+                    ])
 
 {-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -559,12 +543,7 @@ instance Unparse child => Unparse (Ceil level child) where
         <> arguments [ceilChild]
 
     unparse2 Ceil { ceilChild } =
-        "("
-        <> "\\ceil"
-        <> unparse2 ceilChild
-        <> ")"
-
-
+        Pretty.parens (Pretty.fillSep ["\\ceil", unparse2 ceilChild])
 
 {-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
 syntactic category, which are not yet in the Semantics of K document,
@@ -616,7 +595,7 @@ instance
     Unparse (DomainValue level domain child)
   where
     unparse DomainValue { domainValueChild } = unparse domainValueChild
-    unparse2 DomainValue { domainValueChild } = unparse2 domainValueChild
+    unparse2 = unparse
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -681,15 +660,11 @@ instance Unparse child => Unparse (Equals level child) where
             { equalsFirst
             , equalsSecond
             }
-      =
-        "("
-        <> "\\equals"
-        <> unparse2 equalsFirst
-        <> " "
-        <> unparse2 equalsSecond
-        <> ")"
-
-
+      = Pretty.parens (Pretty.fillSep
+            [ "\\equals"
+            , unparse2 equalsFirst
+            , unparse2 equalsSecond
+            ])
 
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -745,10 +720,11 @@ instance
         <> arguments' [unparse existsVariable, unparse existsChild]
 
     unparse2 Exists { existsVariable, existsChild } =
-        "(" <> "∃" <> " "
-        <> (unparse2BindingVariables existsVariable)
-        <> " . " <> (unparse2 existsChild) <> ")"
-
+        Pretty.parens (Pretty.fillSep
+            [ "\\exists"
+            , unparse2BindingVariables existsVariable
+            , unparse2 existsChild
+            ])
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -801,10 +777,7 @@ instance Unparse child => Unparse (Floor level child) where
         <> arguments [floorChild]
 
     unparse2 Floor { floorChild } =
-        "⌊" <> (unparse2 floorChild) <> "⌋"
-
-
-
+        Pretty.parens (Pretty.fillSep ["\\floor", unparse2 floorChild])
 
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -860,10 +833,11 @@ instance
         <> arguments' [unparse forallVariable, unparse forallChild]
 
     unparse2 Forall { forallVariable, forallChild } =
-        "(" <> "∀" <> " "
-        <> (unparse2BindingVariables forallVariable)
-        <> " . " <> (unparse2 forallChild) <> ")"
-
+        Pretty.parens (Pretty.fillSep
+            [ "\\forall"
+            , unparse2BindingVariables forallVariable
+            , unparse2 forallChild
+            ])
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -914,10 +888,11 @@ instance Unparse child => Unparse (Iff level child) where
         <> arguments [iffFirst, iffSecond]
 
     unparse2 Iff { iffFirst, iffSecond } =
-        "(" <> (unparse2 iffFirst)
-        <> " ↔ "
-        <> (unparse2 iffSecond) <> ")"
-
+        Pretty.parens (Pretty.fillSep
+            [ "\\iff"
+            , unparse2 iffFirst
+            , unparse2 iffSecond
+            ])
 
 {-|'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -968,9 +943,11 @@ instance Unparse child => Unparse (Implies level child) where
         <> arguments [impliesFirst, impliesSecond]
 
     unparse2 Implies { impliesFirst, impliesSecond } =
-        "(" <> (unparse2 impliesFirst) <> " → "
-        <> (unparse2 impliesSecond) <> ")"
-
+        Pretty.parens (Pretty.fillSep
+            [ "\\implies"
+            , unparse2 impliesFirst
+            , unparse2 impliesSecond
+            ])
 
 {-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -1038,11 +1015,11 @@ instance Unparse child => Unparse (In level child) where
             { inContainedChild
             , inContainingChild
             }
-      =
-        "(" <> (unparse2 inContainedChild) <> " " <> "∈" <> " " <> (unparse2 inContainingChild) <> ")"
-
-
-
+      = Pretty.parens (Pretty.fillSep
+            [ "\\in"
+            , unparse2 inContainedChild
+            , unparse2 inContainingChild
+            ])
 
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -1092,9 +1069,7 @@ instance Unparse child => Unparse (Next level child) where
         <> arguments [nextChild]
 
     unparse2 Next { nextChild } =
-        "(" <> "∙" <> " " <> (unparse2 nextChild) <> ")"
-
-
+        Pretty.parens (Pretty.fillSep ["\\next", unparse2 nextChild])
 
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -1144,8 +1119,7 @@ instance Unparse child => Unparse (Not level child) where
         <> arguments [notChild]
 
     unparse2 Not { notChild } =
-        "(" <> "¬" <> " " <> (unparse2 notChild) <> ")"
-
+        Pretty.parens (Pretty.fillSep ["\\not", unparse2 notChild])
 
 {-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -1196,10 +1170,11 @@ instance Unparse child => Unparse (Or level child) where
         <> arguments [orFirst, orSecond]
 
     unparse2 Or { orFirst, orSecond } =
-        "(" <> (unparse2 orFirst) <> " " <> "∨" <> " " <> (unparse2 orSecond) <> ")"
-
-
-
+        Pretty.parens (Pretty.fillSep
+            [ "\\or"
+            , unparse2 orFirst
+            , unparse2 orSecond
+            ])
 
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -1251,10 +1226,11 @@ instance Unparse child => Unparse (Rewrites level child) where
         <> arguments [rewritesFirst, rewritesSecond]
 
     unparse2 Rewrites { rewritesFirst, rewritesSecond } =
-        "(" <> (unparse2 rewritesFirst) <> " " <> "⇒" <> " " <> (unparse2 rewritesSecond) <> ")"
-
-
-
+        Pretty.parens (Pretty.fillSep
+            [ "\\rewrites"
+            , unparse2 rewritesFirst
+            , unparse2 rewritesSecond
+            ])
 
 {-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -1295,8 +1271,7 @@ instance Unparse (Top level child) where
     unparse Top { topSort } =
         "\\top" <> parameters [topSort] <> noArguments
 
-    unparse2 Top { } =
-        "⊤"
+    unparse2 Top { } = "\\top"
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,

@@ -108,7 +108,7 @@ parameters2 = parameters2' . map unparse2
 parameters' :: [Doc ann] -> Doc ann
 parameters' = list lbrace rbrace
 parameters2' :: [Doc ann] -> Doc ann
-parameters2' = list "" ""
+parameters2' = list2 "" ""
 
 arguments :: Unparse p => [p] -> Doc ann
 arguments = arguments' . map unparse
@@ -120,7 +120,7 @@ arguments2 = arguments2' . map unparse2
 arguments' :: [Doc ann] -> Doc ann
 arguments' = list lparen rparen
 arguments2' :: [Doc ann] -> Doc ann
-arguments2' = list "" ""
+arguments2' = list2 "" ""
 
 -- | Print a document as arguments.
 argument' :: Doc ann -> Doc ann
@@ -155,6 +155,22 @@ list left right =
     open = left <> line'
     close = line' <> right
     between = comma
+
+-- | Print a list of documents separated by space in the preferred Kore format.
+list2
+    :: Doc ann  -- ^ opening list delimiter
+    -> Doc ann  -- ^ closing list delimiter
+    -> [Doc ann]  -- ^ list items
+    -> Doc ann
+list2 left right =
+    \case
+        [] -> left <> right
+        xs -> (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between) xs
+  where
+    open = left <> line'
+    close = line' <> right
+    between = space
+
 
 -- | Render a 'Doc ann' with indentation and without extra line breaks.
 layoutPrettyUnbounded :: Doc ann -> SimpleDocStream ann

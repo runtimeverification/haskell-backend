@@ -3,9 +3,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 module Kore.AST.ApplicativeKore
-    ( completeDefinition
-     )
-where
+    ( completeDefinition ) where
 
 import Control.Comonad
 import Data.Foldable
@@ -15,8 +13,6 @@ import Kore.AST.Sentence
 import Kore.AST.Valid
 import Kore.Step.Pattern hiding
        ( freeVariables )
-
--- use (CommonStepPattern level) for patternType
 
 completeDefinition :: VerifiedPureDefinition Object -> VerifiedPureDefinition Object
 completeDefinition Definition { definitionAttributes, definitionModules } =
@@ -34,43 +30,21 @@ completeModule Module { moduleName, moduleSentences, moduleAttributes } =
     }
 
 completeSentence :: VerifiedPureSentence Object -> [VerifiedPureSentence Object]
-completeSentence =
-    \case
-        SentenceAxiomSentence
-            SentenceAxiom
-            { sentenceAxiomParameters
-            , sentenceAxiomPattern
-            , sentenceAxiomAttributes
-            } ->
-            [ SentenceAxiomSentence
-                 SentenceAxiom
-                 { sentenceAxiomParameters
-                 , sentenceAxiomPattern = quantifiedAxiomPattern
-                 , sentenceAxiomAttributes
-                 }
-            ]
-              where
-                quantifiedAxiomPattern = quantifyFreeVariables sentenceAxiomPattern
-        s -> [s]
-
-{- completeAxiom :: VerifiedPureSentence Object -> VerifiedPureSentence Object
-completeAxiom =
-    \case
-        SentenceAxiomSentence
-            SentenceAxiom
-            { sentenceAxiomParameters
-            , sentenceAxiomPattern
-            , sentenceAxiomAttributes
-            } ->
-            SentenceAxiomSentence
-                SentenceAxiom
-                { sentenceAxiomParameters
-                , sentenceAxiomPattern = quantifiedAxiomPattern
-                , sentenceAxiomAttributes
-                }
-              where
-                quantifiedAxiomPattern = quantifyFreeVariables sentenceAxiomPattern
-        s -> s -}
+completeSentence ( SentenceAxiomSentence
+                     SentenceAxiom
+                     { sentenceAxiomParameters
+                     , sentenceAxiomPattern
+                     , sentenceAxiomAttributes
+                     } ) =
+    [ SentenceAxiomSentence
+        SentenceAxiom
+        { sentenceAxiomParameters
+        , sentenceAxiomPattern = quantifiedAxiomPattern
+        , sentenceAxiomAttributes
+        } ]
+ where
+   quantifiedAxiomPattern = quantifyFreeVariables sentenceAxiomPattern
+completeSentence s = [s]
 
 quantifyFreeVariables
     :: StepPattern Object Variable -> StepPattern Object Variable

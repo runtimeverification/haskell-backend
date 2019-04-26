@@ -307,26 +307,25 @@ instance Unparse (SentenceSymbol level patternType) where
             , sentenceSymbolSorts
             , sentenceSymbolResultSort
             }
-      =     Pretty.fillSep
-                [ "symbol"
-                , unparse2 sentenceSymbolSymbol
-                , "\naxiom"
-                , "∀ s : Sorts . ("
-                , unparse2 sentenceSymbolSymbol
-                , " "
-                ]
-                <>
-                (unparse2Inhabitant sentenceSymbolSorts)
-                <>
-            Pretty.fillSep
-                [ "⊆ "
-                , "⟦" , unparse2 sentenceSymbolResultSort, "⟧"
-                , ")"
-                ]
+      = Pretty.vsep
+            [ Pretty.fillSep [ "symbol", unparse2 sentenceSymbolSymbol ]
+            , Pretty.fillSep [ "axiom \\forall s Sorts"
+                             , Pretty.parens (Pretty.fillSep
+                                   [ "\\subset"
+                                   , Pretty.parens (Pretty.fillSep
+                                       [ unparse2 sentenceSymbolSymbol
+                                       , unparse2Inhabitant sentenceSymbolSorts
+                                       ])
+                                   , unparse2 sentenceSymbolResultSort
+                                   ])
+                             ]
+            ]
           where unparse2Inhabitant ss =
                   case ss of
                       [] -> ""
-                      (s : rest) -> "⟦" <> unparse2 s <> "⟧ " <> (unparse2Inhabitant rest)
+                      (s : rest) ->
+                        (Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s]))
+                        <> (unparse2Inhabitant rest)
 
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
@@ -417,20 +416,21 @@ instance Unparse (SentenceSort level patternType) where
             { sentenceSortName
             , sentenceSortParameters
             }
-      =
-        Pretty.fillSep
-            [ "symbol"
-            , unparse2 sentenceSortName
-            , "[sort]"
-            , "\naxiom"
-            , unparse2 sentenceSortName
-            , printLbSortsRb (length sentenceSortParameters)
-            , "⊆ ⟦ Sorts ⟧"
+      = Pretty.vsep
+            [ Pretty.fillSep ["symbol", unparse2 sentenceSortName, "[sort]"]
+            , Pretty.fillSep ["axiom"
+                             , "\\subset"
+                             , Pretty.parens (Pretty.fillSep
+                                [ unparse2 sentenceSortName
+                                , printLbSortsRb (length sentenceSortParameters)
+                                ])
+                             , "Sorts"
+                             ]
             ]
       where printLbSortsRb n =
               case n of
                   0 -> ""
-                  m -> "⟦ Sorts ⟧" <> " " <> (printLbSortsRb (m - 1))
+                  m -> Pretty.fillSep["(\\inh Sorts)", printLbSortsRb (m - 1)]
 
 
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
@@ -1015,25 +1015,6 @@ The contained patterns are annotated by 'Valid'.
  -}
 type VerifiedPureSentenceHook level =
     SentenceHook (VerifiedPurePattern level Domain.Builtin)
-
-
-{- type VerifiedPureSentenceSymbol level =
-    SentenceSymbol level (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
-
-type VerifiedPureSentenceAlias level =
-    SentenceAlias level (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
-
-type VerifiedPureSentenceImport level =
-    SentenceImport (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
-
-type VerifiedPureSentenceAxiom level =
-    SentenceAxiom (SortVariable level) (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
-
-type VerifiedPureSentenceSort level =
-    SentenceSort level (PurePattern level Domain.Builtin Variable (Valid (Variable level) level))
-
-type VerifiedPureSentenceHook level =
-    SentenceHook (PurePattern level Domain.Builtin Variable (Valid (Variable level) level)) -}
 
 {- | A 'PureSentence' which has passed verification.
 
