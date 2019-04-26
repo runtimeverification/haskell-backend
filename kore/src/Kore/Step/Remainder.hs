@@ -19,14 +19,14 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Conditional
+                 ( Predicated (Predicated) )
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import           Kore.Step.Representation.Predicated
-                 ( Predicated (Predicated) )
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import           Kore.Unification.Substitution

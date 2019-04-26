@@ -57,6 +57,9 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Conditional
+                 ( Predicated (Predicated) )
+import qualified Kore.Step.Conditional as Predicated
 import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.ExpandedPattern
                  ( ExpandedPattern )
@@ -66,9 +69,6 @@ import           Kore.Step.Representation.MultiOr
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.OrOfExpandedPattern
                  ( OrOfExpandedPattern, OrOfPredicateSubstitution )
-import           Kore.Step.Representation.Predicated
-                 ( Predicated (Predicated) )
-import qualified Kore.Step.Representation.Predicated as Predicated
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution

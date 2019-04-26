@@ -4,7 +4,7 @@ License     : NCSA
 
 Representation of conditional terms.
 -}
-module Kore.Step.Representation.Predicated
+module Kore.Step.Conditional
     ( Predicated (..)
     , withoutTerm
     , withCondition
@@ -12,9 +12,9 @@ module Kore.Step.Representation.Predicated
     , fromPredicate
     , fromSubstitution
     , andPredicate
-    , Kore.Step.Representation.Predicated.freeVariables
+    , Kore.Step.Conditional.freeVariables
     , toPredicate
-    , Kore.Step.Representation.Predicated.mapVariables
+    , Kore.Step.Conditional.mapVariables
     ) where
 
 import           Control.DeepSeq

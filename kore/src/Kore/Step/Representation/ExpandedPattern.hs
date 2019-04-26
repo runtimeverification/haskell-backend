@@ -40,9 +40,9 @@ import           Kore.Annotation.Valid
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Representation.Predicated
+import           Kore.Step.Conditional
                  ( Predicated (..) )
-import qualified Kore.Step.Representation.Predicated as Predicated
+import qualified Kore.Step.Conditional as Predicated
 import           Kore.Step.Representation.PredicateSubstitution
                  ( PredicateSubstitution )
 import           Kore.Step.TermLike

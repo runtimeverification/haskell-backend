@@ -29,9 +29,9 @@ import           Kore.AST.Pure
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Representation.Predicated
+import           Kore.Step.Conditional
                  ( Predicated (..) )
-import qualified Kore.Step.Representation.Predicated as Predicated
+import qualified Kore.Step.Conditional as Predicated
 import           Kore.Unparser
 
 -- | A predicate and substitution without an accompanying term.
