@@ -30,7 +30,8 @@ completeModule Module { moduleName, moduleSentences, moduleAttributes } =
     Module
     { moduleName
     , moduleSentences = concat (map completeSentence moduleSentences)
-    , moduleAttributes}
+    , moduleAttributes
+    }
 
 completeSentence :: VerifiedPureSentence Object -> [VerifiedPureSentence Object]
 completeSentence =
