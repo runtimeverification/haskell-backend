@@ -154,7 +154,7 @@ list left right =
   where
     open = left <> line'
     close = line' <> right
-    between = space
+    between = comma
 
 -- | Render a 'Doc ann' with indentation and without extra line breaks.
 layoutPrettyUnbounded :: Doc ann -> SimpleDocStream ann
