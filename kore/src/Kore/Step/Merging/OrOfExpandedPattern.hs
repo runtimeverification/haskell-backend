@@ -23,9 +23,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
-                 ( mergeWithPredicateSubstitution,
-                 mergeWithPredicateSubstitutionAssumesEvaluated )
+import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.Pattern
                  ( Conditional, PredicateSubstitution )
 import           Kore.Step.Representation.MultiOr
@@ -81,7 +79,7 @@ mergeWithPredicateSubstitution
   = do
     (evaluated, _proofs) <-
         MultiOr.traverseWithPairs
-            (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
+            (give tools $ Pattern.mergeWithPredicateSubstitution
                 tools
                 substitutionSimplifier
                 simplifier
@@ -123,7 +121,7 @@ mergeWithPredicateSubstitutionAssumesEvaluated
   = do
     (evaluated, _proofs) <-
         MultiOr.traverseWithPairs
-            (ExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
+            (Pattern.mergeWithPredicateSubstitutionAssumesEvaluated
                     substitutionMerger
                     toMerge
             )

@@ -1,13 +1,9 @@
-{-|
-Module      : Kore.Step.Merging.ExpandedPattern
-Description : Tools for merging ExpandedPatterns with various stuff.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
-module Kore.Step.Merging.ExpandedPattern
+module Kore.Step.Merging.Pattern
     ( mergeWithPredicateSubstitutionAssumesEvaluated
     , mergeWithPredicateSubstitution
     ) where

@@ -20,8 +20,7 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
-                 ( mergeWithPredicateSubstitution )
+import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -69,7 +68,7 @@ simplify
     (simplifiedTerm, _) <- simplifyTerm' term
     (simplifiedPatt, _) <-
         MultiOr.traverseWithPairs
-            (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
+            (give tools $ Pattern.mergeWithPredicateSubstitution
                 tools
                 substitutionSimplifier
                 termSimplifier
