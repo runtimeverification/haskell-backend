@@ -118,7 +118,6 @@ main = do
             else return Map.empty
         when willPrintDefinition $
             putStrLn (prettyPrintToString parsedDefinition)
-            ---putStrLn (unparseToString2 (completeDefinition (toVerifiedPureDefinition indexedModules)))
 
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName
