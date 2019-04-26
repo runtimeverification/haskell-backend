@@ -55,7 +55,7 @@ getPatternResultSort applicationSorts =
         CharLiteralPattern _ -> charMetaSort
         TopPattern Top { topSort } -> topSort
         VariablePattern variable -> sortedVariableSort variable
-        SortPattern _ -> sortMetaSort
+        InhabitantPattern _ -> sortMetaSort
         SetVariablePattern (SetVariable variable) ->
             sortedVariableSort variable
 

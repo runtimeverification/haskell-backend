@@ -373,7 +373,7 @@ verifyPatternHead =
         VariablePattern var ->
             transCofreeF (VariablePattern . getConst)
                 <$> verifyVariable var
-        SortPattern _ ->
+        InhabitantPattern _ ->
             koreFail "Unexpected pattern."
         SetVariablePattern (SetVariable var) ->
             transCofreeF (SetVariablePattern . SetVariable . getConst)
@@ -851,7 +851,7 @@ patternNameForContext (CharLiteralPattern _) = "<char>"
 patternNameForContext (TopPattern _) = "\\top"
 patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
-patternNameForContext (SortPattern _) = "\\inh"
+patternNameForContext (InhabitantPattern _) = "\\inh"
 patternNameForContext (SetVariablePattern (SetVariable variable)) =
     "set variable '" ++ variableNameForContext variable ++ "'"
 

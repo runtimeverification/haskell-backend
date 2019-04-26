@@ -113,7 +113,7 @@ translatePredicate translateUninterpreted predicate =
             SetVariablePattern _ -> empty
             StringLiteralPattern _ -> empty
             CharLiteralPattern _ -> empty
-            SortPattern _ -> empty
+            InhabitantPattern _ -> empty
 
     translatePredicateAnd And { andFirst, andSecond } =
         SMT.and

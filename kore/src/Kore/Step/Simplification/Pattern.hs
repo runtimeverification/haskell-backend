@@ -219,7 +219,7 @@ simplifyInternal
         CharLiteralPattern p -> return $ CharLiteral.simplify p
         TopPattern p -> return $ Top.simplify p
         VariablePattern p -> return $ Variable.simplify p
-        SortPattern s -> return $ Inhabitant.simplify s
+        InhabitantPattern s -> return $ Inhabitant.simplify s
         SetVariablePattern p -> return $ SetVariable.simplify p
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

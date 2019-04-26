@@ -127,7 +127,7 @@ instance
             CharLiteralPattern _ -> AstLocationUnknown
             TopPattern Top { topSort } -> locationFromAst topSort
             VariablePattern variable -> locationFromAst variable
-            SortPattern s -> locationFromAst s
+            InhabitantPattern s -> locationFromAst s
             SetVariablePattern (SetVariable variable) ->
                 locationFromAst variable
 

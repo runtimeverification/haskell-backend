@@ -1298,14 +1298,6 @@ instance Unparse (Top level child) where
     unparse2 Top { } =
         "⊤"
 
-
-{-|'SortPattern' corresponds to the pattern in applicative Kore that
-represents a sort in regular Kore. For example, Int is a sort in
-regular Kore, so it is also a pattern (built by the constant symbol Int)
-in applicative Kore, and ⟦Int⟧ is the pattern that represents the inhabitant
-set of sort Int.
--}
-
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -1355,7 +1347,7 @@ data Pattern level domain variable child where
         :: !(Top level child) -> Pattern level domain variable child
     VariablePattern
         :: !(variable level) -> Pattern level domain variable child
-    SortPattern
+    InhabitantPattern
         :: !(Sort level) -> Pattern level domain variable child
     SetVariablePattern
         :: !(SetVariable variable level) -> Pattern level domain variable child
@@ -1451,7 +1443,7 @@ instance
             CharLiteralPattern p   -> unparse p
             TopPattern p           -> unparse p
             VariablePattern p      -> unparse p
-            SortPattern s          -> unparse s
+            InhabitantPattern s          -> unparse s
             SetVariablePattern p   -> unparse p
 
     unparse2 =
@@ -1476,7 +1468,7 @@ instance
             CharLiteralPattern p   -> unparse2 p
             TopPattern p           -> unparse2 p
             VariablePattern p      -> unparse2 p
-            SortPattern s          -> unparse s
+            InhabitantPattern s          -> unparse s
             SetVariablePattern p   -> unparse p
 
 data SortedPattern level domain variable child = SortedPattern
@@ -1618,7 +1610,7 @@ traverseVariables traversing =
         ExistsPattern any0 -> ExistsPattern <$> traverseVariablesExists any0
         ForallPattern all0 -> ForallPattern <$> traverseVariablesForall all0
         VariablePattern variable -> VariablePattern <$> traversing variable
-        SortPattern s -> pure (SortPattern s)
+        InhabitantPattern s -> pure (InhabitantPattern s)
         SetVariablePattern (SetVariable variable)
             -> SetVariablePattern . SetVariable <$> traversing variable
         -- Trivial cases
@@ -1654,7 +1646,7 @@ mapDomainValues mapping =
     \case
         -- Non-trivial case
         DomainValuePattern domainP -> DomainValuePattern (mapping domainP)
-        SortPattern s -> SortPattern s
+        InhabitantPattern s -> InhabitantPattern s
         -- Trivial cases
         AndPattern andP -> AndPattern andP
         ApplicationPattern appP -> ApplicationPattern appP

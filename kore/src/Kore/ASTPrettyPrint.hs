@@ -579,8 +579,8 @@ instance
         writeOneFieldStruct flags "TopPattern" p
     prettyPrint flags (VariablePattern p)      =
         writeOneFieldStruct flags "VariablePattern" p
-    prettyPrint flags (SortPattern s)          =
-        writeOneFieldStruct flags "SortPattern" s
+    prettyPrint flags (InhabitantPattern s)          =
+        writeOneFieldStruct flags "InhabitantPattern" s
     prettyPrint flags (SetVariablePattern p)      =
         writeOneFieldStruct flags "SetVariablePattern" p
 

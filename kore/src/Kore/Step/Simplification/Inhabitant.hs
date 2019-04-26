@@ -32,7 +32,7 @@ simplify
 simplify s =
     ( MultiOr.make
         [Predicated
-            { term = mkSortPattern s
+            { term = mkInhabitantPattern s
             , predicate = makeTruePredicate
             , substitution = mempty
             }

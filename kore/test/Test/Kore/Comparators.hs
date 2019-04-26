@@ -245,9 +245,9 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (SortPattern s1) (SortPattern s2) =
-        SumConstructorSameWithArguments (EqWrap "SortPattern" s1 s2)
-    sumConstructorPair pattern1@(SortPattern _) pattern2 =
+    sumConstructorPair (InhabitantPattern s1) (InhabitantPattern s2) =
+        SumConstructorSameWithArguments (EqWrap "InhabitantPattern" s1 s2)
+    sumConstructorPair pattern1@(InhabitantPattern _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1)
             (printWithExplanation pattern2)

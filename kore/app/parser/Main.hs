@@ -30,8 +30,8 @@ import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import Kore.Parser.Parser
-       ( parseKoreDefinition, parseKorePattern )
+import           Kore.Parser.Parser
+                 ( parseKoreDefinition, parseKorePattern )
 
 
 import GlobalMain
