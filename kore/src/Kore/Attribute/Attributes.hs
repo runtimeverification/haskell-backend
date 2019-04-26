@@ -59,6 +59,7 @@ instance NFData Attributes
 
 instance Unparse Attributes where
     unparse = attributes . getAttributes
+    unparse2 = attributes . getAttributes
 
 instance Default Attributes where
     def = Attributes []

@@ -52,6 +52,8 @@ import qualified Kore.Step.Simplification.Implies as Implies
                  ( simplify )
 import qualified Kore.Step.Simplification.In as In
                  ( simplify )
+import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
+                 ( simplify )
 import qualified Kore.Step.Simplification.Next as Next
                  ( simplify )
 import qualified Kore.Step.Simplification.Not as Not
@@ -202,6 +204,7 @@ simplifyInternal
         Common.InPattern p ->
             In.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
+        Common.InhabitantPattern s -> return $ Inhabitant.simplify s
         -- TODO(virgil): Move next up through patterns.
         Common.NextPattern p -> return $ Next.simplify p
         Common.NotPattern p ->

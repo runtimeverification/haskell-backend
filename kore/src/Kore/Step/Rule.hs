@@ -57,7 +57,7 @@ import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
 import           Kore.Unparser
-                 ( Unparse, unparse )
+                 ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
 import qualified Kore.Verified as Verified
 
@@ -114,6 +114,11 @@ deriving instance Show (variable Object) => Show (RewriteRule level variable)
 instance (Unparse (variable Object), Ord (variable Object)) => Unparse (RewriteRule level variable) where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
         unparse
+            $ Valid.mkImplies
+                (Valid.mkAnd left (Predicate.unwrapPredicate requires))
+                right
+    unparse2 (RewriteRule RulePattern { left, right, requires } ) =
+        unparse2
             $ Valid.mkImplies
                 (Valid.mkAnd left (Predicate.unwrapPredicate requires))
                 right
