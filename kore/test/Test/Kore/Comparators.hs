@@ -31,6 +31,8 @@ import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Location as Attribute
+import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Error
 import           Kore.OnePath.Step
@@ -56,12 +58,46 @@ import           Kore.Step.Rule
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof )
+import qualified Kore.Step.SMT.AST as SMT
+                 ( Declarations (Declarations), Encodable,
+                 IndirectSymbolDeclaration (IndirectSymbolDeclaration),
+                 KoreSortDeclaration (..), KoreSymbolDeclaration (..),
+                 Sort (Sort), SortReference (SortReference), Symbol (Symbol),
+                 SymbolReference (SymbolReference) )
+import qualified Kore.Step.SMT.AST as SMT.Declarations
+                 ( Declarations (..) )
+import qualified Kore.Step.SMT.AST as SMT.Symbol
+                 ( Symbol (..) )
+import qualified Kore.Step.SMT.AST as SMT.Sort
+                 ( Sort (..) )
+import qualified Kore.Step.SMT.AST as SMT.SortReference
+                 ( SortReference (..) )
+import qualified Kore.Step.SMT.AST as SMT.SymbolReference
+                 ( SymbolReference (..) )
+import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
+                 ( IndirectSymbolDeclaration (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unifier
 import           Kore.Variables.Target
+import qualified SMT.AST as SMT
+                 ( Constructor (Constructor),
+                 ConstructorArgument (ConstructorArgument),
+                 DataTypeDeclaration (DataTypeDeclaration),
+                 FunctionDeclaration (FunctionDeclaration), SExpr,
+                 SortDeclaration (SortDeclaration), showSExpr )
+import qualified SMT.AST as SMT.SortDeclaration
+                 ( SortDeclaration (..) )
+import qualified SMT.AST as SMT.FunctionDeclaration
+                 ( FunctionDeclaration (..) )
+import qualified SMT.AST as SMT.DataTypeDeclaration
+                 ( DataTypeDeclaration (..) )
+import qualified SMT.AST as SMT.Constructor
+                 ( Constructor (..) )
+import qualified SMT.AST as SMT.ConstructorArgument
+                 ( ConstructorArgument (..) )
 
 import Test.Tasty.HUnit.Extensions
 
@@ -251,7 +287,7 @@ instance
     ) =>
     EqualWithExplanation (PurePattern level domain variable annotation)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(PurePattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -291,7 +327,7 @@ instance
     ) =>
     EqualWithExplanation (KorePattern domain variable annotation)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(KorePattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -319,7 +355,7 @@ instance
     ) =>
     EqualWithExplanation (CofreeT f w a)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(CofreeT _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -336,7 +372,7 @@ instance
     ( EqualWithExplanation a, Show a ) =>
     EqualWithExplanation (Identity a)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Identity _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -1450,7 +1486,7 @@ instance
     ( EqualWithExplanation variable, Show variable
     ) => StructEqualWithExplanation (Valid variable level)
   where
-    structFieldsWithNames expected actual =
+    structFieldsWithNames expected@(Valid _ _) actual@(Valid _ _) =
         [ EqWrap
             "patternSort = "
             (patternSort expected)
@@ -1520,11 +1556,15 @@ instance
     StructEqualWithExplanation (RulePattern level variable)
   where
     structConstructorName _ = "RulePattern"
-    structFieldsWithNames expect actual =
+    structFieldsWithNames
+        expect@(RulePattern _ _ _ _ _)
+        actual@(RulePattern _ _ _ _ _)
+      =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "left = "      ) left
             , Function.on (EqWrap "right = "     ) right
             , Function.on (EqWrap "requires = "  ) requires
+            , Function.on (EqWrap "ensures = "   ) ensures
             , Function.on (EqWrap "attributes = ") attributes
             ]
 
@@ -1534,7 +1574,10 @@ instance EqualWithExplanation Attribute.Axiom where
 
 instance StructEqualWithExplanation Attribute.Axiom where
     structConstructorName _ = "Axiom"
-    structFieldsWithNames expect actual =
+    structFieldsWithNames
+        expect@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+        actual@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+      =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "heatCool = "       ) Attribute.heatCool
             , Function.on (EqWrap "productionID = "   ) Attribute.productionID
@@ -1548,6 +1591,9 @@ instance StructEqualWithExplanation Attribute.Axiom where
             , Function.on (EqWrap "overload = "       ) Attribute.overload
             , Function.on (EqWrap "smtLemma = "       ) Attribute.smtLemma
             , Function.on (EqWrap "label = "          ) Attribute.label
+            , Function.on (EqWrap "sorceLocation = "  ) Attribute.sourceLocation
+            , Function.on (EqWrap "constructor = "    ) Attribute.constructor
+            , Function.on (EqWrap "identifier = "     ) Attribute.identifier
             ]
 
 instance EqualWithExplanation Attribute.HeatCool where
@@ -1565,7 +1611,8 @@ instance SumEqualWithExplanation Attribute.HeatCool where
         SumConstructorDifferent (show expect) (show actual)
 
 instance EqualWithExplanation Attribute.ProductionID where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.ProductionID _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.ProductionID where
@@ -1574,7 +1621,8 @@ instance WrapperEqualWithExplanation Attribute.ProductionID where
         Function.on (EqWrap "getProductionID = ") Attribute.getProductionID
 
 instance EqualWithExplanation Attribute.Assoc where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Assoc _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Assoc where
@@ -1582,7 +1630,8 @@ instance WrapperEqualWithExplanation Attribute.Assoc where
     wrapperField = Function.on (EqWrap "isAssoc = ") Attribute.isAssoc
 
 instance EqualWithExplanation Attribute.Comm where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Comm _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Comm where
@@ -1590,7 +1639,8 @@ instance WrapperEqualWithExplanation Attribute.Comm where
     wrapperField = Function.on (EqWrap "isComm = ") Attribute.isComm
 
 instance EqualWithExplanation Attribute.Unit where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Unit _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Unit where
@@ -1598,7 +1648,8 @@ instance WrapperEqualWithExplanation Attribute.Unit where
     wrapperField = Function.on (EqWrap "isUnit = ") Attribute.isUnit
 
 instance EqualWithExplanation Attribute.Idem where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Idem _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Idem where
@@ -1606,7 +1657,8 @@ instance WrapperEqualWithExplanation Attribute.Idem where
     wrapperField = Function.on (EqWrap "isIdem = ") Attribute.isIdem
 
 instance EqualWithExplanation Attribute.Trusted where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Trusted _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Trusted where
@@ -1614,7 +1666,8 @@ instance WrapperEqualWithExplanation Attribute.Trusted where
     wrapperField = Function.on (EqWrap "isTrusted = ") Attribute.isTrusted
 
 instance EqualWithExplanation Attribute.Concrete where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Concrete _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Concrete where
@@ -1622,7 +1675,8 @@ instance WrapperEqualWithExplanation Attribute.Concrete where
     wrapperField = Function.on (EqWrap "isConcrete = ") Attribute.isConcrete
 
 instance EqualWithExplanation Attribute.Simplification where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Simplification _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Simplification where
@@ -1631,7 +1685,8 @@ instance WrapperEqualWithExplanation Attribute.Simplification where
         Function.on (EqWrap "isSimplification = ") Attribute.isSimplification
 
 instance EqualWithExplanation Attribute.Overload where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Overload _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Overload where
@@ -1639,7 +1694,8 @@ instance WrapperEqualWithExplanation Attribute.Overload where
     wrapperField = Function.on (EqWrap "getOverload = ") Attribute.getOverload
 
 instance EqualWithExplanation Attribute.SmtLemma where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.SmtLemma _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.SmtLemma where
@@ -1647,12 +1703,104 @@ instance WrapperEqualWithExplanation Attribute.SmtLemma where
     wrapperField = Function.on (EqWrap "isSmtLemma = ") Attribute.isSmtLemma
 
 instance EqualWithExplanation Attribute.Label where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attribute.Label _) =
+        wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance WrapperEqualWithExplanation Attribute.Label where
     wrapperConstructorName _ = "Label"
     wrapperField = Function.on (EqWrap "unLabel = ") Attribute.unLabel
+
+instance
+    EqualWithExplanation Attribute.RuleIndex
+  where
+    compareWithExplanation a@(Attribute.RuleIndex _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance
+    WrapperEqualWithExplanation Attribute.RuleIndex
+  where
+    wrapperField = Function.on (EqWrap "getRuleIndex = ") Attribute.getRuleIndex
+    wrapperConstructorName _ = "RuleIndex"
+
+instance
+    EqualWithExplanation Attribute.Constructor
+  where
+    compareWithExplanation a@(Attribute.Constructor _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance
+    WrapperEqualWithExplanation Attribute.Constructor
+  where
+    wrapperField =
+        Function.on (EqWrap "isConstructor = ") Attribute.isConstructor
+    wrapperConstructorName _ = "Constructor"
+
+instance EqualWithExplanation Attribute.SourceLocation
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation Attribute.SourceLocation
+  where
+    structConstructorName _ = "SourceLocation"
+    structFieldsWithNames
+        expect@(Attribute.SourceLocation _ _)
+        actual@(Attribute.SourceLocation _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "location = ") Attribute.location
+            , Function.on (EqWrap "source = ") Attribute.source
+            ]
+
+instance EqualWithExplanation Attribute.Location
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation Attribute.Location
+  where
+    structConstructorName _ = "Location"
+    structFieldsWithNames
+        expect@(Attribute.Location _ _)
+        actual@(Attribute.Location _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "start = ") Attribute.start
+            , Function.on (EqWrap "end = ") Attribute.end
+            ]
+
+instance EqualWithExplanation Attribute.LineColumn
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation Attribute.LineColumn
+  where
+    structConstructorName _ = "LineColumn"
+    structFieldsWithNames
+        expect@(Attribute.LineColumn _ _)
+        actual@(Attribute.LineColumn _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "start = ") Attribute.line
+            , Function.on (EqWrap "end = ") Attribute.column
+            ]
+
+instance
+    EqualWithExplanation Attribute.Source
+  where
+    compareWithExplanation a@(Attribute.Source _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance
+    WrapperEqualWithExplanation Attribute.Source
+  where
+    wrapperField = Function.on (EqWrap "unSource = ") Attribute.unSource
+    wrapperConstructorName _ = "Source"
 
 -- For: Alias
 
@@ -1668,7 +1816,7 @@ instance
     => StructEqualWithExplanation (Alias level)
   where
     structConstructorName _ = "Alias"
-    structFieldsWithNames expect actual =
+    structFieldsWithNames expect@(Alias _ _) actual@(Alias _ _) =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "aliasConstructor = ") aliasConstructor
             , Function.on (EqWrap "aliasParams = ") aliasParams
@@ -1680,7 +1828,7 @@ instance
     MetaOrObject level
     => EqualWithExplanation (SortVariable level)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(SortVariable _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -1713,7 +1861,7 @@ instance
 instance
     EqualWithExplanation Attributes
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation a@(Attributes _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
@@ -1722,11 +1870,17 @@ instance
     wrapperField = Function.on (EqWrap "getAttributes = ") getAttributes
     wrapperConstructorName _ = "Attributes"
 
-instance (EqualWithExplanation goal, Show goal) => EqualWithExplanation (AllPath.ProofState goal) where
+instance
+    (EqualWithExplanation goal, Show goal)
+    => EqualWithExplanation (AllPath.ProofState goal)
+  where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation goal, Show goal) => SumEqualWithExplanation (AllPath.ProofState goal) where
+instance
+    (EqualWithExplanation goal, Show goal)
+    => SumEqualWithExplanation (AllPath.ProofState goal)
+  where
     sumConstructorPair AllPath.Proven          AllPath.Proven          =
         SumConstructorSameNoArguments
     sumConstructorPair (AllPath.Goal goal1)    (AllPath.Goal goal2)    =
@@ -1735,3 +1889,354 @@ instance (EqualWithExplanation goal, Show goal) => SumEqualWithExplanation (AllP
         SumConstructorSameWithArguments (EqWrap "GoalRem" goal1 goal2)
     sumConstructorPair expect           actual           =
         SumConstructorDifferent (show expect) (show actual)
+
+-- SMT.AST
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.Declarations sort symbol name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.Declarations sort symbol name)
+  where
+    structFieldsWithNames
+        expect@(SMT.Declarations _ _)
+        actual@(SMT.Declarations _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "sorts = ") SMT.Declarations.sorts
+            , Function.on (EqWrap "symbols = ") SMT.Declarations.symbols
+            ]
+    structConstructorName _ = "Declarations"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.Sort sort symbol name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.Sort sort symbol name)
+  where
+    structFieldsWithNames
+        expect@(SMT.Sort _ _)
+        actual@(SMT.Sort _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "declaration = ") SMT.Sort.declaration
+            ]
+    structConstructorName _ = "Sort"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.Symbol sort name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.Symbol sort name)
+  where
+    structFieldsWithNames
+        expect@(SMT.Symbol _ _)
+        actual@(SMT.Symbol _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "declaration = ") SMT.Symbol.declaration
+            ]
+    structConstructorName _ = "Symbol"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.KoreSymbolDeclaration sort name)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => SumEqualWithExplanation (SMT.KoreSymbolDeclaration sort name)
+  where
+    sumConstructorPair
+        (SMT.SymbolDeclaredDirectly a) (SMT.SymbolDeclaredDirectly b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SymbolDeclaredDirectly" a b)
+    sumConstructorPair a@(SMT.SymbolDeclaredDirectly _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+    sumConstructorPair
+        (SMT.SymbolDeclaredIndirectly a)
+        (SMT.SymbolDeclaredIndirectly b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SymbolDeclaredIndirectly" a b)
+    sumConstructorPair a@(SMT.SymbolDeclaredIndirectly _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.IndirectSymbolDeclaration sort name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.IndirectSymbolDeclaration sort name)
+  where
+    structFieldsWithNames
+        expect@(SMT.IndirectSymbolDeclaration _ _)
+        actual@(SMT.IndirectSymbolDeclaration _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.IndirectSymbolDeclaration.name
+            , Function.on (EqWrap "sorts = ")
+                SMT.IndirectSymbolDeclaration.sorts
+            ]
+    structConstructorName _ = "IndirectSymbolDeclaration"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.FunctionDeclaration sort name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.FunctionDeclaration sort name)
+  where
+    structFieldsWithNames
+        expect@(SMT.FunctionDeclaration _ _ _)
+        actual@(SMT.FunctionDeclaration _ _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.FunctionDeclaration.name
+            , Function.on (EqWrap "inputSorts = ")
+                SMT.FunctionDeclaration.inputSorts
+            , Function.on (EqWrap "resultSort = ")
+                SMT.FunctionDeclaration.resultSort
+            ]
+    structConstructorName _ = "FunctionDeclaration"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.KoreSortDeclaration sort symbol name)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => SumEqualWithExplanation (SMT.KoreSortDeclaration sort symbol name)
+  where
+    sumConstructorPair
+        (SMT.SortDeclarationDataType a) (SMT.SortDeclarationDataType b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SortDeclarationDataType" a b)
+    sumConstructorPair a@(SMT.SortDeclarationDataType _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+    sumConstructorPair
+        (SMT.SortDeclarationSort a) (SMT.SortDeclarationSort b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SortDeclarationSort" a b)
+    sumConstructorPair a@(SMT.SortDeclarationSort _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+    sumConstructorPair
+        (SMT.SortDeclaredIndirectly a)
+        (SMT.SortDeclaredIndirectly b)
+      =
+        SumConstructorSameWithArguments (EqWrap "SortDeclaredIndirectly" a b)
+    sumConstructorPair a@(SMT.SortDeclaredIndirectly _) b =
+        SumConstructorDifferent
+            (printWithExplanation a)
+            (printWithExplanation b)
+
+instance
+    ( EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.SortDeclaration name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.SortDeclaration name)
+  where
+    structFieldsWithNames
+        expect@(SMT.SortDeclaration _ _)
+        actual@(SMT.SortDeclaration _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.SortDeclaration.name
+            , Function.on (EqWrap "arity = ") SMT.SortDeclaration.arity
+            ]
+    structConstructorName _ = "SortDeclaration"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.DataTypeDeclaration sort symbol name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.DataTypeDeclaration sort symbol name)
+  where
+    structFieldsWithNames
+        expect@(SMT.DataTypeDeclaration _ _ _)
+        actual@(SMT.DataTypeDeclaration _ _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.DataTypeDeclaration.name
+            , Function.on (EqWrap "typeArguments = ")
+                SMT.DataTypeDeclaration.typeArguments
+            , Function.on (EqWrap "constructors = ")
+                SMT.DataTypeDeclaration.constructors
+            ]
+    structConstructorName _ = "DataTypeDeclaration"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.Constructor sort symbol name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation symbol, Show symbol
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.Constructor sort symbol name)
+  where
+    structFieldsWithNames
+        expect@(SMT.Constructor _ _)
+        actual@(SMT.Constructor _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.Constructor.name
+            , Function.on (EqWrap "arguments = ") SMT.Constructor.arguments
+            ]
+    structConstructorName _ = "Constructor"
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => EqualWithExplanation (SMT.ConstructorArgument sort name)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation sort, Show sort
+    , EqualWithExplanation name, Show name
+    )
+    => StructEqualWithExplanation (SMT.ConstructorArgument sort name)
+  where
+    structFieldsWithNames
+        expect@(SMT.ConstructorArgument _ _)
+        actual@(SMT.ConstructorArgument _ _)
+      =
+        map (\f -> f expect actual)
+            [ Function.on (EqWrap "name = ") SMT.ConstructorArgument.name
+            , Function.on (EqWrap "argType = ") SMT.ConstructorArgument.argType
+            ]
+    structConstructorName _ = "ConstructorArgument"
+
+instance EqualWithExplanation SMT.SExpr where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = SMT.showSExpr
+
+instance EqualWithExplanation SMT.SortReference
+  where
+    compareWithExplanation a@(SMT.SortReference _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation SMT.SortReference
+  where
+    wrapperField =
+        Function.on (EqWrap "getSortReference = ")
+            SMT.SortReference.getSortReference
+    wrapperConstructorName _ = "SortReference"
+
+instance EqualWithExplanation SMT.SymbolReference
+  where
+    compareWithExplanation a@(SMT.SymbolReference _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation SMT.SymbolReference
+  where
+    wrapperField =
+        Function.on (EqWrap "getSymbolReference = ")
+            SMT.SymbolReference.getSymbolReference
+    wrapperConstructorName _ = "SymbolReference"
+
+instance EqualWithExplanation SMT.Encodable where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show

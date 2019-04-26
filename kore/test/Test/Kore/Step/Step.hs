@@ -20,7 +20,7 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import           Kore.Step.Representation.ExpandedPattern
@@ -64,7 +64,7 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -72,6 +72,7 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
 evalUnifier
     :: BranchT (Unifier Variable) a

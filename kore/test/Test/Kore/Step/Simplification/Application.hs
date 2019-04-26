@@ -18,7 +18,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -334,6 +334,7 @@ test_applicationSimplification =
             Mock.sortAttributesMapping
             Mock.subsorts
             Mock.headSortsMapping
+            Mock.smtDeclarations
 
     noSimplification
         ::  [   ( StepPattern level Variable
@@ -371,7 +372,7 @@ makeApplication patternSort symbol patterns =
 
 evaluate
     ::  ( MetaOrObject level)
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level

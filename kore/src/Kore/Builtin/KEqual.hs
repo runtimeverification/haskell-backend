@@ -131,7 +131,7 @@ evalKEq
         , Unparse (variable Object)
         )
     => Bool
-    -> MetadataTools.MetadataTools Object StepperAttributes
+    -> MetadataTools.SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
@@ -187,7 +187,7 @@ evalKIte
         , SortedVariable variable
         , ShowMetaOrObject variable
         )
-    => MetadataTools.MetadataTools Object StepperAttributes
+    => MetadataTools.SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object

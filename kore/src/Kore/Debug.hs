@@ -57,6 +57,7 @@ Enjoy.
 module Kore.Debug
     ( traceEither
     , traceExceptT
+    , traceMaybe
     , traceMaybeT
     , traceNonErrorMonad
     , traceFunction
@@ -88,6 +89,10 @@ data DebugPlace
     | D_Function_evaluatePattern
     | D_SMT_refutePredicate
     | D_SMT_command
+    | D_SMT_referenceCheckSort
+    | D_SMT_referenceCheckSymbol
+    | D_SMT_resolveSort
+    | D_SMT_resolveSymbol
   deriving (Eq, Ord, Show)
 
 data DebugArg = DebugArg { name :: !String, value :: !String }
@@ -125,12 +130,23 @@ enabledPlaces = Map.empty
 
 smt :: Map DebugPlace DebugResult
 smt =
-    Map.insert D_SMT_command DebugResult
-      Map.empty
+    id
+    $ Map.insert D_SMT_command DebugResult
+    Map.empty
+
+smtStartup :: Map DebugPlace DebugResult
+smtStartup =
+    id
+    $ Map.insert D_SMT_referenceCheckSort DebugResult
+    $ Map.insert D_SMT_referenceCheckSymbol DebugResult
+    $ Map.insert D_SMT_resolveSort DebugResult
+    $ Map.insert D_SMT_resolveSymbol DebugResult
+    Map.empty
 
 onePathWithFunctionNames :: Map DebugPlace DebugResult
 onePathWithFunctionNames =
-    Map.insert D_Function_evaluatePattern DebugNoResult
+    id
+    $ Map.insert D_Function_evaluatePattern DebugNoResult
     $ Map.insert D_OnePath_verifyClaim DebugNoResult
     $ Map.insert D_OnePath_Step_transitionRule DebugResult
     $ Map.insert D_SMT_refutePredicate DebugResult
@@ -138,7 +154,8 @@ onePathWithFunctionNames =
 
 executionWithFunctionNames :: Map DebugPlace DebugResult
 executionWithFunctionNames =
-    Map.insert D_Function_evaluatePattern DebugNoResult
+    id
+    $ Map.insert D_Function_evaluatePattern DebugNoResult
     $ Map.insert D_Step DebugNoResult
       Map.empty
 
@@ -267,6 +284,45 @@ traceEitherS name startValues debugResult action =
         Right r ->
             endThing name ("result: " ++ show r) debugResult
             $ Right r
+
+{-|Wraps a 'Maybe' action for printing debug messages, similar to 'trace'.
+
+It prints the name and the start values before the action, and the action
+result after.
+-}
+traceMaybe
+    :: Show a
+    => DebugPlace
+    -- ^ Action name
+    -> [DebugArg]
+    -- ^ Extra debugging info (usually the inputs)
+    -> Maybe a
+    -- ^ Action to wrap
+    -> Maybe a
+traceMaybe name startValues =
+    traceWhenEnabled
+        name
+        (traceMaybeS (show name) startValues)
+
+traceMaybeS
+    :: Show a
+    => String
+    -- ^ Action name
+    -> [DebugArg]
+    -- ^ Extra debugging info (usually the inputs)
+    -> DebugResult
+    -> Maybe a
+    -- ^ Action to wrap
+    -> Maybe a
+traceMaybeS name startValues debugResult action =
+    startThing name startValues
+    $ case action of
+        Nothing ->
+            endThing name "Nothing" debugResult
+            $ Nothing
+        Just r ->
+            endThing name ("result: " ++ show r) debugResult
+            $ Just r
 
 {-|Wraps a generic monad action for printing debug messages, similar to 'trace'.
 

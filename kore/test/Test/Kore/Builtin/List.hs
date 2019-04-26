@@ -22,7 +22,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Step.Pattern
 import           Kore.Step.Representation.ExpandedPattern
 import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
@@ -182,7 +182,7 @@ test_isBuiltin =
             (not (List.isSymbolUnit mockHookTools Mock.concatListSymbol))
     ]
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -190,8 +190,9 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
-mockHookTools :: MetadataTools Object Hook
+mockHookTools :: SmtMetadataTools Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.

@@ -14,19 +14,24 @@ import           Kore.AST.Sentence
 import qualified Kore.AST.Sentence as SentenceImport
                  ( SentenceImport (..) )
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Step.SMT.Declaration.All as Declaration
+                 ( declare )
 import           Kore.Step.SMT.Encoder
                  ( encodeName )
-import           Kore.Step.SMT.Sorts
+import qualified Kore.Step.SMT.Representation.All as Representation
+                 ( build )
 import qualified SMT
 
 import           Test.Kore.Step.SMT.Builders
-                 ( constructor, emptyModule, hook, indexModule, indexModules,
-                 sortDeclaration, symbolDeclaration, with )
+                 ( constructor, emptyModule, functional, hook, indexModule,
+                 indexModules, sortDeclaration, symbolDeclaration )
 import           Test.Kore.Step.SMT.Helpers
                  ( atom, constructorAxiom, eq, gt, isNotSatisfiable,
                  isSatisfiable, list, lt, ofType )
 import qualified Test.Kore.Step.SMT.Helpers as Helpers
                  ( testsForModule )
+import           Test.Kore.With
+                 ( with )
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =
@@ -67,7 +72,8 @@ test_sortDeclaration =
     , testsForModule "One sort with one constructor"
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
-            `with` (symbolDeclaration "C" "S" [] `with` constructor)
+            `with`
+                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
             `with` constructorAxiom "S" [("C", [])]
         )
         [ isNotSatisfiable
@@ -88,8 +94,10 @@ test_sortDeclaration =
     , testsForModule "One sort with two constructors"
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
-            `with` (symbolDeclaration "C" "S" [] `with` constructor)
-            `with` (symbolDeclaration "D" "S" [] `with` constructor)
+            `with`
+                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with`
+                (symbolDeclaration "D" "S" [] `with` [functional, constructor])
             `with` constructorAxiom "S" [("C", []), ("D", [])]
         )
         [ isSatisfiable
@@ -115,8 +123,12 @@ test_sortDeclaration =
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
             `with` (sortDeclaration "Integer" `with` hook Int.sort)
-            `with` (symbolDeclaration "C" "S" [] `with` constructor)
-            `with` (symbolDeclaration "D" "S" ["Integer"] `with` constructor)
+            `with`
+                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with`
+                (symbolDeclaration "D" "S" ["Integer"]
+                    `with` [functional, constructor]
+                )
             `with` constructorAxiom "S" [("C", []), ("D", ["Integer"])]
         )
         [ isSatisfiable
@@ -169,9 +181,14 @@ test_sortDeclaration =
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "T"
             `with` sortDeclaration "S"
-            `with` (symbolDeclaration "E" "S" [] `with` constructor)
-            `with` (symbolDeclaration "C" "T" [] `with` constructor)
-            `with` (symbolDeclaration "D" "T" ["S"] `with` constructor)
+            `with`
+                (symbolDeclaration "E" "S" [] `with` [functional, constructor])
+            `with`
+                (symbolDeclaration "C" "T" [] `with` [functional, constructor])
+            `with`
+                (symbolDeclaration "D" "T" ["S"]
+                    `with` [functional, constructor]
+                )
             `with` constructorAxiom "T" [("C", []), ("D", ["S"])]
             `with` constructorAxiom "S" [("E", [])]
         )
@@ -210,11 +227,16 @@ test_sortDeclaration =
     , testsForModule "Sort dependencies reverse order"
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
-            `with` (symbolDeclaration "C" "S" [] `with` constructor)
-            `with` (symbolDeclaration "D" "S" ["T"] `with` constructor)
+            `with`
+                (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with`
+                (symbolDeclaration "D" "S" ["T"]
+                    `with` [functional, constructor]
+                )
             `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
             `with` sortDeclaration "T"
-            `with` (symbolDeclaration "E" "T" [] `with` constructor)
+            `with`
+                (symbolDeclaration "E" "T" [] `with` [functional, constructor])
             `with` constructorAxiom "T" [("E", [])]
         )
         [ isSatisfiable
@@ -254,13 +276,22 @@ test_sortDeclaration =
             (ModuleName "first")
             [ emptyModule "first"
                 `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` constructor)
-                `with` (symbolDeclaration "D" "S" ["T"] `with` constructor)
+                `with`
+                    (symbolDeclaration "C" "S" []
+                        `with` [functional, constructor]
+                    )
+                `with`
+                    (symbolDeclaration "D" "S" ["T"]
+                        `with` [functional, constructor]
+                    )
                 `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
                 `with` importModule "second"
             , emptyModule "second"
                 `with` sortDeclaration "T"
-                `with` (symbolDeclaration "E" "T" [] `with` constructor)
+                `with`
+                    (symbolDeclaration "E" "T" []
+                        `with` [functional, constructor]
+                    )
                 `with` constructorAxiom "T" [("E", [])]
             ]
         )
@@ -308,4 +339,5 @@ test_sortDeclaration =
             :: SentenceImport CommonKorePattern
             )
 
-    testsForModule name = Helpers.testsForModule name declareSorts
+    testsForModule name =
+        Helpers.testsForModule name (Declaration.declare . Representation.build)

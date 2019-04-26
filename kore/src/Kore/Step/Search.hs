@@ -35,7 +35,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
@@ -134,7 +134,7 @@ matchWith
         , ShowMetaOrObject variable
         , Unparse (variable level)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.

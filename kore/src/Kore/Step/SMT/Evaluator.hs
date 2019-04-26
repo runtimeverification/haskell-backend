@@ -30,7 +30,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import           Kore.Step.SMT.Translate
@@ -49,7 +49,7 @@ The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate
     :: forall level variable m.
-        ( Given (MetadataTools level StepperAttributes)
+        ( Given (SmtMetadataTools StepperAttributes)
         , MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -82,7 +82,7 @@ decidePredicate korePredicate =
 goTranslatePredicate
     :: forall variable.
         ( Ord (variable Object)
-        , Given (MetadataTools Object StepperAttributes)
+        , Given (SmtMetadataTools StepperAttributes)
         , Unparse (variable Object)
         )
     => Predicate Object variable

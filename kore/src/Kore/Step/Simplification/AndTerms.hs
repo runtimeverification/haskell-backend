@@ -118,7 +118,7 @@ termEquals
         , ShowMetaOrObject variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -157,7 +157,7 @@ termEqualsAnd
         , ShowMetaOrObject variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -247,7 +247,7 @@ maybeTermEquals
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -286,7 +286,7 @@ termUnification
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -346,7 +346,7 @@ termAnd
         , ShowMetaOrObject variable
         , SortedVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -404,7 +404,7 @@ maybeTermAnd
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -572,7 +572,7 @@ andEqualsFunctions =
         _substitutionMerger
       = f tools
     addT
-        ::  (  MetadataTools level StepperAttributes
+        ::  (  SmtMetadataTools StepperAttributes
             -> PredicateSubstitutionMerger level variable unifier
             -> TermSimplifier level variable unifier
             -> StepPattern level variable
@@ -636,7 +636,7 @@ All the @TermTransformationOld@s and similar functions defined in this module ca
  -}
 type TermTransformation level variable unifier =
        SimplificationType
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -647,7 +647,7 @@ type TermTransformation level variable unifier =
     -> MaybeT unifier
         (ExpandedPattern level variable , SimplificationProof level)
 type TermTransformationOld level variable unifier =
-       MetadataTools level StepperAttributes
+       SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -670,7 +670,7 @@ maybeTransformTerm
         , unifier ~ unifierM variable
         )
     => [TermTransformationOld level variable unifier]
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
@@ -714,7 +714,7 @@ addToolsArg
         -> StepPattern level variable
         -> Maybe (StepPattern level variable, SimplificationProof level)
         )
-    ->  (  MetadataTools level StepperAttributes
+    ->  (  SmtMetadataTools StepperAttributes
         -> StepPattern level variable
         -> StepPattern level variable
         -> Maybe (StepPattern level variable, SimplificationProof level)
@@ -727,12 +727,12 @@ toExpanded
     , Show (variable Object)
     , Ord (variable Object)
     )
-    =>   (  MetadataTools Object StepperAttributes
+    =>  (  SmtMetadataTools StepperAttributes
         -> StepPattern Object variable
         -> StepPattern Object variable
         -> Maybe (StepPattern Object variable, SimplificationProof Object)
         )
-    ->  (  MetadataTools Object StepperAttributes
+    ->  (  SmtMetadataTools StepperAttributes
         -> StepPattern Object variable
         -> StepPattern Object variable
         -> Maybe (ExpandedPattern Object variable, SimplificationProof Object)
@@ -753,7 +753,7 @@ toExpanded transformer tools first second =
 
 transformerLiftOld
     :: Monad unifier
-    =>  (  MetadataTools level StepperAttributes
+    =>  (  SmtMetadataTools StepperAttributes
         -> StepPattern level variable
         -> StepPattern level variable
         -> Maybe (ExpandedPattern level variable, SimplificationProof level)
@@ -819,7 +819,7 @@ bottomTermEquals
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -887,7 +887,7 @@ termBottomEquals
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -921,7 +921,7 @@ variableFunctionAndEquals
         , unifier ~ unifierM variable
         )
     => SimplificationType
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -1035,7 +1035,7 @@ functionVariableAndEquals
         , unifier ~ unifierM variable
         )
     => SimplificationType
-    -> MetadataTools level StepperAttributes
+    -> SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -1086,7 +1086,7 @@ equalInjectiveHeadsAndEquals
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm "and".
@@ -1152,7 +1152,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> TermSimplifier level variable unifier
     -> StepPattern level variable
     -> StepPattern level variable
@@ -1221,7 +1221,7 @@ simplifySortInjections
         ( Ord (variable level)
         , MetaOrObject level
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
     -> Maybe (SortInjectionSimplification level variable)
@@ -1348,7 +1348,7 @@ constructorSortInjectionAndEquals
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
     -> MaybeT unifier (StepPattern level variable, SimplificationProof level)
@@ -1386,7 +1386,7 @@ constructorAndEqualsAssumesDifferentHeads
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
     -> MaybeT unifier (StepPattern level variable, SimplificationProof level)
@@ -1420,7 +1420,7 @@ domainValueAndConstructorErrors
     :: ( Eq (variable level)
        , MetaOrObject level
        )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
     -> Maybe (StepPattern level variable, SimplificationProof level)
@@ -1542,7 +1542,7 @@ functionAnd
         , Show (variable level)
         , Unparse (variable level)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> StepPattern level variable
     -> StepPattern level variable
     -> Maybe (ExpandedPattern level variable, SimplificationProof level)

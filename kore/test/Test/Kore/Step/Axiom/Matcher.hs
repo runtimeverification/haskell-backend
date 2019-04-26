@@ -19,7 +19,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
@@ -868,7 +868,7 @@ test_unificationWithAppMatchOnTop =
         assertEqualWithExplanation "" expect actual
     ]
 
-mockMetadataTools :: MetadataTools Object StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools =
     Mock.makeMetadataTools
         Mock.attributesMapping
@@ -876,13 +876,15 @@ mockMetadataTools =
         Mock.sortAttributesMapping
         Mock.subsorts
         Mock.headSortsMapping
+        Mock.smtDeclarations
 
-mockMetaMetadataTools :: MetadataTools Meta StepperAttributes
-mockMetaMetadataTools = Mock.makeMetadataTools [] [] [] [] []
+mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
+mockMetaMetadataTools =
+    Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
 matchDefinition
     :: forall level . ( MetaOrObject level )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
@@ -890,7 +892,7 @@ matchDefinition = match
 
 matchSimplification
     :: forall level . ( MetaOrObject level )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
@@ -898,7 +900,7 @@ matchSimplification = match
 
 unificationWithMatch
     :: forall level . ( MetaOrObject level )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))
@@ -919,7 +921,7 @@ unificationWithMatch tools first second = do
 
 match
     :: forall level . ( MetaOrObject level )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> CommonStepPattern level
     -> CommonStepPattern level
     -> IO (Maybe (CommonOrOfPredicateSubstitution level))

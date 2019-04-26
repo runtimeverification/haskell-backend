@@ -33,7 +33,9 @@ commandParser :: Parser ReplCommand
 commandParser = do
     cmd <- nonRecursiveCommand
     endOfInput cmd
-        <|> pipeWithRedirect cmd
+        <|> pipeWith appendTo cmd
+        <|> pipeWith redirect cmd
+        <|> appendTo cmd
         <|> redirect cmd
         <|> pipe cmd
 
@@ -63,8 +65,11 @@ nonRecursiveCommand =
         , exit
         ]
 
-pipeWithRedirect :: ReplCommand -> Parser ReplCommand
-pipeWithRedirect cmd = try (pipe cmd >>= redirect)
+pipeWith
+    :: (ReplCommand -> Parser ReplCommand)
+    -> ReplCommand
+    -> Parser ReplCommand
+pipeWith parserCmd cmd = try (pipe cmd >>= parserCmd)
 
 endOfInput :: ReplCommand -> Parser ReplCommand
 endOfInput cmd = eof $> cmd
@@ -138,19 +143,25 @@ clear :: Parser ReplCommand
 clear = Clear <$$> literal "clear" *> maybeDecimal
 
 saveSession :: Parser ReplCommand
-saveSession = SaveSession <$$> literal "save-session" *> word
+saveSession =
+    SaveSession <$$> literal "save-session" *> quotedOrWordWithout ""
 
 redirect :: ReplCommand -> Parser ReplCommand
-redirect cmd = Redirect cmd <$$> literal ">" *> word
+redirect cmd =
+    Redirect cmd <$$> literal ">" *> quotedOrWordWithout ">"
 
 pipe :: ReplCommand -> Parser ReplCommand
-pipe cmd = Pipe cmd <$$> literal "|" *> wordWithout ['>'] <**> many arg
+pipe cmd =
+    Pipe cmd
+    <$$> literal "|"
+    *> quotedOrWordWithout ">"
+    <**> many (quotedOrWordWithout ">")
 
-arg :: Parser String
-arg = quotedArg <|> wordWithout ['>']
-
-quotedArg :: Parser String
-quotedArg = Char.char '"' *> manyTill L.charLiteral (Char.char '"') <* Char.space
+appendTo :: ReplCommand -> Parser ReplCommand
+appendTo cmd =
+    AppendTo cmd
+    <$$> literal ">>"
+    *> quotedOrWordWithout ""
 
 infixr 2 <$$>
 infixr 1 <**>
@@ -175,6 +186,15 @@ maybeDecimal = optional decimal
 
 word :: Parser String
 word = wordWithout []
+
+quotedOrWordWithout :: String -> Parser String
+quotedOrWordWithout s = quotedWord <|> wordWithout s
+
+quotedWord :: Parser String
+quotedWord =
+    Char.char '"'
+    *> manyTill L.charLiteral (Char.char '"')
+    <* Char.space
 
 wordWithout :: [Char] -> Parser String
 wordWithout xs = some (noneOf $ [' '] <> xs) <* Char.space

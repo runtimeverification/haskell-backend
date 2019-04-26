@@ -15,7 +15,7 @@ import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Representation.ExpandedPattern
@@ -51,7 +51,7 @@ simplifyEvaluatedMultiPredicateSubstitution
         , ShowMetaOrObject variable
         , FreshVariable variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level

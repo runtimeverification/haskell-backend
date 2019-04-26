@@ -19,7 +19,7 @@ import           Data.Maybe
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
-import           SimpleSMT
+import           SMT.SimpleSMT
 
 import           Kore.AST.Kore
 import           Kore.Attribute.Smtlib.Smtlib

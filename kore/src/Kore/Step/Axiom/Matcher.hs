@@ -31,7 +31,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -107,7 +107,7 @@ matchAsUnification
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -156,7 +156,7 @@ unificationWithAppMatchOnTop
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -242,7 +242,7 @@ match
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -295,7 +295,7 @@ matchEqualHeadPatterns
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -564,7 +564,7 @@ matchJoin
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -626,7 +626,7 @@ unifyJoin
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
@@ -700,7 +700,7 @@ matchVariableFunction
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.

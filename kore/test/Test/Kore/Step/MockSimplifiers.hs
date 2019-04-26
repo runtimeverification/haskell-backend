@@ -8,7 +8,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( SmtMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( wrapPredicate )
 import           Kore.Step.Representation.ExpandedPattern
@@ -25,7 +25,7 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
                  ( create )
 
 substitutionSimplifier
-    :: MetadataTools Object StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> PredicateSubstitutionSimplifier Object
 substitutionSimplifier tools =
     PredicateSubstitution.create

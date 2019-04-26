@@ -31,7 +31,7 @@ import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
+                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Pattern
@@ -62,7 +62,7 @@ normalizeSubstitution
         , SortedVariable variable
         , Show (variable Object)
         )
-    => MetadataTools Object StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Map (variable Object) (StepPattern Object variable)
     -> ExceptT
         (SubstitutionError Object variable)
@@ -204,7 +204,7 @@ getNonSimplifiableDependencies
         , Ord (variable level)
         , Show (variable level)
         )
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Set (variable level)  -- ^ interesting variables
     -> variable level  -- ^ substitution variable
     -> StepPattern level variable  -- ^ substitution pattern
@@ -219,7 +219,7 @@ getNonSimplifiableDependencies
 nonSimplifiableAbove
     :: forall variable level .
         (MetaOrObject level, Ord (variable level), Show (variable level))
-    => MetadataTools level StepperAttributes
+    => SmtMetadataTools StepperAttributes
     -> Set (variable level)
     -> Base (StepPattern level variable) (Set (variable level))
     -> Set (variable level)
