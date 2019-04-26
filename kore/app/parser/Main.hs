@@ -13,6 +13,7 @@ import           Options.Applicative
                  ( InfoMod, Parser, argument, fullDesc, header, help, long,
                  metavar, progDesc, str, strOption, value )
 
+import           Kore.AST.ApplicativeKore
 import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
                  ( prettyPrintToString )
@@ -26,9 +27,10 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+                 ( VerifiedModule, toVerifiedDefinition )
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition, parseKorePattern )
+import           Kore.Unparser as Unparser
 
 import GlobalMain
 
@@ -49,6 +51,7 @@ data KoreParserOptions = KoreParserOptions
     , willPrintPattern    :: !Bool   -- ^ Option to print pattern
     , willVerify          :: !Bool   -- ^ Option to verify definition
     , willChkAttr         :: !Bool   -- ^ Option to check attributes during verification
+    , appKore             :: !Bool   -- ^ Option to print in applicative Kore syntax
     }
 
 -- | Command Line Argument Parser
@@ -80,7 +83,9 @@ commandLineParser =
     <*> enableDisableFlag "chkattr"
         True False True
             "attributes checking during verification [default enabled]"
-
+    <*> enableDisableFlag "appkore"
+        True False False
+        "printing parsed definition in applicative Kore syntax [default disabled]"
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -106,14 +111,20 @@ main = do
         , willPrintPattern
         , willVerify
         , willChkAttr
+        , appKore
         }
       -> do
         parsedDefinition <- mainDefinitionParse fileName
         indexedModules <- if willVerify
             then mainVerify willChkAttr parsedDefinition
             else return Map.empty
-        when willPrintDefinition $
-            putStrLn (prettyPrintToString parsedDefinition)
+        when willPrintDefinition
+            $ if appKore
+                then putStrLn
+                    $ unparseToString2
+                    $ completeDefinition
+                    $ toVerifiedDefinition indexedModules
+            else putStrLn (prettyPrintToString parsedDefinition)
 
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName

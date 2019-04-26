@@ -98,6 +98,8 @@ instance TopBottom patt
 
 instance Unparse pattern' => Unparse (GenericPredicate pattern') where
     unparse (GenericPredicate pattern') = unparse pattern'
+    unparse2 (GenericPredicate pattern') = unparse2 pattern'
+
 
 {-| 'Predicate' is a user-visible representation for predicates.
 -}

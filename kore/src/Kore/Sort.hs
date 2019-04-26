@@ -63,6 +63,7 @@ instance NFData (SortVariable level)
 
 instance Unparse (SortVariable level) where
     unparse = unparse . getSortVariable
+    unparse2 SortVariable { getSortVariable } = unparseIdLower getSortVariable
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -84,6 +85,14 @@ instance NFData (SortActual level)
 instance Unparse (SortActual level) where
     unparse SortActual { sortActualName, sortActualSorts } =
         unparse sortActualName <> parameters sortActualSorts
+    unparse2 SortActual { sortActualName, sortActualSorts } =
+        case sortActualSorts of
+            [] -> unparse2 sortActualName
+            _ -> "("
+                  <> unparse2 sortActualName
+                  <> " "
+                  <> parameters2 sortActualSorts
+                  <> ")"
 
 {-|'Sort' corresponds to the @object-sort@ and
 @meta-sort@ syntactic categories from the Semantics of K,
@@ -106,7 +115,10 @@ instance Unparse (Sort level) where
         \case
             SortVariableSort sortVariable -> unparse sortVariable
             SortActualSort sortActual -> unparse sortActual
-
+    unparse2 =
+        \case
+            SortVariableSort sortVariable -> unparse2 sortVariable
+            SortActualSort sortActual -> unparse2 sortActual
 {- | Substitute sort variables in a 'Sort'.
 
 Sort variables that are not in the substitution are not changed.

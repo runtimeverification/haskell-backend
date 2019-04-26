@@ -32,8 +32,8 @@ module Kore.IndexedModule.IndexedModule
     , hookedObjectSymbolSentences
     , indexedModuleSubsorts
     , indexedModulesInScope
-    , toVerifiedPureModule
-    , toVerifiedPureDefinition
+    , toVerifiedModule
+    , toVerifiedDefinition
     , recursiveIndexedModuleAxioms
     , recursiveIndexedModuleSortDescriptions
     , recursiveIndexedModuleSymbolSentences
@@ -273,10 +273,10 @@ type VerifiedModule = IndexedModule (SortVariable Object) Verified.Pattern
 The original module attributes /are/ preserved.
 
  -}
-toVerifiedPureModule
+toVerifiedModule
     :: VerifiedModule declAtts axiomAtts
     -> Module Verified.Sentence
-toVerifiedPureModule module' =
+toVerifiedModule module' =
     Module
         { moduleName = indexedModuleName module'
         , moduleSentences = indexedModuleRawSentences module'
@@ -294,15 +294,15 @@ included in the output of this function because it is /implicit/.
 See also: 'toVerifiedPureModule'
 
  -}
-toVerifiedPureDefinition
+toVerifiedDefinition
     :: Foldable t
     => t (VerifiedModule declAtts axiomAtts)
     -> Definition Verified.Sentence
-toVerifiedPureDefinition idx =
+toVerifiedDefinition idx =
     Definition
         { definitionAttributes = Default.def
         , definitionModules =
-            toVerifiedPureModule
+            toVerifiedModule
             <$> filter notImplicitKoreModule (Foldable.toList idx)
         }
   where

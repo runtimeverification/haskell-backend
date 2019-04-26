@@ -68,6 +68,7 @@ patternLens
                 ApplicationPattern <$> patternLensApplication app0
             StringLiteralPattern lit -> pure (StringLiteralPattern lit)
             CharLiteralPattern lit -> pure (CharLiteralPattern lit)
+            InhabitantPattern s -> pure (InhabitantPattern s)
 
     patternLensAnd And { andSort, andFirst, andSecond } =
         And
