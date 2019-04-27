@@ -49,7 +49,6 @@ import           Kore.Step.Axiom.Matcher
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
-                 ( fromPurePattern )
 import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
@@ -369,7 +368,7 @@ evaluateWithDefinitionAxioms
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
         expanded :: Pattern level variable
-        expanded = Pattern.fromPurePattern patt
+        expanded = Pattern.fromTermLike patt
 
     let unwrapEqualityRule =
             \(EqualityRule rule) ->

@@ -232,7 +232,7 @@ evalGet =
         )
       where
         maybeBottom =
-            maybe Pattern.bottom Pattern.fromPurePattern
+            maybe Pattern.bottom Pattern.fromTermLike
 
 evalUnit :: Builtin.Function
 evalUnit =
@@ -266,7 +266,7 @@ evalConcat =
                     if Seq.null _list1
                         then
                             Builtin.appliedFunction
-                            $ Pattern.fromPurePattern _list2
+                            $ Pattern.fromTermLike _list2
                         else
                             empty
                 rightIdentity = do
@@ -274,7 +274,7 @@ evalConcat =
                     if Seq.null _list2
                         then
                             Builtin.appliedFunction
-                            $ Pattern.fromPurePattern _list1
+                            $ Pattern.fromTermLike _list1
                         else
                             empty
                 bothConcrete = do
@@ -352,7 +352,7 @@ asPattern
     -> Builtin variable
     -> Pattern Object variable
 asPattern resultSort =
-    Pattern.fromPurePattern . asInternal tools resultSort
+    Pattern.fromTermLike . asInternal tools resultSort
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given

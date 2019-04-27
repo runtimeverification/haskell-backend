@@ -7,6 +7,7 @@ import Test.Tasty.HUnit
 
 import           Data.Default
                  ( def )
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
 import           Data.Sup
@@ -546,38 +547,19 @@ test_functionIntegration =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Variable expansion." $ do
-        let expect =
+        let equalsXA = mkEquals Mock.testSort (mkVar Mock.x) Mock.a
+            equalsXB = mkEquals Mock.testSort (mkVar Mock.x) Mock.b
+            expect =
                 Conditional
-                    { term = mkOr
-                        (mkOr
-                            (mkAnd
-                                Mock.a
-                                (mkEquals Mock.testSort
-                                    (mkVar Mock.x) Mock.a
-                                )
-                            )
-                            (mkAnd
-                                Mock.b
-                                (mkEquals Mock.testSort
-                                    (mkVar Mock.x) Mock.b
-                                )
-                            )
-                        )
-                        (mkAnd
-                            (Mock.f (mkVar Mock.x))
-                            (mkAnd
-                                (mkNot
-                                    (mkEquals Mock.testSort
-                                        (mkVar Mock.x) Mock.a
-                                    )
-                                )
-                                (mkNot
-                                    (mkEquals Mock.testSort
-                                        (mkVar Mock.x) Mock.b
-                                    )
-                                )
-                            )
-                        )
+                    { term =
+                        Foldable.foldr1 mkOr
+                            [ mkAnd Mock.a equalsXA
+                            , mkAnd Mock.b equalsXB
+                            , mkAnd (Mock.f (mkVar Mock.x))
+                                $ mkAnd
+                                    (mkNot equalsXA)
+                                    (mkNot equalsXB)
+                            ]
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }

@@ -230,7 +230,7 @@ asPattern
     -> Text  -- ^ builtin value to render
     -> Pattern Object variable
 asPattern resultSort =
-    Pattern.fromPurePattern . asTermLike resultSort
+    Pattern.fromTermLike . asTermLike resultSort
 
 asPartialPattern
     :: Ord (variable Object)

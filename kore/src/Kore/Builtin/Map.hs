@@ -201,7 +201,7 @@ returnMap
     -> m (AttemptedAxiom Object variable)
 returnMap tools resultSort map' =
     Builtin.appliedFunction
-    $ Pattern.fromPurePattern
+    $ Pattern.fromTermLike
     $ asInternal tools resultSort map'
 
 evalLookup :: Builtin.Function
@@ -229,7 +229,7 @@ evalLookup =
         )
       where
         maybeBottom =
-            maybe Pattern.bottom Pattern.fromPurePattern
+            maybe Pattern.bottom Pattern.fromTermLike
 
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function
@@ -264,7 +264,7 @@ evalConcat =
                     if Map.null _map1
                         then
                             Builtin.appliedFunction
-                            $ Pattern.fromPurePattern _map2
+                            $ Pattern.fromTermLike _map2
                         else
                             empty
                 rightIdentity = do
@@ -272,7 +272,7 @@ evalConcat =
                     if Map.null _map2
                         then
                             Builtin.appliedFunction
-                            $ Pattern.fromPurePattern _map1
+                            $ Pattern.fromTermLike _map1
                         else
                             empty
                 bothConcrete = do
@@ -428,7 +428,7 @@ asPattern
     -> Builtin variable
     -> Pattern Object variable
 asPattern resultSort =
-    Pattern.fromPurePattern . asInternal tools resultSort
+    Pattern.fromTermLike . asInternal tools resultSort
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given

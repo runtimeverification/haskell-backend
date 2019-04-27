@@ -53,7 +53,6 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Pattern
                  ( Conditional (Conditional), Pattern )
 import           Kore.Step.Pattern as Pattern
-                 ( fromPurePattern )
 import           Kore.Step.Pattern as Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern.Or as Or
@@ -372,7 +371,7 @@ verifyClaimStep
 
     targetPattern :: Pattern Object Variable
     targetPattern =
-        Pattern.fromPurePattern
+        Pattern.fromTermLike
             . right
             . coerce
             $ target

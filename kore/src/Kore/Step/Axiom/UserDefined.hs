@@ -31,7 +31,6 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.Pattern as Pattern
-                 ( fromPurePattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
@@ -113,7 +112,7 @@ equalityRuleEvaluator
             axiomIdToSimplifier
             unificationProcedure
             [RulePattern.mapVariables fromVariable rule']
-            (Pattern.fromPurePattern patt')
+            (Pattern.fromTermLike patt')
 
     simplifyOrPatterns unsimplified =
         MultiOr.filterOr

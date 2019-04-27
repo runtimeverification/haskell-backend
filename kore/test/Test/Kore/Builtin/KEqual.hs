@@ -59,7 +59,7 @@ test_KEqual :: [TestTree]
 test_KEqual =
     [ testCaseWithSolver "dotk equals dotk" $ \solver -> do
         let expect =
-                Pattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal True
             original =
                 mkApp
@@ -73,7 +73,7 @@ test_KEqual =
 
     , testCaseWithSolver "distinct domain values" $ \solver -> do
         let expect =
-                Pattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
                 mkApp
@@ -97,7 +97,7 @@ test_KEqual =
 
     , testCaseWithSolver "injected distinct domain values" $ \solver -> do
         let expect =
-                Pattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
                 mkApp
@@ -129,7 +129,7 @@ test_KEqual =
 
     , testCase "distinct Id domain values casted to K" $ do
         let expect =
-                Pattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
                 mkApp
@@ -174,7 +174,7 @@ test_KIte :: [TestTree]
 test_KIte =
     [ testCaseWithSolver "ite true" $ \solver -> do
         let expect =
-                Pattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
                 mkApp
@@ -189,7 +189,7 @@ test_KIte =
 
     , testCaseWithSolver "ite false" $ \solver -> do
         let expect =
-                Pattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal True
             original =
                 mkApp

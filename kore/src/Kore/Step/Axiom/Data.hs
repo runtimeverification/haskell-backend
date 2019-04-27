@@ -208,7 +208,7 @@ purePatternAxiomEvaluator
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
-            { results = Or.makeFromSinglePurePattern p
+            { results = Or.fromTermLike p
             , remainders = MultiOr.make []
             }
         , SimplificationProof

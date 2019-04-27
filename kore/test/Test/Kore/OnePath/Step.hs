@@ -32,7 +32,6 @@ import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Pattern as Pattern
-                 ( Conditional (..), Pattern, fromPurePattern )
 import           Kore.Step.Proof
                  ( StepProof )
 import           Kore.Step.Rule
@@ -73,12 +72,12 @@ test_onePathStrategy =
         [ actual ] <- runOnePathSteps
             metadataTools
             (Limit 0)
-            (Pattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.a
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (RewritePattern $ Pattern.fromPurePattern Mock.a)
+            (RewritePattern $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "Axiom priority, first step" $ do
         -- Target: a
@@ -89,7 +88,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 1)
-            (Pattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.a
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
@@ -106,12 +105,12 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 1)
-            (Pattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.d
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (RewritePattern $ Pattern.fromPurePattern Mock.c)
+            (RewritePattern $ Pattern.fromTermLike Mock.c)
             _actual
     , testCase "Axiom priority, second step" $ do
         -- Target: b
@@ -123,7 +122,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (Pattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.b
             [simpleRewrite Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
@@ -142,7 +141,7 @@ test_onePathStrategy =
         [ _actual1 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (Pattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.e
             [simpleRewrite Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
@@ -150,7 +149,7 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ RewritePattern $ Pattern.fromPurePattern Mock.c
+                [ RewritePattern $ Pattern.fromTermLike Mock.c
                 ]
             )
             (sort
@@ -167,7 +166,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (Pattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.e
             [simpleRewrite Mock.e Mock.c]
             [ simpleRewrite Mock.b Mock.d
@@ -175,7 +174,7 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ RewritePattern $ Pattern.fromPurePattern Mock.d
+                [ RewritePattern $ Pattern.fromTermLike Mock.d
                 ]
             )
             (sort
@@ -201,7 +200,7 @@ test_onePathStrategy =
             runOnePathSteps
                 metadataTools
                 (Limit 2)
-                (Pattern.fromPurePattern
+                (Pattern.fromTermLike
                     (Mock.functionalConstr10 (mkVar Mock.x))
                 )
                 (Mock.functionalConstr11 Mock.a)
@@ -272,7 +271,7 @@ test_onePathStrategy =
             runOnePathSteps
                 metadataTools
                 (Limit 2)
-                (Pattern.fromPurePattern
+                (Pattern.fromTermLike
                     (Mock.functionalConstr10 (mkVar Mock.x))
                 )
                 (Mock.functionalConstr11 Mock.a)
@@ -329,7 +328,7 @@ test_onePathStrategy =
         [ _actual1, _actual2 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (Pattern.fromPurePattern
+            (Pattern.fromTermLike
                 (Mock.functionalConstr10 Mock.b)
             )
             Mock.a
@@ -365,7 +364,7 @@ test_onePathStrategy =
             runOnePathSteps
                 metadataTools
                 (Limit 2)
-                (Pattern.fromPurePattern (Mock.builtinInt 0))
+                (Pattern.fromTermLike (Mock.builtinInt 0))
                 (Mock.builtinInt 1)
                 []
                 [ rewriteWithPredicate
@@ -493,4 +492,4 @@ runOnePathSteps
         )
     return (sort $ nub (map fst result))
   where
-    expandedTarget = Pattern.fromPurePattern target
+    expandedTarget = Pattern.fromTermLike target

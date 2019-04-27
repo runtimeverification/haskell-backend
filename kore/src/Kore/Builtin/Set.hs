@@ -212,7 +212,7 @@ returnSet
     -> m (AttemptedAxiom Object variable)
 returnSet tools resultSort set =
     Builtin.appliedFunction
-    $ Pattern.fromPurePattern
+    $ Pattern.fromTermLike
     $ asInternal tools resultSort set
 
 evalElement :: Builtin.Function
@@ -275,14 +275,14 @@ evalConcat =
                     if Set.null _set1
                         then
                             Builtin.appliedFunction
-                            $ Pattern.fromPurePattern _set2
+                            $ Pattern.fromTermLike _set2
                         else empty
                 rightIdentity = do
                     _set2 <- expectBuiltinSet ctx tools _set2
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
-                            $ Pattern.fromPurePattern _set1
+                            $ Pattern.fromTermLike _set1
                         else empty
                 bothConcrete = do
                     _set1 <- expectBuiltinSet ctx tools _set1
@@ -309,7 +309,7 @@ evalDifference =
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
-                            $ Pattern.fromPurePattern _set1
+                            $ Pattern.fromTermLike _set1
                         else empty
                 bothConcrete = do
                     _set1 <- expectBuiltinSet ctx tools _set1
@@ -428,7 +428,7 @@ asPattern
     -> Builtin
     -> Pattern Object variable
 asPattern resultSort =
-    Pattern.fromPurePattern . asInternal tools resultSort
+    Pattern.fromTermLike . asInternal tools resultSort
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given

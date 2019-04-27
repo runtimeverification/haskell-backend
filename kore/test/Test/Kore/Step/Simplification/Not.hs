@@ -56,7 +56,7 @@ test_simplifyEvaluated =
             assertEqualWithExplanation "" (MultiOr.make expected) actual
 
 termX :: Pattern Object Variable
-termX = Pattern.fromPurePattern (mkVar Mock.x)
+termX = Pattern.fromTermLike (mkVar Mock.x)
 
 equalsXA :: Pattern Object Variable
 equalsXA = fromPredicate equalsXA_

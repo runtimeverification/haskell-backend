@@ -8,9 +8,10 @@ module Kore.Step.Pattern.Or
     , Pattern
     , PredicateSubstitution
     , fromPatterns
+    , fromPattern
+    , fromTermLike
     , isFalse
     , isTrue
-    , makeFromSinglePurePattern
     , toExpandedPattern
     , toTermLike
     , toPredicate
@@ -50,21 +51,32 @@ type PredicateSubstitution level variable =
 -}
 type Predicate variable = MultiOr (Predicate.Predicate variable)
 
+{- | A "disjunction" of one 'Pattern.Pattern'.
+ -}
+fromPattern
+    :: Ord (variable Object)
+    => Pattern.Pattern Object variable
+    -> Pattern Object variable
+fromPattern = MultiOr.singleton
+
+{- | Disjoin a collection of patterns.
+ -}
 fromPatterns
     :: (Foldable f, Ord (variable Object))
     => f (Pattern.Pattern Object variable)
     -> Pattern Object variable
 fromPatterns = MultiOr.make . Foldable.toList
 
-{-| Constructs a normalized 'Pattern' from
-'TermLike's.
--}
-makeFromSinglePurePattern
+{- | A "disjunction" of one 'TermLike'.
+
+See also: 'fromPattern'
+
+ -}
+fromTermLike
     :: Ord (variable Object)
     => TermLike variable
     -> Pattern Object variable
-makeFromSinglePurePattern patt =
-    MultiOr.make [ Pattern.fromPurePattern patt ]
+fromTermLike = fromPattern . Pattern.fromTermLike
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
 -}
@@ -98,12 +110,9 @@ toExpandedPattern multiOr
     case MultiOr.extractPatterns multiOr of
         [] -> Pattern.bottom
         [patt] -> patt
-        patt : patts ->
+        patts ->
             Conditional.Conditional
-                { term =
-                    Foldable.foldr mkOr
-                        (Pattern.toMLPattern     patt )
-                        (Pattern.toMLPattern <$> patts)
+                { term = Foldable.foldr1 mkOr (Pattern.toMLPattern <$> patts)
                 , predicate = Predicate.makeTruePredicate
                 , substitution = mempty
                 }
@@ -121,10 +130,7 @@ toTermLike multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> mkBottom_
         [patt] -> Pattern.toMLPattern patt
-        patt : patts ->
-            Foldable.foldr mkOr
-                (Pattern.toMLPattern     patt )
-                (Pattern.toMLPattern <$> patts)
+        patts -> Foldable.foldr1 mkOr (Pattern.toMLPattern <$> patts)
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate

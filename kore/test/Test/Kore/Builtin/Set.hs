@@ -232,7 +232,7 @@ test_symbolic =
         (do
             values <- forAll (setVariableGen intSort)
             let patMap = asSymbolicPattern (Set.map mkVar values)
-                expect = Pattern.fromPurePattern patMap
+                expect = Pattern.fromTermLike patMap
             if Set.null values
                 then discard
                 else (===) expect =<< evaluate patMap

@@ -366,7 +366,7 @@ execute verifiedModule strategy inputPattern
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            (Pattern.fromPurePattern inputPattern)
+            (Pattern.fromTermLike inputPattern)
     let
         initialPattern =
             case MultiOr.extractPatterns simplifiedPatterns of
@@ -513,7 +513,7 @@ simplifyPattern tools =
         emptySubstitutionSimplifier
         emptySimplifier
         Map.empty
-    . Pattern.fromPurePattern
+    . Pattern.fromTermLike
   where
     emptySimplifier :: StepPatternSimplifier Object
     emptySimplifier = Simplifier.create tools Map.empty

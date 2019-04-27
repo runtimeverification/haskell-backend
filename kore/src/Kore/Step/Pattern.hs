@@ -19,7 +19,7 @@ module Kore.Step.Pattern
     , toStepPattern
     , top
     , topOf
-    , Kore.Step.Pattern.fromPurePattern
+    , fromTermLike
     , Kore.Step.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
@@ -218,27 +218,26 @@ topOf resultSort =
         , substitution = mempty
         }
 
-{- | Construct an 'Pattern' from a 'StepPattern'.
+{- | Construct an 'Pattern' from a 'TermLike'.
 
-  The resulting @Pattern@ has a true predicate and an empty
-  substitution.
+The resulting @Pattern@ has a true predicate and an empty
+substitution, unless it is trivially 'Bottom'.
 
-  See also: 'makeTruePredicate', 'pure'
+See also: 'makeTruePredicate', 'pure'
 
  -}
-fromPurePattern
+fromTermLike
     :: Ord (variable Object)
     => TermLike variable
     -> Pattern Object variable
-fromPurePattern term@(Recursive.project -> _ :< projected) =
-    case projected of
-        Common.Pattern.BottomPattern _ -> bottom
-        _ ->
-            Conditional
-                { term
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
+fromTermLike term
+  | isBottom term = bottom
+  | otherwise =
+    Conditional
+        { term
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
 
 toPredicate
     ::  ( SortedVariable variable

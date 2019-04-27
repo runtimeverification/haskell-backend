@@ -22,7 +22,7 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -337,7 +337,7 @@ simpleEvaluator ((from, to) : ps) patt
   | from == patt =
     return
         ( Applied AttemptedAxiomResults
-            { results = MultiOr.make [Pattern.fromPurePattern to]
+            { results = Or.fromTermLike to
             , remainders = MultiOr.make []
             }
         , SimplificationProof

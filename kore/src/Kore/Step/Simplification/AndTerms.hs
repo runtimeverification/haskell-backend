@@ -354,7 +354,7 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
         termAndWorker p1 p2
     case eitherResult of
         Left _ -> return
-            ( Pattern.fromPurePattern (mkAnd p1 p2)
+            ( Pattern.fromTermLike (mkAnd p1 p2)
             , SimplificationProof
             )
         Right result -> return result
@@ -384,7 +384,7 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
         return $ fromMaybe andPattern patt
       where
         andPattern =
-                ( Pattern.fromPurePattern (mkAnd first second)
+                ( Pattern.fromTermLike (mkAnd first second)
                 , SimplificationProof
                 )
 
@@ -544,7 +544,7 @@ andEqualsFunctions =
         _termSimplifier
         first
         second
-      = Bifunctor.first Pattern.fromPurePattern <$> f first second
+      = Bifunctor.first Pattern.fromTermLike <$> f first second
     liftE1
         f
         _simplificationType
@@ -556,7 +556,7 @@ andEqualsFunctions =
         _termSimplifier
         first
         second
-      = Bifunctor.first Pattern.fromPurePattern <$> f tools first second
+      = Bifunctor.first Pattern.fromTermLike <$> f tools first second
     liftET = liftE . addToolsArg
     addS
         f

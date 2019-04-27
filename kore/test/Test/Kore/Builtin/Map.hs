@@ -94,7 +94,7 @@ test_lookupUpdate =
             patMap <- forAll genMapPattern
             let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
                 predicate = mkEquals_ patLookup patVal
-                expect = Pattern.fromPurePattern patVal
+                expect = Pattern.fromTermLike patVal
             (===) expect =<< evaluate patLookup
             (===) Pattern.top =<< evaluate predicate
         )
@@ -139,8 +139,8 @@ test_lookupConcatUniqueKeys =
                             (mkEquals_ patLookup1 patVal1)
                             (mkEquals_ patLookup2 patVal2)
                         )
-                expect1 = Pattern.fromPurePattern patVal1
-                expect2 = Pattern.fromPurePattern patVal2
+                expect1 = Pattern.fromTermLike patVal1
+                expect2 = Pattern.fromTermLike patVal2
             (===) expect1 =<< evaluate patLookup1
             (===) expect2 =<< evaluate patLookup2
             (===) Pattern.top =<< evaluate predicate
@@ -299,7 +299,7 @@ test_symbolic =
         (do
             elements <- forAll $ genMapSortedVariable intSort genIntegerPattern
             let patMap = asSymbolicPattern (Map.mapKeys mkVar elements)
-                expect = Pattern.fromPurePattern patMap
+                expect = Pattern.fromTermLike patMap
             if Map.null elements
                 then discard
                 else (===) expect =<< evaluate patMap

@@ -275,7 +275,7 @@ test_substitute =
         actual <-
             evaluate
                 mockMetadataTools
-                (Pattern.fromPurePattern
+                (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
@@ -304,7 +304,7 @@ test_substitute =
         actual <-
             evaluate
                 mockMetadataTools
-                (Pattern.fromPurePattern
+                (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
@@ -336,7 +336,7 @@ test_substituteMap =
         actual <-
             evaluate
                 mockMetadataTools
-                (Pattern.fromPurePattern
+                (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
@@ -373,7 +373,7 @@ test_substituteList =
         actual <-
             evaluate
                 mockMetadataTools
-                ( Pattern.fromPurePattern
+                ( Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
                             (mkVar Mock.x)
