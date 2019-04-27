@@ -115,7 +115,7 @@ equalityRuleEvaluator
             [RulePattern.mapVariables fromVariable rule']
             (Pattern.fromPurePattern patt')
 
-    simplifyOrOfExpandedPattern unsimplified =
+    simplifyOrPatterns unsimplified =
         MultiOr.filterOr
         <$> traverse simplifyPattern unsimplified
 
@@ -133,6 +133,6 @@ equalityRuleEvaluator
         :: Step.Results variable
         -> Simplifier (AttemptedAxiomResults Object variable)
     simplifyResults stepResults = do
-        results <- simplifyOrOfExpandedPattern $ Step.gatherResults stepResults
-        remainders <- simplifyOrOfExpandedPattern $ Step.remainders stepResults
+        results <- simplifyOrPatterns $ Step.gatherResults stepResults
+        remainders <- simplifyOrPatterns $ Step.remainders stepResults
         return AttemptedAxiomResults { results, remainders }

@@ -1,4 +1,4 @@
-module Test.Kore.Step.Representation.OrOfExpandedPattern where
+module Test.Kore.Step.Pattern.Or where
 
 import           Hedgehog
                  ( Property, (===) )

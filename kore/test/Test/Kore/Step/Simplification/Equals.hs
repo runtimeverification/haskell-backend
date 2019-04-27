@@ -1,7 +1,7 @@
 module Test.Kore.Step.Simplification.Equals
     ( test_equalsSimplification_TermLike
-    , test_equalsSimplification_OrOfExpandedPatterns
-    , test_equalsSimplification_Patterns
+    , test_equalsSimplification_Or_Pattern
+    , test_equalsSimplification_Pattern
     ) where
 
 import Test.Tasty
@@ -53,8 +53,8 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-test_equalsSimplification_OrOfExpandedPatterns :: [TestTree]
-test_equalsSimplification_OrOfExpandedPatterns =
+test_equalsSimplification_Or_Pattern :: [TestTree]
+test_equalsSimplification_Or_Pattern =
     [ testCase "bottom == bottom" $ do
         let expect = MultiOr.make [ Conditional.top ]
         actual <-
@@ -304,8 +304,8 @@ test_equalsSimplification_OrOfExpandedPatterns =
         assertEqualWithExplanation "g[x = a] or h or f" expect actual2
     ]
 
-test_equalsSimplification_Patterns :: [TestTree]
-test_equalsSimplification_Patterns =
+test_equalsSimplification_Pattern :: [TestTree]
+test_equalsSimplification_Pattern =
     [ testCase "predicate-substitution vs predicate-substitution" $ do
         let expect =
                 MultiOr.make

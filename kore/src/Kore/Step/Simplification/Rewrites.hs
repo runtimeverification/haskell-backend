@@ -25,8 +25,7 @@ import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
 
-{-|'simplify' simplifies a 'Rewrites' pattern with an 'OrOfExpandedPattern'
-child.
+{- | Simplify a 'Rewrites' pattern with a 'Or.Pattern' child.
 
 Right now this does not do any actual simplification.
 

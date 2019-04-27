@@ -55,7 +55,6 @@ import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern
                  ( Pattern, PredicateSubstitution )
 import qualified Kore.Step.Pattern.Or as Or
-import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.TermLike
                  ( TermLike )
@@ -325,7 +324,7 @@ simplifyTerm
             predicateSimplifier
             stepPattern
             PredicateSubstitution.top
-    return (OrOfExpandedPattern.make results, SimplificationProof)
+    return (Or.fromPatterns results, SimplificationProof)
 
 
 {- | Use a 'StepPatternSimplifier' to simplify a pattern subject to conditions.

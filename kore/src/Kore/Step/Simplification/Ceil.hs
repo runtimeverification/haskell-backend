@@ -57,7 +57,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-| 'simplify' simplifies a 'Ceil' of 'OrOfExpandedPattern'.
+{-| Simplify a 'Ceil' of 'Or.Pattern'.
 
 A ceil(or) is equal to or(ceil). We also take into account that
 * ceil(top) = top
