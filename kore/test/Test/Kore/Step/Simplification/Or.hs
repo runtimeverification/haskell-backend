@@ -16,10 +16,8 @@ import           Kore.AST.Common
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Step.TermLike
@@ -249,7 +247,7 @@ becomes (orChild -> or1, orChild -> or2) (MultiOr.make . List.sort -> expected) 
         (stateIntention
             [ prettyOr or1 or2
             , "to become:"
-            , Unparser.unparse $ OrOfExpandedPattern.toExpandedPattern expected
+            , Unparser.unparse $ Or.toExpandedPattern expected
             ]
         )
 

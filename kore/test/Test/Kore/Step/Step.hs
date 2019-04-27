@@ -24,7 +24,6 @@ import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import qualified Kore.Step.Conditional as Conditional
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )

@@ -17,10 +17,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Step.Or as Or
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )

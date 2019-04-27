@@ -30,7 +30,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators )
 import qualified Kore.Step.Or as Or
-                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )

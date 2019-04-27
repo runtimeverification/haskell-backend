@@ -36,14 +36,11 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern, toPredicate )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
@@ -258,8 +255,8 @@ simplifyEvaluated
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
-                (OrOfExpandedPattern.toExpandedPattern first)
-                (OrOfExpandedPattern.toExpandedPattern second)
+                (Or.toExpandedPattern first)
+                (Or.toExpandedPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -713,12 +710,8 @@ makeEvaluateTermsToPredicateSubstitution
                         ++ ", first=" ++ show first
                         ++ ", second=" ++ show second
                         )
-                firstCeil =
-                    OrOfExpandedPattern.toPredicate
-                        (fmap toPredicateSafe firstCeilOr)
-                secondCeil =
-                    OrOfExpandedPattern.toPredicate
-                        (fmap toPredicateSafe secondCeilOr)
+                firstCeil = Or.toPredicate (fmap toPredicateSafe firstCeilOr)
+                secondCeil = Or.toPredicate (fmap toPredicateSafe secondCeilOr)
                 firstCeilNegation = makeNotPredicate firstCeil
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =

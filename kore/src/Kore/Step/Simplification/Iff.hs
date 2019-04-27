@@ -24,12 +24,9 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -116,16 +113,16 @@ simplifyEvaluated
     axiomSimplifiers
     first
     second
-  | OrOfExpandedPattern.isTrue first = return second
-  | OrOfExpandedPattern.isFalse first =
+  | Or.isTrue first = return second
+  | Or.isFalse first =
     Not.simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
         second
-  | OrOfExpandedPattern.isTrue second = return first
-  | OrOfExpandedPattern.isFalse second =
+  | Or.isTrue second = return first
+  | Or.isFalse second =
     Not.simplifyEvaluated
         tools
         predicateSimplifier
@@ -137,8 +134,8 @@ simplifyEvaluated
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
             makeEvaluate
-                (OrOfExpandedPattern.toExpandedPattern first)
-                (OrOfExpandedPattern.toExpandedPattern second)
+                (Or.toExpandedPattern first)
+                (Or.toExpandedPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second

@@ -12,7 +12,7 @@ import Test.Kore
 -- | Check that 'merge' preserves the @\\or@-idempotency condition.
 hprop_mergeIdemOr :: Property
 hprop_mergeIdemOr = Hedgehog.property $ do
-    ors <- Hedgehog.forAll (standaloneGen $ orOfExpandedPatternGen @Object)
+    ors <- Hedgehog.forAll (standaloneGen $ orPatternGen)
     MultiOr.merge ors ors === ors
 
 hprop_makeIdemOr :: Property
@@ -22,6 +22,6 @@ hprop_makeIdemOr = Hedgehog.property $ do
 
 hprop_flattenIdemOr :: Property
 hprop_flattenIdemOr = Hedgehog.property $ do
-    ors <- Hedgehog.forAll (standaloneGen $ orOfExpandedPatternGen @Object)
+    ors <- Hedgehog.forAll (standaloneGen $ orPatternGen)
     let nested = MultiOr.make [ors, ors]
     MultiOr.flatten nested === ors

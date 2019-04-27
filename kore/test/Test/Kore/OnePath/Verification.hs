@@ -30,7 +30,6 @@ import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import qualified Kore.Step.Or as Or
-                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Step.Pattern as Conditional
@@ -424,7 +423,7 @@ runVerification
     -> Limit Natural
     -> [OnePath.Axiom level]
     -> [claim]
-    -> IO (Either (Or.Pattern level) ())
+    -> IO (Either (Or.Pattern level Variable) ())
 runVerification
     metadataTools
     stepLimit

@@ -35,12 +35,9 @@ import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Conditional as Conditional
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
@@ -170,15 +167,13 @@ simplifyEvaluated
     axiomIdToSimplifier
     first
     second
-  | OrOfExpandedPattern.isFalse first =
+  | Or.isFalse first =
     return (MultiOr.make [], SimplificationProof)
-  | OrOfExpandedPattern.isFalse second =
+  | Or.isFalse second =
     return (MultiOr.make [], SimplificationProof)
 
-  | OrOfExpandedPattern.isTrue first =
-    return (second, SimplificationProof)
-  | OrOfExpandedPattern.isTrue second =
-    return (first, SimplificationProof)
+  | Or.isTrue first = return (second, SimplificationProof)
+  | Or.isTrue second = return (first, SimplificationProof)
 
   | otherwise = do
     result <-

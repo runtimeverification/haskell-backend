@@ -18,10 +18,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -102,10 +99,7 @@ simplify
 simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
     (orPatt, proof) <-
         simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
-    return
-        ( OrOfExpandedPattern.toExpandedPattern orPatt
-        , proof
-        )
+    return (Or.toExpandedPattern orPatt, proof)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
 'Or.Pattern'.

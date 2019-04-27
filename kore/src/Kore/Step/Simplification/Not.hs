@@ -28,10 +28,8 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, Simplifier,
@@ -113,10 +111,8 @@ simplifyEvaluated
     termSimplifier
     axiomSimplifiers
     simplified
-  | OrOfExpandedPattern.isFalse simplified =
-    return (MultiOr.make [Pattern.top])
-  | OrOfExpandedPattern.isTrue simplified =
-    return (MultiOr.make [])
+  | Or.isFalse simplified = return (MultiOr.make [Pattern.top])
+  | Or.isTrue  simplified = return (MultiOr.make [])
   | otherwise =
     fmap MultiOr.make . gather
     $ Foldable.foldrM mkAnd Pattern.top (simplified >>= makeEvaluate)

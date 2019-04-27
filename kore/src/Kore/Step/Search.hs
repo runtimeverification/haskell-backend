@@ -41,7 +41,6 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import qualified Kore.Step.Or as Or
-                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Pattern
                  ( Pattern, PredicateSubstitution )
 import qualified Kore.Step.Pattern as Conditional

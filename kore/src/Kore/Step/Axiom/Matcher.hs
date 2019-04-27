@@ -39,7 +39,6 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
                  ( mergeWithPredicateSubstitutionAssumesEvaluated )
 import qualified Kore.Step.Or as Or
-                 ( OrOfPredicateSubstitution )
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.MultiOr

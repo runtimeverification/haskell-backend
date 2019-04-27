@@ -23,11 +23,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier, SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
@@ -119,13 +116,13 @@ simplifyEvaluated
     axiomSimplifiers
     first
     second
-  | OrOfExpandedPattern.isTrue first =
+  | Or.isTrue first =
     return (second, SimplificationProof)
-  | OrOfExpandedPattern.isFalse first =
+  | Or.isFalse first =
     return (MultiOr.make [Pattern.top], SimplificationProof)
-  | OrOfExpandedPattern.isTrue second =
+  | Or.isTrue second =
     return (MultiOr.make [Pattern.top], SimplificationProof)
-  | OrOfExpandedPattern.isFalse second = do
+  | Or.isFalse second = do
     result <-
         Not.simplifyEvaluated
             tools
@@ -165,9 +162,9 @@ simplifyEvaluateHalfImplies
     axiomSimplifiers
     first
     second
-  | OrOfExpandedPattern.isTrue first =
+  | Or.isTrue first =
     return (MultiOr.make [second])
-  | OrOfExpandedPattern.isFalse first =
+  | Or.isFalse first =
     return (MultiOr.make [Pattern.top])
   | Pattern.isTop second =
     return (MultiOr.make [Pattern.top])
@@ -182,10 +179,7 @@ simplifyEvaluateHalfImplies
     -- TODO: Also merge predicate-only patterns for 'Or'
     return $ case MultiOr.extractPatterns first of
         [firstP] -> makeEvaluateImplies firstP second
-        _ ->
-            makeEvaluateImplies
-                (OrOfExpandedPattern.toExpandedPattern first)
-                second
+        _ -> makeEvaluateImplies (Or.toExpandedPattern first) second
 
 makeEvaluateImplies
     ::  ( SortedVariable variable

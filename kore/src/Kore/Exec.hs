@@ -68,14 +68,12 @@ import           Kore.Step.Axiom.Identifier
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
 import qualified Kore.Step.Or as Or
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), OnePathRule (..),
@@ -248,7 +246,7 @@ prove limit definitionModule specModule = do
             axiomIdToSimplifier
             (defaultStrategy claims axioms)
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-    return $ Bifunctor.first OrOfExpandedPattern.toStepPattern result
+    return $ Bifunctor.first Or.toTermLike result
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.

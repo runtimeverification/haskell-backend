@@ -26,12 +26,10 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Sort
 import qualified Kore.Step.Or as Or
-                 ( CommonOrOfExpandedPattern, CommonOrOfPredicateSubstitution )
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
 import           Kore.Step.Representation.PredicateSubstitution
                  ( CommonPredicateSubstitution, Conditional (..) )
 import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
@@ -287,7 +285,7 @@ test_equalsSimplification_OrOfExpandedPatterns =
         let message1 =
                 unlines
                     [ "Expected"
-                    , unparseToString (OrOfExpandedPattern.toExpandedPattern <$> test1)
+                    , unparseToString (Or.toExpandedPattern <$> test1)
                     , "would simplify to:"
                     , unlines (unparseToString <$> Foldable.toList expect)
                     , "but instead found:"
@@ -1041,7 +1039,7 @@ evaluateTermsGeneric
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (CommonOrOfPredicateSubstitution level)
+    -> IO (Or.PredicateSubstitution level Variable)
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
