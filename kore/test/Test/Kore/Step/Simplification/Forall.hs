@@ -13,8 +13,8 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Sort
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import qualified Kore.Step.Simplification.Forall as Forall

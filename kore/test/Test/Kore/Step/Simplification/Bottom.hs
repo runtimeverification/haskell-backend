@@ -10,9 +10,9 @@ import Test.Tasty.HUnit
 import           Kore.AST.Common
                  ( Bottom (..), Variable (..) )
 import           Kore.AST.MetaOrObject
-import qualified Kore.Step.Or as Or
 import qualified Kore.Step.Pattern as Pattern
                  ( bottom )
+import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Bottom

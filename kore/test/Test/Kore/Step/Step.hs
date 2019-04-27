@@ -23,8 +23,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import qualified Kore.Step.Conditional as Conditional
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

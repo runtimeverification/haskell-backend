@@ -14,7 +14,7 @@ import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.TermLike
        ( TermLike )
-import qualified Kore.Step.Or as Or
+import qualified Kore.Step.Pattern.Or as Or
 import Kore.Step.Simplification.Data
        ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
        StepPatternSimplifier )

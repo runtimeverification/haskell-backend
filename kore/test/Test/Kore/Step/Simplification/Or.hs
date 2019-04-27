@@ -15,8 +15,8 @@ import           Kore.AST.Common
                  ( Or (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )

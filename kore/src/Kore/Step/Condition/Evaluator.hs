@@ -16,8 +16,8 @@ import Data.Reflection
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Simplification.Data
                  ( PredicateSubstitutionSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,

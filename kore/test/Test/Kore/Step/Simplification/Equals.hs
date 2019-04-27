@@ -25,10 +25,10 @@ import           Kore.Predicate.Predicate
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
 import           Kore.Sort
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Conditional
+import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Representation.PredicateSubstitution
                  ( CommonPredicateSubstitution, Conditional (..) )

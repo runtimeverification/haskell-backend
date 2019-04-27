@@ -54,8 +54,8 @@ import           Kore.Parser
 import           Kore.Parser.Lexeme
 import           Kore.Predicate.Predicate
 import           Kore.Sort
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.TermLike as TermLike
 

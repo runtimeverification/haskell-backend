@@ -8,8 +8,8 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import           Kore.AST.Pure
-import qualified Kore.Step.Or as Or
 import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Top
                  ( simplify )

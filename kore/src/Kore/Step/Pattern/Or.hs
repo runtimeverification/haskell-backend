@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.Or
+module Kore.Step.Pattern.Or
     ( Conditional
     , Pattern
     , PredicateSubstitution

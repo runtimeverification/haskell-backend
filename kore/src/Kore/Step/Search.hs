@@ -40,10 +40,10 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Pattern, PredicateSubstitution )
 import qualified Kore.Step.Pattern as Conditional
+import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data

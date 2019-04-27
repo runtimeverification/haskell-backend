@@ -29,13 +29,13 @@ import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Step.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.Step.Pattern as Pattern
                  ( fromPurePattern )
+import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..),

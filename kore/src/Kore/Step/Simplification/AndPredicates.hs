@@ -18,11 +18,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( PredicateSubstitution )
 import qualified Kore.Step.Pattern as Pattern
                  ( Conditional (..) )
+import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd

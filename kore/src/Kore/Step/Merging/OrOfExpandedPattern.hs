@@ -24,9 +24,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional, PredicateSubstitution )
+import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

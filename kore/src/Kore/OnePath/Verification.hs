@@ -50,13 +50,13 @@ import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (Conditional), Pattern )
 import           Kore.Step.Pattern as Pattern
                  ( fromPurePattern )
 import           Kore.Step.Pattern as Conditional
                  ( Conditional (..) )
+import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
