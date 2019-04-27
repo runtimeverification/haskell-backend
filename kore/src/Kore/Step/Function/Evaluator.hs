@@ -44,8 +44,7 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
-import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( mergeWithPredicateSubstitution )
+import qualified Kore.Step.Merging.Pattern.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern, PredicateSubstitution )
 import qualified Kore.Step.Pattern.Or as Or
@@ -387,7 +386,7 @@ reevaluateFunctions
   = do
     (pattOr , _proof) <- simplifyTerm' rewrittenPattern
     (mergedPatt, _proof) <-
-        OrOfExpandedPattern.mergeWithPredicateSubstitution
+        Or.mergeWithPredicateSubstitution
             tools
             substitutionSimplifier
             termSimplifier
@@ -449,7 +448,7 @@ mergeWithConditionAndSubstitution
     )
   = do
     (evaluatedResults, _proof) <-
-        OrOfExpandedPattern.mergeWithPredicateSubstitution
+        Or.mergeWithPredicateSubstitution
             tools
             substitutionSimplifier
             simplifier
@@ -457,7 +456,7 @@ mergeWithConditionAndSubstitution
             toMerge
             results
     (evaluatedRemainders, _proof) <-
-        OrOfExpandedPattern.mergeWithPredicateSubstitution
+        Or.mergeWithPredicateSubstitution
             tools
             substitutionSimplifier
             simplifier

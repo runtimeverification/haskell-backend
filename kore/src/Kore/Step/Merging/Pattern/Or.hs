@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.Merging.OrOfExpandedPattern
+Module      : Kore.Step.Merging.Pattern.Or
 Description : Tools for merging OrOfExpandedPatterns with various stuff.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -7,7 +7,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Merging.OrOfExpandedPattern
+module Kore.Step.Merging.Pattern.Or
     ( mergeWithPredicateSubstitution
     , mergeWithPredicateSubstitutionAssumesEvaluated
     ) where

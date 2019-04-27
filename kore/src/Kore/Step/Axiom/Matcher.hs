@@ -36,8 +36,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( mergeWithPredicateSubstitutionAssumesEvaluated )
+import qualified Kore.Step.Merging.Pattern.Or as Or
 import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
@@ -729,7 +728,7 @@ matchVariableFunction
             axiomIdToSimplifier
             second
     (result, _proof) <-
-        OrOfExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
+        Or.mergeWithPredicateSubstitutionAssumesEvaluated
             (createPredicatesAndSubstitutionsMergerExcept
                 tools
                 substitutionSimplifier

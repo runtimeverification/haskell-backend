@@ -21,8 +21,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( mergeWithPredicateSubstitutionAssumesEvaluated )
+import qualified Kore.Step.Merging.Pattern.Or as Or
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Conditional
@@ -105,7 +104,7 @@ unificationProcedure
                     axiomIdToSimplifier
                     term
             (result, _proof) <-
-                OrOfExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
+                Or.mergeWithPredicateSubstitutionAssumesEvaluated
                     (createPredicatesAndSubstitutionsMerger
                         tools
                         substitutionSimplifier
