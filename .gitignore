@@ -34,4 +34,4 @@ tags
 /coverage_report
 /haskell_documentation
 .stack-work-test
-/kore/test-results.xml
+test-results.xml
