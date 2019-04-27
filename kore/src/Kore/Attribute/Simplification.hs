@@ -21,17 +21,9 @@ module Kore.Attribute.Simplification
     , simplificationId, simplificationSymbol, simplificationAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | @Simplification@ represents the @simplification@ attribute for axioms.
  -}
@@ -56,21 +48,16 @@ simplificationSymbol =
         }
 
 -- | Kore pattern representing the @simplification@ attribute.
-simplificationAttribute :: CommonKorePattern
-simplificationAttribute =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = simplificationSymbol
-            , applicationChildren = []
-            }
+simplificationAttribute :: AttributePattern
+simplificationAttribute = attributePattern_ simplificationSymbol
 
 instance ParseAttributes Simplification where
-    parseAttribute =
-        withApplication $ \params args Simplification { isSimplification } -> do
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Simplification { isSimplification } = do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isSimplification failDuplicate
+            Monad.when isSimplification failDuplicate'
             return Simplification { isSimplification = True }
-      where
-        withApplication = Parser.withApplication simplificationId
-        failDuplicate = Parser.failDuplicate simplificationId
+        withApplication' = Parser.withApplication simplificationId
+        failDuplicate' = Parser.failDuplicate simplificationId

@@ -22,8 +22,6 @@ import System.IO
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Kore
-                 ( CommonKorePattern, VerifiedKorePattern )
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -38,8 +36,8 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
-import           Kore.Parser.Parser
-                 ( parseKorePattern )
+import           Kore.Parser
+                 ( ParsedPattern, parseKorePattern )
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step
@@ -400,7 +398,7 @@ mainWithOptions
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
-mainPatternParse :: String -> IO CommonKorePattern
+mainPatternParse :: String -> IO ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
 -- | IO action that parses a kore pattern from a filename, verifies it,
@@ -409,9 +407,8 @@ mainPatternParseAndVerify
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
     -> IO (CommonStepPattern Object)
-mainPatternParseAndVerify indexedModule patternFileName = do
-    parsedPattern <- mainPatternParse patternFileName
-    makePurePattern <$> mainPatternVerify indexedModule parsedPattern
+mainPatternParseAndVerify indexedModule patternFileName =
+    mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 
 mainParseSearchPattern
     :: VerifiedModule StepperAttributes Attribute.Axiom
@@ -429,11 +426,3 @@ mainParseSearchPattern indexedModule patternFileName = do
                 , substitution = mempty
                 }
         _ -> error "Unexpected non-conjunctive pattern"
-
-makePurePattern
-    :: VerifiedKorePattern
-    -> CommonStepPattern Object
-makePurePattern pat =
-    case fromKorePattern Object pat of
-        Left err -> error (printError err)
-        Right objPat -> objPat

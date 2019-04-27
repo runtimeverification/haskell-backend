@@ -11,8 +11,42 @@ module Kore.Attribute.Sort.Unit
     , unitId, unitSymbol, unitAttribute
     ) where
 
-import Kore.AST.Kore
-import Kore.Attribute.Sort.Unit.Unit
+import Control.DeepSeq
+       ( NFData )
+import Data.Default
+import GHC.Generics
+       ( Generic )
+
+import Kore.Attribute.Parser
+
+-- | @Unit@ represents the @unit@ attribute for sorts.
+newtype Unit = Unit { getUnit :: Maybe (SymbolOrAlias Object) }
+    deriving (Generic, Eq, Ord, Show)
+
+instance Semigroup Unit where
+    (<>) a@(Unit (Just _)) _ = a
+    (<>) _                     b = b
+
+instance Monoid Unit where
+    mempty = Unit { getUnit = Nothing }
+
+instance Default Unit where
+    def = mempty
+
+instance NFData Unit
+
+instance ParseAttributes Unit where
+    parseAttribute = withApplication' parseApplication
+      where
+        parseApplication params args Unit { getUnit }
+          | Just _ <- getUnit = failDuplicate'
+          | otherwise = do
+            getZeroParams params
+            arg <- getOneArgument args
+            symbol <- getSymbolOrAlias arg
+            return Unit { getUnit = Just symbol }
+        withApplication' = withApplication unitId
+        failDuplicate' = failDuplicate unitId
 
 -- | Kore identifier representing the @unit@ attribute symbol.
 unitId :: Id Object
@@ -27,18 +61,5 @@ unitSymbol =
         }
 
 -- | Kore pattern representing the @unit@ attribute.
-unitAttribute
-    :: SymbolOrAlias Object
-    -> CommonKorePattern
-unitAttribute symbol =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = unitSymbol
-            , applicationChildren =
-                [ (asCommonKorePattern . ApplicationPattern)
-                    Application
-                        { applicationSymbolOrAlias = symbol
-                        , applicationChildren = []
-                        }
-                ]
-            }
+unitAttribute :: SymbolOrAlias Object -> AttributePattern
+unitAttribute symbol = attributePattern unitSymbol [attributePattern_ symbol]

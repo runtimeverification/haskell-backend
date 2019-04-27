@@ -6,17 +6,10 @@ License     : NCSA
 -}
 module Kore.Attribute.Subsort where
 
-import Data.Default
-       ( Default (..) )
 import Data.Hashable
        ( Hashable )
-import GHC.Generics
-       ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | The @subsort@ attribute. -}
 data Subsort = Subsort
@@ -56,13 +49,9 @@ Kore syntax: @subsort{Sub,Super}()@
 where @Sub@ is the subsort and @Super@ is the supersort.
 
  -}
-subsortAttribute :: Sort Object -> Sort Object -> CommonKorePattern
+subsortAttribute :: Sort Object -> Sort Object -> AttributePattern
 subsortAttribute subsort supersort =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = subsortSymbol subsort supersort
-            , applicationChildren = []
-            }
+    attributePattern_ $ subsortSymbol subsort supersort
 
 {- | Parse @subsort@ Kore attributes, if present.
 
@@ -74,10 +63,10 @@ subsortAttribute subsort supersort =
  -}
 instance ParseAttributes Subsorts where
     parseAttribute =
-        withApplication $ \params args (Subsorts subsorts) -> do
+        withApplication' $ \params args (Subsorts subsorts) -> do
             Parser.getZeroArguments args
             (subsort, supersort) <- Parser.getTwoParams params
             let relation = Subsort subsort supersort
             return (Subsorts $ relation : subsorts)
       where
-        withApplication = Parser.withApplication subsortId
+        withApplication' = Parser.withApplication subsortId

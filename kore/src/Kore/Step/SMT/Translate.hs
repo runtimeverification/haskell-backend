@@ -34,7 +34,7 @@ import           Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Smtlib
@@ -113,6 +113,7 @@ translatePredicate translateUninterpreted predicate =
             SetVariablePattern _ -> empty
             StringLiteralPattern _ -> empty
             CharLiteralPattern _ -> empty
+            InhabitantPattern _ -> empty
 
     translatePredicateAnd And { andFirst, andSecond } =
         SMT.and

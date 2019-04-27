@@ -12,21 +12,18 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 
 import           Kore.AST.AstWithLocation
-import           Kore.AST.Kore as Kore
 import           Kore.AST.Pure
-import           Kore.AST.PureToKore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.MetaML.AST
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
+import qualified Kore.Verified as Verified
 
 import           Test.Kore
 import           Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
@@ -39,7 +36,7 @@ data PatternRestrict
 
 data TestPattern level = TestPattern
     { testPatternPattern
-        :: !(Pattern level Domain.Builtin Variable VerifiedKorePattern)
+        :: !(Pattern level Domain.Builtin Variable (StepPattern level Variable))
     , testPatternSort       :: !(Sort level)
     , testPatternErrorStack :: !ErrorStack
     }
@@ -53,11 +50,11 @@ testPatternErrorStackStrings
     strings
 
 testPatternUnifiedPattern
-    :: MetaOrObject level => TestPattern level -> VerifiedKorePattern
+    :: MetaOrObject level => TestPattern level -> StepPattern level Variable
 testPatternUnifiedPattern
     TestPattern { testPatternPattern, testPatternSort }
   =
-    asKorePattern (valid :< testPatternPattern)
+    asPurePattern (valid :< testPatternPattern)
   where
     valid =
         Valid
@@ -66,9 +63,8 @@ testPatternUnifiedPattern
                 Foldable.foldl'
                     Set.union
                     Set.empty
-                    (unifiedFreeVariables . extract <$> testPatternPattern)
+                    (freeVariables . extract <$> testPatternPattern)
             }
-    unifiedFreeVariables = transformUnified freeVariables
 
 test_patternVerifier :: [TestTree]
 test_patternVerifier =
@@ -86,22 +82,6 @@ test_patternVerifier =
         (simpleExistsPattern metaVariable' metaSort1)
         (NamePrefix "#dummy")
         (TestedPatternSort metaSort1)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
-        -- TODO: Here we should be able to use NoRestrict,
-        -- at least in some cases.
-        NeedsInternalDefinitions
-    , successTestsForMetaPattern "implicit meta pattern"
-        (ApplicationPattern Application
-            { applicationSymbolOrAlias = nilSortListHead
-            , applicationChildren = []
-            }
-        )
-        (NamePrefix "#dummy")
-        (TestedPatternSort sortListMetaSort)
         (SortVariablesThatMustBeDeclared [])
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort anotherMetaSort)
@@ -130,7 +110,7 @@ test_patternVerifier =
                         freeVariables = Set.empty
                     pattern' = simpleExistsPattern objectVariable' objectSort
                 in
-                    asKorePattern (valid :< pattern')
+                    asPurePattern (valid :< pattern')
             }
         )
         (NamePrefix "dummy")
@@ -151,7 +131,7 @@ test_patternVerifier =
         (ExistsPattern Exists
             { existsSort = objectSort
             , existsVariable = objectVariable'
-            , existsChild = toKorePattern (mkVar anotherVariable)
+            , existsChild = (mkVar anotherVariable)
             }
         )
         (NamePrefix "dummy")
@@ -184,7 +164,7 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                asKorePattern
+                asPurePattern
                     ((:<)
                         Valid
                             { patternSort = objectSortVariableSort
@@ -240,7 +220,7 @@ test_patternVerifier =
         NeedsInternalDefinitions
     , failureTestsForMetaPattern "Meta pattern - sort not matched"
         (ExpectedErrorMessage
-            "Expecting sort '#Variable{}' but got '#CharList{}'.")
+            "Expecting sort '#Char{}' but got '#String{}'.")
         (ErrorStack
             [ "\\exists '#MetaVariable' (<test data>)"
             , "(<test data>, <test data>)"
@@ -449,7 +429,7 @@ test_patternVerifier =
     , successTestsForMetaPattern "Simple string pattern"
         (StringLiteralPattern (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
-        (TestedPatternSort charListMetaSort)
+        (TestedPatternSort stringMetaSort)
         (SortVariablesThatMustBeDeclared [])
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort anotherMetaSort)
@@ -472,7 +452,7 @@ test_patternVerifier =
         NeedsInternalDefinitions
     , failureTestsForMetaPattern "String pattern - sort not matched"
         (ExpectedErrorMessage
-            "Expecting sort '#Char{}' but got '#CharList{}'.")
+            "Expecting sort '#Char{}' but got '#String{}'.")
         (ErrorStack
             [ "(<test data>, <implicitly defined entity>)" ]
         )
@@ -646,23 +626,23 @@ test_patternVerifier =
     objectVariableName = VariableName "ObjectVariable"
     objectVariable' = variable objectVariableName objectSort
     objectSortSentence = simpleSortSentence objectSortName
-    metaSort1 = updateAstLocation charListMetaSort AstLocationTest
+    metaSort1 = updateAstLocation stringMetaSort AstLocationTest
     metaVariable' = variable (VariableName "#MetaVariable") metaSort1
-    dummyMetaSort = updateAstLocation patternMetaSort AstLocationTest
+    dummyMetaSort = updateAstLocation charMetaSort AstLocationTest
     dummyMetaVariable = variable (VariableName "#otherVariable") dummyMetaSort
     anotherSortName = SortName "anotherSort"
     anotherSort :: Sort Object
     anotherSort = simpleSort anotherSortName
     anotherVariable = variable objectVariableName anotherSort
     anotherSortSentence = simpleSortSentence anotherSortName
-    anotherMetaSort = updateAstLocation symbolMetaSort AstLocationTest
+    anotherMetaSort = updateAstLocation stringMetaSort AstLocationTest
     anotherObjectSortName2 = SortName "anotherSort2"
     anotherObjectSort2 :: Sort Object
     anotherObjectSort2 = simpleSort anotherObjectSortName2
     anotherObjectSortSentence2 = simpleSortSentence anotherObjectSortName2
     invalidMetaSort :: Sort Meta
     invalidMetaSort = simpleSort (SortName "#InvalidMetaSort")
-    anotherMetaSort2 = updateAstLocation variableMetaSort AstLocationTest
+    anotherMetaSort2 = updateAstLocation charMetaSort AstLocationTest
     objectSymbolName = SymbolName "ObjectSymbol"
     objectSymbolSentence =
         objectSymbolSentenceWithArguments
@@ -701,11 +681,11 @@ test_patternVerifier =
                 , sentenceSymbolAttributes =
                     Attributes []
                 }
-            :: VerifiedKoreSentenceSymbol Object)
+            :: Verified.SentenceSymbol)
     intSortName = SortName "Int"
     intSort :: Sort Object
     intSort = simpleSort intSortName
-    intSortSentence :: VerifiedKoreSentenceHook
+    intSortSentence :: Verified.SentenceHook
     intSortSentence =
         SentenceHookedSort SentenceSort
             { sentenceSortName = testId name
@@ -718,7 +698,7 @@ test_patternVerifier =
     boolSortName = SortName "Int"
     boolSort :: Sort Object
     boolSort = simpleSort boolSortName
-    boolSortSentence :: VerifiedKoreSentenceHook
+    boolSortSentence :: Verified.SentenceHook
     boolSortSentence =
         SentenceHookedSort SentenceSort
             { sentenceSortName = testId name
@@ -745,11 +725,9 @@ test_verifyBinder =
     testVerifyBinder name expect =
         testCase name $ do
             let
-                original = Kore.eraseAnnotations $ patternPureToKore expect
+                original = eraseAnnotations expect
                 verifier = verifyStandalonePattern Nothing original
-                Right actual =
-                    annotationKoreToPure . patternKoreToPure
-                    <$> runPatternVerifier context verifier
+                Right actual = runPatternVerifier context verifier
             assertEqual "" expect actual
             assertEqual "" (extract expect) (extract actual)
     testVerifyExists =
@@ -765,7 +743,7 @@ test_verifyBinder =
 
 dummyVariableAndSentences
     :: NamePrefix
-    -> (Variable Object, [VerifiedKoreSentence])
+    -> (Variable Object, [Verified.Sentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
   where
@@ -777,12 +755,12 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Object Domain.Builtin Variable VerifiedKorePattern
+    -> Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
 successTestsForObjectPattern
@@ -822,14 +800,14 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Meta Domain.Builtin Variable VerifiedKorePattern
+    -> Pattern Meta Domain.Builtin Variable (StepPattern Object Variable)
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Meta
     -> VariableOfDeclaredSort Meta
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
 successTestsForMetaPattern
@@ -864,12 +842,12 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Object Domain.Builtin Variable VerifiedKorePattern
+    -> Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
 failureTestsForObjectPattern
@@ -921,14 +899,14 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Meta Domain.Builtin Variable VerifiedKorePattern
+    -> Pattern Meta Domain.Builtin Variable (StepPattern Object Variable)
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Meta
     -> VariableOfDeclaredSort Meta
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
 failureTestsForMetaPattern
@@ -967,14 +945,14 @@ failureTestsForMetaPattern
 genericPatternInAllContexts
     :: MetaOrObject level
     => level
-    -> Pattern level Domain.Builtin Variable VerifiedKorePattern
+    -> Pattern level Domain.Builtin Variable (StepPattern level Variable)
     -> NamePrefix
     -> TestedPatternSort level
     -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort level
     -> VariableOfDeclaredSort level
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
 genericPatternInAllContexts
@@ -1013,7 +991,7 @@ genericPatternInAllContexts
         ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild = toKorePattern (mkVar anotherVariable)
+            , existsChild = (mkVar anotherVariable)
             }
     anotherVariable =
         Variable
@@ -1035,12 +1013,12 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Object Domain.Builtin Variable VerifiedKorePattern
+    :: Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
 objectPatternInAllContexts
@@ -1067,7 +1045,7 @@ objectPatternInAllContexts
         ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild = toKorePattern (mkVar anotherVariable)
+            , existsChild = (mkVar anotherVariable)
             }
     anotherVariable =
         Variable
@@ -1084,7 +1062,7 @@ patternsInAllContexts
     -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort level
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
 patternsInAllContexts
@@ -1117,9 +1095,7 @@ patternsInAllContexts
     rawSortVariableName = namePrefix <> "_sortVariable"
     symbolAliasSort = sortVariableSort rawSortVariableName
     symbolSentence =
-        constructUnifiedSentence
-            SentenceSymbolSentence
-            SentenceSymbol
+        SentenceSymbolSentence SentenceSymbol
                 { sentenceSymbolSymbol = Symbol
                     { symbolConstructor = testId rawSymbolName
                     , symbolParams = [SortVariable (testId rawSortVariableName)]
@@ -1129,11 +1105,11 @@ patternsInAllContexts
                 , sentenceSymbolAttributes =
                     Attributes []
                 }
-    aliasSentence :: VerifiedKoreSentence
+    aliasSentence :: Verified.Sentence
     aliasSentence =
         let aliasConstructor = testId rawAliasName
             aliasParams = [SortVariable (testId rawSortVariableName)]
-        in (toKoreSentence . SentenceAliasSentence)
+        in SentenceAliasSentence
             SentenceAlias
                 { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
                 , sentenceAliasSorts = [symbolAliasSort]
@@ -1160,8 +1136,8 @@ patternsInAllContexts
 
 genericPatternInPatterns
     :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable VerifiedKorePattern
-    -> Pattern level Domain.Builtin Variable VerifiedKorePattern
+    => Pattern level Domain.Builtin Variable (StepPattern level Variable)
+    -> Pattern level Domain.Builtin Variable (StepPattern level Variable)
     -> OperandSort level
     -> Helpers.ResultSort level
     -> VariableOfDeclaredSort level
@@ -1195,7 +1171,7 @@ genericPatternInPatterns
         [ TestPattern
             { testPatternPattern = ApplicationPattern Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = [asKorePattern (valid :< testedPattern)]
+                , applicationChildren = [asPurePattern (valid :< testedPattern)]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1208,7 +1184,7 @@ genericPatternInPatterns
         , TestPattern
             { testPatternPattern = ApplicationPattern Application
                 { applicationSymbolOrAlias = alias
-                , applicationChildren = [asKorePattern (valid :< testedPattern)]
+                , applicationChildren = [asPurePattern (valid :< testedPattern)]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1227,20 +1203,19 @@ genericPatternInPatterns
                 Foldable.foldl'
                     Set.union
                     Set.empty
-                    (unifiedFreeVariables . extract <$> testedPattern)
+                    (freeVariables . extract <$> testedPattern)
             }
-    unifiedFreeVariables = transformUnified freeVariables
 
 objectPatternInPatterns
-    :: Pattern Object Domain.Builtin Variable VerifiedKorePattern
-    -> Pattern Object Domain.Builtin Variable VerifiedKorePattern
+    :: Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
+    -> Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
     -> OperandSort Object
     -> [TestPattern Object]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
     :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable VerifiedKorePattern
+    => Pattern level Domain.Builtin Variable (StepPattern level Variable)
     -> Sort level
     -> Variable level
     -> [TestPattern level]
@@ -1282,15 +1257,14 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
                 Foldable.foldl'
                     Set.union
                     Set.empty
-                    (unifiedFreeVariables . extract <$> testedPattern)
+                    (freeVariables . extract <$> testedPattern)
             }
-    unifiedFreeVariables = transformUnified freeVariables
-    testedKorePattern = asKorePattern (valid :< testedPattern)
+    testedKorePattern = asPurePattern (valid :< testedPattern)
 
 patternInUnquantifiedGenericPatterns
     :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable VerifiedKorePattern
-    -> Pattern level Domain.Builtin Variable VerifiedKorePattern
+    => Pattern level Domain.Builtin Variable (StepPattern level Variable)
+    -> Pattern level Domain.Builtin Variable (StepPattern level Variable)
     -> OperandSort level
     -> Helpers.ResultSort level
     -> [TestPattern level]
@@ -1449,13 +1423,13 @@ patternInUnquantifiedGenericPatterns
                     Set.empty
                     (unifiedFreeVariables . extract <$> testedPattern)
             }
-    unifiedFreeVariables = transformUnified freeVariables
-    anotherUnifiedPattern = asKorePattern (valid :< anotherPattern)
-    testedUnifiedPattern = asKorePattern (valid :< testedPattern)
+    unifiedFreeVariables = freeVariables
+    anotherUnifiedPattern = asPurePattern (valid :< anotherPattern)
+    testedUnifiedPattern = asPurePattern (valid :< testedPattern)
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Object Domain.Builtin Variable VerifiedKorePattern
-    -> Pattern Object Domain.Builtin Variable VerifiedKorePattern
+    :: Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
+    -> Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
     -> OperandSort Object
     -> [TestPattern Object]
 patternInUnquantifiedObjectPatterns
@@ -1501,9 +1475,9 @@ patternInUnquantifiedObjectPatterns
                     Set.empty
                     (unifiedFreeVariables . extract <$> testedPattern)
             }
-    unifiedFreeVariables = transformUnified freeVariables
-    anotherUnifiedPattern = asKorePattern (valid :< anotherPattern)
-    testedUnifiedPattern = asKorePattern (valid :< testedPattern)
+    unifiedFreeVariables = freeVariables
+    anotherUnifiedPattern = asPurePattern (valid :< anotherPattern)
+    testedUnifiedPattern = asPurePattern (valid :< testedPattern)
 
 testsForUnifiedPatternInTopLevelContext
     :: MetaOrObject level
@@ -1512,7 +1486,7 @@ testsForUnifiedPatternInTopLevelContext
     -> DeclaredSort level
     -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelContext
@@ -1534,7 +1508,7 @@ testsForUnifiedPatternInTopLevelGenericContext
     -> NamePrefix
     -> DeclaredSort level
     -> SortVariablesThatMustBeDeclared level
-    -> [VerifiedKoreSentence]
+    -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext
@@ -1559,16 +1533,13 @@ testsForUnifiedPatternInTopLevelGenericContext
                 simpleDefinitionFromSentences (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
                         (testPatternUnifiedPattern testPattern)
-                        unifiedSortVariables
+                        sortVariables
                     : additionalSentences
                     )
             }
     in case patternRestrict of
         NeedsInternalDefinitions -> [axiomPattern]
         NeedsSortedParent        -> [axiomPattern]
-
-  where
-    unifiedSortVariables = map asUnified sortVariables
 
 defaultErrorMessage :: String
 defaultErrorMessage = "Replace this with a real error message."

@@ -13,7 +13,6 @@ import qualified Data.Set as Set
 import           Numeric.Natural
                  ( Natural )
 
-import qualified Kore.AST.Kore as Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
                  ( ModuleName (..) )
@@ -32,7 +31,7 @@ import           Kore.IndexedModule.IndexedModule
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Logger.Output
                  ( emptyLogger )
-import           Kore.Parser.Parser
+import           Kore.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Step
                  ( anyRewrite )
@@ -153,7 +152,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     $ Map.lookup mainModuleName verifiedModules
             indexedModule =
                 mapIndexedModulePatterns
-                    Kore.eraseAnnotations
+                    eraseAnnotations
                     verifiedModule
         pat <- parseProgram
         let
@@ -173,10 +172,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                         , declaredVariables =
                             PatternVerifier.emptyDeclaredVariables
                         }
-            purePattern =
-                either (error . printError) id
-                    (fromKorePattern Object verifiedPattern)
-        return (verifiedModule, purePattern)
+        return (verifiedModule, verifiedPattern)
     execution
         ::  ( VerifiedModule StepperAttributes Attribute.Axiom
             , CommonStepPattern Object

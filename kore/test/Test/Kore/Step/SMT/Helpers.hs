@@ -38,15 +38,11 @@ import           Kore.AST.Common as Variable
                  ( Variable (..) )
 import           Kore.AST.Common as SymbolOrAlias
                  ( SymbolOrAlias (..) )
-import           Kore.AST.Kore
-                 ( eraseAnnotations )
 import           Kore.AST.MetaOrObject
                  ( Object )
-import           Kore.AST.PureToKore
-                 ( patternPureToKore )
+import           Kore.AST.Pure
+                 ( eraseAnnotations )
 import           Kore.AST.Sentence
-                 ( Attributes (Attributes), KoreSentence,
-                 SentenceAxiom (SentenceAxiom), asKoreAxiomSentence )
 import qualified Kore.AST.Sentence as SentenceAxiom
                  ( SentenceAxiom (..) )
 import           Kore.AST.Valid
@@ -198,17 +194,15 @@ testsForModule name functionToTest indexedModule tests =
         (give tools $ functionToTest indexedModule)
     tools = MetadataTools.build indexedModule
 
-constructorAxiom :: Text -> [(Text, [Text])] -> KoreSentence
+constructorAxiom :: Text -> [(Text, [Text])] -> ParsedSentence
 constructorAxiom sortName constructors =
-    asKoreAxiomSentence
-        SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern =
-                eraseAnnotations
-                $ patternPureToKore
-                $ foldr mkOr (mkBottom sort) constructorAssertions
-            , sentenceAxiomAttributes = Attributes []
-            }
+    SentenceAxiomSentence SentenceAxiom
+        { sentenceAxiomParameters = []
+        , sentenceAxiomPattern =
+            eraseAnnotations
+            $ foldr mkOr (mkBottom sort) constructorAssertions
+        , sentenceAxiomAttributes = Attributes []
+        }
     `with` noJunk
   where
     sort = makeSort sortName

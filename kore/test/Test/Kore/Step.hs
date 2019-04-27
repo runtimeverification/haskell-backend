@@ -15,7 +15,6 @@ import           Data.Text
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
@@ -43,6 +42,7 @@ import qualified SMT
 import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 {-
@@ -212,8 +212,8 @@ x1 = Variable (testId "#x1") mempty
 rewriteIdentity :: RewriteRule Meta Variable
 rewriteIdentity =
     RewriteRule RulePattern
-        { left = mkVar (x1 patternMetaSort)
-        , right = mkVar (x1 patternMetaSort)
+        { left = mkVar (x1 Mock.testSort)
+        , right = mkVar (x1 Mock.testSort)
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
@@ -222,11 +222,11 @@ rewriteIdentity =
 rewriteImplies :: RewriteRule Meta Variable
 rewriteImplies =
     RewriteRule $ RulePattern
-        { left = mkVar (x1 patternMetaSort)
+        { left = mkVar (x1 Mock.testSort)
         , right =
             mkImplies
-                (mkVar $ x1 patternMetaSort)
-                (mkVar $ x1 patternMetaSort)
+                (mkVar $ x1 Mock.testSort)
+                (mkVar $ x1 Mock.testSort)
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
@@ -234,12 +234,12 @@ rewriteImplies =
 
 expectTwoAxioms :: [(ExpandedPattern Meta Variable, StepProof Meta Variable)]
 expectTwoAxioms =
-    [   ( pure (mkVar $ v1 patternMetaSort), mempty )
+    [   ( pure (mkVar $ v1 Mock.testSort), mempty )
     ,   ( Predicated
             { term =
                 mkImplies
-                    (mkVar $ v1 patternMetaSort)
-                    (mkVar $ v1 patternMetaSort)
+                    (mkVar $ v1 Mock.testSort)
+                    (mkVar $ v1 Mock.testSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -252,7 +252,7 @@ actualTwoAxioms =
     runStep
         mockMetadataTools
         Predicated
-            { term = mkVar (v1 patternMetaSort)
+            { term = mkVar (v1 Mock.testSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -265,8 +265,8 @@ initialFailSimple =
     Predicated
         { term =
             metaSigma
-                (metaG (mkVar $ a1 patternMetaSort))
-                (metaF (mkVar $ b1 patternMetaSort))
+                (metaG (mkVar $ a1 Mock.testSort))
+                (metaF (mkVar $ b1 Mock.testSort))
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -282,10 +282,10 @@ actualFailSimple =
         [ RewriteRule $ RulePattern
             { left =
                 metaSigma
-                    (mkVar $ x1 patternMetaSort)
-                    (mkVar $ x1 patternMetaSort)
+                    (mkVar $ x1 Mock.testSort)
+                    (mkVar $ x1 Mock.testSort)
             , right =
-                mkVar (x1 patternMetaSort)
+                mkVar (x1 Mock.testSort)
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
             , attributes = def
@@ -297,8 +297,8 @@ initialFailCycle =
     Predicated
         { term =
             metaSigma
-                (mkVar $ a1 patternMetaSort)
-                (mkVar $ a1 patternMetaSort)
+                (mkVar $ a1 Mock.testSort)
+                (mkVar $ a1 Mock.testSort)
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -314,10 +314,10 @@ actualFailCycle =
         [ RewriteRule $ RulePattern
             { left =
                 metaSigma
-                    (metaF (mkVar $ x1 patternMetaSort))
-                    (mkVar $ x1 patternMetaSort)
+                    (metaF (mkVar $ x1 Mock.testSort))
+                    (mkVar $ x1 Mock.testSort)
             , right =
-                mkVar (x1 patternMetaSort)
+                mkVar (x1 Mock.testSort)
             , ensures = makeTruePredicate
             , requires = makeTruePredicate
             , attributes = def
@@ -327,7 +327,7 @@ actualFailCycle =
 initialIdentity :: ExpandedPattern Meta Variable
 initialIdentity =
     Predicated
-        { term = mkVar (v1 patternMetaSort)
+        { term = mkVar (v1 Mock.testSort)
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -385,8 +385,8 @@ actualUnificationError =
         Predicated
             { term =
                 metaSigma
-                    (mkVar $ a1 patternMetaSort)
-                    (metaI (mkVar $ b1 patternMetaSort))
+                    (mkVar $ a1 Mock.testSort)
+                    (metaI (mkVar $ b1 Mock.testSort))
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -427,17 +427,17 @@ metaSigma
     :: CommonStepPattern Meta
     -> CommonStepPattern Meta
     -> CommonStepPattern Meta
-metaSigma p1 p2 = mkApp patternMetaSort sigmaSymbol [p1, p2]
+metaSigma p1 p2 = mkApp Mock.testSort sigmaSymbol [p1, p2]
 
 axiomMetaSigmaId :: RewriteRule Meta Variable
 axiomMetaSigmaId =
     RewriteRule RulePattern
         { left =
             metaSigma
-                (mkVar $ x1 patternMetaSort)
-                (mkVar $ x1 patternMetaSort)
+                (mkVar $ x1 Mock.testSort)
+                (mkVar $ x1 Mock.testSort)
         , right =
-            mkVar $ x1 patternMetaSort
+            mkVar $ x1 Mock.testSort
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
@@ -453,7 +453,7 @@ fSymbol = SymbolOrAlias
 metaF
     :: CommonStepPattern Meta
     -> CommonStepPattern Meta
-metaF p = mkApp patternMetaSort fSymbol [p]
+metaF p = mkApp Mock.testSort fSymbol [p]
 
 
 gSymbol :: SymbolOrAlias Meta
@@ -465,7 +465,7 @@ gSymbol = SymbolOrAlias
 metaG
     :: CommonStepPattern Meta
     -> CommonStepPattern Meta
-metaG p = mkApp patternMetaSort gSymbol [p]
+metaG p = mkApp Mock.testSort gSymbol [p]
 
 
 hSymbol :: SymbolOrAlias Meta
@@ -477,7 +477,7 @@ hSymbol = SymbolOrAlias
 metaH
     :: CommonStepPattern Meta
     -> CommonStepPattern Meta
-metaH p = mkApp patternMetaSort hSymbol [p]
+metaH p = mkApp Mock.testSort hSymbol [p]
 
 iSymbol :: SymbolOrAlias Meta
 iSymbol = SymbolOrAlias
@@ -488,7 +488,7 @@ iSymbol = SymbolOrAlias
 metaI
     :: CommonStepPattern Meta
     -> CommonStepPattern Meta
-metaI p = mkApp patternMetaSort iSymbol [p]
+metaI p = mkApp Mock.testSort iSymbol [p]
 
 runStep
     :: MetaOrObject level

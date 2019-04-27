@@ -28,9 +28,9 @@ import           Numeric.Natural
 
 import           Data.Sup
 import qualified Kore.Annotation.Null as Annotation
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
+import           Kore.AST.Valid
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
@@ -181,13 +181,6 @@ instance MetaOrObject level => PrettyPrint (Id level) where
             <> " AstLocationNone) :: Id "
             <> viaShow (isMetaOrObject id')
             )
-
-instance
-    (PrettyPrint (a Meta), PrettyPrint (a Object))
-    => PrettyPrint (Unified a)
-  where
-    prettyPrint flags (UnifiedObject x) =
-        writeOneFieldStruct flags "UnifiedObject" x
 
 instance PrettyPrint a => PrettyPrint [a] where
     prettyPrint _ items =
@@ -352,7 +345,7 @@ instance
             [ writeFieldOneLine "patternSort" patternSort valid
             , writeFieldNewLine
                 "freeVariables"
-                Kore.AST.Kore.freeVariables
+                Kore.AST.Valid.freeVariables
                 valid
             ]
 
@@ -579,6 +572,8 @@ instance
         writeOneFieldStruct flags "TopPattern" p
     prettyPrint flags (VariablePattern p)      =
         writeOneFieldStruct flags "VariablePattern" p
+    prettyPrint flags (InhabitantPattern s)          =
+        writeOneFieldStruct flags "InhabitantPattern" s
     prettyPrint flags (SetVariablePattern p)      =
         writeOneFieldStruct flags "SetVariablePattern" p
 
@@ -604,29 +599,6 @@ instance PrettyPrint a => PrettyPrint (Identity a) where
     prettyPrint _ identity =
         writeStructure "Identity"
             [ writeFieldOneLine "runIdentity" runIdentity identity ]
-
-instance
-    ( PrettyPrint (var Meta)
-    , PrettyPrint (var Object)
-    , PrettyPrint child
-    , PrettyPrint (domain child)
-    ) =>
-    PrettyPrint (UnifiedPattern domain var child)
-  where
-    prettyPrint flags (UnifiedObjectPattern object) =
-        writeOneFieldStruct flags "UnifiedObjectPattern" object
-
-instance
-    ( PrettyPrint ann
-    , PrettyPrint child
-    , PrettyPrint (domain child)
-    , child ~ Cofree (UnifiedPattern domain var) ann
-    ) =>
-    PrettyPrint (KorePattern domain var ann)
-  where
-    prettyPrint _ korePattern =
-        writeStructure "KorePattern"
-            [ writeFieldOneLine "getKorePattern" getKorePattern korePattern ]
 
 instance
     ( MetaOrObject level
@@ -759,13 +731,6 @@ instance
         writeOneFieldStruct flags "SentenceSortSentence" s
     prettyPrint flags (SentenceHookSentence s)         =
         writeOneFieldStruct flags "SentenceHookSentence" s
-
-instance
-    (PrettyPrint sortParam, PrettyPrint patternType) =>
-    PrettyPrint (UnifiedSentence sortParam patternType)
-  where
-    prettyPrint flags (UnifiedObjectSentence s) =
-        writeOneFieldStruct flags "ObjectSentence" s
 
 instance PrettyPrint sentence => PrettyPrint (Module sentence) where
     prettyPrint _ m@(Module _ _ _) =

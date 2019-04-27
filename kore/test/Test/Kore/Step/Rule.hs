@@ -12,26 +12,21 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
-import           Data.Proxy
-                 ( Proxy (..) )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Builders
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (..), verifyAndIndexDefinition )
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import           Kore.Parser.ParserImpl
+import           Kore.Parser.Parser
 import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern hiding
@@ -39,6 +34,7 @@ import           Kore.Step.Pattern hiding
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
+import qualified Kore.Verified as Verified
 
 import           Test.Kore
                  ( testId )
@@ -65,16 +61,13 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (koreSentenceToAxiomPattern Object
-                    (mkRewriteAxiom varI1 varI2 Nothing)
-                )
+                (Rule.fromSentence $ mkRewriteAxiom varI1 varI2 Nothing)
             )
         ,   let
-                axiom1 :: VerifiedKoreSentence
+                axiom1, axiom2 :: Verified.Sentence
                 axiom1 = mkRewriteAxiom varI1 varI2 Nothing
-                axiom2 :: VerifiedKoreSentence
                 axiom2 =
-                    (asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
+                    (SentenceAxiomSentence . mkAxiom_)
                         (applyInj sortKItem
                             (mkRewrites
                                 (mkAnd mkTop_ varI1)
@@ -86,12 +79,12 @@ axiomPatternsUnitTests =
                         { moduleName = ModuleName "TEST"
                         , moduleSentences =
                             map
-                                eraseUnifiedSentenceAnnotations
+                                eraseSentenceAnnotations
                                 [ axiom1
                                 , axiom2
                                 , sortSentenceAInt
                                 , sortSentenceKItem
-                                , toKoreSentence symbolSentenceInj
+                                , symbolSentenceInj
                                 ]
                         , moduleAttributes = Attributes []
                         }
@@ -114,14 +107,14 @@ axiomPatternsUnitTests =
                         , attributes = def
                         }
                     ]
-                    (extractRewriteAxioms Object
+                    (extractRewriteAxioms
                         (extractIndexedModule "TEST" indexedDefinition)
                     )
         , testCase "(I1:AInt => I2:AInt)::KItem"
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
-                (koreSentenceToAxiomPattern Object
-                    ((asKoreAxiomSentence . toKoreSentenceAxiom . mkAxiom_)
+                (Rule.fromSentenceAxiom
+                    (mkAxiom_
                         (applySymbol
                             symbolInj
                             [sortAInt, sortKItem]
@@ -217,18 +210,17 @@ axiomPatternsIntegrationTests =
                             \        )\n\
                             \    )\n\
                             \[]"
-                    let valid =
-                            UnifiedObject Valid { patternSort, freeVariables }
+                    let valid = Valid { patternSort, freeVariables }
                           where
                             patternSort = sortTCell
                             freeVariables =
                                 Set.fromList
-                                    [ asUnified (Variable "VarI1" mempty sortAInt)
-                                    , asUnified (Variable "VarI2" mempty sortAInt)
-                                    , asUnified (Variable "VarDotVar1" mempty sortK)
-                                    , asUnified (Variable "VarDotVar0" mempty sortStateCell)
+                                    [ Variable "VarI1" mempty sortAInt
+                                    , Variable "VarI2" mempty sortAInt
+                                    , Variable "VarDotVar1" mempty sortK
+                                    , Variable "VarDotVar0" mempty sortStateCell
                                     ]
-                    koreSentenceToAxiomPattern Object ((<$) valid <$> parsed)
+                    Rule.fromSentence ((<$) valid <$> parsed)
                 )
             )
         ]
@@ -247,9 +239,9 @@ sortAInt = simpleSort (SortName "AInt")
 sortAExp = simpleSort (SortName "AExp")
 sortBExp = simpleSort (SortName "BExp")
 
-sortSentenceAInt :: VerifiedKoreSentence
+sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
-    toKoreSentence (asSentence sentence)
+    (asSentence sentence)
   where
     sentence :: SentenceSort Object (CommonStepPattern Object)
     sentence =
@@ -259,9 +251,9 @@ sortSentenceAInt =
             , sentenceSortAttributes = Attributes []
             }
 
-sortSentenceKItem :: VerifiedKoreSentence
+sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
-    toKoreSentence (asSentence sentence)
+    (asSentence sentence)
   where
     sentence :: SentenceSort Object (CommonStepPattern Object)
     sentence =
@@ -272,7 +264,7 @@ sortSentenceKItem =
             }
 
 sortParam :: Text -> SortVariable Object
-sortParam name = sortParameter Proxy name AstLocationTest
+sortParam name = SortVariable (testId name)
 
 sortParamSort :: Text -> Sort Object
 sortParamSort = SortVariableSort . sortParam
@@ -373,7 +365,7 @@ varStateCell =
         , variableSort = sortStateCell
         }
 
-parseAxiom :: String -> Either (Error a) KoreSentence
+parseAxiom :: String -> Either (Error a) ParsedSentence
 parseAxiom str =
     case parseOnly (koreSentenceParser <* endOfInput) "<test-string>" str of
         Left err  -> koreFail err

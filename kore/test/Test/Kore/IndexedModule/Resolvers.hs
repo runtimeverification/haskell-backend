@@ -12,7 +12,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 
 import           Kore.Annotation.Valid
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
@@ -22,12 +21,12 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.Implicit.ImplicitSorts
 import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Step.Pattern hiding
                  ( freeVariables )
+import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -42,10 +41,10 @@ objectB :: SentenceAlias Object (CommonStepPattern Object)
 objectB = mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
 
 metaA :: SentenceSymbol Meta (CommonStepPattern Meta)
-metaA = mkSymbol_ (testId "#a") [] charListMetaSort
+metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias Meta (CommonStepPattern Meta)
-metaB = mkAlias_ (testId "#b") charListMetaSort [] $ mkTop charListMetaSort
+metaB = mkAlias_ (testId "#b") stringMetaSort [] $ mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -59,16 +58,16 @@ testSubMainModuleName = ModuleName "TEST-SUB-MAIN-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-strictAttribute :: CommonKorePattern
+strictAttribute :: ParsedPattern
 strictAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asParsedPattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias =
                 groundHead "strict" AstLocationTest :: SymbolOrAlias Object
             , applicationChildren = []
             }
 
-testObjectModule :: Module (VerifiedPureSentence Object)
+testObjectModule :: Module Verified.Sentence
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -85,7 +84,7 @@ testObjectModule =
         , moduleAttributes = Attributes [strictAttribute]
         }
 
-testMetaModule :: Module (VerifiedPureSentence Meta)
+testMetaModule :: Module Verified.Sentence
 testMetaModule =
     Module
         { moduleName = testMetaModuleName
@@ -96,7 +95,7 @@ testMetaModule =
         , moduleAttributes = Attributes []
         }
 
-subMainModule :: VerifiedKoreModule
+subMainModule :: Module Verified.Sentence
 subMainModule =
     Module
         { moduleName = testSubMainModuleName
@@ -107,7 +106,7 @@ subMainModule =
         , moduleAttributes = Attributes [strictAttribute]
         }
 
-mainModule :: VerifiedKoreModule
+mainModule :: Module Verified.Sentence
 mainModule =
     Module
         { moduleName = testMainModuleName
@@ -119,13 +118,13 @@ mainModule =
         }
 
 
-testDefinition :: VerifiedKoreDefinition
+testDefinition :: Definition Verified.Sentence
 testDefinition =
     Definition
         { definitionAttributes = Attributes [strictAttribute]
         , definitionModules =
-            [ toKoreModule testObjectModule
-            , toKoreModule testMetaModule
+            [ testObjectModule
+            , testMetaModule
             , subMainModule
             , mainModule
             ]
@@ -137,7 +136,7 @@ testIndexedModule =
         verifyAndIndexDefinition
             DoNotVerifyAttributes
             Builtin.koreVerifiers
-            (eraseUnifiedSentenceAnnotations <$> testDefinition)
+            (eraseSentenceAnnotations <$> testDefinition)
       of
         Right modulesMap ->
             fromMaybe
@@ -184,7 +183,7 @@ test_resolvers =
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol metaA
                 , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort = charListMetaSort
+                , sentenceSymbolResultSort = stringMetaSort
                 }
             ))
             (resolveSymbol testIndexedModule (testId "#a" :: Id Meta))
@@ -221,7 +220,7 @@ test_resolvers =
                                 freeVariables = Set.empty
                             top' = TopPattern Top { topSort = objectS1 }
                         in
-                            asKorePattern (valid :< top')
+                            asPurePattern (valid :< top')
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -254,12 +253,12 @@ test_resolvers =
                     let
                         valid = Valid { patternSort, freeVariables }
                           where
-                            patternSort = charListMetaSort
+                            patternSort = stringMetaSort
                             freeVariables = Set.empty
-                        top' = TopPattern Top { topSort = charListMetaSort }
+                        top' = TopPattern Top { topSort = stringMetaSort }
                     in
-                        asKorePattern (valid :< top')
-                , sentenceAliasResultSort = charListMetaSort
+                        asPurePattern (valid :< top')
+                , sentenceAliasResultSort = stringMetaSort
                 }
             ))
             (resolveAlias testIndexedModule (testId "#b" :: Id Meta))
@@ -288,9 +287,8 @@ test_resolvers =
         )
     ]
   where
-    SortActualSort charMetaSortActual = charMetaSort
     charMetaId :: Id Meta
-    charMetaId = sortActualName charMetaSortActual
+    charMetaId = charMetaSortId
 
 
 test_resolver_undefined_messages :: TestTree

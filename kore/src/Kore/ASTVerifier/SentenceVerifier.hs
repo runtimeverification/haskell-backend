@@ -21,7 +21,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Error
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
@@ -32,12 +32,13 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
-    :: [UnifiedSentence param pat]
+    :: [Sentence Object param pat]
     -> Map.Map Text AstLocation
     -- ^ Names that are already defined.
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
@@ -76,27 +77,20 @@ verifyUniqueId existing (UnparameterizedId name location) =
   where
     name' = Text.pack name
 
-definedNamesForSentence :: UnifiedSentence param pat -> [UnparameterizedId]
-definedNamesForSentence =
-    applyUnifiedSentence
-        definedNamesForObjectSentence
-        definedNamesForObjectSentence
-
-definedNamesForObjectSentence
-    :: Sentence Object param pat -> [UnparameterizedId]
-definedNamesForObjectSentence (SentenceAliasSentence sentenceAlias) =
+definedNamesForSentence :: Sentence Object param pat -> [UnparameterizedId]
+definedNamesForSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForObjectSentence (SentenceSymbolSentence sentenceSymbol) =
+definedNamesForSentence (SentenceSymbolSentence sentenceSymbol) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForObjectSentence (SentenceImportSentence _) = []
-definedNamesForObjectSentence (SentenceAxiomSentence _)  = []
-definedNamesForObjectSentence (SentenceClaimSentence _)  = []
-definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
+definedNamesForSentence (SentenceImportSentence _) = []
+definedNamesForSentence (SentenceAxiomSentence _)  = []
+definedNamesForSentence (SentenceClaimSentence _)  = []
+definedNamesForSentence (SentenceSortSentence sentenceSort) =
     [ toUnparameterizedId (sentenceSortName sentenceSort) ]
-definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSort sentence))
-  = definedNamesForObjectSentence (SentenceSortSentence sentence)
-definedNamesForObjectSentence (SentenceHookSentence (SentenceHookedSymbol sentence))
-  = definedNamesForObjectSentence (SentenceSymbolSentence sentence)
+definedNamesForSentence (SentenceHookSentence (SentenceHookedSort sentence)) =
+    definedNamesForSentence (SentenceSortSentence sentence)
+definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
+    definedNamesForSentence (SentenceSymbolSentence sentence)
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
@@ -106,8 +100,8 @@ verifySentences
     -- pattern.
     -> AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> [KoreSentence]
-    -> Either (Error VerifyError) [VerifiedKoreSentence]
+    -> [ParsedSentence]
+    -> Either (Error VerifyError) [Verified.Sentence]
 verifySentences indexedModule attributesVerification builtinVerifiers =
     traverse
         (verifySentence
@@ -120,40 +114,13 @@ verifySentence
     :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
-    -> KoreSentence
-    -> Either (Error VerifyError) VerifiedKoreSentence
-verifySentence builtinVerifiers indexedModule attributesVerification =
-    applyUnifiedSentence
-        (verifyObjectSentence
-            builtinVerifiers
-            indexedModule
-            attributesVerification
-        )
-        (verifyObjectSentence
-            builtinVerifiers
-            indexedModule
-            attributesVerification
-        )
-
-verifyObjectSentence
-    :: Builtin.Verifiers
-    -> KoreIndexedModule declAtts axiomAtts
-    -> AttributesVerification declAtts axiomAtts
-    -> Sentence Object UnifiedSortVariable CommonKorePattern
-    -> Either (Error VerifyError) VerifiedKoreSentence
-verifyObjectSentence
-    builtinVerifiers
-    indexedModule
-    attributesVerification
-    sentence
-  =
-    withSentenceContext sentence (UnifiedObjectSentence <$> verifyObjectSentence0)
+    -> ParsedSentence
+    -> Either (Error VerifyError) Verified.Sentence
+verifySentence builtinVerifiers indexedModule attributesVerification sentence =
+    withSentenceContext sentence verifySentenceWorker
   where
-    verifyObjectSentence0
-        :: Either
-            (Error VerifyError)
-            (Sentence Meta UnifiedSortVariable VerifiedKorePattern)
-    verifyObjectSentence0 = do
+    verifySentenceWorker :: Either (Error VerifyError) Verified.Sentence
+    verifySentenceWorker = do
         verified <-
             case sentence of
                 SentenceSymbolSentence symbolSentence ->
@@ -214,7 +181,7 @@ verifyObjectSentence
 
 verifySentenceAttributes
     :: AttributesVerification declAtts axiomAtts
-    -> Sentence level UnifiedSortVariable CommonKorePattern
+    -> ParsedSentence
     -> Either (Error VerifyError) VerifySuccess
 verifySentenceAttributes attributesVerification sentence =
     do
@@ -229,8 +196,8 @@ verifyHookSentence
     :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> AttributesVerification declAtts axiomAtts
-    -> SentenceHook CommonKorePattern
-    -> Either (Error VerifyError) (SentenceHook VerifiedKorePattern)
+    -> ParsedSentenceHook
+    -> Either (Error VerifyError) Verified.SentenceHook
 verifyHookSentence
     builtinVerifiers
     indexedModule
@@ -274,10 +241,9 @@ verifyHookSentence
     findSort = findIndexedSort indexedModule
 
 verifySymbolSentence
-    :: (MetaOrObject level)
-    => KoreIndexedModule declAtts axiomAtts
-    -> KoreSentenceSymbol level
-    -> Either (Error VerifyError) (VerifiedKoreSentenceSymbol level)
+    :: KoreIndexedModule declAtts axiomAtts
+    -> ParsedSentenceSymbol
+    -> Either (Error VerifyError) Verified.SentenceSymbol
 verifySymbolSentence indexedModule sentence =
     do
         variables <- buildDeclaredSortVariables sortParams
@@ -297,8 +263,8 @@ verifyAliasSentence
     :: (MetaOrObject level)
     => Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
-    -> KoreSentenceAlias level
-    -> Either (Error VerifyError) (VerifiedKoreSentenceAlias level)
+    -> ParsedSentenceAlias
+    -> Either (Error VerifyError) Verified.SentenceAlias
 verifyAliasSentence builtinVerifiers indexedModule sentence =
     do
         variables <- buildDeclaredSortVariables sortParams
@@ -330,18 +296,16 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
     SentenceAlias { sentenceAliasResultSort } = sentence
     findSort         = findIndexedSort indexedModule
     sortParams       = (aliasParams . sentenceAliasAlias) sentence
-    expectedSort = asUnified sentenceAliasResultSort
+    expectedSort = sentenceAliasResultSort
 
 verifyAxiomSentence
-    :: KoreSentenceAxiom
+    :: ParsedSentenceAxiom
     -> Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
-    -> Either (Error VerifyError) VerifiedKoreSentenceAxiom
+    -> Either (Error VerifyError) Verified.SentenceAxiom
 verifyAxiomSentence axiom builtinVerifiers indexedModule =
     do
-        variables <-
-            buildDeclaredUnifiedSortVariables
-                (sentenceAxiomParameters axiom)
+        variables <- buildDeclaredSortVariables $ sentenceAxiomParameters axiom
         let context =
                 PatternVerifier.Context
                     { builtinDomainValueVerifiers =
@@ -358,26 +322,18 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
     SentenceAxiom { sentenceAxiomPattern } = axiom
 
 verifySortSentence
-    :: KoreSentenceSort Object
-    -> Either (Error VerifyError) (VerifiedKoreSentenceSort Object)
+    :: ParsedSentenceSort
+    -> Either (Error VerifyError) Verified.SentenceSort
 verifySortSentence sentenceSort = do
     _ <- buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
     traverse verifyNoPatterns sentenceSort
 
 buildDeclaredSortVariables
-    :: MetaOrObject level
-    => [SortVariable level]
-    -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
-buildDeclaredSortVariables variables =
-    buildDeclaredUnifiedSortVariables
-        (map asUnified variables)
-
-buildDeclaredUnifiedSortVariables
-    :: [UnifiedSortVariable]
-    -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
-buildDeclaredUnifiedSortVariables [] = Right Set.empty
-buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
-    variables <- buildDeclaredUnifiedSortVariables list
+    :: [SortVariable Object]
+    -> Either (Error VerifyError) (Set.Set (SortVariable Object))
+buildDeclaredSortVariables [] = Right Set.empty
+buildDeclaredSortVariables (unifiedVariable : list) = do
+    variables <- buildDeclaredSortVariables list
     koreFailWithLocationsWhen
         (unifiedVariable `Set.member` variables)
         [unifiedVariable]
@@ -386,5 +342,4 @@ buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
         ++ "'.")
     return (Set.insert unifiedVariable variables)
   where
-    extractVariableName (UnifiedObject variable) =
-        getIdForError (getSortVariable variable)
+    extractVariableName variable = getIdForError (getSortVariable variable)

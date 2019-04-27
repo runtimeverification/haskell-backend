@@ -11,17 +11,9 @@ module Kore.Attribute.SmtLemma
     , smtLemmaId, smtLemmaSymbol, smtLemmaAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 -- | @SmtLemma@ represents the @smt-lemma@ attribute for symbols.
 newtype SmtLemma = SmtLemma { isSmtLemma :: Bool }
@@ -45,21 +37,16 @@ smtLemmaSymbol =
         }
 
 -- | Kore pattern representing the @smt-lemma@ attribute.
-smtLemmaAttribute :: CommonKorePattern
-smtLemmaAttribute =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = smtLemmaSymbol
-            , applicationChildren = []
-            }
+smtLemmaAttribute :: AttributePattern
+smtLemmaAttribute = attributePattern_ smtLemmaSymbol
 
 instance ParseAttributes SmtLemma where
-    parseAttribute = withApplication parseApplication
+    parseAttribute = withApplication' parseApplication
       where
         parseApplication params args SmtLemma { isSmtLemma } = do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isSmtLemma failDuplicate
+            Monad.when isSmtLemma failDuplicate'
             return SmtLemma { isSmtLemma = True }
-        withApplication = Parser.withApplication smtLemmaId
-        failDuplicate = Parser.failDuplicate smtLemmaId
+        withApplication' = Parser.withApplication smtLemmaId
+        failDuplicate' = Parser.failDuplicate smtLemmaId

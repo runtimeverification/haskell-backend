@@ -1,90 +1,12 @@
 module Test.Kore.AST.Common
-    ( test_withSort
-    , test_id
+    ( test_id
     , test_prettyPrintAstLocation
     ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
-       ( assertBool, assertEqual, assertFailure, testCase )
 
-import           Kore.AST.Kore
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.Implicit.ImplicitSorts
-
-import Test.Tasty.HUnit.Extensions
-
-test_withSort :: TestTree
-test_withSort =
-    testGroup "withSort"
-        [ testCase "withSort fills missing sort"
-            (assertSortedStub
-                SortedPattern
-                    { sortedPatternPattern = TopPattern Top
-                        { topSort = sortListMetaSort }
-                    , sortedPatternSort = sortListMetaSort
-                    }
-                (withSort sortListMetaSort
-                    (UnsortedPatternStub
-                        (\sort -> TopPattern Top { topSort = sort })
-                    )
-                )
-            )
-        , testCase "withSort keeps the same sort sort"
-            (assertSortedStub
-                SortedPattern
-                    { sortedPatternPattern = TopPattern Top
-                        { topSort = sortListMetaSort }
-                    , sortedPatternSort = sortListMetaSort
-                    }
-                (withSort sortListMetaSort
-                    (SortedPatternStub SortedPattern
-                        { sortedPatternPattern =
-                            TopPattern Top { topSort = sortListMetaSort }
-                        , sortedPatternSort = sortListMetaSort
-                        }
-                    )
-                )
-            )
-        , testCase "withSort keeps the same sort sort"
-            (assertError
-                (assertSubstring
-                    "Expecting unmatched sorts error"
-                    (  "Unmatched sorts: "
-                    ++ "SortActualSort (SortActual {sortActualName = Id "
-                    ++ "{getId = \"#PatternList\", "
-                    ++ "idLocation = AstLocationImplicit}, "
-                    ++ "sortActualSorts = []}) "
-                    ++ "and SortActualSort (SortActual {sortActualName = Id "
-                    ++ "{getId = \"#SortList\""
-                    ++ ", idLocation = AstLocationImplicit}"
-                    ++ ", sortActualSorts = []})."
-                    )
-                )
-                (withSort patternListMetaSort
-                    (SortedPatternStub SortedPattern
-                        { sortedPatternPattern =
-                            TopPattern Top { topSort = sortListMetaSort }
-                        , sortedPatternSort = sortListMetaSort
-                        }
-                    )
-                :: PatternStub Meta Domain.Builtin Variable ()
-                )
-            )
-        ]
-  where
-    assertSortedStub
-        :: SortedPattern Meta Domain.Builtin Variable CommonKorePattern
-        -> PatternStub Meta Domain.Builtin Variable CommonKorePattern
-        -> IO ()
-    assertSortedStub expectedSorted stub =
-        case stub of
-            UnsortedPatternStub _ ->
-                assertFailure "Expected a sorted pattern stub"
-            SortedPatternStub sorted ->
-                assertEqual "Expecting a pattern with the given sort"
-                    expectedSorted
-                    sorted
+import Kore.AST.Pure
 
 test_prettyPrintAstLocation :: TestTree
 test_prettyPrintAstLocation =

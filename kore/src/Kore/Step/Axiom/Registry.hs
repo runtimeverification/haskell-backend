@@ -21,7 +21,7 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.Attribute.Axiom
                  ( Assoc (Assoc), Comm (Comm), Idem (Idem), Unit (Unit) )
@@ -42,24 +42,21 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
+import           Kore.Step.Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
-                 RulePattern (RulePattern),
-                 verifiedKoreSentenceToAxiomPattern )
-import qualified Kore.Step.Rule
-                 ( RulePattern (..) )
+                 RulePattern (RulePattern) )
+import qualified Kore.Step.Rule as Rule
+import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
  -}
 extractEqualityAxioms
-    ::  forall level.
-        MetaOrObject level
-    => level
-    -> VerifiedModule StepperAttributes Attribute.Axiom
-    -> Map (AxiomIdentifier level) [EqualityRule level Variable]
-extractEqualityAxioms level =
+    :: VerifiedModule StepperAttributes Attribute.Axiom
+    -> Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+extractEqualityAxioms =
     \imod ->
         Foldable.foldl'
             extractModuleAxioms
@@ -68,9 +65,9 @@ extractEqualityAxioms level =
   where
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
-        :: Map (AxiomIdentifier level) [EqualityRule level Variable]
+        :: Map (AxiomIdentifier Object) [EqualityRule Object Variable]
         -> VerifiedModule StepperAttributes Attribute.Axiom
-        -> Map (AxiomIdentifier level) [EqualityRule level Variable]
+        -> Map (AxiomIdentifier Object) [EqualityRule Object Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
       where
@@ -80,12 +77,12 @@ extractEqualityAxioms level =
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
     extractSentenceAxiom
-        :: Map (AxiomIdentifier level) [EqualityRule level Variable]
-        -> (attrs, VerifiedKoreSentenceAxiom)
-        -> Map (AxiomIdentifier level) [EqualityRule level Variable]
+        :: Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+        -> (attrs, Verified.SentenceAxiom)
+        -> Map (AxiomIdentifier Object) [EqualityRule Object Variable]
     extractSentenceAxiom axioms (_, sentence) =
         let
-            namedAxiom = axiomToIdAxiomPatternPair level sentence
+            namedAxiom = axiomToIdAxiomPatternPair sentence
         in
             Foldable.foldl' insertAxiom axioms namedAxiom
 
@@ -98,12 +95,10 @@ extractEqualityAxioms level =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    :: MetaOrObject level
-    => level
-    -> SentenceAxiom UnifiedSortVariable VerifiedKorePattern
-    -> Maybe (AxiomIdentifier level, EqualityRule level Variable)
-axiomToIdAxiomPatternPair level (asKoreAxiomSentence -> axiom) =
-    case verifiedKoreSentenceToAxiomPattern level axiom of
+    :: SentenceAxiom (SortVariable Object) (StepPattern Object Variable)
+    -> Maybe (AxiomIdentifier Object, EqualityRule Object Variable)
+axiomToIdAxiomPatternPair axiom =
+    case Rule.fromSentenceAxiom axiom of
         Left _ -> Nothing
         Right
             (FunctionAxiomPattern axiomPat@(EqualityRule RulePattern { left }))

@@ -56,6 +56,10 @@ instance Unparse (External child) where
         "\\dv"
         <> parameters [domainValueSort]
         <> arguments [domainValueChild]
+    unparse2 (External { domainValueSort, domainValueChild }) =
+        "\\dv"
+        <> parameters2 [domainValueSort]
+        <> arguments2 [domainValueChild]
 
 instance Domain External where
     lensDomainValue mapDomainValue external =

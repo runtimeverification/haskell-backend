@@ -11,17 +11,9 @@ module Kore.Attribute.Axiom.Unit
     , unitId, unitSymbol, unitAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser
 
 {- | @Unit@ represents the @unit@ attribute for axioms.
  -}
@@ -46,21 +38,16 @@ unitSymbol =
         }
 
 -- | Kore pattern representing the @unit@ attribute.
-unitAttribute :: CommonKorePattern
-unitAttribute =
-    (asCommonKorePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = unitSymbol
-            , applicationChildren = []
-            }
+unitAttribute :: AttributePattern
+unitAttribute = attributePattern_ unitSymbol
 
 instance ParseAttributes Unit where
     parseAttribute =
-        withApplication $ \params args Unit { isUnit } -> do
+        withApplication' $ \params args Unit { isUnit } -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isUnit failDuplicate
+            Monad.when isUnit failDuplicate'
             return Unit { isUnit = True }
       where
-        withApplication = Parser.withApplication unitId
-        failDuplicate = Parser.failDuplicate unitId
+        withApplication' = Parser.withApplication unitId
+        failDuplicate' = Parser.failDuplicate unitId

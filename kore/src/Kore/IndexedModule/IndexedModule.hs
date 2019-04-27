@@ -32,11 +32,17 @@ module Kore.IndexedModule.IndexedModule
     , hookedObjectSymbolSentences
     , indexedModuleSubsorts
     , indexedModulesInScope
-    , toVerifiedPureModule
-    , toVerifiedPureDefinition
+    , toVerifiedModule
+    , toVerifiedDefinition
     , recursiveIndexedModuleAxioms
     , recursiveIndexedModuleSortDescriptions
     , recursiveIndexedModuleSymbolSentences
+    -- * Implicit Kore
+    , implicitModuleName
+    , implicitNames
+    , implicitSortNames
+    , implicitIndexedModule
+    , implicitModules
     ) where
 
 import           Control.DeepSeq
@@ -52,6 +58,8 @@ import qualified Data.Foldable as Foldable
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -60,8 +68,7 @@ import           GHC.Generics
 
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Error
-import           Kore.AST.Kore
-import           Kore.AST.PureToKore
+import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
@@ -74,9 +81,12 @@ import           Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol.Symbol as Attribute
                  ( Symbol )
 import           Kore.Error
+import           Kore.Parser
+                 ( ParsedPattern )
+import qualified Kore.Verified as Verified
 
 type SortDescription level dom =
-    SentenceSort level (KorePattern dom Variable (Unified Annotation.Null))
+    SentenceSort level (PurePattern level dom Variable (Annotation.Null level))
 
 data IndexModuleError
 
@@ -254,24 +264,22 @@ mapIndexedModulePatterns mapping indexedModule =
         )
 
 type KoreIndexedModule =
-    IndexedModule UnifiedSortVariable CommonKorePattern
+    IndexedModule (SortVariable Object) ParsedPattern
 
-type VerifiedModule =
-    IndexedModule UnifiedSortVariable VerifiedKorePattern
+type VerifiedModule = IndexedModule (SortVariable Object) Verified.Pattern
 
 {- | Convert a 'VerifiedModule' back into a 'Module'.
 
 The original module attributes /are/ preserved.
 
  -}
-toVerifiedPureModule
+toVerifiedModule
     :: VerifiedModule declAtts axiomAtts
-    -> VerifiedPureModule Object
-toVerifiedPureModule module' =
+    -> Module Verified.Sentence
+toVerifiedModule module' =
     Module
         { moduleName = indexedModuleName module'
-        , moduleSentences =
-            sentenceKoreToPure <$> indexedModuleRawSentences module'
+        , moduleSentences = indexedModuleRawSentences module'
         , moduleAttributes = snd (indexedModuleAttributes module')
         }
 
@@ -286,15 +294,15 @@ included in the output of this function because it is /implicit/.
 See also: 'toVerifiedPureModule'
 
  -}
-toVerifiedPureDefinition
+toVerifiedDefinition
     :: Foldable t
     => t (VerifiedModule declAtts axiomAtts)
-    -> VerifiedPureDefinition Object
-toVerifiedPureDefinition idx =
+    -> Definition Verified.Sentence
+toVerifiedDefinition idx =
     Definition
         { definitionAttributes = Default.def
         , definitionModules =
-            toVerifiedPureModule
+            toVerifiedModule
             <$> filter notImplicitKoreModule (Foldable.toList idx)
         }
   where
@@ -302,9 +310,9 @@ toVerifiedPureDefinition idx =
         indexedModuleName verifiedModule /= "kore"
 
 indexedModuleRawSentences
-    :: IndexedModule param pat atts atts' -> [UnifiedSentence param pat]
+    :: IndexedModule param pat atts atts' -> [Sentence Object param pat]
 indexedModuleRawSentences im =
-    map (constructUnifiedSentence SentenceAliasSentence . getIndexedSentence)
+    map (SentenceAliasSentence . getIndexedSentence)
         (Map.elems (indexedModuleAliasSentences im))
     ++
     map hookSymbolIfNeeded
@@ -314,14 +322,14 @@ indexedModuleRawSentences im =
         (Map.toList (indexedModuleSortDescriptions im))
     ++
     map
-        (constructUnifiedSentence SentenceAxiomSentence . getIndexedSentence)
+        (SentenceAxiomSentence . getIndexedSentence)
         (indexedModuleAxioms im)
     ++
     map
-        (constructUnifiedSentence SentenceClaimSentence . getIndexedSentence)
+        (SentenceClaimSentence . getIndexedSentence)
         (indexedModuleClaims im)
     ++
-    [ constructUnifiedSentence SentenceImportSentence
+    [ SentenceImportSentence
       (SentenceImport (indexedModuleName m) attributes)
     | (_, attributes, m) <- indexedModuleImports im
     ]
@@ -330,18 +338,14 @@ indexedModuleRawSentences im =
     hookedIds = indexedModuleHookedIdentifiers im
     hookSortIfNeeded (x, (_, sortDescription))
         | x `Set.member` hookedIds =
-            constructUnifiedSentence
-                SentenceHookSentence
-                (SentenceHookedSort sortDescription)
+            SentenceHookSentence (SentenceHookedSort sortDescription)
         | otherwise =
-            constructUnifiedSentence SentenceSortSentence sortDescription
+            SentenceSortSentence sortDescription
     hookSymbolIfNeeded (x, (_, symbolSentence))
         | x `Set.member` hookedIds =
-            constructUnifiedSentence
-                SentenceHookSentence
-                (SentenceHookedSymbol symbolSentence)
+            SentenceHookSentence (SentenceHookedSymbol symbolSentence)
         | otherwise =
-            constructUnifiedSentence SentenceSymbolSentence symbolSentence
+            SentenceSymbolSentence symbolSentence
 
 {-|'ImplicitIndexedModule' is the type for the 'IndexedModule' containing
 things that are implicitly defined.
@@ -351,9 +355,7 @@ newtype ImplicitIndexedModule param pat declAtts axiomAtts =
     deriving (Show)
 
 type KoreImplicitIndexedModule =
-    ImplicitIndexedModule
-        UnifiedSortVariable
-        CommonKorePattern
+    ImplicitIndexedModule (SortVariable Object) ParsedPattern
 
 emptyIndexedModule
     ::  ( Default parsedDeclAttributes
@@ -402,7 +404,7 @@ the module is already in the 'IndexedModule' map.
 indexModuleIfNeeded
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ UnifiedSentence sortParam patternType
+        , sentence ~ Sentence Object sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
@@ -430,7 +432,7 @@ indexModuleIfNeeded
 internalIndexModuleIfNeeded
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ UnifiedSentence sortParam patternType
+        , sentence ~ Sentence Object sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
@@ -485,7 +487,7 @@ internalIndexModuleIfNeeded
 indexModuleKoreSentence
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ UnifiedSentence sortParam patternType
+        , sentence ~ Sentence Object sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
@@ -494,15 +496,12 @@ indexModuleKoreSentence
     -> (Map.Map ModuleName indexed, indexed)
     -> sentence
     -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
-indexModuleKoreSentence a b c d =
-    applyUnifiedSentence
-        (indexModuleSentence a b c d)
-        (indexModuleSentence a b c d)
+indexModuleKoreSentence = indexModuleSentence
 
 indexModuleSentence
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ UnifiedSentence sortParam patternType
+        , sentence ~ Sentence Object sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
@@ -694,7 +693,7 @@ indexModuleSentence
 indexImportedModule
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ UnifiedSentence sortParam patternType
+        , sentence ~ Sentence Object sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
@@ -822,3 +821,39 @@ indexedModulesInScope =
         name = indexedModuleName imod
 
     resolveImport (_, _, imod) = resolveModule imod
+
+implicitModules
+    :: (Default declAttrs, Default axiomAttrs)
+    => Map ModuleName (IndexedModule sortParam patternType declAttrs axiomAttrs)
+implicitModules = Map.singleton implicitModuleName implicitIndexedModule
+
+-- | The name of the module containing the implicit Kore declarations.
+implicitModuleName :: ModuleName
+implicitModuleName = ModuleName "kore"
+
+-- | The 'IndexedModule' that indexes the implicit Kore declarations.
+implicitIndexedModule
+    :: (Default declAttrs, Default axiomAttrs)
+    => IndexedModule sortParam patternType declAttrs axiomAttrs
+implicitIndexedModule =
+    (emptyIndexedModule implicitModuleName)
+        { indexedModuleSortDescriptions =
+            Map.fromSet makeSortIndex implicitSortNames
+        }
+  where
+    makeSortIndex sortId = (Default.def, declareSort sortId)
+    declareSort sortId =
+        SentenceSort
+            { sentenceSortName = sortId
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes []
+            }
+
+implicitNames :: Map Text AstLocation
+implicitNames =
+    Map.mapKeys getId
+    $ Map.fromSet idLocation
+    $ Set.insert predicateSortId implicitSortNames
+
+implicitSortNames :: Set (Id Meta)
+implicitSortNames = Set.fromList [charMetaSortId, stringMetaSortId]

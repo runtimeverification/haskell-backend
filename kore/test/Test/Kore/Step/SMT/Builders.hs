@@ -22,15 +22,9 @@ import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Kore
-                 ( CommonKorePattern )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
-                 ( Attributes (Attributes), Definition (Definition),
-                 KoreSentence, Module (Module), ModuleName (ModuleName),
-                 SentenceSort (SentenceSort), SentenceSymbol (SentenceSymbol),
-                 Symbol (Symbol), asSentence )
 import qualified Kore.AST.Sentence as Definition
                  ( Definition (..) )
 import qualified Kore.AST.Sentence as Module
@@ -61,6 +55,8 @@ import           Kore.Error
                  ( Error )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
+import           Kore.Parser
+                 ( ParsedPattern )
 import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
@@ -72,14 +68,14 @@ import Test.Kore.With
        ( Attribute (Attribute) )
 
 indexModule
-    :: Module KoreSentence
+    :: ParsedModule
     -> VerifiedModule Attribute.Symbol Attribute.Axiom
 indexModule m@Module{ moduleName } =
     indexModules moduleName [m]
 
 indexModules
     :: ModuleName
-    -> [Module KoreSentence]
+    -> [ParsedModule]
     -> VerifiedModule Attribute.Symbol Attribute.Axiom
 indexModules moduleName modules =
     case perhapsIndexedDefinition of
@@ -145,7 +141,7 @@ emptyModule name =
         , moduleAttributes = Attributes []
         }
 
-sortDeclaration :: Text -> KoreSentence
+sortDeclaration :: Text -> ParsedSentence
 sortDeclaration name =
     asSentence
         (SentenceSort
@@ -153,10 +149,10 @@ sortDeclaration name =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: SentenceSort Object CommonKorePattern
+        :: SentenceSort Object ParsedPattern
         )
 
-symbolDeclaration :: Text -> Text -> [Text] -> KoreSentence
+symbolDeclaration :: Text -> Text -> [Text] -> ParsedSentence
 symbolDeclaration name sortName argumentSortNames =
     asSentence
         (SentenceSymbol
@@ -165,7 +161,7 @@ symbolDeclaration name sortName argumentSortNames =
             , sentenceSymbolResultSort = koreSort sortName
             , sentenceSymbolAttributes = Attributes []
             }
-        :: SentenceSymbol Object CommonKorePattern
+        :: SentenceSymbol Object ParsedPattern
         )
 
 makeSymbol :: Text -> Symbol Object

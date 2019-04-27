@@ -1,14 +1,7 @@
 {- |
-Module      : Kore.AST.Valid
-Description : Constructors and patterns for valid Kore syntax trees
+Description : Constructors and patterns for verified Kore syntax trees
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-
-This module implements an interface analogous to
-"Kore.ASTUtils.SmartConstructors" and "Kore.ASTUtils.SmartPatterns" for 'Valid'
-patterns. Unlike the @SmartConstructors@, this module does not require
-"Kore.IndexedModule.MetadataTools".
 
  -}
 
@@ -45,6 +38,7 @@ module Kore.AST.Valid
     , mkCharLiteral
     , mkSort
     , mkSortVariable
+    , mkInhabitantPattern
     , varS
     , symS
     -- * Predicate constructors
@@ -112,7 +106,6 @@ import           Kore.AST.Lens
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.Domain.Class
-import           Kore.Implicit.ImplicitSorts
 import           Kore.Unparser
                  ( Unparse, renderDefault, unparseToString )
 import qualified Kore.Unparser as Unparse
@@ -218,6 +211,7 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 CharLiteralPattern _ -> illSorted
                 StringLiteralPattern _ -> illSorted
                 VariablePattern _ -> illSorted
+                InhabitantPattern _ -> illSorted
                 SetVariablePattern _ -> illSorted
 
 {- | Call the argument function with two patterns whose sorts agree.
@@ -1000,6 +994,19 @@ mkCharLiteral char =
   where
     valid = Valid { patternSort = charMetaSort, freeVariables = Set.empty }
     charLiteral = CharLiteral char
+
+mkInhabitantPattern
+    ::  ( Functor domain
+        , valid ~ Valid (variable level) level
+        )
+    => Sort level
+    -> PurePattern level domain variable valid
+mkInhabitantPattern s =
+    asPurePattern (valid :< InhabitantPattern s)
+  where
+    freeVariables = Set.empty
+    patternSort = s
+    valid = Valid { patternSort, freeVariables }
 
 mkSort :: Id level -> Sort level
 mkSort name = SortActualSort $ SortActual name []

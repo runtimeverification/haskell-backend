@@ -11,18 +11,10 @@ module Kore.Attribute.Axiom.Concrete
     , concreteId, concreteSymbol, concreteAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
 import qualified Control.Monad as Monad
-import           Data.Default
-import           GHC.Generics
-                 ( Generic )
 
-import           Kore.AST.Kore hiding
-                 ( Concrete )
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import qualified Kore.Attribute.Parser as Parser
+import Kore.Attribute.Parser as Parser hiding
+       ( Concrete )
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
@@ -47,9 +39,9 @@ concreteSymbol =
         }
 
 -- | Kore pattern representing the @concrete@ attribute.
-concreteAttribute :: CommonKorePattern
+concreteAttribute :: AttributePattern
 concreteAttribute =
-    (asCommonKorePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias = concreteSymbol
             , applicationChildren = []
@@ -57,11 +49,11 @@ concreteAttribute =
 
 instance ParseAttributes Concrete where
     parseAttribute =
-        withApplication $ \params args Concrete { isConcrete } -> do
+        withApplication' $ \params args Concrete { isConcrete } -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isConcrete failDuplicate
+            Monad.when isConcrete failDuplicate'
             return Concrete { isConcrete = True }
       where
-        withApplication = Parser.withApplication concreteId
-        failDuplicate = Parser.failDuplicate concreteId
+        withApplication' = Parser.withApplication concreteId
+        failDuplicate' = Parser.failDuplicate concreteId

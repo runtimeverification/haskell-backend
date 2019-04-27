@@ -14,6 +14,8 @@ module Kore.AST.Identifier
       Id (..)
     , getIdForError
     , noLocationId
+    , implicitId
+    , unparseIdLower
     -- * Locations
     , AstLocation (..)
     , FileLocation (..)
@@ -121,6 +123,14 @@ instance IsString (Id level) where
 
 instance Unparse (Id level) where
     unparse = Pretty.pretty . getId
+    unparse2 = Pretty.pretty . getId
+
+{-| 'unparseIdLower' prints an identifier in lower case.
+    'unparseIdUpper' prints an identifier in upper case.
+-}
+unparseIdLower :: Id leve -> Pretty.Doc ann
+unparseIdLower Id { getId } = Pretty.pretty (Text.toLower getId)
+
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options
@@ -131,6 +141,10 @@ noLocationId value = Id
     { getId = value
     , idLocation = AstLocationNone
     }
+
+-- | Create an implicit 'Id'.
+implicitId :: Text -> Id level
+implicitId name = Id name AstLocationImplicit
 
 getIdForError :: Id level -> String
 getIdForError = Text.unpack . getId

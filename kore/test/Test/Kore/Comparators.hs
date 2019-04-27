@@ -27,7 +27,6 @@ import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import qualified Kore.AST.Common as SetVariable
                  ( SetVariable (..) )
-import           Kore.AST.Kore
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
@@ -245,6 +244,13 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
+    sumConstructorPair (InhabitantPattern s1) (InhabitantPattern s2) =
+        SumConstructorSameWithArguments (EqWrap "InhabitantPattern" s1 s2)
+    sumConstructorPair pattern1@(InhabitantPattern _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1)
+            (printWithExplanation pattern2)
+
     sumConstructorPair (SetVariablePattern a1) (SetVariablePattern a2) =
         SumConstructorSameWithArguments (EqWrap "SetVariablePattern" a1 a2)
     sumConstructorPair pattern1@(SetVariablePattern _) pattern2 =
@@ -304,43 +310,6 @@ instance
             (getPurePattern expected)
             (getPurePattern actual)
     wrapperConstructorName _ = "PurePattern"
-
-instance
-    ( Show (KorePattern domain variable annotation)
-    , Show1 domain
-    , Eq1 domain
-    , Show annotation
-    , Eq annotation
-    , EqualWithExplanation annotation
-    , EqualWithExplanation (variable Meta)
-    , EqualWithExplanation (variable Object)
-    , EqualWithExplanation (domain (Cofree (UnifiedPattern domain variable) annotation))
-    , OrdMetaOrObject variable
-    , ShowMetaOrObject variable
-    ) =>
-    EqualWithExplanation (KorePattern domain variable annotation)
-  where
-    compareWithExplanation a@(KorePattern _) = wrapperCompareWithExplanation a
-    printWithExplanation = show
-
-instance
-    ( Show (KorePattern domain variable annotation)
-    , Eq1 domain, Show1 domain
-    , Eq annotation, Show annotation
-    , EqualWithExplanation annotation
-    , EqualWithExplanation (variable Meta)
-    , EqualWithExplanation (variable Object)
-    , EqualWithExplanation (domain (Cofree (UnifiedPattern domain variable) annotation))
-    , OrdMetaOrObject variable, ShowMetaOrObject variable
-    ) =>
-    WrapperEqualWithExplanation (KorePattern domain variable annotation)
-  where
-    wrapperField expected actual =
-        EqWrap
-            "getKorePattern = "
-            (getKorePattern expected)
-            (getKorePattern actual)
-    wrapperConstructorName _ = "KorePattern"
 
 instance
     ( Show (CofreeT f w a)
@@ -1391,58 +1360,6 @@ instance
     printWithExplanation = show
 
 instance
-    ( Show (variable Object), Show (variable Meta), Show child
-    , Eq (variable Meta), Eq (variable Object), Eq child
-    , EqualWithExplanation (variable Meta)
-    , EqualWithExplanation (variable Object)
-    , EqualWithExplanation (domain child)
-    , EqualWithExplanation child
-    , Show1 domain
-    , Eq1 domain
-    )
-    => EqualWithExplanation (UnifiedPattern domain variable child)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Show (variable Object), Show (variable Meta), Show child
-    , Eq (variable Meta), Eq (variable Object), Eq child
-    , EqualWithExplanation (variable Object)
-    , EqualWithExplanation (variable Meta)
-    , EqualWithExplanation (domain child)
-    , EqualWithExplanation child
-    , Show1 domain
-    , Eq1 domain
-    )
-    => SumEqualWithExplanation (UnifiedPattern domain variable child)
-  where
-    sumConstructorPair (UnifiedObjectPattern p1) (UnifiedObjectPattern p2) =
-        SumConstructorSameWithArguments (EqWrap "UnifiedObjectPattern" p1 p2)
-
-instance
-    ( EqualWithExplanation (a Meta)
-    , EqualWithExplanation (a Object)
-    , ShowMetaOrObject a
-    ) =>
-    SumEqualWithExplanation (Unified a)
-  where
-    sumConstructorPair (UnifiedObject a1) (UnifiedObject a2) =
-        SumConstructorSameWithArguments (EqWrap "UnifiedObject" a1 a2)
-
-instance
-    ( EqualWithExplanation (a Meta)
-    , EqualWithExplanation (a Object)
-    , Show (a Meta)
-    , Show (a Object)
-    , SumEqualWithExplanation (Unified a)
-    )
-    => EqualWithExplanation (Unified a)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
     ( EqualWithExplanation patt
     , Show patt
     , Eq patt
@@ -1486,8 +1403,8 @@ instance
             (patternSort actual)
         , EqWrap
             "freeVariables = "
-            (Kore.AST.Kore.freeVariables expected)
-            (Kore.AST.Kore.freeVariables actual)
+            (Kore.Annotation.Valid.freeVariables expected)
+            (Kore.Annotation.Valid.freeVariables actual)
         ]
     structConstructorName _ = "Valid"
 

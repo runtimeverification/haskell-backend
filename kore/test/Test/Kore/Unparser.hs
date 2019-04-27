@@ -12,10 +12,10 @@ import           Test.Tasty.Hedgehog
 import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
-import Kore.AST.Kore
+import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.Parser.Lexeme
-import Kore.Parser.ParserImpl
+import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
 import Kore.Unparser
 
@@ -32,18 +32,18 @@ test_unparse =
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     }
-                    :: KoreSentenceSort Object
+                    :: ParsedSentenceSort
                 )
             )
             "sort x{} []"
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ asCommonKorePattern (TopPattern Top
+                    [ asParsedPattern (TopPattern Top
                         { topSort = SortVariableSort SortVariable
                             { getSortVariable = testId "#Fm" :: Id Meta }
                         })
-                    , asCommonKorePattern (InPattern In
+                    , asParsedPattern (InPattern In
                         { inOperandSort = SortActualSort SortActual
                             { sortActualName = testId "B" :: Id Object
                             , sortActualSorts = []
@@ -53,13 +53,13 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asCommonKorePattern $ VariablePattern Variable
+                            asParsedPattern $ VariablePattern Variable
                                 { variableName = testId "T" :: Id Object
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
                                 }
-                        , inContainingChild = asCommonKorePattern (StringLiteralPattern
+                        , inContainingChild = asParsedPattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })
                         })
                     ]
@@ -71,7 +71,7 @@ test_unparse =
                 , moduleSentences = []
                 , moduleAttributes = Attributes []
                 }
-                :: KoreModule
+                :: ParsedModule
             )
             "module t\n\
             \endmodule\n\
@@ -109,7 +109,7 @@ test_unparse =
                         }
                     ]
                 }
-                :: KoreDefinition
+                :: ParsedDefinition
             )
             "[]\n\
             \module i\n\
@@ -119,18 +119,18 @@ test_unparse =
             \endmodule\n\
             \[]"
         , unparseTest
-            ( constructUnifiedSentence SentenceImportSentence $ SentenceImport
+            ( SentenceImportSentence SentenceImport
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
                 , sentenceImportAttributes =
                     Attributes { getAttributes = [] } :: Attributes
                 }
-                :: KoreSentence
+                :: ParsedSentence
             )
             "import sl []"
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asCommonKorePattern
+                    [ asParsedPattern
                         ( TopPattern Top
                             { topSort = SortActualSort SortActual
                                 { sortActualName = testId "#CharList" :: Id Meta
@@ -145,11 +145,11 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asCommonKorePattern
+                    [ asParsedPattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
-                    , asCommonKorePattern
+                    , asParsedPattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
@@ -187,9 +187,9 @@ test_parse =
             roundtrip (standaloneGen sortGen) (sortParser Meta)
         , testProperty "UnifiedVariable" $
             roundtrip
-                (standaloneGen $ unifiedVariableGen =<< unifiedSortGen)
-                unifiedVariableParser
-        , testProperty "CommonKorePattern" $
+                (standaloneGen $ variableGen =<< sortGen)
+                (variableParser Object)
+        , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $
             roundtrip (standaloneGen attributesGen) attributesParser

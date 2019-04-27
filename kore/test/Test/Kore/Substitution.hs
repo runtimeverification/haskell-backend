@@ -1,6 +1,6 @@
 module Test.Kore.Substitution where
 
-import           Kore.AST.Kore
+import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
 
 import Test.Kore
@@ -15,15 +15,12 @@ objectVariable = Variable
     , variableCounter = mempty
     }
 
-unifiedObjectVariable :: Unified Variable
-unifiedObjectVariable = UnifiedObject objectVariable
-
 objectVariablePattern
-    :: Pattern Object Domain.Builtin Variable CommonKorePattern
+    :: Pattern Object Domain.Builtin Variable ParsedPattern
 objectVariablePattern = VariablePattern objectVariable
 
-objectVariableUnifiedPattern :: CommonKorePattern
-objectVariableUnifiedPattern = asCommonKorePattern objectVariablePattern
+objectVariableUnifiedPattern :: ParsedPattern
+objectVariableUnifiedPattern = asParsedPattern objectVariablePattern
 
 metaSort :: Sort Meta
 metaSort = SortVariableSort (SortVariable (testId "#s"))
@@ -35,17 +32,14 @@ metaVariable = Variable
     , variableCounter = mempty
     }
 
-unifiedMetaVariable :: Unified Variable
-unifiedMetaVariable = UnifiedObject metaVariable
-
-metaVariablePattern :: Pattern Meta Domain.Builtin Variable CommonKorePattern
+metaVariablePattern :: Pattern Meta Domain.Builtin Variable ParsedPattern
 metaVariablePattern = VariablePattern metaVariable
 
-metaVariableUnifiedPattern :: CommonKorePattern
-metaVariableUnifiedPattern = asCommonKorePattern metaVariablePattern
+metaVariableUnifiedPattern :: ParsedPattern
+metaVariableUnifiedPattern = asParsedPattern metaVariablePattern
 
-objectTopPattern :: CommonKorePattern
-objectTopPattern = asCommonKorePattern $ TopPattern $ Top objectSort
+objectTopPattern :: ParsedPattern
+objectTopPattern = asParsedPattern $ TopPattern $ Top objectSort
 
-objectBottomPattern :: CommonKorePattern
-objectBottomPattern = asCommonKorePattern $ BottomPattern $ Bottom objectSort
+objectBottomPattern :: ParsedPattern
+objectBottomPattern = asParsedPattern $ BottomPattern $ Bottom objectSort
