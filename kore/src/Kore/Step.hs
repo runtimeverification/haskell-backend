@@ -52,8 +52,7 @@ import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
@@ -94,7 +93,7 @@ rewriteStep a =
 transitionRule
     :: (HasCallStack, MetaOrObject Object)
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object

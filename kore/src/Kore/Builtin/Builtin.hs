@@ -138,7 +138,7 @@ import           Kore.Step.Pattern as Pattern
                  ( top )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 ( PredicateSimplifier, SimplificationProof (..),
                  SimplificationType, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
@@ -804,7 +804,7 @@ functionEvaluator impl =
     evaluator
         :: (Ord (variable Object), Show (variable Object))
         => SmtMetadataTools StepperAttributes
-        -> PredicateSubstitutionSimplifier level
+        -> PredicateSimplifier level
         -> StepPatternSimplifier Object
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF

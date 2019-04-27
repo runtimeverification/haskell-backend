@@ -15,9 +15,15 @@ import           Kore.AST.Common
                  ( Or (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
+                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeOrPredicate, makeTruePredicate, substitutionToPredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof (..) )
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Step.TermLike
@@ -26,8 +32,6 @@ import           Kore.Unification.Substitution
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unparser as Unparser
 
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -178,7 +182,7 @@ t_ = mkBottom Mock.testSort
 testVar :: Text -> Variable Object
 testVar ident = Variable (testId ident) mempty Mock.testSort
 
-type TestPredicate = Predicate Variable
+type TestPredicate = Syntax.Predicate Variable
 
 pT :: TestPredicate
 pT = makeTruePredicate

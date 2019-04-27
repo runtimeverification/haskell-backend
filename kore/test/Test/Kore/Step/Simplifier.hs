@@ -16,8 +16,8 @@ import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, stepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier, stepPatternSimplifier )
 import           Kore.Step.TermLike
                  ( Object, TermLike )
 import qualified Kore.Step.TermLike as TermLike
@@ -82,7 +82,7 @@ mockSimplifierHelper
             , ([Pattern Object variable], SimplificationProof Object)
             )
         ]
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> TermLike variable0
     -> Simplifier
         (Or.Pattern Object variable0, SimplificationProof Object)

@@ -18,7 +18,7 @@ import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
+                 ( PredicateSimplifier (..),
                  SimplificationProof (SimplificationProof),
                  stepPatternSimplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
@@ -26,7 +26,7 @@ import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubs
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
 substitutionSimplifier tools =
     PredicateSubstitution.create
         tools

@@ -16,7 +16,7 @@ module Kore.Step.Simplification.Data
     , gather
     , gatherAll
     , scatter
-    , PredicateSubstitutionSimplifier (..)
+    , PredicateSimplifier (..)
     , StepPatternSimplifier
     , stepPatternSimplifier
     , simplifyTerm
@@ -53,9 +53,9 @@ import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern
-                 ( Pattern, PredicateSubstitution )
+                 ( Pattern, Predicate )
 import qualified Kore.Step.Pattern.Or as Or
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Unparser
@@ -288,9 +288,9 @@ newtype StepPatternSimplifier level =
             , Unparse (variable level)
             , SortedVariable variable
             )
-        => PredicateSubstitutionSimplifier level
+        => PredicateSimplifier level
         -> TermLike variable
-        -> PredicateSubstitution level variable
+        -> Predicate level variable
         -> BranchT Simplifier (Pattern level variable)
         )
 
@@ -308,7 +308,7 @@ simplifyTerm
         , SortedVariable variable
         )
     => StepPatternSimplifier Object
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> TermLike variable
     -> Simplifier
         ( Or.Pattern Object variable
@@ -323,7 +323,7 @@ simplifyTerm
         gather $ simplify
             predicateSimplifier
             stepPattern
-            PredicateSubstitution.top
+            Predicate.top
     return (Or.fromPatterns results, SimplificationProof)
 
 
@@ -338,9 +338,9 @@ simplifyConditionalTerm
         , SortedVariable variable
         )
     => StepPatternSimplifier Object
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> TermLike variable
-    -> PredicateSubstitution Object variable
+    -> Predicate Object variable
     -> BranchT Simplifier (Pattern Object variable)
 simplifyConditionalTerm (StepPatternSimplifier simplify) = simplify
 
@@ -358,7 +358,7 @@ stepPatternSimplifier
             , Unparse (variable Object)
             , SortedVariable variable
             )
-        => PredicateSubstitutionSimplifier Object
+        => PredicateSimplifier Object
         -> TermLike variable
         -> Simplifier
             ( Or.Pattern Object variable
@@ -377,9 +377,9 @@ stepPatternSimplifier simplifier =
             , Unparse (variable Object)
             , SortedVariable variable
             )
-        => PredicateSubstitutionSimplifier Object
+        => PredicateSimplifier Object
         -> TermLike variable
-        -> PredicateSubstitution Object variable
+        -> Predicate Object variable
         -> BranchT Simplifier (Pattern Object variable)
     stepPatternSimplifierWorker
         predicateSimplifier
@@ -392,13 +392,13 @@ stepPatternSimplifier simplifier =
         result <- scatter results
         return (result `Conditional.andCondition` initialCondition)
 
-{-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies
-'PredicateSubstitution's. The minimal requirement from this function is
+{-| 'PredicateSimplifier' wraps a function that simplifies
+'Predicate's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSubstitutionSimplifier level =
-    PredicateSubstitutionSimplifier
-        { getPredicateSubstitutionSimplifier
+newtype PredicateSimplifier level =
+    PredicateSimplifier
+        { getPredicateSimplifier
             ::  forall variable
             .   ( FreshVariable variable
                 , MetaOrObject level
@@ -409,6 +409,6 @@ newtype PredicateSubstitutionSimplifier level =
                 , Unparse (variable level)
                 , SortedVariable variable
                 )
-            => PredicateSubstitution level variable
-            -> BranchT Simplifier (PredicateSubstitution level variable)
+            => Predicate level variable
+            -> BranchT Simplifier (Predicate level variable)
         }

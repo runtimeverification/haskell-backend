@@ -31,8 +31,8 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -56,7 +56,7 @@ simplify
         , Unparse (variable Object)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -100,7 +100,7 @@ simplifyEvaluatedIn
         , Unparse (variable Object)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -169,7 +169,7 @@ makeEvaluateIn
         , Unparse (variable Object)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object

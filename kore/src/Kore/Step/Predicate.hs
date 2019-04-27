@@ -3,9 +3,8 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.Representation.PredicateSubstitution
-    ( PredicateSubstitution
-    , CommonPredicateSubstitution
+module Kore.Step.Predicate
+    ( Predicate
     , eraseConditionalTerm
     , top
     , bottom
@@ -16,7 +15,7 @@ module Kore.Step.Representation.PredicateSubstitution
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
-    , Kore.Step.Representation.PredicateSubstitution.mapVariables
+    , Kore.Step.Predicate.mapVariables
     -- * Re-exports
     , Conditional (..)
     ) where
@@ -26,62 +25,45 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import           Kore.AST.Pure
-import           Kore.Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Unparser
 
 -- | A predicate and substitution without an accompanying term.
-type PredicateSubstitution level variable = Conditional level variable ()
+type Predicate level variable = Conditional level variable ()
 
--- | A 'PredicateSubstitution' of the 'Variable' type.
-type CommonPredicateSubstitution level = PredicateSubstitution level Variable
-
--- | Erase the @Conditional@ 'term' to yield a 'PredicateSubstitution'.
+-- | Erase the @Conditional@ 'term' to yield a 'Predicate'.
 eraseConditionalTerm
     :: Conditional Object variable child
-    -> PredicateSubstitution Object variable
+    -> Predicate Object variable
 eraseConditionalTerm = Conditional.withoutTerm
 
-top
-    ::  ( MetaOrObject Object
-        , Ord (variable Object)
-        )
-    => PredicateSubstitution Object variable
+top :: Ord (variable Object) => Predicate Object variable
 top =
     Conditional
         { term = ()
-        , predicate = Predicate.makeTruePredicate
+        , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
         }
 
-bottom
-    ::  ( MetaOrObject Object
-        , Ord (variable Object)
-        )
-    => PredicateSubstitution Object variable
+bottom :: Ord (variable Object) => Predicate Object variable
 bottom =
     Conditional
         { term = ()
-        , predicate = Predicate.makeFalsePredicate
+        , predicate = Syntax.Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
-topPredicate
-    ::  ( MetaOrObject Object
-        , Ord (variable Object)
-        )
-    => PredicateSubstitution Object variable
+topPredicate :: Ord (variable Object) => Predicate Object variable
 topPredicate = top
 
 bottomPredicate
-    ::  ( MetaOrObject Object
-        , Ord (variable Object)
-        )
-    => PredicateSubstitution Object variable
+    :: Ord (variable Object)
+    => Predicate Object variable
 bottomPredicate = bottom
 
 {- | Extract the set of free variables from a predicate and substitution.
@@ -90,13 +72,12 @@ bottomPredicate = bottom
 -}
 
 freeVariables
-    :: ( MetaOrObject Object
-       , Ord (variable Object)
+    :: ( Ord (variable Object)
        , Show (variable Object)
        , Unparse (variable Object)
        , SortedVariable variable
        )
-    => PredicateSubstitution Object variable
+    => Predicate Object variable
     -> Set (variable Object)
 freeVariables = Conditional.freeVariables (const Set.empty)
 
@@ -109,19 +90,18 @@ See also: 'substitutionToPredicate'.
 
 -}
 toPredicate
-    :: ( MetaOrObject Object
-       , SortedVariable variable
+    :: ( SortedVariable variable
        , Ord (variable Object)
        , Show (variable Object)
        , Unparse (variable Object)
        )
-    => PredicateSubstitution Object variable
-    -> Predicate variable
+    => Predicate Object variable
+    -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate
 
 mapVariables
     :: Ord (variable2 Object)
     => (variable1 Object -> variable2 Object)
-    -> PredicateSubstitution Object variable1
-    -> PredicateSubstitution Object variable2
+    -> Predicate Object variable1
+    -> Predicate Object variable2
 mapVariables = Conditional.mapVariables (\_ () -> ())

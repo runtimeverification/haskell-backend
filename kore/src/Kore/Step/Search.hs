@@ -41,14 +41,13 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Pattern
-                 ( Pattern, PredicateSubstitution )
+                 ( Pattern, Predicate )
 import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -134,14 +133,14 @@ matchWith
         , Unparse (variable level)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable
     -> Pattern level variable
-    -> MaybeT Simplifier (Or.PredicateSubstitution level variable)
+    -> MaybeT Simplifier (Or.Predicate level variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-
         hushT . Monad.Unify.getUnifier $
@@ -154,9 +153,9 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                 t2
     let
         mergeAndEvaluate
-            :: PredicateSubstitution level variable
+            :: Predicate level variable
             -> Simplifier
-                ( PredicateSubstitution level variable
+                ( Predicate level variable
                 , UnificationProof level variable
                 )
         mergeAndEvaluate predSubst = do

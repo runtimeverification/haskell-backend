@@ -26,11 +26,11 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
 import qualified Kore.Step.Pattern.Or as Or
+import           Kore.Step.Predicate
+                 ( Conditional (..) )
+import qualified Kore.Step.Predicate as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( Conditional (..) )
-import qualified Kore.Step.Representation.PredicateSubstitution as Conditional
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
@@ -886,7 +886,7 @@ matchDefinition
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Or.PredicateSubstitution level Variable))
+    -> IO (Maybe (Or.Predicate level Variable))
 matchDefinition = match
 
 matchSimplification
@@ -894,7 +894,7 @@ matchSimplification
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Or.PredicateSubstitution level Variable))
+    -> IO (Maybe (Or.Predicate level Variable))
 matchSimplification = match
 
 unificationWithMatch
@@ -902,7 +902,7 @@ unificationWithMatch
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Or.PredicateSubstitution level Variable))
+    -> IO (Maybe (Or.Predicate level Variable))
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
@@ -923,7 +923,7 @@ match
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Or.PredicateSubstitution level Variable))
+    -> IO (Maybe (Or.Predicate level Variable))
 match tools first second =
     matchAsEither >>= return . \case
         Left _err -> Nothing
@@ -933,7 +933,7 @@ match tools first second =
         :: IO
             (Either
                 (UnificationOrSubstitutionError level Variable)
-                ( Or.PredicateSubstitution level Variable
+                ( Or.Predicate level Variable
                 , UnificationProof level Variable
                 )
             )
@@ -945,7 +945,7 @@ match tools first second =
         :: ExceptT
             (UnificationOrSubstitutionError level Variable)
             Simplifier
-            ( Or.PredicateSubstitution level Variable
+            ( Or.Predicate level Variable
             , UnificationProof level Variable
             )
     matchResult =

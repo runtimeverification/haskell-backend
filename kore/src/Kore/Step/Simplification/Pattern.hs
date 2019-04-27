@@ -27,8 +27,8 @@ import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, simplifyTerm )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier, simplifyTerm )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
@@ -47,7 +47,7 @@ simplify
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap level
@@ -67,7 +67,7 @@ simplify
     (simplifiedTerm, _) <- simplifyTerm' term
     (simplifiedPatt, _) <-
         MultiOr.traverseWithPairs
-            (give tools $ Pattern.mergeWithPredicateSubstitution
+            (give tools $ Pattern.mergeWithPredicate
                 tools
                 substitutionSimplifier
                 termSimplifier
@@ -98,7 +98,7 @@ simplifyPredicate
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap level

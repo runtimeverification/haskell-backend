@@ -6,7 +6,7 @@ License     : NCSA
 module Kore.Step.Pattern.Or
     ( Conditional
     , Pattern
-    , PredicateSubstitution
+    , Predicate
     , fromPatterns
     , fromPattern
     , fromTermLike
@@ -21,13 +21,15 @@ import qualified Data.Foldable as Foldable
 
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Conditional as Conditional
 import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -42,14 +44,9 @@ type Conditional level variable term =
 -}
 type Pattern level variable = MultiOr (Pattern.Pattern level variable)
 
-{-| The disjunction of 'PredicateSubstitution.PredicateSubstitution'.
+{-| The disjunction of 'Predicate.Predicate'.
 -}
-type PredicateSubstitution level variable =
-    MultiOr (PredicateSubstitution.PredicateSubstitution level variable)
-
-{-| The disjunction of 'Predicate'.
--}
-type Predicate variable = MultiOr (Predicate.Predicate variable)
+type Predicate level variable = MultiOr (Predicate.Predicate level variable)
 
 {- | A "disjunction" of one 'Pattern.Pattern'.
  -}
@@ -113,7 +110,7 @@ toExpandedPattern multiOr
         patts ->
             Conditional.Conditional
                 { term = Foldable.foldr1 mkOr (Pattern.toMLPattern <$> patts)
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Syntax.Predicate.makeTruePredicate
                 , substitution = mempty
                 }
 
@@ -139,6 +136,6 @@ toPredicate
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Predicate variable -> Predicate.Predicate variable
+    => MultiOr (Syntax.Predicate variable) -> Syntax.Predicate variable
 toPredicate multiOr =
-    Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
+    Syntax.Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)

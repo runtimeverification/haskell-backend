@@ -29,8 +29,10 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeEqualsPredicate,
-                 makeNotPredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Proof
                  ( StepProof )
@@ -410,7 +412,7 @@ rewriteWithPredicate
     :: MetaOrObject level
     => TermLike Variable
     -> TermLike Variable
-    -> Predicate Variable
+    -> Syntax.Predicate Variable
     -> RewriteRule level Variable
 rewriteWithPredicate left right predicate =
     RewriteRule RulePattern

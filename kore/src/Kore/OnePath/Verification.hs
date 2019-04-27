@@ -64,8 +64,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, StepPatternSimplifier )
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy
@@ -145,7 +144,7 @@ verify
     => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -230,7 +229,7 @@ verifyClaim
     :: forall level . (MetaOrObject level)
     => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     ->  (  Pattern Object Variable
@@ -308,7 +307,7 @@ verifyClaimStep
         )
     => SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier level
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> claim
     -- ^ claim that is being proven

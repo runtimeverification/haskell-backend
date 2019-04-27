@@ -1,6 +1,6 @@
 {-|
 Module      : Kore.Step.Simplification.AndPredicates
-Description : Tools for And PredicateSubstitution simplification.
+Description : Tools for And Predicate simplification.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.AndPredicates
-    ( simplifyEvaluatedMultiPredicateSubstitution
+    ( simplifyEvaluatedMultiPredicate
     ) where
 
 import           Kore.AST.Pure
@@ -19,7 +19,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-                 ( PredicateSubstitution )
+                 ( Predicate )
 import qualified Kore.Step.Pattern as Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern.Or as Or
@@ -32,14 +32,14 @@ import           Kore.Step.Representation.MultiOr
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-simplifyEvaluatedMultiPredicateSubstitution
+simplifyEvaluatedMultiPredicate
     :: forall level variable .
         ( MetaOrObject level
         , SortedVariable variable
@@ -51,13 +51,13 @@ simplifyEvaluatedMultiPredicateSubstitution
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> MultiAnd (Or.PredicateSubstitution level variable)
+    -> MultiAnd (Or.Predicate level variable)
     -> Simplifier
-        (Or.PredicateSubstitution level variable, SimplificationProof level)
-simplifyEvaluatedMultiPredicateSubstitution
+        (Or.Predicate level variable, SimplificationProof level)
+simplifyEvaluatedMultiPredicate
     tools
     substitutionSimplifier
     simplifier
@@ -65,20 +65,20 @@ simplifyEvaluatedMultiPredicateSubstitution
     predicateSubstitutions
   = do
     let
-        crossProduct :: MultiOr [PredicateSubstitution level variable]
+        crossProduct :: MultiOr [Predicate level variable]
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicateSubstitutions)
-    result <- traverse andPredicateSubstitutions crossProduct
+    result <- traverse andPredicates crossProduct
     return
         ( result
         , SimplificationProof
         )
   where
-    andPredicateSubstitutions
-        :: [PredicateSubstitution level variable]
-        -> Simplifier (PredicateSubstitution level variable)
-    andPredicateSubstitutions predicateSubstitutions0 = do
+    andPredicates
+        :: [Predicate level variable]
+        -> Simplifier (Predicate level variable)
+    andPredicates predicateSubstitutions0 = do
         (result, _proof) <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier

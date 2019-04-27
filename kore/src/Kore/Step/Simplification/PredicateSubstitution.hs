@@ -27,7 +27,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-                 ( Conditional (..), PredicateSubstitution )
+                 ( Conditional (..), Predicate )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import           Kore.Step.Substitution
@@ -46,12 +46,12 @@ create
     :: SmtMetadataTools StepperAttributes
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
 create tools simplifier axiomIdToSimplifier =
-    PredicateSubstitutionSimplifier
+    PredicateSimplifier
         (simplify tools simplifier axiomIdToSimplifier 0)
 
-{- | Simplify a 'PredicateSubstitution'.
+{- | Simplify a 'Predicate'.
 
 @simplify@ applies the substitution to the predicate and simplifies the
 result. The result is re-simplified once.
@@ -72,8 +72,8 @@ simplify
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Int
-    -> PredicateSubstitution Object variable
-    -> BranchT Simplifier (PredicateSubstitution Object variable)
+    -> Predicate Object variable
+    -> BranchT Simplifier (Predicate Object variable)
 simplify
     tools
     simplifier
@@ -109,7 +109,7 @@ simplify
                     -- variables are not among substitution's variables.
                     assertDistinctVariables
                         (substitution <> simplifiedSubstitution)
-                    (mergedPredicateSubstitution, _proof) <-
+                    (mergedPredicate, _proof) <-
                         Monad.Trans.lift
                         $ mergePredicatesAndSubstitutions
                             tools
@@ -118,11 +118,11 @@ simplify
                             axiomIdToSimplifier
                             [simplifiedPredicate]
                             [substitution, simplifiedSubstitution]
-                    TopBottom.guardAgainstBottom mergedPredicateSubstitution
-                    return mergedPredicateSubstitution
+                    TopBottom.guardAgainstBottom mergedPredicate
+                    return mergedPredicate
   where
     substitutionSimplifier =
-        PredicateSubstitutionSimplifier
+        PredicateSimplifier
             (simplify tools simplifier axiomIdToSimplifier (times + 1))
 
 assertDistinctVariables

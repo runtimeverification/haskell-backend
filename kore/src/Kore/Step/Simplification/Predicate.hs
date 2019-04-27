@@ -14,18 +14,18 @@ module Kore.Step.Simplification.Predicate
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import Kore.AST.Pure
-import Kore.AST.Valid
-import Kore.Predicate.Predicate
-       ( Predicate, unwrapPredicate )
-import Kore.Step.Pattern
-       ( Conditional (..), PredicateSubstitution )
-import Kore.Step.Simplification.Data
-import Kore.Unparser
-import Kore.Variables.Fresh
-       ( FreshVariable )
+import           Kore.AST.Pure
+import           Kore.AST.Valid
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate, unwrapPredicate )
+import           Kore.Step.Pattern
+                 ( Conditional (..), Predicate )
+import           Kore.Step.Simplification.Data
+import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
-{- | Simplify the 'Predicate' once; return but do not apply the substitution.
+{- | Simplify the 'Synatx.Predicate' once; do not apply the substitution.
 
 @simplifyPartial@ does not attempt to apply the resulting substitution and
 re-simplify the result; see "Kore.Step.Simplification.PredicateSubstitution".
@@ -41,10 +41,10 @@ simplifyPartial
         , Unparse (variable level)
         , SortedVariable variable
         )
-    => PredicateSubstitutionSimplifier level
+    => PredicateSimplifier level
     -> StepPatternSimplifier level
-    -> Predicate variable
-    -> BranchT Simplifier (PredicateSubstitution level variable)
+    -> Syntax.Predicate variable
+    -> BranchT Simplifier (Predicate level variable)
 simplifyPartial
     substitutionSimplifier
     termSimplifier
@@ -52,7 +52,8 @@ simplifyPartial
   = do
     (patternOr, _proof) <-
         Monad.Trans.lift
-        $ simplifyTerm' (unwrapPredicate predicate)
+        $ simplifyTerm'
+        $ Syntax.unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
     -- for \bottom because patternOr is an Or.Pattern.
     scatter (eraseTerm <$> patternOr)

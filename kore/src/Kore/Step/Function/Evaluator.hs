@@ -46,13 +46,13 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.Pattern.Or as Or
 import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern, PredicateSubstitution )
+                 ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( flatten, make, merge, traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, simplifyTerm )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier, simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
 import           Kore.Unparser
@@ -74,12 +74,12 @@ evaluateApplication
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
+    -> Predicate level variable
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
         (Application level)
@@ -93,7 +93,7 @@ evaluateApplication
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    childrenPredicateSubstitution
+    childrenPredicate
     (valid :< app)
   = case maybeEvaluatedPattSimplifier of
         Nothing
@@ -115,7 +115,7 @@ evaluateApplication
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
-            childrenPredicateSubstitution
+            childrenPredicate
             appPurePattern
             unchangedOr
 
@@ -133,7 +133,7 @@ evaluateApplication
             }
       where
         Conditional { term = (), predicate, substitution } =
-            childrenPredicateSubstitution
+            childrenPredicate
     unchangedOr = MultiOr.make [unchangedPatt]
     unchanged = (unchangedOr, SimplificationProof)
 
@@ -156,12 +156,12 @@ evaluatePattern
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
+    -> Predicate level variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
@@ -174,7 +174,7 @@ evaluatePattern
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    childrenPredicateSubstitution
+    childrenPredicate
     patt
     defaultValue
   =
@@ -185,7 +185,7 @@ evaluatePattern
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
-            childrenPredicateSubstitution
+            childrenPredicate
             patt
             defaultValue
         )
@@ -208,12 +208,12 @@ maybeEvaluatePattern
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
+    -> Predicate level variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
@@ -228,7 +228,7 @@ maybeEvaluatePattern
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    childrenPredicateSubstitution
+    childrenPredicate
     patt
     defaultValue
   =
@@ -267,7 +267,7 @@ maybeEvaluatePattern
                     substitutionSimplifier
                     simplifier
                     axiomIdToEvaluator
-                    childrenPredicateSubstitution
+                    childrenPredicate
                     (flattened, proof)
                 case merged of
                     AttemptedAxiom.NotApplicable ->
@@ -295,7 +295,7 @@ maybeEvaluatePattern
             }
       where
         Conditional { term = (), predicate, substitution } =
-            childrenPredicateSubstitution
+            childrenPredicate
 
     simplifyIfNeeded
         :: Pattern level variable
@@ -365,7 +365,7 @@ reevaluateFunctions
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap level
@@ -386,7 +386,7 @@ reevaluateFunctions
   = do
     (pattOr , _proof) <- simplifyTerm' rewrittenPattern
     (mergedPatt, _proof) <-
-        Or.mergeWithPredicateSubstitution
+        Or.mergeWithPredicate
             tools
             substitutionSimplifier
             termSimplifier
@@ -423,12 +423,12 @@ mergeWithConditionAndSubstitution
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
+    -> Predicate level variable
     -- ^ Condition and substitution to add.
     -> (AttemptedAxiom level variable, SimplificationProof level)
     -- ^ AttemptedAxiom to which the condition should be added.
@@ -448,7 +448,7 @@ mergeWithConditionAndSubstitution
     )
   = do
     (evaluatedResults, _proof) <-
-        Or.mergeWithPredicateSubstitution
+        Or.mergeWithPredicate
             tools
             substitutionSimplifier
             simplifier
@@ -456,7 +456,7 @@ mergeWithConditionAndSubstitution
             toMerge
             results
     (evaluatedRemainders, _proof) <-
-        Or.mergeWithPredicateSubstitution
+        Or.mergeWithPredicate
             tools
             substitutionSimplifier
             simplifier

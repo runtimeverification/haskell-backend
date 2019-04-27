@@ -24,18 +24,17 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
+import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSubstitutionSimplifier,
-                 SimplificationProof (..), Simplifier, StepPatternSimplifier,
-                 gather, scatter )
+                 ( BranchT, PredicateSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier, gather, scatter )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
@@ -79,7 +78,7 @@ simplify
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap level
@@ -128,7 +127,7 @@ simplifyEvaluated
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap level
@@ -176,7 +175,7 @@ makeEvaluate
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap level
@@ -242,7 +241,7 @@ makeEvaluateBoundLeft
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap level
@@ -268,7 +267,7 @@ makeEvaluateBoundLeft
                         Pattern.substitute boundSubstitution
                         $ Conditional.term normalized
                     , predicate =
-                        Predicate.substitute boundSubstitution
+                        Syntax.Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
         (results, _proof) <- Monad.Trans.lift $ simplify' substituted
@@ -312,7 +311,7 @@ makeEvaluateBoundRight
     simplifiedPattern =
         Conditional.andCondition
             (quantifyPattern variable normalized)
-            (PredicateSubstitution.fromSubstitution freeSubstitution)
+            (Predicate.fromSubstitution freeSubstitution)
 
 {- | Split the substitution on the given variable.
 
@@ -365,8 +364,8 @@ quantifyPattern variable Conditional { term, predicate, substitution }
         { term =
             mkExists variable
             $ mkAnd term
-            $ Predicate.unwrapPredicate predicate'
-        , predicate = Predicate.makeTruePredicate
+            $ Syntax.Predicate.unwrapPredicate predicate'
+        , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
         }
   | quantifyTerm =
@@ -378,13 +377,13 @@ quantifyPattern variable Conditional { term, predicate, substitution }
   | quantifyPredicate =
       Conditional
         { term
-        , predicate = Predicate.makeExistsPredicate variable predicate'
+        , predicate = Syntax.Predicate.makeExistsPredicate variable predicate'
         , substitution = mempty
         }
   | otherwise = Conditional { term, predicate, substitution }
   where
     quantifyTerm = Pattern.hasFreeVariable variable term
     predicate' =
-        Predicate.makeAndPredicate predicate
-        $ Predicate.fromSubstitution substitution
-    quantifyPredicate = Predicate.hasFreeVariable variable predicate'
+        Syntax.Predicate.makeAndPredicate predicate
+        $ Syntax.Predicate.fromSubstitution substitution
+    quantifyPredicate = Syntax.Predicate.hasFreeVariable variable predicate'

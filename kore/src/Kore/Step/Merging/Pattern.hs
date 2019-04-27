@@ -4,8 +4,8 @@ License     : NCSA
 
 -}
 module Kore.Step.Merging.Pattern
-    ( mergeWithPredicateSubstitutionAssumesEvaluated
-    , mergeWithPredicateSubstitution
+    ( mergeWithPredicateAssumesEvaluated
+    , mergeWithPredicate
     ) where
 
 import Data.Reflection
@@ -22,21 +22,21 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern, PredicateSubstitution )
+                 ( Conditional (..), Pattern, Predicate )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
+                 ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
                  StepPatternSimplifier )
 import           Kore.Step.Substitution
-                 ( PredicateSubstitutionMerger (PredicateSubstitutionMerger),
+                 ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-| 'mergeWithPredicateSubstitution' ands the given predicate-substitution
+{-| 'mergeWithPredicate' ands the given predicate-substitution
 with the given pattern.
 -}
-mergeWithPredicateSubstitution
+mergeWithPredicate
     ::  ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -50,17 +50,17 @@ mergeWithPredicateSubstitution
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
+    -> Predicate level variable
     -- ^ Condition and substitution to add.
     -> Pattern level variable
     -- ^ pattern to which the above should be added.
     -> Simplifier (Pattern level variable, SimplificationProof level)
-mergeWithPredicateSubstitution
+mergeWithPredicate
     tools
     substitutionSimplifier
     simplifier
@@ -108,13 +108,13 @@ mergeWithEvaluatedCondition
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern level variable
-    -> PredicateSubstitution level variable
+    -> Predicate level variable
     -> Simplifier (Pattern level variable, SimplificationProof level)
 mergeWithEvaluatedCondition
     tools
@@ -124,7 +124,7 @@ mergeWithEvaluatedCondition
     Conditional
         { term = pattTerm
         , substitution = pattSubstitution
-        }  -- The predicate was already included in the PredicateSubstitution
+        }  -- The predicate was already included in the Predicate
     Conditional
         { predicate = predPredicate, substitution = predSubstitution }
   = do
@@ -154,7 +154,7 @@ mergeWithEvaluatedCondition
 Assumes that the initial patterns are simplified, so it does not attempt
 to re-simplify them.
 -}
-mergeWithPredicateSubstitutionAssumesEvaluated
+mergeWithPredicateAssumesEvaluated
     ::  ( FreshVariable variable
         , MetaOrObject level
         , Monad m
@@ -165,12 +165,12 @@ mergeWithPredicateSubstitutionAssumesEvaluated
         , SortedVariable variable
         , Unparse (variable level)
         )
-    => PredicateSubstitutionMerger level variable m
-    -> PredicateSubstitution level variable
+    => PredicateMerger level variable m
+    -> Predicate level variable
     -> Conditional level variable term
     -> m (Conditional level variable term, SimplificationProof level)
-mergeWithPredicateSubstitutionAssumesEvaluated
-    (PredicateSubstitutionMerger substitutionMerger)
+mergeWithPredicateAssumesEvaluated
+    (PredicateMerger substitutionMerger)
     Conditional
         { term = ()
         , predicate = predPredicate
@@ -180,7 +180,7 @@ mergeWithPredicateSubstitutionAssumesEvaluated
         { term = pattTerm
         , predicate = pattPredicate
         , substitution = pattSubstitution
-        }  -- The predicate was already included in the PredicateSubstitution
+        }  -- The predicate was already included in the Predicate
   = do
     Conditional
         { term = ()

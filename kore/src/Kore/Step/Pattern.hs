@@ -6,7 +6,7 @@ Representation of program configurations as conditional patterns.
 -}
 module Kore.Step.Pattern
     ( Pattern
-    , fromPredicateSubstitution
+    , fromPredicate
     , toPredicate
     , Kore.Step.Pattern.allVariables
     , bottom
@@ -14,7 +14,6 @@ module Kore.Step.Pattern
     , isBottom
     , isTop
     , Kore.Step.Pattern.mapVariables
-    , substitutionToPredicate
     , toMLPattern
     , toStepPattern
     , top
@@ -23,29 +22,25 @@ module Kore.Step.Pattern
     , Kore.Step.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
-    , PredicateSubstitution
+    , Predicate
     , module Kore.Step.TermLike
     ) where
 
-import qualified Data.Functor.Foldable as Recursive
-import           Data.Monoid
-                 ( (<>) )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.Annotation.Valid
-import qualified Kore.AST.Common as Common.Pattern
-                 ( Pattern (..) )
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution )
+import           Kore.Step.Predicate
+                 ( Predicate )
 import           Kore.Step.TermLike
                  ( CofreeF (..), Object, Sort, SortedVariable, TermLike,
                  Variable )
@@ -66,10 +61,8 @@ program configuration for Kore execution.
 type Pattern level variable =
     Conditional level variable (TermLike variable)
 
-fromPredicateSubstitution
-    :: PredicateSubstitution Object variable
-    -> Pattern Object variable
-fromPredicateSubstitution = (<$) mkTop_
+fromPredicate :: Predicate Object variable -> Pattern Object variable
+fromPredicate = (<$) mkTop_
 
 freeVariables
     :: Ord (variable Object)
@@ -91,7 +84,7 @@ mapVariables
   =
     Conditional
         { term = TermLike.mapVariables variableMapper term
-        , predicate = Predicate.mapVariables variableMapper predicate
+        , predicate = Syntax.Predicate.mapVariables variableMapper predicate
         , substitution =
             Substitution.mapVariables variableMapper substitution
         }
@@ -107,7 +100,7 @@ allVariables
     Conditional { term, predicate, substitution }
   =
     pureAllVariables term
-    <> Predicate.allVariables predicate
+    <> Syntax.Predicate.allVariables predicate
     <> allSubstitutionVars (Substitution.unwrap substitution)
   where
     allSubstitutionVars sub =
@@ -142,25 +135,23 @@ toStepPattern
   =
     simpleAnd
         (simpleAnd term predicate)
-        (substitutionToPredicate substitution)
+        (Syntax.Predicate.fromSubstitution substitution)
   where
     -- TODO: Most likely I defined this somewhere.
     simpleAnd
         :: TermLike variable
-        -> Predicate variable
+        -> Syntax.Predicate variable
         -> TermLike variable
-    simpleAnd pattern'@(Recursive.project -> valid :< projected) =
-        \case
-            PredicateTrue -> pattern'
-            PredicateFalse -> mkBottom patternSort
-            predicate' ->
-                case projected of
-                    Common.Pattern.TopPattern _ ->
-                        Predicate.fromPredicate patternSort predicate'
-                    Common.Pattern.BottomPattern _ -> pattern'
-                    _ -> mkAnd pattern' (Predicate.fromPredicate patternSort predicate')
+    simpleAnd pattern' predicate'
+      | isTop predicate'    = pattern'
+      | isBottom predicate' = mkBottom patternSort
+      | isTop pattern'      = predicateTermLike
+      | isBottom pattern'   = pattern'
+      | otherwise           = mkAnd pattern' predicateTermLike
       where
-        Valid { patternSort } = valid
+        predicateTermLike =
+            Syntax.Predicate.fromPredicate patternSort predicate'
+        patternSort = getSort pattern'
 
 toMLPattern
     ::  forall variable.
@@ -180,7 +171,7 @@ bottom :: Ord (variable Object) => Pattern Object variable
 bottom =
     Conditional
         { term      = mkBottom_
-        , predicate = makeFalsePredicate
+        , predicate = Syntax.Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -193,7 +184,7 @@ bottomOf :: Ord (variable Object) => Sort Object -> Pattern Object variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
-        , predicate = makeFalsePredicate
+        , predicate = Syntax.Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -204,7 +195,7 @@ top :: Ord (variable Object) => Pattern Object variable
 top =
     Conditional
         { term      = mkTop_
-        , predicate = makeTruePredicate
+        , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -214,7 +205,7 @@ topOf :: Ord (variable Object) => Sort Object -> Pattern Object variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
-        , predicate = makeTruePredicate
+        , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -235,7 +226,7 @@ fromTermLike term
   | otherwise =
     Conditional
         { term
-        , predicate = makeTruePredicate
+        , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -246,5 +237,5 @@ toPredicate
         , Unparse (variable Object)
         )
     => Pattern Object variable
-    -> Predicate variable
+    -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate

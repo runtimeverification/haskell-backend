@@ -58,8 +58,7 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
@@ -231,7 +230,7 @@ and n destinations.
 transitionRule
     :: forall level . (MetaOrObject level)
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap level

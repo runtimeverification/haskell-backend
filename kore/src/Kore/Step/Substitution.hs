@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Substitution
-    ( PredicateSubstitutionMerger (..)
+    ( PredicateMerger (..)
     , createLiftedPredicatesAndSubstitutionsMerger
     , createPredicatesAndSubstitutionsMerger
     , createPredicatesAndSubstitutionsMergerExcept
@@ -33,14 +33,14 @@ import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeMultipleAndPredicate,
-                 substitutionToPredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( Conditional (..), PredicateSubstitution )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
@@ -60,30 +60,28 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-newtype PredicateSubstitutionMerger level variable m =
-    PredicateSubstitutionMerger
-    (  [Predicate variable]
+newtype PredicateMerger level variable m =
+    PredicateMerger
+    (  [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> m (PredicateSubstitution level variable)
+    -> m (Predicate level variable)
     )
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
-    :: forall level variable term
-    .   ( level ~ Object
-        , MetaOrObject level
-        , FreshVariable variable
+    :: forall variable term
+    .   ( FreshVariable variable
         , SortedVariable variable
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Unparse (variable Object)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -> Conditional level variable term
-    -> BranchT Simplifier (Conditional level variable term)
+    -> PredicateSimplifier Object
+    -> StepPatternSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> Conditional Object variable term
+    -> BranchT Simplifier (Conditional Object variable term)
 normalize
     tools
     substitutionSimplifier
@@ -110,9 +108,8 @@ normalize
             return Conditional
                 { term
                 , predicate =
-                    makeAndPredicate
-                        predicate
-                        (substitutionToPredicate substitution)
+                    Syntax.Predicate.makeAndPredicate predicate
+                    $ Syntax.Predicate.fromSubstitution substitution
                 , substitution = mempty
                 }
   where
@@ -131,14 +128,14 @@ normalizeExcept
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitution level variable
-    -> BranchT unifier (PredicateSubstitution level variable)
+    -> Predicate level variable
+    -> BranchT unifier (Predicate level variable)
 normalizeExcept
     tools
-    predicateSimplifier@(PredicateSubstitutionSimplifier simplifySubstitution)
+    predicateSimplifier@(PredicateSimplifier simplifySubstitution)
     simplifier
     axiomIdToSimplifier
     Conditional { predicate, substitution }
@@ -160,7 +157,7 @@ normalizeExcept
         Conditional { predicate = normalizedPredicate } = normalized
 
         mergedPredicate =
-            makeMultipleAndPredicate
+            Syntax.Predicate.makeMultipleAndPredicate
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
@@ -205,13 +202,13 @@ mergePredicatesAndSubstitutions
        , FreshVariable variable
        )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> [Predicate variable]
+    -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> Simplifier
-        ( PredicateSubstitution level variable
+        ( Predicate level variable
         , UnificationProof level variable
         )
 mergePredicatesAndSubstitutions
@@ -234,9 +231,9 @@ mergePredicatesAndSubstitutions
         Left _ ->
             let
                 mergedPredicate =
-                    makeMultipleAndPredicate
+                    Syntax.Predicate.makeMultipleAndPredicate
                         (  predicates
-                        ++ map substitutionToPredicate substitutions
+                        ++ map Syntax.Predicate.fromSubstitution substitutions
                         )
             in
                 return
@@ -262,13 +259,13 @@ mergePredicatesAndSubstitutionsExcept
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> [Predicate variable]
+    -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier
-        ( PredicateSubstitution level variable
+        ( Predicate level variable
         , UnificationProof level variable
         )
 mergePredicatesAndSubstitutionsExcept
@@ -281,7 +278,7 @@ mergePredicatesAndSubstitutionsExcept
   = do
     let
         mergedSubstitution = Foldable.fold substitutions
-        mergedPredicate = makeMultipleAndPredicate predicates
+        mergedPredicate = Syntax.Predicate.makeMultipleAndPredicate predicates
     (Conditional {predicate, substitution}, _proof) <-
         normalizeSubstitutionAfterMerge
             tools
@@ -302,7 +299,7 @@ mergePredicatesAndSubstitutionsExcept
         , EmptyUnificationProof
         )
 
-{-| Creates a 'PredicateSubstitutionMerger' that returns errors on unifications it
+{-| Creates a 'PredicateMerger' that returns errors on unifications it
 can't handle.
 -}
 createPredicatesAndSubstitutionsMergerExcept
@@ -319,19 +316,19 @@ createPredicatesAndSubstitutionsMergerExcept
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
 createPredicatesAndSubstitutionsMergerExcept
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
-    PredicateSubstitutionMerger worker
+    PredicateMerger worker
   where
     worker
-        :: [Predicate variable]
+        :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> unifier (PredicateSubstitution level variable)
+        -> unifier (Predicate level variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutionsExcept
             tools
@@ -342,7 +339,7 @@ createPredicatesAndSubstitutionsMergerExcept
             substitutions
         return merged
 
-{-| Creates a 'PredicateSubstitutionMerger' that creates predicates for
+{-| Creates a 'PredicateMerger' that creates predicates for
 unifications it can't handle.
 -}
 createPredicatesAndSubstitutionsMerger
@@ -357,19 +354,19 @@ createPredicatesAndSubstitutionsMerger
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable Simplifier
+    -> PredicateMerger level variable Simplifier
 createPredicatesAndSubstitutionsMerger
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
-    PredicateSubstitutionMerger worker
+    PredicateMerger worker
   where
     worker
-        :: [Predicate variable]
+        :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> Simplifier (PredicateSubstitution level variable)
+        -> Simplifier (Predicate level variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutions
             tools
@@ -380,7 +377,7 @@ createPredicatesAndSubstitutionsMerger
             substitutions
         return merged
 
-{-| Creates a 'PredicateSubstitutionMerger' that creates predicates for
+{-| Creates a 'PredicateMerger' that creates predicates for
 unifications it can't handle and whose result is in any monad transformer
 over the base monad.
 -}
@@ -398,19 +395,19 @@ createLiftedPredicatesAndSubstitutionsMerger
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
 createLiftedPredicatesAndSubstitutionsMerger
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
-    PredicateSubstitutionMerger worker
+    PredicateMerger worker
   where
     worker
-        :: [Predicate variable]
+        :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> unifier (PredicateSubstitution level variable)
+        -> unifier (Predicate level variable)
     worker predicates substitutions = Monad.Unify.liftSimplifier $ do
         (merged, _proof) <- mergePredicatesAndSubstitutions
             tools
@@ -435,12 +432,12 @@ normalizeSubstitutionAfterMerge
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitution level variable
+    -> Predicate level variable
     -> unifier
-          ( PredicateSubstitution level variable
+          ( Predicate level variable
           , UnificationProof level variable
           )
 normalizeSubstitutionAfterMerge
@@ -460,7 +457,7 @@ normalizeSubstitutionAfterMerge
             predicateSubstitution
     case Foldable.toList results of
         [] -> return
-            ( PredicateSubstitution.bottom
+            ( Predicate.bottom
             , EmptyUnificationProof
             )
         [normal] -> return (normal, EmptyUnificationProof)

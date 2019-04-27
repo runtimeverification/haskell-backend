@@ -15,15 +15,15 @@ import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
+import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
@@ -64,36 +64,36 @@ equalsXA = fromPredicate equalsXA_
 equalsXB :: Pattern Object Variable
 equalsXB = fromPredicate equalsXB_
 
-equalsXA_ :: Predicate Variable
-equalsXA_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+equalsXA_ :: Syntax.Predicate Variable
+equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
 
-equalsXB_ :: Predicate Variable
-equalsXB_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
+equalsXB_ :: Syntax.Predicate Variable
+equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
 
 notEqualsXA :: Pattern Object Variable
-notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
+notEqualsXA = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXA_
 
 neitherXAB :: Pattern Object Variable
 neitherXAB =
     fromPredicate
-    $ Predicate.makeAndPredicate
-        (Predicate.makeNotPredicate equalsXA_)
-        (Predicate.makeNotPredicate equalsXB_)
+    $ Syntax.Predicate.makeAndPredicate
+        (Syntax.Predicate.makeNotPredicate equalsXA_)
+        (Syntax.Predicate.makeNotPredicate equalsXB_)
 
 substXA :: Pattern Object Variable
 substXA = fromSubstitution $ Substitution.unsafeWrap [(Mock.x, Mock.a)]
 
-fromPredicate :: Predicate Variable -> Pattern Object Variable
+fromPredicate :: Syntax.Predicate Variable -> Pattern Object Variable
 fromPredicate =
-    Pattern.fromPredicateSubstitution
-    . PredicateSubstitution.fromPredicate
+    Pattern.fromPredicate
+    . Predicate.fromPredicate
 
 fromSubstitution
     :: Substitution Variable
     -> Pattern Object Variable
 fromSubstitution =
-    Pattern.fromPredicateSubstitution
-    . PredicateSubstitution.fromSubstitution
+    Pattern.fromPredicate
+    . Predicate.fromSubstitution
 
 simplifyEvaluated
     :: Or.Pattern Object Variable

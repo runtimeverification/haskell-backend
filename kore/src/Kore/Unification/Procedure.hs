@@ -33,7 +33,7 @@ import           Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, StepPatternSimplifier )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
 import           Kore.Step.TermLike
@@ -65,7 +65,7 @@ unificationProcedure
         )
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -74,7 +74,7 @@ unificationProcedure
     -- ^left-hand-side of unification
     -> TermLike variable
     -> unifier
-        ( Or.PredicateSubstitution level variable
+        ( Or.Predicate level variable
         , UnificationProof level variable
         )
 unificationProcedure
@@ -104,7 +104,7 @@ unificationProcedure
                     axiomIdToSimplifier
                     term
             (result, _proof) <-
-                Or.mergeWithPredicateSubstitutionAssumesEvaluated
+                Or.mergeWithPredicateAssumesEvaluated
                     (createPredicatesAndSubstitutionsMerger
                         tools
                         substitutionSimplifier

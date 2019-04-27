@@ -38,15 +38,15 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.Pattern.Or as Or
 import qualified Kore.Step.Pattern.Or as Or
+import           Kore.Step.Predicate as Conditional
+                 ( Conditional (..), Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, filterOr, fullCrossProduct, make )
-import           Kore.Step.Representation.PredicateSubstitution as Conditional
-                 ( Conditional (..), PredicateSubstitution )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )
@@ -57,7 +57,7 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplificatio
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, StepPatternSimplifier )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
@@ -106,7 +106,7 @@ matchAsUnification
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -114,7 +114,7 @@ matchAsUnification
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( Or.PredicateSubstitution level variable
+        ( Or.Predicate level variable
         , UnificationProof level variable
         )
 matchAsUnification
@@ -155,7 +155,7 @@ unificationWithAppMatchOnTop
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -163,7 +163,7 @@ unificationWithAppMatchOnTop
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( Or.PredicateSubstitution level variable
+        ( Or.Predicate level variable
         , UnificationProof level variable
         )
 unificationWithAppMatchOnTop
@@ -241,7 +241,7 @@ match
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -251,7 +251,7 @@ match
     -> TermLike variable
     -- TODO: Use Result here.
     -> MaybeT unifier
-        (Or.PredicateSubstitution level variable)
+        (Or.Predicate level variable)
 match
     tools
     substitutionSimplifier
@@ -294,7 +294,7 @@ matchEqualHeadPatterns
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -303,7 +303,7 @@ matchEqualHeadPatterns
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Or.PredicateSubstitution level variable)
+        (Or.Predicate level variable)
 matchEqualHeadPatterns
     tools
     substitutionSimplifier
@@ -543,9 +543,9 @@ matchEqualHeadPatterns
             else nothing
     justTop
         :: MaybeT unifier
-            (Or.PredicateSubstitution level variable)
+            (Or.Predicate level variable)
     justTop = just
-        (MultiOr.make [PredicateSubstitution.top])
+        (MultiOr.make [Predicate.top])
 
 matchJoin
     :: forall level variable unifier unifierM .
@@ -563,7 +563,7 @@ matchJoin
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -571,7 +571,7 @@ matchJoin
     -> Map.Map (variable level) (variable level)
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier
-        (Or.PredicateSubstitution level variable)
+        (Or.Predicate level variable)
 matchJoin
     tools
     substitutionSimplifier
@@ -592,12 +592,12 @@ matchJoin
             )
             patterns
     let
-        crossProduct :: MultiOr [PredicateSubstitution level variable]
+        crossProduct :: MultiOr [Predicate level variable]
         crossProduct = MultiOr.fullCrossProduct matched
         merge
-            :: [PredicateSubstitution level variable]
+            :: [Predicate level variable]
             -> unifier
-                (PredicateSubstitution level variable)
+                (Predicate level variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
                 tools
@@ -625,14 +625,14 @@ unifyJoin
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
     -> unifier
-        ( Or.PredicateSubstitution level variable
+        ( Or.Predicate level variable
         , UnificationProof level variable
         )
 unifyJoin
@@ -649,14 +649,14 @@ unifyJoin
             )
             patterns
     let
-        matched :: [Or.PredicateSubstitution level variable]
+        matched :: [Or.Predicate level variable]
         (matched, _proof) = unzip matchedWithProofs
-        crossProduct :: MultiOr [PredicateSubstitution level variable]
+        crossProduct :: MultiOr [Predicate level variable]
         crossProduct = MultiOr.fullCrossProduct matched
         merge
-            :: [PredicateSubstitution level variable]
+            :: [Predicate level variable]
             -> unifier
-                (PredicateSubstitution level variable)
+                (Predicate level variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
                 tools
@@ -699,7 +699,7 @@ matchVariableFunction
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -708,7 +708,7 @@ matchVariableFunction
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Or.PredicateSubstitution level variable)
+        (Or.Predicate level variable)
 matchVariableFunction
     tools
     substitutionSimplifier
@@ -728,7 +728,7 @@ matchVariableFunction
             axiomIdToSimplifier
             second
     (result, _proof) <-
-        Or.mergeWithPredicateSubstitutionAssumesEvaluated
+        Or.mergeWithPredicateAssumesEvaluated
             (createPredicatesAndSubstitutionsMergerExcept
                 tools
                 substitutionSimplifier
@@ -756,8 +756,8 @@ checkVariableEscapeOr
         , Unparse (variable level)
         )
     => [variable level]
-    -> Or.PredicateSubstitution level variable
-    -> Or.PredicateSubstitution level variable
+    -> Or.Predicate level variable
+    -> Or.Predicate level variable
 checkVariableEscapeOr vars = fmap (checkVariableEscape vars)
 
 checkVariableEscape
@@ -772,11 +772,11 @@ checkVariableEscape
         , Unparse (variable level)
         )
     => [variable level]
-    -> PredicateSubstitution level variable
-    -> PredicateSubstitution level variable
+    -> Predicate level variable
+    -> Predicate level variable
 checkVariableEscape vars predSubst
   | any (`Set.member` freeVars) vars = error
         "quantified variables in substitution or predicate escaping context"
   | otherwise = predSubst
   where
-    freeVars = PredicateSubstitution.freeVariables predSubst
+    freeVars = Predicate.freeVariables predSubst

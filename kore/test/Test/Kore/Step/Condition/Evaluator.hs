@@ -12,6 +12,10 @@ import           Data.Text
 
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
+                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeNotPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
 import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
@@ -58,8 +62,8 @@ test_andNegation =
             }
 
 evaluate
-    :: Predicate Variable
-    -> PropertyT SMT (PredicateSubstitution Object Variable)
+    :: Syntax.Predicate Variable
+    -> PropertyT SMT (Predicate Object Variable)
 evaluate predicate =
     (<$>) fst
     $ give testMetadataTools
@@ -104,7 +108,7 @@ sub i j = mkApp intSort Builtin.subIntSymbol  [i, j]
 mul i j = mkApp intSort Builtin.mulIntSymbol  [i, j]
 div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 
-assertRefuted :: Predicate Variable -> Assertion
+assertRefuted :: Syntax.Predicate Variable -> Assertion
 assertRefuted prop = give testMetadataTools $ do
     let expect = Just False
     actual <- SMT.runSMT SMT.defaultConfig $ SMT.Evaluator.decidePredicate prop

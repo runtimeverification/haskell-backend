@@ -9,7 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Equals
     ( makeEvaluate
-    , makeEvaluateTermsToPredicateSubstitution
+    , makeEvaluateTermsToPredicate
     , simplify
     ) where
 
@@ -37,11 +37,11 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -49,8 +49,8 @@ import qualified Kore.Step.Simplification.AndTerms as AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -150,7 +150,7 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -201,7 +201,7 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -274,7 +274,7 @@ makeEvaluateFunctionalOr
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -404,7 +404,7 @@ makeEvaluate
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -441,7 +441,7 @@ makeEvaluate
         }
   = do
     (result, _proof) <-
-        makeEvaluateTermsToPredicateSubstitution
+        makeEvaluateTermsToPredicate
             tools
             substitutionSimplifier
             simplifier
@@ -449,7 +449,7 @@ makeEvaluate
             firstTerm
             secondTerm
     return
-        ( fmap Pattern.fromPredicateSubstitution result
+        ( fmap Pattern.fromPredicate result
         , SimplificationProof
         )
 makeEvaluate
@@ -540,7 +540,7 @@ makeEvaluateTermsAssumesNoBottom
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -593,7 +593,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -619,7 +619,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
             first
             second
     return
-        ( fmap Pattern.fromPredicateSubstitution result
+        ( fmap Pattern.fromPredicate result
         , SimplificationProof
         )
 
@@ -633,7 +633,7 @@ because it returns an 'or').
 
 See 'simplify' for detailed documentation.
 -}
-makeEvaluateTermsToPredicateSubstitution
+makeEvaluateTermsToPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Ord (variable level)
@@ -644,7 +644,7 @@ makeEvaluateTermsToPredicateSubstitution
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -652,12 +652,12 @@ makeEvaluateTermsToPredicateSubstitution
     -> TermLike variable
     -> TermLike variable
     -> Simplifier
-        (Or.PredicateSubstitution level variable, SimplificationProof level)
-makeEvaluateTermsToPredicateSubstitution
+        (Or.Predicate level variable, SimplificationProof level)
+makeEvaluateTermsToPredicate
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =
     return
-        ( MultiOr.make [PredicateSubstitution.top]
+        ( MultiOr.make [Predicate.top]
         , SimplificationProof
         )
   | otherwise = do

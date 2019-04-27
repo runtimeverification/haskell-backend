@@ -56,8 +56,8 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -121,7 +121,7 @@ totalDefinitionEvaluation rules =
             , ShowMetaOrObject variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSubstitutionSimplifier level
+        -> PredicateSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
         -> TermLike variable
@@ -197,7 +197,7 @@ evaluateBuiltin
         )
     => BuiltinAndAxiomSimplifier level
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -256,7 +256,7 @@ applyFirstSimplifierThatWorks
     => [BuiltinAndAxiomSimplifier level]
     -> AcceptsMultipleResults
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -348,7 +348,7 @@ evaluateWithDefinitionAxioms
         )
     => [EqualityRule level Variable]
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators

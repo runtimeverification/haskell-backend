@@ -29,15 +29,14 @@ import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Pattern.Or as Or
+import           Kore.Step.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( CommonPredicateSubstitution, Conditional (..) )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
-                 ( makeEvaluate, makeEvaluateTermsToPredicateSubstitution,
-                 simplify )
+                 ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
@@ -391,14 +390,14 @@ test_equalsSimplification_TermLike =
     [ testCase "bottom == bottom"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.topPredicate
+            Predicate.topPredicate
             mkBottom_
             mkBottom_
         )
     , testCase "domain-value == domain-value"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.topPredicate
+            Predicate.topPredicate
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
@@ -417,7 +416,7 @@ test_equalsSimplification_TermLike =
     , testCase "domain-value != domain-value"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottomPredicate
+            Predicate.bottomPredicate
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
@@ -436,7 +435,7 @@ test_equalsSimplification_TermLike =
     , testCase "domain-value != domain-value because of sorts"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottomPredicate
+            Predicate.bottomPredicate
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
@@ -455,42 +454,42 @@ test_equalsSimplification_TermLike =
     , testCase "\"a\" == \"a\""
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution.topPredicate
+            Predicate.topPredicate
             (mkStringLiteral "a")
             (mkStringLiteral "a")
         )
     , testCase "\"a\" != \"b\""
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution.bottomPredicate
+            Predicate.bottomPredicate
             (mkStringLiteral "a")
             (mkStringLiteral "b")
         )
     , testCase "'a' == 'a'"
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution.topPredicate
+            Predicate.topPredicate
             (mkCharLiteral 'a')
             (mkCharLiteral 'a')
         )
     , testCase "'a' != 'b'"
         (assertTermEqualsGeneric
             mockMetaMetadataTools
-            PredicateSubstitution.bottomPredicate
+            Predicate.bottomPredicate
             (mkCharLiteral 'a')
             (mkCharLiteral 'b')
         )
     , testCase "a != bottom"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottomPredicate
+            Predicate.bottomPredicate
             mkBottom_
             Mock.a
         )
     , testCase "a == a"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.topPredicate
+            Predicate.topPredicate
             Mock.a
             Mock.a
         )
@@ -508,7 +507,7 @@ test_equalsSimplification_TermLike =
     , testCase "constructor1(a) vs constructor1(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.topPredicate
+            Predicate.topPredicate
             constructor1OfA
             constructor1OfA
         )
@@ -516,21 +515,21 @@ test_equalsSimplification_TermLike =
         "functionalconstructor1(a) vs functionalconstructor2(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottomPredicate
+            Predicate.bottomPredicate
             functionalConstructor1OfA
             functionalConstructor2OfA
         )
     , testCase "constructor1(a) vs constructor2(a)"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.bottomPredicate
+            Predicate.bottomPredicate
             constructor1OfA
             constructor2OfA
         )
     , testCase "constructor1(f(a)) vs constructor1(f(a))"
         (assertTermEquals
             mockMetadataTools
-            PredicateSubstitution.topPredicate
+            Predicate.topPredicate
             (Mock.constr10 fOfA)
             (Mock.constr10 fOfA)
         )
@@ -683,7 +682,7 @@ test_equalsSimplification_TermLike =
         , testCase "concrete Map, different keys"
             (assertTermEquals
                 mockMetadataTools
-                PredicateSubstitution.bottomPredicate
+                Predicate.bottomPredicate
                 (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
                 (Mock.builtinMap [(Mock.bConcrete, mkVar Mock.x)])
             )
@@ -807,7 +806,7 @@ test_equalsSimplification_TermLike =
         ,
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
-                unified34 = PredicateSubstitution.bottomPredicate
+                unified34 = Predicate.bottomPredicate
             in
                 testCase "[same head, different head]"
                     (assertTermEquals
@@ -841,7 +840,7 @@ test_equalsSimplification_TermLike =
                 testCase "different lengths"
                     (assertTermEquals
                         mockMetadataTools
-                        PredicateSubstitution.bottomPredicate
+                        Predicate.bottomPredicate
                         term7
                         term8
                     )
@@ -853,7 +852,7 @@ test_equalsSimplification_TermLike =
 assertTermEquals
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> CommonPredicateSubstitution Object
+    -> Predicate Object Variable
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -862,7 +861,7 @@ assertTermEquals = assertTermEqualsGeneric
 assertTermEqualsGeneric
     :: (MetaOrObject level, HasCallStack)
     => SmtMetadataTools StepperAttributes
-    -> CommonPredicateSubstitution level
+    -> Predicate Object Variable
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -873,7 +872,7 @@ assertTermEqualsGeneric tools expectPure =
 assertTermEqualsMulti
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> [CommonPredicateSubstitution Object]
+    -> [Predicate Object Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -882,7 +881,7 @@ assertTermEqualsMulti = assertTermEqualsMultiGeneric
 assertTermEqualsMultiGeneric
     :: (MetaOrObject level, HasCallStack)
     => SmtMetadataTools StepperAttributes
-    -> [CommonPredicateSubstitution level]
+    -> [Predicate Object Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -919,7 +918,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
             }
     predSubstToPattern
         :: MetaOrObject level
-        => CommonPredicateSubstitution level
+        => Predicate Object Variable
         -> Pattern Object Variable
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
@@ -1039,12 +1038,12 @@ evaluateTermsGeneric
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Or.PredicateSubstitution level Variable)
+    -> IO (Or.Predicate level Variable)
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ makeEvaluateTermsToPredicateSubstitution
+    $ makeEvaluateTermsToPredicate
         tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create tools Map.empty)

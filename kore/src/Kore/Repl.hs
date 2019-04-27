@@ -63,7 +63,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier )
+                 ( PredicateSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
                  ( TermLike )
@@ -84,7 +84,7 @@ runRepl
     -- ^ tools required for the proof
     -> StepPatternSimplifier level
     -- ^ pattern simplifier
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -- ^ predicate simplifier
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ builtin simplifier

@@ -37,22 +37,27 @@ import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Conditional
+                 ( Conditional (..) )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
-import           Kore.Step.Pattern as Pattern
+import           Kore.Step.Pattern
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
                  ( make )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, traverseFlattenWithPairs )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.TermLike
+import           Kore.TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -79,7 +84,7 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -128,7 +133,7 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -167,7 +172,7 @@ makeEvaluate
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -202,7 +207,7 @@ makeEvaluateNonBoolCeil
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -228,17 +233,17 @@ makeEvaluateNonBoolCeil
         simplifier
         axiomIdToEvaluator
         term
-    (result, proof) <- And.simplifyEvaluatedMultiPredicateSubstitution
+    (result, proof) <- And.simplifyEvaluatedMultiPredicate
         tools
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
         (MultiAnd.make
-            [ MultiOr.make [PredicateSubstitution.eraseConditionalTerm patt]
+            [ MultiOr.make [Predicate.eraseConditionalTerm patt]
             , termCeil
             ]
         )
-    return (fmap Pattern.fromPredicateSubstitution result, proof)
+    return (fmap Pattern.fromPredicate result, proof)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -258,14 +263,14 @@ makeEvaluateTerm
         , Unparse (variable level)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> Simplifier
-        (Or.PredicateSubstitution level variable, SimplificationProof level)
+        (Or.Predicate level variable, SimplificationProof level)
 makeEvaluateTerm
     tools
     substitutionSimplifier
@@ -274,14 +279,14 @@ makeEvaluateTerm
     term@(Recursive.project -> _ :< projected)
   | isTop term =
     return
-        ( MultiOr.make [PredicateSubstitution.top]
+        ( MultiOr.make [Predicate.top]
         , SimplificationProof
         )
   | isBottom term =
     return (MultiOr.make [], SimplificationProof)
   | isTotalPattern tools term =
     return
-        ( MultiOr.make [PredicateSubstitution.top]
+        ( MultiOr.make [Predicate.top]
         , SimplificationProof
         )
   | otherwise =
@@ -295,7 +300,7 @@ makeEvaluateTerm
                 children
             let
                 (ceils, _proofs) = unzip simplifiedChildren
-            And.simplifyEvaluatedMultiPredicateSubstitution
+            And.simplifyEvaluatedMultiPredicate
                 tools
                 substitutionSimplifier
                 simplifier
@@ -332,13 +337,13 @@ makeEvaluateTerm
                         }
                     ]
                 )
-            return (fmap toPredicateSubstitution evaluation, proof)
+            return (fmap toPredicate evaluation, proof)
   where
-    toPredicateSubstitution
+    toPredicate
         Conditional {term = Top_ _, predicate, substitution}
       =
         Conditional {term = (), predicate, substitution}
-    toPredicateSubstitution patt =
+    toPredicate patt =
         error
             (  "Ceil simplification is expected to result ai a predicate, but"
             ++ " got (" ++ show patt ++ ")."
@@ -359,14 +364,14 @@ makeEvaluateBuiltin
         , Unparse (variable level)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> Domain.Builtin (TermLike variable)
     -> Simplifier
-        (Or.PredicateSubstitution level variable, SimplificationProof level)
+        (Or.Predicate level variable, SimplificationProof level)
 makeEvaluateBuiltin
     _tools
     _substitutionSimplifier
@@ -379,7 +384,7 @@ makeEvaluateBuiltin
             -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return
-                ( MultiOr.make [PredicateSubstitution.top]
+                ( MultiOr.make [Predicate.top]
                 , SimplificationProof
                 )
         _ ->
@@ -400,9 +405,9 @@ makeEvaluateBuiltin
         )
         values
     let
-        ceils :: [Or.PredicateSubstitution level variable]
+        ceils :: [Or.Predicate level variable]
         (ceils, _proofs) = unzip children
-    And.simplifyEvaluatedMultiPredicateSubstitution
+    And.simplifyEvaluatedMultiPredicate
         tools
         substitutionSimplifier
         simplifier
@@ -425,9 +430,9 @@ makeEvaluateBuiltin
         )
         (Foldable.toList l)
     let
-        ceils :: [Or.PredicateSubstitution level variable]
+        ceils :: [Or.Predicate level variable]
         (ceils, _proofs) = unzip children
-    And.simplifyEvaluatedMultiPredicateSubstitution
+    And.simplifyEvaluatedMultiPredicate
         tools
         substitutionSimplifier
         simplifier
@@ -463,8 +468,8 @@ topPredicateWithProof
     ::  ( MetaOrObject level
         , Ord (variable level)
         )
-    => (Or.PredicateSubstitution level variable, SimplificationProof level)
+    => (Or.Predicate level variable, SimplificationProof level)
 topPredicateWithProof =
-    ( MultiOr.make [PredicateSubstitution.top]
+    ( MultiOr.make [Predicate.top]
     , SimplificationProof
     )

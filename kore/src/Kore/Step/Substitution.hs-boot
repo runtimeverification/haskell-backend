@@ -7,14 +7,14 @@ import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
-import Kore.Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
        ( Predicate )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Pattern
-       ( PredicateSubstitution )
+       ( Predicate )
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, StepPatternSimplifier )
+       ( PredicateSimplifier, StepPatternSimplifier )
 import Kore.Unification.Data
        ( UnificationProof )
 import Kore.Unification.Substitution
@@ -38,12 +38,12 @@ mergePredicatesAndSubstitutionsExcept
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> [Predicate variable]
+    -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier
-        ( PredicateSubstitution level variable
+        ( Predicate level variable
         , UnificationProof level variable
         )

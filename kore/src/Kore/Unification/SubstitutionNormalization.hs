@@ -34,9 +34,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( Conditional (..), PredicateSubstitution )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
@@ -69,7 +69,7 @@ normalizeSubstitution
     -> ExceptT
         (SubstitutionError Object variable)
         m
-        (PredicateSubstitution Object variable)
+        (Predicate Object variable)
 normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
@@ -116,15 +116,15 @@ normalizeSubstitution tools substitution =
 
     normalizeSortedSubstitution'
         :: [variable Object]
-        -> m (PredicateSubstitution Object variable)
+        -> m (Predicate Object variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
     maybeToBottom
         :: Maybe [variable Object]
-        -> m (PredicateSubstitution Object variable)
+        -> m (Predicate Object variable)
     maybeToBottom = maybe
-        (return PredicateSubstitution.bottom)
+        (return Predicate.bottom)
         normalizeSortedSubstitution'
 
 variableToSubstitution
@@ -148,7 +148,7 @@ normalizeSortedSubstitution
     => [(variable level, TermLike variable)]
     -> [(variable level, TermLike variable)]
     -> [(variable level, TermLike variable)]
-    -> m (PredicateSubstitution level variable)
+    -> m (Predicate level variable)
 normalizeSortedSubstitution [] result _ =
     return Conditional
         { term = ()
@@ -161,7 +161,7 @@ normalizeSortedSubstitution
     substitution
   =
     case Cofree.tailF (Recursive.project varPattern) of
-        BottomPattern _ -> return PredicateSubstitution.bottom
+        BottomPattern _ -> return Predicate.bottom
         VariablePattern var'
           | var == var' ->
             normalizeSortedSubstitution unprocessed result substitution

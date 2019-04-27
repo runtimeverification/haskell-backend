@@ -18,16 +18,15 @@ import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeImpliesPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
@@ -54,7 +53,7 @@ simplify
         , Unparse (variable Object)
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Implies Object (Or.Pattern Object variable)
@@ -102,7 +101,7 @@ simplifyEvaluated
         , Unparse (variable Object)
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Or.Pattern Object variable
@@ -149,7 +148,7 @@ simplifyEvaluateHalfImplies
         , Unparse (variable Object)
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Or.Pattern Object variable
@@ -228,13 +227,14 @@ makeEvaluateImpliesNonBool
         [ Conditional
             { term = firstTerm
             , predicate =
-                makeImpliesPredicate
-                    (makeAndPredicate
+                Syntax.Predicate.makeImpliesPredicate
+                    (Syntax.Predicate.makeAndPredicate
                         firstPredicate
-                        (substitutionToPredicate firstSubstitution))
-                    (makeAndPredicate
+                        (Syntax.Predicate.fromSubstitution firstSubstitution)
+                    )
+                    (Syntax.Predicate.makeAndPredicate
                         secondPredicate
-                        (substitutionToPredicate secondSubstitution)
+                        (Syntax.Predicate.fromSubstitution secondSubstitution)
                     )
             , substitution = mempty
             }
@@ -246,7 +246,7 @@ makeEvaluateImpliesNonBool
                 mkImplies
                     (Pattern.toMLPattern pattern1)
                     (Pattern.toMLPattern pattern2)
-            , predicate = makeTruePredicate
+            , predicate = Syntax.Predicate.makeTruePredicate
             , substitution = mempty
             }
         ]

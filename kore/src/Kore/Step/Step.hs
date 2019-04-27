@@ -52,7 +52,7 @@ import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Logger as Log
-import           Kore.Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
@@ -61,13 +61,13 @@ import           Kore.Step.Conditional
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
+import           Kore.Step.Predicate
+                 ( Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
@@ -109,13 +109,13 @@ newtype UnificationProcedure level =
             , unifier ~ unifierM variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSubstitutionSimplifier level
+        -> PredicateSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
         -> TermLike variable
         -> TermLike variable
         -> unifier
-            ( Or.PredicateSubstitution level variable
+            ( Or.Predicate level variable
             , UnificationProof level variable
             )
         )
@@ -186,7 +186,7 @@ unifyRule
         )
     => SmtMetadataTools StepperAttributes
     -> UnificationProcedure Object
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
@@ -218,7 +218,7 @@ unifyRule
     -- Combine the unification solution with the rule's requirement clause.
     let
         RulePattern { requires = ruleRequires } = rule'
-        requires' = PredicateSubstitution.fromPredicate ruleRequires
+        requires' = Predicate.fromPredicate ruleRequires
     unification' <- normalize (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
   where
@@ -261,15 +261,15 @@ applyInitialConditions
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> PredicateSubstitution Object variable
+    -> Predicate Object variable
     -- ^ Initial conditions
-    -> PredicateSubstitution Object variable
+    -> Predicate Object variable
     -- ^ Unification conditions
-    -> BranchT unifier (Or.PredicateSubstitution Object variable)
+    -> BranchT unifier (Or.Predicate Object variable)
 applyInitialConditions
     metadataTools
     predicateSimplifier
@@ -323,13 +323,13 @@ finalizeAppliedRule
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
     -> RulePattern Object variable
     -- ^ Applied rule
-    -> Or.PredicateSubstitution Object variable
+    -> Or.Predicate Object variable
     -- ^ Conditions of applied rule
     -> BranchT unifier (Or.Pattern Object variable)
 finalizeAppliedRule
@@ -350,7 +350,7 @@ finalizeAppliedRule
         -- unifyRule.
         let
             RulePattern { ensures } = renamedRule
-            ensuresCondition = PredicateSubstitution.fromPredicate ensures
+            ensuresCondition = Predicate.fromPredicate ensures
         finalCondition <- normalize (appliedCondition <> ensuresCondition)
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
@@ -383,13 +383,13 @@ applyRemainder
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
     -> Pattern Object variable
     -- ^ Initial configuration
-    -> Predicate variable
+    -> Syntax.Predicate variable
     -- ^ Remainder
     -> BranchT unifier (Pattern Object variable)
 applyRemainder
@@ -399,7 +399,7 @@ applyRemainder
     axiomSimplifiers
 
     initial
-    (PredicateSubstitution.fromPredicate -> remainder)
+    (Predicate.fromPredicate -> remainder)
   = do
     let final = initial `Conditional.andCondition` remainder
         finalCondition = Conditional.withoutTerm final
@@ -445,7 +445,7 @@ applyRule
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -528,7 +528,7 @@ applyRewriteRule
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -678,7 +678,7 @@ applyRulesInParallel
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -743,7 +743,7 @@ applyRewriteRules
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -789,7 +789,7 @@ sequenceRules
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -876,7 +876,7 @@ sequenceRewriteRules
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object

@@ -21,14 +21,17 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate as Predicate
+                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
+                 makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -81,12 +84,12 @@ evalUnifier =
     . gather
 
 applyInitialConditions
-    :: PredicateSubstitution Object Variable
-    -> PredicateSubstitution Object Variable
+    :: Predicate Object Variable
+    -> Predicate Object Variable
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [Or.PredicateSubstitution Object Variable]
+            [Or.Predicate Object Variable]
         )
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
@@ -120,21 +123,21 @@ test_applyInitialConditions =
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
-            initial = PredicateSubstitution.bottom
+            initial = Predicate.bottom
             expect = Right mempty
         actual <- applyInitialConditions initial unification
         assertEqualWithExplanation "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
-        let unification = PredicateSubstitution.top
-            initial = PredicateSubstitution.top
+        let unification = Predicate.top
+            initial = Predicate.top
             expect = Right [MultiOr.singleton initial]
         actual <- applyInitialConditions initial unification
         assertEqualWithExplanation "" expect actual
 
     , testCase "combine initial and rule conditions" $ do
-        let unification = PredicateSubstitution.fromPredicate expect2
-            initial = PredicateSubstitution.fromPredicate expect1
+        let unification = Predicate.fromPredicate expect2
+            initial = Predicate.fromPredicate expect1
             expect1 =
                 Predicate.makeEqualsPredicate
                     (Mock.f $ mkVar Mock.x)
@@ -151,9 +154,9 @@ test_applyInitialConditions =
 
     , testCase "conflicting initial and rule conditions" $ do
         let predicate = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
-            unification = PredicateSubstitution.fromPredicate predicate
+            unification = Predicate.fromPredicate predicate
             initial =
-                PredicateSubstitution.fromPredicate
+                Predicate.fromPredicate
                 $ Predicate.makeNotPredicate predicate
             expect = Right mempty
         actual <- applyInitialConditions initial unification

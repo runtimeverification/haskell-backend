@@ -36,8 +36,8 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
@@ -67,7 +67,7 @@ equalityRuleEvaluator
     -> SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap level

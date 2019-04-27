@@ -23,12 +23,10 @@ import           Kore.Step.Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import qualified Kore.Step.Pattern.Or as Or
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
+import           Kore.Step.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Step.Predicate as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( CommonPredicateSubstitution, Conditional (..) )
-import qualified Kore.Step.Representation.PredicateSubstitution as Conditional
 import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PSSimplifier
@@ -286,8 +284,8 @@ mockMetadataTools =
 
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap Object
-    -> CommonPredicateSubstitution Object
-    -> IO (MultiOr (CommonPredicateSubstitution Object))
+    -> Predicate Object Variable
+    -> IO (Or.Predicate Object Variable)
 runSimplifier patternSimplifierMap predicateSubstitution =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig
@@ -295,7 +293,7 @@ runSimplifier patternSimplifierMap predicateSubstitution =
     $ gather
     $ simplifier predicateSubstitution
   where
-    PredicateSubstitutionSimplifier simplifier =
+    PredicateSimplifier simplifier =
         PSSimplifier.create
             mockMetadataTools
             (Simplifier.create mockMetadataTools patternSimplifierMap)

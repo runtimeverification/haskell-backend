@@ -16,7 +16,7 @@ import Kore.Step.TermLike
        ( TermLike )
 import qualified Kore.Step.Pattern.Or as Or
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
+       ( PredicateSimplifier, SimplificationProof, Simplifier,
        StepPatternSimplifier )
 import Kore.Unparser
        ( Unparse )
@@ -35,11 +35,11 @@ makeEvaluateTerm
         , Unparse (variable level)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> Simplifier
-        (Or.PredicateSubstitution level variable, SimplificationProof level)
+        (Or.Predicate level variable, SimplificationProof level)

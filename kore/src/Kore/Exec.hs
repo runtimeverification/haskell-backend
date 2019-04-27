@@ -71,10 +71,10 @@ import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), OnePathRule (..),
                  RewriteRule (RewriteRule), RulePattern (RulePattern),
@@ -86,8 +86,8 @@ import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier (..), SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -116,7 +116,7 @@ data Initialized =
     Initialized
         { rewriteRules :: ![Rewrite]
         , simplifier :: !(StepPatternSimplifier Object)
-        , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
+        , substitutionSimplifier :: !(PredicateSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         }
 
@@ -125,7 +125,7 @@ data Execution =
     Execution
         { metadataTools :: !(SmtMetadataTools StepperAttributes)
         , simplifier :: !(StepPatternSimplifier Object)
-        , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
+        , substitutionSimplifier :: !(PredicateSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         , executionGraph :: !ExecutionGraph
         }
@@ -206,7 +206,7 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
             concatMap MultiOr.extractPatterns solutionsLists
         orPredicate =
             makeMultipleOrPredicate
-                (PredicateSubstitution.toPredicate <$> solutions)
+                (Predicate.toPredicate <$> solutions)
     return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
     Valid { patternSort } = extract purePattern
@@ -423,7 +423,7 @@ initialize verifiedModule tools =
             simplifier :: StepPatternSimplifier Object
             simplifier = Simplifier.create tools axiomIdToSimplifier
             substitutionSimplifier
-                :: PredicateSubstitutionSimplifier Object
+                :: PredicateSimplifier Object
             substitutionSimplifier =
                 PredicateSubstitution.create
                     tools simplifier axiomIdToSimplifier

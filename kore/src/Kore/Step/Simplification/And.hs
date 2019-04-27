@@ -41,9 +41,8 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSubstitutionSimplifier,
-                 SimplificationProof (..), Simplifier, StepPatternSimplifier,
-                 gather, scatter )
+                 ( BranchT, PredicateSimplifier, SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier, gather, scatter )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Step.TermLike
 import           Kore.Unparser
@@ -96,7 +95,7 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -151,7 +150,7 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -205,7 +204,7 @@ makeEvaluate
         , HasCallStack
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -239,7 +238,7 @@ makeEvaluateNonBool
         , HasCallStack
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -306,7 +305,7 @@ makeTermAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level

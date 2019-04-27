@@ -12,6 +12,7 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
+    , rulePattern
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -31,6 +32,7 @@ module Kore.Step.Rule
     , substitute
     ) where
 import           Control.Comonad
+import qualified Data.Default as Default
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
@@ -79,7 +81,7 @@ deriving instance Ord (variable Object) => Ord (RulePattern level variable)
 deriving instance Show (variable Object) => Show (RulePattern level variable)
 
 instance Unparse (variable Object) => Pretty (RulePattern level variable) where
-    pretty rulePattern@(RulePattern _ _ _ _ _) =
+    pretty rulePattern'@(RulePattern _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
             , Pretty.indent 4 (unparse left)
@@ -91,7 +93,20 @@ instance Unparse (variable Object) => Pretty (RulePattern level variable) where
             , Pretty.indent 4 (unparse ensures)
             ]
       where
-        RulePattern { left, right, requires, ensures } = rulePattern
+        RulePattern { left, right, requires, ensures } = rulePattern'
+
+rulePattern
+    :: TermLike variable
+    -> TermLike variable
+    -> RulePattern Object variable
+rulePattern left right =
+    RulePattern
+        { left
+        , right
+        , requires = Predicate.makeTruePredicate
+        , ensures  = Predicate.makeTruePredicate
+        , attributes = Default.def
+        }
 
 {-  | Equality-based rule pattern.
 -}
@@ -428,22 +443,22 @@ refreshRulePattern
     => Set (variable Object)  -- ^ Variables to avoid
     -> RulePattern Object variable
     -> (Map (variable Object) (variable Object), RulePattern Object variable)
-refreshRulePattern avoid rulePattern =
+refreshRulePattern avoid rule1 =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
         left' = TermLike.substitute subst left
         right' = TermLike.substitute subst right
         requires' = Predicate.substitute subst requires
-        rulePattern' =
-            rulePattern
+        rule2 =
+            rule1
                 { left = left'
                 , right = right'
                 , requires = requires'
                 }
-    in (rename, rulePattern')
+    in (rename, rule2)
   where
-    RulePattern { left, right, requires } = rulePattern
-    originalFreeVariables = freeVariables rulePattern
+    RulePattern { left, right, requires } = rule1
+    originalFreeVariables = freeVariables rule1
 
 {- | Extract the free variables of a 'RulePattern'.
  -}
@@ -467,15 +482,15 @@ mapVariables
     => (variable1 Object -> variable2 Object)
     -> RulePattern Object variable1
     -> RulePattern Object variable2
-mapVariables mapping rulePattern =
-    rulePattern
+mapVariables mapping rule1 =
+    rule1
         { left = TermLike.mapVariables mapping left
         , right = TermLike.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
         , ensures = Predicate.mapVariables mapping ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rulePattern
+    RulePattern { left, right, requires, ensures } = rule1
 
 
 {- | Traverse the predicate from the top down and apply substitutions.
@@ -493,12 +508,12 @@ substitute
     => Map (variable Object) (TermLike variable)
     -> RulePattern Object variable
     -> RulePattern Object variable
-substitute subst rulePattern =
-    rulePattern
+substitute subst rulePattern' =
+    rulePattern'
         { left = TermLike.substitute subst left
         , right = TermLike.substitute subst right
         , requires = Predicate.substitute subst requires
         , ensures = Predicate.substitute subst ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rulePattern
+    RulePattern { left, right, requires, ensures } = rulePattern'

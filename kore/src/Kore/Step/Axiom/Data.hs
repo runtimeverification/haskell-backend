@@ -48,8 +48,8 @@ import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, merge )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier )
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Unparser
@@ -93,7 +93,7 @@ newtype BuiltinAndAxiomSimplifier level =
             , ShowMetaOrObject variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSubstitutionSimplifier level
+        -> PredicateSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
         -> TermLike variable
@@ -231,7 +231,7 @@ applicationAxiomSimplifier
             , ShowMetaOrObject variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSubstitutionSimplifier level
+        -> PredicateSimplifier level
         -> StepPatternSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
@@ -260,7 +260,7 @@ applicationAxiomSimplifier applicationSimplifier =
                 , ShowMetaOrObject variable
                 )
             => SmtMetadataTools StepperAttributes
-            -> PredicateSubstitutionSimplifier level
+            -> PredicateSimplifier level
             -> StepPatternSimplifier level
             -> BuiltinAndAxiomSimplifierMap level
             -> TermLike variable

@@ -42,7 +42,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
+                 ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
                  StepPatternSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -486,7 +486,7 @@ appliedMockEvaluator result =
 mockEvaluator
     :: AttemptedAxiom level variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable

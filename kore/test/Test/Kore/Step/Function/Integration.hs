@@ -5,8 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Data.Default
-                 ( def )
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
@@ -18,8 +16,10 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeCeilPredicate,
-                 makeEqualsPredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
@@ -34,13 +34,12 @@ import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+                 ( EqualityRule (EqualityRule) )
 import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
+                 ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), Simplifier, StepPatternSimplifier,
-                 evalSimplifier )
+                 ( PredicateSimplifier (..), SimplificationProof (..),
+                 Simplifier, StepPatternSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -596,16 +595,10 @@ axiomEvaluator left right =
 axiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Predicate Variable
+    -> Syntax.Predicate Variable
     -> EqualityRule Object Variable
 axiom left right predicate =
-    EqualityRule RulePattern
-        { left
-        , right
-        , requires = predicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
+    EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
 
 appliedMockEvaluator
     :: Pattern Object Variable -> BuiltinAndAxiomSimplifier level
@@ -621,11 +614,9 @@ appliedMockEvaluator result =
 mapVariables
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
         )
     => Pattern Object Variable
-    -> Pattern level variable
+    -> Pattern Object variable
 mapVariables =
     Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Element 1) }
@@ -633,7 +624,7 @@ mapVariables =
 mockEvaluator
     :: AttemptedAxiom level variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
@@ -655,7 +646,7 @@ evaluate metadataTools functionIdToEvaluator patt =
     $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
-    substitutionSimplifier :: PredicateSubstitutionSimplifier level
+    substitutionSimplifier :: PredicateSimplifier level
     substitutionSimplifier =
         PredicateSubstitution.create
             metadataTools patternSimplifier functionIdToEvaluator

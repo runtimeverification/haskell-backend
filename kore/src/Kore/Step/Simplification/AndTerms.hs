@@ -58,18 +58,18 @@ import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
+                 ( PredicateSimplifier, SimplificationProof (..),
                  SimplificationType, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.Substitution
-                 ( PredicateSubstitutionMerger (PredicateSubstitutionMerger),
+                 ( PredicateMerger (PredicateMerger),
                  createLiftedPredicatesAndSubstitutionsMerger,
                  createPredicatesAndSubstitutionsMergerExcept )
 import           Kore.Step.TermLike
@@ -115,14 +115,14 @@ termEquals
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable
     -> MaybeT
         Simplifier
-        (Or.PredicateSubstitution level variable, SimplificationProof level)
+        (Or.Predicate level variable, SimplificationProof level)
 termEquals
     tools
     substitutionSimplifier
@@ -140,7 +140,7 @@ termEquals
             first
             second
     return
-        (MultiOr.make [PredicateSubstitution.eraseConditionalTerm result], proof)
+        (MultiOr.make [Predicate.eraseConditionalTerm result], proof)
 
 termEqualsAnd
     :: forall level variable .
@@ -154,7 +154,7 @@ termEqualsAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
@@ -244,10 +244,10 @@ maybeTermEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -283,7 +283,7 @@ termUnification
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
@@ -343,7 +343,7 @@ termAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
@@ -401,10 +401,10 @@ maybeTermAnd
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -569,7 +569,7 @@ andEqualsFunctions =
       = f tools
     addT
         ::  (  SmtMetadataTools StepperAttributes
-            -> PredicateSubstitutionMerger level variable unifier
+            -> PredicateMerger level variable unifier
             -> TermSimplifier level variable unifier
             -> TermLike variable
             -> TermLike variable
@@ -633,10 +633,10 @@ All the @TermTransformationOld@s and similar functions defined in this module ca
 type TermTransformation level variable unifier =
        SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
     -> TermLike variable
     -> TermLike variable
@@ -644,10 +644,10 @@ type TermTransformation level variable unifier =
         (Pattern level variable , SimplificationProof level)
 type TermTransformationOld level variable unifier =
        SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
     -> TermLike variable
     -> TermLike variable
@@ -667,10 +667,10 @@ maybeTransformTerm
         )
     => [TermTransformationOld level variable unifier]
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm pairs.
     -> TermLike variable
@@ -816,7 +816,7 @@ bottomTermEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -858,7 +858,7 @@ bottomTermEquals
                 , predicate =
                     makeNotPredicate
                         (Or.toPredicate
-                            (fmap PredicateSubstitution.toPredicate secondCeil)
+                            (fmap Predicate.toPredicate secondCeil)
                         )
                 , substitution = mempty
                 }
@@ -884,7 +884,7 @@ termBottomEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
@@ -918,12 +918,12 @@ variableFunctionAndEquals
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
@@ -955,7 +955,7 @@ variableFunctionAndEquals
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    (PredicateSubstitutionMerger substitutionMerger)
+    (PredicateMerger substitutionMerger)
     first@(Var_ v)
     second
   | isFunctionPattern tools second = Monad.Trans.lift $ do -- MonadUnify
@@ -965,7 +965,7 @@ variableFunctionAndEquals
                 -- Ceil predicate not needed since 'second' being bottom
                 -- will make the entire term bottom. However, one must
                 -- be careful to not just drop the term.
-                return PredicateSubstitution.top
+                return Predicate.top
             SimplificationType.Equals -> do
                 (resultOr, _proof) <- Monad.Unify.liftSimplifier
                     $ Ceil.makeEvaluateTerm
@@ -984,9 +984,9 @@ variableFunctionAndEquals
                            )
                            first
                            second
-                        return PredicateSubstitution.bottom
-                    [resultPredicateSubstitution] ->
-                        return resultPredicateSubstitution
+                        return Predicate.bottom
+                    [resultPredicate] ->
+                        return resultPredicate
                     _ -> error
                         (  "Unimplemented, ceil of "
                         ++ show second
@@ -1032,12 +1032,12 @@ functionVariableAndEquals
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
@@ -1083,7 +1083,7 @@ equalInjectiveHeadsAndEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionMerger level variable unifier
+    -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -1092,7 +1092,7 @@ equalInjectiveHeadsAndEquals
         (Pattern level variable, SimplificationProof level)
 equalInjectiveHeadsAndEquals
     tools
-    (PredicateSubstitutionMerger substitutionMerger)
+    (PredicateMerger substitutionMerger)
     termMerger
     firstPattern@(App_ firstHead firstChildren)
     (App_ secondHead secondChildren)

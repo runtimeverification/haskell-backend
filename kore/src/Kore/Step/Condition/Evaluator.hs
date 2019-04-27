@@ -15,11 +15,13 @@ import Data.Reflection
 
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
+                 ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
                  StepPatternSimplifier, simplifyTerm )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -42,24 +44,25 @@ evaluate
         , Unparse (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => PredicateSubstitutionSimplifier Object
+    => PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions in a pattern.
-    -> Predicate variable
+    -> Syntax.Predicate variable
     -- ^ The condition to be evaluated.
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
     -> Simplifier
-        (PredicateSubstitution Object variable, SimplificationProof Object)
+        (Predicate Object variable, SimplificationProof Object)
 evaluate
     substitutionSimplifier
     termSimplifier
     predicate
   = do
-    (simplified, _proof) <- simplifyTerm' (unwrapPredicate predicate)
+    (simplified, _proof) <-
+        simplifyTerm' (Syntax.Predicate.unwrapPredicate predicate)
     refute <-
         case () of
-            _ | Or.isTrue simplified -> return (Just True)
+            _ | Or.isTrue simplified  -> return (Just True)
               | Or.isFalse simplified -> return (Just False)
               | otherwise -> SMT.Evaluator.decidePredicate predicate
     let simplified' =
@@ -67,24 +70,26 @@ evaluate
                 Just False -> Pattern.bottom
                 Just True -> Pattern.top
                 _ -> Or.toExpandedPattern simplified
-        (subst, _proof) = asPredicateSubstitution simplified'
+        (subst, _proof) = asPredicate simplified'
     return (subst, SimplificationProof)
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
-asPredicateSubstitution
+asPredicate
     ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         )
     => Pattern Object variable
-    -> (PredicateSubstitution Object variable, SimplificationProof Object)
-asPredicateSubstitution
+    -> (Predicate Object variable, SimplificationProof Object)
+asPredicate
     Conditional {term, predicate, substitution}
   =
     let
-        andPatt = makeAndPredicate predicate (wrapPredicate term)
+        andPatt =
+            Syntax.Predicate.makeAndPredicate predicate
+            $ Syntax.Predicate.wrapPredicate term
     in
         ( Conditional
             { term = ()

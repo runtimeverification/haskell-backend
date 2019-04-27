@@ -282,7 +282,7 @@ freeVariables getFreeVariables Conditional { term, predicate, substitution } =
 @toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
 a 'PredicateSubstition' into only a 'Predicate'; i.e. when @term ~ ()@,
 
-> Conditional Object variable term ~ PredicateSubstitution Object variable
+> Conditional Object variable term ~ Predicate Object variable
 
 @toPredicate@ is also used to extract the 'Predicate' and 'Substitution' while
 discarding the 'term'.

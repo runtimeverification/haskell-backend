@@ -25,8 +25,7 @@ import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.Step.TermLike
@@ -39,7 +38,7 @@ import           Kore.Variables.Fresh
 
 checkImplicationIsTop
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object

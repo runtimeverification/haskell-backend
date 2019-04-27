@@ -30,9 +30,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, simplifyTerm,
-                 stepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 StepPatternSimplifier, simplifyTerm, stepPatternSimplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -88,7 +87,7 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
@@ -117,7 +116,7 @@ simplifyToOr
     => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> TermLike variable
     -> Simplifier
         ( Or.Pattern level variable
@@ -145,7 +144,7 @@ simplifyInternal
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -> StepPatternSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators

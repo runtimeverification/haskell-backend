@@ -16,19 +16,19 @@ import qualified Data.Set as Set
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Step.Pattern as Pattern
+import           Kore.Step.Predicate
+                 ( Predicate )
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -49,8 +49,8 @@ remainder
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => MultiOr (PredicateSubstitution Object (Target variable))
-    -> Predicate variable
+    => MultiOr (Predicate Object (Target variable))
+    -> Syntax.Predicate variable
 remainder results =
     mkMultiAndPredicate $ mkNotExists conditions
   where
@@ -64,14 +64,15 @@ existentiallyQuantifyTarget
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => Predicate (Target variable)
-    -> Predicate variable
+    => Syntax.Predicate (Target variable)
+    -> Syntax.Predicate variable
 existentiallyQuantifyTarget predicate =
-    Predicate.mapVariables Target.unwrapVariable
-    $ Predicate.makeMultipleExists freeTargetVariables predicate
+    Syntax.Predicate.mapVariables Target.unwrapVariable
+    $ Syntax.Predicate.makeMultipleExists freeTargetVariables predicate
   where
     freeTargetVariables =
-        Set.filter Target.isTarget (Predicate.freeVariables predicate)
+        Set.filter Target.isTarget
+        $ Syntax.Predicate.freeVariables predicate
 
 {- | Negate a disjunction of many terms.
 
@@ -86,9 +87,12 @@ mkNotMultiOr
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => MultiOr  (Predicate variable)
-    -> MultiAnd (Predicate variable)
-mkNotMultiOr = MultiAnd.make . map Predicate.makeNotPredicate . Foldable.toList
+    => MultiOr  (Syntax.Predicate variable)
+    -> MultiAnd (Syntax.Predicate variable)
+mkNotMultiOr =
+    MultiAnd.make
+    . map Syntax.Predicate.makeNotPredicate
+    . Foldable.toList
 
 mkMultiAndPredicate
     ::  ( Ord     (variable Object)
@@ -96,9 +100,10 @@ mkMultiAndPredicate
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => MultiAnd (Predicate variable)
-    ->           Predicate variable
-mkMultiAndPredicate = Predicate.makeMultipleAndPredicate . Foldable.toList
+    => MultiAnd (Syntax.Predicate variable)
+    ->           Syntax.Predicate variable
+mkMultiAndPredicate =
+    Syntax.Predicate.makeMultipleAndPredicate . Foldable.toList
 
 {- | Represent the unification solution as a conjunction of predicates.
  -}
@@ -108,9 +113,9 @@ unificationConditions
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => PredicateSubstitution Object (Target variable)
+    => Predicate Object (Target variable)
     -- ^ Unification solution
-    -> MultiAnd (Predicate (Target variable))
+    -> MultiAnd (Syntax.Predicate (Target variable))
 unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
@@ -123,9 +128,9 @@ substitutionConditions
         , SortedVariable variable
         )
     => Substitution variable
-    -> MultiAnd (Predicate variable)
+    -> MultiAnd (Syntax.Predicate variable)
 substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
     substitutionCoverageWorker (x, t) =
-        Predicate.makeEqualsPredicate (mkVar x) t
+        Syntax.Predicate.makeEqualsPredicate (mkVar x) t

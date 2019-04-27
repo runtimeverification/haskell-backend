@@ -79,7 +79,7 @@ mkPair lSort rSort l r =
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
 substitutionSimplifier tools =
     PredicateSubstitution.create tools stepSimplifier evaluators
 
@@ -175,7 +175,7 @@ indexedModule =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 
-testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object
+testSubstitutionSimplifier :: PredicateSimplifier Object
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
 evaluators :: BuiltinAndAxiomSimplifierMap Object

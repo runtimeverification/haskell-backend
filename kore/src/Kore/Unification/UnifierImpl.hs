@@ -32,12 +32,11 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( Conditional (..), PredicateSubstitution )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import           Kore.Step.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier (..), StepPatternSimplifier )
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Unification.Data
@@ -102,7 +101,7 @@ simplifyAnds
         , MonadUnify unifierM
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> NonEmpty (TermLike variable)
@@ -179,13 +178,13 @@ solveGroupedSubstitution
        , unifier ~ unifierM variable
       )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> variable Object
     -> NonEmpty (TermLike variable)
     -> unifier
-        ( PredicateSubstitution Object variable
+        ( Predicate Object variable
         , UnificationProof Object variable
         )
 solveGroupedSubstitution
@@ -232,12 +231,12 @@ normalizeSubstitutionDuplication
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
     -> StepPatternSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Substitution variable
     -> unifier
-        ( PredicateSubstitution Object variable
+        ( Predicate Object variable
         , UnificationProof Object variable
         )
 normalizeSubstitutionDuplication
@@ -254,7 +253,7 @@ normalizeSubstitutionDuplication
             )
         else do
             (predSubst, proof') <-
-                mergePredicateSubstitutionList
+                mergePredicateList
                 <$> mapM
                     (uncurry
                         $ solveGroupedSubstitution
@@ -304,22 +303,22 @@ normalizeSubstitutionDuplication
             ((x, y) : ys) -> [(x, y :| (snd <$> ys))]
 
 
-mergePredicateSubstitutionList
+mergePredicateList
     :: ( Ord (variable Object)
        , Show (variable Object)
        , Unparse (variable Object)
        , SortedVariable variable
        )
-    => [(PredicateSubstitution Object variable, UnificationProof Object variable)]
-    -> (PredicateSubstitution Object variable, UnificationProof Object variable)
-mergePredicateSubstitutionList [] =
-    ( PredicateSubstitution.top
+    => [(Predicate Object variable, UnificationProof Object variable)]
+    -> (Predicate Object variable, UnificationProof Object variable)
+mergePredicateList [] =
+    ( Predicate.top
     , EmptyUnificationProof
     )
-mergePredicateSubstitutionList (p:ps) =
-    foldl' mergePredicateSubstitutions p ps
+mergePredicateList (p:ps) =
+    foldl' mergePredicates p ps
   where
-    mergePredicateSubstitutions
+    mergePredicates
         ( Conditional { predicate = p1, substitution = s1 }, proofs)
         ( Conditional { predicate = p2, substitution = s2 }, proof) =
         ( Conditional
