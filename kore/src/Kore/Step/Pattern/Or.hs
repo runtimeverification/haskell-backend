@@ -7,6 +7,7 @@ module Kore.Step.Pattern.Or
     ( Conditional
     , Pattern
     , PredicateSubstitution
+    , fromPatterns
     , isFalse
     , isTrue
     , makeFromSinglePurePattern
@@ -15,8 +16,7 @@ module Kore.Step.Pattern.Or
     , toPredicate
     ) where
 
-import Data.List
-       ( foldl' )
+import qualified Data.Foldable as Foldable
 
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
@@ -49,6 +49,12 @@ type PredicateSubstitution level variable =
 {-| The disjunction of 'Predicate'.
 -}
 type Predicate variable = MultiOr (Predicate.Predicate variable)
+
+fromPatterns
+    :: (Foldable f, Ord (variable Object))
+    => f (Pattern.Pattern Object variable)
+    -> Pattern Object variable
+fromPatterns = MultiOr.make . Foldable.toList
 
 {-| Constructs a normalized 'Pattern' from
 'TermLike's.
@@ -95,10 +101,9 @@ toExpandedPattern multiOr
         patt : patts ->
             Conditional.Conditional
                 { term =
-                    foldl'
-                        (\x y -> mkOr x (Pattern.toMLPattern y))
-                        (Pattern.toMLPattern patt)
-                        patts
+                    Foldable.foldr mkOr
+                        (Pattern.toMLPattern     patt )
+                        (Pattern.toMLPattern <$> patts)
                 , predicate = Predicate.makeTruePredicate
                 , substitution = mempty
                 }
@@ -117,10 +122,9 @@ toTermLike multiOr =
         [] -> mkBottom_
         [patt] -> Pattern.toMLPattern patt
         patt : patts ->
-            foldl'
-                (\x y -> mkOr x (Pattern.toMLPattern y))
-                (Pattern.toMLPattern patt)
-                patts
+            Foldable.foldr mkOr
+                (Pattern.toMLPattern     patt )
+                (Pattern.toMLPattern <$> patts)
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
