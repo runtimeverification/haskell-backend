@@ -31,9 +31,8 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..), TermLikeSimplifier,
@@ -63,7 +62,7 @@ test_applicationSimplification =
         -- sigma(a or b, c or d) =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.sigma Mock.a Mock.c
                         , predicate = makeTruePredicate
@@ -101,7 +100,7 @@ test_applicationSimplification =
 
     , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
-        let expect = MultiOr.make [ Pattern.bottom ]
+        let expect = OrPattern.fromPatterns [ Pattern.bottom ]
         actual <-
             evaluate
                 mockMetadataTools
@@ -118,7 +117,7 @@ test_applicationSimplification =
 
     , testCase "Applies functions" $ do
         -- f(a) evaluated to g(a).
-        let expect = MultiOr.make [ gOfAExpanded ]
+        let expect = OrPattern.fromPatterns [ gOfAExpanded ]
         actual <-
             evaluate
                 mockMetadataTools
@@ -130,8 +129,8 @@ test_applicationSimplification =
                             (const $ const $ const $ const $ const $ return
                                 ( AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results =
-                                        MultiOr.make [gOfAExpanded]
-                                    , remainders = MultiOr.make []
+                                        OrPattern.fromPatterns [gOfAExpanded]
+                                    , remainders = OrPattern.fromPatterns []
                                     }
                                 , SimplificationProof
                                 )
@@ -153,7 +152,7 @@ test_applicationSimplification =
             --        and (f(a)=f(b) and g(a)=g(b))
             --        and [x=f(a), y=g(a)]
             let expect =
-                    MultiOr.make
+                    OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
@@ -201,7 +200,7 @@ test_applicationSimplification =
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
             let z' = Mock.z { variableCounter = Just (Element 1) }
                 expect =
-                    MultiOr.make
+                    OrPattern.fromPatterns
                         [ Conditional
                             { term = fOfA
                             , predicate =
@@ -240,7 +239,7 @@ test_applicationSimplification =
                             )
                         => AttemptedAxiom Object variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results = MultiOr.make
+                        { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -248,7 +247,7 @@ test_applicationSimplification =
                                     Substitution.wrap [ (zvar, gOfB) ]
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
                 in
                     evaluate
@@ -358,7 +357,7 @@ makeApplication patternSort symbol patterns =
         valid
         Application
             { applicationSymbolOrAlias = symbol
-            , applicationChildren = map MultiOr.make patterns
+            , applicationChildren = map OrPattern.fromPatterns patterns
             }
   where
     termFreeVariables = TermLike.freeVariables . Pattern.term

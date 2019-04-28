@@ -23,7 +23,6 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.Simplification.Or
@@ -245,9 +244,9 @@ becomes
   => (TestConfig, TestConfig)
   -> [Pattern Object Variable]
   -> TestTree
-becomes (orChild -> or1, orChild -> or2) (MultiOr.make . List.sort -> expected) =
+becomes (orChild -> or1, orChild -> or2) (OrPattern.fromPatterns . List.sort -> expected) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
+        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
         (expected, SimplificationProof)
         "or becomes"
         (stateIntention
@@ -264,8 +263,8 @@ simplifiesTo
     -> TestTree
 simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
-        (MultiOr.make [simplified], SimplificationProof)
+        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
+        (OrPattern.fromPatterns [simplified], SimplificationProof)
         "or does simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -280,8 +279,8 @@ doesNotSimplify
     -> TestTree
 doesNotSimplify (orChild -> or1, orChild -> or2) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
-        (MultiOr.make $ List.sort [or1, or2], SimplificationProof)
+        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
+        (OrPattern.fromPatterns $ List.sort [or1, or2], SimplificationProof)
         "or does not simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -315,4 +314,4 @@ orChild (term, predicate, substitution) =
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
     -> OrPattern Object Variable
-wrapInOrPattern tuple = MultiOr.make [orChild tuple]
+wrapInOrPattern tuple = OrPattern.fromPatterns [orChild tuple]

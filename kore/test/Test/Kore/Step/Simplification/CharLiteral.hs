@@ -13,10 +13,9 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.CharLiteral
                  ( simplify )
 
@@ -27,7 +26,7 @@ test_charLiteralSimplification :: [TestTree]
 test_charLiteralSimplification =
     [ testCase "CharLiteral evaluates to CharLiteral"
         (assertEqualWithExplanation ""
-            (MultiOr.make
+            (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate

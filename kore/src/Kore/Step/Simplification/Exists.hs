@@ -193,7 +193,7 @@ makeEvaluate
     axiomIdToSimplifier
     variable
     original
-  = fmap (withProof . MultiOr.make) $ gather $ do
+  = fmap (withProof . OrPattern.fromPatterns) $ gather $ do
     normalized <- normalize original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of

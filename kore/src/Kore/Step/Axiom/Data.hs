@@ -48,7 +48,7 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make, merge )
+                 ( merge )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
                  TermLikeSimplifier )
@@ -147,13 +147,13 @@ instance Ord (variable Object)
                     MultiOr.merge firstRemainders secondRemainders
             }
 
-instance Ord (variable Object)
-    => Monoid (AttemptedAxiomResults level variable)
+instance
+    Ord (variable Object) => Monoid (AttemptedAxiomResults Object variable)
   where
     mempty =
         AttemptedAxiomResults
-            { results = MultiOr.make []
-            , remainders = MultiOr.make []
+            { results = OrPattern.bottom
+            , remainders = OrPattern.bottom
             }
 
 {-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
@@ -211,7 +211,7 @@ purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
             { results = OrPattern.fromTermLike p
-            , remainders = MultiOr.make []
+            , remainders = OrPattern.fromPatterns []
             }
         , SimplificationProof
         )

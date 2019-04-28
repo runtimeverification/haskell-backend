@@ -14,15 +14,10 @@ module Kore.Step.Simplification.Rewrites
 import           Kore.AST.Common
                  ( Rewrites (..) )
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -88,14 +83,10 @@ makeEvaluateRewrites
     -> Pattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
-    ( MultiOr.make
-        [ Conditional
-            { term = mkRewrites
-                (Pattern.toMLPattern first)
-                (Pattern.toMLPattern second)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        ]
+    ( OrPattern.fromPattern
+        $ Pattern.fromTermLike
+        $ mkRewrites
+            (Pattern.toMLPattern first)
+            (Pattern.toMLPattern second)
     , SimplificationProof
     )

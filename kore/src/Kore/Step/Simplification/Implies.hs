@@ -120,9 +120,9 @@ simplifyEvaluated
   | OrPattern.isTrue first =
     return (second, SimplificationProof)
   | OrPattern.isFalse first =
-    return (MultiOr.make [Pattern.top], SimplificationProof)
+    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
   | OrPattern.isTrue second =
-    return (MultiOr.make [Pattern.top], SimplificationProof)
+    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
   | OrPattern.isFalse second = do
     result <-
         Not.simplifyEvaluated
@@ -164,11 +164,11 @@ simplifyEvaluateHalfImplies
     first
     second
   | OrPattern.isTrue first =
-    return (MultiOr.make [second])
+    return (OrPattern.fromPatterns [second])
   | OrPattern.isFalse first =
-    return (MultiOr.make [Pattern.top])
+    return (OrPattern.fromPatterns [Pattern.top])
   | Pattern.isTop second =
-    return (MultiOr.make [Pattern.top])
+    return (OrPattern.fromPatterns [Pattern.top])
   | Pattern.isBottom second =
     Not.simplifyEvaluated
         tools
@@ -194,11 +194,11 @@ makeEvaluateImplies
 makeEvaluateImplies
     first second
   | Pattern.isTop first =
-    MultiOr.make [second]
+    OrPattern.fromPatterns [second]
   | Pattern.isBottom first =
-    MultiOr.make [Pattern.top]
+    OrPattern.fromPatterns [Pattern.top]
   | Pattern.isTop second =
-    MultiOr.make [Pattern.top]
+    OrPattern.fromPatterns [Pattern.top]
   | Pattern.isBottom second =
     Not.makeEvaluate first
   | otherwise =
@@ -225,7 +225,7 @@ makeEvaluateImpliesNonBool
         , substitution = secondSubstitution
         }
   | isTop firstTerm, isTop secondTerm =
-    MultiOr.make
+    OrPattern.fromPatterns
         [ Conditional
             { term = firstTerm
             , predicate =
@@ -242,7 +242,7 @@ makeEvaluateImpliesNonBool
             }
         ]
   | otherwise =
-    MultiOr.make
+    OrPattern.fromPatterns
         [ Conditional
             { term =
                 mkImplies

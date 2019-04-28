@@ -59,34 +59,34 @@ import           Test.Tasty.HUnit.Extensions
 test_equalsSimplification_Or_Pattern :: [TestTree]
 test_equalsSimplification_Or_Pattern =
     [ testCase "bottom == bottom" $ do
-        let expect = MultiOr.make [ Conditional.top ]
+        let expect = OrPattern.fromPatterns [ Conditional.top ]
         actual <-
             evaluateOr
                 mockMetadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
-                    , equalsFirst = MultiOr.make []
-                    , equalsSecond = MultiOr.make []
+                    , equalsFirst = OrPattern.fromPatterns []
+                    , equalsSecond = OrPattern.fromPatterns []
                     }
         assertEqualWithExplanation "" expect actual
 
     , testCase "a == a" $ do
-        let expect = MultiOr.make [ Conditional.top ]
+        let expect = OrPattern.fromPatterns [ Conditional.top ]
         actual <-
             evaluateOr
                 mockMetadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
-                    , equalsFirst = MultiOr.make
+                    , equalsFirst = OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.a
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
                         ]
-                    , equalsSecond = MultiOr.make
+                    , equalsSecond = OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.a
                             , predicate = makeTruePredicate
@@ -97,15 +97,15 @@ test_equalsSimplification_Or_Pattern =
         assertEqualWithExplanation "" expect actual
 
     , testCase "a != bottom" $ do
-        let expect = MultiOr.make []
+        let expect = OrPattern.fromPatterns []
         actual <-
             evaluateOr
                 mockMetadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
-                    , equalsFirst = MultiOr.make []
-                    , equalsSecond = MultiOr.make
+                    , equalsFirst = OrPattern.fromPatterns []
+                    , equalsSecond = OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.a
                             , predicate = makeTruePredicate
@@ -117,7 +117,7 @@ test_equalsSimplification_Or_Pattern =
 
     , testCase "f(a) vs g(a)" $ do
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate = makeEqualsPredicate fOfA gOfA
@@ -130,14 +130,14 @@ test_equalsSimplification_Or_Pattern =
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
-                    , equalsFirst = MultiOr.make
+                    , equalsFirst = OrPattern.fromPatterns
                         [ Conditional
                             { term = fOfA
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
                         ]
-                    , equalsSecond = MultiOr.make
+                    , equalsSecond = OrPattern.fromPatterns
                         [ Conditional
                             { term = gOfA
                             , predicate = makeTruePredicate
@@ -149,7 +149,7 @@ test_equalsSimplification_Or_Pattern =
 
     , testCase "f vs g or h" $ do
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate =
@@ -179,7 +179,7 @@ test_equalsSimplification_Or_Pattern =
                         }
                     ]
             first =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.cf
                         , predicate = makeTruePredicate
@@ -187,7 +187,7 @@ test_equalsSimplification_Or_Pattern =
                         }
                     ]
             second =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.cg
                         , predicate = makeTruePredicate
@@ -222,7 +222,7 @@ test_equalsSimplification_Or_Pattern =
 
     , testCase "f vs g[x = a] or h" $ do
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate =
@@ -257,7 +257,7 @@ test_equalsSimplification_Or_Pattern =
                         (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                 definedH = makeCeilPredicate Mock.ch
             first =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.cf
                         , predicate = makeTruePredicate
@@ -265,7 +265,7 @@ test_equalsSimplification_Or_Pattern =
                         }
                     ]
             second =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.cg
                         , predicate = makeTruePredicate
@@ -311,7 +311,7 @@ test_equalsSimplification_Pattern :: [TestTree]
 test_equalsSimplification_Pattern =
     [ testCase "predicate-substitution vs predicate-substitution" $ do
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate =
@@ -338,7 +338,7 @@ test_equalsSimplification_Pattern =
 
     , testCase "constructor-patt vs constructor-patt" $ do
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate =
@@ -891,7 +891,7 @@ assertTermEqualsMultiGeneric
     -> Assertion
 assertTermEqualsMultiGeneric tools expectPure first second = do
     let expectExpanded =
-            MultiOr.make
+            OrPattern.fromPatterns
                 (map predSubstToPattern expectPure)
     actualExpanded <-
         evaluateGeneric

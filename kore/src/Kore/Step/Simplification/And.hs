@@ -38,8 +38,6 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
@@ -169,9 +167,9 @@ simplifyEvaluated
     first
     second
   | OrPattern.isFalse first =
-    return (MultiOr.make [], SimplificationProof)
+    return (OrPattern.fromPatterns [], SimplificationProof)
   | OrPattern.isFalse second =
-    return (MultiOr.make [], SimplificationProof)
+    return (OrPattern.fromPatterns [], SimplificationProof)
 
   | OrPattern.isTrue first = return (second, SimplificationProof)
   | OrPattern.isTrue second = return (first, SimplificationProof)
@@ -188,7 +186,7 @@ simplifyEvaluated
                 axiomIdToSimplifier
                 first1
                 second1
-    return (MultiOr.make result, SimplificationProof)
+    return (OrPattern.fromPatterns result, SimplificationProof)
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 

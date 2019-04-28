@@ -8,7 +8,9 @@ module Kore.Step.OrPattern
     , fromPatterns
     , fromPattern
     , fromTermLike
+    , bottom
     , isFalse
+    , top
     , isTrue
     , toExpandedPattern
     , toTermLike
@@ -62,10 +64,30 @@ fromTermLike
     -> OrPattern Object variable
 fromTermLike = fromPattern . Pattern.fromTermLike
 
+{- | @\\bottom@
+
+@
+'isFalse' bottom == True
+@
+
+ -}
+bottom :: Ord (variable Object) => OrPattern Object variable
+bottom = fromPatterns []
+
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
 -}
 isFalse :: Ord (variable Object) => OrPattern Object variable -> Bool
 isFalse = isBottom
+
+{- | @\\top@
+
+@
+'isTrue' top == True
+@
+
+ -}
+top :: Ord (variable Object) => OrPattern Object variable
+top = fromPattern Pattern.top
 
 {-| 'isTrue' checks if the 'Or' has a single top pattern.
 -}

@@ -12,10 +12,9 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Pattern as Pattern
                  ( bottom )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Bottom
                  ( simplify )
 
@@ -27,7 +26,7 @@ test_bottomSimplification :: [TestTree]
 test_bottomSimplification =
     [ testCase "Bottom evaluates to bottom"
         (assertEqualWithExplanation ""
-            (MultiOr.make
+            (OrPattern.fromPatterns
                 [ Pattern.bottom ]
             )
             (evaluate

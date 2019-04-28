@@ -43,6 +43,7 @@ import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
 import           Kore.Step.Pattern
@@ -184,10 +185,8 @@ makeEvaluate
     -> Simplifier
         (OrPattern level variable, SimplificationProof level)
 makeEvaluate tools substitutionSimplifier simplifier axiomIdToEvaluator child
-  | Pattern.isTop child =
-    return (MultiOr.make [Pattern.top], SimplificationProof)
-  | Pattern.isBottom child =
-    return (MultiOr.make [], SimplificationProof)
+  | Pattern.isTop    child = return (OrPattern.top, SimplificationProof)
+  | Pattern.isBottom child = return (OrPattern.bottom, SimplificationProof)
   | otherwise =
         makeEvaluateNonBoolCeil
             tools
@@ -226,7 +225,7 @@ makeEvaluateNonBoolCeil
     patt@Conditional {term}
   | isTop term =
     return
-        ( MultiOr.make [patt]
+        ( OrPattern.fromPattern patt
         , SimplificationProof
         )
   | otherwise = do
@@ -332,19 +331,15 @@ makeEvaluateTerm
                     , substitution = mempty
                     }
                 (mkCeil_ term)
-                (MultiOr.make
-                    [ Conditional
-                        { term = mkTop_
-                        , predicate = makeCeilPredicate term
-                        , substitution = mempty
-                        }
-                    ]
+                (OrPattern.fromPattern Conditional
+                    { term = mkTop_
+                    , predicate = makeCeilPredicate term
+                    , substitution = mempty
+                    }
                 )
             return (fmap toPredicate evaluation, proof)
   where
-    toPredicate
-        Conditional {term = Top_ _, predicate, substitution}
-      =
+    toPredicate Conditional {term = Top_ _, predicate, substitution} =
         Conditional {term = (), predicate, substitution}
     toPredicate patt =
         error

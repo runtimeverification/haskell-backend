@@ -61,6 +61,7 @@ import           Kore.Step.Conditional
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
 import           Kore.Step.Pattern as Pattern
@@ -344,7 +345,7 @@ finalizeAppliedRule
     renamedRule
     appliedConditions
   =
-    Monad.Trans.lift . Monad.liftM MultiOr.make . gather
+    Monad.Trans.lift . Monad.liftM OrPattern.fromPatterns . gather
     $ finalizeAppliedRuleWorker =<< scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
@@ -711,7 +712,7 @@ applyRulesInParallel
     remainders' <- gather $ applyRemainder' initial remainder
     return Step.Results
         { results = Seq.fromList results
-        , remainders = MultiOr.make remainders'
+        , remainders = OrPattern.fromPatterns remainders'
         }
   where
     applyRule' =
@@ -827,7 +828,8 @@ sequenceRules
                 Remainder.remainder
                 $ MultiOr.make
                 $ Conditional.withoutTerm . Step.appliedRule <$> results
-        Monad.liftM MultiOr.make $ gather $ applyRemainder' config remainder
+        Monad.liftM OrPattern.fromPatterns
+            $ gather $ applyRemainder' config remainder
 
     applyRemainder' =
         applyRemainder

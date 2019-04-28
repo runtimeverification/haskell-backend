@@ -15,9 +15,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import qualified Kore.Step.Simplification.Forall as Forall
                  ( makeEvaluate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -31,7 +30,7 @@ test_forallSimplification =
     [ testCase "Forall - or distribution"
         -- forall(a or b) = forall(a) or forall(b)
         (assertEqualWithExplanation ""
-            (MultiOr.make
+            (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkForall Mock.x something1OfX
                     , predicate = makeTruePredicate
@@ -55,7 +54,7 @@ test_forallSimplification =
         (do
             -- forall(top) = top
             assertEqualWithExplanation "forall(top)"
-                (MultiOr.make
+                (OrPattern.fromPatterns
                     [ Pattern.top ]
                 )
                 (evaluate
@@ -66,7 +65,7 @@ test_forallSimplification =
                 )
             -- forall(bottom) = bottom
             assertEqualWithExplanation "forall(bottom)"
-                (MultiOr.make
+                (OrPattern.fromPatterns
                     []
                 )
                 (evaluate
@@ -243,7 +242,7 @@ makeForall variable patterns =
     Forall
         { forallSort = testSort
         , forallVariable  = variable
-        , forallChild       = MultiOr.make patterns
+        , forallChild       = OrPattern.fromPatterns patterns
         }
 
 testSort :: Sort Object

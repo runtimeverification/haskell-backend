@@ -29,7 +29,7 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( crossProductGeneric, flatten, make )
+                 ( crossProductGeneric, flatten )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
@@ -114,9 +114,9 @@ simplifyEvaluatedIn
 simplifyEvaluatedIn
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | OrPattern.isFalse first =
-    return (MultiOr.make [], SimplificationProof)
+    return (OrPattern.fromPatterns [], SimplificationProof)
   | OrPattern.isFalse second =
-    return (MultiOr.make [], SimplificationProof)
+    return (OrPattern.fromPatterns [], SimplificationProof)
 
   | OrPattern.isTrue first =
     Ceil.simplifyEvaluated
@@ -189,7 +189,7 @@ makeEvaluateIn
     Ceil.makeEvaluate
         tools substitutionSimplifier simplifier axiomIdToSimplifier first
   | Pattern.isBottom first || Pattern.isBottom second =
-    return (MultiOr.make [], SimplificationProof)
+    return (OrPattern.fromPatterns [], SimplificationProof)
   | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
@@ -202,7 +202,7 @@ makeEvaluateNonBoolIn
     -> Pattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateNonBoolIn patt1 patt2 =
-    ( MultiOr.make
+    ( OrPattern.fromPatterns
         [ Conditional
             { term = mkTop_
             , predicate =

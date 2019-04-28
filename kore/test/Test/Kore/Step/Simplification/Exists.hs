@@ -22,9 +22,8 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
@@ -95,13 +94,13 @@ test_simplify =
         testCase message $ do
             actual <- simplify mockMetadataTools (makeExists Mock.x original)
             assertEqualWithExplanation "expected simplification"
-                (MultiOr.make expected) actual
+                (OrPattern.fromPatterns expected) actual
 
 test_makeEvaluate :: [TestTree]
 test_makeEvaluate =
     [ testGroup "Exists - Predicates"
         [ testCase "Top" $ do
-            let expect = MultiOr.make [ Pattern.top ]
+            let expect = OrPattern.fromPatterns [ Pattern.top ]
             actual <-
                 makeEvaluate mockMetadataTools
                     Mock.x
@@ -109,7 +108,7 @@ test_makeEvaluate =
             assertEqualWithExplanation "" expect actual
 
         , testCase " Bottom" $ do
-            let expect = MultiOr.make []
+            let expect = OrPattern.fromPatterns []
             actual <-
                 makeEvaluate mockMetadataTools
                     Mock.x
@@ -121,7 +120,7 @@ test_makeEvaluate =
         -- exists x . (t(x) and p(x) and [x = alpha, others])
         --    = t(alpha) and p(alpha) and [others]
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.f gOfA
                         , predicate =
@@ -146,7 +145,7 @@ test_makeEvaluate =
         --    = t and p and s
         --    if t, p, s do not depend on x.
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = fOfA
                         , predicate = makeCeilPredicate gOfA
@@ -168,7 +167,7 @@ test_makeEvaluate =
         --    = (exists x . t(x)) and p and s
         --    if p, s do not depend on x.
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = mkExists Mock.x fOfX
                         , predicate = makeCeilPredicate gOfA
@@ -190,7 +189,7 @@ test_makeEvaluate =
         --    = t and (exists x . p(x)) and s
         --    if t, s do not depend on x.
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = fOfA
                         , predicate =
@@ -213,7 +212,7 @@ test_makeEvaluate =
         --    = exists x . (t(x) and p(x)) and Top and s
         --    if s do not depend on x.
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term =
                             mkExists Mock.x (mkAnd fOfX (mkEquals_ fOfX gOfA))
@@ -235,7 +234,7 @@ test_makeEvaluate =
     , testCase "exists reevaluates" $ do
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
-        let expect = MultiOr.make [ Pattern.top ]
+        let expect = OrPattern.fromPatterns [ Pattern.top ]
         actual <-
             makeEvaluate mockMetadataTools
                 Mock.x
@@ -271,7 +270,7 @@ makeExists variable patterns =
     Exists
         { existsSort = testSort
         , existsVariable = variable
-        , existsChild = MultiOr.make patterns
+        , existsChild = OrPattern.fromPatterns patterns
         }
 
 testSort :: Sort Object

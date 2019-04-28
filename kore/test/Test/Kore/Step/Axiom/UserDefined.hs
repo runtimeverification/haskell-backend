@@ -29,10 +29,9 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
                  ( Conditional (..), Pattern, bottom )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -59,14 +58,14 @@ test_userDefinedFunction =
     [ testCase "Applies one step" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = MultiOr.make
+                    { results = OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.functionalConstr11 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
                         ]
-                    , remainders = MultiOr.make []
+                    , remainders = OrPattern.fromPatterns []
                     }
         actual <-
             evaluateWithAxiom
@@ -119,8 +118,8 @@ test_userDefinedFunction =
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = MultiOr.make []
-                    , remainders = MultiOr.make
+                    { results = OrPattern.fromPatterns []
+                    , remainders = OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.functionalConstr10 (mkVar Mock.x)
                             , predicate = makeTruePredicate
@@ -147,8 +146,8 @@ test_userDefinedFunction =
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results =
-                        MultiOr.make [ Pattern.bottom ]
-                    , remainders = MultiOr.make []
+                        OrPattern.fromPatterns [ Pattern.bottom ]
+                    , remainders = OrPattern.fromPatterns []
                     }
         actual <-
             evaluateWithAxiom
@@ -171,7 +170,7 @@ test_userDefinedFunction =
     , testCase "Preserves step substitution" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = MultiOr.make
+                    { results = OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.g (mkVar Mock.z)
                             , predicate = makeTruePredicate
@@ -179,7 +178,7 @@ test_userDefinedFunction =
                                 [(Mock.y, mkVar Mock.z)]
                             }
                         ]
-                    , remainders = MultiOr.make
+                    , remainders = OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.functionalConstr20
                                 (mkVar Mock.y)

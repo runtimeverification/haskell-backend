@@ -47,10 +47,11 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( flatten, make, merge, traverseWithPairs )
+                 ( flatten, merge, traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
                  TermLikeSimplifier, simplifyTerm )
@@ -135,7 +136,7 @@ evaluateApplication
       where
         Conditional { term = (), predicate, substitution } =
             childrenPredicate
-    unchangedOr = MultiOr.make [unchangedPatt]
+    unchangedOr = OrPattern.fromPattern unchangedPatt
     unchanged = (unchangedOr, SimplificationProof)
 
     getAppHookString =
@@ -303,7 +304,7 @@ maybeEvaluatePattern
         -> Simplifier (OrPattern level variable)
     simplifyIfNeeded toSimplify =
         if toSimplify == unchangedPatt
-            then return (MultiOr.make [unchangedPatt])
+            then return (OrPattern.fromPattern unchangedPatt)
             else
                 reevaluateFunctions
                     tools

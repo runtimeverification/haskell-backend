@@ -20,9 +20,8 @@ import           Kore.Predicate.Predicate
                  makeIffPredicate, makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
@@ -53,7 +52,7 @@ test_simplify =
   where
     becomes (a, b) rs name =
         testCase name $ do
-            let expect = MultiOr.make rs
+            let expect = OrPattern.fromPatterns rs
             actual <- simplify $ makeIff [a] [b]
             assertEqualWithExplanation "" expect actual
 
@@ -71,7 +70,7 @@ test_makeEvaluate =
         -- iff(top and predicate1 and subst1, top and predicate2 and subst2)
         --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
         (assertEqualWithExplanation "iff(top and predicate, top and predicate)"
-            (MultiOr.make
+            (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
                     , predicate =
@@ -103,7 +102,7 @@ test_makeEvaluate =
         )
     , testCase "iff with generic patterns"
         (assertEqualWithExplanation "iff(generic, generic)"
-            (MultiOr.make
+            (OrPattern.fromPatterns
                 [ Conditional
                     { term =
                         mkIff
@@ -144,13 +143,13 @@ test_makeEvaluate =
     becomes (a, b) rs =
         Terse.equals
             (makeEvaluate a b)
-            (MultiOr.make rs)
+            (OrPattern.fromPatterns rs)
 
 testSimplifyBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testSimplifyBoolean a b =
     testCase ("iff(" ++ name a ++ ", " ++ name b ++ ")") $ do
         actual <- simplify $ makeIff [value a] [value b]
-        let expect = MultiOr.make [value r]
+        let expect = OrPattern.fromPatterns [value r]
         assertEqualWithExplanation ("expected: " ++ name r) expect actual
   where
     name x
@@ -164,7 +163,7 @@ testSimplifyBoolean a b =
 testEvaluateBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testEvaluateBoolean a b =
     Terse.equals
-        (MultiOr.make [value r])
+        (OrPattern.fromPatterns [value r])
         (Function.on makeEvaluate value a b)
         ("iff(" ++ name a ++ ", " ++ name b ++ ")")
   where
@@ -195,8 +194,8 @@ makeIff
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
-        , iffFirst  = MultiOr.make first
-        , iffSecond = MultiOr.make second
+        , iffFirst  = OrPattern.fromPatterns first
+        , iffSecond = OrPattern.fromPatterns second
         }
 
 simplify

@@ -13,14 +13,10 @@ module Kore.Step.Simplification.Variable
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
+import qualified Kore.Step.OrPattern as OrPattern
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -28,18 +24,10 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that variable.
 -}
 simplify
-    :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
-    => variable level
-    -> ( OrPattern level variable
-       , SimplificationProof level
-       )
+    :: (Ord (variable Object), SortedVariable variable)
+    => variable Object
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplify var =
-    ( MultiOr.make
-        [Conditional
-            { term = mkVar var
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        ]
+    ( OrPattern.fromPattern $ Pattern.fromTermLike $ mkVar var
     , SimplificationProof
     )

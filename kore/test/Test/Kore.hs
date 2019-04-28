@@ -58,8 +58,8 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.TermLike as TermLike
 
 {- | @Context@ stores the variables and sort variables in scope.
@@ -856,4 +856,4 @@ expandedPatternGen =
 
 orPatternGen :: Gen (OrPattern Object Variable)
 orPatternGen =
-    MultiOr.make <$> Gen.list (Range.linear 0 64) expandedPatternGen
+    OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) expandedPatternGen

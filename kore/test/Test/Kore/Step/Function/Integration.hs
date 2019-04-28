@@ -30,9 +30,8 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import           Kore.Step.Rule as RulePattern
@@ -606,9 +605,9 @@ appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
     $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = MultiOr.make
+        { results = OrPattern.fromPatterns
             [Test.Kore.Step.Function.Integration.mapVariables result]
-        , remainders = MultiOr.make []
+        , remainders = OrPattern.fromPatterns []
         }
 
 mapVariables

@@ -31,7 +31,6 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
@@ -113,10 +112,10 @@ simplifyEvaluated
     termSimplifier
     axiomSimplifiers
     simplified
-  | OrPattern.isFalse simplified = return (MultiOr.make [Pattern.top])
-  | OrPattern.isTrue  simplified = return (MultiOr.make [])
+  | OrPattern.isFalse simplified = return (OrPattern.fromPatterns [Pattern.top])
+  | OrPattern.isTrue  simplified = return (OrPattern.fromPatterns [])
   | otherwise =
-    fmap MultiOr.make . gather
+    fmap OrPattern.fromPatterns . gather
     $ Foldable.foldrM mkAnd Pattern.top (simplified >>= makeEvaluate)
   where
     mkAnd =
@@ -141,7 +140,7 @@ makeEvaluate
     => Pattern level variable
     -> OrPattern level variable
 makeEvaluate Conditional { term, predicate, substitution } =
-    MultiOr.make
+    OrPattern.fromPatterns
         [ Conditional
             { term = makeTermNot term
             , predicate = makeTruePredicate

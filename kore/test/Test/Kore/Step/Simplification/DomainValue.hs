@@ -21,11 +21,10 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 
@@ -40,7 +39,7 @@ test_domainValueSimplification :: [TestTree]
 test_domainValueSimplification =
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqualWithExplanation ""
-            (MultiOr.make
+            (OrPattern.fromPatterns
                 [ Conditional
                     { term =
                         mkDomainValue
@@ -68,7 +67,7 @@ test_domainValueSimplification =
     , testCase "\\bottom propagates through builtin Map"
         (assertEqualWithExplanation
             "Expected \\bottom to propagate to the top level"
-            (MultiOr.make [])
+            (OrPattern.fromPatterns [])
             (evaluate
                 mockMetadataTools
                 (mkMapDomainValue [(Mock.aConcrete, bottom)])
@@ -77,7 +76,7 @@ test_domainValueSimplification =
     , testCase "\\bottom propagates through builtin List"
         (assertEqualWithExplanation
             "Expected \\bottom to propagate to the top level"
-            (MultiOr.make [])
+            (OrPattern.fromPatterns [])
             (evaluate
                 mockMetadataTools
                 (mkListDomainValue [bottom])
@@ -85,7 +84,7 @@ test_domainValueSimplification =
         )
     ]
   where
-    bottom = MultiOr.make [Pattern.bottom]
+    bottom = OrPattern.fromPatterns [Pattern.bottom]
 
 mkMapDomainValue
     :: [(Domain.Key, child)]

@@ -20,11 +20,11 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
@@ -53,8 +53,8 @@ test_simplifyEvaluated =
   where
     becomes_ original expected =
         testCase "becomes" $ do
-            actual <- simplifyEvaluated (MultiOr.make original)
-            assertEqualWithExplanation "" (MultiOr.make expected) actual
+            actual <- simplifyEvaluated (OrPattern.fromPatterns original)
+            assertEqualWithExplanation "" (OrPattern.fromPatterns expected) actual
 
 termX :: Pattern Object Variable
 termX = Pattern.fromTermLike (mkVar Mock.x)

@@ -10,12 +10,11 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
                  ( mapVariables )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
                  TermLikeSimplifier, termLikeSimplifier )
@@ -89,7 +88,7 @@ mockSimplifierHelper
         (OrPattern Object variable0, SimplificationProof Object)
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
-        ( MultiOr.make
+        ( OrPattern.fromPatterns
             [ convertExpandedVariables
                 (unevaluatedConverter (convertPatternVariables patt))
             ]
@@ -103,7 +102,7 @@ mockSimplifierHelper
   =
     if patt == convertPatternVariables unevaluatedPatt
         then return
-            ( MultiOr.make (map convertExpandedVariables patts)
+            ( OrPattern.fromPatterns (map convertExpandedVariables patts)
             , proof
             )
         else

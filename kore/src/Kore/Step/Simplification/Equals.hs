@@ -223,7 +223,7 @@ simplifyEvaluated
     first
     second
   | first == second =
-    return (MultiOr.make [Pattern.top], SimplificationProof)
+    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
@@ -329,7 +329,7 @@ makeEvaluateFunctionalOr
     let oneNotBottom =
             foldl'
                 (dropProofFold Or.simplifyEvaluated)
-                (MultiOr.make [])
+                (OrPattern.fromPatterns [])
                 secondCeils
     allAreBottom <-
         foldM
@@ -341,7 +341,7 @@ makeEvaluateFunctionalOr
                     axiomIdToSimplfier
                 )
             )
-            (MultiOr.make [Pattern.top])
+            (OrPattern.fromPatterns [Pattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
         mapM
@@ -574,7 +574,7 @@ makeEvaluateTermsAssumesNoBottom
     (return . fromMaybe def) result
   where
     def =
-        (MultiOr.make
+        (OrPattern.fromPatterns
             [ Conditional
                 { term = mkTop_
                 , predicate = makeEqualsPredicate firstTerm secondTerm

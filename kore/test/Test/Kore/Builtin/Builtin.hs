@@ -41,11 +41,11 @@ import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
@@ -186,7 +186,7 @@ stepSimplifier =
     termLikeSimplifier
         (\_ p ->
             return
-                ( MultiOr.make
+                ( OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate = Predicate.wrapPredicate p

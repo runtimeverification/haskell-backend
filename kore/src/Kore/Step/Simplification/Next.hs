@@ -21,8 +21,6 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -61,7 +59,7 @@ simplifyEvaluated
     => OrPattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated simplified =
-    ( MultiOr.make
+    ( OrPattern.fromPatterns
         [ Conditional
             { term =
                 mkNext

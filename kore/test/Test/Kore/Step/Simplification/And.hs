@@ -17,11 +17,10 @@ import           Kore.Predicate.Predicate
                  makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr (MultiOr) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.And
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier, gather )
@@ -44,30 +43,30 @@ test_andSimplification :: [TestTree]
 test_andSimplification =
     [ testCase "And truth table" $ do
         assertEqualWithExplanation "false and false = false"
-            (MultiOr.make [])
+            OrPattern.bottom
             =<< evaluate (makeAnd [] [])
         assertEqualWithExplanation "false and true = false"
-            (MultiOr.make [])
+            OrPattern.bottom
             =<< evaluate (makeAnd [] [Pattern.top])
         assertEqualWithExplanation "true and false = false"
-            (MultiOr.make [])
+            OrPattern.bottom
             =<< evaluate (makeAnd [Pattern.top] [])
         assertEqualWithExplanation "true and true = true"
-            (MultiOr.make [Pattern.top])
+            OrPattern.top
             =<< evaluate (makeAnd [Pattern.top] [Pattern.top])
 
     , testCase "And with booleans" $ do
         assertEqualWithExplanation "false and something = false"
-            (MultiOr.make [])
+            OrPattern.bottom
             =<< evaluate (makeAnd [] [fOfXExpanded])
         assertEqualWithExplanation "something and false = false"
-            (MultiOr.make [])
+            OrPattern.bottom
             =<< evaluate (makeAnd [fOfXExpanded] [])
         assertEqualWithExplanation "true and something = something"
-            (MultiOr.make [fOfXExpanded])
+            (OrPattern.fromPatterns [fOfXExpanded])
             =<< evaluate (makeAnd [Pattern.top] [fOfXExpanded])
         assertEqualWithExplanation "something and true = something"
-            (MultiOr.make [fOfXExpanded])
+            (OrPattern.fromPatterns [fOfXExpanded])
             =<< evaluate (makeAnd [fOfXExpanded] [Pattern.top])
 
     , testCase "And with partial booleans" $ do
@@ -93,7 +92,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
-            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
+            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And function terms" $ do
             let expect =
@@ -103,7 +102,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
-            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
+            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And predicates" $ do
             let expect =
@@ -127,7 +126,7 @@ test_andSimplification =
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
+            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And substitutions - simple" $ do
             let expect =
@@ -149,7 +148,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap [(Mock.z, gOfX)]
                         }
-            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
+            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And substitutions - multiple terms" $ do
             let
@@ -170,7 +169,7 @@ test_andSimplification =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
+            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And substitutions - separate predicate" $ do
             let
@@ -192,7 +191,7 @@ test_andSimplification =
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, gOfX)]
                     }
-            assertEqualWithExplanation "" (MultiOr.make [expect]) actual
+            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And substitutions - failure" $ do
             actual <-
@@ -215,7 +214,7 @@ test_andSimplification =
                                 )
                             ]
                         }
-            assertEqualWithExplanation "" (MultiOr.make []) actual
+            assertEqualWithExplanation "" (OrPattern.bottom) actual
             {-
             TODO(virgil): Uncomment this after substitution merge can handle
             function equality.
@@ -315,7 +314,7 @@ test_andSimplification =
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
     , testCase "And-Or distribution" $ do
         let expect =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ Conditional
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
@@ -408,8 +407,8 @@ makeAnd
 makeAnd first second =
     And
         { andSort = findSort (first ++ second)
-        , andFirst = MultiOr.make first
-        , andSecond = MultiOr.make second
+        , andFirst = OrPattern.fromPatterns first
+        , andSecond = OrPattern.fromPatterns second
         }
 
 findSort :: [Pattern Object Variable] -> Sort Object
@@ -435,7 +434,7 @@ evaluatePatterns
     -> Pattern Object Variable
     -> IO (OrPattern Object Variable)
 evaluatePatterns first second =
-    fmap MultiOr.make
+    fmap OrPattern.fromPatterns
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ gather

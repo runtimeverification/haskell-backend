@@ -22,7 +22,7 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make )
+                 ( extractPatterns )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -95,9 +95,9 @@ makeEvaluateFloor
     -> (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateFloor child
   | Pattern.isTop child =
-    (MultiOr.make [Pattern.top], SimplificationProof)
+    (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
   | Pattern.isBottom child =
-    (MultiOr.make [Pattern.bottom], SimplificationProof)
+    (OrPattern.fromPatterns [Pattern.bottom], SimplificationProof)
   | otherwise =
     makeEvaluateNonBoolFloor child
 
@@ -112,7 +112,7 @@ makeEvaluateNonBoolFloor
 makeEvaluateNonBoolFloor
     patt@Conditional { term = Top_ _ }
   =
-    ( MultiOr.make [patt]
+    ( OrPattern.fromPatterns [patt]
     , SimplificationProof
     )
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
@@ -120,7 +120,7 @@ makeEvaluateNonBoolFloor
 makeEvaluateNonBoolFloor
     Conditional {term, predicate, substitution}
   =
-    ( MultiOr.make
+    ( OrPattern.fromPatterns
         [ Conditional
             { term = mkTop_
             , predicate = makeAndPredicate (makeFloorPredicate term) predicate

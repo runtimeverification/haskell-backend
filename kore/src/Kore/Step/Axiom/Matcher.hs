@@ -669,9 +669,7 @@ unifyJoin
             return result
     mergedItems <- mapM merge (MultiOr.extractPatterns crossProduct)
     return
-        ( MultiOr.make mergedItems
-        , EmptyUnificationProof
-        )
+        ( MultiOr.make mergedItems , EmptyUnificationProof )
 
 -- Note that we can't match variables to stuff which can have more than one
 -- value, because if we take the axiom

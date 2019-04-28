@@ -26,10 +26,10 @@ import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make, merge )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -102,7 +102,7 @@ simplifyEvaluated first second
   | (head1 : tail1) <- MultiOr.extractPatterns first
   , (head2 : tail2) <- MultiOr.extractPatterns second
   , Just (result, proof) <- simplifySinglePatterns head1 head2
-  = (MultiOr.make $ result : (tail1 ++ tail2), proof)
+  = (OrPattern.fromPatterns $ result : (tail1 ++ tail2), proof)
 
   | otherwise =
     ( MultiOr.merge first second

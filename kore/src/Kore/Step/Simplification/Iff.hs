@@ -27,7 +27,6 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
                  TermLikeSimplifier )
@@ -155,9 +154,9 @@ makeEvaluate
     -> Pattern Object variable
     -> OrPattern Object variable
 makeEvaluate first second
-  | Pattern.isTop first = MultiOr.make [second]
+  | Pattern.isTop first = OrPattern.fromPatterns [second]
   | Pattern.isBottom first = Not.makeEvaluate second
-  | Pattern.isTop second = MultiOr.make [first]
+  | Pattern.isTop second = OrPattern.fromPatterns [first]
   | Pattern.isBottom second = Not.makeEvaluate first
   | otherwise = makeEvaluateNonBoolIff first second
 
@@ -183,7 +182,7 @@ makeEvaluateNonBoolIff
         }
   | isTop firstTerm, isTop secondTerm
   =
-    MultiOr.make
+    OrPattern.fromPatterns
         [ Conditional
             { term = firstTerm
             , predicate =
