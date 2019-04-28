@@ -10,13 +10,13 @@ import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.TermLike
-       ( TermLike )
 import Kore.Step.Pattern
        ( Pattern )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, SimplificationProof, Simplifier,
        TermLikeSimplifier )
+import Kore.Step.TermLike
+       ( TermLike )
 import Kore.Unification.Unify
        ( MonadUnify )
 import Kore.Unparser

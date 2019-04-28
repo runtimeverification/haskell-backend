@@ -16,10 +16,10 @@ import           Data.Text.Prettyprint.Doc
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Logger as Log
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Step.Simplification.Data
                  ( Environment (..), Simplifier )
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )

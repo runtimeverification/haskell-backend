@@ -12,13 +12,13 @@ import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.TermLike
-       ( TermLike )
 import Kore.Step.OrPredicate
        ( OrPredicate )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, SimplificationProof, Simplifier,
        TermLikeSimplifier )
+import Kore.Step.TermLike
+       ( TermLike )
 import Kore.Unparser
        ( Unparse )
 import Kore.Variables.Fresh
