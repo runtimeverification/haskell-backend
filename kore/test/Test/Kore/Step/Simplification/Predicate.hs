@@ -22,7 +22,7 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import qualified Kore.Step.Pattern.Or as Or
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Step.Predicate as Conditional
@@ -285,7 +285,7 @@ mockMetadataTools =
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap Object
     -> Predicate Object Variable
-    -> IO (Or.Predicate Object Variable)
+    -> IO (OrPattern.Predicate Object Variable)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig
@@ -335,7 +335,7 @@ simpleEvaluator ((from, to) : ps) patt
   | from == patt =
     return
         ( Applied AttemptedAxiomResults
-            { results = Or.fromTermLike to
+            { results = OrPattern.fromTermLike to
             , remainders = MultiOr.make []
             }
         , SimplificationProof

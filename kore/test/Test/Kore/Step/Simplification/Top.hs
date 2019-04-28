@@ -8,8 +8,9 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import           Kore.AST.Pure
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Top
                  ( simplify )
@@ -34,8 +35,8 @@ test_topSimplification =
 
 evaluate
     ::  ( MetaOrObject level)
-    => Top level (Or.Pattern Object Variable)
-    -> Or.Pattern Object Variable
+    => Top level (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate top =
     case simplify top of
         (result, _proof) -> result

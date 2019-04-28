@@ -21,9 +21,10 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import qualified Kore.Step.Merging.Pattern as Pattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
@@ -34,7 +35,7 @@ import           Kore.Step.Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-| Simplifies an 'Pattern', returning an 'Or.Pattern'.
+{-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
     ::  ( MetaOrObject level
@@ -54,7 +55,7 @@ simplify
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern level variable
     -> Simplifier
-        ( Or.Pattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplify

@@ -17,8 +17,10 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -98,10 +100,10 @@ simplify
 simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
     (orPatt, proof) <-
         simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
-    return (Or.toExpandedPattern orPatt, proof)
+    return (OrPattern.toExpandedPattern orPatt, proof)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
-'Or.Pattern'.
+'OrPattern'.
 -}
 simplifyToOr
     ::  ( MetaOrObject level
@@ -119,7 +121,7 @@ simplifyToOr
     -> PredicateSimplifier level
     -> TermLike variable
     -> Simplifier
-        ( Or.Pattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
@@ -150,7 +152,7 @@ simplifyInternal
     -- ^ Map from axiom IDs to axiom evaluators
     -> Recursive.Base (TermLike variable) (TermLike variable)
     -> Simplifier
-        ( Or.Pattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplifyInternal

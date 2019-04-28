@@ -13,8 +13,9 @@ import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Sort
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import qualified Kore.Step.Simplification.Forall as Forall
@@ -237,7 +238,7 @@ makeForall
     :: Ord (variable Object)
     => variable Object
     -> [Pattern Object variable]
-    -> Forall Object variable (Or.Pattern Object variable)
+    -> Forall Object variable (OrPattern Object variable)
 makeForall variable patterns =
     Forall
         { forallSort = testSort
@@ -254,8 +255,8 @@ testSort =
 
 evaluate
     :: MetaOrObject level
-    => Forall level Variable (Or.Pattern Object Variable)
-    -> Or.Pattern Object Variable
+    => Forall level Variable (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate forall =
     fst $ Forall.simplify forall
 

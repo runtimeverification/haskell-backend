@@ -44,10 +44,11 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
-import qualified Kore.Step.Merging.Pattern.Or as Or
+import qualified Kore.Step.Merging.OrPattern as OrPattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern, Predicate )
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( flatten, make, merge, traverseWithPairs )
 import           Kore.Step.Simplification.Data
@@ -87,7 +88,7 @@ evaluateApplication
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 evaluateApplication
     tools
     substitutionSimplifier
@@ -165,10 +166,10 @@ evaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> Or.Pattern level variable
+    -> OrPattern level variable
     -- ^ The default value
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 evaluatePattern
     tools
     substitutionSimplifier
@@ -217,11 +218,11 @@ maybeEvaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> Or.Pattern level variable
+    -> OrPattern level variable
     -- ^ The default value
     -> Maybe
         (Simplifier
-            (Or.Pattern level variable, SimplificationProof level)
+            (OrPattern level variable, SimplificationProof level)
         )
 maybeEvaluatePattern
     tools
@@ -299,7 +300,7 @@ maybeEvaluatePattern
 
     simplifyIfNeeded
         :: Pattern level variable
-        -> Simplifier (Or.Pattern level variable)
+        -> Simplifier (OrPattern level variable)
     simplifyIfNeeded toSimplify =
         if toSimplify == unchangedPatt
             then return (MultiOr.make [unchangedPatt])
@@ -372,7 +373,7 @@ reevaluateFunctions
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern level variable
     -- ^ Function evaluation result.
-    -> Simplifier (Or.Pattern level variable)
+    -> Simplifier (OrPattern level variable)
 reevaluateFunctions
     tools
     substitutionSimplifier
@@ -386,7 +387,7 @@ reevaluateFunctions
   = do
     (pattOr , _proof) <- simplifyTerm' rewrittenPattern
     (mergedPatt, _proof) <-
-        Or.mergeWithPredicate
+        OrPattern.mergeWithPredicate
             tools
             substitutionSimplifier
             termSimplifier
@@ -448,7 +449,7 @@ mergeWithConditionAndSubstitution
     )
   = do
     (evaluatedResults, _proof) <-
-        Or.mergeWithPredicate
+        OrPattern.mergeWithPredicate
             tools
             substitutionSimplifier
             simplifier
@@ -456,7 +457,7 @@ mergeWithConditionAndSubstitution
             toMerge
             results
     (evaluatedRemainders, _proof) <-
-        Or.mergeWithPredicate
+        OrPattern.mergeWithPredicate
             tools
             substitutionSimplifier
             simplifier

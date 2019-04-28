@@ -18,8 +18,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -190,7 +191,7 @@ makeIff
     :: (Ord (variable Object))
     => [Pattern Object variable]
     -> [Pattern Object variable]
-    -> Iff Object (Or.Pattern Object variable)
+    -> Iff Object (OrPattern Object variable)
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
@@ -199,8 +200,8 @@ makeIff first second =
         }
 
 simplify
-    :: Iff Object (Or.Pattern Object Variable)
-    -> IO (Or.Pattern Object Variable)
+    :: Iff Object (OrPattern Object Variable)
+    -> IO (OrPattern Object Variable)
 simplify iff0 =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -215,7 +216,7 @@ simplify iff0 =
 makeEvaluate
     :: Pattern Object Variable
     -> Pattern Object Variable
-    -> Or.Pattern Object Variable
+    -> OrPattern Object Variable
 makeEvaluate = Iff.makeEvaluate
 
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol

@@ -16,7 +16,9 @@ import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import qualified Kore.Step.Pattern.Or as Or
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
@@ -34,8 +36,8 @@ simplify
        , SortedVariable variable
        )
     => SmtMetadataTools attrs
-    -> Domain.Builtin (Or.Pattern Object variable)
-    -> (Or.Pattern Object variable, SimplificationProof Object)
+    -> Domain.Builtin (OrPattern Object variable)
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplify _ builtin =
     ( MultiOr.filterOr
         (do
@@ -51,8 +53,8 @@ simplifyBuiltin
        , Unparse (variable Object)
        , SortedVariable variable
        )
-    => Domain.Builtin (Or.Pattern Object variable)
-    -> Or.Conditional Object variable
+    => Domain.Builtin (OrPattern Object variable)
+    -> OrPattern.Conditional Object variable
         (Domain.Builtin (TermLike variable))
 simplifyBuiltin =
     \case

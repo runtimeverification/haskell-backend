@@ -27,11 +27,12 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import           Kore.Step.Pattern as Pattern
                  ( Conditional (..) )
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
 import           Kore.Step.Simplification.Data
@@ -53,7 +54,7 @@ type ExpandedApplication level variable =
             (TermLike variable)
         )
 
-{-|'simplify' simplifies an 'Application' of 'Or.Pattern'.
+{-|'simplify' simplifies an 'Application' of 'OrPattern'.
 
 To do that, it first distributes the terms, making it an Or of Application
 patterns, each Application having 'Pattern's as children,
@@ -82,9 +83,9 @@ simplify
     -> CofreeF
         (Application level)
         (Valid (variable level) level)
-        (Or.Pattern level variable)
+        (OrPattern level variable)
     -> Simplifier
-        ( Or.Pattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplify
@@ -140,7 +141,7 @@ makeAndEvaluateApplications
     -> SymbolOrAlias level
     -> [Pattern level variable]
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeAndEvaluateApplications
     tools
     substitutionSimplifier
@@ -182,7 +183,7 @@ makeAndEvaluateSymbolApplications
     -> SymbolOrAlias level
     -> [Pattern level variable]
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeAndEvaluateSymbolApplications
     tools
     substitutionSimplifier
@@ -229,7 +230,7 @@ evaluateApplicationFunction
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 evaluateApplicationFunction
     tools
     substitutionSimplifier

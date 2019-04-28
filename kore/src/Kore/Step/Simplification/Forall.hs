@@ -17,8 +17,10 @@ import           Kore.AST.Common
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fmapWithPairs )
 import           Kore.Step.Simplification.Data
@@ -28,7 +30,7 @@ import           Kore.Unparser
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
-{-|'simplify' simplifies an 'Forall' pattern with an 'Or.Pattern'
+{-|'simplify' simplifies an 'Forall' pattern with an 'OrPattern'
 child.
 
 Right now this has special cases only for top and bottom children.
@@ -48,8 +50,8 @@ simplify
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Forall Object variable (Or.Pattern Object variable)
-    ->  ( Or.Pattern Object variable
+    => Forall Object variable (OrPattern Object variable)
+    ->  ( OrPattern Object variable
         , SimplificationProof Object
         )
 simplify
@@ -62,9 +64,9 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Forall Object) (Valid Object) (Or.Pattern Object variable)
+> CofreeF (Forall Object) (Valid Object) (OrPattern Object variable)
 
-instead of a 'variable Object' and an 'Or.Pattern' argument. The type of
+instead of a 'variable Object' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
@@ -77,11 +79,11 @@ simplifyEvaluated
         , Unparse (variable Object)
         )
     => variable Object
-    -> Or.Pattern Object variable
-    -> (Or.Pattern Object variable, SimplificationProof Object)
+    -> OrPattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated variable simplified
-  | Or.isTrue simplified = (simplified, SimplificationProof)
-  | Or.isFalse simplified = (simplified, SimplificationProof)
+  | OrPattern.isTrue simplified = (simplified, SimplificationProof)
+  | OrPattern.isFalse simplified = (simplified, SimplificationProof)
   | otherwise =
     let
         (patt, _proofs) =

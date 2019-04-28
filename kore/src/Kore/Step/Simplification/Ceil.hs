@@ -41,10 +41,12 @@ import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
@@ -62,7 +64,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-| Simplify a 'Ceil' of 'Or.Pattern'.
+{-| Simplify a 'Ceil' of 'OrPattern'.
 
 A ceil(or) is equal to or(ceil). We also take into account that
 * ceil(top) = top
@@ -89,9 +91,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Ceil level (Or.Pattern level variable)
+    -> Ceil level (OrPattern level variable)
     -> Simplifier
-        ( Or.Pattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplify
@@ -112,9 +114,9 @@ for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Ceil level) (Valid level) (Or.Pattern level variable)
+> CofreeF (Ceil level) (Valid level) (OrPattern level variable)
 
-instead of an 'Or.Pattern' argument. The type of 'makeEvaluate' may
+instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -138,9 +140,9 @@ simplifyEvaluated
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Or.Pattern level variable
+    -> OrPattern level variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 simplifyEvaluated
     tools substitutionSimplifier simplifier axiomIdToEvaluator child
   = do
@@ -179,7 +181,7 @@ makeEvaluate
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluate tools substitutionSimplifier simplifier axiomIdToEvaluator child
   | Pattern.isTop child =
     return (MultiOr.make [Pattern.top], SimplificationProof)
@@ -214,7 +216,7 @@ makeEvaluateNonBoolCeil
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluateNonBoolCeil
     tools
     substitutionSimplifier
@@ -270,7 +272,7 @@ makeEvaluateTerm
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> Simplifier
-        (Or.Predicate level variable, SimplificationProof level)
+        (OrPattern.Predicate level variable, SimplificationProof level)
 makeEvaluateTerm
     tools
     substitutionSimplifier
@@ -371,7 +373,7 @@ makeEvaluateBuiltin
     -- ^ Map from symbol IDs to defined functions
     -> Domain.Builtin (TermLike variable)
     -> Simplifier
-        (Or.Predicate level variable, SimplificationProof level)
+        (OrPattern.Predicate level variable, SimplificationProof level)
 makeEvaluateBuiltin
     _tools
     _substitutionSimplifier
@@ -405,7 +407,7 @@ makeEvaluateBuiltin
         )
         values
     let
-        ceils :: [Or.Predicate level variable]
+        ceils :: [OrPattern.Predicate level variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicate
         tools
@@ -430,7 +432,7 @@ makeEvaluateBuiltin
         )
         (Foldable.toList l)
     let
-        ceils :: [Or.Predicate level variable]
+        ceils :: [OrPattern.Predicate level variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicate
         tools
@@ -468,7 +470,7 @@ topPredicateWithProof
     ::  ( MetaOrObject level
         , Ord (variable level)
         )
-    => (Or.Predicate level variable, SimplificationProof level)
+    => (OrPattern.Predicate level variable, SimplificationProof level)
 topPredicateWithProof =
     ( MultiOr.make [Predicate.top]
     , SimplificationProof

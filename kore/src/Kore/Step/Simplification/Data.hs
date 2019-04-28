@@ -52,9 +52,11 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Pattern, Predicate )
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.TermLike
                  ( TermLike )
@@ -311,7 +313,7 @@ simplifyTerm
     -> PredicateSimplifier Object
     -> TermLike variable
     -> Simplifier
-        ( Or.Pattern Object variable
+        ( OrPattern Object variable
         , SimplificationProof Object
         )
 simplifyTerm
@@ -324,7 +326,7 @@ simplifyTerm
             predicateSimplifier
             termLike
             Predicate.top
-    return (Or.fromPatterns results, SimplificationProof)
+    return (OrPattern.fromPatterns results, SimplificationProof)
 
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
@@ -361,7 +363,7 @@ termLikeSimplifier
         => PredicateSimplifier Object
         -> TermLike variable
         -> Simplifier
-            ( Or.Pattern Object variable
+            ( OrPattern Object variable
             , SimplificationProof Object
             )
         )

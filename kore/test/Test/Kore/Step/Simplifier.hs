@@ -8,11 +8,12 @@ import           Kore.AST.Common
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
                  ( mapVariables )
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -85,7 +86,7 @@ mockSimplifierHelper
     -> PredicateSimplifier Object
     -> TermLike variable0
     -> Simplifier
-        (Or.Pattern Object variable0, SimplificationProof Object)
+        (OrPattern Object variable0, SimplificationProof Object)
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
         ( MultiOr.make

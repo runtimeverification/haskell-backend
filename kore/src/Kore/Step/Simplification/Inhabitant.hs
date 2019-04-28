@@ -11,8 +11,9 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
@@ -23,7 +24,7 @@ an or containing a term made of that literal.
 simplify
     :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
     => Sort level
-    -> ( Or.Pattern level variable
+    -> ( OrPattern level variable
        , SimplificationProof level
        )
 simplify s =

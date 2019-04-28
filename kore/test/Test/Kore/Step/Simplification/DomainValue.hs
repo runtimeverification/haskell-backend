@@ -19,10 +19,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.DomainValue
@@ -115,8 +116,8 @@ mockMetadataTools =
 evaluate
     :: (MetaOrObject Object)
     => SmtMetadataTools attrs
-    -> Domain.Builtin (Or.Pattern Object Variable)
-    -> Or.Pattern Object Variable
+    -> Domain.Builtin (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate tools domainValue =
     case simplify tools domainValue of
         (result, _proof) -> result

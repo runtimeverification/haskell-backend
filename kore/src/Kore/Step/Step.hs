@@ -59,8 +59,10 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Predicate
                  ( Predicate )
 import qualified Kore.Step.Predicate as Predicate
@@ -115,7 +117,7 @@ newtype UnificationProcedure level =
         -> TermLike variable
         -> TermLike variable
         -> unifier
-            ( Or.Predicate level variable
+            ( OrPattern.Predicate level variable
             , UnificationProof level variable
             )
         )
@@ -269,7 +271,7 @@ applyInitialConditions
     -- ^ Initial conditions
     -> Predicate Object variable
     -- ^ Unification conditions
-    -> BranchT unifier (Or.Predicate Object variable)
+    -> BranchT unifier (OrPattern.Predicate Object variable)
 applyInitialConditions
     metadataTools
     predicateSimplifier
@@ -329,9 +331,9 @@ finalizeAppliedRule
 
     -> RulePattern Object variable
     -- ^ Applied rule
-    -> Or.Predicate Object variable
+    -> OrPattern.Predicate Object variable
     -- ^ Conditions of applied rule
-    -> BranchT unifier (Or.Pattern Object variable)
+    -> BranchT unifier (OrPattern Object variable)
 finalizeAppliedRule
     metadataTools
     predicateSimplifier

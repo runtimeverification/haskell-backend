@@ -28,8 +28,10 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
@@ -50,7 +52,7 @@ import           Kore.Variables.Fresh
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
-{-|'simplify' simplifies an 'Exists' pattern with an 'Or.Pattern'
+{-|'simplify' simplifies an 'Exists' pattern with an 'OrPattern'
 child.
 
 The simplification of exists x . (pat and pred and subst) is equivalent to:
@@ -83,9 +85,9 @@ simplify
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Exists level variable (Or.Pattern level variable)
+    -> Exists level variable (OrPattern level variable)
     -> Simplifier
-        ( Or.Pattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplify
@@ -108,9 +110,9 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Exists level) (Valid level) (Or.Pattern level variable)
+> CofreeF (Exists level) (Valid level) (OrPattern level variable)
 
-instead of a 'variable level' and an 'Or.Pattern' argument. The type of
+instead of a 'variable level' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
@@ -133,9 +135,9 @@ simplifyEvaluated
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable level
-    -> Or.Pattern level variable
+    -> OrPattern level variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -143,9 +145,9 @@ simplifyEvaluated
     axiomIdToSimplifier
     variable
     simplified
-  | Or.isTrue simplified =
+  | OrPattern.isTrue simplified =
     return (simplified, SimplificationProof)
-  | Or.isFalse simplified =
+  | OrPattern.isFalse simplified =
     return (simplified, SimplificationProof)
   | otherwise = do
     (evaluated, _proofs) <-
@@ -183,7 +185,7 @@ makeEvaluate
     -> variable level
     -> Pattern level variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluate
     tools
     substitutionSimplifier

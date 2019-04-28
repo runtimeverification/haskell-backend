@@ -40,10 +40,10 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Step.Pattern as Conditional
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
@@ -140,7 +140,7 @@ matchWith
     -- ^ Map from symbol IDs to defined functions
     -> Pattern level variable
     -> Pattern level variable
-    -> MaybeT Simplifier (Or.Predicate level variable)
+    -> MaybeT Simplifier (OrPattern.Predicate level variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-
         hushT . Monad.Unify.getUnifier $

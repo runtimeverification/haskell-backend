@@ -12,8 +12,9 @@ import           Kore.AST.Common
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Next
@@ -84,15 +85,15 @@ findSort [] = Mock.testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
 evaluate
-    :: Next Object (Or.Pattern Object Variable)
-    -> Or.Pattern Object Variable
+    :: Next Object (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate next =
     case simplify next of
         (result, _proof) -> result
 
 makeNext
     :: [Pattern Object Variable]
-    -> Next Object (Or.Pattern Object Variable)
+    -> Next Object (OrPattern Object Variable)
 makeNext child =
     Next
         { nextSort = findSort child

@@ -26,8 +26,10 @@ import           Kore.Predicate.Predicate as Predicate
                  makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
@@ -89,7 +91,7 @@ applyInitialConditions
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [Or.Predicate Object Variable]
+            [OrPattern.Predicate Object Variable]
         )
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
@@ -255,7 +257,7 @@ applyRewriteRule_
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [Or.Pattern Object Variable]
+            [OrPattern Object Variable]
         )
 applyRewriteRule_ initial rule = do
     result <- applyRewriteRules initial [rule]

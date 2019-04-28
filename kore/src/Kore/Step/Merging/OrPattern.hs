@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.Merging.Pattern.Or
+module Kore.Step.Merging.OrPattern
     ( mergeWithPredicate
     , mergeWithPredicateAssumesEvaluated
     ) where
@@ -20,9 +20,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.Pattern as Pattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional, Predicate )
-import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -38,7 +39,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 {-| 'mergeWithPredicate' ands the given predicate/substitution
-to the given Or.
+to the given OrPattern.
 -}
 mergeWithPredicate
     ::  ( MetaOrObject level
@@ -60,10 +61,10 @@ mergeWithPredicate
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate level variable
     -- ^ Predicate to add.
-    -> Or.Pattern level variable
+    -> OrPattern level variable
     -- ^ Pattern to which the condition should be added.
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 mergeWithPredicate
     tools
     substitutionSimplifier

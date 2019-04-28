@@ -18,10 +18,11 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
@@ -96,8 +97,8 @@ fromSubstitution =
     . Predicate.fromSubstitution
 
 simplifyEvaluated
-    :: Or.Pattern Object Variable
-    -> IO (Or.Pattern Object Variable)
+    :: OrPattern Object Variable
+    -> IO (OrPattern Object Variable)
 simplifyEvaluated =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger

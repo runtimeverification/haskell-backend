@@ -50,12 +50,13 @@ import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (Conditional), Pattern )
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Pattern as Conditional
                  ( Conditional (..) )
-import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -162,7 +163,7 @@ verify
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT
-        (Or.Pattern level Variable)
+        (OrPattern level Variable)
         Simplifier
         ()
 verify
@@ -242,7 +243,7 @@ verifyClaim
         )
     -> (RewriteRule level Variable, Limit Natural)
     -> ExceptT
-        (Or.Pattern level Variable)
+        (OrPattern level Variable)
         Simplifier
         ()
 verifyClaim

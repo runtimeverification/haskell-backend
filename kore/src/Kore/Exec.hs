@@ -67,10 +67,12 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Proof
                  ( StepProof )
@@ -246,7 +248,7 @@ prove limit definitionModule specModule = do
             axiomIdToSimplifier
             (defaultStrategy claims axioms)
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-    return $ Bifunctor.first Or.toTermLike result
+    return $ Bifunctor.first OrPattern.toTermLike result
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -506,7 +508,7 @@ simplifyPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> Simplifier
-        (Or.Pattern Object Variable, SimplificationProof Object)
+        (OrPattern Object Variable, SimplificationProof Object)
 simplifyPattern tools =
     Pattern.simplify
         tools

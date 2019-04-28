@@ -15,10 +15,12 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -28,7 +30,7 @@ import           Kore.Unparser
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
-{-|'simplify' simplifies a 'Next' pattern with an 'Or.Pattern'
+{-|'simplify' simplifies a 'Next' pattern with an 'OrPattern'
 child.
 
 Right now this does not do any actual simplification.
@@ -40,8 +42,8 @@ simplify
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Next Object (Or.Pattern Object variable)
-    ->  ( Or.Pattern Object variable
+    => Next Object (OrPattern Object variable)
+    ->  ( OrPattern Object variable
         , SimplificationProof Object
         )
 simplify
@@ -56,15 +58,15 @@ simplifyEvaluated
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Or.Pattern Object variable
-    -> (Or.Pattern Object variable, SimplificationProof Object)
+    => OrPattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated simplified =
     ( MultiOr.make
         [ Conditional
             { term =
                 mkNext
                 $ Pattern.toMLPattern
-                $ Or.toExpandedPattern simplified
+                $ OrPattern.toExpandedPattern simplified
             , predicate = makeTruePredicate
             , substitution = mempty
             }

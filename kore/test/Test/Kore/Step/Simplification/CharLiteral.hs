@@ -11,9 +11,10 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..) )
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.CharLiteral
@@ -43,7 +44,7 @@ test_charLiteralSimplification =
 evaluate
     ::  ( MetaOrObject Meta)
     => CharLiteral
-    -> Or.Pattern Object Variable
+    -> OrPattern Object Variable
 evaluate charLiteral =
     case simplify charLiteral of
         (result, _proof) -> result

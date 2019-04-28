@@ -34,8 +34,10 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -48,7 +50,7 @@ import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-|'simplify' simplifies an 'And' of 'Or.Pattern'.
+{-|'simplify' simplifies an 'And' of 'OrPattern'.
 
 To do that, it first distributes the terms, making it an Or of And patterns,
 each And having 'Pattern's as children, then it simplifies each of
@@ -100,9 +102,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> And level (Or.Pattern level variable)
+    -> And level (OrPattern level variable)
     -> Simplifier
-        ( Or.Pattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplify
@@ -123,7 +125,7 @@ simplify
         first
         second
 
-{-| simplifies an And given its two 'Or.Pattern' children.
+{-| simplifies an And given its two 'OrPattern' children.
 
 See 'simplify' for details.
 -}
@@ -132,9 +134,9 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (And level) (Valid level) (Or.Pattern level variable)
+> CofreeF (And level) (Valid level) (OrPattern level variable)
 
-instead of two 'Or.Pattern' arguments. The type of 'makeEvaluate' may
+instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -155,10 +157,10 @@ simplifyEvaluated
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Or.Pattern level variable
-    -> Or.Pattern level variable
+    -> OrPattern level variable
+    -> OrPattern level variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -166,13 +168,13 @@ simplifyEvaluated
     axiomIdToSimplifier
     first
     second
-  | Or.isFalse first =
+  | OrPattern.isFalse first =
     return (MultiOr.make [], SimplificationProof)
-  | Or.isFalse second =
+  | OrPattern.isFalse second =
     return (MultiOr.make [], SimplificationProof)
 
-  | Or.isTrue first = return (second, SimplificationProof)
-  | Or.isTrue second = return (first, SimplificationProof)
+  | OrPattern.isTrue first = return (second, SimplificationProof)
+  | OrPattern.isTrue second = return (first, SimplificationProof)
 
   | otherwise = do
     result <-

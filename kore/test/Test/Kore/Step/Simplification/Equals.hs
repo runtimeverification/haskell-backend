@@ -25,10 +25,12 @@ import           Kore.Predicate.Predicate
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
 import           Kore.Sort
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Conditional
-import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Step.Predicate as Predicate
@@ -284,7 +286,7 @@ test_equalsSimplification_Or_Pattern =
         let message1 =
                 unlines
                     [ "Expected"
-                    , unparseToString (Or.toExpandedPattern <$> test1)
+                    , unparseToString (OrPattern.toExpandedPattern <$> test1)
                     , "would simplify to:"
                     , unlines (unparseToString <$> Foldable.toList expect)
                     , "but instead found:"
@@ -995,8 +997,8 @@ testSort2 =
 
 evaluateOr
     :: SmtMetadataTools StepperAttributes
-    -> Equals Object (Or.Pattern Object Variable)
-    -> IO (Or.Pattern Object Variable)
+    -> Equals Object (OrPattern Object Variable)
+    -> IO (OrPattern Object Variable)
 evaluateOr tools equals =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -1012,7 +1014,7 @@ evaluate
     :: SmtMetadataTools StepperAttributes
     -> Pattern Object Variable
     -> Pattern Object Variable
-    -> IO (Or.Pattern Object Variable)
+    -> IO (OrPattern Object Variable)
 evaluate = evaluateGeneric
 
 evaluateGeneric
@@ -1020,7 +1022,7 @@ evaluateGeneric
     => SmtMetadataTools StepperAttributes
     -> Pattern Object Variable
     -> Pattern Object Variable
-    -> IO (Or.Pattern Object Variable)
+    -> IO (OrPattern Object Variable)
 evaluateGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -1038,7 +1040,7 @@ evaluateTermsGeneric
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Or.Predicate level Variable)
+    -> IO (OrPattern.Predicate level Variable)
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

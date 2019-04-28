@@ -15,9 +15,10 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..) )
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -29,7 +30,7 @@ an or containing a term made of that literal.
 simplify
     :: Ord (variable Meta)
     => StringLiteral
-    -> ( Or.Pattern Meta variable
+    -> ( OrPattern Meta variable
        , SimplificationProof Meta
        )
 simplify (StringLiteral str) =

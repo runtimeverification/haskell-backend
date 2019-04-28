@@ -18,8 +18,8 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
@@ -62,14 +62,14 @@ evaluate
         simplifyTerm' (Syntax.Predicate.unwrapPredicate predicate)
     refute <-
         case () of
-            _ | Or.isTrue simplified  -> return (Just True)
-              | Or.isFalse simplified -> return (Just False)
+            _ | OrPattern.isTrue simplified  -> return (Just True)
+              | OrPattern.isFalse simplified -> return (Just False)
               | otherwise -> SMT.Evaluator.decidePredicate predicate
     let simplified' =
             case refute of
                 Just False -> Pattern.bottom
                 Just True -> Pattern.top
-                _ -> Or.toExpandedPattern simplified
+                _ -> OrPattern.toExpandedPattern simplified
         (subst, _proof) = asPredicate simplified'
     return (subst, SimplificationProof)
   where

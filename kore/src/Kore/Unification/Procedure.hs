@@ -21,11 +21,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Merging.Pattern.Or as Or
+import qualified Kore.Step.Merging.OrPattern as OrPattern
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Conditional
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.AndTerms
@@ -74,7 +74,7 @@ unificationProcedure
     -- ^left-hand-side of unification
     -> TermLike variable
     -> unifier
-        ( Or.Predicate level variable
+        ( OrPattern.Predicate level variable
         , UnificationProof level variable
         )
 unificationProcedure
@@ -104,7 +104,7 @@ unificationProcedure
                     axiomIdToSimplifier
                     term
             (result, _proof) <-
-                Or.mergeWithPredicateAssumesEvaluated
+                OrPattern.mergeWithPredicateAssumesEvaluated
                     (createPredicatesAndSubstitutionsMerger
                         tools
                         substitutionSimplifier

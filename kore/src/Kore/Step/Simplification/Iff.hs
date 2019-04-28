@@ -22,8 +22,10 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
 import           Kore.Step.Simplification.Data
@@ -35,7 +37,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-|'simplify' simplifies an 'Iff' pattern with 'Or.Pattern'
+{-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.
 
 Right now this has special cases only for top and bottom children
@@ -52,9 +54,9 @@ simplify
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Iff Object (Or.Pattern Object variable)
+    -> Iff Object (OrPattern Object variable)
     -> Simplifier
-        (Or.Pattern Object variable, SimplificationProof Object)
+        (OrPattern Object variable, SimplificationProof Object)
 simplify
     tools
     predicateSimplifier
@@ -75,7 +77,7 @@ simplify
   where
     withProof a = (a, SimplificationProof)
 
-{-| evaluates an 'Iff' given its two 'Or.Pattern' children.
+{-| evaluates an 'Iff' given its two 'OrPattern' children.
 
 See 'simplify' for detailed documentation.
 -}
@@ -84,9 +86,9 @@ See 'simplify' for detailed documentation.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Iff Object) (Valid Object) (Or.Pattern Object variable)
+> CofreeF (Iff Object) (Valid Object) (OrPattern Object variable)
 
-instead of two 'Or.Pattern' arguments. The type of 'makeEvaluate' may
+instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -102,9 +104,9 @@ simplifyEvaluated
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Or.Pattern Object variable
-    -> Or.Pattern Object variable
-    -> Simplifier (Or.Pattern Object variable)
+    -> OrPattern Object variable
+    -> OrPattern Object variable
+    -> Simplifier (OrPattern Object variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -112,16 +114,16 @@ simplifyEvaluated
     axiomSimplifiers
     first
     second
-  | Or.isTrue first = return second
-  | Or.isFalse first =
+  | OrPattern.isTrue first = return second
+  | OrPattern.isFalse first =
     Not.simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
         second
-  | Or.isTrue second = return first
-  | Or.isFalse second =
+  | OrPattern.isTrue second = return first
+  | OrPattern.isFalse second =
     Not.simplifyEvaluated
         tools
         predicateSimplifier
@@ -133,8 +135,8 @@ simplifyEvaluated
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
             makeEvaluate
-                (Or.toExpandedPattern first)
-                (Or.toExpandedPattern second)
+                (OrPattern.toExpandedPattern first)
+                (OrPattern.toExpandedPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -151,7 +153,7 @@ makeEvaluate
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> Or.Pattern Object variable
+    -> OrPattern Object variable
 makeEvaluate first second
   | Pattern.isTop first = MultiOr.make [second]
   | Pattern.isBottom first = Not.makeEvaluate second
@@ -167,7 +169,7 @@ makeEvaluateNonBoolIff
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> Or.Pattern Object variable
+    -> OrPattern Object variable
 makeEvaluateNonBoolIff
     patt1@Conditional
         { term = firstTerm
@@ -198,6 +200,6 @@ makeEvaluateNonBoolIff
             }
         ]
   | otherwise =
-    Or.fromTermLike $ mkIff
+    OrPattern.fromTermLike $ mkIff
         (Pattern.toMLPattern patt1)
         (Pattern.toMLPattern patt2)

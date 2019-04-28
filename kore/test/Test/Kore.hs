@@ -56,8 +56,9 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Sort
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.TermLike as TermLike
 
@@ -853,6 +854,6 @@ expandedPatternGen :: MetaOrObject level => Gen (Pattern Object Variable)
 expandedPatternGen =
     Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
-orPatternGen :: Gen (Or.Pattern Object Variable)
+orPatternGen :: Gen (OrPattern Object Variable)
 orPatternGen =
     MultiOr.make <$> Gen.list (Range.linear 0 64) expandedPatternGen

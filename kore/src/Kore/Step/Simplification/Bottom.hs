@@ -14,7 +14,8 @@ module Kore.Step.Simplification.Bottom
 import           Kore.AST.Common
                  ( Bottom (..) )
 import           Kore.AST.MetaOrObject
-import qualified Kore.Step.Pattern.Or as Or
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -25,6 +26,6 @@ import           Kore.Step.Simplification.Data
 simplify
     :: Ord (variable Object)
     => Bottom Object child
-    -> (Or.Pattern Object variable, SimplificationProof Object)
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplify Bottom {} =
     (MultiOr.make [], SimplificationProof)

@@ -27,8 +27,10 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
@@ -39,7 +41,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-|'simplify' simplifies a 'Not' pattern with an 'Or.Pattern'
+{-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
 
 Right now this uses the following:
@@ -59,8 +61,8 @@ simplify
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Not Object (Or.Pattern Object variable)
-    -> Simplifier (Or.Pattern Object variable)
+    -> Not Object (OrPattern Object variable)
+    -> Simplifier (OrPattern Object variable)
 simplify
     tools
     predicateSimplifier
@@ -76,7 +78,7 @@ simplify
         child
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
-'Or.Pattern' child.
+'OrPattern' child.
 
 See 'simplify' for details.
 -}
@@ -85,9 +87,9 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Not level) (Valid level) (Or.Pattern level variable)
+> CofreeF (Not level) (Valid level) (OrPattern level variable)
 
-instead of an 'Or.Pattern' argument. The type of 'makeEvaluate' may
+instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -103,16 +105,16 @@ simplifyEvaluated
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Or.Pattern Object variable
-    -> Simplifier (Or.Pattern Object variable)
+    -> OrPattern Object variable
+    -> Simplifier (OrPattern Object variable)
 simplifyEvaluated
     tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
     simplified
-  | Or.isFalse simplified = return (MultiOr.make [Pattern.top])
-  | Or.isTrue  simplified = return (MultiOr.make [])
+  | OrPattern.isFalse simplified = return (MultiOr.make [Pattern.top])
+  | OrPattern.isTrue  simplified = return (MultiOr.make [])
   | otherwise =
     fmap MultiOr.make . gather
     $ Foldable.foldrM mkAnd Pattern.top (simplified >>= makeEvaluate)
@@ -137,7 +139,7 @@ makeEvaluate
         , Unparse (variable level)
         )
     => Pattern level variable
-    -> Or.Pattern level variable
+    -> OrPattern level variable
 makeEvaluate Conditional { term, predicate, substitution } =
     MultiOr.make
         [ Conditional

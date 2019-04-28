@@ -46,10 +46,10 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Step.Rule
@@ -302,7 +302,7 @@ applyFirstSimplifierThatWorks
                         )
                     )
                 when
-                    (not (Or.isFalse orRemainders)
+                    (not (OrPattern.isFalse orRemainders)
                     && not (acceptsMultipleResults multipleResults)
                     )
                     -- It's not obvious that we should accept simplifications

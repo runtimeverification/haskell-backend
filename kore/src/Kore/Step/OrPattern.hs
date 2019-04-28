@@ -3,9 +3,9 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.Pattern.Or
+module Kore.Step.OrPattern
     ( Conditional
-    , Pattern
+    , OrPattern
     , Predicate
     , fromPatterns
     , fromPattern
@@ -25,6 +25,8 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.Pattern
+                 ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
@@ -42,7 +44,7 @@ type Conditional level variable term =
 
 {-| The disjunction of 'Pattern'.
 -}
-type Pattern level variable = MultiOr (Pattern.Pattern level variable)
+type OrPattern level variable = MultiOr (Pattern level variable)
 
 {-| The disjunction of 'Predicate.Predicate'.
 -}
@@ -52,16 +54,16 @@ type Predicate level variable = MultiOr (Predicate.Predicate level variable)
  -}
 fromPattern
     :: Ord (variable Object)
-    => Pattern.Pattern Object variable
-    -> Pattern Object variable
+    => Pattern Object variable
+    -> OrPattern Object variable
 fromPattern = MultiOr.singleton
 
 {- | Disjoin a collection of patterns.
  -}
 fromPatterns
     :: (Foldable f, Ord (variable Object))
-    => f (Pattern.Pattern Object variable)
-    -> Pattern Object variable
+    => f (Pattern Object variable)
+    -> OrPattern Object variable
 fromPatterns = MultiOr.make . Foldable.toList
 
 {- | A "disjunction" of one 'TermLike'.
@@ -72,7 +74,7 @@ See also: 'fromPattern'
 fromTermLike
     :: Ord (variable Object)
     => TermLike variable
-    -> Pattern Object variable
+    -> OrPattern Object variable
 fromTermLike = fromPattern . Pattern.fromTermLike
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
@@ -101,7 +103,7 @@ toExpandedPattern
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Pattern Object variable -> Pattern.Pattern Object variable
+    => OrPattern Object variable -> Pattern Object variable
 toExpandedPattern multiOr
   =
     case MultiOr.extractPatterns multiOr of
@@ -122,7 +124,7 @@ toTermLike
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Pattern Object variable -> TermLike variable
+    => OrPattern Object variable -> TermLike variable
 toTermLike multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> mkBottom_

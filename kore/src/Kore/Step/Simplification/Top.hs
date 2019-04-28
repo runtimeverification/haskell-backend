@@ -14,8 +14,9 @@ module Kore.Step.Simplification.Top
 import           Kore.AST.Common
                  ( Top (..) )
 import           Kore.AST.MetaOrObject
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
@@ -27,7 +28,7 @@ import           Kore.Step.Simplification.Data
 simplify
     :: (MetaOrObject level, Ord (variable level))
     => Top level child
-    -> ( Or.Pattern level variable
+    -> ( OrPattern level variable
        , SimplificationProof level
        )
 simplify _ =

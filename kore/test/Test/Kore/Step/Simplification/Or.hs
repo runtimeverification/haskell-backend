@@ -19,8 +19,10 @@ import           Kore.Predicate.Predicate
                  makeOrPredicate, makeTruePredicate, substitutionToPredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
@@ -39,8 +41,8 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 
 {-
 
-`SimplifyEvaluated` is the core function. It converts two `Or.Pattern`
-values into a simplifier that is to produce a single `Or.Pattern`. We
+`SimplifyEvaluated` is the core function. It converts two `OrPattern`
+values into a simplifier that is to produce a single `OrPattern`. We
 run the simplifier to check correctness.
 
 -}
@@ -131,16 +133,16 @@ test_simplify =
             (simplifyEvaluated          orPattern1 orPattern2 )
         ]
   where
-    orPattern1 :: Or.Pattern Object Variable
+    orPattern1 :: OrPattern Object Variable
     orPattern1 = wrapInOrPattern (tM, pM, sM)
 
-    orPattern2 :: Or.Pattern Object Variable
+    orPattern2 :: OrPattern Object Variable
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 
     binaryOr
-      :: Or.Pattern Object Variable
-      -> Or.Pattern Object Variable
-      -> Or Object (Or.Pattern Object Variable)
+      :: OrPattern Object Variable
+      -> OrPattern Object Variable
+      -> Or Object (OrPattern Object Variable)
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
@@ -149,7 +151,7 @@ test_simplify =
 
 {-
 Key for variable names:
-1. `Or.Pattern` values are represented by a tuple containing
+1. `OrPattern` values are represented by a tuple containing
    the term, predicate, and substitution, in that order. They're
    also tagged with `t`, `p`, and `s`.
 2. The second character has this meaning:
@@ -251,7 +253,7 @@ becomes (orChild -> or1, orChild -> or2) (MultiOr.make . List.sort -> expected) 
         (stateIntention
             [ prettyOr or1 or2
             , "to become:"
-            , Unparser.unparse $ Or.toExpandedPattern expected
+            , Unparser.unparse $ OrPattern.toExpandedPattern expected
             ]
         )
 
@@ -309,8 +311,8 @@ orChild (term, predicate, substitution) =
     Conditional { term, predicate, substitution }
 
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
--- during conversion of a Conditional into an Or.Pattern
+-- during conversion of a Conditional into an OrPattern
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> Or.Pattern Object Variable
+    -> OrPattern Object Variable
 wrapInOrPattern tuple = MultiOr.make [orChild tuple]

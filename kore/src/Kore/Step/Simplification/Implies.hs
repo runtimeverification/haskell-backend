@@ -21,8 +21,10 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
@@ -33,7 +35,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-|'simplify' simplifies an 'Implies' pattern with 'Or.Pattern'
+{-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
 
 Right now this uses the following simplifications:
@@ -56,9 +58,9 @@ simplify
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Implies Object (Or.Pattern Object variable)
+    -> Implies Object (OrPattern Object variable)
     -> Simplifier
-        (Or.Pattern Object variable , SimplificationProof Object)
+        (OrPattern Object variable , SimplificationProof Object)
 simplify
     tools
     predicateSimplifier
@@ -77,7 +79,7 @@ simplify
         first
         second
 
-{-| simplifies an Implies given its two 'Or.Pattern' children.
+{-| simplifies an Implies given its two 'OrPattern' children.
 
 See 'simplify' for details.
 -}
@@ -87,9 +89,9 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Implies Object) (Valid Object) (Or.Pattern Object variable)
+> CofreeF (Implies Object) (Valid Object) (OrPattern Object variable)
 
-instead of two 'Or.Pattern' arguments. The type of 'makeEvaluate' may
+instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -104,10 +106,10 @@ simplifyEvaluated
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Or.Pattern Object variable
-    -> Or.Pattern Object variable
+    -> OrPattern Object variable
+    -> OrPattern Object variable
     -> Simplifier
-        (Or.Pattern Object variable, SimplificationProof Object)
+        (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -115,13 +117,13 @@ simplifyEvaluated
     axiomSimplifiers
     first
     second
-  | Or.isTrue first =
+  | OrPattern.isTrue first =
     return (second, SimplificationProof)
-  | Or.isFalse first =
+  | OrPattern.isFalse first =
     return (MultiOr.make [Pattern.top], SimplificationProof)
-  | Or.isTrue second =
+  | OrPattern.isTrue second =
     return (MultiOr.make [Pattern.top], SimplificationProof)
-  | Or.isFalse second = do
+  | OrPattern.isFalse second = do
     result <-
         Not.simplifyEvaluated
             tools
@@ -151,9 +153,9 @@ simplifyEvaluateHalfImplies
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Or.Pattern Object variable
+    -> OrPattern Object variable
     -> Pattern Object variable
-    -> Simplifier (Or.Pattern Object variable)
+    -> Simplifier (OrPattern Object variable)
 simplifyEvaluateHalfImplies
     tools
     predicateSimplifier
@@ -161,9 +163,9 @@ simplifyEvaluateHalfImplies
     axiomSimplifiers
     first
     second
-  | Or.isTrue first =
+  | OrPattern.isTrue first =
     return (MultiOr.make [second])
-  | Or.isFalse first =
+  | OrPattern.isFalse first =
     return (MultiOr.make [Pattern.top])
   | Pattern.isTop second =
     return (MultiOr.make [Pattern.top])
@@ -178,7 +180,7 @@ simplifyEvaluateHalfImplies
     -- TODO: Also merge predicate-only patterns for 'Or'
     return $ case MultiOr.extractPatterns first of
         [firstP] -> makeEvaluateImplies firstP second
-        _ -> makeEvaluateImplies (Or.toExpandedPattern first) second
+        _ -> makeEvaluateImplies (OrPattern.toExpandedPattern first) second
 
 makeEvaluateImplies
     ::  ( SortedVariable variable
@@ -188,7 +190,7 @@ makeEvaluateImplies
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> Or.Pattern Object variable
+    -> OrPattern Object variable
 makeEvaluateImplies
     first second
   | Pattern.isTop first =
@@ -210,7 +212,7 @@ makeEvaluateImpliesNonBool
         )
     => Pattern Object variable
     -> Pattern Object variable
-    -> Or.Pattern Object variable
+    -> OrPattern Object variable
 makeEvaluateImpliesNonBool
     pattern1@Conditional
         { term = firstTerm

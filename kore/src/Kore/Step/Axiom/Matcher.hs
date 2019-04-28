@@ -36,8 +36,8 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Merging.Pattern.Or as Or
-import qualified Kore.Step.Pattern.Or as Or
+import qualified Kore.Step.Merging.OrPattern as OrPattern
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Predicate as Conditional
                  ( Conditional (..), Predicate )
 import qualified Kore.Step.Predicate as Predicate
@@ -114,7 +114,7 @@ matchAsUnification
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( Or.Predicate level variable
+        ( OrPattern.Predicate level variable
         , UnificationProof level variable
         )
 matchAsUnification
@@ -163,7 +163,7 @@ unificationWithAppMatchOnTop
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( Or.Predicate level variable
+        ( OrPattern.Predicate level variable
         , UnificationProof level variable
         )
 unificationWithAppMatchOnTop
@@ -251,7 +251,7 @@ match
     -> TermLike variable
     -- TODO: Use Result here.
     -> MaybeT unifier
-        (Or.Predicate level variable)
+        (OrPattern.Predicate level variable)
 match
     tools
     substitutionSimplifier
@@ -303,7 +303,7 @@ matchEqualHeadPatterns
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Or.Predicate level variable)
+        (OrPattern.Predicate level variable)
 matchEqualHeadPatterns
     tools
     substitutionSimplifier
@@ -543,7 +543,7 @@ matchEqualHeadPatterns
             else nothing
     justTop
         :: MaybeT unifier
-            (Or.Predicate level variable)
+            (OrPattern.Predicate level variable)
     justTop = just
         (MultiOr.make [Predicate.top])
 
@@ -571,7 +571,7 @@ matchJoin
     -> Map.Map (variable level) (variable level)
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier
-        (Or.Predicate level variable)
+        (OrPattern.Predicate level variable)
 matchJoin
     tools
     substitutionSimplifier
@@ -632,7 +632,7 @@ unifyJoin
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
     -> unifier
-        ( Or.Predicate level variable
+        ( OrPattern.Predicate level variable
         , UnificationProof level variable
         )
 unifyJoin
@@ -649,7 +649,7 @@ unifyJoin
             )
             patterns
     let
-        matched :: [Or.Predicate level variable]
+        matched :: [OrPattern.Predicate level variable]
         (matched, _proof) = unzip matchedWithProofs
         crossProduct :: MultiOr [Predicate level variable]
         crossProduct = MultiOr.fullCrossProduct matched
@@ -708,7 +708,7 @@ matchVariableFunction
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Or.Predicate level variable)
+        (OrPattern.Predicate level variable)
 matchVariableFunction
     tools
     substitutionSimplifier
@@ -728,7 +728,7 @@ matchVariableFunction
             axiomIdToSimplifier
             second
     (result, _proof) <-
-        Or.mergeWithPredicateAssumesEvaluated
+        OrPattern.mergeWithPredicateAssumesEvaluated
             (createPredicatesAndSubstitutionsMergerExcept
                 tools
                 substitutionSimplifier
@@ -756,8 +756,8 @@ checkVariableEscapeOr
         , Unparse (variable level)
         )
     => [variable level]
-    -> Or.Predicate level variable
-    -> Or.Predicate level variable
+    -> OrPattern.Predicate level variable
+    -> OrPattern.Predicate level variable
 checkVariableEscapeOr vars = fmap (checkVariableEscape vars)
 
 checkVariableEscape

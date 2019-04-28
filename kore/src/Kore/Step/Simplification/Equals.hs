@@ -35,8 +35,10 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeNotPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
@@ -64,7 +66,7 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-|'simplify' simplifies an 'Equals' pattern made of 'Or.Pattern's.
+{-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
 
 This uses the following simplifications
 (t = term, s = substitution, p = predicate):
@@ -155,9 +157,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Equals level (Or.Pattern level variable)
+    -> Equals level (OrPattern level variable)
     -> Simplifier
-        ( Or.Pattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplify
@@ -183,9 +185,9 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Equals level) (Valid level) (Or.Pattern level variable)
+> CofreeF (Equals level) (Valid level) (OrPattern level variable)
 
-instead of two 'Or.Pattern' arguments. The type of 'makeEvaluate' may
+instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -206,10 +208,10 @@ simplifyEvaluated
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Or.Pattern level variable
-    -> Or.Pattern level variable
+    -> OrPattern level variable
+    -> OrPattern level variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -255,8 +257,8 @@ simplifyEvaluated
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
-                (Or.toExpandedPattern first)
-                (Or.toExpandedPattern second)
+                (OrPattern.toExpandedPattern first)
+                (OrPattern.toExpandedPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -282,7 +284,7 @@ makeEvaluateFunctionalOr
     -> Pattern level variable
     -> [Pattern level variable]
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluateFunctionalOr
     tools
     substitutionSimplifier
@@ -412,7 +414,7 @@ makeEvaluate
     -> Pattern level variable
     -> Pattern level variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluate
     _
     _
@@ -548,7 +550,7 @@ makeEvaluateTermsAssumesNoBottom
     -> TermLike variable
     -> TermLike variable
     -> Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
     tools
     substitutionSimplifier
@@ -601,7 +603,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier
-        (Or.Pattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottomMaybe
     tools
     substitutionSimplifier
@@ -652,7 +654,7 @@ makeEvaluateTermsToPredicate
     -> TermLike variable
     -> TermLike variable
     -> Simplifier
-        (Or.Predicate level variable, SimplificationProof level)
+        (OrPattern.Predicate level variable, SimplificationProof level)
 makeEvaluateTermsToPredicate
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =
@@ -710,8 +712,8 @@ makeEvaluateTermsToPredicate
                         ++ ", first=" ++ show first
                         ++ ", second=" ++ show second
                         )
-                firstCeil = Or.toPredicate (fmap toPredicateSafe firstCeilOr)
-                secondCeil = Or.toPredicate (fmap toPredicateSafe secondCeilOr)
+                firstCeil = OrPattern.toPredicate (fmap toPredicateSafe firstCeilOr)
+                secondCeil = OrPattern.toPredicate (fmap toPredicateSafe secondCeilOr)
                 firstCeilNegation = makeNotPredicate firstCeil
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =

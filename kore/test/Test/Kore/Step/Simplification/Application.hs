@@ -29,8 +29,9 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Application
@@ -351,7 +352,7 @@ makeApplication
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
-        (Or.Pattern Object variable)
+        (OrPattern Object variable)
 makeApplication patternSort symbol patterns =
     (:<)
         valid
@@ -378,8 +379,8 @@ evaluate
     -> CofreeF
         (Application level)
         (Valid (Variable level) level)
-        (Or.Pattern level Variable)
-    -> IO (Or.Pattern level Variable)
+        (OrPattern level Variable)
+    -> IO (OrPattern level Variable)
 evaluate
     tools
     simplifier
