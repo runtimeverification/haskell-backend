@@ -62,13 +62,13 @@ simplifyEvaluatedMultiPredicate
     substitutionSimplifier
     simplifier
     axiomIdToSubstitution
-    predicateSubstitutions
+    predicates
   = do
     let
         crossProduct :: MultiOr [Predicate level variable]
         crossProduct =
             MultiOr.fullCrossProduct
-                (MultiAnd.extractPatterns predicateSubstitutions)
+                (MultiAnd.extractPatterns predicates)
     result <- traverse andPredicates crossProduct
     return
         ( result
@@ -78,12 +78,12 @@ simplifyEvaluatedMultiPredicate
     andPredicates
         :: [Predicate level variable]
         -> Simplifier (Predicate level variable)
-    andPredicates predicateSubstitutions0 = do
+    andPredicates predicates0 = do
         (result, _proof) <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSubstitution
-            (map Pattern.predicate predicateSubstitutions0)
-            (map Pattern.substitution predicateSubstitutions0)
+            (map Pattern.predicate predicates0)
+            (map Pattern.substitution predicates0)
         return result

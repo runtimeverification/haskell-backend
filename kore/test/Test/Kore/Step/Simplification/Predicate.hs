@@ -286,12 +286,12 @@ runSimplifier
     :: BuiltinAndAxiomSimplifierMap Object
     -> Predicate Object Variable
     -> IO (Or.Predicate Object Variable)
-runSimplifier patternSimplifierMap predicateSubstitution =
+runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ gather
-    $ simplifier predicateSubstitution
+    $ simplifier predicate
   where
     PredicateSimplifier simplifier =
         PSSimplifier.create

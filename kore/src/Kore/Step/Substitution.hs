@@ -445,7 +445,7 @@ normalizeSubstitutionAfterMerge
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    predicateSubstitution
+    predicate
   = do
     results <-
         gather
@@ -454,7 +454,7 @@ normalizeSubstitutionAfterMerge
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            predicateSubstitution
+            predicate
     case Foldable.toList results of
         [] -> return
             ( Predicate.bottom
