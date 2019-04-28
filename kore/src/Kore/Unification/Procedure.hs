@@ -22,7 +22,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Conditional
@@ -74,7 +75,7 @@ unificationProcedure
     -- ^left-hand-side of unification
     -> TermLike variable
     -> unifier
-        ( OrPattern.Predicate level variable
+        ( OrPredicate level variable
         , UnificationProof level variable
         )
 unificationProcedure

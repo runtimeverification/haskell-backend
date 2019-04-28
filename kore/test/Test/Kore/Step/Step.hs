@@ -28,7 +28,8 @@ import qualified Kore.Step.Axiom.Matcher as Matcher
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
@@ -91,7 +92,7 @@ applyInitialConditions
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [OrPattern.Predicate Object Variable]
+            [OrPredicate Object Variable]
         )
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList

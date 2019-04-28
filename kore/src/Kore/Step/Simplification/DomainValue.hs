@@ -16,10 +16,11 @@ import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Step.Conditional
+                 ( Conditional )
 import           Kore.Step.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Step.TermLike
@@ -54,8 +55,8 @@ simplifyBuiltin
        , SortedVariable variable
        )
     => Domain.Builtin (OrPattern Object variable)
-    -> OrPattern.Conditional Object variable
-        (Domain.Builtin (TermLike variable))
+    -> MultiOr
+        (Conditional Object variable (Domain.Builtin (TermLike variable)))
 simplifyBuiltin =
     \case
         Domain.BuiltinExternal _ext -> do

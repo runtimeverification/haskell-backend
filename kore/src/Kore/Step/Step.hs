@@ -61,7 +61,8 @@ import           Kore.Step.Conditional
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Predicate
                  ( Predicate )
@@ -117,7 +118,7 @@ newtype UnificationProcedure level =
         -> TermLike variable
         -> TermLike variable
         -> unifier
-            ( OrPattern.Predicate level variable
+            ( OrPredicate level variable
             , UnificationProof level variable
             )
         )
@@ -271,7 +272,7 @@ applyInitialConditions
     -- ^ Initial conditions
     -> Predicate Object variable
     -- ^ Unification conditions
-    -> BranchT unifier (OrPattern.Predicate Object variable)
+    -> BranchT unifier (OrPredicate Object variable)
 applyInitialConditions
     metadataTools
     predicateSimplifier
@@ -331,7 +332,7 @@ finalizeAppliedRule
 
     -> RulePattern Object variable
     -- ^ Applied rule
-    -> OrPattern.Predicate Object variable
+    -> OrPredicate Object variable
     -- ^ Conditions of applied rule
     -> BranchT unifier (OrPattern Object variable)
 finalizeAppliedRule

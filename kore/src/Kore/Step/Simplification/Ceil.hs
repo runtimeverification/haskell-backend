@@ -43,7 +43,8 @@ import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
 import           Kore.Step.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
@@ -272,7 +273,7 @@ makeEvaluateTerm
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> Simplifier
-        (OrPattern.Predicate level variable, SimplificationProof level)
+        (OrPredicate level variable, SimplificationProof level)
 makeEvaluateTerm
     tools
     substitutionSimplifier
@@ -373,7 +374,7 @@ makeEvaluateBuiltin
     -- ^ Map from symbol IDs to defined functions
     -> Domain.Builtin (TermLike variable)
     -> Simplifier
-        (OrPattern.Predicate level variable, SimplificationProof level)
+        (OrPredicate level variable, SimplificationProof level)
 makeEvaluateBuiltin
     _tools
     _substitutionSimplifier
@@ -407,7 +408,7 @@ makeEvaluateBuiltin
         )
         values
     let
-        ceils :: [OrPattern.Predicate level variable]
+        ceils :: [OrPredicate level variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicate
         tools
@@ -432,7 +433,7 @@ makeEvaluateBuiltin
         )
         (Foldable.toList l)
     let
-        ceils :: [OrPattern.Predicate level variable]
+        ceils :: [OrPredicate level variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicate
         tools
@@ -470,7 +471,7 @@ topPredicateWithProof
     ::  ( MetaOrObject level
         , Ord (variable level)
         )
-    => (OrPattern.Predicate level variable, SimplificationProof level)
+    => (OrPredicate level variable, SimplificationProof level)
 topPredicateWithProof =
     ( MultiOr.make [Predicate.top]
     , SimplificationProof

@@ -25,7 +25,8 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
-import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Predicate
                  ( Conditional (..) )
 import qualified Kore.Step.Predicate as Conditional
@@ -886,7 +887,7 @@ matchDefinition
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPattern.Predicate level Variable))
+    -> IO (Maybe (OrPredicate level Variable))
 matchDefinition = match
 
 matchSimplification
@@ -894,7 +895,7 @@ matchSimplification
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPattern.Predicate level Variable))
+    -> IO (Maybe (OrPredicate level Variable))
 matchSimplification = match
 
 unificationWithMatch
@@ -902,7 +903,7 @@ unificationWithMatch
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPattern.Predicate level Variable))
+    -> IO (Maybe (OrPredicate level Variable))
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
@@ -923,7 +924,7 @@ match
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPattern.Predicate level Variable))
+    -> IO (Maybe (OrPredicate level Variable))
 match tools first second =
     matchAsEither >>= return . \case
         Left _err -> Nothing
@@ -933,7 +934,7 @@ match tools first second =
         :: IO
             (Either
                 (UnificationOrSubstitutionError level Variable)
-                ( OrPattern.Predicate level Variable
+                ( OrPredicate level Variable
                 , UnificationProof level Variable
                 )
             )
@@ -945,7 +946,7 @@ match tools first second =
         :: ExceptT
             (UnificationOrSubstitutionError level Variable)
             Simplifier
-            ( OrPattern.Predicate level Variable
+            ( OrPredicate level Variable
             , UnificationProof level Variable
             )
     matchResult =

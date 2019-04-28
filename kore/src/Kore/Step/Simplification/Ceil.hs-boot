@@ -14,7 +14,8 @@ import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.TermLike
        ( TermLike )
-import qualified Kore.Step.OrPattern as OrPattern
+import Kore.Step.OrPredicate
+       ( OrPredicate )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, SimplificationProof, Simplifier,
        TermLikeSimplifier )
@@ -42,4 +43,4 @@ makeEvaluateTerm
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> Simplifier
-        (OrPattern.Predicate level variable, SimplificationProof level)
+        (OrPredicate level variable, SimplificationProof level)

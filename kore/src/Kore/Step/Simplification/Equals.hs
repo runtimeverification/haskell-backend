@@ -38,6 +38,9 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Step.OrPredicate as OrPredicate
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
@@ -654,7 +657,7 @@ makeEvaluateTermsToPredicate
     -> TermLike variable
     -> TermLike variable
     -> Simplifier
-        (OrPattern.Predicate level variable, SimplificationProof level)
+        (OrPredicate level variable, SimplificationProof level)
 makeEvaluateTermsToPredicate
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =
@@ -712,8 +715,8 @@ makeEvaluateTermsToPredicate
                         ++ ", first=" ++ show first
                         ++ ", second=" ++ show second
                         )
-                firstCeil = OrPattern.toPredicate (fmap toPredicateSafe firstCeilOr)
-                secondCeil = OrPattern.toPredicate (fmap toPredicateSafe secondCeilOr)
+                firstCeil = OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
+                secondCeil = OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
                 firstCeilNegation = makeNotPredicate firstCeil
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =

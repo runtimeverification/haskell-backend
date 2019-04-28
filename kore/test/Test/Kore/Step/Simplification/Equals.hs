@@ -28,6 +28,8 @@ import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Conditional
@@ -1040,7 +1042,7 @@ evaluateTermsGeneric
     => SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (OrPattern.Predicate level Variable)
+    -> IO (OrPredicate level Variable)
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

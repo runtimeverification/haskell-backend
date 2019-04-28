@@ -18,7 +18,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Pattern
                  ( Predicate )
 import qualified Kore.Step.Pattern as Pattern
@@ -54,9 +55,9 @@ simplifyEvaluatedMultiPredicate
     -> PredicateSimplifier level
     -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> MultiAnd (OrPattern.Predicate level variable)
+    -> MultiAnd (OrPredicate level variable)
     -> Simplifier
-        (OrPattern.Predicate level variable, SimplificationProof level)
+        (OrPredicate level variable, SimplificationProof level)
 simplifyEvaluatedMultiPredicate
     tools
     substitutionSimplifier
