@@ -31,7 +31,7 @@ import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 StepPatternSimplifier, simplifyTerm, stepPatternSimplifier )
+                 TermLikeSimplifier, simplifyTerm, stepPatternSimplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -145,7 +145,7 @@ simplifyInternal
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Recursive.Base (TermLike variable) (TermLike variable)

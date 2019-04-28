@@ -40,8 +40,8 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..),
-                 SimplificationProof (SimplificationProof),
-                 StepPatternSimplifier, evalSimplifier )
+                 SimplificationProof (SimplificationProof), TermLikeSimplifier,
+                 evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -574,5 +574,5 @@ evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
             Map.empty
     patternSimplifier
         ::  ( MetaOrObject level )
-        => StepPatternSimplifier level
+        => TermLikeSimplifier level
     patternSimplifier = Simplifier.create metadataTools Map.empty

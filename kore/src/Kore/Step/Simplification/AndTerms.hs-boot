@@ -16,7 +16,7 @@ import Kore.Step.Pattern
        ( Pattern )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, SimplificationProof, Simplifier,
-       StepPatternSimplifier )
+       TermLikeSimplifier )
 import Kore.Unification.Unify
        ( MonadUnify )
 import Kore.Unparser
@@ -36,7 +36,7 @@ termAnd
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable
@@ -57,7 +57,7 @@ termUnification
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable

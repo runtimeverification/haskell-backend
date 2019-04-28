@@ -50,7 +50,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 StepPatternSimplifier )
+                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -151,7 +151,7 @@ simplify
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -202,7 +202,7 @@ simplifyEvaluated
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -275,7 +275,7 @@ makeEvaluateFunctionalOr
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -405,7 +405,7 @@ makeEvaluate
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -541,7 +541,7 @@ makeEvaluateTermsAssumesNoBottom
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -594,7 +594,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -645,7 +645,7 @@ makeEvaluateTermsToPredicate
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions

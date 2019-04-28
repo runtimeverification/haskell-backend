@@ -38,7 +38,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), StepPatternSimplifier,
+                 ( SimplificationProof (..), TermLikeSimplifier,
                  evalSimplifier )
 import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
@@ -253,7 +253,7 @@ evaluateWithAxiom
     :: forall level . MetaOrObject level
     => SmtMetadataTools StepperAttributes
     -> EqualityRule level Variable
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> TermLike Variable
     -> IO (CommonAttemptedAxiom level)
 evaluateWithAxiom

@@ -47,7 +47,7 @@ import qualified Kore.Step.Pattern.Or as Or
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -134,7 +134,7 @@ matchWith
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions

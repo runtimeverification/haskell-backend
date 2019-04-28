@@ -28,7 +28,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 StepPatternSimplifier )
+                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
@@ -50,7 +50,7 @@ simplify
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Iff Object (Or.Pattern Object variable)
     -> Simplifier
@@ -100,7 +100,7 @@ simplifyEvaluated
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Or.Pattern Object variable
     -> Or.Pattern Object variable

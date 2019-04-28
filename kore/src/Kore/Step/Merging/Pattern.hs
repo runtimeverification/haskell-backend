@@ -26,7 +26,7 @@ import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
-                 StepPatternSimplifier )
+                 TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )
@@ -51,7 +51,7 @@ mergeWithPredicate
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -109,7 +109,7 @@ mergeWithEvaluatedCondition
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators

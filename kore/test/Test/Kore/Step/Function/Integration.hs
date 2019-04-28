@@ -39,7 +39,7 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, evalSimplifier )
+                 Simplifier, TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -625,7 +625,7 @@ mockEvaluator
     :: AttemptedAxiom level variable
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> Simplifier
@@ -652,7 +652,7 @@ evaluate metadataTools functionIdToEvaluator patt =
             metadataTools patternSimplifier functionIdToEvaluator
     patternSimplifier
         ::  ( MetaOrObject level )
-        => StepPatternSimplifier level
+        => TermLikeSimplifier level
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes

@@ -78,7 +78,7 @@ normalize
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Conditional Object variable term
     -> BranchT Simplifier (Conditional Object variable term)
@@ -129,7 +129,7 @@ normalizeExcept
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> Predicate level variable
     -> BranchT unifier (Predicate level variable)
@@ -203,7 +203,7 @@ mergePredicatesAndSubstitutions
        )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
@@ -260,7 +260,7 @@ mergePredicatesAndSubstitutionsExcept
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
@@ -317,7 +317,7 @@ createPredicatesAndSubstitutionsMergerExcept
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
 createPredicatesAndSubstitutionsMergerExcept
@@ -355,7 +355,7 @@ createPredicatesAndSubstitutionsMerger
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable Simplifier
 createPredicatesAndSubstitutionsMerger
@@ -396,7 +396,7 @@ createLiftedPredicatesAndSubstitutionsMerger
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
 createLiftedPredicatesAndSubstitutionsMerger
@@ -433,7 +433,7 @@ normalizeSubstitutionAfterMerge
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> Predicate level variable
     -> unifier

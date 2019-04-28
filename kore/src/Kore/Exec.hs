@@ -87,7 +87,7 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -115,7 +115,7 @@ type ExecutionGraph =
 data Initialized =
     Initialized
         { rewriteRules :: ![Rewrite]
-        , simplifier :: !(StepPatternSimplifier Object)
+        , simplifier :: !(TermLikeSimplifier Object)
         , substitutionSimplifier :: !(PredicateSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         }
@@ -124,7 +124,7 @@ data Initialized =
 data Execution =
     Execution
         { metadataTools :: !(SmtMetadataTools StepperAttributes)
-        , simplifier :: !(StepPatternSimplifier Object)
+        , simplifier :: !(TermLikeSimplifier Object)
         , substitutionSimplifier :: !(PredicateSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         , executionGraph :: !ExecutionGraph
@@ -420,7 +420,7 @@ initialize verifiedModule tools =
                     )
                     -- user-defined functions
                     functionEvaluators
-            simplifier :: StepPatternSimplifier Object
+            simplifier :: TermLikeSimplifier Object
             simplifier = Simplifier.create tools axiomIdToSimplifier
             substitutionSimplifier
                 :: PredicateSimplifier Object
@@ -515,7 +515,7 @@ simplifyPattern tools =
         Map.empty
     . Pattern.fromTermLike
   where
-    emptySimplifier :: StepPatternSimplifier Object
+    emptySimplifier :: TermLikeSimplifier Object
     emptySimplifier = Simplifier.create tools Map.empty
     emptySubstitutionSimplifier =
         Predicate.create tools emptySimplifier Map.empty

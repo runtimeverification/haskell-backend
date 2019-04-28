@@ -139,7 +139,7 @@ import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..),
-                 SimplificationType, Simplifier, StepPatternSimplifier )
+                 SimplificationType, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.TermLike
@@ -669,7 +669,7 @@ unaryOperator
     unaryOperator0
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
-        -> StepPatternSimplifier level
+        -> TermLikeSimplifier level
         -> Sort level
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -722,7 +722,7 @@ binaryOperator
     binaryOperator0
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
-        -> StepPatternSimplifier level
+        -> TermLikeSimplifier level
         -> Sort level
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -775,7 +775,7 @@ ternaryOperator
     ternaryOperator0
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
-        -> StepPatternSimplifier level
+        -> TermLikeSimplifier level
         -> Sort level
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -792,7 +792,7 @@ type FunctionImplementation
     = forall variable
         .  Ord (variable Object)
         => SmtMetadataTools StepperAttributes
-        -> StepPatternSimplifier Object
+        -> TermLikeSimplifier Object
         -> Sort Object
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
@@ -805,7 +805,7 @@ functionEvaluator impl =
         :: (Ord (variable Object), Show (variable Object))
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier level
-        -> StepPatternSimplifier Object
+        -> TermLikeSimplifier Object
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
             (Application Object)

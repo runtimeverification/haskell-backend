@@ -52,7 +52,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( flatten, make, merge, traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 StepPatternSimplifier, simplifyTerm )
+                 TermLikeSimplifier, simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
 import           Kore.Unparser
@@ -75,7 +75,7 @@ evaluateApplication
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -157,7 +157,7 @@ evaluatePattern
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -209,7 +209,7 @@ maybeEvaluatePattern
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -366,7 +366,7 @@ reevaluateFunctions
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -424,7 +424,7 @@ mergeWithConditionAndSubstitution
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators

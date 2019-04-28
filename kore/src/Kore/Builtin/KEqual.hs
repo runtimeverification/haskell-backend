@@ -56,7 +56,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 StepPatternSimplifier )
+                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Step.TermLike
 import           Kore.Unparser
@@ -133,7 +133,7 @@ evalKEq
     => Bool
     -> MetadataTools.SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -189,7 +189,7 @@ evalKIte
         )
     => MetadataTools.SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF

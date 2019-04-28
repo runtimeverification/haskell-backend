@@ -33,7 +33,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 StepPatternSimplifier )
+                 TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
@@ -52,7 +52,7 @@ simplifyEvaluatedMultiPredicate
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> MultiAnd (Or.Predicate level variable)
     -> Simplifier

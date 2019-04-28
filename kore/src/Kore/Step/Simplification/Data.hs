@@ -17,7 +17,7 @@ module Kore.Step.Simplification.Data
     , gatherAll
     , scatter
     , PredicateSimplifier (..)
-    , StepPatternSimplifier
+    , TermLikeSimplifier
     , stepPatternSimplifier
     , simplifyTerm
     , simplifyConditionalTerm
@@ -276,8 +276,8 @@ evalSimplifier logger (Simplifier simpl) =
 
 {-| Wraps a function that evaluates Kore functions on TermLikes.
 -}
-newtype StepPatternSimplifier level =
-    StepPatternSimplifier
+newtype TermLikeSimplifier level =
+    TermLikeSimplifier
         ( forall variable
         .   ( FreshVariable variable
             , MetaOrObject level
@@ -294,7 +294,7 @@ newtype StepPatternSimplifier level =
         -> BranchT Simplifier (Pattern level variable)
         )
 
-{- | Use a 'StepPatternSimplifier' to simplify a pattern.
+{- | Use a 'TermLikeSimplifier' to simplify a pattern.
 
 The pattern is considered as an isolated term without extra initial conditions.
 
@@ -307,7 +307,7 @@ simplifyTerm
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => StepPatternSimplifier Object
+    => TermLikeSimplifier Object
     -> PredicateSimplifier Object
     -> TermLike variable
     -> Simplifier
@@ -315,7 +315,7 @@ simplifyTerm
         , SimplificationProof Object
         )
 simplifyTerm
-    (StepPatternSimplifier simplify)
+    (TermLikeSimplifier simplify)
     predicateSimplifier
     stepPattern
   = do
@@ -327,7 +327,7 @@ simplifyTerm
     return (Or.fromPatterns results, SimplificationProof)
 
 
-{- | Use a 'StepPatternSimplifier' to simplify a pattern subject to conditions.
+{- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}
 simplifyConditionalTerm
     :: forall variable
@@ -337,14 +337,14 @@ simplifyConditionalTerm
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => StepPatternSimplifier Object
+    => TermLikeSimplifier Object
     -> PredicateSimplifier Object
     -> TermLike variable
     -> Predicate Object variable
     -> BranchT Simplifier (Pattern Object variable)
-simplifyConditionalTerm (StepPatternSimplifier simplify) = simplify
+simplifyConditionalTerm (TermLikeSimplifier simplify) = simplify
 
-{- | Construct a 'StepPatternSimplifier' from a term simplifier.
+{- | Construct a 'TermLikeSimplifier' from a term simplifier.
 
 The constructed simplifier does not consider the initial condition during
 simplification, but only attaches it unmodified to the final result.
@@ -365,9 +365,9 @@ stepPatternSimplifier
             , SimplificationProof Object
             )
         )
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
 stepPatternSimplifier simplifier =
-    StepPatternSimplifier stepPatternSimplifierWorker
+    TermLikeSimplifier stepPatternSimplifierWorker
   where
     stepPatternSimplifierWorker
         :: forall variable

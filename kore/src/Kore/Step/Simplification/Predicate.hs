@@ -47,7 +47,7 @@ import           Kore.Variables.Fresh
 -}
 create
     :: SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> PredicateSimplifier Object
 create tools simplifier axiomIdToSimplifier =
@@ -71,7 +71,7 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Int
@@ -168,7 +168,7 @@ simplifyPartial
         , SortedVariable variable
         )
     => PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> Syntax.Predicate variable
     -> BranchT Simplifier (Predicate level variable)
 simplifyPartial

@@ -38,7 +38,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( StepPatternSimplifier, evalSimplifier )
+                 ( TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -423,7 +423,7 @@ evaluateWithAxioms tools axioms patt =
             axiomIdToSimplifier
             patt
   where
-    simplifier :: StepPatternSimplifier Object
+    simplifier :: TermLikeSimplifier Object
     simplifier = Simplifier.create tools axiomIdToSimplifier
     axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap Object
     axiomIdToSimplifier =

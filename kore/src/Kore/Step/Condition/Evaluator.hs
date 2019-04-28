@@ -23,7 +23,7 @@ import qualified Kore.Step.Pattern.Or as Or
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
-                 StepPatternSimplifier, simplifyTerm )
+                 TermLikeSimplifier, simplifyTerm )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -45,7 +45,7 @@ evaluate
         , Given (SmtMetadataTools StepperAttributes)
         )
     => PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in a pattern.
     -> Syntax.Predicate variable
     -- ^ The condition to be evaluated.

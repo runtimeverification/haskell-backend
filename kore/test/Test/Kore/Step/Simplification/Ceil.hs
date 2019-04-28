@@ -44,7 +44,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
-                 StepPatternSimplifier, evalSimplifier )
+                 TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
@@ -487,7 +487,7 @@ mockEvaluator
     :: AttemptedAxiom level variable
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> Simplifier

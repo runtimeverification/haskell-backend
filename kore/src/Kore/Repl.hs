@@ -61,7 +61,7 @@ import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import           Kore.Step.Simplification.Data
-                 ( StepPatternSimplifier )
+                 ( TermLikeSimplifier )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier )
 import qualified Kore.Step.Strategy as Strategy
@@ -82,7 +82,7 @@ runRepl
     => Claim claim
     => SmtMetadataTools StepperAttributes
     -- ^ tools required for the proof
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ pattern simplifier
     -> PredicateSimplifier level
     -- ^ predicate simplifier

@@ -36,7 +36,7 @@ import           Kore.Step.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), StepPatternSimplifier )
+                 ( PredicateSimplifier (..), TermLikeSimplifier )
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Unification.Data
@@ -102,7 +102,7 @@ simplifyAnds
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> NonEmpty (TermLike variable)
     -> unifier (Pattern Object variable, UnificationProof Object variable)
@@ -179,7 +179,7 @@ solveGroupedSubstitution
       )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> variable Object
     -> NonEmpty (TermLike variable)
@@ -232,7 +232,7 @@ normalizeSubstitutionDuplication
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Substitution variable
     -> unifier

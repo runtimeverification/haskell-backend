@@ -110,7 +110,7 @@ newtype UnificationProcedure level =
             )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier level
-        -> StepPatternSimplifier level
+        -> TermLikeSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
         -> TermLike variable
         -> TermLike variable
@@ -187,7 +187,7 @@ unifyRule
     => SmtMetadataTools StepperAttributes
     -> UnificationProcedure Object
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
     -> Pattern Object variable
@@ -262,7 +262,7 @@ applyInitialConditions
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
     -> Predicate Object variable
@@ -324,7 +324,7 @@ finalizeAppliedRule
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
     -> RulePattern Object variable
@@ -384,7 +384,7 @@ applyRemainder
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
     -> Pattern Object variable
@@ -446,7 +446,7 @@ applyRule
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -529,7 +529,7 @@ applyRewriteRule
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -679,7 +679,7 @@ applyRulesInParallel
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -744,7 +744,7 @@ applyRewriteRules
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -790,7 +790,7 @@ sequenceRules
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -877,7 +877,7 @@ sequenceRewriteRules
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
-    -> StepPatternSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions

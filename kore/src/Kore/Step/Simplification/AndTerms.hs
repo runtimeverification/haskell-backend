@@ -65,7 +65,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..),
-                 SimplificationType, Simplifier, StepPatternSimplifier )
+                 SimplificationType, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.Substitution
@@ -116,7 +116,7 @@ termEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable
@@ -155,7 +155,7 @@ termEqualsAnd
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable
@@ -245,7 +245,7 @@ maybeTermEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
@@ -284,7 +284,7 @@ termUnification
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable
@@ -344,7 +344,7 @@ termAnd
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> TermLike variable
     -> TermLike variable
@@ -402,7 +402,7 @@ maybeTermAnd
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
@@ -634,7 +634,7 @@ type TermTransformation level variable unifier =
        SimplificationType
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
@@ -645,7 +645,7 @@ type TermTransformation level variable unifier =
 type TermTransformationOld level variable unifier =
        SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
@@ -668,7 +668,7 @@ maybeTransformTerm
     => [TermTransformationOld level variable unifier]
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
@@ -817,7 +817,7 @@ bottomTermEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -885,7 +885,7 @@ termBottomEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -919,7 +919,7 @@ variableFunctionAndEquals
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -1033,7 +1033,7 @@ functionVariableAndEquals
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions

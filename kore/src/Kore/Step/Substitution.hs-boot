@@ -14,7 +14,7 @@ import Kore.Step.Axiom.Data
 import Kore.Step.Pattern
        ( Predicate )
 import Kore.Step.Simplification.Data
-       ( PredicateSimplifier, StepPatternSimplifier )
+       ( PredicateSimplifier, TermLikeSimplifier )
 import Kore.Unification.Data
        ( UnificationProof )
 import Kore.Unification.Substitution
@@ -39,7 +39,7 @@ mergePredicatesAndSubstitutionsExcept
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> [Syntax.Predicate variable]
     -> [Substitution variable]

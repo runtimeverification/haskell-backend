@@ -35,7 +35,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), StepPatternSimplifier,
+                 ( SimplificationProof (..), TermLikeSimplifier,
                  evalSimplifier )
 import           Kore.Step.TermLike as TermLike
 import qualified Kore.Unification.Substitution as Substitution
@@ -371,7 +371,7 @@ makeApplication patternSort symbol patterns =
 evaluate
     ::  ( MetaOrObject level)
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators

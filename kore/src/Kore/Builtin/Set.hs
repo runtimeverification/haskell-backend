@@ -95,7 +95,7 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationProof (..),
-                 SimplificationType, StepPatternSimplifier )
+                 SimplificationType, TermLikeSimplifier )
 import           Kore.Step.TermLike
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -518,7 +518,7 @@ unifyEquals
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators

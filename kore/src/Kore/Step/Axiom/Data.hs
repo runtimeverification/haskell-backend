@@ -49,7 +49,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make, merge )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 StepPatternSimplifier )
+                 TermLikeSimplifier )
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Unparser
@@ -65,7 +65,7 @@ Arguments:
 * 'MetadataTools' are tools for finding additional information about
 patterns such as their sorts, whether they are constructors or hooked.
 
-* 'StepPatternSimplifier' is a Function for simplifying patterns, used for
+* 'TermLikeSimplifier' is a Function for simplifying patterns, used for
 the post-processing of the function application results.
 
 * BuiltinAndAxiomSimplifierMap is a map from pattern identifiers to the
@@ -94,7 +94,7 @@ newtype BuiltinAndAxiomSimplifier level =
             )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier level
-        -> StepPatternSimplifier level
+        -> TermLikeSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
         -> TermLike variable
         -> Simplifier
@@ -232,7 +232,7 @@ applicationAxiomSimplifier
             )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier level
-        -> StepPatternSimplifier level
+        -> TermLikeSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
             (Application level)
@@ -261,7 +261,7 @@ applicationAxiomSimplifier applicationSimplifier =
                 )
             => SmtMetadataTools StepperAttributes
             -> PredicateSimplifier level
-            -> StepPatternSimplifier level
+            -> TermLikeSimplifier level
             -> BuiltinAndAxiomSimplifierMap level
             -> TermLike variable
             -> Simplifier
