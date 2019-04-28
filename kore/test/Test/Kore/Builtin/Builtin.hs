@@ -183,7 +183,7 @@ evaluators = Builtin.koreEvaluators verifiedModule
 
 stepSimplifier :: TermLikeSimplifier Object
 stepSimplifier =
-    stepPatternSimplifier
+    termLikeSimplifier
         (\_ p ->
             return
                 ( MultiOr.make

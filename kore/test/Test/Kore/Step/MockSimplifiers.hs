@@ -20,7 +20,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..),
                  SimplificationProof (SimplificationProof),
-                 stepPatternSimplifier )
+                 termLikeSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 
@@ -30,7 +30,7 @@ substitutionSimplifier
 substitutionSimplifier tools =
     Predicate.create
         tools
-        (stepPatternSimplifier
+        (termLikeSimplifier
             (\_ p ->
                 return
                     ( MultiOr.make

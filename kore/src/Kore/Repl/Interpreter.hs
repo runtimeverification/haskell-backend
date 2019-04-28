@@ -737,8 +737,8 @@ unparseStrategy omitList =
   where
     hide :: TermLike Variable -> TermLike Variable
     hide =
-        Recursive.unfold $ \stepPattern ->
-            case Recursive.project stepPattern of
+        Recursive.unfold $ \termLike ->
+            case Recursive.project termLike of
                 ann :< ApplicationPattern app
                   | shouldBeExcluded (applicationSymbolOrAlias app) ->
                     -- Do not display children

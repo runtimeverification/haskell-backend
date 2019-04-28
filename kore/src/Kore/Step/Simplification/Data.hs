@@ -18,7 +18,7 @@ module Kore.Step.Simplification.Data
     , scatter
     , PredicateSimplifier (..)
     , TermLikeSimplifier
-    , stepPatternSimplifier
+    , termLikeSimplifier
     , simplifyTerm
     , simplifyConditionalTerm
     , SimplificationProof (..)
@@ -317,12 +317,12 @@ simplifyTerm
 simplifyTerm
     (TermLikeSimplifier simplify)
     predicateSimplifier
-    stepPattern
+    termLike
   = do
     results <-
         gather $ simplify
             predicateSimplifier
-            stepPattern
+            termLike
             Predicate.top
     return (Or.fromPatterns results, SimplificationProof)
 
@@ -350,7 +350,7 @@ The constructed simplifier does not consider the initial condition during
 simplification, but only attaches it unmodified to the final result.
 
  -}
-stepPatternSimplifier
+termLikeSimplifier
     ::  ( forall variable
         .   ( FreshVariable variable
             , Ord (variable Object)
@@ -366,10 +366,10 @@ stepPatternSimplifier
             )
         )
     -> TermLikeSimplifier Object
-stepPatternSimplifier simplifier =
-    TermLikeSimplifier stepPatternSimplifierWorker
+termLikeSimplifier simplifier =
+    TermLikeSimplifier termLikeSimplifierWorker
   where
-    stepPatternSimplifierWorker
+    termLikeSimplifierWorker
         :: forall variable
         .   ( FreshVariable variable
             , Ord (variable Object)
@@ -381,14 +381,14 @@ stepPatternSimplifier simplifier =
         -> TermLike variable
         -> Predicate Object variable
         -> BranchT Simplifier (Pattern Object variable)
-    stepPatternSimplifierWorker
+    termLikeSimplifierWorker
         predicateSimplifier
-        stepPattern
+        termLike
         initialCondition
       = do
         (results, _) <-
             Monad.Trans.lift
-            $ simplifier predicateSimplifier stepPattern
+            $ simplifier predicateSimplifier termLike
         result <- scatter results
         return (result `Conditional.andCondition` initialCondition)
 

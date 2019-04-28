@@ -58,7 +58,7 @@ type TermLike variable =
     PurePattern Object Domain.Builtin variable (Valid (variable Object) Object)
 
 freeVariables :: TermLike variable -> Set (variable Object)
-freeVariables stepPattern = Valid.freeVariables (extract stepPattern)
+freeVariables termLike = Valid.freeVariables (extract termLike)
 
 hasFreeVariable
     :: Ord (variable Object)
@@ -80,15 +80,15 @@ withoutFreeVariable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
     -> a
-withoutFreeVariable variable stepPattern result
-  | hasFreeVariable variable stepPattern =
+withoutFreeVariable variable termLike result
+  | hasFreeVariable variable termLike =
     (error . show . Pretty.vsep)
         [ Pretty.hsep
             [ "Unexpected free variable"
             , unparse variable
             , "in pattern:"
             ]
-        , Pretty.indent 4 (unparse stepPattern)
+        , Pretty.indent 4 (unparse termLike)
         ]
   | otherwise = result
 
@@ -209,16 +209,16 @@ externalizeFreshVariables
     :: forall level. MetaOrObject level
     => TermLike Variable
     -> TermLike Variable
-externalizeFreshVariables stepPattern =
+externalizeFreshVariables termLike =
     Reader.runReader
-        (Recursive.fold externalizeFreshVariablesWorker stepPattern)
+        (Recursive.fold externalizeFreshVariablesWorker termLike)
         renamedFreeVariables
   where
     -- | 'originalFreeVariables' are present in the original pattern; they do
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition Base.isOriginalVariable (freeVariables stepPattern)
+        Set.partition Base.isOriginalVariable (freeVariables termLike)
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.

@@ -16,7 +16,7 @@ module Test.Kore
     , sortActual
     , sortVariable
     , sortVariableSort
-    , stepPatternGen
+    , termLikeGen
     , expandedPatternGen
     , orPatternGen
     , predicateGen
@@ -465,19 +465,19 @@ patternGen childGen patternSort =
         , (5, Common.VariablePattern <$> variableGen patternSort)
         ]
 
-stepPatternGen
+termLikeGen
     :: MetaOrObject level
     => Hedgehog.Gen (TermLike Variable)
-stepPatternGen = standaloneGen (stepPatternChildGen =<< sortGen)
+termLikeGen = standaloneGen (termLikeChildGen =<< sortGen)
 
-stepPatternChildGen
+termLikeChildGen
     :: MetaOrObject level
     => Sort level
     -> Gen (TermLike Variable)
-stepPatternChildGen patternSort =
-    Gen.sized stepPatternChildGenWorker
+termLikeChildGen patternSort =
+    Gen.sized termLikeChildGenWorker
   where
-    stepPatternChildGenWorker n
+    termLikeChildGenWorker n
       | n <= 1 =
         case isMetaOrObject patternSort of
             IsObject
@@ -492,78 +492,78 @@ stepPatternChildGen patternSort =
                     ]
       | otherwise =
         (Gen.small . Gen.frequency)
-            [ (1, stepPatternAndGen)
-            , (1, stepPatternAppGen)
-            , (1, stepPatternBottomGen)
-            , (1, stepPatternCeilGen)
-            , (1, stepPatternEqualsGen)
-            , (1, stepPatternExistsGen)
-            , (1, stepPatternFloorGen)
-            , (1, stepPatternForallGen)
-            , (1, stepPatternIffGen)
-            , (1, stepPatternImpliesGen)
-            , (1, stepPatternInGen)
-            , (1, stepPatternNotGen)
-            , (1, stepPatternOrGen)
-            , (1, stepPatternTopGen)
-            , (5, stepPatternVariableGen)
+            [ (1, termLikeAndGen)
+            , (1, termLikeAppGen)
+            , (1, termLikeBottomGen)
+            , (1, termLikeCeilGen)
+            , (1, termLikeEqualsGen)
+            , (1, termLikeExistsGen)
+            , (1, termLikeFloorGen)
+            , (1, termLikeForallGen)
+            , (1, termLikeIffGen)
+            , (1, termLikeImpliesGen)
+            , (1, termLikeInGen)
+            , (1, termLikeNotGen)
+            , (1, termLikeOrGen)
+            , (1, termLikeTopGen)
+            , (5, termLikeVariableGen)
             ]
-    stepPatternAndGen =
+    termLikeAndGen =
         mkAnd
-            <$> stepPatternChildGen patternSort
-            <*> stepPatternChildGen patternSort
-    stepPatternAppGen =
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeAppGen =
         mkApp patternSort
             <$> symbolOrAliasGen
-            <*> couple (stepPatternChildGen =<< sortGen)
-    stepPatternBottomGen = pure (mkBottom patternSort)
-    stepPatternCeilGen = do
-        child <- stepPatternChildGen =<< sortGen
+            <*> couple (termLikeChildGen =<< sortGen)
+    termLikeBottomGen = pure (mkBottom patternSort)
+    termLikeCeilGen = do
+        child <- termLikeChildGen =<< sortGen
         pure (mkCeil patternSort child)
-    stepPatternEqualsGen = do
+    termLikeEqualsGen = do
         operandSort <- sortGen
         mkEquals patternSort
-            <$> stepPatternChildGen operandSort
-            <*> stepPatternChildGen operandSort
-    stepPatternExistsGen = do
+            <$> termLikeChildGen operandSort
+            <*> termLikeChildGen operandSort
+    termLikeExistsGen = do
         varSort <- sortGen
         var <- variableGen varSort
         child <-
             Reader.local
                 (addVariable var)
-                (stepPatternChildGen patternSort)
+                (termLikeChildGen patternSort)
         pure (mkExists var child)
-    stepPatternForallGen = do
+    termLikeForallGen = do
         varSort <- sortGen
         var <- variableGen varSort
         child <-
             Reader.local
                 (addVariable var)
-                (stepPatternChildGen patternSort)
+                (termLikeChildGen patternSort)
         pure (mkForall var child)
-    stepPatternFloorGen = do
-        child <- stepPatternChildGen =<< sortGen
+    termLikeFloorGen = do
+        child <- termLikeChildGen =<< sortGen
         pure (mkFloor patternSort child)
-    stepPatternIffGen =
+    termLikeIffGen =
         mkIff
-            <$> stepPatternChildGen patternSort
-            <*> stepPatternChildGen patternSort
-    stepPatternImpliesGen =
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeImpliesGen =
         mkImplies
-            <$> stepPatternChildGen patternSort
-            <*> stepPatternChildGen patternSort
-    stepPatternInGen =
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeInGen =
         mkIn patternSort
-            <$> stepPatternChildGen patternSort
-            <*> stepPatternChildGen patternSort
-    stepPatternNotGen =
-        mkNot <$> stepPatternChildGen patternSort
-    stepPatternOrGen =
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeNotGen =
+        mkNot <$> termLikeChildGen patternSort
+    termLikeOrGen =
         mkOr
-            <$> stepPatternChildGen patternSort
-            <*> stepPatternChildGen patternSort
-    stepPatternTopGen = pure (mkTop patternSort)
-    stepPatternVariableGen = mkVar <$> variableGen patternSort
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeTopGen = pure (mkTop patternSort)
+    termLikeVariableGen = mkVar <$> variableGen patternSort
 
 korePatternGen :: Hedgehog.Gen ParsedPattern
 korePatternGen =
@@ -851,7 +851,7 @@ sortActual name sorts =
 
 expandedPatternGen :: MetaOrObject level => Gen (Pattern Object Variable)
 expandedPatternGen =
-    Pattern.fromTermLike <$> (stepPatternChildGen =<< sortGen)
+    Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
 orPatternGen :: Gen (Or.Pattern Object Variable)
 orPatternGen =

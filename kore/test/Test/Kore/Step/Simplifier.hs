@@ -17,7 +17,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier, stepPatternSimplifier )
+                 TermLikeSimplifier, termLikeSimplifier )
 import           Kore.Step.TermLike
                  ( Object, TermLike )
 import qualified Kore.Step.TermLike as TermLike
@@ -36,7 +36,7 @@ mockSimplifier
         ]
     -> TermLikeSimplifier Object
 mockSimplifier values =
-    stepPatternSimplifier
+    termLikeSimplifier
         ( mockSimplifierHelper
             (\patt -> Conditional
                 { term = patt
@@ -57,7 +57,7 @@ mockPredicateSimplifier
         ]
     -> TermLikeSimplifier Object
 mockPredicateSimplifier values =
-    stepPatternSimplifier
+    termLikeSimplifier
         (mockSimplifierHelper
             (\patt -> Conditional
                 { term = mkTop_

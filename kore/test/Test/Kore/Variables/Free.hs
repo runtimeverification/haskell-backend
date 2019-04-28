@@ -13,7 +13,7 @@ import Test.Kore
 -- annotations as the smart constructors in "Kore.AST.Valid".
 hprop_synthetic :: Property
 hprop_synthetic = property $ do
-    stepPattern <- forAll (stepPatternGen @Object)
+    termLike <- forAll (termLikeGen @Object)
     (===)
-        (Annotation.synthesize Variables.Free.synthetic stepPattern)
-        (Annotation.Valid.freeVariables <$> stepPattern)
+        (Annotation.synthesize Variables.Free.synthetic termLike)
+        (Annotation.Valid.freeVariables <$> termLike)

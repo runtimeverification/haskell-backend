@@ -31,7 +31,7 @@ import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier, simplifyTerm, stepPatternSimplifier )
+                 TermLikeSimplifier, simplifyTerm, termLikeSimplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -130,7 +130,7 @@ simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
         axiomIdToEvaluator
         (Recursive.project patt)
   where
-    simplifier = stepPatternSimplifier
+    simplifier = termLikeSimplifier
         (simplifyToOr tools axiomIdToEvaluator)
 
 simplifyInternal

@@ -35,28 +35,28 @@ test_TermLike =
     isBottom = TopBottom.isBottom
 
     testIsTop :: TermLike Variable -> [Tasty.TestTree]
-    testIsTop stepPattern =
+    testIsTop termLike =
         [ satisfies isTop            "satisfies isTop"
         , satisfies (not . isBottom) "satisfies (not . isBottom)"
         ]
       where
-        satisfies = Terse.satisfies stepPattern
+        satisfies = Terse.satisfies termLike
 
     testIsBottom :: TermLike Variable -> [Tasty.TestTree]
-    testIsBottom stepPattern =
+    testIsBottom termLike =
         [ satisfies isBottom         "satisfies isBottom"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"
         ]
       where
-        satisfies = Terse.satisfies stepPattern
+        satisfies = Terse.satisfies termLike
 
     testIsNeither :: TermLike Variable -> [Tasty.TestTree]
-    testIsNeither stepPattern =
+    testIsNeither termLike =
         [ satisfies (not . isBottom) "satisfies (not . isBottom)"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"
         ]
       where
-        satisfies = Terse.satisfies stepPattern
+        satisfies = Terse.satisfies termLike
 
 test_Predicate :: [Tasty.TestTree]
 test_Predicate =

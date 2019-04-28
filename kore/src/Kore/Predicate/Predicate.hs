@@ -572,5 +572,5 @@ substitute
     => Map (variable Object) (TermLike variable)
     -> Predicate variable
     -> Predicate variable
-substitute subst (GenericPredicate stepPattern) =
-    GenericPredicate (TermLike.substitute subst stepPattern)
+substitute subst (GenericPredicate termLike) =
+    GenericPredicate (TermLike.substitute subst termLike)
