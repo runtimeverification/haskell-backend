@@ -1,5 +1,5 @@
-module Test.Kore.Step.Simplification.PredicateSubstitution
-    ( test_predicateSubstitutionSimplification
+module Test.Kore.Step.Simplification.Predicate
+    ( test_predicateSimplification
     ) where
 
 import Test.Tasty
@@ -29,7 +29,7 @@ import qualified Kore.Step.Predicate as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )
-import qualified Kore.Step.Simplification.PredicateSubstitution as PSSimplifier
+import qualified Kore.Step.Simplification.Predicate as PSSimplifier
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
@@ -46,8 +46,8 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-test_predicateSubstitutionSimplification :: [TestTree]
-test_predicateSubstitutionSimplification =
+test_predicateSimplification :: [TestTree]
+test_predicateSimplification =
     [ testCase "Identity for top and bottom" $ do
         actualBottom <- runSimplifier Map.empty Conditional.bottomPredicate
         assertEqualWithExplanation "" mempty actualBottom

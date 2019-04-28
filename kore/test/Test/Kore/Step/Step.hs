@@ -36,7 +36,7 @@ import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step hiding
@@ -104,7 +104,7 @@ applyInitialConditions initial unification =
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -186,7 +186,7 @@ unifyRule initial rule =
     metadataTools = mockMetadataTools
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -701,7 +701,7 @@ applyRewriteRules initial rules =
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -1076,7 +1076,7 @@ sequenceRewriteRules initial rules =
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -1199,7 +1199,7 @@ sequenceMatchingRules initial rules =
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers

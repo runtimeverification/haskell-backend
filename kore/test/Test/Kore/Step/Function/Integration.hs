@@ -40,7 +40,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationProof (..),
                  Simplifier, StepPatternSimplifier, evalSimplifier )
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
@@ -648,7 +648,7 @@ evaluate metadataTools functionIdToEvaluator patt =
   where
     substitutionSimplifier :: PredicateSimplifier level
     substitutionSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools patternSimplifier functionIdToEvaluator
     patternSimplifier
         ::  ( MetaOrObject level )

@@ -49,7 +49,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import           Kore.Step.TermLike
@@ -81,7 +81,7 @@ substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
 substitutionSimplifier tools =
-    PredicateSubstitution.create tools stepSimplifier evaluators
+    Predicate.create tools stepSimplifier evaluators
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver

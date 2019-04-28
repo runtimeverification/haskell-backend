@@ -21,14 +21,14 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..),
                  SimplificationProof (SimplificationProof),
                  stepPatternSimplifier )
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
 substitutionSimplifier tools =
-    PredicateSubstitution.create
+    Predicate.create
         tools
         (stepPatternSimplifier
             (\_ p ->

@@ -89,7 +89,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationProof (..),
                  Simplifier, StepPatternSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
@@ -425,7 +425,7 @@ initialize verifiedModule tools =
             substitutionSimplifier
                 :: PredicateSimplifier Object
             substitutionSimplifier =
-                PredicateSubstitution.create
+                Predicate.create
                     tools simplifier axiomIdToSimplifier
         return Initialized
             { rewriteRules
@@ -518,4 +518,4 @@ simplifyPattern tools =
     emptySimplifier :: StepPatternSimplifier Object
     emptySimplifier = Simplifier.create tools Map.empty
     emptySubstitutionSimplifier =
-        PredicateSubstitution.create tools emptySimplifier Map.empty
+        Predicate.create tools emptySimplifier Map.empty

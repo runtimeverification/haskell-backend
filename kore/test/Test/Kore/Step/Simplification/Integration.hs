@@ -41,7 +41,7 @@ import           Kore.Step.Simplification.Data
                  ( StepPatternSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Unification.Substitution as Substitution
@@ -418,7 +418,7 @@ evaluateWithAxioms tools axioms patt =
         $ evalSimplifier emptyLogger
         $ Pattern.simplify
             tools
-            (PredicateSubstitution.create tools simplifier axiomIdToSimplifier)
+            (Predicate.create tools simplifier axiomIdToSimplifier)
             simplifier
             axiomIdToSimplifier
             patt
