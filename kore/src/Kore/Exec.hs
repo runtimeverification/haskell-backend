@@ -32,7 +32,6 @@ import           System.Exit
 
 import           Data.Limit
                  ( Limit (..) )
-import           Kore.AST.Common
 import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
                  ( Object (..) )
@@ -68,17 +67,16 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Proof
                  ( StepProof )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), OnePathRule (..),
                  RewriteRule (RewriteRule), RulePattern (RulePattern),
@@ -90,17 +88,18 @@ import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), Simplifier, StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSimplifier (..), SimplificationProof (..),
+                 Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 -- | Configuration used in symbolic execution.
-type Config = CommonExpandedPattern Object
+type Config = Pattern Object Variable
 
 -- | Proof returned by symbolic execution.
 type Proof = StepProof Object Variable
@@ -118,8 +117,8 @@ type ExecutionGraph =
 data Initialized =
     Initialized
         { rewriteRules :: ![Rewrite]
-        , simplifier :: !(StepPatternSimplifier Object)
-        , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
+        , simplifier :: !(TermLikeSimplifier Object)
+        , substitutionSimplifier :: !(PredicateSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         }
 
@@ -127,8 +126,8 @@ data Initialized =
 data Execution =
     Execution
         { metadataTools :: !(SmtMetadataTools StepperAttributes)
-        , simplifier :: !(StepPatternSimplifier Object)
-        , substitutionSimplifier :: !(PredicateSubstitutionSimplifier Object)
+        , simplifier :: !(TermLikeSimplifier Object)
+        , substitutionSimplifier :: !(PredicateSimplifier Object)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         , executionGraph :: !ExecutionGraph
         }
@@ -139,15 +138,15 @@ exec
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -- ^ The input pattern
-    -> Simplifier (CommonStepPattern Object)
+    -> Simplifier (TermLike Variable)
 exec indexedModule strategy purePattern = do
     execution <- execute indexedModule strategy purePattern
     let
         Execution { executionGraph } = execution
         (finalConfig, _) = pickLongest executionGraph
-    return (forceSort patternSort $ ExpandedPattern.toMLPattern finalConfig)
+    return (forceSort patternSort $ Pattern.toMLPattern finalConfig)
   where
     Valid { patternSort } = extract purePattern
 
@@ -157,7 +156,7 @@ execGetExitCode
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -- ^ The final pattern (top cell) to extract the exit code
     -> Simplifier ExitCode
 execGetExitCode indexedModule strategy' purePattern =
@@ -180,13 +179,13 @@ search
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -- ^ The input pattern
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
-    -> Simplifier (CommonStepPattern Object)
+    -> Simplifier (TermLike Variable)
 search verifiedModule strategy purePattern searchPattern searchConfig = do
     execution <- execute verifiedModule strategy purePattern
     let
@@ -209,7 +208,7 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
             concatMap MultiOr.extractPatterns solutionsLists
         orPredicate =
             makeMultipleOrPredicate
-                (PredicateSubstitution.toPredicate <$> solutions)
+                (Predicate.toPredicate <$> solutions)
     return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
     Valid { patternSort } = extract purePattern
@@ -222,7 +221,7 @@ prove
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> Simplifier (Either (CommonStepPattern Object) ())
+    -> Simplifier (Either (TermLike Variable) ())
 prove limit definitionModule specModule = do
     let tools = MetadataTools.build definitionModule
     Initialized
@@ -249,7 +248,7 @@ prove limit definitionModule specModule = do
             axiomIdToSimplifier
             (defaultStrategy claims axioms)
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-    return $ Bifunctor.first OrOfExpandedPattern.toStepPattern result
+    return $ Bifunctor.first OrPattern.toTermLike result
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -351,7 +350,7 @@ execute
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -- ^ The input pattern
     -> Simplifier Execution
 execute verifiedModule strategy inputPattern
@@ -364,16 +363,16 @@ execute verifiedModule strategy inputPattern
         Initialized { substitutionSimplifier } = initialized
         Initialized { axiomIdToSimplifier } = initialized
     (simplifiedPatterns, _) <-
-        ExpandedPattern.simplify
+        Pattern.simplify
             metadataTools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            (ExpandedPattern.fromPurePattern inputPattern)
+            (Pattern.fromTermLike inputPattern)
     let
         initialPattern =
             case MultiOr.extractPatterns simplifiedPatterns of
-                [] -> ExpandedPattern.bottomOf patternSort
+                [] -> Pattern.bottomOf patternSort
                 (config : _) -> config
           where
             Valid { patternSort } = extract inputPattern
@@ -423,12 +422,12 @@ initialize verifiedModule tools =
                     )
                     -- user-defined functions
                     functionEvaluators
-            simplifier :: StepPatternSimplifier Object
+            simplifier :: TermLikeSimplifier Object
             simplifier = Simplifier.create tools axiomIdToSimplifier
             substitutionSimplifier
-                :: PredicateSubstitutionSimplifier Object
+                :: PredicateSimplifier Object
             substitutionSimplifier =
-                PredicateSubstitution.create
+                Predicate.create
                     tools simplifier axiomIdToSimplifier
         return Initialized
             { rewriteRules
@@ -477,7 +476,7 @@ simplifyRulePattern tools rulePattern = do
     let RulePattern { left } = rulePattern
     (simplifiedLeft, _proof) <- simplifyPattern tools left
     case MultiOr.extractPatterns simplifiedLeft of
-        [ Predicated { term, predicate, substitution } ]
+        [ Conditional { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
             let subst = Substitution.toMap substitution
                 left' = substitute subst term
@@ -504,21 +503,21 @@ simplifyRulePattern tools rulePattern = do
             -- later.
             return rulePattern
 
--- | Simplify a 'StepPattern' using only matching logic rules.
+-- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern
     :: SmtMetadataTools StepperAttributes
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -> Simplifier
-        (OrOfExpandedPattern Object Variable, SimplificationProof Object)
+        (OrPattern Object Variable, SimplificationProof Object)
 simplifyPattern tools =
-    ExpandedPattern.simplify
+    Pattern.simplify
         tools
         emptySubstitutionSimplifier
         emptySimplifier
         Map.empty
-    . ExpandedPattern.fromPurePattern
+    . Pattern.fromTermLike
   where
-    emptySimplifier :: StepPatternSimplifier Object
+    emptySimplifier :: TermLikeSimplifier Object
     emptySimplifier = Simplifier.create tools Map.empty
     emptySubstitutionSimplifier =
-        PredicateSubstitution.create tools emptySimplifier Map.empty
+        Predicate.create tools emptySimplifier Map.empty

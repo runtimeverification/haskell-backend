@@ -23,7 +23,6 @@ import           Data.Text
 import           System.Exit
                  ( ExitCode (..) )
 
-import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -41,17 +40,17 @@ import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Sort
 import           Kore.Step
                  ( allRewrites, anyRewrite )
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import           Kore.Step.TermLike
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -153,7 +152,7 @@ test_search =
                 FINAL -> Set.fromList [b, d]
 
 -- | V:MySort{}
-searchVar :: CommonStepPattern Object
+searchVar :: TermLike Variable
 searchVar =
     mkVar Variable
         { variableName = Id "V" AstLocationTest
@@ -165,8 +164,8 @@ searchVar =
 --  \and{MySort{}}(
 --      V:MySort{},
 --      \top{MySort{}}())
-searchPattern :: CommonExpandedPattern Object
-searchPattern = Predicated
+searchPattern :: Pattern Object Variable
+searchPattern = Conditional
     { term = searchVar
     , predicate = makeTruePredicate
     , substitution = mempty
@@ -175,7 +174,7 @@ searchPattern = Predicated
 -- | Turn a disjunction of "v = ???" into Just a set of the ???. If the input is
 -- not a disjunction of "v = ???", return Nothing.
 extractSearchResults
-    :: CommonStepPattern Object -> Maybe (Set (CommonStepPattern Object))
+    :: TermLike Variable -> Maybe (Set (TermLike Variable))
 extractSearchResults =
     \case
         Equals_ operandSort resultSort first second
@@ -273,7 +272,7 @@ rewriteAxiom lhsName rhsName =
         (applyToNoArgs mySort rhsName)
         Nothing
 
-applyToNoArgs :: Sort Object -> Text -> CommonStepPattern Object
+applyToNoArgs :: Sort Object -> Text -> TermLike Variable
 applyToNoArgs sort name =
     mkApp
         sort

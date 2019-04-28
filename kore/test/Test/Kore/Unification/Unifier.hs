@@ -22,7 +22,9 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( SortedVariable (..) )
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Sentence
 import           Kore.AST.Valid hiding
                  ( V )
@@ -36,22 +38,17 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import           Kore.Predicate.Predicate
-                 ( Predicate, makeCeilPredicate, makeFalsePredicate,
-                 makeTruePredicate )
-import qualified Kore.Predicate.Predicate as Predicate
-                 ( makeEqualsPredicate )
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution,
-                 Predicated (Predicated) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), bottom )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import           Kore.Sort
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.TermLike
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
@@ -69,12 +66,12 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 applyInj
     :: Sort Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    -> TermLike Variable
+    -> TermLike Variable
 applyInj sortTo pat =
     applySymbol symbolInj [sortFrom, sortTo] [pat]
   where
-    Valid { patternSort = sortFrom } = extract pat
+    sortFrom = getSort pat
 
 s1, s2, s3, s4 :: Sort Object
 s1 = simpleSort (SortName "s1")
@@ -82,85 +79,85 @@ s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
 s4 = simpleSort (SortName "s4")
 
-a1, a2, a3, a4, a5 :: SentenceSymbol Object (CommonStepPattern Object)
+a1, a2, a3, a4, a5 :: SentenceSymbol Object (TermLike Variable)
 a1 = mkSymbol_ (testId "a1") [] s1
 a2 = mkSymbol_ (testId "a2") [] s1
 a3 = mkSymbol_ (testId "a3") [] s1
 a4 = mkSymbol_ (testId "a4") [] s1
 a5 = mkSymbol_ (testId "a5") [] s1
 
-a, b, f :: SentenceSymbol Object (CommonStepPattern Object)
+a, b, f :: SentenceSymbol Object (TermLike Variable)
 a = mkSymbol_ (testId "a") [] s1
 b = mkSymbol_ (testId "b") [] s2
 f = mkSymbol_ (testId "f") [s1] s2
 
-ef, eg, eh :: SentenceSymbol Object (CommonStepPattern Object)
+ef, eg, eh :: SentenceSymbol Object (TermLike Variable)
 ef = mkSymbol_ (testId "ef") [s1, s1, s1] s1
 eg = mkSymbol_ (testId "eg") [s1] s1
 eh = mkSymbol_ (testId "eh") [s1] s1
 
-nonLinF, nonLinG, nonLinAS :: SentenceSymbol Object (CommonStepPattern Object)
+nonLinF, nonLinG, nonLinAS :: SentenceSymbol Object (TermLike Variable)
 nonLinF  = mkSymbol_ (testId "nonLinF") [s1, s1] s1
 nonLinG  = mkSymbol_ (testId "nonLinG") [s1] s1
 nonLinAS = mkSymbol_ (testId "nonLinA") [] s1
 
-nonLinA, nonLinX, nonLinY :: CommonStepPattern Object
+nonLinA, nonLinX, nonLinY :: TermLike Variable
 nonLinA = applySymbol_ nonLinAS []
 nonLinX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
 nonLinY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
 
-expBin :: SentenceSymbol Object (CommonStepPattern Object)
+expBin :: SentenceSymbol Object (TermLike Variable)
 expBin = mkSymbol_ (testId "times") [s1, s1] s1
 
-expA, expX, expY :: CommonStepPattern Object
+expA, expX, expY :: TermLike Variable
 expA = mkVar Variable { variableName = testId "a", variableCounter = mempty, variableSort = s1 }
 expX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
 expY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
 
-ex1, ex2, ex3, ex4 :: CommonStepPattern Object
+ex1, ex2, ex3, ex4 :: TermLike Variable
 ex1 = mkVar Variable { variableName = testId "ex1", variableCounter = mempty, variableSort = s1 }
 ex2 = mkVar Variable { variableName = testId "ex2", variableCounter = mempty, variableSort = s1 }
 ex3 = mkVar Variable { variableName = testId "ex3", variableCounter = mempty, variableSort = s1 }
 ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, variableSort = s1 }
 
 
-dv1, dv2 :: CommonStepPattern Object
+dv1, dv2 :: TermLike Variable
 dv1 =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
-        , domainValueChild = eraseAnnotations $ mkStringLiteral "dv1"
+        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "dv1"
         }
 dv2 =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
-        , domainValueChild = eraseAnnotations $ mkStringLiteral "dv."
+        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "dv."
         }
 
-aA :: CommonStepPattern Object
+aA :: TermLike Variable
 aA = applySymbol_ a []
 
-a1A :: CommonStepPattern Object
+a1A :: TermLike Variable
 a1A = applySymbol_ a1 []
 
-a2A :: CommonStepPattern Object
+a2A :: TermLike Variable
 a2A = applySymbol_ a2 []
 
-a3A :: CommonStepPattern Object
+a3A :: TermLike Variable
 a3A = applySymbol_ a3 []
 
-a4A :: CommonStepPattern Object
+a4A :: TermLike Variable
 a4A = applySymbol_ a4 []
 
-a5A :: CommonStepPattern Object
+a5A :: TermLike Variable
 a5A = applySymbol_ a5 []
 
-bA :: CommonStepPattern Object
+bA :: TermLike Variable
 bA = applySymbol_ b []
 
-x :: CommonStepPattern Object
+x :: TermLike Variable
 x = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
 
-xs2 :: CommonStepPattern Object
+xs2 :: TermLike Variable
 xs2 = mkVar Variable { variableName = testId "xs2", variableCounter = mempty, variableSort = s2 }
 
 sortParam :: Text -> SortVariable level
@@ -172,7 +169,7 @@ sortParamSort = SortVariableSort . sortParam
 injName :: Text
 injName = "inj"
 
-symbolInj :: SentenceSymbol Object (CommonStepPattern Object)
+symbolInj :: SentenceSymbol Object (TermLike Variable)
 symbolInj =
     mkSymbol
         (testId injName)
@@ -224,15 +221,15 @@ unificationProblem
     :: MetaOrObject level
     => UnificationTerm level
     -> UnificationTerm level
-    -> CommonStepPattern level
+    -> TermLike Variable
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     mkAnd term1 term2
 
-type Substitution level = [(Text, CommonStepPattern level)]
+type Substitution = [(Text, TermLike Variable)]
 
 unificationSubstitution
-    :: Substitution Object
-    -> [ (Variable Object, CommonStepPattern Object) ]
+    :: Substitution
+    -> [ (Variable Object, TermLike Variable) ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
@@ -242,27 +239,27 @@ unificationSubstitution = map trans
 
 unificationResult
     :: UnificationResultTerm Object
-    -> Substitution Object
-    -> Predicate Object Variable
-    -> ExpandedPattern Object Variable
+    -> Substitution
+    -> Syntax.Predicate Variable
+    -> Pattern Object Variable
 unificationResult (UnificationResultTerm term) sub predicate =
-    Predicated
+    Conditional
         { term
         , predicate = predicate
         , substitution = Substitution.wrap $ unificationSubstitution sub
         }
 
-newtype UnificationTerm level = UnificationTerm (CommonStepPattern level)
+newtype UnificationTerm level = UnificationTerm (TermLike Variable)
 newtype UnificationResultTerm level =
-    UnificationResultTerm (CommonStepPattern level)
+    UnificationResultTerm (TermLike Variable)
 
 andSimplifySuccess
     :: HasCallStack
     => UnificationTerm Object
     -> UnificationTerm Object
     -> UnificationResultTerm Object
-    -> Substitution Object
-    -> Predicate Object Variable
+    -> Substitution
+    -> Syntax.Predicate Variable
     -> UnificationProof Object Variable
     -> Assertion
 andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
@@ -280,11 +277,11 @@ andSimplifySuccess term1 term2 resultTerm subst predicate proof = do
     let
         subst'' =
             subst'
-                { ExpandedPattern.substitution =
+                { Pattern.substitution =
                     sortBy
                         (compare `on` fst)
                     `Substitution.modify`
-                    ExpandedPattern.substitution subst'
+                    Pattern.substitution subst'
                 }
     assertEqualWithExplanation "" expect (subst'', proof')
 
@@ -343,7 +340,7 @@ unificationProcedureSuccess
     => TestName
     -> UnificationTerm Object
     -> UnificationTerm Object
-    -> [(Substitution Object, Predicate Object Variable)]
+    -> [(Substitution, Syntax.Predicate Variable)]
     -> UnificationProof Object Variable
     -> TestTree
 unificationProcedureSuccess
@@ -367,11 +364,11 @@ unificationProcedureSuccess
                 term2
         let
             normalize
-                :: PredicateSubstitution Object Variable
-                ->  ( [ (Variable Object, CommonStepPattern Object) ]
-                    , Predicate Object Variable
+                :: Predicate Object Variable
+                ->  ( [ (Variable Object, TermLike Variable) ]
+                    , Syntax.Predicate Variable
                     )
-            normalize Predicated { substitution, predicate } =
+            normalize Conditional { substitution, predicate } =
                 ( sortBy (compare `on` fst) $ Substitution.unwrap substitution
                 , predicate
                 )
@@ -393,7 +390,7 @@ test_unification =
             (UnificationTerm aA)
             (UnificationResultTerm aA)
             []
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "Variable" $
         andSimplifySuccess
@@ -401,7 +398,7 @@ test_unification =
             (UnificationTerm aA)
             (UnificationResultTerm aA)
             [("x", aA)]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "one level" $
         andSimplifySuccess
@@ -409,7 +406,7 @@ test_unification =
             (UnificationTerm (applySymbol_ f [aA]))
             (UnificationResultTerm (applySymbol_ f [aA]))
             [("x", aA)]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "equal non-constructor patterns" $
         andSimplifySuccess
@@ -417,7 +414,7 @@ test_unification =
             (UnificationTerm a2A)
             (UnificationResultTerm a2A)
             []
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "variable + non-constructor pattern" $
         andSimplifySuccess
@@ -425,7 +422,7 @@ test_unification =
             (UnificationTerm x)
             (UnificationResultTerm a2A)
             [("x", a2A)]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3" $
         andSimplifySuccess
@@ -447,7 +444,7 @@ test_unification =
             , ("ex2", ex3)
             , ("ex4", applySymbol_ eh [applySymbol_ eg [ex3]])
             ]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
         andSimplifySuccess
@@ -463,7 +460,7 @@ test_unification =
             [ ("x", nonLinA)
             , ("y", applySymbol_ nonLinG [nonLinA])
             ]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "times(times(a, y), x) = times(x, times(y, a))" $
         andSimplifySuccess
@@ -483,7 +480,7 @@ test_unification =
             [ ("a", expY)
             , ("x", applySymbol_ expBin [expY, expY])
             ]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , unificationProcedureSuccess
         "times(x, g(x)) = times(a, a) -- cycle bottom"
@@ -502,7 +499,7 @@ test_unification =
         [   (   [ ("a", expY)
                 , ("x", applySymbol_ expBin [expY, expY])
                 ]
-            , makeTruePredicate
+            , Syntax.Predicate.makeTruePredicate
             )
         ]
         EmptyUnificationProof
@@ -517,7 +514,7 @@ test_unification =
         (UnificationTerm x)
         (UnificationTerm a5A)
         [   ( [("x", a5A)]
-            , makeCeilPredicate a5A
+            , Syntax.Predicate.makeCeilPredicate a5A
             )
         ]
          EmptyUnificationProof
@@ -528,7 +525,7 @@ test_unification =
             (UnificationTerm a1A)
             (UnificationResultTerm mkBottom_)
             []
-            makeFalsePredicate
+            Syntax.Predicate.makeFalsePredicate
             EmptyUnificationProof
     , testCase "Unmatching domain values is bottom" $
         andSimplifySuccess
@@ -536,7 +533,7 @@ test_unification =
             (UnificationTerm dv2)
             (UnificationResultTerm mkBottom_)
             []
-            makeFalsePredicate
+            Syntax.Predicate.makeFalsePredicate
             EmptyUnificationProof
     , andSimplifyException "Unmatching constructor constant + domain value"
         (UnificationTerm aA)
@@ -589,7 +586,7 @@ test_unification =
             (UnificationTerm (applySymbol_ f [a1A]))
             (UnificationResultTerm mkBottom_)
             []
-            makeFalsePredicate
+            Syntax.Predicate.makeFalsePredicate
             EmptyUnificationProof
           {- currently this cannot even be built because of builder checkd
     , andSimplifyFailure "Unmatching sorts"
@@ -646,10 +643,10 @@ instance EqualWithExplanation (W level)
 showVar :: V level -> W level
 showVar (V i) = W (show i)
 
-var' :: Integer -> StepPattern Meta V
+var' :: Integer -> TermLike V
 var' i = mkVar (V i)
 
-war' :: String -> StepPattern Meta W
+war' :: String -> TermLike W
 war' s = mkVar (W s)
 
 sortVar :: Sort level
@@ -663,7 +660,7 @@ injUnificationTests =
             (UnificationTerm (applyInj s2 aA))
             (UnificationResultTerm (applyInj s2 aA))
             [("x", aA)]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "Variable" $
         andSimplifySuccess
@@ -671,7 +668,7 @@ injUnificationTests =
             (UnificationTerm (applyInj s2 aA))
             (UnificationResultTerm (applyInj s2 aA))
             [("xs2", applyInj s2 aA)]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "Injected Variable vs doubly injected term" $ do
         term2 <-
@@ -682,7 +679,7 @@ injUnificationTests =
             term2
             (UnificationResultTerm (applyInj s2 aA))
             [("x", aA)]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "doubly injected variable vs injected term" $ do
         term1 <-
@@ -693,7 +690,7 @@ injUnificationTests =
             (UnificationTerm (applyInj s2 aA))
             (UnificationResultTerm (applyInj s2 aA))
             [("x", aA)]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "doubly injected variable vs doubly injected term" $ do
         term1 <-
@@ -707,7 +704,7 @@ injUnificationTests =
             term2
             (UnificationResultTerm (applyInj s2 aA))
             [("x", aA)]
-            makeTruePredicate
+            Syntax.Predicate.makeTruePredicate
             EmptyUnificationProof
     , testCase "constant vs injection is bottom" $
         andSimplifySuccess
@@ -715,7 +712,7 @@ injUnificationTests =
             (UnificationTerm (applyInj s1 xs2))
             (UnificationResultTerm mkBottom_)
             []
-            makeFalsePredicate
+            Syntax.Predicate.makeFalsePredicate
             EmptyUnificationProof
     , testCase "unmatching nested injections" $ do
         term1 <-
@@ -729,7 +726,7 @@ injUnificationTests =
             term2
             (UnificationResultTerm mkBottom_)
             []
-            makeFalsePredicate
+            Syntax.Predicate.makeFalsePredicate
             EmptyUnificationProof
     , testCase "unmatching injections" $
         andSimplifySuccess
@@ -738,18 +735,18 @@ injUnificationTests =
             (UnificationTerm (applyInj s3 xs2))
             (UnificationResultTerm mkBottom_)
             []
-            makeFalsePredicate
+            Syntax.Predicate.makeFalsePredicate
             EmptyUnificationProof
     ]
 
 simplifyPattern :: UnificationTerm Object -> IO (UnificationTerm Object)
 simplifyPattern (UnificationTerm term) = do
-    Predicated { term = term' } <- runSMT $ evalSimplifier emptyLogger simplifier
+    Conditional { term = term' } <- runSMT $ evalSimplifier emptyLogger simplifier
     return $ UnificationTerm term'
   where
     simplifier = do
         simplifiedPatterns <-
-            ExpandedPattern.simplify
+            Pattern.simplify
                 tools
                 (Mock.substitutionSimplifier tools)
                 (Simplifier.create tools functionRegistry)
@@ -758,20 +755,20 @@ simplifyPattern (UnificationTerm term) = do
         case
             MultiOr.extractPatterns
                 (fst simplifiedPatterns) of
-            [] -> return ExpandedPattern.bottom
+            [] -> return Pattern.bottom
             (config : _) -> return config
     functionRegistry = Map.empty
-    expandedPattern = Predicated
+    expandedPattern = Conditional
         { term
-        , predicate = makeTruePredicate
+        , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
         }
 
 makeEqualsPredicate
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> Predicate Object Variable
-makeEqualsPredicate t1 t2 = Predicate.makeEqualsPredicate t1 t2
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Syntax.Predicate Variable
+makeEqualsPredicate = Syntax.Predicate.makeEqualsPredicate
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig

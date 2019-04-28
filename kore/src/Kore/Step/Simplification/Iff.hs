@@ -13,36 +13,30 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
-import qualified Data.Functor.Foldable as Recursive
-
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Iff (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeIffPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), substitutionToPredicate )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, toExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{-|'simplify' simplifies an 'Iff' pattern with 'OrOfExpandedPattern'
+{-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.
 
 Right now this has special cases only for top and bottom children
@@ -56,12 +50,12 @@ simplify
         , Unparse (variable Object)
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Iff Object (OrOfExpandedPattern Object variable)
+    -> Iff Object (OrPattern Object variable)
     -> Simplifier
-        (OrOfExpandedPattern Object variable, SimplificationProof Object)
+        (OrPattern Object variable, SimplificationProof Object)
 simplify
     tools
     predicateSimplifier
@@ -82,7 +76,7 @@ simplify
   where
     withProof a = (a, SimplificationProof)
 
-{-| evaluates an 'Iff' given its two 'OrOfExpandedPattern' children.
+{-| evaluates an 'Iff' given its two 'OrPattern' children.
 
 See 'simplify' for detailed documentation.
 -}
@@ -91,9 +85,9 @@ See 'simplify' for detailed documentation.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Iff level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (Iff Object) (Valid Object) (OrPattern Object variable)
 
-instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluate' may
+instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -106,12 +100,12 @@ simplifyEvaluated
         , Unparse (variable Object)
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
-    -> Simplifier (OrOfExpandedPattern Object variable)
+    -> OrPattern Object variable
+    -> OrPattern Object variable
+    -> Simplifier (OrPattern Object variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -119,16 +113,16 @@ simplifyEvaluated
     axiomSimplifiers
     first
     second
-  | OrOfExpandedPattern.isTrue first = return second
-  | OrOfExpandedPattern.isFalse first =
+  | OrPattern.isTrue first = return second
+  | OrPattern.isFalse first =
     Not.simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
         second
-  | OrOfExpandedPattern.isTrue second = return first
-  | OrOfExpandedPattern.isFalse second =
+  | OrPattern.isTrue second = return first
+  | OrPattern.isFalse second =
     Not.simplifyEvaluated
         tools
         predicateSimplifier
@@ -140,79 +134,71 @@ simplifyEvaluated
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
             makeEvaluate
-                (OrOfExpandedPattern.toExpandedPattern first)
-                (OrOfExpandedPattern.toExpandedPattern second)
+                (OrPattern.toExpandedPattern first)
+                (OrPattern.toExpandedPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
 
-{-| evaluates an 'Iff' given its two 'ExpandedPattern' children.
+{-| evaluates an 'Iff' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    => Pattern Object variable
+    -> Pattern Object variable
+    -> OrPattern Object variable
 makeEvaluate first second
-  | ExpandedPattern.isTop first = MultiOr.make [second]
-  | ExpandedPattern.isBottom first = Not.makeEvaluate second
-  | ExpandedPattern.isTop second = MultiOr.make [first]
-  | ExpandedPattern.isBottom second = Not.makeEvaluate first
+  | Pattern.isTop first = OrPattern.fromPatterns [second]
+  | Pattern.isBottom first = Not.makeEvaluate second
+  | Pattern.isTop second = OrPattern.fromPatterns [first]
+  | Pattern.isBottom second = Not.makeEvaluate first
   | otherwise = makeEvaluateNonBoolIff first second
 
 makeEvaluateNonBoolIff
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    => Pattern Object variable
+    -> Pattern Object variable
+    -> OrPattern Object variable
 makeEvaluateNonBoolIff
-    patt1@Predicated
+    patt1@Conditional
         { term = firstTerm
         , predicate = firstPredicate
         , substitution = firstSubstitution
         }
-    patt2@Predicated
+    patt2@Conditional
         { term = secondTerm
         , predicate = secondPredicate
         , substitution = secondSubstitution
         }
-  | (Recursive.project -> _ :< TopPattern _) <- firstTerm
-  , (Recursive.project -> _ :< TopPattern _) <- secondTerm
+  | isTop firstTerm, isTop secondTerm
   =
-    MultiOr.make
-        [ Predicated
+    OrPattern.fromPatterns
+        [ Conditional
             { term = firstTerm
             , predicate =
-                makeIffPredicate
-                    (makeAndPredicate
+                Syntax.Predicate.makeIffPredicate
+                    (Syntax.Predicate.makeAndPredicate
                         firstPredicate
-                        (substitutionToPredicate firstSubstitution))
-                    (makeAndPredicate
+                        (Syntax.Predicate.fromSubstitution firstSubstitution)
+                    )
+                    (Syntax.Predicate.makeAndPredicate
                         secondPredicate
-                        (substitutionToPredicate secondSubstitution)
+                        (Syntax.Predicate.fromSubstitution secondSubstitution)
                     )
             , substitution = mempty
             }
         ]
   | otherwise =
-    MultiOr.make
-        [ Predicated
-            { term = mkIff
-                (ExpandedPattern.toMLPattern patt1)
-                (ExpandedPattern.toMLPattern patt2)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        ]
+    OrPattern.fromTermLike $ mkIff
+        (Pattern.toMLPattern patt1)
+        (Pattern.toMLPattern patt2)

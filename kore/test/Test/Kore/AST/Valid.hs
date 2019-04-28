@@ -18,7 +18,8 @@ import Kore.AST.Lens
        ( resultSort )
 import Kore.AST.Pure
 import Kore.AST.Valid
-import Kore.Step.Pattern
+import Kore.Step.TermLike
+       ( TermLike )
 
 test_sortAgreement :: TestTree
 test_sortAgreement = testGroup "Sort agreement"
@@ -36,40 +37,40 @@ test_sortAgreement = testGroup "Sort agreement"
             (Just $ mkSort "Y")
     , testCase "predicateSort.1" $
         assertEqual ""
-            ((mkBottom_ :: CommonStepPattern Object) ^? resultSort)
+            ((mkBottom_ :: TermLike Variable) ^? resultSort)
             (Just (predicateSort :: Sort Object))
     , testCase "predicateSort.2" $
         assertEqual ""
-            ((mkTop_ :: CommonStepPattern Object) ^? resultSort)
+            ((mkTop_ :: TermLike Variable) ^? resultSort)
             (Just (predicateSort :: Sort Object))
     , testCase "predicateSort.3" $
         assertEqual ""
             ((mkExists (var_ "a" "A") mkBottom_
-                    :: CommonStepPattern Object) ^? resultSort)
+                    :: TermLike Variable) ^? resultSort)
             (Just (predicateSort :: Sort Object))
     , testGroup "sortAgreementManySimplePatterns"
         sortAgreementManySimplePatterns
     ]
 
--- subAlphaRename2Solution :: CommonStepPattern Object
+-- subAlphaRename2Solution :: TermLike Variable
 -- subAlphaRename2Solution = dummyEnvironment @Object $
 --   subst (mkVar $ var "a") (mkVar $ var "b") $
 --   mkExists (var "b0") (mkVar $ var "b")
 
 -- the a : X forces bottom : X
-sortAgreement1 :: CommonStepPattern Object
+sortAgreement1 :: TermLike Variable
 sortAgreement1 =
     mkOr (mkVar $ var_ "a" "X") mkBottom_
 
 -- the y : Y should force everything else to be Y
-sortAgreement2 :: CommonStepPattern Object
+sortAgreement2 :: TermLike Variable
 sortAgreement2 =
     mkImplies mkBottom_ $
     mkIff
         (mkEquals_ (mkVar $ var_ "foo" "X") (mkVar $ var_ "bar" "X"))
         (mkVar $ var_ "y" "Y")
 
-varX :: CommonStepPattern Object
+varX :: TermLike Variable
 varX = mkVar $ var_ "x" "X"
 
 sortAgreementManySimplePatterns :: [TestTree]

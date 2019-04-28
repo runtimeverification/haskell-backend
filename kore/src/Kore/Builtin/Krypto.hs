@@ -113,7 +113,7 @@ evalKeccak =
                     $ str
                 result = fromString (show digest)
             Builtin.appliedFunction
-                $ String.asExpandedPattern resultSort result
+                $ String.asPattern resultSort result
 
 evalECDSARecover :: Builtin.Function
 evalECDSARecover =
@@ -130,7 +130,7 @@ evalECDSARecover =
             s <- string2Integer . Text.unpack
                     <$> String.expectBuiltinString "" s0
             Builtin.appliedFunction
-                $ String.asExpandedPattern resultSort
+                $ String.asPattern resultSort
                 $ Text.pack
                 $ byteString2String
                 $ pad 64 0

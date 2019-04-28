@@ -75,14 +75,14 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Step.Pattern
-                 ( StepPattern )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unification.Unify
                  ( MonadUnify, Unifier )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -255,8 +255,8 @@ data ReplState claim level = ReplState
         -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
-        :: StepPattern level Variable
-        -> StepPattern level Variable
+        :: TermLike Variable
+        -> TermLike Variable
         -> UnifierWithExplanation Variable ()
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
@@ -323,7 +323,7 @@ emptyExecutionGraph =
         :: RewriteRule level Variable
         -> CommonStrategyPattern level
     extractConfig (RewriteRule RulePattern { left, requires }) =
-        RewritePattern $ Predicated left requires mempty
+        RewritePattern $ Conditional left requires mempty
 
 -- | Get nth claim from the claims list.
 getClaimByIndex

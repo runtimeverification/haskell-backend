@@ -19,13 +19,12 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern
+                 ( Conditional (..) )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 
@@ -40,8 +39,8 @@ test_domainValueSimplification :: [TestTree]
 test_domainValueSimplification =
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqualWithExplanation ""
-            (MultiOr.make
-                [ Predicated
+            (OrPattern.fromPatterns
+                [ Conditional
                     { term =
                         mkDomainValue
                             (Domain.BuiltinExternal Domain.External
@@ -68,7 +67,7 @@ test_domainValueSimplification =
     , testCase "\\bottom propagates through builtin Map"
         (assertEqualWithExplanation
             "Expected \\bottom to propagate to the top level"
-            (MultiOr.make [])
+            (OrPattern.fromPatterns [])
             (evaluate
                 mockMetadataTools
                 (mkMapDomainValue [(Mock.aConcrete, bottom)])
@@ -77,7 +76,7 @@ test_domainValueSimplification =
     , testCase "\\bottom propagates through builtin List"
         (assertEqualWithExplanation
             "Expected \\bottom to propagate to the top level"
-            (MultiOr.make [])
+            (OrPattern.fromPatterns [])
             (evaluate
                 mockMetadataTools
                 (mkListDomainValue [bottom])
@@ -85,7 +84,7 @@ test_domainValueSimplification =
         )
     ]
   where
-    bottom = MultiOr.make [ExpandedPattern.bottom]
+    bottom = OrPattern.fromPatterns [Pattern.bottom]
 
 mkMapDomainValue
     :: [(Domain.Key, child)]
@@ -116,8 +115,8 @@ mockMetadataTools =
 evaluate
     :: (MetaOrObject Object)
     => SmtMetadataTools attrs
-    -> Domain.Builtin (CommonOrOfExpandedPattern Object)
-    -> CommonOrOfExpandedPattern Object
+    -> Domain.Builtin (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate tools domainValue =
     case simplify tools domainValue of
         (result, _proof) -> result

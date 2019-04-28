@@ -16,16 +16,15 @@ import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
+import           Kore.Step.Conditional
+                 ( Conditional )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import           Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
@@ -38,10 +37,8 @@ simplify
        , SortedVariable variable
        )
     => SmtMetadataTools attrs
-    -> Domain.Builtin (OrOfExpandedPattern Object variable)
-    -> ( OrOfExpandedPattern Object variable
-       , SimplificationProof Object
-       )
+    -> Domain.Builtin (OrPattern Object variable)
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplify _ builtin =
     ( MultiOr.filterOr
         (do
@@ -57,10 +54,9 @@ simplifyBuiltin
        , Unparse (variable Object)
        , SortedVariable variable
        )
-    => Domain.Builtin (OrOfExpandedPattern Object variable)
+    => Domain.Builtin (OrPattern Object variable)
     -> MultiOr
-        (Predicated Object variable
-            (Domain.Builtin (StepPattern Object variable)))
+        (Conditional Object variable (Domain.Builtin (TermLike variable)))
 simplifyBuiltin =
     \case
         Domain.BuiltinExternal _ext -> do

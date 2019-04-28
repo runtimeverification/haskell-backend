@@ -29,7 +29,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools, extractMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Step.Pattern
+import           Kore.Step.TermLike
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -38,12 +38,12 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol Object (CommonStepPattern Object)
+objectA :: SentenceSymbol Object (TermLike Variable)
 objectA =
     (mkSymbol_ (testId "b") [] objectS1)
         { sentenceSymbolAttributes = Attributes [ constructorAttribute ] }
 
-metaA :: SentenceSymbol Meta (CommonStepPattern Meta)
+metaA :: SentenceSymbol Meta (TermLike Variable)
 metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
 testObjectModuleName :: ModuleName

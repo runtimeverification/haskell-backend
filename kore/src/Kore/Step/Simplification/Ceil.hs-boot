@@ -12,13 +12,13 @@ import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.Pattern
-       ( StepPattern )
-import Kore.Step.Representation.OrOfExpandedPattern
-       ( OrOfPredicateSubstitution )
+import Kore.Step.OrPredicate
+       ( OrPredicate )
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
-       StepPatternSimplifier )
+       ( PredicateSimplifier, SimplificationProof, Simplifier,
+       TermLikeSimplifier )
+import Kore.Step.TermLike
+       ( TermLike )
 import Kore.Unparser
        ( Unparse )
 import Kore.Variables.Fresh
@@ -36,11 +36,11 @@ makeEvaluateTerm
         , Unparse (variable level)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
-        (OrOfPredicateSubstitution level variable, SimplificationProof level)
+        (OrPredicate level variable, SimplificationProof level)

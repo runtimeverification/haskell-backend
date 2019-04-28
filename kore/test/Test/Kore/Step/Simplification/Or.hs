@@ -11,25 +11,28 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Or (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), isBottom, isTop )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeOrPredicate, makeTruePredicate, substitutionToPredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
+import           Kore.Step.Simplification.Data
+                 ( SimplificationProof (..) )
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
+import           Kore.Step.TermLike
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unparser as Unparser
 
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -37,8 +40,8 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 
 {-
 
-`SimplifyEvaluated` is the core function. It converts two `OrOfExpandedPattern`
-values into a simplifier that is to produce a single `OrOfExpandedPattern`. We
+`SimplifyEvaluated` is the core function. It converts two `OrPattern`
+values into a simplifier that is to produce a single `OrPattern`. We
 run the simplifier to check correctness.
 
 -}
@@ -129,16 +132,16 @@ test_simplify =
             (simplifyEvaluated          orPattern1 orPattern2 )
         ]
   where
-    orPattern1 :: OrOfExpandedPattern Object Variable
+    orPattern1 :: OrPattern Object Variable
     orPattern1 = wrapInOrPattern (tM, pM, sM)
 
-    orPattern2 :: OrOfExpandedPattern Object Variable
+    orPattern2 :: OrPattern Object Variable
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 
     binaryOr
-      :: OrOfExpandedPattern Object Variable
-      -> OrOfExpandedPattern Object Variable
-      -> Or Object (OrOfExpandedPattern Object Variable)
+      :: OrPattern Object Variable
+      -> OrPattern Object Variable
+      -> Or Object (OrPattern Object Variable)
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
@@ -147,7 +150,7 @@ test_simplify =
 
 {-
 Key for variable names:
-1. `OrOfExpandedPattern` values are represented by a tuple containing
+1. `OrPattern` values are represented by a tuple containing
    the term, predicate, and substitution, in that order. They're
    also tagged with `t`, `p`, and `s`.
 2. The second character has this meaning:
@@ -157,13 +160,13 @@ Key for variable names:
             named `pm` and `pM` are expected to be unequal.
 -}
 
-{- | Short-hand for: @ExpandedPattern Object Variable@
+{- | Short-hand for: @Pattern Object Variable@
 
 See also: 'orChild'
  -}
 type TestConfig = (TestTerm, TestPredicate, TestSubstitution)
 
-type TestTerm = StepPattern Object Variable
+type TestTerm = TermLike Variable
 
 tT :: TestTerm
 tT = mkTop Mock.testSort
@@ -180,7 +183,7 @@ t_ = mkBottom Mock.testSort
 testVar :: Text -> Variable Object
 testVar ident = Variable (testId ident) mempty Mock.testSort
 
-type TestPredicate = Predicate Object Variable
+type TestPredicate = Syntax.Predicate Variable
 
 pT :: TestPredicate
 pT = makeTruePredicate
@@ -200,7 +203,7 @@ pM =
 p_ :: TestPredicate
 p_ = makeFalsePredicate
 
-type TestSubstitution = Substitution Object Variable
+type TestSubstitution = Substitution Variable
 
 sT :: TestSubstitution
 sT = mempty
@@ -239,17 +242,17 @@ test_valueProperties =
 becomes
   :: HasCallStack
   => (TestConfig, TestConfig)
-  -> [ExpandedPattern Object Variable]
+  -> [Pattern Object Variable]
   -> TestTree
-becomes (orChild -> or1, orChild -> or2) (MultiOr.make . List.sort -> expected) =
+becomes (orChild -> or1, orChild -> or2) (OrPattern.fromPatterns . List.sort -> expected) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
+        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
         (expected, SimplificationProof)
         "or becomes"
         (stateIntention
             [ prettyOr or1 or2
             , "to become:"
-            , Unparser.unparse $ OrOfExpandedPattern.toExpandedPattern expected
+            , Unparser.unparse $ OrPattern.toExpandedPattern expected
             ]
         )
 
@@ -260,8 +263,8 @@ simplifiesTo
     -> TestTree
 simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
-        (MultiOr.make [simplified], SimplificationProof)
+        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
+        (OrPattern.fromPatterns [simplified], SimplificationProof)
         "or does simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -276,8 +279,8 @@ doesNotSimplify
     -> TestTree
 doesNotSimplify (orChild -> or1, orChild -> or2) =
     actual_expected_name_intention
-        (simplifyEvaluated (MultiOr.make [or1]) (MultiOr.make [or2]))
-        (MultiOr.make $ List.sort [or1, or2], SimplificationProof)
+        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
+        (OrPattern.fromPatterns $ List.sort [or1, or2], SimplificationProof)
         "or does not simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -288,15 +291,13 @@ doesNotSimplify (orChild -> or1, orChild -> or2) =
 -- * Support Functions
 
 prettyOr
-    :: ExpandedPattern Object Variable
-    -> ExpandedPattern Object Variable
+    :: Pattern Object Variable
+    -> Pattern Object Variable
     -> Pretty.Doc a
 prettyOr orFirst orSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
   where
-    Valid { patternSort = orSort } = extract term
-      where
-        Predicated { term } = orFirst
+    orSort = getSort (Pattern.term orFirst)
 
 stateIntention :: [Pretty.Doc ann] -> String
 stateIntention actualAndSoOn =
@@ -304,13 +305,13 @@ stateIntention actualAndSoOn =
 
 orChild
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> ExpandedPattern Object Variable
+    -> Pattern Object Variable
 orChild (term, predicate, substitution) =
-    Predicated { term, predicate, substitution }
+    Conditional { term, predicate, substitution }
 
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
--- during conversion of a Predicated into an OrOfExpandedPattern
+-- during conversion of a Conditional into an OrPattern
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> OrOfExpandedPattern Object Variable
-wrapInOrPattern tuple = MultiOr.make [orChild tuple]
+    -> OrPattern Object Variable
+wrapInOrPattern tuple = OrPattern.fromPatterns [orChild tuple]

@@ -29,14 +29,13 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
-                 makeNotPredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-                 ( CommonStepPattern )
+                 ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Proof
                  ( StepProof )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..), fromPurePattern )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -47,6 +46,8 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
+                 ( TermLike )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -73,12 +74,12 @@ test_onePathStrategy =
         [ actual ] <- runOnePathSteps
             metadataTools
             (Limit 0)
-            (ExpandedPattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.a
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.a)
+            (RewritePattern $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "Axiom priority, first step" $ do
         -- Target: a
@@ -89,7 +90,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 1)
-            (ExpandedPattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.a
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
@@ -106,12 +107,12 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 1)
-            (ExpandedPattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.d
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (RewritePattern $ ExpandedPattern.fromPurePattern Mock.c)
+            (RewritePattern $ Pattern.fromTermLike Mock.c)
             _actual
     , testCase "Axiom priority, second step" $ do
         -- Target: b
@@ -123,7 +124,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (ExpandedPattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.b
             [simpleRewrite Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
@@ -142,7 +143,7 @@ test_onePathStrategy =
         [ _actual1 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (ExpandedPattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.e
             [simpleRewrite Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
@@ -150,7 +151,7 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ RewritePattern $ ExpandedPattern.fromPurePattern Mock.c
+                [ RewritePattern $ Pattern.fromTermLike Mock.c
                 ]
             )
             (sort
@@ -167,7 +168,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (ExpandedPattern.fromPurePattern Mock.a)
+            (Pattern.fromTermLike Mock.a)
             Mock.e
             [simpleRewrite Mock.e Mock.c]
             [ simpleRewrite Mock.b Mock.d
@@ -175,7 +176,7 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ RewritePattern $ ExpandedPattern.fromPurePattern Mock.d
+                [ RewritePattern $ Pattern.fromTermLike Mock.d
                 ]
             )
             (sort
@@ -201,7 +202,7 @@ test_onePathStrategy =
             runOnePathSteps
                 metadataTools
                 (Limit 2)
-                (ExpandedPattern.fromPurePattern
+                (Pattern.fromTermLike
                     (Mock.functionalConstr10 (mkVar Mock.x))
                 )
                 (Mock.functionalConstr11 Mock.a)
@@ -219,17 +220,17 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
-            [ RewritePattern Predicated
+            [ RewritePattern Conditional
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                 }
-            , RewritePattern Predicated
+            , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                 }
-            , RewritePattern Predicated
+            , RewritePattern Conditional
                 { term = Mock.h (mkVar Mock.x)
                 , predicate =  -- TODO(virgil): Better and simplification.
                     makeAndPredicate
@@ -272,7 +273,7 @@ test_onePathStrategy =
             runOnePathSteps
                 metadataTools
                 (Limit 2)
-                (ExpandedPattern.fromPurePattern
+                (Pattern.fromTermLike
                     (Mock.functionalConstr10 (mkVar Mock.x))
                 )
                 (Mock.functionalConstr11 Mock.a)
@@ -284,17 +285,17 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
-            [ RewritePattern Predicated
+            [ RewritePattern Conditional
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                 }
-            , RewritePattern Predicated
+            , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                 }
-            , Stuck Predicated
+            , Stuck Conditional
                 { term = Mock.functionalConstr11 (mkVar Mock.x)
                 , predicate =
                     makeAndPredicate
@@ -329,7 +330,7 @@ test_onePathStrategy =
         [ _actual1, _actual2 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (ExpandedPattern.fromPurePattern
+            (Pattern.fromTermLike
                 (Mock.functionalConstr10 Mock.b)
             )
             Mock.a
@@ -342,7 +343,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqualWithExplanation ""
-            [ Stuck Predicated
+            [ Stuck Conditional
                 { term = Mock.functionalConstr10 Mock.b
                 , predicate =
                     makeNotPredicate
@@ -365,7 +366,7 @@ test_onePathStrategy =
             runOnePathSteps
                 metadataTools
                 (Limit 2)
-                (ExpandedPattern.fromPurePattern (Mock.builtinInt 0))
+                (Pattern.fromTermLike (Mock.builtinInt 0))
                 (Mock.builtinInt 1)
                 []
                 [ rewriteWithPredicate
@@ -395,8 +396,8 @@ test_onePathStrategy =
 
 simpleRewrite
     :: MetaOrObject level
-    => CommonStepPattern level
-    -> CommonStepPattern level
+    => TermLike Variable
+    -> TermLike Variable
     -> RewriteRule level Variable
 simpleRewrite left right =
     RewriteRule RulePattern
@@ -409,9 +410,9 @@ simpleRewrite left right =
 
 rewriteWithPredicate
     :: MetaOrObject level
-    => CommonStepPattern level
-    -> CommonStepPattern level
-    -> CommonPredicate level
+    => TermLike Variable
+    -> TermLike Variable
+    -> Syntax.Predicate Variable
     -> RewriteRule level Variable
 rewriteWithPredicate left right predicate =
     RewriteRule RulePattern
@@ -430,11 +431,11 @@ runSteps
         -> Maybe (ExecutionGraph b)
         )
     -> (ExecutionGraph b -> a)
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
     -- ^left-hand-side of unification
     -> [Strategy
         (Prim
-            (CommonExpandedPattern level)
+            (Pattern Object Variable)
             (RewriteRule level Variable)
         )
        ]
@@ -461,9 +462,9 @@ runOnePathSteps
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
     -- ^left-hand-side of unification
-    -> CommonStepPattern level
+    -> TermLike Variable
     -> [RewriteRule level Variable]
     -> [RewriteRule level Variable]
     -> IO [CommonStrategyPattern level]
@@ -493,4 +494,4 @@ runOnePathSteps
         )
     return (sort $ nub (map fst result))
   where
-    expandedTarget = ExpandedPattern.fromPurePattern target
+    expandedTarget = Pattern.fromTermLike target

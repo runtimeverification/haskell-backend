@@ -1,5 +1,5 @@
-module Test.Kore.Step.Simplification.PredicateSubstitution
-    ( test_predicateSubstitutionSimplification
+module Test.Kore.Step.Simplification.Predicate
+    ( test_predicateSimplification
     ) where
 
 import Test.Tasty
@@ -22,20 +22,20 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
+import           Kore.Step.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Step.Predicate as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( CommonPredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.PredicateSubstitution as Predicated
 import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )
-import qualified Kore.Step.Simplification.PredicateSubstitution as PSSimplifier
+import qualified Kore.Step.Simplification.Predicate as PSSimplifier
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -48,19 +48,19 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-test_predicateSubstitutionSimplification :: [TestTree]
-test_predicateSubstitutionSimplification =
+test_predicateSimplification :: [TestTree]
+test_predicateSimplification =
     [ testCase "Identity for top and bottom" $ do
-        actualBottom <- runSimplifier Map.empty Predicated.bottomPredicate
+        actualBottom <- runSimplifier Map.empty Conditional.bottomPredicate
         assertEqualWithExplanation "" mempty actualBottom
-        actualTop <- runSimplifier Map.empty Predicated.topPredicate
+        actualTop <- runSimplifier Map.empty Conditional.topPredicate
         assertEqualWithExplanation ""
-            (MultiOr.singleton Predicated.topPredicate)
+            (MultiOr.singleton Conditional.topPredicate)
             actualTop
 
     , testCase "Applies substitution to predicate" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -73,7 +73,7 @@ test_predicateSubstitutionSimplification =
                     }
         actual <-
             runSimplifier Map.empty
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -88,7 +88,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -101,7 +101,7 @@ test_predicateSubstitutionSimplification =
                     }
         actual <-
             runSimplifier Map.empty
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -116,7 +116,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate Mock.functional00 Mock.a
                     , substitution = Substitution.unsafeWrap
@@ -139,7 +139,7 @@ test_predicateSubstitutionSimplification =
                         )
                     ]
                 )
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -154,7 +154,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Merges substitution from predicate simplification" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
@@ -174,7 +174,7 @@ test_predicateSubstitutionSimplification =
                         )
                     ]
                 )
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -188,7 +188,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Reapplies substitution from predicate simplification" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -211,7 +211,7 @@ test_predicateSubstitutionSimplification =
                         )
                     ]
                 )
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
@@ -231,7 +231,7 @@ test_predicateSubstitutionSimplification =
 
     , testCase "Simplifies after reapplying substitution" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
@@ -255,7 +255,7 @@ test_predicateSubstitutionSimplification =
                         )
                     ]
                 )
-                Predicated
+                Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
@@ -286,16 +286,16 @@ mockMetadataTools =
 
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap Object
-    -> CommonPredicateSubstitution Object
-    -> IO (MultiOr (CommonPredicateSubstitution Object))
-runSimplifier patternSimplifierMap predicateSubstitution =
+    -> Predicate Object Variable
+    -> IO (OrPredicate Object Variable)
+runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ gather
-    $ simplifier predicateSubstitution
+    $ simplifier predicate
   where
-    PredicateSubstitutionSimplifier simplifier =
+    PredicateSimplifier simplifier =
         PSSimplifier.create
             mockMetadataTools
             (Simplifier.create mockMetadataTools patternSimplifierMap)
@@ -313,7 +313,7 @@ makeEvaluator
             , SortedVariable variable
             , ShowMetaOrObject variable
             )
-        => [(StepPattern Object variable, StepPattern Object variable)]
+        => [(TermLike variable, TermLike variable)]
         )
     -> BuiltinAndAxiomSimplifier Object
 makeEvaluator mapping =
@@ -326,8 +326,8 @@ simpleEvaluator
         , SortedVariable variable
         , ShowMetaOrObject variable
         )
-    => [(StepPattern Object variable, StepPattern Object variable)]
-    -> StepPattern Object variable
+    => [(TermLike variable, TermLike variable)]
+    -> TermLike variable
     -> Simplifier
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
@@ -337,7 +337,7 @@ simpleEvaluator ((from, to) : ps) patt
   | from == patt =
     return
         ( Applied AttemptedAxiomResults
-            { results = MultiOr.make [ExpandedPattern.fromPurePattern to]
+            { results = OrPattern.fromTermLike to
             , remainders = MultiOr.make []
             }
         , SimplificationProof

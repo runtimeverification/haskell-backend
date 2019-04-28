@@ -16,7 +16,7 @@ import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
@@ -40,7 +40,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         b <- forAll Gen.bool
-        let expect = Test.Bool.asExpandedPattern (impl a b)
+        let expect = Test.Bool.asPattern (impl a b)
         actual <-
             evaluate
             $ mkApp boolSort symb
@@ -59,7 +59,7 @@ test_KEqual :: [TestTree]
 test_KEqual =
     [ testCaseWithSolver "dotk equals dotk" $ \solver -> do
         let expect =
-                ExpandedPattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal True
             original =
                 mkApp
@@ -73,7 +73,7 @@ test_KEqual =
 
     , testCaseWithSolver "distinct domain values" $ \solver -> do
         let expect =
-                ExpandedPattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
                 mkApp
@@ -97,7 +97,7 @@ test_KEqual =
 
     , testCaseWithSolver "injected distinct domain values" $ \solver -> do
         let expect =
-                ExpandedPattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
                 mkApp
@@ -129,7 +129,7 @@ test_KEqual =
 
     , testCase "distinct Id domain values casted to K" $ do
         let expect =
-                ExpandedPattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
                 mkApp
@@ -174,7 +174,7 @@ test_KIte :: [TestTree]
 test_KIte =
     [ testCaseWithSolver "ite true" $ \solver -> do
         let expect =
-                ExpandedPattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
                 mkApp
@@ -189,7 +189,7 @@ test_KIte =
 
     , testCaseWithSolver "ite false" $ \solver -> do
         let expect =
-                ExpandedPattern.fromPurePattern
+                Pattern.fromTermLike
                 $ Test.Bool.asInternal True
             original =
                 mkApp

@@ -16,10 +16,10 @@ import           Data.Text.Prettyprint.Doc
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Logger as Log
-import           Kore.Step.Pattern
-                 ( StepPattern )
 import           Kore.Step.Simplification.Data
                  ( Environment (..), Simplifier )
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )
@@ -54,8 +54,8 @@ class (forall variable. Monad (unifier variable)) => MonadUnify unifier where
     explainBottom
         :: Unparse (variable Object)
         => Doc ()
-        -> StepPattern Object variable
-        -> StepPattern Object variable
+        -> TermLike variable
+        -> TermLike variable
         -> unifier variable ()
     explainBottom _ _ _ = pure ()
 

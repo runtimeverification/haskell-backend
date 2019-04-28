@@ -21,6 +21,8 @@ import GHC.Generics
 
 import           Kore.AST.Common
                  ( CharLiteral, StringLiteral, SymbolOrAlias )
+import           Kore.AST.MetaOrObject
+                 ( Object )
 import qualified Kore.Domain.Builtin as Domain
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is
@@ -30,23 +32,27 @@ import qualified Kore.Domain.Builtin as Domain
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data FunctionalProof level variable
-    = FunctionalVariable (variable level)
+    = FunctionalVariable (variable Object)
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
     | FunctionalDomainValue (Domain.Builtin ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
-    | FunctionalHead (SymbolOrAlias level)
+    | FunctionalHead (SymbolOrAlias Object)
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     | FunctionalStringLiteral StringLiteral
     -- ^A string literal is the repeated application of functional constructors.
     | FunctionalCharLiteral CharLiteral
     -- ^A char literal is a functional constructor without arguments.
-  deriving (Eq, Generic, Show)
+  deriving Generic
 
-instance Hashable (variable level) => Hashable (FunctionalProof level variable)
+deriving instance Eq (variable Object) => Eq (FunctionalProof level variable)
+deriving instance Ord (variable Object) => Ord (FunctionalProof level variable)
+deriving instance Show (variable Object) => Show (FunctionalProof level variable)
+
+instance Hashable (variable Object) => Hashable (FunctionalProof level variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
@@ -56,11 +62,14 @@ instance Hashable (variable level) => Hashable (FunctionalProof level variable)
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data FunctionProof level variable
-    = FunctionProofFunctional (FunctionalProof level variable)
+    = FunctionProofFunctional (FunctionalProof Object variable)
     -- ^ A functional component is also function-like.
-    | FunctionHead (SymbolOrAlias level)
+    | FunctionHead (SymbolOrAlias Object)
     -- ^Head of a partial function.
-  deriving (Eq, Show)
+
+deriving instance Eq (variable Object) => Eq (FunctionProof level variable)
+deriving instance Ord (variable Object) => Ord (FunctionProof level variable)
+deriving instance Show (variable Object) => Show (FunctionProof level variable)
 
 -- |'TotalProof' is used for providing arguments that a pattern is
 -- total/not bottom.  Currently we only support arguments stating that a
@@ -69,22 +78,24 @@ data FunctionProof level variable
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data TotalProof level variable
-    = TotalProofFunctional (FunctionalProof level variable)
+    = TotalProofFunctional (FunctionalProof Object variable)
     -- ^A functional component is also total.
-    | TotalHead (SymbolOrAlias level)
+    | TotalHead (SymbolOrAlias Object)
     -- ^Head of a total symbol.
-  deriving (Eq, Show)
+
+deriving instance Eq (variable Object) => Eq (TotalProof level variable)
+deriving instance Ord (variable Object) => Ord (TotalProof level variable)
+deriving instance Show (variable Object) => Show (TotalProof level variable)
 
 -- |Used for providing arguments that a pattern is made of constructor-like
 -- elements.
-data ConstructorLikeProof
-    = ConstructorLikeProof
+data ConstructorLikeProof = ConstructorLikeProof
   deriving (Eq, Show)
 
 mapVariables
-    :: (variable1 level -> variable2 level)
-    -> FunctionalProof level variable1
-    -> FunctionalProof level variable2
+    :: (variable1 Object -> variable2 Object)
+    -> FunctionalProof Object variable1
+    -> FunctionalProof Object variable2
 mapVariables mapping =
     \case
         FunctionalVariable variable -> FunctionalVariable (mapping variable)

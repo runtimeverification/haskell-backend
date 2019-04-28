@@ -35,9 +35,9 @@ import           Kore.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Step
                  ( anyRewrite )
-import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import           Kore.Step.TermLike
 import qualified SMT
 
 import           System.Directory
@@ -134,7 +134,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
     name = takeFileName test
     setUp :: IO
                 ( VerifiedModule StepperAttributes Attribute.Axiom
-                , CommonStepPattern Object)
+                , TermLike Variable)
     setUp = do
         kompile
         definition <- readFile $ root </> definitionFile
@@ -175,9 +175,9 @@ execBenchmark root kFile definitionFile mainModuleName test =
         return (verifiedModule, verifiedPattern)
     execution
         ::  ( VerifiedModule StepperAttributes Attribute.Axiom
-            , CommonStepPattern Object
+            , TermLike Variable
             )
-        -> IO (CommonStepPattern Object)
+        -> IO (TermLike Variable)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger

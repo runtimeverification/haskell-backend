@@ -5,20 +5,21 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Data.Default
-                 ( def )
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
 import           Data.Sup
-import           Kore.AST.Pure hiding
-                 ( mapVariables )
+import           Kore.AST.Common
+                 ( SortedVariable (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, makeAndPredicate, makeCeilPredicate,
-                 makeEqualsPredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
@@ -29,28 +30,22 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern,
-                 Predicated (Predicated) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..), mapVariables )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+                 ( EqualityRule (EqualityRule) )
 import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
+                 ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), Simplifier, StepPatternSimplifier,
-                 evalSimplifier )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSimplifier (..), SimplificationProof (..),
+                 Simplifier, TermLikeSimplifier, evalSimplifier )
+import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import qualified Kore.Step.Simplification.TermLike as TermLike
+                 ( simplify )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 import qualified SMT
@@ -66,7 +61,7 @@ test_functionIntegration :: [TestTree]
 test_functionIntegration =
     [ testCase "Simple evaluation" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -86,7 +81,7 @@ test_functionIntegration =
 
     , testCase "Simple evaluation (builtin branch)" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -107,7 +102,7 @@ test_functionIntegration =
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)"
       $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -134,7 +129,7 @@ test_functionIntegration =
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)"
       $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -159,7 +154,7 @@ test_functionIntegration =
 
     , testCase "Evaluates inside functions" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.functional10 (Mock.functional10 Mock.c)
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -179,7 +174,7 @@ test_functionIntegration =
 
     , testCase "Evaluates 'or'" $ do
         let expect =
-                Predicated
+                Conditional
                     { term =
                         mkOr
                             (Mock.functional10 (Mock.functional10 Mock.c))
@@ -207,7 +202,7 @@ test_functionIntegration =
 
     , testCase "Evaluates on multiple branches" $ do
         let expect =
-                Predicated
+                Conditional
                     { term =
                         Mock.functional10
                             (Mock.functional20
@@ -237,7 +232,7 @@ test_functionIntegration =
 
     , testCase "Returns conditions" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.f Mock.d
                     , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
                     , substitution = mempty
@@ -247,7 +242,7 @@ test_functionIntegration =
                 mockMetadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.cId)
-                    ( appliedMockEvaluator Predicated
+                    ( appliedMockEvaluator Conditional
                         { term   = Mock.d
                         , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
                         , substitution = mempty
@@ -259,7 +254,7 @@ test_functionIntegration =
 
     , testCase "Merges conditions" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
                     , predicate =
                         makeAndPredicate
@@ -272,14 +267,14 @@ test_functionIntegration =
                 mockMetadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cId
-                        , appliedMockEvaluator Predicated
+                        , appliedMockEvaluator Conditional
                             { term = Mock.e
                             , predicate = makeCeilPredicate Mock.cg
                             , substitution = mempty
                             }
                         )
                     ,   ( AxiomIdentifier.Application Mock.dId
-                        , appliedMockEvaluator Predicated
+                        , appliedMockEvaluator Conditional
                             { term = Mock.e
                             , predicate = makeCeilPredicate Mock.cf
                             , substitution = mempty
@@ -297,7 +292,7 @@ test_functionIntegration =
 
     , testCase "Reevaluates user-defined function results." $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.f Mock.e
                     , predicate = makeEqualsPredicate (Mock.f Mock.e) Mock.e
                     , substitution = mempty
@@ -310,7 +305,7 @@ test_functionIntegration =
                         , axiomEvaluator Mock.c Mock.d
                         )
                     ,   ( AxiomIdentifier.Application Mock.dId
-                        , appliedMockEvaluator Predicated
+                        , appliedMockEvaluator Conditional
                             { term = Mock.e
                             , predicate =
                                 makeEqualsPredicate (Mock.f Mock.e) Mock.e
@@ -324,7 +319,7 @@ test_functionIntegration =
 
     , testCase "Merges substitutions with reevaluation ones." $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.f Mock.e
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
@@ -341,7 +336,7 @@ test_functionIntegration =
                 mockMetadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cId
-                        , appliedMockEvaluator Predicated
+                        , appliedMockEvaluator Conditional
                             { term = Mock.d
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
@@ -352,7 +347,7 @@ test_functionIntegration =
                             }
                         )
                     ,   ( AxiomIdentifier.Application Mock.dId
-                        , appliedMockEvaluator Predicated
+                        , appliedMockEvaluator Conditional
                             { term = Mock.e
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
@@ -373,7 +368,7 @@ test_functionIntegration =
         -- 2. Transforming the 'and' in an equals predicate,
         --    as it would happen for functions.
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.a
                     , predicate =
                         makeCeilPredicate
@@ -386,7 +381,7 @@ test_functionIntegration =
                 mockMetadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
-                        , appliedMockEvaluator Predicated
+                        , appliedMockEvaluator Conditional
                             { term = Mock.a
                             , predicate =
                                 makeCeilPredicate
@@ -411,7 +406,7 @@ test_functionIntegration =
 
     , testCase "Evaluates only simplifications." $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.b
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -422,7 +417,7 @@ test_functionIntegration =
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
-                            (appliedMockEvaluator Predicated
+                            (appliedMockEvaluator Conditional
                                 { term = Mock.b
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -443,7 +438,7 @@ test_functionIntegration =
 
     , testCase "Picks first matching simplification." $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.b
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -458,12 +453,12 @@ test_functionIntegration =
                                 [ axiomEvaluator
                                     (Mock.f (Mock.g (mkVar Mock.x)))
                                     Mock.c
-                                ,  appliedMockEvaluator Predicated
+                                ,  appliedMockEvaluator Conditional
                                     { term = Mock.b
                                     , predicate = makeTruePredicate
                                     , substitution = mempty
                                     }
-                                ,  appliedMockEvaluator Predicated
+                                ,  appliedMockEvaluator Conditional
                                     { term = Mock.c
                                     , predicate = makeTruePredicate
                                     , substitution = mempty
@@ -485,7 +480,7 @@ test_functionIntegration =
 
     , testCase "Falls back to evaluating the definition." $ do
         let expect =
-                Predicated
+                Conditional
                     { term = Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -515,7 +510,7 @@ test_functionIntegration =
 
     , testCase "Multiple definition branches." $ do
         let expect =
-                Predicated
+                Conditional
                     { term = mkOr
                         (mkAnd Mock.a (mkCeil Mock.testSort Mock.cf))
                         (mkAnd Mock.b (mkNot (mkCeil Mock.testSort Mock.cf)))
@@ -550,38 +545,19 @@ test_functionIntegration =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Variable expansion." $ do
-        let expect =
-                Predicated
-                    { term = mkOr
-                        (mkOr
-                            (mkAnd
-                                Mock.a
-                                (mkEquals Mock.testSort
-                                    (mkVar Mock.x) Mock.a
-                                )
-                            )
-                            (mkAnd
-                                Mock.b
-                                (mkEquals Mock.testSort
-                                    (mkVar Mock.x) Mock.b
-                                )
-                            )
-                        )
-                        (mkAnd
-                            (Mock.f (mkVar Mock.x))
-                            (mkAnd
-                                (mkNot
-                                    (mkEquals Mock.testSort
-                                        (mkVar Mock.x) Mock.a
-                                    )
-                                )
-                                (mkNot
-                                    (mkEquals Mock.testSort
-                                        (mkVar Mock.x) Mock.b
-                                    )
-                                )
-                            )
-                        )
+        let equalsXA = mkEquals Mock.testSort (mkVar Mock.x) Mock.a
+            equalsXB = mkEquals Mock.testSort (mkVar Mock.x) Mock.b
+            expect =
+                Conditional
+                    { term =
+                        Foldable.foldr1 mkOr
+                            [ mkAnd Mock.a equalsXA
+                            , mkAnd Mock.b equalsXB
+                            , mkAnd (Mock.f (mkVar Mock.x))
+                                $ mkAnd
+                                    (mkNot equalsXA)
+                                    (mkNot equalsXB)
+                            ]
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -608,57 +584,49 @@ test_functionIntegration =
     ]
 
 axiomEvaluator
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
         (equalityRuleEvaluator (axiom left right makeTruePredicate))
 
 axiom
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonPredicate Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Syntax.Predicate Variable
     -> EqualityRule Object Variable
 axiom left right predicate =
-    EqualityRule RulePattern
-        { left
-        , right
-        , requires = predicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
+    EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> BuiltinAndAxiomSimplifier level
+    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier level
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
     $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = MultiOr.make
+        { results = OrPattern.fromPatterns
             [Test.Kore.Step.Function.Integration.mapVariables result]
-        , remainders = MultiOr.make []
+        , remainders = OrPattern.fromPatterns []
         }
 
 mapVariables
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
         )
-    => CommonExpandedPattern level
-    -> ExpandedPattern level variable
+    => Pattern Object Variable
+    -> Pattern Object variable
 mapVariables =
-    ExpandedPattern.mapVariables $ \v ->
+    Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Element 1) }
 
 mockEvaluator
     :: AttemptedAxiom level variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ _ _ =
@@ -668,22 +636,22 @@ evaluate
     :: forall level . MetaOrObject level
     => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
-    -> CommonStepPattern level
-    -> IO (CommonExpandedPattern level)
+    -> TermLike Variable
+    -> IO (Pattern Object Variable)
 evaluate metadataTools functionIdToEvaluator patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ Pattern.simplify
+    $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
-    substitutionSimplifier :: PredicateSubstitutionSimplifier level
+    substitutionSimplifier :: PredicateSimplifier level
     substitutionSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools patternSimplifier functionIdToEvaluator
     patternSimplifier
         ::  ( MetaOrObject level )
-        => StepPatternSimplifier level
+        => TermLikeSimplifier level
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes

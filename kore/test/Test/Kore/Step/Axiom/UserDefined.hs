@@ -11,7 +11,6 @@ import           Data.List
                  ( sort )
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
@@ -30,18 +29,17 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( ExpandedPattern, Predicated (..), bottom )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
+                 ( Conditional (..), Pattern, bottom )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), StepPatternSimplifier,
+                 ( SimplificationProof (..), TermLikeSimplifier,
                  evalSimplifier )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -60,14 +58,14 @@ test_userDefinedFunction =
     [ testCase "Applies one step" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = MultiOr.make
-                        [ Predicated
+                    { results = OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.functionalConstr11 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
                         ]
-                    , remainders = MultiOr.make []
+                    , remainders = OrPattern.fromPatterns []
                     }
         actual <-
             evaluateWithAxiom
@@ -120,9 +118,9 @@ test_userDefinedFunction =
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = MultiOr.make []
-                    , remainders = MultiOr.make
-                        [ Predicated
+                    { results = OrPattern.fromPatterns []
+                    , remainders = OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.functionalConstr10 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -148,8 +146,8 @@ test_userDefinedFunction =
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results =
-                        MultiOr.make [ ExpandedPattern.bottom ]
-                    , remainders = MultiOr.make []
+                        OrPattern.fromPatterns [ Pattern.bottom ]
+                    , remainders = OrPattern.fromPatterns []
                     }
         actual <-
             evaluateWithAxiom
@@ -172,16 +170,16 @@ test_userDefinedFunction =
     , testCase "Preserves step substitution" $ do
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = MultiOr.make
-                        [ Predicated
+                    { results = OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.g (mkVar Mock.z)
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap
                                 [(Mock.y, mkVar Mock.z)]
                             }
                         ]
-                    , remainders = MultiOr.make
-                        [ Predicated
+                    , remainders = OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.functionalConstr20
                                 (mkVar Mock.y)
                                 (mkVar Mock.z)
@@ -222,20 +220,20 @@ test_userDefinedFunction =
     ]
 
 noSimplification
-    ::  [   ( StepPattern level Variable
-            , ([ExpandedPattern level Variable], SimplificationProof level)
+    ::  [   ( TermLike Variable
+            , ([Pattern level Variable], SimplificationProof level)
             )
         ]
 noSimplification = []
 
 
 asSimplification
-    ::  [   ( StepPattern level Variable
-            , ([ExpandedPattern level Variable], SimplificationProof level)
+    ::  [   ( TermLike Variable
+            , ([Pattern level Variable], SimplificationProof level)
             )
         ]
-    ->  [   ( StepPattern level Variable
-            , ([ExpandedPattern level Variable], SimplificationProof level)
+    ->  [   ( TermLike Variable
+            , ([Pattern level Variable], SimplificationProof level)
             )
         ]
 asSimplification = id
@@ -254,8 +252,8 @@ evaluateWithAxiom
     :: forall level . MetaOrObject level
     => SmtMetadataTools StepperAttributes
     -> EqualityRule level Variable
-    -> StepPatternSimplifier level
-    -> CommonStepPattern level
+    -> TermLikeSimplifier level
+    -> TermLike Variable
     -> IO (CommonAttemptedAxiom level)
 evaluateWithAxiom
     metadataTools
@@ -278,8 +276,8 @@ evaluateWithAxiom
                         }
             result -> result
 
-    sortSubstitution Predicated {term, predicate, substitution} =
-        Predicated
+    sortSubstitution Conditional {term, predicate, substitution} =
+        Conditional
             { term = term
             , predicate = predicate
             , substitution = Substitution.modify sort substitution

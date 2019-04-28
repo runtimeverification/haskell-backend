@@ -50,24 +50,22 @@ import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import           Kore.Step.Pattern
+                 ( Conditional (Conditional), Pattern )
+import           Kore.Step.Pattern as Pattern
+import           Kore.Step.Pattern as Conditional
+                 ( Conditional (..) )
 import           Kore.Step.Proof
                  ( StepProof )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (Predicated) )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
-import           Kore.Step.Representation.ExpandedPattern as Predicated
-                 ( Predicated (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy
@@ -145,16 +143,16 @@ If the verification succeeds, it returns ().
 verify
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonExpandedPattern level
+    ->  (  Pattern Object Variable
         -> [Strategy
             (Prim
-                (CommonExpandedPattern level)
+                (Pattern Object Variable)
                 (RewriteRule level Variable)
             )
            ]
@@ -165,7 +163,7 @@ verify
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT
-        (CommonOrOfExpandedPattern level)
+        (OrPattern level Variable)
         Simplifier
         ()
 verify
@@ -201,10 +199,10 @@ defaultStrategy
     => [claim]
     -- The claims that we want to prove
     -> [Axiom level]
-    -> CommonExpandedPattern level
+    -> Pattern Object Variable
     -> [Strategy
         (Prim
-            (CommonExpandedPattern level)
+            (Pattern Object Variable)
             (RewriteRule level Variable)
         )
        ]
@@ -231,21 +229,21 @@ defaultStrategy
 verifyClaim
     :: forall level . (MetaOrObject level)
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
-    -> PredicateSubstitutionSimplifier level
+    -> TermLikeSimplifier level
+    -> PredicateSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonExpandedPattern level
+    ->  (  Pattern Object Variable
         -> [Strategy
             (Prim
-                (CommonExpandedPattern level)
+                (Pattern Object Variable)
                 (RewriteRule level Variable)
             )
            ]
         )
     -> (RewriteRule level Variable, Limit Natural)
     -> ExceptT
-        (CommonOrOfExpandedPattern level)
+        (OrPattern level Variable)
         Simplifier
         ()
 verifyClaim
@@ -261,7 +259,7 @@ verifyClaim
             Limit.takeWithin
                 stepLimit
                 (strategyBuilder
-                    Predicated
+                    Conditional
                     { term = right
                     , predicate = ensures
                     , substitution = mempty
@@ -270,7 +268,7 @@ verifyClaim
         startPattern :: CommonStrategyPattern level
         startPattern =
             StrategyPattern.RewritePattern
-                Predicated
+                Conditional
                     {term = left, predicate = requires, substitution = mempty}
     executionGraph <- Monad.Trans.lift $ runStrategy
         transitionRule'
@@ -280,7 +278,7 @@ verifyClaim
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
-        :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+        :: Prim (Pattern Object Variable) (RewriteRule level Variable)
         -> (CommonStrategyPattern level, StepProof level Variable)
         -> TransitionT (RewriteRule level Variable) Simplifier
             (CommonStrategyPattern level, StepProof level Variable)
@@ -309,8 +307,8 @@ verifyClaimStep
         , Claim claim
         )
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
-    -> PredicateSubstitutionSimplifier level
+    -> TermLikeSimplifier level
+    -> PredicateSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> claim
     -- ^ claim that is being proven
@@ -344,7 +342,7 @@ verifyClaimStep
         node
   where
     transitionRule'
-        :: Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+        :: Prim (Pattern Object Variable) (RewriteRule level Variable)
         -> CommonStrategyPattern level
         -> TransitionT (RewriteRule level Variable) Simplifier
             (CommonStrategyPattern level)
@@ -358,7 +356,7 @@ verifyClaimStep
 
     strategy'
         :: Strategy
-            (Prim (CommonExpandedPattern level) (RewriteRule level Variable))
+            (Prim (Pattern Object Variable) (RewriteRule level Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites
@@ -371,9 +369,9 @@ verifyClaimStep
     rewrites :: [RewriteRule level Variable]
     rewrites = coerce <$> axioms
 
-    targetPattern :: CommonExpandedPattern level
+    targetPattern :: Pattern Object Variable
     targetPattern =
-        ExpandedPattern.fromPurePattern
+        Pattern.fromTermLike
             . right
             . coerce
             $ target

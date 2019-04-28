@@ -50,15 +50,14 @@ import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), AttemptedAxiomResults (..),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
+                 ( Conditional (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -132,15 +131,15 @@ evalKEq
         )
     => Bool
     -> MetadataTools.SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
-        (StepPattern Object variable)
+        (TermLike variable)
     -> Simplifier
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
@@ -155,15 +154,15 @@ evalKEq true _ _ _ _ (valid :< app) =
     Application { applicationChildren } = app
     evalEq t1 t2 = do
         let (expr, _proof) = Or.simplifyEvaluated
-                (MultiOr.make
-                    [ Predicated
+                (OrPattern.fromPatterns
+                    [ Conditional
                         (Bool.asInternal patternSort true)
                         (Predicate.makeEqualsPredicate t1 t2)
                         mempty
                     ]
                 )
-                (MultiOr.make
-                    [ Predicated
+                (OrPattern.fromPatterns
+                    [ Conditional
                         (Bool.asInternal patternSort false)
                         ( Predicate.makeNotPredicate $
                             Predicate.makeEqualsPredicate t1 t2
@@ -174,7 +173,7 @@ evalKEq true _ _ _ _ (valid :< app) =
         pure
             ( Applied AttemptedAxiomResults
                 { results = expr
-                , remainders = MultiOr.make []
+                , remainders = OrPattern.fromPatterns []
                 }
             , SimplificationProof
             )
@@ -188,14 +187,14 @@ evalKIte
         , ShowMetaOrObject variable
         )
     => MetadataTools.SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application Object)
         (Valid (variable Object) Object)
-        (StepPattern Object variable)
+        (TermLike variable)
     -> Simplifier
         ( AttemptedAxiom Object variable
         , SimplificationProof Object
@@ -207,7 +206,7 @@ evalKIte _ _ _ _ (_ :< app) =
         _ -> Builtin.wrongArity iteKey
   where
     evaluate
-        :: StepPattern Object variable
+        :: TermLike variable
         -> Maybe Bool
     evaluate (Recursive.project -> _ :< pat) =
         case pat of

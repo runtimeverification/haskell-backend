@@ -11,12 +11,10 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import           Kore.Step.Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -26,16 +24,14 @@ an or containing a term made of that literal.
 simplify
     :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
     => Sort level
-    -> ( OrOfExpandedPattern level variable
+    -> ( OrPattern level variable
        , SimplificationProof level
        )
 simplify s =
-    ( MultiOr.make
-        [Predicated
-            { term = mkInhabitantPattern s
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        ]
+    ( MultiOr.singleton Conditional
+        { term = mkInhabitantPattern s
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
     , SimplificationProof
     )

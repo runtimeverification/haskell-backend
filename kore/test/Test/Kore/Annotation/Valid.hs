@@ -16,6 +16,6 @@ import Test.Kore
 -- variables as 'Variables.Free.freePureVariables'.
 hprop_freeVariables :: Property
 hprop_freeVariables = property $ do
-    stepPattern <- forAll (stepPatternGen @Object)
-    let Valid { freeVariables } = extract stepPattern
-    freeVariables === Variables.Free.freePureVariables stepPattern
+    termLike <- forAll (termLikeGen @Object)
+    let Valid { freeVariables } = extract termLike
+    freeVariables === Variables.Free.freePureVariables termLike

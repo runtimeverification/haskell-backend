@@ -37,23 +37,22 @@ import           Kore.ModelChecker.Simplification
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-                 ( StepPattern )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
+                 ( TermLike )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -71,8 +70,11 @@ data Prim patt rewrite =
 
 data ModalPattern level variable = ModalPattern
     { modalOp :: !Text
-    , term  :: !(StepPattern level variable)
-    } deriving (Eq, Show)
+    , term  :: !(TermLike variable)
+    }
+
+deriving instance Eq (variable Object) => Eq (ModalPattern level variable)
+deriving instance Show (variable Object) => Show (ModalPattern level variable)
 
 type CommonModalPattern level = ModalPattern level Variable
 
@@ -86,8 +88,8 @@ data ProofState patt
     -- ^ State which can't be rewritten anymore.
   deriving (Show, Eq, Ord, Generic)
 
--- | A 'ProofState' instantiated to 'CommonExpandedPattern' for convenience.
-type CommonProofState level = ProofState (CommonExpandedPattern level)
+-- | A 'ProofState' instantiated to 'Pattern Object Variable' for convenience.
+type CommonProofState level = ProofState (Pattern Object Variable)
 
 instance Hashable patt => Hashable (ProofState patt)
 
@@ -108,8 +110,8 @@ type Transition = TransitionT (RewriteRule Object Variable) Simplifier
 transitionRule
     :: forall level . (MetaOrObject level)
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -154,7 +156,7 @@ transitionRule
         do
             (configs, _) <-
                 Monad.Trans.lift
-                $ ExpandedPattern.simplify
+                $ Pattern.simplify
                     tools
                     predicateSimplifier
                     patternSimplifier
@@ -175,10 +177,10 @@ transitionRule
     transitionUnroll _ Proven = empty
     transitionUnroll _ Unprovable = empty
     transitionUnroll goalrhs (GoalLHS config)
-        | ExpandedPattern.isBottom config = return Proven
+        | Pattern.isBottom config = return Proven
         | otherwise = applyUnroll goalrhs GoalLHS config
     transitionUnroll goalrhs (GoalRemLHS config)
-        | ExpandedPattern.isBottom config = return Proven
+        | Pattern.isBottom config = return Proven
         | otherwise = applyUnroll goalrhs GoalRemLHS config
 
     applyUnroll ModalPattern { modalOp, term } wrapper config
@@ -219,15 +221,15 @@ transitionRule
     transitionComputeWeakNext rules (GoalLHS config)
       = transitionComputeWeakNextHelper rules config
     transitionComputeWeakNext _ (GoalRemLHS _)
-      = return (GoalLHS ExpandedPattern.bottom)
+      = return (GoalLHS Pattern.bottom)
 
     transitionComputeWeakNextHelper
         :: [RewriteRule level Variable]
-        -> (CommonExpandedPattern level)
+        -> (Pattern Object Variable)
         -> TransitionT (RewriteRule level Variable) Simplifier
             (CommonProofState level)
     transitionComputeWeakNextHelper _ config
-        | ExpandedPattern.isBottom config = return Proven
+        | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do
         result <-
             Monad.Trans.lift

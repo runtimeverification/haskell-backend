@@ -9,7 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Equals
     ( makeEvaluate
-    , makeEvaluateTermsToPredicateSubstitution
+    , makeEvaluateTermsToPredicate
     , simplify
     ) where
 
@@ -23,7 +23,8 @@ import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Traversable as Traversable
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Equals (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -34,19 +35,18 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeNotPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Step.OrPredicate as OrPredicate
+import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns, make, merge )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern, toPredicate )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -54,8 +54,8 @@ import qualified Kore.Step.Simplification.AndTerms as AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -64,11 +64,12 @@ import qualified Kore.Step.Simplification.Not as Not
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-|'simplify' simplifies an 'Equals' pattern made of 'OrOfExpandedPattern's.
+{-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
 
 This uses the following simplifications
 (t = term, s = substitution, p = predicate):
@@ -154,14 +155,14 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Equals level (OrOfExpandedPattern level variable)
+    -> Equals level (OrPattern level variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplify
@@ -187,9 +188,9 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Equals level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (Equals level) (Valid level) (OrPattern level variable)
 
-instead of two 'OrOfExpandedPattern' arguments. The type of 'makeEvaluate' may
+instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
@@ -205,15 +206,15 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> OrOfExpandedPattern level variable
-    -> OrOfExpandedPattern level variable
+    -> OrPattern level variable
+    -> OrPattern level variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -222,7 +223,7 @@ simplifyEvaluated
     first
     second
   | first == second =
-    return (MultiOr.make [ExpandedPattern.top], SimplificationProof)
+    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
@@ -236,7 +237,7 @@ simplifyEvaluated
                 firstP
                 secondP
         ([firstP], _)
-            | isFunctionPredicated firstP ->
+            | isFunctionConditional firstP ->
                 makeEvaluateFunctionalOr
                     tools
                     substitutionSimplifier
@@ -245,7 +246,7 @@ simplifyEvaluated
                     firstP
                     secondPatterns
         (_, [secondP])
-            | isFunctionPredicated secondP ->
+            | isFunctionConditional secondP ->
                 makeEvaluateFunctionalOr
                     tools
                     substitutionSimplifier
@@ -259,12 +260,12 @@ simplifyEvaluated
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
-                (OrOfExpandedPattern.toExpandedPattern first)
-                (OrOfExpandedPattern.toExpandedPattern second)
+                (OrPattern.toExpandedPattern first)
+                (OrPattern.toExpandedPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
-    isFunctionPredicated Predicated {term} = isFunctionPattern tools term
+    isFunctionConditional Conditional {term} = isFunctionPattern tools term
 
 makeEvaluateFunctionalOr
     :: forall variable level .
@@ -278,15 +279,15 @@ makeEvaluateFunctionalOr
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
-    -> [ExpandedPattern level variable]
+    -> Pattern level variable
+    -> [Pattern level variable]
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluateFunctionalOr
     tools
     substitutionSimplifier
@@ -328,7 +329,7 @@ makeEvaluateFunctionalOr
     let oneNotBottom =
             foldl'
                 (dropProofFold Or.simplifyEvaluated)
-                (MultiOr.make [])
+                (OrPattern.fromPatterns [])
                 secondCeils
     allAreBottom <-
         foldM
@@ -340,7 +341,7 @@ makeEvaluateFunctionalOr
                     axiomIdToSimplfier
                 )
             )
-            (MultiOr.make [ExpandedPattern.top])
+            (OrPattern.fromPatterns [Pattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
         mapM
@@ -372,8 +373,8 @@ makeEvaluateFunctionalOr
         -> Simplifier a
     dropProofFoldM f x y = dropProofM (f x y)
     makeEvaluateEqualsIfSecondNotBottom
-        Predicated {term = firstTerm}
-        (Predicated {term = secondTerm}, secondCeil)
+        Conditional {term = firstTerm}
+        (Conditional {term = secondTerm}, secondCeil)
       = do
         (equality, _) <-
             makeEvaluateTermsAssumesNoBottom
@@ -393,7 +394,7 @@ makeEvaluateFunctionalOr
                 equality
         return result
 
-{-| evaluates an 'Equals' given its two 'ExpandedPattern' children.
+{-| evaluates an 'Equals' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
@@ -408,23 +409,23 @@ makeEvaluate
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
+    -> Pattern level variable
+    -> Pattern level variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluate
     _
     _
     _
     _
-    first@Predicated
+    first@Conditional
         { term = Top_ _ }
-    second@Predicated
+    second@Conditional
         { term = Top_ _ }
   =
     return (Iff.makeEvaluate first second, SimplificationProof)
@@ -433,19 +434,19 @@ makeEvaluate
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
-    Predicated
+    Conditional
         { term = firstTerm
         , predicate = PredicateTrue
         , substitution = (Substitution.unwrap -> [])
         }
-    Predicated
+    Conditional
         { term = secondTerm
         , predicate = PredicateTrue
         , substitution = (Substitution.unwrap -> [])
         }
   = do
     (result, _proof) <-
-        makeEvaluateTermsToPredicateSubstitution
+        makeEvaluateTermsToPredicate
             tools
             substitutionSimplifier
             simplifier
@@ -453,7 +454,7 @@ makeEvaluate
             firstTerm
             secondTerm
     return
-        ( fmap ExpandedPattern.fromPredicateSubstitution result
+        ( fmap Pattern.fromPredicate result
         , SimplificationProof
         )
 makeEvaluate
@@ -461,9 +462,9 @@ makeEvaluate
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
-    first@Predicated
+    first@Conditional
         { term = firstTerm }
-    second@Predicated
+    second@Conditional
         { term = secondTerm }
   = do
     (firstCeil, _proof1) <-
@@ -544,15 +545,15 @@ makeEvaluateTermsAssumesNoBottom
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottom
     tools
     substitutionSimplifier
@@ -573,8 +574,8 @@ makeEvaluateTermsAssumesNoBottom
     (return . fromMaybe def) result
   where
     def =
-        (MultiOr.make
-            [ Predicated
+        (OrPattern.fromPatterns
+            [ Conditional
                 { term = mkTop_
                 , predicate = makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
@@ -597,15 +598,15 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> MaybeT Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeEvaluateTermsAssumesNoBottomMaybe
     tools
     substitutionSimplifier
@@ -623,7 +624,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
             first
             second
     return
-        ( fmap ExpandedPattern.fromPredicateSubstitution result
+        ( fmap Pattern.fromPredicate result
         , SimplificationProof
         )
 
@@ -637,7 +638,7 @@ because it returns an 'or').
 
 See 'simplify' for detailed documentation.
 -}
-makeEvaluateTermsToPredicateSubstitution
+makeEvaluateTermsToPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Ord (variable level)
@@ -648,20 +649,20 @@ makeEvaluateTermsToPredicateSubstitution
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
-    -> StepPattern level variable
+    -> TermLike variable
+    -> TermLike variable
     -> Simplifier
-        (OrOfPredicateSubstitution level variable, SimplificationProof level)
-makeEvaluateTermsToPredicateSubstitution
+        (OrPredicate level variable, SimplificationProof level)
+makeEvaluateTermsToPredicate
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =
     return
-        ( MultiOr.make [PredicateSubstitution.top]
+        ( MultiOr.make [Predicate.top]
         , SimplificationProof
         )
   | otherwise = do
@@ -678,7 +679,7 @@ makeEvaluateTermsToPredicateSubstitution
         Nothing ->
             return
                 ( MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeEqualsPredicate first second
                         , substitution = mempty
@@ -703,7 +704,7 @@ makeEvaluateTermsToPredicateSubstitution
                     second
             let
                 toPredicateSafe
-                    ps@Predicated {term = (), predicate, substitution}
+                    ps@Conditional {term = (), predicate, substitution}
                   | Substitution.null substitution =
                     predicate
                   | otherwise =
@@ -714,12 +715,8 @@ makeEvaluateTermsToPredicateSubstitution
                         ++ ", first=" ++ show first
                         ++ ", second=" ++ show second
                         )
-                firstCeil =
-                    OrOfExpandedPattern.toPredicate
-                        (fmap toPredicateSafe firstCeilOr)
-                secondCeil =
-                    OrOfExpandedPattern.toPredicate
-                        (fmap toPredicateSafe secondCeilOr)
+                firstCeil = OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
+                secondCeil = OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
                 firstCeilNegation = makeNotPredicate firstCeil
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =
@@ -728,7 +725,7 @@ makeEvaluateTermsToPredicateSubstitution
                 ( MultiOr.merge
                     predicatedOr
                     (MultiOr.make
-                        [ Predicated
+                        [ Conditional
                             { term = ()
                             , predicate = ceilNegationAnd
                             , substitution = mempty

@@ -1,15 +1,11 @@
-{-|
-Module      : Kore.Step.Merging.OrOfExpandedPattern
-Description : Tools for merging OrOfExpandedPatterns with various stuff.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
-module Kore.Step.Merging.OrOfExpandedPattern
-    ( mergeWithPredicateSubstitution
-    , mergeWithPredicateSubstitutionAssumesEvaluated
+module Kore.Step.Merging.OrPattern
+    ( mergeWithPredicate
+    , mergeWithPredicateAssumesEvaluated
     ) where
 
 import Data.Reflection
@@ -23,31 +19,29 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
-                 ( mergeWithPredicateSubstitution,
-                 mergeWithPredicateSubstitutionAssumesEvaluated )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( PredicateSubstitution, Predicated )
+import qualified Kore.Step.Merging.Pattern as Pattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import           Kore.Step.Pattern
+                 ( Conditional, Predicate )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 TermLikeSimplifier )
 import           Kore.Step.Substitution
-                 ( PredicateSubstitutionMerger )
+                 ( PredicateMerger )
 import           Kore.TopBottom
                  ( TopBottom )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-{-| 'mergeWithPredicateSubstitution' ands the given predicate/substitution
-to the given Or.
+{-| 'mergeWithPredicate' ands the given predicate/substitution
+to the given OrPattern.
 -}
-mergeWithPredicateSubstitution
+mergeWithPredicate
     ::  ( MetaOrObject level
         , Ord (variable level)
         , Show (variable level)
@@ -60,18 +54,18 @@ mergeWithPredicateSubstitution
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitution level variable
-    -- ^ PredicateSubstitution to add.
-    -> OrOfExpandedPattern level variable
+    -> Predicate level variable
+    -- ^ Predicate to add.
+    -> OrPattern level variable
     -- ^ Pattern to which the condition should be added.
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
-mergeWithPredicateSubstitution
+        (OrPattern level variable, SimplificationProof level)
+mergeWithPredicate
     tools
     substitutionSimplifier
     simplifier
@@ -81,7 +75,7 @@ mergeWithPredicateSubstitution
   = do
     (evaluated, _proofs) <-
         MultiOr.traverseWithPairs
-            (give tools $ ExpandedPattern.mergeWithPredicateSubstitution
+            (give tools $ Pattern.mergeWithPredicate
                 tools
                 substitutionSimplifier
                 simplifier
@@ -96,7 +90,7 @@ mergeWithPredicateSubstitution
 Assumes that the initial patterns are simplified, so it does not attempt
 to re-simplify them.
 -}
-mergeWithPredicateSubstitutionAssumesEvaluated
+mergeWithPredicateAssumesEvaluated
     ::  ( FreshVariable variable
         , MetaOrObject level
         , Monad m
@@ -109,21 +103,21 @@ mergeWithPredicateSubstitutionAssumesEvaluated
         , TopBottom term
         , Unparse (variable level)
         )
-    => PredicateSubstitutionMerger level variable m
-    -> PredicateSubstitution level variable
-    -- ^ PredicateSubstitution to add.
-    -> MultiOr (Predicated level variable term)
+    => PredicateMerger level variable m
+    -> Predicate level variable
+    -- ^ Predicate to add.
+    -> MultiOr (Conditional level variable term)
     -- ^ Pattern to which the condition should be added.
     -> m
-        (MultiOr (Predicated level variable term), SimplificationProof level)
-mergeWithPredicateSubstitutionAssumesEvaluated
+        (MultiOr (Conditional level variable term), SimplificationProof level)
+mergeWithPredicateAssumesEvaluated
     substitutionMerger
     toMerge
     patt
   = do
     (evaluated, _proofs) <-
         MultiOr.traverseWithPairs
-            (ExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
+            (Pattern.mergeWithPredicateAssumesEvaluated
                     substitutionMerger
                     toMerge
             )

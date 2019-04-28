@@ -16,9 +16,9 @@ module Kore.Step.Simplification.Data
     , gather
     , gatherAll
     , scatter
-    , PredicateSubstitutionSimplifier (..)
-    , StepPatternSimplifier
-    , stepPatternSimplifier
+    , PredicateSimplifier (..)
+    , TermLikeSimplifier
+    , termLikeSimplifier
     , simplifyTerm
     , simplifyConditionalTerm
     , SimplificationProof (..)
@@ -51,14 +51,15 @@ import           Kore.AST.Common
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
+import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution )
-import qualified Kore.Step.Representation.MultiOr as OrOfExpandedPattern
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.Predicated as Predicated
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+                 ( Pattern, Predicate )
+import qualified Kore.Step.Predicate as Predicate
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
@@ -275,10 +276,10 @@ evalSimplifier logger (Simplifier simpl) =
 
 -- * Implementation
 
-{-| Wraps a function that evaluates Kore functions on StepPatterns.
+{-| Wraps a function that evaluates Kore functions on TermLikes.
 -}
-newtype StepPatternSimplifier level =
-    StepPatternSimplifier
+newtype TermLikeSimplifier level =
+    TermLikeSimplifier
         ( forall variable
         .   ( FreshVariable variable
             , MetaOrObject level
@@ -289,13 +290,13 @@ newtype StepPatternSimplifier level =
             , Unparse (variable level)
             , SortedVariable variable
             )
-        => PredicateSubstitutionSimplifier level
-        -> StepPattern level variable
-        -> PredicateSubstitution level variable
-        -> BranchT Simplifier (ExpandedPattern level variable)
+        => PredicateSimplifier level
+        -> TermLike variable
+        -> Predicate level variable
+        -> BranchT Simplifier (Pattern level variable)
         )
 
-{- | Use a 'StepPatternSimplifier' to simplify a pattern.
+{- | Use a 'TermLikeSimplifier' to simplify a pattern.
 
 The pattern is considered as an isolated term without extra initial conditions.
 
@@ -308,27 +309,27 @@ simplifyTerm
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => StepPatternSimplifier Object
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPattern Object variable
+    => TermLikeSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLike variable
     -> Simplifier
-        ( OrOfExpandedPattern Object variable
+        ( OrPattern Object variable
         , SimplificationProof Object
         )
 simplifyTerm
-    (StepPatternSimplifier simplify)
+    (TermLikeSimplifier simplify)
     predicateSimplifier
-    stepPattern
+    termLike
   = do
     results <-
         gather $ simplify
             predicateSimplifier
-            stepPattern
-            PredicateSubstitution.top
-    return (OrOfExpandedPattern.make results, SimplificationProof)
+            termLike
+            Predicate.top
+    return (OrPattern.fromPatterns results, SimplificationProof)
 
 
-{- | Use a 'StepPatternSimplifier' to simplify a pattern subject to conditions.
+{- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}
 simplifyConditionalTerm
     :: forall variable
@@ -338,20 +339,20 @@ simplifyConditionalTerm
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => StepPatternSimplifier Object
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPattern Object variable
-    -> PredicateSubstitution Object variable
-    -> BranchT Simplifier (ExpandedPattern Object variable)
-simplifyConditionalTerm (StepPatternSimplifier simplify) = simplify
+    => TermLikeSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLike variable
+    -> Predicate Object variable
+    -> BranchT Simplifier (Pattern Object variable)
+simplifyConditionalTerm (TermLikeSimplifier simplify) = simplify
 
-{- | Construct a 'StepPatternSimplifier' from a term simplifier.
+{- | Construct a 'TermLikeSimplifier' from a term simplifier.
 
 The constructed simplifier does not consider the initial condition during
 simplification, but only attaches it unmodified to the final result.
 
  -}
-stepPatternSimplifier
+termLikeSimplifier
     ::  ( forall variable
         .   ( FreshVariable variable
             , Ord (variable Object)
@@ -359,18 +360,18 @@ stepPatternSimplifier
             , Unparse (variable Object)
             , SortedVariable variable
             )
-        => PredicateSubstitutionSimplifier Object
-        -> StepPattern Object variable
+        => PredicateSimplifier Object
+        -> TermLike variable
         -> Simplifier
-            ( OrOfExpandedPattern Object variable
+            ( OrPattern Object variable
             , SimplificationProof Object
             )
         )
-    -> StepPatternSimplifier Object
-stepPatternSimplifier simplifier =
-    StepPatternSimplifier stepPatternSimplifierWorker
+    -> TermLikeSimplifier Object
+termLikeSimplifier simplifier =
+    TermLikeSimplifier termLikeSimplifierWorker
   where
-    stepPatternSimplifierWorker
+    termLikeSimplifierWorker
         :: forall variable
         .   ( FreshVariable variable
             , Ord (variable Object)
@@ -378,28 +379,28 @@ stepPatternSimplifier simplifier =
             , Unparse (variable Object)
             , SortedVariable variable
             )
-        => PredicateSubstitutionSimplifier Object
-        -> StepPattern Object variable
-        -> PredicateSubstitution Object variable
-        -> BranchT Simplifier (ExpandedPattern Object variable)
-    stepPatternSimplifierWorker
+        => PredicateSimplifier Object
+        -> TermLike variable
+        -> Predicate Object variable
+        -> BranchT Simplifier (Pattern Object variable)
+    termLikeSimplifierWorker
         predicateSimplifier
-        stepPattern
+        termLike
         initialCondition
       = do
         (results, _) <-
             Monad.Trans.lift
-            $ simplifier predicateSimplifier stepPattern
+            $ simplifier predicateSimplifier termLike
         result <- scatter results
-        return (result `Predicated.andCondition` initialCondition)
+        return (result `Conditional.andCondition` initialCondition)
 
-{-| 'PredicateSubstitutionSimplifier' wraps a function that simplifies
-'PredicateSubstitution's. The minimal requirement from this function is
+{-| 'PredicateSimplifier' wraps a function that simplifies
+'Predicate's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSubstitutionSimplifier level =
-    PredicateSubstitutionSimplifier
-        { getPredicateSubstitutionSimplifier
+newtype PredicateSimplifier level =
+    PredicateSimplifier
+        { getPredicateSimplifier
             ::  forall variable
             .   ( FreshVariable variable
                 , MetaOrObject level
@@ -410,6 +411,6 @@ newtype PredicateSubstitutionSimplifier level =
                 , Unparse (variable level)
                 , SortedVariable variable
                 )
-            => PredicateSubstitution level variable
-            -> BranchT Simplifier (PredicateSubstitution level variable)
+            => Predicate level variable
+            -> BranchT Simplifier (Predicate level variable)
         }

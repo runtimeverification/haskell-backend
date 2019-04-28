@@ -45,7 +45,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Pure
 import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -53,26 +52,26 @@ import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Logger as Log
-import           Kore.Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Conditional
+                 ( Conditional (Conditional) )
+import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Pattern as Pattern
+import           Kore.Step.Predicate
+                 ( Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
-import           Kore.Step.Representation.Predicated
-                 ( Predicated (Predicated) )
-import qualified Kore.Step.Representation.Predicated as Predicated
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
@@ -80,6 +79,7 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.Step.TermLike as TermLike
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof )
@@ -113,13 +113,13 @@ newtype UnificationProcedure level =
             , unifier ~ unifierM variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSubstitutionSimplifier level
-        -> StepPatternSimplifier level
+        -> PredicateSimplifier level
+        -> TermLikeSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
-        -> StepPattern level variable
-        -> StepPattern level variable
+        -> TermLike variable
+        -> TermLike variable
         -> unifier
-            ( OrOfPredicateSubstitution level variable
+            ( OrPredicate level variable
             , UnificationProof level variable
             )
         )
@@ -131,37 +131,37 @@ solution and the renamed rule is wrapped with the combined condition.
 
  -}
 type UnifiedRule variable =
-    Predicated Object variable (RulePattern Object variable)
+    Conditional Object variable (RulePattern Object variable)
 
 withoutUnification :: UnifiedRule variable -> RulePattern Object variable
-withoutUnification = Predicated.term
+withoutUnification = Conditional.term
 
 type Result variable =
     Step.Result
         (UnifiedRule (Target variable))
-        (ExpandedPattern Object variable)
+        (Pattern Object variable)
 
 type Results variable =
     Step.Results
         (UnifiedRule (Target variable))
-        (ExpandedPattern Object variable)
+        (Pattern Object variable)
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
 unwrapRule
-    :: Ord (variable level)
-    => RulePattern level (Target variable) -> RulePattern level variable
+    :: Ord (variable Object)
+    => RulePattern Object (Target variable) -> RulePattern Object variable
 unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
 unwrapConfiguration
-    :: Ord (variable level)
-    => ExpandedPattern level (Target variable)
-    -> ExpandedPattern level variable
-unwrapConfiguration config@Predicated { substitution } =
-    ExpandedPattern.mapVariables Target.unwrapVariable
-        config { ExpandedPattern.substitution = substitution' }
+    :: Ord (variable Object)
+    => Pattern Object (Target variable)
+    -> Pattern Object variable
+unwrapConfiguration config@Conditional { substitution } =
+    Pattern.mapVariables Target.unwrapVariable
+        config { Pattern.substitution = substitution' }
   where
     substitution' = Substitution.filter Target.isNonTarget substitution
 
@@ -190,11 +190,11 @@ unifyRule
         )
     => SmtMetadataTools StepperAttributes
     -> UnificationProcedure Object
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Initial configuration
     -> RulePattern Object variable
     -- ^ Rule
@@ -206,13 +206,13 @@ unifyRule
     patternSimplifier
     axiomSimplifiers
 
-    initial@Predicated { term = initialTerm }
+    initial@Conditional { term = initialTerm }
     rule
   = do
     -- Rename free axiom variables to avoid free variables from the initial
     -- configuration.
     let
-        configVariables = ExpandedPattern.freeVariables initial
+        configVariables = Pattern.freeVariables initial
         (_, rule') = RulePattern.refreshRulePattern configVariables rule
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
@@ -222,14 +222,14 @@ unifyRule
     -- Combine the unification solution with the rule's requirement clause.
     let
         RulePattern { requires = ruleRequires } = rule'
-        requires' = PredicateSubstitution.fromPredicate ruleRequires
+        requires' = Predicate.fromPredicate ruleRequires
     unification' <- normalize (unification <> requires')
-    return (rule' `Predicated.withCondition` unification')
+    return (rule' `Conditional.withCondition` unification')
   where
     unifyPatterns
-        :: StepPattern Object variable
-        -> StepPattern Object variable
-        -> BranchT unifier (Predicated Object variable ())
+        :: TermLike variable
+        -> TermLike variable
+        -> BranchT unifier (Conditional Object variable ())
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
             Monad.Trans.lift
@@ -265,15 +265,15 @@ applyInitialConditions
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> PredicateSubstitution Object variable
+    -> Predicate Object variable
     -- ^ Initial conditions
-    -> PredicateSubstitution Object variable
+    -> Predicate Object variable
     -- ^ Unification conditions
-    -> BranchT unifier (OrOfPredicateSubstitution Object variable)
+    -> BranchT unifier (OrPredicate Object variable)
 applyInitialConditions
     metadataTools
     predicateSimplifier
@@ -327,15 +327,15 @@ finalizeAppliedRule
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
     -> RulePattern Object variable
     -- ^ Applied rule
-    -> OrOfPredicateSubstitution Object variable
+    -> OrPredicate Object variable
     -- ^ Conditions of applied rule
-    -> BranchT unifier (OrOfExpandedPattern Object variable)
+    -> BranchT unifier (OrPattern Object variable)
 finalizeAppliedRule
     metadataTools
     predicateSimplifier
@@ -345,7 +345,7 @@ finalizeAppliedRule
     renamedRule
     appliedConditions
   =
-    Monad.Trans.lift . Monad.liftM MultiOr.make . gather
+    Monad.Trans.lift . Monad.liftM OrPattern.fromPatterns . gather
     $ finalizeAppliedRuleWorker =<< scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
@@ -354,16 +354,16 @@ finalizeAppliedRule
         -- unifyRule.
         let
             RulePattern { ensures } = renamedRule
-            ensuresCondition = PredicateSubstitution.fromPredicate ensures
+            ensuresCondition = Predicate.fromPredicate ensures
         finalCondition <- normalize (appliedCondition <> ensuresCondition)
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
-            Predicated { substitution } = finalCondition
+            Conditional { substitution } = finalCondition
             substitution' = Substitution.toMap substitution
             RulePattern { right = finalTerm } = renamedRule
-            finalTerm' = Pattern.substitute substitution' finalTerm
-        return finalCondition { ExpandedPattern.term = finalTerm' }
+            finalTerm' = TermLike.substitute substitution' finalTerm
+        return finalCondition { Pattern.term = finalTerm' }
 
     normalize condition =
         Substitution.normalizeExcept
@@ -387,15 +387,15 @@ applyRemainder
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Initial configuration
-    -> Predicate Object variable
+    -> Syntax.Predicate variable
     -- ^ Remainder
-    -> BranchT unifier (ExpandedPattern Object variable)
+    -> BranchT unifier (Pattern Object variable)
 applyRemainder
     metadataTools
     predicateSimplifier
@@ -403,13 +403,13 @@ applyRemainder
     axiomSimplifiers
 
     initial
-    (PredicateSubstitution.fromPredicate -> remainder)
+    (Predicate.fromPredicate -> remainder)
   = do
-    let final = initial `Predicated.andCondition` remainder
-        finalCondition = Predicated.withoutTerm final
-        Predicated { Predicated.term = finalTerm } = final
+    let final = initial `Conditional.andCondition` remainder
+        finalCondition = Conditional.withoutTerm final
+        Conditional { Conditional.term = finalTerm } = final
     normalizedCondition <- normalize finalCondition
-    let normalized = normalizedCondition { Predicated.term = finalTerm }
+    let normalized = normalizedCondition { Conditional.term = finalTerm }
     return normalized
   where
     normalize condition =
@@ -421,16 +421,16 @@ applyRemainder
             condition
 
 toAxiomVariables
-    :: Ord (variable level)
-    => RulePattern level variable
-    -> RulePattern level (Target variable)
+    :: Ord (variable Object)
+    => RulePattern Object variable
+    -> RulePattern Object (Target variable)
 toAxiomVariables = RulePattern.mapVariables Target.Target
 
 toConfigurationVariables
-    :: Ord (variable level)
-    => ExpandedPattern level variable
-    -> ExpandedPattern level (Target variable)
-toConfigurationVariables = ExpandedPattern.mapVariables Target.NonTarget
+    :: Ord (variable Object)
+    => Pattern Object variable
+    -> Pattern Object (Target variable)
+toConfigurationVariables = Pattern.mapVariables Target.NonTarget
 
 {- | Fully apply a single rule to the initial configuration.
 
@@ -449,14 +449,14 @@ applyRule
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten.
     -> RulePattern Object variable
     -- ^ Rewriting axiom
@@ -480,11 +480,11 @@ applyRule
             rule' = toAxiomVariables rule
         unifiedRule <- unifyRule' initial' rule'
         let
-            initialCondition = Predicated.withoutTerm initial'
-            unificationCondition = Predicated.withoutTerm unifiedRule
+            initialCondition = Conditional.withoutTerm initial'
+            unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions' initialCondition unificationCondition
         let
-            renamedRule = Predicated.term unifiedRule
+            renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule' renamedRule applied
         let
             checkSubstitutionCoverage' =
@@ -532,14 +532,14 @@ applyRewriteRule
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten.
     -> RewriteRule Object variable
     -- ^ Rewriting axiom
@@ -579,22 +579,22 @@ variables have been instantiated by the substitution.
 
  -}
 checkSubstitutionCoverage
-    ::  ( MetaOrObject level
+    ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Ord     (variable level)
-        , Show    (variable level)
-        , Unparse (variable level)
+        , Ord     (variable Object)
+        , Show    (variable Object)
+        , Unparse (variable Object)
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
     => SmtMetadataTools StepperAttributes
-    -> ExpandedPattern level (Target variable)
+    -> Pattern Object (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
-    -> ExpandedPattern level (Target variable)
+    -> Pattern Object (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier (ExpandedPattern level variable)
+    -> BranchT unifier (Pattern Object variable)
 checkSubstitutionCoverage tools initial unified final
   | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
   | isSymbolic =
@@ -635,13 +635,13 @@ checkSubstitutionCoverage tools initial unified final
         , "in the left-hand side of the axiom."
         ]
   where
-    Predicated { term = axiom } = unified
-    unification = Predicated.toPredicate (Predicated.withoutTerm unified)
+    Conditional { term = axiom } = unified
+    unification = Conditional.toPredicate (Conditional.withoutTerm unified)
     leftAxiomVariables =
-        Pattern.freeVariables leftAxiom
+        TermLike.freeVariables leftAxiom
       where
         RulePattern { left = leftAxiom } = axiom
-    Predicated { substitution } = final
+    Conditional { substitution } = final
     subst = Substitution.toMap substitution
     substitutionVariables = Map.keysSet subst
     isCoveringSubstitution =
@@ -682,8 +682,8 @@ applyRulesInParallel
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -691,7 +691,7 @@ applyRulesInParallel
 
     -> [RulePattern Object variable]
     -- ^ Rewrite rules
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesInParallel
@@ -707,12 +707,12 @@ applyRulesInParallel
     results <- Foldable.fold <$> traverse applyRule' rules
     let unifications =
             MultiOr.make
-                (Predicated.withoutTerm . Step.appliedRule <$> results)
+                (Conditional.withoutTerm . Step.appliedRule <$> results)
         remainder = Remainder.remainder unifications
     remainders' <- gather $ applyRemainder' initial remainder
     return Step.Results
         { results = Seq.fromList results
-        , remainders = MultiOr.make remainders'
+        , remainders = OrPattern.fromPatterns remainders'
         }
   where
     applyRule' =
@@ -747,8 +747,8 @@ applyRewriteRules
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -756,7 +756,7 @@ applyRewriteRules
 
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRewriteRules
@@ -793,14 +793,14 @@ sequenceRules
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten
     -> [RulePattern Object variable]
     -- ^ Rewrite rules
@@ -818,17 +818,18 @@ sequenceRules
     -- The single remainder of the input configuration after rewriting to
     -- produce the disjunction of results.
     remainingAfter
-        :: ExpandedPattern Object variable
+        :: Pattern Object variable
         -- ^ initial configuration
         -> [Result variable]
         -- ^ results
-        -> unifier (MultiOr (ExpandedPattern Object variable))
+        -> unifier (MultiOr (Pattern Object variable))
     remainingAfter config results = do
         let remainder =
                 Remainder.remainder
                 $ MultiOr.make
-                $ Predicated.withoutTerm . Step.appliedRule <$> results
-        Monad.liftM MultiOr.make $ gather $ applyRemainder' config remainder
+                $ Conditional.withoutTerm . Step.appliedRule <$> results
+        Monad.liftM OrPattern.fromPatterns
+            $ gather $ applyRemainder' config remainder
 
     applyRemainder' =
         applyRemainder
@@ -880,14 +881,14 @@ sequenceRewriteRules
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
-    -> StepPatternSimplifier Object
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Configuration being rewritten
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules

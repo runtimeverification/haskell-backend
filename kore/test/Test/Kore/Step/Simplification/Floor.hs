@@ -7,22 +7,22 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Floor (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
                  makeTruePredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
                  ( bottom, top )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore
@@ -37,8 +37,8 @@ test_floorSimplification =
     [ testCase "Floor - or distribution"
         -- floor(a or b) = (top and floor(a)) or (top and floor(b))
         (assertEqualWithExplanation ""
-            (MultiOr.make
-                [ Predicated
+            (OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate = makeFloorPredicate (mkOr a b)
                     , substitution = mempty
@@ -55,17 +55,17 @@ test_floorSimplification =
         (do
             -- floor(top) = top
             assertEqualWithExplanation "floor(top)"
-                (MultiOr.make
-                    [ ExpandedPattern.top ]
+                (OrPattern.fromPatterns
+                    [ Pattern.top ]
                 )
                 (evaluate
                     (makeFloor
-                        [ExpandedPattern.top]
+                        [Pattern.top]
                     )
                 )
             -- floor(bottom) = bottom
             assertEqualWithExplanation "floor(bottom)"
-                (MultiOr.make
+                (OrPattern.fromPatterns
                     []
                 )
                 (evaluate
@@ -78,27 +78,27 @@ test_floorSimplification =
         (do
             -- floor(top) = top
             assertEqualWithExplanation "floor(top)"
-                (MultiOr.make
-                    [ ExpandedPattern.top ]
+                (OrPattern.fromPatterns
+                    [ Pattern.top ]
                 )
                 (makeEvaluate
-                    (ExpandedPattern.top :: CommonExpandedPattern Object)
+                    (Pattern.top :: Pattern Object Variable)
                 )
             -- floor(bottom) = bottom
             assertEqualWithExplanation "floor(bottom)"
-                (MultiOr.make
+                (OrPattern.fromPatterns
                     []
                 )
                 (makeEvaluate
-                    (ExpandedPattern.bottom :: CommonExpandedPattern Object)
+                    (Pattern.bottom :: Pattern Object Variable)
                 )
         )
     , testCase "floor with predicates and substitutions"
         -- floor(term and predicate and subst)
         --     = top and (floor(term) and predicate) and subst
         (assertEqualWithExplanation "floor(top)"
-            (MultiOr.make
-                [ Predicated
+            (OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -109,7 +109,7 @@ test_floorSimplification =
                 ]
             )
             (makeEvaluate
-                Predicated
+                Conditional
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.wrap [(x, fOfB)]
@@ -119,14 +119,14 @@ test_floorSimplification =
     -- floor moves predicates and substitutions up
     ]
   where
-    fId = Id "f" AstLocationTest
-    gId = Id "g" AstLocationTest
+    fId = testId "f"
+    gId = testId "g"
     aSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "a" AstLocationTest
+        { symbolOrAliasConstructor = testId "a"
         , symbolOrAliasParams      = []
         }
     bSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "b" AstLocationTest
+        { symbolOrAliasConstructor = testId "b"
         , symbolOrAliasParams      = []
         }
     fSymbol = SymbolOrAlias
@@ -138,19 +138,19 @@ test_floorSimplification =
         , symbolOrAliasParams      = []
         }
     x = Variable (testId "x") mempty testSort
-    a :: CommonStepPattern Object
+    a :: TermLike Variable
     a = mkApp testSort aSymbol []
-    b :: CommonStepPattern Object
+    b :: TermLike Variable
     b = mkApp testSort bSymbol []
     fOfA = mkApp testSort fSymbol [a]
     fOfB = mkApp testSort fSymbol [b]
     gOfA = mkApp testSort gSymbol [a]
-    aExpanded = Predicated
+    aExpanded = Conditional
         { term = a
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    bExpanded = Predicated
+    bExpanded = Conditional
         { term = b
         , predicate = makeTruePredicate
         , substitution = mempty
@@ -158,19 +158,19 @@ test_floorSimplification =
 
 makeFloor
     :: Ord (variable Object)
-    => [ExpandedPattern Object variable]
-    -> Floor Object (OrOfExpandedPattern Object variable)
+    => [Pattern Object variable]
+    -> Floor Object (OrPattern Object variable)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
         , floorResultSort  = testSort
-        , floorChild       = MultiOr.make patterns
+        , floorChild       = OrPattern.fromPatterns patterns
         }
 
 evaluate
     :: MetaOrObject level
-    => Floor level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    => Floor level (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate floor' =
     case simplify floor' of
         (result, _proof) -> result
@@ -178,8 +178,8 @@ evaluate floor' =
 
 makeEvaluate
     :: MetaOrObject level
-    => CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    => Pattern Object Variable
+    -> OrPattern Object Variable
 makeEvaluate child =
     case makeEvaluateFloor child of
         (result, _proof) -> result

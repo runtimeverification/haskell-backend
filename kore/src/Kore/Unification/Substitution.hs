@@ -43,16 +43,20 @@ import           GHC.Stack
 import           Prelude hiding
                  ( null )
 
-import Kore.Step.Pattern as Pattern
-import Kore.TopBottom
-       ( TopBottom (..) )
+import           Kore.AST.MetaOrObject
+                 ( Object )
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
+import           Kore.TopBottom
+                 ( TopBottom (..) )
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
 Individual substitutions are a pair of type
 
 @
-(variable level, StepPattern level variable)
+(variable level, TermLike variable)
 @
 
 A collection of substitutions @[xᵢ=φᵢ]@ is /normalized/ if, for all @xⱼ=φⱼ@ in
@@ -60,46 +64,49 @@ the collection, @xⱼ@ is unique among all @xᵢ@ and none of the @xᵢ@ (includ
 @xⱼ@) occur free in @φⱼ@.
 
  -}
-data Substitution level variable
+data Substitution variable
     -- TODO (thomas.tuegel): Instead of a sum type, use a product containing the
     -- normalized and denormalized parts of the substitution together. That
     -- would enable us to keep more substitutions normalized in the Semigroup
     -- instance below.
-    = Substitution ![(variable level, StepPattern level variable)]
-    | NormalizedSubstitution
-        !(Map (variable level) (StepPattern level variable))
-    deriving (Eq, Generic, Ord, Show)
+    = Substitution ![(variable Object, TermLike variable)]
+    | NormalizedSubstitution !(Map (variable Object) (TermLike variable))
+    deriving Generic
 
-instance NFData (variable level) => NFData (Substitution level variable)
+deriving instance Eq (variable Object) => Eq (Substitution variable)
+deriving instance Ord (variable Object) => Ord (Substitution variable)
+deriving instance Show (variable Object) => Show (Substitution variable)
+
+instance NFData (variable Object) => NFData (Substitution variable)
 
 instance
-    Hashable (variable level) =>
-    Hashable (Substitution level variable)
+    Hashable (variable Object) =>
+    Hashable (Substitution variable)
   where
     hashWithSalt salt (Substitution denorm) =
         salt `hashWithSalt` (0::Int) `hashWithSalt` denorm
     hashWithSalt salt (NormalizedSubstitution norm) =
         salt `hashWithSalt` (1::Int) `hashWithSalt` (Map.toList norm)
 
-instance TopBottom (Substitution level variable)
+instance TopBottom (Substitution variable)
   where
     isTop = null
     isBottom _ = False
 
-instance Ord (variable level) => Semigroup (Substitution level variable) where
+instance Ord (variable Object) => Semigroup (Substitution variable) where
     a <> b
       | null a, null b = mempty
       | null a         = b
       | null b         = a
       | otherwise      = Substitution (unwrap a <> unwrap b)
 
-instance Ord (variable level) => Monoid (Substitution level variable) where
+instance Ord (variable Object) => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
-    :: Substitution level variable
-    -> [(variable level, StepPattern level variable)]
+    :: Substitution variable
+    -> [(variable Object, TermLike variable)]
 unwrap (Substitution xs) = xs
 unwrap (NormalizedSubstitution xs)  = Map.toList xs
 
@@ -112,85 +119,84 @@ See also: 'fromMap'
 
  -}
 toMap
-    :: (HasCallStack, Ord (variable level))
-    => Substitution level variable
-    -> Map (variable level) (StepPattern level variable)
+    :: (HasCallStack, Ord (variable Object))
+    => Substitution variable
+    -> Map (variable Object) (TermLike variable)
 toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
 toMap (NormalizedSubstitution norm) = norm
 
 fromMap
-    :: Ord (variable level)
-    => Map (variable level) (StepPattern level variable)
-    -> Substitution level variable
+    :: Ord (variable Object)
+    => Map (variable Object) (TermLike variable)
+    -> Substitution variable
 fromMap = wrap . Map.toList
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
 wrap
-    :: [(variable level, StepPattern level variable)]
-    -> Substitution level variable
+    :: [(variable Object, TermLike variable)]
+    -> Substitution variable
 wrap [] = NormalizedSubstitution Map.empty
 wrap xs = Substitution xs
 
 -- | Wrap the list of substitutions to a normalized substitution. Do not use
 -- this unless you are sure you need it.
 unsafeWrap
-    :: Ord (variable level)
-    => [(variable level, StepPattern level variable)]
-    -> Substitution level variable
+    :: Ord (variable Object)
+    => [(variable Object, TermLike variable)]
+    -> Substitution variable
 unsafeWrap = NormalizedSubstitution . Map.fromList
 
 -- | Maps a function over the inner representation of the 'Substitution'. The
 -- normalization status is reset to un-normalized.
 modify
-    :: ( [(variable level, StepPattern level variable)]
-        -> [(variable' level', StepPattern level' variable')]
-       )
-    -> Substitution level variable
-    -> Substitution level' variable'
+    ::  (  [(variable1 Object, TermLike variable1)]
+        -> [(variable2 Object, TermLike variable2)]
+        )
+    -> Substitution variable1
+    -> Substitution variable2
 modify f = wrap . f . unwrap
 
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
 mapVariables
-    ::  forall level variableFrom variableTo.
-        Ord (variableTo level)
-    => (variableFrom level -> variableTo level)
-    -> Substitution level variableFrom
-    -> Substitution level variableTo
+    :: forall variableFrom variableTo. Ord (variableTo Object)
+    => (variableFrom Object -> variableTo Object)
+    -> Substitution variableFrom
+    -> Substitution variableTo
 mapVariables variableMapper =
     modify (map (mapVariable variableMapper))
   where
     mapVariable
-        :: (variableFrom level -> variableTo level)
-        -> (variableFrom level, StepPattern level variableFrom)
-        -> (variableTo level, StepPattern level variableTo)
+        :: (variableFrom Object -> variableTo Object)
+        -> (variableFrom Object, TermLike variableFrom)
+        -> (variableTo Object, TermLike variableTo)
     mapVariable
         mapper
         (variable, patt)
       =
-        (mapper variable, Pattern.mapVariables mapper patt)
+        (mapper variable, TermLike.mapVariables mapper patt)
 
 -- | Returns true iff the substitution is normalized.
-isNormalized :: Substitution level variable -> Bool
+isNormalized :: Substitution variable -> Bool
 isNormalized (Substitution _)           = False
 isNormalized (NormalizedSubstitution _) = True
 
 -- | Returns true iff the substitution is empty.
-null :: Substitution level variable -> Bool
+null :: Substitution variable -> Bool
 null (Substitution denorm)         = List.null denorm
 null (NormalizedSubstitution norm) = Map.null norm
 
 -- | Returns the list of variables in the 'Substitution'.
-variables :: Substitution level variable -> [(variable level)]
+variables :: Substitution variable -> [(variable Object)]
 variables = fmap fst . unwrap
 
 -- | Filter the variables of the 'Substitution'.
 filter
-    :: (variable level -> Bool)
-    -> Substitution level variable
-    -> Substitution level variable
+    :: (variable Object -> Bool)
+    -> Substitution variable
+    -> Substitution variable
 filter filtering =
     modify (Prelude.filter (filtering . fst))
 
@@ -200,9 +206,9 @@ The normalization state is preserved.
 
  -}
 partition
-    :: (variable level -> StepPattern level variable -> Bool)
-    -> Substitution level variable
-    -> (Substitution level variable, Substitution level variable)
+    :: (variable Object -> TermLike variable -> Bool)
+    -> Substitution variable
+    -> (Substitution variable, Substitution variable)
 partition criterion (Substitution substitution) =
     let (true, false) = List.partition (uncurry criterion) substitution
     in (Substitution true, Substitution false)
@@ -217,10 +223,10 @@ the free variables are @variable@ and all the free variables of @term@.
 
  -}
 freeVariables
-    :: Ord (variable level)
-    => Substitution level variable
-    -> Set (variable level)
+    :: Ord (variable Object)
+    => Substitution variable
+    -> Set (variable Object)
 freeVariables = Foldable.foldl' freeVariablesWorker Set.empty . unwrap
   where
     freeVariablesWorker freeVars (x, t) =
-        freeVars <> Set.insert x (Pattern.freeVariables t)
+        freeVars <> Set.insert x (TermLike.freeVariables t)

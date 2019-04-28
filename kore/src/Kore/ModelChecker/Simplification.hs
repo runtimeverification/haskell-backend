@@ -22,31 +22,29 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-                 ( CommonStepPattern )
+                 ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 checkImplicationIsTop
-    :: forall level . (MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> CommonExpandedPattern level
-    -> CommonStepPattern level
+    -> Pattern Object Variable
+    -> TermLike Variable
     -> Simplifier Bool
 checkImplicationIsTop
     tools
@@ -59,16 +57,16 @@ checkImplicationIsTop
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
                 subst = mkVar <$> rename
-                implicationLHS' = Pattern.substitute subst implicationLHS
-                implicationRHS' = Pattern.substitute subst implicationRHS
+                implicationLHS' = TermLike.substitute subst implicationLHS
+                implicationRHS' = TermLike.substitute subst implicationRHS
                 resultTerm = mkCeil_
                                 (mkAnd
                                     (mkAnd lhsMLPatt implicationLHS')
                                     (mkNot implicationRHS')
                                 )
-                result = Predicated
+                result = Conditional
                             { term = resultTerm, predicate = Predicate.makeTruePredicate, substitution = mempty}
-            (orResult, _) <- ExpandedPattern.simplify
+            (orResult, _) <- Pattern.simplify
                                 tools
                                 predicateSimplifier
                                 patternSimplifier
@@ -81,12 +79,12 @@ checkImplicationIsTop
              , Pretty.indent 4 (unparse rhs)
              ]
       where
-        lhsFreeVariables = ExpandedPattern.freeVariables lhs
-        lhsMLPatt = ExpandedPattern.toMLPattern lhs
+        lhsFreeVariables = Pattern.freeVariables lhs
+        lhsMLPatt = Pattern.toMLPattern lhs
 
 stripForallQuantifiers
-    :: CommonStepPattern level
-    -> (Set.Set (Variable level), CommonStepPattern level)
+    :: TermLike Variable
+    -> (Set.Set (Variable Object), TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

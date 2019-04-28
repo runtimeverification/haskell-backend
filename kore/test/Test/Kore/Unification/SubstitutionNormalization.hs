@@ -18,9 +18,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import           Kore.Step.Pattern
-                 ( StepPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import qualified Kore.Step.Pattern as Conditional
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -38,7 +38,7 @@ test_substitutionNormalization =
         (assertEqual ""
             (Right [])
             (runNormalizeSubstitution
-                ([] :: [(Variable Meta, StepPattern Meta Variable)])
+                ([] :: [(Variable Meta, TermLike Variable)])
             )
         )
     , testCase "Simple substitution"
@@ -185,22 +185,22 @@ test_substitutionNormalization =
 
 runNormalizeSubstitution
     :: MetaOrObject level
-    => [(Variable level, StepPattern level Variable)]
+    => [(Variable level, TermLike Variable)]
     -> Either
         (SubstitutionError level Variable)
-        [(Variable level, StepPattern level Variable)]
+        [(Variable level, TermLike Variable)]
 runNormalizeSubstitution substitution =
-    fmap (Substitution.unwrap . Predicated.substitution)
+    fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept
     $ normalizeSubstitution mockMetadataTools (Map.fromList substitution)
 
 runNormalizeSubstitutionObject
-    :: [(Variable Object, StepPattern Object Variable)]
+    :: [(Variable Object, TermLike Variable)]
     -> Either
         (SubstitutionError Object Variable)
-        [(Variable Object, StepPattern Object Variable)]
+        [(Variable Object, TermLike Variable)]
 runNormalizeSubstitutionObject substitution =
-    fmap (Substitution.unwrap . Predicated.substitution)
+    fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept
     $ normalizeSubstitution mockMetadataToolsO (Map.fromList substitution)
   where

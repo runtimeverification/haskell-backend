@@ -25,17 +25,17 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
-import           Kore.Step.Pattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
+import           Kore.Step.Predicate
+                 ( Conditional (..) )
+import qualified Kore.Step.Predicate as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfPredicateSubstitution )
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.PredicateSubstitution as Predicated
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution
@@ -57,7 +57,7 @@ test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =
     [ testCase "And" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
@@ -72,7 +72,7 @@ test_matcherEqualHeads =
     , testGroup "Application"
         [ testCase "same symbol" $ do
             let expect = Just $ MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
@@ -127,7 +127,7 @@ test_matcherEqualHeads =
             assertEqualWithExplanation "" expect actual
 
     , testCase "Bottom" $ do
-        let expect = Just $ MultiOr.make [Predicated.topPredicate]
+        let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition
                 mockMetadataTools
@@ -137,7 +137,7 @@ test_matcherEqualHeads =
 
     , testCase "Ceil" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
@@ -150,7 +150,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "CharLiteral" $ do
-        let expect = Just $ MultiOr.make [Predicated.topPredicate]
+        let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition mockMetaMetadataTools
                 (mkCharLiteral 'a')
@@ -158,7 +158,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "DomainValue" $ do
-        let expect = Just $ MultiOr.make [Predicated.topPredicate]
+        let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition mockMetadataTools
                 (mkDomainValue $ Domain.BuiltinExternal Domain.External
@@ -177,7 +177,7 @@ test_matcherEqualHeads =
 
     , testCase "Equals" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
@@ -191,7 +191,7 @@ test_matcherEqualHeads =
 
     , testCase "Exists" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.y, Mock.a)]
                     , term = ()
@@ -205,7 +205,7 @@ test_matcherEqualHeads =
 
     , testCase "Floor" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     , term = ()
@@ -219,7 +219,7 @@ test_matcherEqualHeads =
 
     , testCase "Forall" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.y, Mock.a)]
                     , term = ()
@@ -233,7 +233,7 @@ test_matcherEqualHeads =
 
     , testCase "Iff" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
@@ -247,7 +247,7 @@ test_matcherEqualHeads =
 
     , testCase "Implies" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
@@ -261,7 +261,7 @@ test_matcherEqualHeads =
 
     , testCase "In" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
@@ -275,7 +275,7 @@ test_matcherEqualHeads =
 
     , testCase "Next" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     , term = ()
@@ -289,7 +289,7 @@ test_matcherEqualHeads =
 
     , testCase "Not" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     , term = ()
@@ -303,7 +303,7 @@ test_matcherEqualHeads =
 
     , testCase "Or" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
@@ -317,7 +317,7 @@ test_matcherEqualHeads =
 
     , testCase "Rewrites" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     , term = ()
@@ -330,7 +330,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "StringLiteral" $ do
-        let expect = Just $ MultiOr.make [Predicated.topPredicate]
+        let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition mockMetaMetadataTools
                 (mkStringLiteral "10")
@@ -338,7 +338,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Top" $ do
-        let expect = Just $ MultiOr.make [Predicated.topPredicate]
+        let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition mockMetadataTools
                 mkTop_
@@ -346,7 +346,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Variable (quantified)" $ do
-        let expect = Just $ MultiOr.make [Predicated.topPredicate]
+        let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition mockMetadataTools
                 (mkExists Mock.x (Mock.plain10 (mkVar Mock.x)))
@@ -364,7 +364,7 @@ test_matcherEqualHeads =
     , testGroup "Simplification"
         [ testCase "same symbol" $ do
             let expect = Just $ MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
@@ -391,7 +391,7 @@ test_matcherVariableFunction :: [TestTree]
 test_matcherVariableFunction =
     [ testCase "Functional" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution =
                         Substitution.unsafeWrap [(Mock.x, Mock.functional00)]
@@ -406,7 +406,7 @@ test_matcherVariableFunction =
 
     , testCase "Function" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
                     , term = ()
@@ -439,7 +439,7 @@ test_matcherVariableFunction =
             a = Mock.functional00SubSubSort
             x = Variable (testId "x") mempty Mock.subSort
             expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
                         [(x, Mock.sortInjectionSubSubToSub a)]
@@ -468,7 +468,7 @@ test_matcherVariableFunction =
             aSubSub = Mock.functional00SubSubSort
             xSub = Variable (testId "x") mempty Mock.subSort
             expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
                         [ (xSub, Mock.sortInjectionSubSubToSub aSubSub)
@@ -494,7 +494,7 @@ test_matcherVariableFunction =
             aSubSub = Mock.functional00SubSubSort
             xSub = Variable (testId "x") mempty Mock.subSort
             expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
                         [ (xSub, Mock.sortInjectionSubSubToSub aSubSub)
@@ -517,7 +517,7 @@ test_matcherVariableFunction =
 
     , testCase "Quantified match on equivalent variable" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
                     , term = ()
@@ -538,7 +538,7 @@ test_matcherVariableFunction =
     , testGroup "Simplification"
         [ testCase "Function" $ do
             let expect = Just $ MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { predicate = makeCeilPredicate Mock.cf
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, Mock.cf)]
@@ -600,7 +600,7 @@ test_matcherMergeSubresults :: [TestTree]
 test_matcherMergeSubresults =
     [ testCase "And" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -615,7 +615,7 @@ test_matcherMergeSubresults =
 
     , testCase "Application" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -636,7 +636,7 @@ test_matcherMergeSubresults =
 
     , testCase "Equals" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -654,7 +654,7 @@ test_matcherMergeSubresults =
 
     , testCase "Iff" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -669,7 +669,7 @@ test_matcherMergeSubresults =
 
     , testCase "Implies" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -690,7 +690,7 @@ test_matcherMergeSubresults =
 
     , testCase "In" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -705,7 +705,7 @@ test_matcherMergeSubresults =
 
     , testCase "Or" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -720,7 +720,7 @@ test_matcherMergeSubresults =
 
     , testCase "Rewrites" $ do
         let expect = Just $ MultiOr.make
-                [ Predicated
+                [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
@@ -760,7 +760,7 @@ test_unificationWithAppMatchOnTop :: [TestTree]
 test_unificationWithAppMatchOnTop =
     [ testCase "Simple match same top" $ do
         let
-            expect = Just (MultiOr.make [Predicated.topPredicate])
+            expect = Just (MultiOr.make [Conditional.topPredicate])
         actual <-
             unificationWithMatch mockMetadataTools
             Mock.cg
@@ -770,7 +770,7 @@ test_unificationWithAppMatchOnTop =
         let
             expect = Just
                 (MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
@@ -787,7 +787,7 @@ test_unificationWithAppMatchOnTop =
         let
             expect = Just
                 (MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
@@ -804,7 +804,7 @@ test_unificationWithAppMatchOnTop =
         let
             expect = Just
                 (MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
@@ -821,7 +821,7 @@ test_unificationWithAppMatchOnTop =
         let
             expect = Just
                 (MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeEqualsPredicate
                             Mock.a
@@ -839,7 +839,7 @@ test_unificationWithAppMatchOnTop =
         let
             expect = Just
                 (MultiOr.make
-                    [ Predicated
+                    [ Conditional
                         { term = ()
                         , predicate = makeAndPredicate
                             (makeEqualsPredicate
@@ -885,25 +885,25 @@ mockMetaMetadataTools =
 matchDefinition
     :: forall level . ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
-    -> IO (Maybe (CommonOrOfPredicateSubstitution level))
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Maybe (OrPredicate level Variable))
 matchDefinition = match
 
 matchSimplification
     :: forall level . ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
-    -> IO (Maybe (CommonOrOfPredicateSubstitution level))
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Maybe (OrPredicate level Variable))
 matchSimplification = match
 
 unificationWithMatch
     :: forall level . ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
-    -> IO (Maybe (CommonOrOfPredicateSubstitution level))
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Maybe (OrPredicate level Variable))
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
@@ -922,9 +922,9 @@ unificationWithMatch tools first second = do
 match
     :: forall level . ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
-    -> IO (Maybe (CommonOrOfPredicateSubstitution level))
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Maybe (OrPredicate level Variable))
 match tools first second =
     matchAsEither >>= return . \case
         Left _err -> Nothing
@@ -934,7 +934,7 @@ match tools first second =
         :: IO
             (Either
                 (UnificationOrSubstitutionError level Variable)
-                ( CommonOrOfPredicateSubstitution level
+                ( OrPredicate level Variable
                 , UnificationProof level Variable
                 )
             )
@@ -946,7 +946,7 @@ match tools first second =
         :: ExceptT
             (UnificationOrSubstitutionError level Variable)
             Simplifier
-            ( CommonOrOfPredicateSubstitution level
+            ( OrPredicate level Variable
             , UnificationProof level Variable
             )
     matchResult =

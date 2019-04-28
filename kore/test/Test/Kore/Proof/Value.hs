@@ -13,7 +13,7 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.Pattern
+import           Kore.Step.TermLike
 
 import           Test.Kore
 import           Test.Kore.Builtin.Definition
@@ -48,33 +48,33 @@ unit_fun :: Assertion
 unit_fun =
     assertNotValue (mkApp intSort funSymbol [onePattern])
 
-mkInj :: CommonStepPattern Object -> CommonStepPattern Object
+mkInj :: TermLike Variable -> TermLike Variable
 mkInj input =
     mkApp supSort (injSymbol (getSort input) supSort) [input]
 
 mkPair
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 mkPair a b =
     mkApp (pairSort inputSort') (pairSymbol inputSort') [a, b]
   where
     inputSort' = getSort a
 
-unitPattern :: CommonStepPattern Object
+unitPattern :: TermLike Variable
 unitPattern = mkApp unitSort unitSymbol []
 
-onePattern :: CommonStepPattern Object
+onePattern :: TermLike Variable
 onePattern =
-    Builtin.Int.asPattern
+    Builtin.Int.asTermLike
         Domain.InternalInt
             { builtinIntSort = intSort
             , builtinIntValue = 1
             }
 
-zeroPattern :: CommonStepPattern Object
+zeroPattern :: TermLike Variable
 zeroPattern =
-    Builtin.Int.asPattern
+    Builtin.Int.asTermLike
         Domain.InternalInt
             { builtinIntSort = intSort
             , builtinIntValue = 0
@@ -160,7 +160,7 @@ tools =
         []
         Mock.emptySmtDeclarations
 
-assertValue :: CommonStepPattern Object -> Assertion
+assertValue :: TermLike Variable -> Assertion
 assertValue purePattern =
     assertEqual "Expected normalized pattern"
         concretePattern
@@ -171,10 +171,10 @@ assertValue purePattern =
         value <- Value.fromConcreteStepPattern tools patt
         return (Value.asConcreteStepPattern value)
 
-testValue :: TestName -> CommonStepPattern Object -> TestTree
+testValue :: TestName -> TermLike Variable -> TestTree
 testValue name = testCase name . assertValue
 
-assertNotValue :: CommonStepPattern Object -> Assertion
+assertNotValue :: TermLike Variable -> Assertion
 assertNotValue purePattern =
     assertEqual "Unexpected normalized pattern"
         Nothing

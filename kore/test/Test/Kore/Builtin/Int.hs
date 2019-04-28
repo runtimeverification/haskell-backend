@@ -2,7 +2,8 @@
 
 module Test.Kore.Builtin.Int where
 
-import           Hedgehog
+import           Hedgehog hiding
+                 ( Concrete )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
@@ -18,14 +19,13 @@ import           GHC.Integer.GMP.Internals
 import           GHC.Integer.Logarithms
                  ( integerLog2# )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.TermLike
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -36,10 +36,10 @@ import           Test.SMT
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
-genIntegerPattern :: Gen (CommonStepPattern Object)
+genIntegerPattern :: Gen (TermLike Variable)
 genIntegerPattern = asInternal <$> genInteger
 
-genConcreteIntegerPattern :: Gen (ConcreteStepPattern Object)
+genConcreteIntegerPattern :: Gen (TermLike Concrete)
 genConcreteIntegerPattern = asInternal <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
@@ -52,7 +52,7 @@ testUnary
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
-        let expect = asExpandedPattern $ impl a
+        let expect = asPattern $ impl a
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
@@ -74,7 +74,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = asExpandedPattern $ impl a b
+        let expect = asPattern $ impl a b
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -96,7 +96,7 @@ testComparison symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = Test.Bool.asExpandedPattern $ impl a b
+        let expect = Test.Bool.asPattern $ impl a b
         actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -117,7 +117,7 @@ testPartialUnary
 testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
-        let expect = asPartialExpandedPattern $ impl a
+        let expect = asPartialPattern $ impl a
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
@@ -139,7 +139,7 @@ testPartialBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
-        let expect = asPartialExpandedPattern $ impl a b
+        let expect = asPartialPattern $ impl a b
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -161,7 +161,7 @@ testPartialBinaryZero
 testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
-        let expect = asPartialExpandedPattern $ impl a 0
+        let expect = asPartialPattern $ impl a 0
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, 0])
         (===) expect actual
   where
@@ -184,7 +184,7 @@ testPartialTernary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         c <- forAll genInteger
-        let expect = asPartialExpandedPattern $ impl a b c
+        let expect = asPartialPattern $ impl a b c
         actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
@@ -310,22 +310,22 @@ test_emod =
         "emod normal"
         emodIntSymbol
         (asInternal <$> [193, 12])
-        (asExpandedPattern 1)
+        (asPattern 1)
     , testInt
         "emod negative lhs"
         emodIntSymbol
         (asInternal <$> [-193, 12])
-        (asExpandedPattern 11)
+        (asPattern 11)
     , testInt
         "emod negative rhs"
         emodIntSymbol
         (asInternal <$> [193, -12])
-        (asExpandedPattern 1)
+        (asPattern 1)
     , testInt
         "emod both negative"
         emodIntSymbol
         (asInternal <$> [-193, -12])
-        (asExpandedPattern (-1))
+        (asPattern (-1))
     , testInt
         "emod bottom"
         emodIntSymbol
@@ -334,30 +334,30 @@ test_emod =
     ]
 
 -- | Another name for asInternal.
-intLiteral :: Integer -> CommonStepPattern Object
+intLiteral :: Integer -> TermLike Variable
 intLiteral = asInternal
 
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
-asInternal :: Ord (variable Object) => Integer -> StepPattern Object variable
+asInternal :: Ord (variable Object) => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
 -- | Specialize 'Int.asConcretePattern' to the builtin sort 'intSort'.
-asConcretePattern :: Integer -> ConcreteStepPattern Object
+asConcretePattern :: Integer -> TermLike Concrete
 asConcretePattern = Int.asConcretePattern intSort
 
--- | Specialize 'Int.asExpandedPattern' to the builtin sort 'intSort'.
-asExpandedPattern :: Integer -> CommonExpandedPattern Object
-asExpandedPattern = Int.asExpandedPattern intSort
+-- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
+asPattern :: Integer -> Pattern Object Variable
+asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
-asPartialExpandedPattern :: Maybe Integer -> CommonExpandedPattern Object
-asPartialExpandedPattern = Int.asPartialExpandedPattern intSort
+asPartialPattern :: Maybe Integer -> Pattern Object Variable
+asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
     -> SymbolOrAlias Object
-    -> [CommonStepPattern Object]
-    -> CommonExpandedPattern Object
+    -> [TermLike Variable]
+    -> Pattern Object Variable
     -> TestTree
 testInt name = testSymbolWithSolver evaluate name intSort
 
@@ -411,7 +411,7 @@ test_unifyAnd_Fn =
         let dv = asInternal 2
             fnPat = mkApp intSort absIntSymbol  [mkVar var]
             expect =
-                Predicated
+                Conditional
                     { term = dv
                     , predicate = makeEqualsPredicate dv fnPat
                     , substitution = mempty

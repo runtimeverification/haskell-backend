@@ -3,43 +3,42 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( SortedVariable (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
+                 ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
                  ( mapVariables )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( mapVariables )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, stepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 TermLikeSimplifier, termLikeSimplifier )
+import           Kore.Step.TermLike
+                 ( Object, TermLike )
+import qualified Kore.Step.TermLike as TermLike
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
 mockSimplifier
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( Ord (variable Object)
         , SortedVariable variable
         )
-    =>  [   ( StepPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  [   ( TermLike variable
+            , ([Pattern Object variable], SimplificationProof Object)
             )
         ]
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier Object
 mockSimplifier values =
-    stepPatternSimplifier
+    termLikeSimplifier
         ( mockSimplifierHelper
-            (\patt -> Predicated
+            (\patt -> Conditional
                 { term = patt
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -49,19 +48,18 @@ mockSimplifier values =
         )
 
 mockPredicateSimplifier
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( Ord (variable Object)
         , SortedVariable variable
         )
-    =>  [   ( StepPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  [   ( TermLike variable
+            , ([Pattern Object variable], SimplificationProof Object)
             )
         ]
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier Object
 mockPredicateSimplifier values =
-    stepPatternSimplifier
+    termLikeSimplifier
         (mockSimplifierHelper
-            (\patt -> Predicated
+            (\patt -> Conditional
                 { term = mkTop_
                 , predicate = wrapPredicate patt
                 , substitution = mempty
@@ -72,28 +70,25 @@ mockPredicateSimplifier values =
 
 mockSimplifierHelper
     ::  ( FreshVariable variable0
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable0 level)
-        , OrdMetaOrObject variable0
-        , Show (variable0 level)
-        , ShowMetaOrObject variable0
-        , Unparse (variable0 level)
+        , Ord (variable Object)
+        , Ord (variable0 Object)
+        , Show (variable0 Object)
+        , Unparse (variable0 Object)
         , SortedVariable variable
         , SortedVariable variable0
         )
-    =>  (StepPattern level variable -> ExpandedPattern level variable)
-    ->  [   ( StepPattern level variable
-            , ([ExpandedPattern level variable], SimplificationProof level)
+    =>  (TermLike variable -> Pattern Object variable)
+    ->  [   ( TermLike variable
+            , ([Pattern Object variable], SimplificationProof Object)
             )
         ]
-    -> PredicateSubstitutionSimplifier level
-    -> StepPattern level variable0
+    -> PredicateSimplifier Object
+    -> TermLike variable0
     -> Simplifier
-        (OrOfExpandedPattern level variable0, SimplificationProof level)
+        (OrPattern Object variable0, SimplificationProof Object)
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
-        ( MultiOr.make
+        ( OrPattern.fromPatterns
             [ convertExpandedVariables
                 (unevaluatedConverter (convertPatternVariables patt))
             ]
@@ -107,7 +102,7 @@ mockSimplifierHelper
   =
     if patt == convertPatternVariables unevaluatedPatt
         then return
-            ( MultiOr.make (map convertExpandedVariables patts)
+            ( OrPattern.fromPatterns (map convertExpandedVariables patts)
             , proof
             )
         else
@@ -118,20 +113,20 @@ mockSimplifierHelper
                 unevaluatedPatt
 
 convertPatternVariables
-    ::  ( Ord (variable0 level)
+    ::  ( Ord (variable0 Object)
         , SortedVariable variable
         , SortedVariable variable0
         )
-    => StepPattern level variable
-    -> StepPattern level variable0
-convertPatternVariables = Pattern.mapVariables (fromVariable . toVariable)
+    => TermLike variable
+    -> TermLike variable0
+convertPatternVariables = TermLike.mapVariables (fromVariable . toVariable)
 
 convertExpandedVariables
-    ::  ( Ord (variable0 level)
+    ::  ( Ord (variable0 Object)
         , SortedVariable variable
         , SortedVariable variable0
         )
-    => ExpandedPattern level variable
-    -> ExpandedPattern level variable0
+    => Pattern Object variable
+    -> Pattern Object variable0
 convertExpandedVariables =
-    ExpandedPattern.mapVariables (fromVariable . toVariable)
+    Pattern.mapVariables (fromVariable . toVariable)

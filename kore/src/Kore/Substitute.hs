@@ -68,14 +68,14 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
         -> Map (variable level) (Either (variable level) a)
     renaming variable variable' = Map.insert variable (Left variable')
 
-    substituteWorker subst stepPattern
+    substituteWorker subst termLike
       | Map.null subst' =
         -- If there are no targeted free variables, return the original pattern.
         -- Note that this covers the case of a non-targeted variable pattern,
         -- which produces an error below.
-        stepPattern
+        termLike
       | otherwise =
-        case stepPatternHead of
+        case termLikeHead of
             -- Capturing quantifiers
             ExistsPattern exists@Exists { existsVariable, existsChild }
               | Just existsVariable' <- avoidCapture existsVariable ->
@@ -109,16 +109,16 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
                         error "Internal error: Impossible free variable"
                     Just (Left variable') ->
                         Recursive.embed (attrib' :< VariablePattern variable')
-                    Just (Right stepPattern') ->
-                        stepPattern'
+                    Just (Right termLike') ->
+                        termLike'
 
             -- All other patterns
             _ ->
-                let stepPatternHead' =
-                        substituteWorker subst' <$> stepPatternHead
-                in Recursive.embed (attrib' :< stepPatternHead')
+                let termLikeHead' =
+                        substituteWorker subst' <$> termLikeHead
+                in Recursive.embed (attrib' :< termLikeHead')
       where
-        attrib :< stepPatternHead = Recursive.project stepPattern
+        attrib :< termLikeHead = Recursive.project termLike
         freeVariables = Lens.view lensFreeVariables attrib
         attrib' = Lens.set lensFreeVariables freeVariables' attrib
         -- | The substitution applied to subterms, including only the free

@@ -12,6 +12,7 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
+    , rulePattern
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -31,6 +32,7 @@ module Kore.Step.Rule
     , substitute
     ) where
 import           Control.Comonad
+import qualified Data.Default as Default
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
@@ -53,9 +55,9 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
-                 ( CommonStepPattern, StepPattern )
-import qualified Kore.Step.Pattern as Pattern
+import           Kore.Step.TermLike
+                 ( TermLike )
+import qualified Kore.Step.TermLike as TermLike
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
@@ -67,16 +69,19 @@ newtype AxiomPatternError = AxiomPatternError ()
 
  -}
 data RulePattern level variable = RulePattern
-    { left  :: !(StepPattern level variable)
-    , right :: !(StepPattern level variable)
-    , requires :: !(Predicate level variable)
-    , ensures :: !(Predicate level variable)
+    { left  :: !(TermLike variable)
+    , right :: !(TermLike variable)
+    , requires :: !(Predicate variable)
+    , ensures :: !(Predicate variable)
     , attributes :: !Attribute.Axiom
     }
-    deriving (Eq, Ord, Show)
 
-instance Unparse (variable level) => Pretty (RulePattern level variable) where
-    pretty rulePattern@(RulePattern _ _ _ _ _) =
+deriving instance Eq (variable Object) => Eq (RulePattern level variable)
+deriving instance Ord (variable Object) => Ord (RulePattern level variable)
+deriving instance Show (variable Object) => Show (RulePattern level variable)
+
+instance Unparse (variable Object) => Pretty (RulePattern level variable) where
+    pretty rulePattern'@(RulePattern _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
             , Pretty.indent 4 (unparse left)
@@ -88,44 +93,64 @@ instance Unparse (variable level) => Pretty (RulePattern level variable) where
             , Pretty.indent 4 (unparse ensures)
             ]
       where
-        RulePattern { left, right, requires, ensures } = rulePattern
+        RulePattern { left, right, requires, ensures } = rulePattern'
+
+rulePattern
+    :: TermLike variable
+    -> TermLike variable
+    -> RulePattern Object variable
+rulePattern left right =
+    RulePattern
+        { left
+        , right
+        , requires = Predicate.makeTruePredicate
+        , ensures  = Predicate.makeTruePredicate
+        , attributes = Default.def
+        }
 
 {-  | Equality-based rule pattern.
 -}
 newtype EqualityRule level variable =
     EqualityRule { getEqualityRule :: RulePattern level variable }
-    deriving (Eq, Show)
+
+deriving instance Eq (variable Object) => Eq (EqualityRule level variable)
+deriving instance Ord (variable Object) => Ord (EqualityRule level variable)
+deriving instance Show (variable Object) => Show (EqualityRule level variable)
 
 {-  | Rewrite-based rule pattern.
 -}
 newtype RewriteRule level variable =
     RewriteRule { getRewriteRule :: RulePattern level variable }
-    deriving (Eq, Show)
 
-{-  | Implication-based pattern.
--}
-newtype ImplicationRule level variable =
-    ImplicationRule { getImplicationRule :: RulePattern level variable }
-    deriving (Eq, Show)
+deriving instance Eq (variable Object) => Eq (RewriteRule level variable)
+deriving instance Ord (variable Object) => Ord (RewriteRule level variable)
+deriving instance Show (variable Object) => Show (RewriteRule level variable)
 
-instance (Unparse (variable level), Ord (variable level)) => Unparse (RewriteRule level variable) where
+instance (Unparse (variable Object), Ord (variable Object)) => Unparse (RewriteRule level variable) where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
         unparse
             $ Valid.mkImplies
                 (Valid.mkAnd left (Predicate.unwrapPredicate requires))
                 right
-
     unparse2 (RewriteRule RulePattern { left, right, requires } ) =
         unparse2
             $ Valid.mkImplies
                 (Valid.mkAnd left (Predicate.unwrapPredicate requires))
                 right
 
+{-  | Implication-based pattern.
+-}
+newtype ImplicationRule level variable =
+    ImplicationRule { getImplicationRule :: RulePattern level variable }
+
+deriving instance Eq (variable Object) => Eq (ImplicationRule level variable)
+deriving instance Ord (variable Object) => Ord (ImplicationRule level variable)
+deriving instance Show (variable Object) => Show (ImplicationRule level variable)
 
 qualifiedAxiomOpToConstructor
     :: SymbolOrAlias Object
     -> Maybe
-        (RulePattern level variable -> QualifiedAxiomPattern level variable)
+        (RulePattern Object variable -> QualifiedAxiomPattern Object variable)
 qualifiedAxiomOpToConstructor patternHead = case headName of
     "weakExistsFinally" -> Just $ OnePathClaimPattern . OnePathRule
     "weakAlwaysFinally" -> Just $ AllPathClaimPattern . AllPathRule
@@ -137,13 +162,19 @@ qualifiedAxiomOpToConstructor patternHead = case headName of
 -}
 newtype OnePathRule level variable =
     OnePathRule { getOnePathRule :: RulePattern level variable }
-    deriving (Eq, Show)
+
+deriving instance Eq (variable Object) => Eq (OnePathRule level variable)
+deriving instance Ord (variable Object) => Ord (OnePathRule level variable)
+deriving instance Show (variable Object) => Show (OnePathRule level variable)
 
 {-  | All-Path-Claim rule pattern.
 -}
 newtype AllPathRule level variable =
     AllPathRule { getAllPathRule :: RulePattern level variable }
-    deriving (Eq, Show)
+
+deriving instance Eq (variable Object) => Eq (AllPathRule level variable)
+deriving instance Ord (variable Object) => Ord (AllPathRule level variable)
+deriving instance Show (variable Object) => Show (AllPathRule level variable)
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
@@ -156,11 +187,14 @@ data QualifiedAxiomPattern level variable
     | ImplicationAxiomPattern (ImplicationRule level variable)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
     -- not only to function-related ones.
-    deriving (Eq, Show)
+
+deriving instance Eq (variable Object) => Eq (QualifiedAxiomPattern level variable)
+deriving instance Ord (variable Object) => Ord (QualifiedAxiomPattern level variable)
+deriving instance Show (variable Object) => Show (QualifiedAxiomPattern level variable)
 
 {- | Does the axiom pattern represent a heating rule?
  -}
-isHeatingRule :: RulePattern level variable -> Bool
+isHeatingRule :: RulePattern Object variable -> Bool
 isHeatingRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Heat -> True
@@ -168,7 +202,7 @@ isHeatingRule RulePattern { attributes } =
 
 {- | Does the axiom pattern represent a cooling rule?
  -}
-isCoolingRule :: RulePattern level variable -> Bool
+isCoolingRule :: RulePattern Object variable -> Bool
 isCoolingRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Cool -> True
@@ -176,7 +210,7 @@ isCoolingRule RulePattern { attributes } =
 
 {- | Does the axiom pattern represent a normal rule?
  -}
-isNormalRule :: RulePattern level variable -> Bool
+isNormalRule :: RulePattern Object variable -> Bool
 isNormalRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Normal -> True
@@ -290,7 +324,7 @@ not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
     :: Attribute.Axiom
-    -> CommonStepPattern Object
+    -> TermLike Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
 patternToAxiomPattern attributes pat =
     case pat of
@@ -360,9 +394,9 @@ The requires clause must be a predicate, i.e. it can occur in any sort.
 
  -}
 mkRewriteAxiom
-    :: CommonStepPattern Object  -- ^ left-hand side
-    -> CommonStepPattern Object  -- ^ right-hand side
-    -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
+    :: TermLike Variable  -- ^ left-hand side
+    -> TermLike Variable  -- ^ right-hand side
+    -> Maybe (Sort Object -> TermLike Variable)  -- ^ requires clause
     -> Verified.Sentence
 mkRewriteAxiom lhs rhs requires =
     (SentenceAxiomSentence . mkAxiom_)
@@ -379,9 +413,9 @@ The requires clause must be a predicate, i.e. it can occur in any sort.
 
  -}
 mkEqualityAxiom
-    :: CommonStepPattern Object  -- ^ left-hand side
-    -> CommonStepPattern Object  -- ^ right-hand side
-    -> Maybe (Sort Object -> CommonStepPattern Object)  -- ^ requires clause
+    :: TermLike Variable  -- ^ left-hand side
+    -> TermLike Variable  -- ^ right-hand side
+    -> Maybe (Sort Object -> TermLike Variable)  -- ^ requires clause
     -> Verified.Sentence
 mkEqualityAxiom lhs rhs requires =
     SentenceAxiomSentence
@@ -402,40 +436,38 @@ to avoid collision with any variables in the given set.
 
  -}
 refreshRulePattern
-    :: forall variable level
+    :: forall variable
     .   ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable level)
-        , MetaOrObject level
         )
-    => Set (variable level)  -- ^ Variables to avoid
-    -> RulePattern level variable
-    -> (Map (variable level) (variable level), RulePattern level variable)
-refreshRulePattern avoid rulePattern =
+    => Set (variable Object)  -- ^ Variables to avoid
+    -> RulePattern Object variable
+    -> (Map (variable Object) (variable Object), RulePattern Object variable)
+refreshRulePattern avoid rule1 =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
-        left' = Pattern.substitute subst left
-        right' = Pattern.substitute subst right
+        left' = TermLike.substitute subst left
+        right' = TermLike.substitute subst right
         requires' = Predicate.substitute subst requires
-        rulePattern' =
-            rulePattern
+        rule2 =
+            rule1
                 { left = left'
                 , right = right'
                 , requires = requires'
                 }
-    in (rename, rulePattern')
+    in (rename, rule2)
   where
-    RulePattern { left, right, requires } = rulePattern
-    originalFreeVariables = freeVariables rulePattern
+    RulePattern { left, right, requires } = rule1
+    originalFreeVariables = freeVariables rule1
 
 {- | Extract the free variables of a 'RulePattern'.
  -}
 freeVariables
-    ::  ( MetaOrObject level
-        , Ord (variable level)
+    ::  ( MetaOrObject Object
+        , Ord (variable Object)
         )
-    => RulePattern level variable
-    -> Set (variable level)
+    => RulePattern Object variable
+    -> Set (variable Object)
 freeVariables RulePattern { left, right, requires } =
     Set.unions
         [ (Valid.freeVariables . extract) left
@@ -446,19 +478,19 @@ freeVariables RulePattern { left, right, requires } =
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}
 mapVariables
-    :: Ord (variable2 level)
-    => (variable1 level -> variable2 level)
-    -> RulePattern level variable1
-    -> RulePattern level variable2
-mapVariables mapping rulePattern =
-    rulePattern
-        { left = Pattern.mapVariables mapping left
-        , right = Pattern.mapVariables mapping right
+    :: Ord (variable2 Object)
+    => (variable1 Object -> variable2 Object)
+    -> RulePattern Object variable1
+    -> RulePattern Object variable2
+mapVariables mapping rule1 =
+    rule1
+        { left = TermLike.mapVariables mapping left
+        , right = TermLike.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
         , ensures = Predicate.mapVariables mapping ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rulePattern
+    RulePattern { left, right, requires, ensures } = rule1
 
 
 {- | Traverse the predicate from the top down and apply substitutions.
@@ -469,19 +501,19 @@ contain none of the targeted variables.
  -}
 substitute
     ::  ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
+        , MetaOrObject Object
+        , Ord (variable Object)
         , SortedVariable variable
         )
-    => Map (variable level) (StepPattern level variable)
-    -> RulePattern level variable
-    -> RulePattern level variable
-substitute subst rulePattern =
-    rulePattern
-        { left = Pattern.substitute subst left
-        , right = Pattern.substitute subst right
+    => Map (variable Object) (TermLike variable)
+    -> RulePattern Object variable
+    -> RulePattern Object variable
+substitute subst rulePattern' =
+    rulePattern'
+        { left = TermLike.substitute subst left
+        , right = TermLike.substitute subst right
         , requires = Predicate.substitute subst requires
         , ensures = Predicate.substitute subst ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rulePattern
+    RulePattern { left, right, requires, ensures } = rulePattern'

@@ -1,140 +1,195 @@
-module Test.Kore.Step.Pattern where
+module Test.Kore.Step.Pattern
+    ( test_expandedPattern
+    ) where
 
 import Test.Tasty
+       ( TestTree )
 import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty (..) )
 
-import Data.Sup
-import Kore.AST.Common
-import Kore.AST.Valid
-import Kore.Step.Pattern
-import Kore.Variables.Fresh
+import           Kore.AST.Pure
+import           Kore.AST.Valid hiding
+                 ( V )
+import           Kore.Predicate.Predicate
+                 ( Predicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeTruePredicate )
+import           Kore.Step.Pattern as Pattern
+                 ( Conditional (..), allVariables, mapVariables, toMLPattern )
+import           Kore.Step.TermLike
+import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 
-import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
-import           Test.Terse
+import Test.Kore.Comparators ()
+import Test.Tasty.HUnit.Extensions
 
-test_substitute :: [TestTree]
-test_substitute =
-    [ testCase "Replaces target variable"
-        (assertEqualWithExplanation
-            "Expected substituted variable"
-            (mkVar Mock.z)
-            (substitute
-                (Map.singleton Mock.x (mkVar Mock.z))
-                (mkVar Mock.x)
+test_expandedPattern :: [TestTree]
+test_expandedPattern =
+    [ testCase "Mapping variables"
+        (assertEqualWithExplanation ""
+            Conditional
+                { term = war "1"
+                , predicate = makeEquals (war "2") (war "3")
+                , substitution = Substitution.wrap [(W "4", war "5")]
+                }
+            (Pattern.mapVariables showVar
+                Conditional
+                    { term = var 1
+                    , predicate = makeEquals (var 2) (var 3)
+                    , substitution = Substitution.wrap [(V 4, var 5)]
+                    }
             )
         )
-
-    , testCase "Ignores non-target variable"
-        (assertEqualWithExplanation
-            "Expected original non-target variable"
-            (mkVar Mock.y)
-            (substitute
-                (Map.singleton Mock.x (mkVar Mock.z))
-                (mkVar Mock.y)
+    , testCase "Extracting variables"
+        (assertEqual ""
+            [V 1, V 2, V 3, V 4, V 5]
+            (Set.toList
+                (Pattern.allVariables
+                    Conditional
+                        { term = var 1
+                        , predicate = makeEquals (var 2) (var 3)
+                        , substitution = Substitution.wrap [(V 4, var 5)]
+                        }
+                )
             )
         )
-
-    , testGroup "Ignores patterns without children" $
-        let ignoring mkPredicate =
-                assertEqualWithExplanation
-                    "Expected no substitution"
-                    expect actual
-              where
-                expect = mkPredicate Mock.testSort
-                actual =
-                    substitute
-                        (Map.singleton Mock.x (mkVar Mock.z))
-                        (mkPredicate Mock.testSort)
-        in
-            [ testCase "Bottom" (ignoring mkBottom)
-            , testCase "Top" (ignoring mkTop)
-            ]
-
-    , testGroup "Ignores shadowed variables" $
-        let ignoring mkQuantifier =
-                assertEqualWithExplanation
-                    "Expected shadowed variable to be ignored"
-                    expect actual
-              where
-                expect = mkQuantifier Mock.x (mkVar Mock.x)
-                actual =
-                    substitute
-                        (Map.singleton Mock.x (mkVar Mock.z))
-                        (mkQuantifier Mock.x (mkVar Mock.x))
-        in
-            [ testCase "Exists" (ignoring mkExists)
-            , testCase "Forall" (ignoring mkForall)
-            ]
-
-    , testGroup "Renames quantified variables to avoid capture" $
-        let renaming mkQuantifier =
-                assertEqualWithExplanation
-                    "Expected quantified variable to be renamed"
-                    expect actual
-              where
-                expect =
-                    mkQuantifier z' $ mkAnd (mkVar z') (mkVar Mock.z)
-                  where
-                    Just z' = refreshVariable (Set.singleton Mock.z) Mock.z
-                actual =
-                    substitute (Map.singleton Mock.x (mkVar Mock.z))
-                    $ mkQuantifier Mock.z
-                    $ mkAnd (mkVar Mock.z) (mkVar Mock.x)
-        in
-            [ testCase "Exists" (renaming mkExists)
-            , testCase "Forall" (renaming mkForall)
-            ]
+    , testCase "Converting to a ML pattern"
+        (assertEqualWithExplanation ""
+            (makeAnd
+                (makeAnd
+                    (var 1)
+                    (makeEq (var 2) (var 3))
+                )
+                (makeEq (var 4) (var 5))
+            )
+            (Pattern.toMLPattern
+                Conditional
+                    { term = var 1
+                    , predicate = makeEquals (var 2) (var 3)
+                    , substitution = Substitution.wrap [(V 4, var 5)]
+                    }
+            )
+        )
+    , testCase "Converting to a ML pattern - top pattern"
+        (assertEqualWithExplanation ""
+            (makeAnd
+                (makeEq (var 2) (var 3))
+                (makeEq (var 4) (var 5))
+            )
+            (Pattern.toMLPattern
+                Conditional
+                    { term = mkTop sortVariable
+                    , predicate = makeEquals (var 2) (var 3)
+                    , substitution = Substitution.wrap [(V 4, var 5)]
+                    }
+            )
+        )
+    , testCase "Converting to a ML pattern - top predicate"
+        (assertEqualWithExplanation ""
+            (var 1)
+            (Pattern.toMLPattern
+                Conditional
+                    { term = var 1
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+            )
+        )
+    , testCase "Converting to a ML pattern - bottom pattern"
+        (assertEqualWithExplanation ""
+            (mkBottom sortVariable)
+            (Pattern.toMLPattern
+                Conditional
+                    { term = mkBottom sortVariable
+                    , predicate = makeEquals (var 2) (var 3)
+                    , substitution = Substitution.wrap [(V 4, var 5)]
+                    }
+            )
+        )
+    , testCase "Converting to a ML pattern - bottom predicate"
+        (assertEqualWithExplanation ""
+            (mkBottom sortVariable)
+            (Pattern.toMLPattern
+                Conditional
+                    { term = var 1
+                    , predicate = makeFalsePredicate
+                    , substitution = mempty
+                    }
+            )
+        )
     ]
 
-test_externalizeFreshVariables :: [TestTree]
-test_externalizeFreshVariables =
-    [ becomes (mkVar x_0) (mkVar x0) "Append counter"
-    , testGroup "No aliasing"
-        [ becomes (mk (mkVar x0) (mkVar x_0)) (mk (mkVar x0) (mkVar x1)) comment
-        | (mk, comment) <- binaryPatterns
-        ]
-    , testGroup "No capturing - Original free"
-        [ becomes (mk x_0 $ mkVar x0) (mk x1 $ mkVar x0) comment
-        | (mk, comment) <- quantifiers
-        ]
-    , testGroup "No capturing - Generated free"
-        [ becomes (mk x0 $ mkVar x_0) (mk x00 $ mkVar x0) comment
-        | (mk, comment) <- quantifiers
-        ]
-    ]
-  where
-    binaryPatterns =
-        [ (mkAnd, "And")
-        , (mkEquals_, "Equals")
-        , (mkIff, "Iff")
-        , (mkImplies, "Implies")
-        , (mkIn_, "In")
-        , (mkOr, "Or")
-        , (mkRewrites, "Rewrites")
-        ]
-    quantifiers =
-        [ (mkExists, "Exists")
-        , (mkForall, "Forall")
-        ]
-    becomes original expected =
-        equals (externalizeFreshVariables original) expected
+newtype V level = V Integer
+    deriving (Show, Eq, Ord)
+newtype W level = W String
+    deriving (Show, Eq, Ord)
 
-x :: Variable Object
-x = Mock.x
+instance Unparse (V level) where
+    unparse (V n) = "V" <> pretty n <> ":" <> unparse sortVariable
+    unparse2 = error "Not implemented"
 
-x_0 :: Variable Object
-x_0 = x { variableCounter = Just (Element 0) }
+instance Unparse (W level) where
+    unparse (W name) = "W" <> pretty name <> ":" <> unparse sortVariable
+    unparse2 = error "Not implemented"
 
-x0 :: Variable Object
-x0 = x { variableName = "x0" }
+instance SortedVariable V where
+    sortedVariableSort _ = sortVariable
+    fromVariable = error "Not implemented"
+    toVariable = error "Not implemented"
 
-x00 :: Variable Object
-x00 = x { variableName = "x00" }
+instance SumEqualWithExplanation (V level) where
+    sumConstructorPair (V a1) (V a2) =
+        SumConstructorSameWithArguments
+            (EqWrap "V" a1 a2)
 
-x1 :: Variable Object
-x1 = x { variableName = "x1" }
+instance EqualWithExplanation (V level) where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance SortedVariable W where
+    sortedVariableSort _ = sortVariable
+    fromVariable = error "Not implemented"
+    toVariable = error "Not implemented"
+
+instance SumEqualWithExplanation (W level) where
+    sumConstructorPair (W a1) (W a2) =
+        SumConstructorSameWithArguments (EqWrap "W" a1 a2)
+
+instance EqualWithExplanation (W level) where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+
+showVar :: V level -> W level
+showVar (V i) = W (show i)
+
+var :: Integer -> TermLike V
+var i = mkVar (V i)
+
+war :: String -> TermLike W
+war s = mkVar (W s)
+
+makeEq
+    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
+    => TermLike var
+    -> TermLike var
+    -> TermLike var
+makeEq = mkEquals sortVariable
+
+makeAnd
+    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
+    => TermLike var
+    -> TermLike var
+    -> TermLike var
+makeAnd p1 p2 = mkAnd p1 p2
+
+makeEquals
+    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
+    => TermLike var -> TermLike var -> Predicate var
+makeEquals p1 p2 = makeEqualsPredicate p1 p2
+
+sortVariable :: Sort level
+sortVariable = SortVariableSort (SortVariable (Id "#a" AstLocationTest))

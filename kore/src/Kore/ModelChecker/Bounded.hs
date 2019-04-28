@@ -38,16 +38,15 @@ import           Kore.OnePath.Verification
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (Predicated) )
-import           Kore.Step.Representation.ExpandedPattern as Predicated
-                 ( Predicated (..) )
+import           Kore.Step.Pattern
+                 ( Conditional (Conditional) )
+import           Kore.Step.Pattern as Conditional
+                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
                  RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT, pickFinal, runStrategy )
 import           Numeric.Natural
@@ -65,9 +64,9 @@ data CheckResult
 check
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSubstitutionSimplifier level
+    -> PredicateSimplifier level
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
@@ -124,8 +123,8 @@ bmcStrategy
 checkClaim
     :: forall level . (MetaOrObject level)
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
-    -> PredicateSubstitutionSimplifier level
+    -> TermLikeSimplifier level
+    -> PredicateSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
     ->  (  CommonModalPattern level
@@ -156,7 +155,7 @@ checkClaim
             startState :: CommonProofState level
             startState =
                 ProofState.GoalLHS
-                    Predicated
+                    Conditional
                         {term = left, predicate = Predicate.makeTruePredicate, substitution = mempty}
         executionGraph <- runStrategy transitionRule' strategy startState
         let

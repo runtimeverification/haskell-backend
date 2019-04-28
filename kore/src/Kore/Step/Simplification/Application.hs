@@ -9,9 +9,11 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Application
     ( simplify
+    , Application (..)
     ) where
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Application (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -25,42 +27,42 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..), Pattern )
+import           Kore.Step.Pattern as Pattern
+                 ( Conditional (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct, traverseFlattenWithPairsGeneric )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 type ExpandedApplication level variable =
-    Predicated
+    Conditional
         level
         variable
         (CofreeF
             (Application level)
             (Valid (variable level) level)
-            (StepPattern level variable)
+            (TermLike variable)
         )
 
-{-|'simplify' simplifies an 'Application' of 'OrOfExpandedPattern'.
+{-|'simplify' simplifies an 'Application' of 'OrPattern'.
 
 To do that, it first distributes the terms, making it an Or of Application
-patterns, each Application having 'ExpandedPattern's as children,
+patterns, each Application having 'Pattern's as children,
 then it simplifies each of those.
 
-Simplifying an Application of ExpandedPattern means merging the children
+Simplifying an Application of Pattern means merging the children
 predicates ans substitutions, applying functions on the Application(terms),
-then merging everything into an ExpandedPattern.
+then merging everything into an Pattern.
 -}
 simplify
     ::  ( MetaOrObject level
@@ -73,17 +75,17 @@ simplify
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application level)
         (Valid (variable level) level)
-        (OrOfExpandedPattern level variable)
+        (OrPattern level variable)
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
 simplify
@@ -130,16 +132,16 @@ makeAndEvaluateApplications
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
-    -> [ExpandedPattern level variable]
+    -> [Pattern level variable]
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeAndEvaluateApplications
     tools
     substitutionSimplifier
@@ -172,16 +174,16 @@ makeAndEvaluateSymbolApplications
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
-    -> [ExpandedPattern level variable]
+    -> [Pattern level variable]
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 makeAndEvaluateSymbolApplications
     tools
     substitutionSimplifier
@@ -220,21 +222,21 @@ evaluateApplicationFunction
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedApplication level variable
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrOfExpandedPattern level variable, SimplificationProof level)
+        (OrPattern level variable, SimplificationProof level)
 evaluateApplicationFunction
     tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    Predicated
+    Conditional
         { term, predicate, substitution }
   =
     evaluateApplication
@@ -242,7 +244,7 @@ evaluateApplicationFunction
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
-        Predicated { term = (), predicate, substitution }
+        Conditional { term = (), predicate, substitution }
         term
 
 makeExpandedApplication
@@ -256,14 +258,14 @@ makeExpandedApplication
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid (variable level) level
     -> SymbolOrAlias level
-    -> [ExpandedPattern level variable]
+    -> [Pattern level variable]
     -> Simplifier
         (ExpandedApplication level variable, SimplificationProof level)
 makeExpandedApplication
@@ -275,7 +277,7 @@ makeExpandedApplication
     symbol
     children
   = do
-    (   Predicated
+    (   Conditional
             { predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
@@ -285,16 +287,16 @@ makeExpandedApplication
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
-                (map ExpandedPattern.predicate children)
-                (map ExpandedPattern.substitution children)
+                (map Pattern.predicate children)
+                (map Pattern.substitution children)
     return
-        ( Predicated
+        ( Conditional
             { term =
                 (:<) valid
                     Application
                         { applicationSymbolOrAlias = symbol
                         , applicationChildren =
-                            map ExpandedPattern.term children
+                            map Pattern.term children
                         }
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
