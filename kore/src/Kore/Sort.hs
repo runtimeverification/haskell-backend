@@ -63,7 +63,7 @@ instance NFData (SortVariable level)
 
 instance Unparse (SortVariable level) where
     unparse = unparse . getSortVariable
-    unparse2 SortVariable { getSortVariable } = unparseIdLower getSortVariable
+    unparse2 SortVariable { getSortVariable } = unparse2 getSortVariable
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
