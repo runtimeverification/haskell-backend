@@ -1,6 +1,6 @@
 module Kore.Step.Simplification.AndTerms where
 
-import Kore.AST.Common
+import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.AST.MetaOrObject
        ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )

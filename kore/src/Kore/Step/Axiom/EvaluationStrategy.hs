@@ -23,8 +23,6 @@ import           Data.Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Common
-                 ( SortedVariable (..), Variable )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject, Object, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.AST.Pure
@@ -63,6 +61,7 @@ import           Kore.Step.Step
 import qualified Kore.Step.Step as Step
 import           Kore.Step.TermLike
                  ( TermLike, asConcreteStepPattern )
+import           Kore.Syntax.Variable
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )

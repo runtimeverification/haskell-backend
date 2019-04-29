@@ -64,8 +64,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
 
-import           Kore.AST.Common
-                 ( Variable )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.OnePath.Step
@@ -83,6 +81,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
+                 ( Variable )
 import           Kore.Unification.Unify
                  ( MonadUnify, Unifier )
 import qualified Kore.Unification.Unify as Monad.Unify

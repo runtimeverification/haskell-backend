@@ -6,6 +6,8 @@ module Kore.Variables.Fresh
     ( FreshVariable (..)
     , refreshVariables
     , nextVariable
+    -- * Re-exports
+    , module Kore.Syntax.Variable
     ) where
 
 import qualified Data.Foldable as Foldable
@@ -17,10 +19,9 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import Data.Sup
-import Kore.AST.Common
-       ( Variable (..), illegalVariableCounter )
 import Kore.AST.MetaOrObject
 import Kore.Syntax.Id
+import Kore.Syntax.Variable
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}

@@ -22,7 +22,7 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import Kore.AST.Common
-       ( Exists (..), Forall (..), Pattern (..), SortedVariable )
+       ( Exists (..), Forall (..), Pattern (..) )
 import Kore.AST.MetaOrObject
 import Kore.AST.Pure
 import Kore.Variables.Fresh

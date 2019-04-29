@@ -19,11 +19,9 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import           Kore.AST.Common
-                 ( SymbolOrAlias (SymbolOrAlias), Variable (Variable) )
+                 ( SymbolOrAlias (SymbolOrAlias) )
 import           Kore.AST.Common as SymbolOrAlias
                  ( SymbolOrAlias (..) )
-import qualified Kore.AST.Common as Variable
-                 ( Variable (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -65,6 +63,9 @@ import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Syntax.Id
                  ( Id )
+import           Kore.Syntax.Variable
+                 ( Variable (Variable) )
+import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified

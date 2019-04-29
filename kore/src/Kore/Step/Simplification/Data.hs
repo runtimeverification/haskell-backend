@@ -47,8 +47,6 @@ import           GHC.Stack
 
 import           Control.Monad.Catch
                  ( Exception, MonadCatch, MonadThrow, catch, throwM )
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
@@ -60,6 +58,8 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT

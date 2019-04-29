@@ -30,8 +30,7 @@ import qualified Data.Limit as Limit
 import           Data.Maybe
 import           Data.Profunctor
                  ( dimap )
-import           Kore.AST.Common
-                 ( Variable )
+
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject (..), Object )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -72,6 +71,8 @@ import           Kore.Step.Strategy
                  ( Strategy, TransitionT, pickFinal, runStrategy )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..) )
+import           Kore.Syntax.Variable
+                 ( Variable )
 import qualified Kore.TopBottom as TopBottom
 import           Numeric.Natural
                  ( Natural )

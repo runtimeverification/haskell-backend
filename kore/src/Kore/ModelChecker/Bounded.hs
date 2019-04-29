@@ -16,7 +16,7 @@ import qualified Data.Limit as Limit
 import           Debug.Trace
 
 import           Kore.AST.Common
-                 ( SymbolOrAlias (..), Variable )
+                 ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.AST.Valid
@@ -49,6 +49,8 @@ import           Kore.Step.Strategy
                  ( Strategy, TransitionT, pickFinal, runStrategy )
 import           Kore.Syntax.Id
                  ( Id (..) )
+import           Kore.Syntax.Variable
+                 ( Variable )
 import           Numeric.Natural
                  ( Natural )
 

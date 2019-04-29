@@ -11,8 +11,6 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -38,6 +36,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Unify

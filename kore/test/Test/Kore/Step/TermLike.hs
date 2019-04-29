@@ -7,7 +7,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import Data.Sup
-import Kore.AST.Common
 import Kore.AST.Valid
 import Kore.Step.TermLike
 import Kore.Variables.Fresh

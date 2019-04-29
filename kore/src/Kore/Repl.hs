@@ -37,7 +37,6 @@ import           System.IO
 import           Text.Megaparsec
                  ( parseMaybe )
 
-import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -66,7 +65,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
-                 ( TermLike )
+                 ( TermLike, Variable )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unparser

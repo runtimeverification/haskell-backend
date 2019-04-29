@@ -1,6 +1,6 @@
 module Kore.Step.Substitution where
 
-import           Kore.AST.Common
+import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol

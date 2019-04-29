@@ -22,11 +22,7 @@ import           Data.Reflection
 import qualified Data.Text as Text
 
 import qualified Control.Monad.Counter as Counter
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( IsMetaOrObject (IsObject), MetaOrObject, Object,
-                 isMetaOrObject )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -35,6 +31,8 @@ import           Kore.Predicate.Predicate
                  ( Predicate )
 import           Kore.Step.SMT.Translate
                  ( Translator, evalTranslator, translatePredicate )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.Unparser
                  ( Unparse )
 import           SMT

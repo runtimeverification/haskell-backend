@@ -10,8 +10,6 @@ module Kore.Step.Merging.OrPattern
 
 import Data.Reflection
 
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -33,6 +31,8 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( PredicateMerger )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.TopBottom
                  ( TopBottom )
 import           Kore.Unparser

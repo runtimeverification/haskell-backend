@@ -2,7 +2,7 @@ module Kore.Step.Simplification.Ceil
     ( makeEvaluateTerm
     ) where
 
-import Kore.AST.Common
+import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.AST.MetaOrObject
        ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )

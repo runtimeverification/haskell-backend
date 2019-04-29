@@ -25,8 +25,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Debug.Trace
 import           GHC.Generics
 
-import           Kore.AST.Common
-                 ( Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -53,6 +51,8 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
+                 ( Variable )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser

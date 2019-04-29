@@ -28,10 +28,7 @@ import Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -52,6 +49,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Procedure

@@ -11,7 +11,7 @@ import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
 import           Kore.AST.Common
-                 ( Ceil (..), SortedVariable (..) )
+                 ( Ceil (..) )
 import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -48,6 +48,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Variable
+                 ( SortedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )

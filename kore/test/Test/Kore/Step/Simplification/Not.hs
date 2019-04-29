@@ -7,8 +7,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Common
-                 ( Variable )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Valid
@@ -29,6 +27,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Syntax.Variable
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

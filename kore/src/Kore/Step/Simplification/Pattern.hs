@@ -9,8 +9,6 @@ module Kore.Step.Simplification.Pattern
     ) where
 
 import           Data.Reflection
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -32,6 +30,8 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier, simplifyTerm )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

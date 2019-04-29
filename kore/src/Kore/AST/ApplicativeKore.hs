@@ -5,13 +5,14 @@ License     : NCSA
 module Kore.AST.ApplicativeKore
     ( completeDefinition ) where
 
-import           Kore.AST.Common
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Step.TermLike as TermLike
 import qualified Kore.Verified as Verified
 
-completeDefinition :: Definition Verified.Sentence -> Definition Verified.Sentence
+completeDefinition
+    :: Definition Verified.Sentence
+    -> Definition Verified.Sentence
 completeDefinition Definition { definitionAttributes, definitionModules } =
     Definition
     { definitionAttributes

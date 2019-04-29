@@ -27,8 +27,6 @@ import qualified Data.Map as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -42,6 +40,8 @@ import           Kore.Step.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof (EmptyUnificationProof) )

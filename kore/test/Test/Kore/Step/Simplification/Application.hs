@@ -13,8 +13,6 @@ import qualified Data.Set as Set
 
 import           Data.Sup
 import qualified Kore.Annotation.Valid as Valid
-import           Kore.AST.Common
-                 ( SortedVariable (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )

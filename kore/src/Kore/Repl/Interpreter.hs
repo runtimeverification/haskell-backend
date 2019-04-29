@@ -59,8 +59,7 @@ import           System.Process
                  std_out )
 
 import           Kore.AST.Common
-                 ( Application (..), Pattern (..), SymbolOrAlias (..),
-                 Variable )
+                 ( Application (..), Pattern (..), SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject, Object )
 import           Kore.Attribute.Axiom
@@ -93,6 +92,8 @@ import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )
+import           Kore.Syntax.Variable
+                 ( Variable )
 import           Kore.Unparser
                  ( unparseToString )
 

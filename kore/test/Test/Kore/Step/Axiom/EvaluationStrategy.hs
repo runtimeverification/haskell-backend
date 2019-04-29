@@ -9,7 +9,6 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
-import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -47,6 +46,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

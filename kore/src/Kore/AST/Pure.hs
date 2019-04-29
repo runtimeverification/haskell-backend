@@ -29,6 +29,7 @@ module Kore.AST.Pure
     , module Control.Comonad
     , module Kore.AST.Common
     , module Kore.Syntax.Id
+    , module Kore.Syntax.Variable
     , module Kore.AST.MetaOrObject
     , module Kore.Sort
     ) where
@@ -70,6 +71,7 @@ import qualified Kore.AST.Common as Head
 import           Kore.AST.MetaOrObject
 import           Kore.Sort
 import           Kore.Syntax.Id
+import           Kore.Syntax.Variable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser

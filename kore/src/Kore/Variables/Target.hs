@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.Common
+import Kore.Syntax.Variable
        ( SortedVariable (..) )
 import Kore.Unparser
        ( Unparse (..) )
@@ -85,4 +85,3 @@ instance
     unparse (NonTarget var) = unparse var
     unparse2 (Target var) = unparse2 var
     unparse2 (NonTarget var) = unparse2 var
-

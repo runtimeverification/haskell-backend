@@ -39,18 +39,18 @@ import           Kore.Annotation.Valid
                  ( Valid )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
-                 ( Exists (..), Forall (..), Pattern (..),
-                 SortedVariable (..) )
+                 ( Exists (..), Forall (..), Pattern (..) )
 import qualified Kore.AST.Common as Base
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( And, Application, Bottom, Ceil, CharLiteral, CofreeF (..),
                  Concrete, DomainValue, Equals, Exists, Floor, Forall, Id (..),
                  Iff, Implies, In, Next, Not, Or, PurePattern, Rewrites, Sort,
-                 SortActual, SortVariable, SortedVariable, StringLiteral,
+                 SortActual, SortVariable, SortedVariable (..), StringLiteral,
                  SymbolOrAlias (..), Top, Variable (..) )
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Substitute as Substitute
+import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -218,7 +218,7 @@ externalizeFreshVariables termLike =
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition Base.isOriginalVariable (freeVariables termLike)
+        Set.partition Variable.isOriginalVariable (freeVariables termLike)
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
@@ -254,7 +254,7 @@ externalizeFreshVariables termLike =
     safeVariable avoiding variable =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture
-        $ Base.externalizeFreshVariable
+        $ Variable.externalizeFreshVariable
         <$> iterate nextVariable variable
       where
         wouldCapture var = Set.member var avoiding
