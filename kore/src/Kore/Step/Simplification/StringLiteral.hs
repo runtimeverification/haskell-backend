@@ -24,7 +24,7 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that literal.
 -}
 simplify
-    :: Ord (variable Meta)
+    :: Ord variable
     => StringLiteral
     -> (OrPattern Meta variable, SimplificationProof Meta)
 simplify (StringLiteral str) =

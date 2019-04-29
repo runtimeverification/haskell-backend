@@ -63,11 +63,9 @@ result. The result is re-simplified once.
 simplify
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -130,8 +128,8 @@ simplify
 
 assertDistinctVariables
     :: forall variable m
-    .   ( Show (variable Object)
-        , Eq (variable Object)
+    .   ( Show variable
+        , Eq variable
         , Monad m
         )
     => Substitution variable
@@ -141,12 +139,12 @@ assertDistinctVariables subst =
         [] -> return ()
         (var : _) -> error ("Duplicated variable: " ++ show var)
   where
-    moreThanOne :: [variable Object] -> Bool
+    moreThanOne :: [variable] -> Bool
     moreThanOne [] = False
     moreThanOne [_] = False
     moreThanOne _ = True
 
-    variables :: [variable Object]
+    variables :: [variable]
     variables = Substitution.variables subst
 
 {- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.
@@ -160,11 +158,9 @@ See also: 'simplify'
 simplifyPartial
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => PredicateSimplifier level

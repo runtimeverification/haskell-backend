@@ -24,7 +24,6 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject, Object, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.AST.Valid
@@ -111,13 +110,10 @@ totalDefinitionEvaluation rules =
         ::  forall variable
         .   ( FreshVariable variable
             , MetaOrObject level
-            , Ord (variable level)
-            , OrdMetaOrObject variable
+            , Ord variable
             , SortedVariable variable
-            , Show (variable level)
-            , Show (variable Object)
-            , Unparse (variable level)
-            , ShowMetaOrObject variable
+            , Show variable
+            , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier level
@@ -186,13 +182,10 @@ evaluateBuiltin
     :: forall variable level
     .   ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
+        , Ord variable
         , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Object)
-        , Unparse (variable level)
-        , ShowMetaOrObject variable
+        , Show variable
+        , Unparse variable
         )
     => BuiltinAndAxiomSimplifier level
     -> SmtMetadataTools StepperAttributes
@@ -244,13 +237,10 @@ applyFirstSimplifierThatWorks
     :: forall variable level
     .   ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
+        , Ord variable
         , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Object)
-        , Unparse (variable level)
-        , ShowMetaOrObject variable
+        , Show variable
+        , Unparse variable
         )
     => [BuiltinAndAxiomSimplifier level]
     -> AcceptsMultipleResults
@@ -337,13 +327,10 @@ evaluateWithDefinitionAxioms
     :: forall variable level
     .   ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
+        , Ord variable
         , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Object)
-        , Unparse (variable level)
-        , ShowMetaOrObject variable
+        , Show variable
+        , Unparse variable
         )
     => [EqualityRule level Variable]
     -> SmtMetadataTools StepperAttributes

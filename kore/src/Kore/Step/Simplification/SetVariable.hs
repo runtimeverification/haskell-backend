@@ -24,8 +24,8 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that variable.
 -}
 simplify
-    :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
-    => SetVariable variable level
+    :: (MetaOrObject level, Ord variable, SortedVariable variable)
+    => SetVariable variable
     -> (OrPattern level variable, SimplificationProof level)
 simplify (SetVariable var) =
     ( OrPattern.fromPattern $ Pattern.fromTermLike $ mkSetVar var

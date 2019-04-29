@@ -234,8 +234,8 @@ test_forallSimplification =
         }
 
 makeForall
-    :: Ord (variable Object)
-    => variable Object
+    :: Ord variable
+    => variable
     -> [Pattern Object variable]
     -> Forall Object variable (OrPattern Object variable)
 makeForall variable patterns =
@@ -255,7 +255,7 @@ evaluate forall =
     fst $ Forall.simplify forall
 
 makeEvaluate
-    :: Variable Object
+    :: Variable
     -> Pattern Object Variable
     -> Pattern Object Variable
 makeEvaluate variable child =

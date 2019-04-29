@@ -52,9 +52,9 @@ Right now this uses the following:
 simplify
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier Object
@@ -96,9 +96,9 @@ besides the pattern sort, which will make it even more useful to carry around.
 simplifyEvaluated
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier Object
@@ -133,9 +133,9 @@ See 'simplify' for details.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern level variable
     -> OrPattern level variable
@@ -159,9 +159,9 @@ makeEvaluate Conditional { term, predicate, substitution } =
 makeTermNot
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => TermLike variable
     -> TermLike variable

@@ -3,7 +3,6 @@ module Kore.Step.Simplification.AndTerms where
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.AST.MetaOrObject
-       ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
@@ -27,11 +26,9 @@ termAnd
     :: forall level variable .
         ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -46,11 +43,9 @@ termUnification
     :: forall level variable unifier unifierM .
         ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable

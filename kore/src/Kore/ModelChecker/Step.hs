@@ -73,8 +73,8 @@ data ModalPattern level variable = ModalPattern
     , term  :: !(TermLike variable)
     }
 
-deriving instance Eq (variable Object) => Eq (ModalPattern level variable)
-deriving instance Show (variable Object) => Show (ModalPattern level variable)
+deriving instance Eq variable => Eq (ModalPattern level variable)
+deriving instance Show variable => Show (ModalPattern level variable)
 
 type CommonModalPattern level = ModalPattern level Variable
 

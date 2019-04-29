@@ -5,7 +5,6 @@ module Kore.Step.Simplification.Ceil
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.AST.MetaOrObject
-       ( MetaOrObject, OrdMetaOrObject, ShowMetaOrObject )
 import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
@@ -29,11 +28,9 @@ makeEvaluateTerm
         ( MetaOrObject level
         , FreshVariable variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level

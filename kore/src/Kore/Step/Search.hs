@@ -126,11 +126,9 @@ matchWith
         ( MetaOrObject level
         , SortedVariable variable
         , FreshVariable variable
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level

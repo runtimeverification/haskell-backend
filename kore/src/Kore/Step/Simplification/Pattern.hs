@@ -39,11 +39,9 @@ import           Kore.Variables.Fresh
 -}
 simplify
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -88,11 +86,9 @@ simplify
 -}
 simplifyPredicate
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )

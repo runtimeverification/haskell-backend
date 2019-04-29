@@ -194,7 +194,7 @@ expectBuiltinMap ctx _map =
                 empty
 
 returnMap
-    :: (Monad m, Ord (variable Object))
+    :: (Monad m, Ord variable)
     => SmtMetadataTools attrs
     -> Sort
     -> Builtin variable
@@ -374,7 +374,7 @@ See also: 'sort'
 
  -}
 asInternal
-    :: Ord (variable Object)
+    :: Ord variable
     => SmtMetadataTools attrs
     -> Sort
     -> Builtin variable
@@ -397,7 +397,7 @@ asInternal tools builtinMapSort builtinMapChild =
 {- | Render an 'Domain.InternalMap' as a 'TermLike' domain value pattern.
  -}
 asTermLike
-    :: Ord (variable Object)
+    :: Ord variable
     => Domain.InternalMap (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
@@ -421,7 +421,7 @@ See also: 'asPattern'
 
  -}
 asPattern
-    ::  ( Ord (variable Object)
+    ::  ( Ord variable
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort
@@ -544,12 +544,11 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
     :: forall level variable unifierM unifier p expanded proof .
-        ( OrdMetaOrObject variable, ShowMetaOrObject variable
-        , SortedVariable variable
+        ( SortedVariable variable
         , MetaOrObject level
         , FreshVariable variable
-        , Show (variable level)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , p ~ TermLike variable
         , expanded ~ Pattern level variable
         , proof ~ SimplificationProof level

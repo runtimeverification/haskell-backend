@@ -47,8 +47,8 @@ functionalProofVars
     :: Prism
          (FunctionalProof Object variableFrom)
          (FunctionalProof Object variableTo)
-         (variableFrom Object)
-         (variableTo Object)
+         variableFrom
+         variableTo
 functionalProofVars = Lens.prism FunctionalVariable isVar
   where
     isVar (FunctionalVariable v) = Right v
@@ -61,7 +61,7 @@ functionalProofVars = Lens.prism FunctionalVariable isVar
 using the provided mapping.
 -}
 mapFunctionalProofVariables
-    :: (variableFrom Object -> variableTo Object)
+    :: (variableFrom -> variableTo)
     -> FunctionalProof Object variableFrom
     -> FunctionalProof Object variableTo
 mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
@@ -101,7 +101,7 @@ isConstructorLikePattern tools =
     If it is, returns a proof certifying that.
 -}
 isConstructorModuloLikePattern
-    :: (MetaOrObject Object, Show (variable Object))
+    :: (MetaOrObject Object, Show variable)
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> Either ConstructorLikeError [ConstructorLikeProof]
@@ -207,7 +207,7 @@ checkConstructorLikeHead tools base@(_ :< pattern') =
           | otherwise -> Left NonConstructorLikeHead
 
 checkConstructorModuloLikeHead
-    :: (MetaOrObject Object, Show a, Show (variable Object))
+    :: (MetaOrObject Object, Show a, Show variable)
     => SmtMetadataTools StepperAttributes
     -> Recursive.Base (TermLike variable) a
     -> Either

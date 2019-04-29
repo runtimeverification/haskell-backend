@@ -257,7 +257,7 @@ See also: 'sort'
 
  -}
 asInternal
-    :: Ord (variable Object)
+    :: Ord variable
     => Sort  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> TermLike variable
@@ -277,7 +277,7 @@ asInternal builtinIntSort builtinIntValue =
 
  -}
 asTermLike
-    :: Ord (variable Object)
+    :: Ord variable
     => Domain.InternalInt  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
@@ -316,14 +316,14 @@ asConcretePattern domainValueSort builtinIntChild =
             }
 
 asPattern
-    :: Ord (variable Object)
+    :: Ord variable
     => Sort  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> Pattern Object variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 asPartialPattern
-    :: Ord (variable Object)
+    :: Ord variable
     => Sort  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
     -> Pattern Object variable

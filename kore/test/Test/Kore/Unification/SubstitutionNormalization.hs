@@ -38,7 +38,7 @@ test_substitutionNormalization =
         (assertEqual ""
             (Right [])
             (runNormalizeSubstitution
-                ([] :: [(Variable Meta, TermLike Variable)])
+                ([] :: [(Variable, TermLike Variable)])
             )
         )
     , testCase "Simple substitution"
@@ -177,28 +177,28 @@ test_substitutionNormalization =
         )
     ]
   where
-    v1 :: Sort -> Variable level
+    v1 :: Sort -> Variable
     v1 = Variable (testId "v1") mempty
-    x1 :: Sort -> Variable level
+    x1 :: Sort -> Variable
     x1 = Variable (testId "x1") mempty
     f = groundHead "f" AstLocationTest
 
 runNormalizeSubstitution
     :: MetaOrObject level
-    => [(Variable level, TermLike Variable)]
+    => [(Variable, TermLike Variable)]
     -> Either
         (SubstitutionError level Variable)
-        [(Variable level, TermLike Variable)]
+        [(Variable, TermLike Variable)]
 runNormalizeSubstitution substitution =
     fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept
     $ normalizeSubstitution mockMetadataTools (Map.fromList substitution)
 
 runNormalizeSubstitutionObject
-    :: [(Variable Object, TermLike Variable)]
+    :: [(Variable, TermLike Variable)]
     -> Either
         (SubstitutionError Object Variable)
-        [(Variable Object, TermLike Variable)]
+        [(Variable, TermLike Variable)]
 runNormalizeSubstitutionObject substitution =
     fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept

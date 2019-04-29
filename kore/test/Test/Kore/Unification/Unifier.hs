@@ -227,7 +227,7 @@ type Substitution = [(Text, TermLike Variable)]
 
 unificationSubstitution
     :: Substitution
-    -> [ (Variable Object, TermLike Variable) ]
+    -> [ (Variable, TermLike Variable) ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
@@ -363,7 +363,7 @@ unificationProcedureSuccess
         let
             normalize
                 :: Predicate Object Variable
-                ->  ( [ (Variable Object, TermLike Variable) ]
+                ->  ( [ (Variable, TermLike Variable) ]
                     , Syntax.Predicate Variable
                     )
             normalize Conditional { substitution, predicate } =
@@ -611,10 +611,10 @@ test_unsupportedConstructs =
             (UnificationTerm (applySymbol_ f [mkImplies aA (mkNext a1A)]))
             UnsupportedPatterns
 
-newtype V level = V Integer
+newtype V = V Integer
     deriving (Show, Eq, Ord)
 
-newtype W level = W String
+newtype W = W String
     deriving (Show, Eq, Ord)
 
 instance SortedVariable V where
@@ -627,18 +627,15 @@ instance SortedVariable W where
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
 
-instance EqualWithExplanation (V level)
-  where
+instance EqualWithExplanation V where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (W level)
-  where
+instance EqualWithExplanation W where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-
-showVar :: V level -> W level
+showVar :: V -> W
 showVar (V i) = W (show i)
 
 var' :: Integer -> TermLike V

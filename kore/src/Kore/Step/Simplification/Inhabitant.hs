@@ -22,7 +22,7 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that literal.
 -}
 simplify
-    :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
+    :: (MetaOrObject level, Ord variable, SortedVariable variable)
     => Sort
     -> ( OrPattern level variable
        , SimplificationProof level

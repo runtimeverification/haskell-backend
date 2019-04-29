@@ -43,9 +43,9 @@ children by merging the two children.
 -}
 simplify
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Or Object (OrPattern Object variable)
     ->  ( OrPattern Object variable
@@ -71,9 +71,9 @@ See 'simplify' for detailed documentation.
 -}
 simplifyEvaluated
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => OrPattern Object variable
     -> OrPattern Object variable
@@ -125,9 +125,9 @@ This simplification case is only applied if the configurations have the same
  -}
 disjoinPredicates
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -- ^ Configuration
@@ -234,9 +234,9 @@ configuration. Nevertheless, this simplification is required by
  -}
 topAnnihilates
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -- ^ Configuration

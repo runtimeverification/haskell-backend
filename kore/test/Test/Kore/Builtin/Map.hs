@@ -66,7 +66,7 @@ genMapSortedVariable
     :: MetaOrObject level
     => Sort
     -> Gen a
-    -> Gen (Map (Variable level) a)
+    -> Gen (Map (Variable) a)
 genMapSortedVariable sort genElement =
     Gen.map
         (Range.linear 0 32)

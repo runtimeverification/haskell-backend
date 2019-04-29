@@ -109,11 +109,9 @@ See also: 'termAnd'
 termEquals
     ::  ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -148,11 +146,9 @@ termEqualsAnd
     :: forall level variable .
         ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -236,11 +232,9 @@ termEqualsAnd
 maybeTermEquals
     ::  ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -275,11 +269,9 @@ termUnification
     :: forall level variable unifier unifierM .
         ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -337,11 +329,9 @@ termAnd
     :: forall level variable .
         ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -393,11 +383,9 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
 maybeTermAnd
     ::  ( MetaOrObject level
         , FreshVariable variable
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -418,11 +406,9 @@ andFunctions
     ::  forall level variable unifier unifierM
     .   ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -445,11 +431,9 @@ equalsFunctions
     :: forall level variable unifier unifierM
     .   ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -470,14 +454,12 @@ equalsFunctions =
 
 andEqualsFunctions
     :: forall variable level unifier unifierM .
-        ( Eq (variable level)
+        ( Eq variable
         , FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -659,10 +641,10 @@ type TermTransformationOld level variable unifier =
 maybeTransformTerm
     ::  ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
+        , Ord variable
+        , Ord variable
+        , Ord variable
+        , Show variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -722,8 +704,8 @@ addToolsArg = pure
 toExpanded
     ::
     ( SortedVariable variable
-    , Show (variable Object)
-    , Ord (variable Object)
+    , Show variable
+    , Ord variable
     )
     =>  (  SmtMetadataTools StepperAttributes
         -> TermLike variable
@@ -792,8 +774,8 @@ boolAnd first second =
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
-    ::  ( Eq (variable level)
-        , Eq (variable Object)
+    ::  ( Eq variable
+        , Eq variable
         , MetaOrObject level
         )
     => TermLike variable
@@ -809,11 +791,9 @@ bottomTermEquals
     ::  ( FreshVariable variable
         , MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
@@ -877,11 +857,9 @@ termBottomEquals
     ::  ( FreshVariable variable
         , MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
@@ -910,11 +888,9 @@ variableFunctionAndEquals
     ::  ( FreshVariable variable
         , MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
@@ -1024,11 +1000,9 @@ functionVariableAndEquals
     ::  ( FreshVariable variable
         , MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
@@ -1075,11 +1049,9 @@ See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
 equalInjectiveHeadsAndEquals
     ::  ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -1144,8 +1116,8 @@ when @src1@ is a subsort of @src2@.
  -}
 sortInjectionAndEqualsAssumesDifferentHeads
     ::  forall level variable unifier unifierM .
-        ( Ord (variable level)
-        , Unparse (variable level)
+        ( Ord variable
+        , Unparse variable
         , MetaOrObject level
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -1216,7 +1188,7 @@ data SortInjectionSimplification level variable
 
 simplifySortInjections
     ::  forall level variable .
-        ( Ord (variable level)
+        ( Ord variable
         , MetaOrObject level
         )
     => SmtMetadataTools StepperAttributes
@@ -1340,9 +1312,9 @@ returns @\\bottom@.
 -- TODO (virgil): This implementation is provisional, we're not sure yet if sort
 -- injection should always clash with constructors. We should clarify this.
 constructorSortInjectionAndEquals
-    ::  ( Eq (variable level)
+    ::  ( Eq variable
         , MetaOrObject level
-        , Unparse (variable level)
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
@@ -1378,9 +1350,9 @@ to be different; therefore their conjunction is @\\bottom@.
 
  -}
 constructorAndEqualsAssumesDifferentHeads
-    ::  ( Eq (variable level)
+    ::  ( Eq variable
         , MetaOrObject level
-        , Unparse (variable level)
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
@@ -1415,7 +1387,7 @@ sort with constructors.
 
 -}
 domainValueAndConstructorErrors
-    :: ( Eq (variable level)
+    :: ( Eq variable
        , MetaOrObject level
        )
     => SmtMetadataTools StepperAttributes
@@ -1447,8 +1419,8 @@ See also: 'equalAndEquals'
 -- TODO (thomas.tuegel): This unification case assumes that \dv is injective,
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
-    :: Eq (variable Object)
-    => Unparse (variable Object)
+    :: Eq variable
+    => Unparse variable
     => MonadUnify unifierM
     => unifier ~ unifierM variable
     => TermLike variable
@@ -1469,8 +1441,8 @@ domainValueAndEqualsAssumesDifferent
 domainValueAndEqualsAssumesDifferent _ _ = empty
 
 cannotUnifyDomainValues
-    :: Eq (variable Object)
-    => Unparse (variable Object)
+    :: Eq variable
+    => Unparse variable
     => MonadUnify unifierM
     => unifier ~ unifierM variable
     => TermLike variable
@@ -1493,8 +1465,8 @@ See also: 'equalAndEquals'
 
  -}
 stringLiteralAndEqualsAssumesDifferent
-    :: Eq (variable Object)
-    => Unparse (variable Object)
+    :: Eq variable
+    => Unparse variable
     => MonadUnify unifierM
     => unifier ~ unifierM variable
     => TermLike variable
@@ -1515,8 +1487,8 @@ See also: 'equalAndEquals'
 
  -}
 charLiteralAndEqualsAssumesDifferent
-    :: Eq (variable Object)
-    => Unparse (variable Object)
+    :: Eq variable
+    => Unparse variable
     => MonadUnify unifierM
     => unifier ~ unifierM variable
     => TermLike variable
@@ -1536,9 +1508,9 @@ The function patterns are unified by creating an @\\equals@ predicate.
 functionAnd
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
     -> TermLike variable

@@ -42,7 +42,7 @@ eraseConditionalTerm
     -> Predicate Object variable
 eraseConditionalTerm = Conditional.withoutTerm
 
-top :: Ord (variable Object) => Predicate Object variable
+top :: Ord variable => Predicate Object variable
 top =
     Conditional
         { term = ()
@@ -50,7 +50,7 @@ top =
         , substitution = mempty
         }
 
-bottom :: Ord (variable Object) => Predicate Object variable
+bottom :: Ord variable => Predicate Object variable
 bottom =
     Conditional
         { term = ()
@@ -58,11 +58,11 @@ bottom =
         , substitution = mempty
         }
 
-topPredicate :: Ord (variable Object) => Predicate Object variable
+topPredicate :: Ord variable => Predicate Object variable
 topPredicate = top
 
 bottomPredicate
-    :: Ord (variable Object)
+    :: Ord variable
     => Predicate Object variable
 bottomPredicate = bottom
 
@@ -72,13 +72,13 @@ bottomPredicate = bottom
 -}
 
 freeVariables
-    :: ( Ord (variable Object)
-       , Show (variable Object)
-       , Unparse (variable Object)
+    :: ( Ord variable
+       , Show variable
+       , Unparse variable
        , SortedVariable variable
        )
     => Predicate Object variable
-    -> Set (variable Object)
+    -> Set variable
 freeVariables = Conditional.freeVariables (const Set.empty)
 
 {- | Transform a predicate and substitution into a predicate only.
@@ -91,17 +91,17 @@ See also: 'substitutionToPredicate'.
 -}
 toPredicate
     :: ( SortedVariable variable
-       , Ord (variable Object)
-       , Show (variable Object)
-       , Unparse (variable Object)
+       , Ord variable
+       , Show variable
+       , Unparse variable
        )
     => Predicate Object variable
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate
 
 mapVariables
-    :: Ord (variable2 Object)
-    => (variable1 Object -> variable2 Object)
+    :: Ord variable2
+    => (variable1 -> variable2)
     -> Predicate Object variable1
     -> Predicate Object variable2
 mapVariables = Conditional.mapVariables (\_ () -> ())

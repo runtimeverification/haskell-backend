@@ -412,7 +412,7 @@ sentenceAliasWithAttributes
     -> [SortVariable]
     -> Sort
     -> [ParsedPattern]
-    -> Application Object (Variable Object)
+    -> Application Object (Variable)
     -> ParsedPattern
     -> ParsedSentenceAlias
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
@@ -594,7 +594,7 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort -> [Variable Object] -> Verified.Sentence
+    :: AliasName -> Sort -> [Variable] -> Verified.Sentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
@@ -608,7 +608,7 @@ objectAliasSentenceWithArguments a b c =
 aliasSentenceWithArguments
     :: AliasName
     -> Sort
-    -> [Variable Object]
+    -> [Variable]
     -> Verified.Pattern
     -> Verified.Sentence
 aliasSentenceWithArguments (AliasName name) sort operands r =
@@ -654,7 +654,7 @@ unifiedSortVariable _x (SortVariableName name) = sortVariable name
 stringUnifiedPattern :: Text -> TermLike Variable
 stringUnifiedPattern s = (mkStringLiteral s)
 
-variable :: VariableName -> Sort -> Variable level
+variable :: VariableName -> Sort -> Variable
 variable (VariableName name) sort =
     Variable
         { variableName = testId name
@@ -664,7 +664,7 @@ variable (VariableName name) sort =
 
 unifiedVariable
     :: MetaOrObject level
-    => VariableName -> Sort -> Variable level
+    => VariableName -> Sort -> Variable
 unifiedVariable name sort =
     variable name sort
 
@@ -682,7 +682,7 @@ unifiedVariablePattern name patternSort =
 
 simpleExistsPattern
     :: MetaOrObject level
-    => Variable level
+    => Variable
     -> Sort
     -> Pattern level domain Variable (TermLike Variable)
 simpleExistsPattern quantifiedVariable resultSort =

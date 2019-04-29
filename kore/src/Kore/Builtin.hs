@@ -185,7 +185,7 @@ See also: 'asPattern'
  -}
 -- TODO (thomas.tuegel): Transform from Domain.Internal to Domain.External.
 externalizePattern
-    ::  forall variable. Ord (variable Object)
+    ::  forall variable. Ord variable
     =>  TermLike variable
     ->  TermLike variable
 externalizePattern =

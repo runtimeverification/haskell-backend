@@ -262,8 +262,8 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 makeExists
-    :: Ord (variable Object)
-    => variable Object
+    :: Ord variable
+    => variable
     -> [Pattern Object variable]
     -> Exists Object variable (OrPattern Object variable)
 makeExists variable patterns =
@@ -293,7 +293,7 @@ simplify tools exists =
 
 makeEvaluate
     :: SmtMetadataTools StepperAttributes
-    -> Variable Object
+    -> Variable
     -> Pattern Object Variable
     -> IO (OrPattern Object Variable)
 makeEvaluate tools variable child =

@@ -378,9 +378,9 @@ transitionRule
 {- | The predicate to remove the destination from the present configuration.
  -}
 removalPredicate
-    ::  ( Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => Pattern Object variable

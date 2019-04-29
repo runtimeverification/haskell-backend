@@ -65,17 +65,17 @@ fromPredicate :: Predicate Object variable -> Pattern Object variable
 fromPredicate = (<$) mkTop_
 
 freeVariables
-    :: Ord (variable Object)
+    :: Ord variable
     => Pattern Object variable
-    -> Set (variable Object)
+    -> Set variable
 freeVariables = Conditional.freeVariables TermLike.freeVariables
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an Pattern.
 -}
 mapVariables
-    :: Ord (variableTo Object)
-    => (variableFrom Object -> variableTo Object)
+    :: Ord variableTo
+    => (variableFrom -> variableTo)
     -> Pattern Object variableFrom
     -> Pattern Object variableTo
 mapVariables
@@ -93,9 +93,9 @@ mapVariables
 from an Pattern.
 -}
 allVariables
-    :: (Ord (variable Object), Unparse (variable Object))
+    :: (Ord variable, Unparse variable)
     => Pattern Object variable
-    -> Set.Set (variable Object)
+    -> Set.Set variable
 allVariables
     Conditional { term, predicate, substitution }
   =
@@ -124,9 +124,9 @@ important.
 toStepPattern
     ::  forall variable.
         ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , HasCallStack
         )
     => Pattern Object variable -> TermLike variable
@@ -156,9 +156,9 @@ toStepPattern
 toMLPattern
     ::  forall variable.
         ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , HasCallStack
         )
     => Pattern Object variable -> TermLike variable
@@ -167,7 +167,7 @@ toMLPattern = toStepPattern
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
 -}
-bottom :: Ord (variable Object) => Pattern Object variable
+bottom :: Ord variable => Pattern Object variable
 bottom =
     Conditional
         { term      = mkBottom_
@@ -180,7 +180,7 @@ bottom =
 The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
-bottomOf :: Ord (variable Object) => Sort -> Pattern Object variable
+bottomOf :: Ord variable => Sort -> Pattern Object variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
@@ -191,7 +191,7 @@ bottomOf resultSort =
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
-top :: Ord (variable Object) => Pattern Object variable
+top :: Ord variable => Pattern Object variable
 top =
     Conditional
         { term      = mkTop_
@@ -201,7 +201,7 @@ top =
 
 {- | An 'Pattern' where the 'term' is 'Top' of the given 'Sort'.
  -}
-topOf :: Ord (variable Object) => Sort -> Pattern Object variable
+topOf :: Ord variable => Sort -> Pattern Object variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
@@ -218,7 +218,7 @@ See also: 'makeTruePredicate', 'pure'
 
  -}
 fromTermLike
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> Pattern Object variable
 fromTermLike term
@@ -232,9 +232,9 @@ fromTermLike term
 
 toPredicate
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> Syntax.Predicate variable

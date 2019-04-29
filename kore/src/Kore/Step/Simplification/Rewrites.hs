@@ -30,9 +30,9 @@ TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Rewrites Object (OrPattern Object variable)
     ->  ( OrPattern Object variable
@@ -61,9 +61,9 @@ more useful to carry around.
 -}
 simplifyEvaluatedRewrites
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => OrPattern Object variable
     -> OrPattern Object variable
@@ -75,9 +75,9 @@ simplifyEvaluatedRewrites first second =
 
 makeEvaluateRewrites
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> Pattern Object variable

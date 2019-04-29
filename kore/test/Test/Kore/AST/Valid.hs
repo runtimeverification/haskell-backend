@@ -112,8 +112,8 @@ sortAgreementManySimplePatterns = do
             predicateSort
     assert1 ++ assert2 ++ assert3 ++ assert4
 
-var :: MetaOrObject level => Text -> Variable level
+var :: MetaOrObject level => Text -> Variable
 var x = Variable (noLocationId x) mempty (mkSort "S")
 
-var_ :: MetaOrObject level => Text -> Id -> Variable level
+var_ :: MetaOrObject level => Text -> Id -> Variable
 var_ x s = Variable (noLocationId x) mempty (mkSort s)

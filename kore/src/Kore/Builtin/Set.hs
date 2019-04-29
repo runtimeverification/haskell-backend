@@ -204,7 +204,7 @@ expectBuiltinSet ctx tools _set =
                 empty
 
 returnSet
-    :: (Monad m, Ord (variable Object))
+    :: (Monad m, Ord variable)
     => SmtMetadataTools attrs
     -> Sort
     -> Builtin
@@ -374,7 +374,7 @@ pattern.
 
  -}
 asInternal
-    :: Ord (variable Object)
+    :: Ord variable
     => SmtMetadataTools attrs
     -> Sort
     -> Builtin
@@ -397,7 +397,7 @@ asInternal tools builtinSetSort builtinSetChild =
 {- | Render an 'Domain.InternalSet' as a 'TermLike' domain value.
  -}
 asTermLike
-    :: Ord (variable Object)
+    :: Ord variable
     => Domain.InternalSet
     -> TermLike variable
 asTermLike builtin =
@@ -420,7 +420,7 @@ asTermLike builtin =
 
  -}
 asPattern
-    ::  ( Ord (variable Object)
+    ::  ( Ord variable
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort
@@ -504,9 +504,9 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
  -}
 unifyEquals
     :: forall level variable unifier unifierM p expanded proof.
-        ( OrdMetaOrObject variable, ShowMetaOrObject variable
-        , SortedVariable variable
-        , Unparse (variable level)
+        ( SortedVariable variable
+        , Unparse variable
+        , Show variable
         , MetaOrObject level
         , FreshVariable variable
         , p ~ TermLike variable
@@ -722,10 +722,10 @@ unifyEquals
 -- we choose to throw an error here.
 errorIfIncompletelyUnified
     ::  ( Monad m
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
         , SortedVariable variable
-        , Unparse (variable Object)
+        , Unparse variable
         , HasCallStack
         )
     => TermLike variable

@@ -20,7 +20,7 @@ Conventions used:
    an element which is the union of the two, the union is called 'Unified*'.
    As an example, if we have @⟨object-variable⟩@, @⟨meta-variable⟩@ and
    @⟨variable⟩ ::= ⟨object-variable⟩ | ⟨meta-variable⟩@, then we'll represent
-   the fist two by "Variable level" and the latter by "UnifiedVariable".
+   the fist two by "Variable" and the latter by "UnifiedVariable".
 
 3. Parsers called 'Raw' receive a constructor that constructs the element.
 
@@ -272,7 +272,7 @@ existsForallRemainderParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort -> Variable level -> child
+    -> (Sort -> Variable -> child
         -> m level Variable child)
     -- ^ Element constructor.
     -> Parser (m level Variable child)
@@ -413,7 +413,7 @@ variableRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Id  -- ^ The already parsed prefix.
-    -> Parser (Variable level)
+    -> Parser (Variable)
 variableRemainderParser x identifier = do
     colonParser
     sort <- sortParser x
@@ -437,7 +437,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 variableParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Variable level)
+    -> Parser (Variable)
 variableParser x = idParser x >>= variableRemainderParser x
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or

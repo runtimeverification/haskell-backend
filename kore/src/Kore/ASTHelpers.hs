@@ -124,7 +124,7 @@ wrapAndQuantify
     :: Functor domain
     => Sort
     -> CommonPurePattern level domain
-    -> Variable level
+    -> Variable
     -> CommonPurePattern level domain
 wrapAndQuantify s p var =
     asPurePattern
@@ -136,15 +136,15 @@ wrapAndQuantify s p var =
         )
 
 checkUnique
-    :: Set.Set (Variable level) -> Set.Set (Variable level)
+    :: Set.Set (Variable) -> Set.Set (Variable)
 checkUnique variables =
     case checkUniqueEither (Set.toList variables) Map.empty of
         Right _  -> variables
         Left err -> error err
 
 checkUniqueEither
-    :: [Variable level]
-    -> Map.Map Text (Variable level)
+    :: [Variable]
+    -> Map.Map Text (Variable)
     -> Either String ()
 checkUniqueEither [] _ = Right ()
 checkUniqueEither (var:vars) indexed =

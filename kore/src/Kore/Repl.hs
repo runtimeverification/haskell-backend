@@ -77,7 +77,7 @@ import           Kore.Unparser
 runRepl
     :: forall level claim
     .  MetaOrObject level
-    => Unparse (Variable level)
+    => Unparse (Variable)
     => Claim claim
     => SmtMetadataTools StepperAttributes
     -- ^ tools required for the proof

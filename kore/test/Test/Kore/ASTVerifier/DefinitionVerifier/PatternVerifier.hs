@@ -41,7 +41,7 @@ data TestPattern level = TestPattern
     , testPatternErrorStack :: !ErrorStack
     }
 
-newtype VariableOfDeclaredSort level = VariableOfDeclaredSort (Variable level)
+newtype VariableOfDeclaredSort level = VariableOfDeclaredSort (Variable)
 
 testPatternErrorStackStrings :: TestPattern level -> [String]
 testPatternErrorStackStrings
@@ -743,7 +743,7 @@ test_verifyBinder =
 
 dummyVariableAndSentences
     :: NamePrefix
-    -> (Variable Object, [Verified.Sentence])
+    -> (Variable, [Verified.Sentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
   where
@@ -1217,7 +1217,7 @@ patternInQuantifiedPatterns
     :: MetaOrObject level
     => Pattern level Domain.Builtin Variable (TermLike Variable)
     -> Sort
-    -> Variable level
+    -> Variable
     -> [TestPattern level]
 patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern

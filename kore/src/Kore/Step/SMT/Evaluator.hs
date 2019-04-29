@@ -49,9 +49,9 @@ decidePredicate
     :: forall level variable m.
         ( Given (SmtMetadataTools StepperAttributes)
         , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadSMT m
         )
@@ -79,9 +79,9 @@ decidePredicate korePredicate =
 
 goTranslatePredicate
     :: forall variable.
-        ( Ord (variable Object)
+        ( Ord variable
         , Given (SmtMetadataTools StepperAttributes)
-        , Unparse (variable Object)
+        , Unparse variable
         )
     => Predicate variable
     -> MaybeT SMT SExpr

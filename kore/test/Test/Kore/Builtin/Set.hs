@@ -220,7 +220,7 @@ test_size =
 setVariableGen
     :: MetaOrObject level
     => Sort
-    -> Gen (Set (Variable level))
+    -> Gen (Set (Variable))
 setVariableGen sort =
     Gen.set (Range.linear 0 32) (standaloneGen $ variableGen sort)
 
@@ -320,8 +320,8 @@ test_unifyFramingVariable =
 -- `SetItem(absInt(X:Int)) Rest:Set`, or
 -- `Rest:Set SetItem(absInt(X:Int))`, respectively.
 selectFunctionPattern
-    :: Variable Object          -- ^element variable
-    -> Variable Object          -- ^set variable
+    :: Variable          -- ^element variable
+    -> Variable          -- ^set variable
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectFunctionPattern elementVar setVar permutation  =
@@ -334,8 +334,8 @@ selectFunctionPattern elementVar setVar permutation  =
 -- @id@ or @reverse@, produces a pattern of the form
 -- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
 selectPattern
-    :: Variable Object          -- ^element variable
-    -> Variable Object          -- ^set variable
+    :: Variable          -- ^element variable
+    -> Variable          -- ^set variable
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectPattern elementVar setVar permutation  =

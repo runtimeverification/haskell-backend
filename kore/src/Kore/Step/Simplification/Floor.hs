@@ -40,9 +40,9 @@ floor(a and b) = floor(a) and floor(b).
 -}
 simplify
     ::  ( SortedVariable variable
-        , Unparse (variable Object)
-        , Show (variable Object)
-        , Ord (variable Object)
+        , Unparse variable
+        , Show variable
+        , Ord variable
         )
     => Floor Object (OrPattern Object variable)
     ->  ( OrPattern Object variable
@@ -68,9 +68,9 @@ carry around.
 -}
 simplifyEvaluatedFloor
     ::  ( SortedVariable variable
-        , Show (variable Object)
-        , Ord (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Ord variable
+        , Unparse variable
         )
     => OrPattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)
@@ -87,9 +87,9 @@ See 'simplify' for details.
 -}
 makeEvaluateFloor
     ::  ( SortedVariable variable
-        , Show (variable Object)
-        , Ord (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Ord variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)
@@ -103,9 +103,9 @@ makeEvaluateFloor child
 
 makeEvaluateNonBoolFloor
     ::  ( SortedVariable variable
-        , Show (variable Object)
-        , Ord (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Ord variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)

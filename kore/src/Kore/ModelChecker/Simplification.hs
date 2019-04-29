@@ -83,7 +83,7 @@ checkImplicationIsTop
 
 stripForallQuantifiers
     :: TermLike Variable
-    -> (Set.Set (Variable Object), TermLike Variable)
+    -> (Set.Set (Variable), TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

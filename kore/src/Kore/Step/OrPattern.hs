@@ -40,7 +40,7 @@ type OrPattern level variable = MultiOr (Pattern level variable)
 {- | A "disjunction" of one 'Pattern.Pattern'.
  -}
 fromPattern
-    :: Ord (variable Object)
+    :: Ord variable
     => Pattern Object variable
     -> OrPattern Object variable
 fromPattern = MultiOr.singleton
@@ -48,7 +48,7 @@ fromPattern = MultiOr.singleton
 {- | Disjoin a collection of patterns.
  -}
 fromPatterns
-    :: (Foldable f, Ord (variable Object))
+    :: (Foldable f, Ord variable)
     => f (Pattern Object variable)
     -> OrPattern Object variable
 fromPatterns = MultiOr.make . Foldable.toList
@@ -59,7 +59,7 @@ See also: 'fromPattern'
 
  -}
 fromTermLike
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> OrPattern Object variable
 fromTermLike = fromPattern . Pattern.fromTermLike
@@ -71,12 +71,12 @@ fromTermLike = fromPattern . Pattern.fromTermLike
 @
 
  -}
-bottom :: Ord (variable Object) => OrPattern Object variable
+bottom :: Ord variable => OrPattern Object variable
 bottom = fromPatterns []
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
 -}
-isFalse :: Ord (variable Object) => OrPattern Object variable -> Bool
+isFalse :: Ord variable => OrPattern Object variable -> Bool
 isFalse = isBottom
 
 {- | @\\top@
@@ -86,12 +86,12 @@ isFalse = isBottom
 @
 
  -}
-top :: Ord (variable Object) => OrPattern Object variable
+top :: Ord variable => OrPattern Object variable
 top = fromPattern Pattern.top
 
 {-| 'isTrue' checks if the 'Or' has a single top pattern.
 -}
-isTrue :: Ord (variable Object) => OrPattern Object variable -> Bool
+isTrue :: Ord variable => OrPattern Object variable -> Bool
 isTrue = isTop
 
 {-| 'toExpandedPattern' transforms an 'Pattern' into
@@ -99,9 +99,9 @@ an 'Pattern.Pattern'.
 -}
 toExpandedPattern
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => OrPattern Object variable -> Pattern Object variable
 toExpandedPattern multiOr
@@ -120,9 +120,9 @@ toExpandedPattern multiOr
 -}
 toTermLike
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => OrPattern Object variable -> TermLike variable
 toTermLike multiOr =

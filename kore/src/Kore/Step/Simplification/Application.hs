@@ -50,7 +50,7 @@ type ExpandedApplication level variable =
         variable
         (CofreeF
             (Application level)
-            (Valid (variable level) level)
+            (Valid variable level)
             (TermLike variable)
         )
 
@@ -66,11 +66,9 @@ then merging everything into an Pattern.
 -}
 simplify
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -82,7 +80,7 @@ simplify
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application level)
-        (Valid (variable level) level)
+        (Valid variable level)
         (OrPattern level variable)
     -> Simplifier
         ( OrPattern level variable
@@ -123,11 +121,9 @@ simplify
 
 makeAndEvaluateApplications
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -137,7 +133,7 @@ makeAndEvaluateApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid (variable level) level
+    -> Valid variable level
     -> SymbolOrAlias level
     -> [Pattern level variable]
     -> Simplifier
@@ -165,11 +161,9 @@ makeAndEvaluateApplications
 
 makeAndEvaluateSymbolApplications
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -179,7 +173,7 @@ makeAndEvaluateSymbolApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid (variable level) level
+    -> Valid variable level
     -> SymbolOrAlias level
     -> [Pattern level variable]
     -> Simplifier
@@ -213,11 +207,9 @@ makeAndEvaluateSymbolApplications
 
 evaluateApplicationFunction
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -249,11 +241,9 @@ evaluateApplicationFunction
 
 makeExpandedApplication
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -263,7 +253,7 @@ makeExpandedApplication
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid (variable level) level
+    -> Valid variable level
     -> SymbolOrAlias level
     -> [Pattern level variable]
     -> Simplifier

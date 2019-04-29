@@ -57,15 +57,14 @@ x = f(x) or something equivalent).
 -}
 normalizeSubstitution
     ::  forall m variable
-     .  ( Ord (variable Object)
-        , OrdMetaOrObject variable
+     .  ( Ord variable
         , Monad m
         , FreshVariable variable
         , SortedVariable variable
-        , Show (variable Object)
+        , Show variable
         )
     => SmtMetadataTools StepperAttributes
-    -> Map (variable Object) (TermLike variable)
+    -> Map variable (TermLike variable)
     -> ExceptT
         (SubstitutionError Object variable)
         m
@@ -74,16 +73,16 @@ normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
   where
-    interestingVariables :: Set (variable Object)
+    interestingVariables :: Set variable
     interestingVariables = Map.keysSet substitution
 
-    allDependencies :: Map (variable Object) (Set (variable Object))
+    allDependencies :: Map variable (Set variable)
     allDependencies =
         Map.mapWithKey
             (getDependencies interestingVariables)
             substitution
 
-    nonSimplifiableDependencies :: Map (variable Object) (Set (variable Object))
+    nonSimplifiableDependencies :: Map variable (Set variable)
     nonSimplifiableDependencies =
         Map.mapWithKey
             (getNonSimplifiableDependencies tools interestingVariables)
@@ -95,7 +94,7 @@ normalizeSubstitution tools substitution =
     topologicalSortConverted
         :: Either
             (SubstitutionError Object variable)
-            (Maybe [variable Object])
+            (Maybe [variable])
     topologicalSortConverted =
         case topologicalSort (Set.toList <$> allDependencies) of
             Left (ToplogicalSortCycles vars) ->
@@ -110,28 +109,28 @@ normalizeSubstitution tools substitution =
             topologicalSort (Set.toList <$> nonSimplifiableDependencies)
 
     sortedSubstitution
-        :: [variable Object]
-        -> [(variable Object, TermLike variable)]
+        :: [variable]
+        -> [(variable, TermLike variable)]
     sortedSubstitution = fmap (variableToSubstitution substitution)
 
     normalizeSortedSubstitution'
-        :: [variable Object]
+        :: [variable]
         -> m (Predicate Object variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
     maybeToBottom
-        :: Maybe [variable Object]
+        :: Maybe [variable]
         -> m (Predicate Object variable)
     maybeToBottom = maybe
         (return Predicate.bottom)
         normalizeSortedSubstitution'
 
 variableToSubstitution
-    :: (Ord (variable level), Show (variable level))
-    => Map (variable level) (TermLike variable)
-    -> variable level
-    -> (variable level, TermLike variable)
+    :: (Ord variable, Show variable)
+    => Map variable (TermLike variable)
+    -> variable
+    -> (variable, TermLike variable)
 variableToSubstitution varToPattern var =
     case Map.lookup var varToPattern of
         Just patt -> (var, patt)
@@ -139,15 +138,14 @@ variableToSubstitution varToPattern var =
 
 normalizeSortedSubstitution
     ::  ( MetaOrObject level
-        , OrdMetaOrObject variable
-        , Ord (variable level)
+        , Ord variable
         , Monad m
         , FreshVariable variable
         , SortedVariable variable
         )
-    => [(variable level, TermLike variable)]
-    -> [(variable level, TermLike variable)]
-    -> [(variable level, TermLike variable)]
+    => [(variable, TermLike variable)]
+    -> [(variable, TermLike variable)]
+    -> [(variable, TermLike variable)]
     -> m (Predicate level variable)
 normalizeSortedSubstitution [] result _ =
     return Conditional
@@ -181,12 +179,12 @@ normalizeSortedSubstitution
  -}
 getDependencies
     ::  ( MetaOrObject level
-        , Ord (variable level)
+        , Ord variable
         )
-    => Set (variable level)  -- ^ interesting variables
-    -> variable level  -- ^ substitution variable
+    => Set variable  -- ^ interesting variables
+    -> variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
-    -> Set (variable level)
+    -> Set variable
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
         VariablePattern v | v == var -> Set.empty
@@ -203,14 +201,14 @@ getDependencies interesting var (Recursive.project -> valid :< patternHead) =
  -}
 getNonSimplifiableDependencies
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
+        , Ord variable
+        , Show variable
         )
     => SmtMetadataTools StepperAttributes
-    -> Set (variable level)  -- ^ interesting variables
-    -> variable level  -- ^ substitution variable
+    -> Set variable  -- ^ interesting variables
+    -> variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
-    -> Set (variable level)
+    -> Set variable
 getNonSimplifiableDependencies
     tools interesting var p@(Recursive.project -> _ :< h)
   =
@@ -220,11 +218,11 @@ getNonSimplifiableDependencies
 
 nonSimplifiableAbove
     :: forall variable level .
-        (MetaOrObject level, Ord (variable level), Show (variable level))
+        (MetaOrObject level, Ord variable, Show variable)
     => SmtMetadataTools StepperAttributes
-    -> Set (variable level)
-    -> Base (TermLike variable) (Set (variable level))
-    -> Set (variable level)
+    -> Set variable
+    -> Base (TermLike variable) (Set variable)
+    -> Set variable
 nonSimplifiableAbove tools interesting p =
     case Cofree.tailF p of
         VariablePattern v ->
@@ -237,5 +235,5 @@ nonSimplifiableAbove tools interesting p =
                 else Set.empty
         _ -> dependencies
   where
-    dependencies :: Set (variable level)
+    dependencies :: Set variable
     dependencies = foldl Set.union Set.empty p

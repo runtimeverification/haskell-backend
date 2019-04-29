@@ -65,11 +65,9 @@ import           Kore.Variables.Fresh
 evaluateApplication
     ::  forall level variable.
         ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -85,7 +83,7 @@ evaluateApplication
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
         (Application level)
-        (Valid (variable level) level)
+        (Valid variable level)
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier
@@ -147,11 +145,9 @@ evaluateApplication
 evaluatePattern
     ::  forall level variable .
         ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -199,11 +195,9 @@ Returns Nothing if there is no axiom for the pattern's identifier.
 maybeEvaluatePattern
     ::  forall level variable .
         ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -314,7 +308,7 @@ maybeEvaluatePattern
                     toSimplify
 
 evaluateSortInjection
-    :: (MetaOrObject level, Ord (variable level))
+    :: (MetaOrObject level, Ord variable)
     => SmtMetadataTools StepperAttributes
     -> Application level (TermLike variable)
     ->  ( Application level (TermLike variable)
@@ -357,11 +351,9 @@ was evaluated.
 reevaluateFunctions
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -416,11 +408,9 @@ reevaluateFunctions
 -}
 mergeWithConditionAndSubstitution
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )

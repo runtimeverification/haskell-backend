@@ -23,7 +23,7 @@ import           Kore.Step.Simplification.Data
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
 simplify
-    :: Ord (variable Object)
+    :: Ord variable
     => Bottom Object child
     -> (OrPattern Object variable, SimplificationProof Object)
 simplify Bottom {} = (OrPattern.bottom, SimplificationProof)

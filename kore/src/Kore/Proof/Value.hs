@@ -73,11 +73,11 @@ instance Show1 (ValueF level) where
     liftShowsPrec = $(Deriving.makeLiftShowsPrec ''ValueF)
 
 newtype Value (level :: *) =
-    Value { getValue :: Cofree (ValueF level) (Valid (Concrete level) level) }
+    Value { getValue :: Cofree (ValueF level) (Valid Concrete level) }
     deriving (Eq, Generic, Ord, Show)
 
 type instance Base (Value level) =
-    CofreeF (ValueF level) (Valid (Concrete level) level)
+    CofreeF (ValueF level) (Valid Concrete level)
 
 instance Recursive (Value level) where
     project (Value embedded) =

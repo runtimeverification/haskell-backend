@@ -618,7 +618,7 @@ parseString parser lit =
   See also: 'Pattern'
  -}
 appliedFunction
-    :: (Monad m, Ord (variable level), level ~ Object)
+    :: (Monad m, Ord variable, level ~ Object)
     => Pattern level variable
     -> m (AttemptedAxiom level variable)
 appliedFunction epat =
@@ -645,7 +645,7 @@ unaryOperator
         )
     -- ^ Parse operand
     ->  (   forall variable.
-            Ord (variable Object)
+            Ord variable
         => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
@@ -665,7 +665,7 @@ unaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
-        :: (Ord (variable level), level ~ Object)
+        :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
         -> Sort
@@ -698,7 +698,7 @@ binaryOperator
         -> a
         )
     -- ^ Extract domain value
-    ->  (  forall variable . Ord (variable Object)
+    ->  (  forall variable . Ord variable
         => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
@@ -718,7 +718,7 @@ binaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
-        :: (Ord (variable level), level ~ Object)
+        :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
         -> Sort
@@ -751,7 +751,7 @@ ternaryOperator
         -> a
         )
     -- ^ Extract domain value
-    ->  (  forall variable. Ord (variable Object)
+    ->  (  forall variable. Ord variable
         => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
@@ -771,7 +771,7 @@ ternaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
-        :: (Ord (variable level), level ~ Object)
+        :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
         -> Sort
@@ -788,7 +788,7 @@ ternaryOperator
 
 type FunctionImplementation
     = forall variable
-        .  Ord (variable Object)
+        .  Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
         -> Sort
@@ -800,14 +800,14 @@ functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: (Ord (variable Object), Show (variable Object))
+        :: (Ord variable, Show variable)
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier level
         -> TermLikeSimplifier Object
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
             (Application Object)
-            (Valid (variable Object) Object)
+            (Valid variable Object)
             (TermLike variable)
         -> Simplifier
             ( AttemptedAxiom Object variable
@@ -952,10 +952,10 @@ getAttemptedAxiom attempt =
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
     ::  ( Monad m
-        , Ord (variable level)
+        , Ord variable
         , SortedVariable variable
-        , Show (variable level)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , level ~ Object
         , expanded ~ Pattern level variable
         , patt ~ TermLike variable

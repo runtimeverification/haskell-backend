@@ -202,7 +202,7 @@ rewritesTo left right =
     like `rewriteStep`.
 -}
 
-v1, a1, b1, x1 :: Sort -> Variable Meta
+v1, a1, b1, x1 :: Sort -> Variable
 v1 = Variable (testId "#v1") mempty
 a1 = Variable (testId "#a1") mempty
 b1 = Variable (testId "#b1") mempty

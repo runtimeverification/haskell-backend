@@ -222,18 +222,18 @@ test_applicationSimplification =
                     zvar
                         :: forall variable
                         .   ( FreshVariable variable
-                            , Ord (variable Object)
+                            , Ord variable
                             , SortedVariable variable
                             )
-                        => variable Object
+                        => variable
                     zvar = fromVariable z'
                     result
                         :: forall variable
                         .   ( FreshVariable variable
-                            , Ord (variable Object)
-                            , Show (variable Object)
+                            , Ord variable
+                            , Show variable
                             , SortedVariable variable
-                            , Unparse (variable Object)
+                            , Unparse variable
                             )
                         => AttemptedAxiom Object variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
@@ -284,11 +284,11 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB :: Ord (variable Object) => TermLike variable
+    fOfA, fOfB :: Ord variable => TermLike variable
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
 
-    gOfA, gOfB :: Ord (variable Object) => TermLike variable
+    gOfA, gOfB :: Ord variable => TermLike variable
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
 
@@ -313,7 +313,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: Ord (variable Object) => Pattern Object variable
+    gOfAExpanded :: Ord variable => Pattern Object variable
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
@@ -342,13 +342,13 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: (Ord (variable Object), Show (variable Object), HasCallStack)
+    :: (Ord variable, Show variable, HasCallStack)
     => Sort
     -> SymbolOrAlias Object
     -> [[Pattern Object variable]]
     -> CofreeF
         (Application Object)
-        (Valid (variable Object) Object)
+        (Valid variable Object)
         (OrPattern Object variable)
 makeApplication patternSort symbol patterns =
     (:<)
@@ -375,7 +375,7 @@ evaluate
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application level)
-        (Valid (Variable level) level)
+        (Valid Variable level)
         (OrPattern level Variable)
     -> IO (OrPattern level Variable)
 evaluate

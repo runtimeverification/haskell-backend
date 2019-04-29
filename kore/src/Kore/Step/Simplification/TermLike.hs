@@ -81,11 +81,9 @@ import           Kore.Variables.Fresh
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Show variable
+        , Ord variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -108,11 +106,9 @@ simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
 simplifyToOr
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Show variable
+        , Ord variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -138,11 +134,9 @@ simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
 simplifyInternal
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Show variable
+        , Ord variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes

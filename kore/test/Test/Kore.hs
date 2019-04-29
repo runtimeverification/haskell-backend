@@ -66,7 +66,7 @@ import           Kore.Step.TermLike as TermLike
  -}
 data Context =
     Context
-        { objectVariables :: ![Variable Object]
+        { objectVariables :: ![Variable]
         , objectSortVariables :: ![SortVariable]
         }
 
@@ -83,17 +83,15 @@ standaloneGen generator =
 
 addVariable
     :: MetaOrObject level
-    => Variable level
+    => Variable
     -> Context
     -> Context
-addVariable var =
-    case isMetaOrObject var of
-        IsObject -> \ctx@Context { objectVariables } ->
-            ctx { objectVariables = var : objectVariables }
+addVariable var ctx@Context { objectVariables } =
+    ctx { objectVariables = var : objectVariables }
 
 addVariables
     :: MetaOrObject level
-    => [Variable level]
+    => [Variable]
     -> Context
     -> Context
 addVariables vars = \ctx -> foldr addVariable ctx vars
@@ -224,13 +222,13 @@ sortGen =
 moduleNameGen :: MonadGen m => m ModuleName
 moduleNameGen = ModuleName <$> objectIdGen
 
-variableGen :: Sort -> Gen (Variable Object)
+variableGen :: Sort -> Gen (Variable)
 variableGen patternSort = do
     Context { objectVariables } <- Reader.ask
     variableGenWorker objectVariables
   where
     bySort Variable { variableSort } = variableSort == patternSort
-    variableGenWorker :: [Variable Object] -> Gen (Variable Object)
+    variableGenWorker :: [Variable] -> Gen (Variable)
     variableGenWorker variables =
         case filter bySort variables of
             [] -> freshVariable
@@ -286,7 +284,7 @@ equalsInGen constructor childGen resultSort = do
 
 existsForallGen
     :: MetaOrObject level
-    => (Sort -> Variable level -> child -> q level Variable child)
+    => (Sort -> Variable -> child -> q level Variable child)
     -> (Sort -> Gen child)
     -> Sort
     -> Gen (q level Variable child)

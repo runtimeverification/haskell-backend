@@ -5,20 +5,19 @@ import Test.Tasty.HUnit
 
 import qualified Data.Set as Set
 
-import Kore.AST.MetaOrObject
 import Kore.Sort
 import Kore.Variables.Fresh
 
 import Test.Kore
 
-metaVariable :: Variable Meta
+metaVariable :: Variable
 metaVariable = Variable
     { variableName = testId "#v"
     , variableCounter = mempty
     , variableSort = SortVariableSort (SortVariable (testId "#s"))
     }
 
-metaVariableDifferentSort :: Variable Meta
+metaVariableDifferentSort :: Variable
 metaVariableDifferentSort = Variable
     { variableName = testId "#v"
     , variableCounter = mempty

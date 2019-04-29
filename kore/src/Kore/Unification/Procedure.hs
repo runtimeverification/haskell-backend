@@ -54,11 +54,9 @@ import           Kore.Variables.Fresh
 -- If failing, it gives a 'UnificationError' reason for the failure.
 unificationProcedure
     ::  ( SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , MetaOrObject level
         , FreshVariable variable
         , MonadUnify unifierM

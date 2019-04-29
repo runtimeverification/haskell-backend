@@ -72,9 +72,8 @@ normalize
     :: forall variable term
     .   ( FreshVariable variable
         , SortedVariable variable
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Unparse (variable Object)
+        , Unparse variable
+        , Show variable
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
@@ -117,11 +116,9 @@ normalize
 
 normalizeExcept
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
         , MonadUnify unifierM
@@ -192,13 +189,11 @@ predicates and redo the merge.
 hs-boot: Please remember to update the hs-boot file when changing the signature.
 -}
 mergePredicatesAndSubstitutions
-    :: ( Show (variable level)
-       , Unparse (variable level)
+    :: ( Show variable
+       , Unparse variable
        , SortedVariable variable
        , MetaOrObject level
-       , Ord (variable level)
-       , OrdMetaOrObject variable
-       , ShowMetaOrObject variable
+       , Ord variable
        , FreshVariable variable
        )
     => SmtMetadataTools StepperAttributes
@@ -247,13 +242,11 @@ mergePredicatesAndSubstitutions
         Right r -> return r
 
 mergePredicatesAndSubstitutionsExcept
-    ::  ( Show (variable level)
+    ::  ( Show variable
         , SortedVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Unparse variable
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -304,13 +297,11 @@ can't handle.
 -}
 createPredicatesAndSubstitutionsMergerExcept
     :: forall level variable unifier unifierM .
-        ( Show (variable level)
-        , Unparse (variable level)
+        ( Show variable
+        , Unparse variable
         , SortedVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -344,13 +335,11 @@ unifications it can't handle.
 -}
 createPredicatesAndSubstitutionsMerger
     :: forall level variable .
-        ( Show (variable level)
-        , Unparse (variable level)
+        ( Show variable
+        , Unparse variable
         , SortedVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -383,13 +372,11 @@ over the base monad.
 -}
 createLiftedPredicatesAndSubstitutionsMerger
     :: forall level variable unifier unifierM .
-        ( Show (variable level)
-        , Unparse (variable level)
+        ( Show variable
+        , Unparse variable
         , SortedVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -420,11 +407,9 @@ createLiftedPredicatesAndSubstitutionsMerger
 
 normalizeSubstitutionAfterMerge
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
         , HasCallStack

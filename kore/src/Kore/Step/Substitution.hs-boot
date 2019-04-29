@@ -26,13 +26,11 @@ import           Kore.Variables.Fresh
                  ( FreshVariable )
 
 mergePredicatesAndSubstitutionsExcept
-    ::  ( Show (variable level)
+    ::  ( Show variable
         , SortedVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Unparse variable
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable

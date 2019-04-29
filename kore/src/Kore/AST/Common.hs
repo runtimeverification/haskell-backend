@@ -1,6 +1,3 @@
-{-# LANGUAGE EmptyDataDeriving #-}
-{-# LANGUAGE TemplateHaskell   #-}
-
 {-|
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -16,6 +13,9 @@ an AST term in a single data type (e.g. 'UnifiedSort' that can be either
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
+
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.AST.Common where
 
 import           Control.DeepSeq
@@ -118,36 +118,17 @@ unparseSymbolOrAliasNoSortParams
   = unparse2 symbolOrAliasConstructor
 
 -- |Wrapper for set variables
-newtype SetVariable variable level
-    = SetVariable { getVariable :: variable level }
+newtype SetVariable variable
+    = SetVariable { getVariable :: variable }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (variable level) => Hashable (SetVariable variable level)
+instance Hashable variable => Hashable (SetVariable variable)
 
-instance NFData (variable level) => NFData (SetVariable variable level)
+instance NFData variable => NFData (SetVariable variable)
 
-instance Unparse (variable level) => Unparse (SetVariable variable level) where
+instance Unparse variable => Unparse (SetVariable variable) where
     unparse = unparse . getVariable
     unparse2 = unparse2 . getVariable  -- TOFIX: print with a leading "#"
-
-{- | @Concrete level@ is a variable occuring in a concrete pattern.
-
-    Concrete patterns do not contain variables, so this is an uninhabited type
-    (it has no constructors).
-
-    See also: 'Data.Void.Void'
-
- -}
-data Concrete level
-    deriving (Eq, Generic, Ord, Read, Show)
-
-instance Hashable (Concrete level)
-
-instance NFData (Concrete level)
-
-instance Unparse (Concrete level) where
-    unparse = \case {}
-    unparse2 = \case {}
 
 {-|Enumeration of patterns starting with @\@
 -}
@@ -557,40 +538,40 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the '∃existsVariable(existsChild)' Matching Logic construct.
 -}
-data Exists level v child = Exists
+data Exists level variable child = Exists
     { existsSort     :: !Sort
-    , existsVariable :: !(v level)
+    , existsVariable :: !variable
     , existsChild    :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
 $newDefinitionGroup
 
-instance Eq (var lvl) => Eq1 (Exists lvl var) where
+instance Eq variable => Eq1 (Exists lvl variable) where
     liftEq = $(makeLiftEq ''Exists)
 
-instance Ord (var lvl) => Ord1 (Exists lvl var) where
+instance Ord variable => Ord1 (Exists lvl variable) where
     liftCompare = $(makeLiftCompare ''Exists)
 
-instance Show (var lvl) => Show1 (Exists lvl var) where
+instance Show variable => Show1 (Exists lvl variable) where
     liftShowsPrec = $(makeLiftShowsPrec ''Exists)
 
-instance (Eq child, Eq (var lvl)) => Eq (Exists lvl var child) where
+instance (Eq child, Eq variable) => Eq (Exists lvl variable child) where
     (==) = eq1
 
-instance (Ord child, Ord (var lvl)) => Ord (Exists lvl var child) where
+instance (Ord child, Ord variable) => Ord (Exists lvl variable child) where
     compare = compare1
 
-instance (Show child, Show (var lvl)) => Show (Exists lvl var child) where
+instance (Show child, Show variable) => Show (Exists lvl variable child) where
     showsPrec = showsPrec1
 
-instance (Hashable child, Hashable (var lvl)) => Hashable (Exists lvl var child)
+instance (Hashable child, Hashable variable) => Hashable (Exists lvl variable child)
 
-instance (NFData child, NFData (var lvl)) => NFData (Exists lvl var child)
+instance (NFData child, NFData variable) => NFData (Exists lvl variable child)
 
 instance
     ( Unparse child
-    , Unparse (variable level)
+    , Unparse variable
     ) =>
     Unparse (Exists level variable child)
   where
@@ -670,40 +651,40 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the '∀forallVariable(forallChild)' Matching Logic construct.
 -}
-data Forall level v child = Forall
+data Forall level variable child = Forall
     { forallSort     :: !Sort
-    , forallVariable :: !(v level)
+    , forallVariable :: !variable
     , forallChild    :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
 $newDefinitionGroup
 
-instance Eq (var lvl) => Eq1 (Forall lvl var) where
+instance Eq variable => Eq1 (Forall lvl variable) where
     liftEq = $(makeLiftEq ''Forall)
 
-instance Ord (var lvl) => Ord1 (Forall lvl var) where
+instance Ord variable => Ord1 (Forall lvl variable) where
     liftCompare = $(makeLiftCompare ''Forall)
 
-instance Show (var lvl) => Show1 (Forall lvl var) where
+instance Show variable => Show1 (Forall lvl variable) where
     liftShowsPrec = $(makeLiftShowsPrec ''Forall)
 
-instance (Eq child, Eq (var lvl)) => Eq (Forall lvl var child) where
+instance (Eq child, Eq variable) => Eq (Forall lvl variable child) where
     (==) = eq1
 
-instance (Ord child, Ord (var lvl)) => Ord (Forall lvl var child) where
+instance (Ord child, Ord variable) => Ord (Forall lvl variable child) where
     compare = compare1
 
-instance (Show child, Show (var lvl)) => Show (Forall lvl var child) where
+instance (Show child, Show variable) => Show (Forall lvl variable child) where
     showsPrec = showsPrec1
 
-instance (Hashable child, Hashable (var lvl)) => Hashable (Forall lvl var child)
+instance (Hashable child, Hashable variable) => Hashable (Forall lvl variable child)
 
-instance (NFData child, NFData (var lvl)) => NFData (Forall lvl var child)
+instance (NFData child, NFData variable) => NFData (Forall lvl variable child)
 
 instance
     ( Unparse child
-    , Unparse (variable level)
+    , Unparse variable
     ) =>
     Unparse (Forall level variable child)
   where
@@ -1201,29 +1182,29 @@ data Pattern level domain variable child where
     TopPattern
         :: !(Top level child) -> Pattern level domain variable child
     VariablePattern
-        :: !(variable level) -> Pattern level domain variable child
+        :: !variable -> Pattern level domain variable child
     InhabitantPattern
         :: !Sort -> Pattern level domain variable child
     SetVariablePattern
-        :: !(SetVariable variable level) -> Pattern level domain variable child
+        :: !(SetVariable variable) -> Pattern level domain variable child
 
 $newDefinitionGroup
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
 instance
-    (Eq (variable level), Eq1 domain) =>
+    (Eq variable, Eq1 domain) =>
     Eq1 (Pattern level domain variable)
   where
     liftEq = $(makeLiftEq ''Pattern)
 
 instance
-    (Ord (variable level), Ord1 domain) =>
+    (Ord variable, Ord1 domain) =>
     Ord1 (Pattern level domain variable)
   where
     liftCompare = $(makeLiftCompare ''Pattern)
 
 instance
-    (Show (variable level), Show1 domain) =>
+    (Show variable, Show1 domain) =>
     Show1 (Pattern level domain variable)
   where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
@@ -1232,32 +1213,32 @@ deriving instance Generic (Pattern level domain variable child)
 
 instance
     ( Hashable child
-    , Hashable (variable level)
+    , Hashable variable
     , Hashable (domain child)
     ) =>
     Hashable (Pattern level domain variable child)
 
 instance
     ( NFData child
-    , NFData (var level)
+    , NFData variable
     , NFData (domain child)
     ) =>
-    NFData (Pattern level domain var child)
+    NFData (Pattern level domain variable child)
 
 instance
-    (Eq child, Eq (variable level), Eq1 domain) =>
+    (Eq child, Eq variable, Eq1 domain) =>
     Eq (Pattern level domain variable child)
   where
     (==) = eq1
 
 instance
-    (Ord child, Ord (variable level), Ord1 domain) =>
+    (Ord child, Ord variable, Ord1 domain) =>
     Ord (Pattern level domain variable child)
   where
     compare = compare1
 
 instance
-    (Show child, Show (variable level), Show1 domain) =>
+    (Show child, Show variable, Show1 domain) =>
     Show (Pattern level domain variable child)
   where
     showsPrec = showsPrec1
@@ -1272,7 +1253,7 @@ deriving instance
 instance
     ( Unparse child
     , Unparse (domain child)
-    , Unparse (variable level)
+    , Unparse variable
     ) =>
     Unparse (Pattern level domain variable child)
   where
@@ -1347,7 +1328,7 @@ not injective!
 
 -}
 mapVariables
-    :: (variable1 level -> variable2 level)
+    :: (variable1 -> variable2)
     -> Pattern level domain variable1 child
     -> Pattern level domain variable2 child
 mapVariables mapping =
@@ -1362,7 +1343,7 @@ traversal is not injective!
 -}
 traverseVariables
     :: Applicative f
-    => (variable1 level -> f (variable2 level))
+    => (variable1 -> f variable2)
     -> Pattern level domain variable1 child
     -> f (Pattern level domain variable2 child)
 traverseVariables traversing =

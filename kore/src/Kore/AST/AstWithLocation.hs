@@ -60,7 +60,7 @@ instance AstWithLocation Sort where
     updateAstLocation (SortActualSort sortActual) loc =
         SortActualSort (updateAstLocation sortActual loc)
 
-instance AstWithLocation (Variable level) where
+instance AstWithLocation Variable where
     locationFromAst = locationFromAst . variableName
     updateAstLocation var loc =
         var {variableName = updateAstLocation (variableName var) loc}
@@ -84,7 +84,7 @@ instance AstWithLocation (Symbol level) where
         s { symbolConstructor = updateAstLocation (symbolConstructor s) loc }
 
 instance
-    (Domain domain, AstWithLocation (variable level)) =>
+    (Domain domain, AstWithLocation variable) =>
     AstWithLocation (Pattern level domain variable child)
   where
     locationFromAst =

@@ -71,11 +71,9 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 -}
 simplify
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -112,7 +110,7 @@ take an argument of type
 
 > CofreeF (Exists level) (Valid level) (OrPattern level variable)
 
-instead of a 'variable level' and an 'OrPattern' argument. The type of
+instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
@@ -120,11 +118,9 @@ more useful to carry around.
 -}
 simplifyEvaluated
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -134,7 +130,7 @@ simplifyEvaluated
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> variable level
+    -> variable
     -> OrPattern level variable
     -> Simplifier
         (OrPattern level variable, SimplificationProof level)
@@ -168,11 +164,9 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluate
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -182,7 +176,7 @@ makeEvaluate
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> variable level
+    -> variable
     -> Pattern level variable
     -> Simplifier
         (OrPattern level variable, SimplificationProof level)
@@ -234,11 +228,9 @@ See also: 'quantifyPattern'
  -}
 makeEvaluateBoundLeft
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -248,7 +240,7 @@ makeEvaluateBoundLeft
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> variable level  -- ^ quantified variable
+    -> variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern level variable
     -> BranchT Simplifier (Pattern level variable)
@@ -293,12 +285,12 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundRight
-    ::  ( Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
-    => variable Object  -- ^ variable to be quantified
+    => variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern Object variable  -- ^ pattern to quantify
     -> BranchT Simplifier (Pattern Object variable)
@@ -329,8 +321,8 @@ The result is a pair of:
 
  -}
 splitSubstitution
-    :: (HasCallStack, Ord (variable Object))
-    => variable Object
+    :: (HasCallStack, Ord variable)
+    => variable
     -> Substitution variable
     ->  ( Either (TermLike variable) (Substitution variable)
         , Substitution variable
@@ -352,12 +344,12 @@ is lowered onto the 'term' or 'predicate' alone, or omitted, if possible.
 
  -}
 quantifyPattern
-    ::  ( Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
-    => variable Object
+    => variable
     -> Pattern Object variable
     -> Pattern Object variable
 quantifyPattern variable Conditional { term, predicate, substitution }

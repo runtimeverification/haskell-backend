@@ -283,11 +283,9 @@ newtype TermLikeSimplifier level =
         ( forall variable
         .   ( FreshVariable variable
             , MetaOrObject level
-            , Ord (variable level)
-            , OrdMetaOrObject variable
-            , Show (variable level)
-            , ShowMetaOrObject variable
-            , Unparse (variable level)
+            , Ord variable
+            , Show variable
+            , Unparse variable
             , SortedVariable variable
             )
         => PredicateSimplifier level
@@ -304,9 +302,9 @@ The pattern is considered as an isolated term without extra initial conditions.
 simplifyTerm
     :: forall variable
     .   ( FreshVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => TermLikeSimplifier Object
@@ -334,9 +332,9 @@ simplifyTerm
 simplifyConditionalTerm
     :: forall variable
     .   ( FreshVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => TermLikeSimplifier Object
@@ -355,9 +353,9 @@ simplification, but only attaches it unmodified to the final result.
 termLikeSimplifier
     ::  ( forall variable
         .   ( FreshVariable variable
-            , Ord (variable Object)
-            , Show (variable Object)
-            , Unparse (variable Object)
+            , Ord variable
+            , Show variable
+            , Unparse variable
             , SortedVariable variable
             )
         => PredicateSimplifier Object
@@ -374,9 +372,9 @@ termLikeSimplifier simplifier =
     termLikeSimplifierWorker
         :: forall variable
         .   ( FreshVariable variable
-            , Ord (variable Object)
-            , Show (variable Object)
-            , Unparse (variable Object)
+            , Ord variable
+            , Show variable
+            , Unparse variable
             , SortedVariable variable
             )
         => PredicateSimplifier Object
@@ -404,11 +402,9 @@ newtype PredicateSimplifier level =
             ::  forall variable
             .   ( FreshVariable variable
                 , MetaOrObject level
-                , Ord (variable level)
-                , OrdMetaOrObject variable
-                , Show (variable level)
-                , ShowMetaOrObject variable
-                , Unparse (variable level)
+                , Ord variable
+                , Show variable
+                , Unparse variable
                 , SortedVariable variable
                 )
             => Predicate level variable

@@ -90,7 +90,7 @@ tree. @PurePattern@ is a 'Traversable' 'Comonad' over the type of annotations.
 newtype PurePattern
     (level :: *)
     (domain :: * -> *)
-    (variable :: * -> *)
+    (variable :: *)
     (annotation :: *)
   =
     PurePattern
@@ -99,7 +99,7 @@ newtype PurePattern
 
 instance
     ( Eq level
-    , Eq (variable level)
+    , Eq variable
     , Eq1 domain, Functor domain
     ) =>
     Eq (PurePattern level domain variable annotation)
@@ -115,7 +115,7 @@ instance
 
 instance
     ( Ord level
-    , Ord (variable level)
+    , Ord variable
     , Ord1 domain, Functor domain
     ) =>
     Ord (PurePattern level domain variable annotation)
@@ -131,7 +131,7 @@ instance
 
 deriving instance
     ( Show annotation
-    , Show (variable level)
+    , Show variable
     , Show1 domain
     , child ~ Cofree (Pattern level domain variable) annotation
     ) =>
@@ -139,7 +139,7 @@ deriving instance
 
 instance
     ( Functor domain
-    , Hashable (variable level)
+    , Hashable variable
     , Hashable (domain child)
     , child ~ PurePattern level domain variable annotation
     ) =>
@@ -151,7 +151,7 @@ instance
 instance
     ( Functor domain
     , NFData annotation
-    , NFData (variable level)
+    , NFData variable
     , NFData (domain child)
     , child ~ PurePattern level domain variable annotation
     ) =>
@@ -162,7 +162,7 @@ instance
 
 instance
     ( Functor domain
-    , Unparse (variable level)
+    , Unparse variable
     , Unparse (domain self)
     , self ~ PurePattern level domain variable annotation
     ) =>
@@ -329,7 +329,7 @@ type CommonPurePattern level domain =
 
 -- | A concrete pure pattern (containing no variables) at level @level@.
 type ConcretePurePattern level domain =
-    PurePattern level domain Concrete (Valid (Concrete level) level)
+    PurePattern level domain Concrete (Valid Concrete level)
 
 -- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
 type ParsedPurePattern level domain =
@@ -337,7 +337,7 @@ type ParsedPurePattern level domain =
 
 -- | A pure pattern which has been parsed and verified.
 type VerifiedPurePattern level domain =
-    PurePattern level domain Variable (Valid (Variable level) level)
+    PurePattern level domain Variable (Valid Variable level)
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 
@@ -352,7 +352,7 @@ See also: 'mapVariables'
 traverseVariables
     ::  forall m level variable1 variable2 domain annotation.
         (Monad m, Traversable domain)
-    => (variable1 level -> m (variable2 level))
+    => (variable1 -> m variable2)
     -> PurePattern level domain variable1 annotation
     -> m (PurePattern level domain variable2 annotation)
 traverseVariables traversing =
@@ -379,7 +379,7 @@ See also: 'traverseVariables'
  -}
 mapVariables
     :: Functor domain
-    => (variable1 level -> variable2 level)
+    => (variable1 -> variable2)
     -> PurePattern level domain variable1 annotation
     -> PurePattern level domain variable2 annotation
 mapVariables mapping =

@@ -8,7 +8,7 @@ import Test.Kore
 objectSort :: Sort
 objectSort = SortVariableSort (SortVariable (testId "s"))
 
-objectVariable :: Variable Object
+objectVariable :: Variable
 objectVariable = Variable
     { variableName = testId "v"
     , variableSort = objectSort
@@ -25,7 +25,7 @@ objectVariableUnifiedPattern = asParsedPattern objectVariablePattern
 metaSort :: Sort
 metaSort = SortVariableSort (SortVariable (testId "#s"))
 
-metaVariable :: Variable Meta
+metaVariable :: Variable
 metaVariable = Variable
     { variableName = testId "#v"
     , variableSort = metaSort

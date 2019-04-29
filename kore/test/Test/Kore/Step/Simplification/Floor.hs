@@ -157,7 +157,7 @@ test_floorSimplification =
         }
 
 makeFloor
-    :: Ord (variable Object)
+    :: Ord variable
     => [Pattern Object variable]
     -> Floor Object (OrPattern Object variable)
 makeFloor patterns =

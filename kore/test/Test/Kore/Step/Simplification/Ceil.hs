@@ -501,7 +501,7 @@ mapVariables
     ::  ( FreshVariable variable
         , SortedVariable variable
         , MetaOrObject level
-        , Ord (variable level)
+        , Ord variable
         )
     => Pattern Object Variable
     -> Pattern level variable
@@ -510,7 +510,7 @@ mapVariables =
         fromVariable v { variableCounter = Just (Sup.Element 1) }
 
 makeCeil
-    :: Ord (variable Object)
+    :: Ord variable
     => [Pattern Object variable]
     -> Ceil Object (OrPattern Object variable)
 makeCeil patterns =

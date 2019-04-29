@@ -56,11 +56,9 @@ equalityRuleEvaluator
         ( FreshVariable variable
         , SortedVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => EqualityRule level Variable
     -- ^ Axiom defining the current function.

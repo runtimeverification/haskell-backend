@@ -85,7 +85,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
 translateUninterpreted
     :: ( Ord p
        , p ~ TermLike variable
-       , Unparse (variable Object)
+       , Unparse variable
        )
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern

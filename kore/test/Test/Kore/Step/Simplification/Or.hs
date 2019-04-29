@@ -180,7 +180,7 @@ tM = mkVar Mock.y
 t_ :: TestTerm
 t_ = mkBottom Mock.testSort
 
-testVar :: Text -> Variable Object
+testVar :: Text -> Variable
 testVar ident = Variable (testId ident) mempty Mock.testSort
 
 type TestPredicate = Syntax.Predicate Variable

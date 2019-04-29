@@ -102,11 +102,9 @@ newtype UnificationProcedure level =
     UnificationProcedure
         ( forall variable unifier unifierM
         .   ( SortedVariable variable
-            , Ord (variable level)
-            , Show (variable level)
-            , Unparse (variable level)
-            , OrdMetaOrObject variable
-            , ShowMetaOrObject variable
+            , Ord variable
+            , Show variable
+            , Unparse variable
             , MetaOrObject level
             , FreshVariable variable
             , MonadUnify unifierM
@@ -149,14 +147,14 @@ type Results variable =
 {- | Unwrap the variables in a 'RulePattern'.
  -}
 unwrapRule
-    :: Ord (variable Object)
+    :: Ord variable
     => RulePattern Object (Target variable) -> RulePattern Object variable
 unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
 unwrapConfiguration
-    :: Ord (variable Object)
+    :: Ord variable
     => Pattern Object (Target variable)
     -> Pattern Object variable
 unwrapConfiguration config@Conditional { substitution } =
@@ -180,9 +178,9 @@ unification. The substitution is not applied to the renamed rule.
  -}
 unifyRule
     ::  forall unifier variable unifierM
-    .   ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    .   ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifierM
@@ -256,9 +254,9 @@ The rule is considered to apply if the result is not @\\bottom@.
  -}
 applyInitialConditions
     ::  forall unifier variable unifierM
-    .   ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    .   ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifierM
@@ -318,9 +316,9 @@ See also: 'applyInitialConditions'
  -}
 finalizeAppliedRule
     ::  forall unifier variable unifierM
-    .   ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    .   ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifierM
@@ -378,9 +376,9 @@ finalizeAppliedRule
  -}
 applyRemainder
     ::  forall unifier variable unifierM
-    .   ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    .   ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifierM
@@ -421,13 +419,13 @@ applyRemainder
             condition
 
 toAxiomVariables
-    :: Ord (variable Object)
+    :: Ord variable
     => RulePattern Object variable
     -> RulePattern Object (Target variable)
 toAxiomVariables = RulePattern.mapVariables Target.Target
 
 toConfigurationVariables
-    :: Ord (variable Object)
+    :: Ord variable
     => Pattern Object variable
     -> Pattern Object (Target variable)
 toConfigurationVariables = Pattern.mapVariables Target.NonTarget
@@ -439,9 +437,9 @@ configurations.
 
  -}
 applyRule
-    ::  ( Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
@@ -522,9 +520,9 @@ final configurations.
 
  -}
 applyRewriteRule
-    ::  ( Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
@@ -581,9 +579,9 @@ variables have been instantiated by the substitution.
 checkSubstitutionCoverage
     ::  ( MetaOrObject Object
         , SortedVariable variable
-        , Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+        , Ord     variable
+        , Show    variable
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
@@ -672,9 +670,9 @@ See also: 'applyRewriteRule'
  -}
 applyRulesInParallel
     ::  forall unifier variable unifierM
-    .   ( Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    .   ( Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
@@ -737,9 +735,9 @@ See also: 'applyRewriteRule'
  -}
 applyRewriteRules
     ::  forall unifier variable unifierM
-    .   ( Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    .   ( Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
@@ -783,9 +781,9 @@ See also: 'applyRewriteRule'
  -}
 sequenceRules
     ::  forall unifier variable unifierM
-    .   ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    .   ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
@@ -871,9 +869,9 @@ See also: 'applyRewriteRule'
  -}
 sequenceRewriteRules
     ::  forall unifier variable unifierM
-    .   ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    .   ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier

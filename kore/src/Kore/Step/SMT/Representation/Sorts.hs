@@ -337,7 +337,7 @@ parseSMTConstructor patt =
 
     parseExists
         :: TermLike Variable
-        -> (Set.Set (Variable Object), TermLike Variable)
+        -> (Set.Set (Variable), TermLike Variable)
     parseExists (Exists_ _ variable child) =
         (Set.insert variable childVars, unquantifiedPatt)
       where
@@ -345,9 +345,9 @@ parseSMTConstructor patt =
     parseExists unquantifiedPatt = (Set.empty, unquantifiedPatt)
 
     checkOnlyQuantifiedVariablesOnce
-        :: Set.Set (Variable Object)
+        :: Set.Set (Variable)
         -> [TermLike Variable]
-        -> Maybe [Variable Object]
+        -> Maybe [Variable]
     checkOnlyQuantifiedVariablesOnce
         allowedVars
         []
@@ -370,7 +370,7 @@ parseSMTConstructor patt =
 
     buildConstructor
         :: SymbolOrAlias Object
-        -> [Variable Object]
+        -> [Variable]
         -> Maybe AST.UnresolvedConstructor
     buildConstructor
         SymbolOrAlias { symbolOrAliasConstructor, symbolOrAliasParams = [] }
@@ -390,7 +390,7 @@ parseSMTConstructor patt =
     parseVariableSort
         :: AST.Encodable
         -> Integer
-        -> Variable Object
+        -> Variable
         -> Maybe AST.UnresolvedConstructorArgument
     parseVariableSort
         constructorName

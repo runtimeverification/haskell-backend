@@ -518,185 +518,185 @@ sigmaSymbol = SymbolOrAlias
     , symbolOrAliasParams      = []
     }
 
-var_x_1 :: Variable Object
+var_x_1 :: Variable
 var_x_1 = Variable (testId "x") (Just (Element 1)) testSort
-var_y_1 :: Variable Object
+var_y_1 :: Variable
 var_y_1 = Variable (testId "y") (Just (Element 1)) testSort
-var_z_1 :: Variable Object
+var_z_1 :: Variable
 var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
-x :: Variable Object
+x :: Variable
 x = Variable (testId "x") mempty testSort
-y :: Variable Object
+y :: Variable
 y = Variable (testId "y") mempty testSort
-z :: Variable Object
+z :: Variable
 z = Variable (testId "z") mempty testSort
-m :: Variable Object
+m :: Variable
 m = Variable (testId "m") mempty mapSort
-xInt :: Variable Object
+xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
 
-a :: Ord (variable Object) => TermLike variable
+a :: Ord variable => TermLike variable
 a = mkApp testSort aSymbol []
 
 aConcrete :: TermLike Concrete
 aConcrete = let Just r = asConcretePurePattern a in r
 
-aSort0 :: Ord (variable Object) => TermLike variable
+aSort0 :: Ord variable => TermLike variable
 aSort0 = mkApp testSort0 aSort0Symbol []
 
-aSort1 :: Ord (variable Object) => TermLike variable
+aSort1 :: Ord variable => TermLike variable
 aSort1 = mkApp testSort1 aSort1Symbol []
 
-aSubsort :: Ord (variable Object) => TermLike variable
+aSubsort :: Ord variable => TermLike variable
 aSubsort = mkApp subSort aSubsortSymbol []
 
-aSubSubsort :: Ord (variable Object) => TermLike variable
+aSubSubsort :: Ord variable => TermLike variable
 aSubSubsort = mkApp subSubsort aSubSubsortSymbol []
 
-aOtherSort :: Ord (variable Object) => TermLike variable
+aOtherSort :: Ord variable => TermLike variable
 aOtherSort = mkApp otherSort aOtherSortSymbol []
 
-b :: Ord (variable Object) => TermLike variable
+b :: Ord variable => TermLike variable
 b = mkApp testSort bSymbol []
 
 bConcrete :: TermLike Concrete
 bConcrete = let Just r = asConcretePurePattern b in r
 
-bSort0 :: Ord (variable Object) => TermLike variable
+bSort0 :: Ord variable => TermLike variable
 bSort0 = mkApp testSort0 bSort0Symbol []
 
-c :: Ord (variable Object) => TermLike variable
+c :: Ord variable => TermLike variable
 c = mkApp testSort cSymbol []
 
-d :: Ord (variable Object) => TermLike variable
+d :: Ord variable => TermLike variable
 d = mkApp testSort dSymbol []
 
-e :: Ord (variable Object) => TermLike variable
+e :: Ord variable => TermLike variable
 e = mkApp testSort eSymbol []
 
 f, g, h
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 f arg = mkApp testSort fSymbol [arg]
 g arg = mkApp testSort gSymbol [arg]
 h arg = mkApp testSort hSymbol [arg]
 
-cf :: Ord (variable Object) => TermLike variable
+cf :: Ord variable => TermLike variable
 cf = mkApp testSort cfSymbol []
 
-cfSort0 :: Ord (variable Object) => TermLike variable
+cfSort0 :: Ord variable => TermLike variable
 cfSort0 = mkApp testSort0 cfSort0Symbol []
 
-cfSort1 :: Ord (variable Object) => TermLike variable
+cfSort1 :: Ord variable => TermLike variable
 cfSort1 = mkApp testSort1 cfSort1Symbol []
 
-cg :: Ord (variable Object) => TermLike variable
+cg :: Ord variable => TermLike variable
 cg = mkApp testSort cgSymbol []
 
-cgSort0 :: Ord (variable Object) => TermLike variable
+cgSort0 :: Ord variable => TermLike variable
 cgSort0 = mkApp testSort0 cgSort0Symbol []
 
-ch :: Ord (variable Object) => TermLike variable
+ch :: Ord variable => TermLike variable
 ch = mkApp testSort chSymbol []
 
-plain00 :: Ord (variable Object) => TermLike variable
+plain00 :: Ord variable => TermLike variable
 plain00 = mkApp testSort plain00Symbol []
 
-plain00Sort0 :: Ord (variable Object) => TermLike variable
+plain00Sort0 :: Ord variable => TermLike variable
 plain00Sort0 = mkApp testSort0 plain00Sort0Symbol []
 
-plain00Subsort :: Ord (variable Object) => TermLike variable
+plain00Subsort :: Ord variable => TermLike variable
 plain00Subsort = mkApp subSort plain00SubsortSymbol []
 
-plain00SubSubsort :: Ord (variable Object) => TermLike variable
+plain00SubSubsort :: Ord variable => TermLike variable
 plain00SubSubsort = mkApp subSubsort plain00SubSubsortSymbol []
 
 plain10, plain11
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 plain10 arg = mkApp testSort plain10Symbol [arg]
 plain11 arg = mkApp testSort plain11Symbol [arg]
 
 plain20
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 plain20 arg1 arg2 = mkApp testSort plain20Symbol [arg1, arg2]
 
 constr10, constr11
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 constr10 arg = mkApp testSort constr10Symbol [arg]
 constr11 arg = mkApp testSort constr11Symbol [arg]
 
 constr20
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 constr20 arg1 arg2 = mkApp testSort constr20Symbol [arg1, arg2]
 
 function20MapTest
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 function20MapTest arg1 arg2 =
     mkApp testSort function20MapTestSymbol [arg1, arg2]
 
-functional00 :: Ord (variable Object) => TermLike variable
+functional00 :: Ord variable => TermLike variable
 functional00 = mkApp testSort functional00Symbol []
 
-functional01 :: Ord (variable Object) => TermLike variable
+functional01 :: Ord variable => TermLike variable
 functional01 = mkApp testSort functional01Symbol []
 
 functional10
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 functional10 arg = mkApp testSort functional10Symbol [arg]
 
 functional11
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 functional11 arg = mkApp testSort functional11Symbol [arg]
 
 functional20
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 functional20 arg1 arg2 = mkApp testSort functional20Symbol [arg1, arg2]
 
-functional00SubSubSort :: Ord (variable Object) => TermLike variable
+functional00SubSubSort :: Ord variable => TermLike variable
 functional00SubSubSort = mkApp subSubsort functional00SubSubSortSymbol []
 
 functionalConstr10
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 functionalConstr10 arg =
     mkApp testSort functionalConstr10Symbol [arg]
 
 functionalConstr11
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 functionalConstr11 arg = mkApp testSort functionalConstr11Symbol [arg]
 
 functionalConstr12
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 functionalConstr12 arg = mkApp testSort functionalConstr12Symbol [arg]
 
 functionalConstr20
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -704,7 +704,7 @@ functionalConstr20 arg1 arg2 =
     mkApp testSort functionalConstr20Symbol [arg1, arg2]
 
 functionalConstr30
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -713,7 +713,7 @@ functionalConstr30 arg1 arg2 arg3 =
     mkApp testSort functionalConstr30Symbol [arg1, arg2, arg3]
 
 functionalTopConstr20
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -721,7 +721,7 @@ functionalTopConstr20 arg1 arg2 =
     mkApp testSort functionalTopConstr20Symbol [arg1, arg2]
 
 functionalTopConstr21
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -729,107 +729,107 @@ functionalTopConstr21 arg1 arg2 =
     mkApp testSort functionalTopConstr21Symbol [arg1, arg2]
 
 injective10
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 injective10 arg = mkApp testSort injective10Symbol [arg]
 
 injective11
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 injective11 arg = mkApp testSort injective11Symbol [arg]
 
 sortInjection10
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection10 arg =
     mkApp testSort sortInjection10Symbol [arg]
 
 sortInjection11
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection11 arg =
     mkApp testSort sortInjection11Symbol [arg]
 
 sortInjection0ToTop
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection0ToTop arg =
     mkApp topSort sortInjection0ToTopSymbol [arg]
 
 sortInjectionSubToTop
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionSubToTop arg = mkApp topSort sortInjectionSubToTopSymbol [arg]
 
 sortInjectionSubSubToTop
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionSubSubToTop arg =
     mkApp topSort sortInjectionSubSubToTopSymbol [arg]
 
 sortInjectionSubSubToSub
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionSubSubToSub arg =
     mkApp subSort sortInjectionSubSubToSubSymbol [arg]
 
 sortInjectionOtherToTop
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionOtherToTop arg =
     mkApp topSort sortInjectionOtherToTopSymbol [arg]
 
 concatMap
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 concatMap m1 m2 = mkApp mapSort concatMapSymbol [m1, m2]
 
 lessInt
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 lessInt i1 i2 = mkApp boolSort lessIntSymbol [i1, i2]
 
 greaterEqInt
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 greaterEqInt i1 i2 = mkApp boolSort greaterEqIntSymbol [i1, i2]
 
 unitMap
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
 unitMap = mkApp mapSort unitMapSymbol []
 
 elementMap
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 elementMap m1 m2 = mkApp mapSort elementMapSymbol [m1, m2]
 
 concatList
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 concatList l1 l2 = mkApp listSort concatListSymbol [l1, l2]
 
 sigma
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1920,7 +1920,7 @@ subsorts =
     ]
 
 builtinMap
-    :: Ord (variable Object)
+    :: Ord variable
     => [(TermLike Concrete, TermLike variable)]
     -> TermLike variable
 builtinMap child =
@@ -1933,7 +1933,7 @@ builtinMap child =
         }
 
 builtinList
-    :: Ord (variable Object)
+    :: Ord variable
     => [TermLike variable]
     -> TermLike variable
 builtinList child =
@@ -1946,7 +1946,7 @@ builtinList child =
         }
 
 builtinSet
-    :: Ord (variable Object)
+    :: Ord variable
     => [TermLike Concrete]
     -> TermLike variable
 builtinSet child =
@@ -1959,13 +1959,13 @@ builtinSet child =
         }
 
 builtinInt
-    :: Ord (variable Object)
+    :: Ord variable
     => Integer
     -> TermLike variable
 builtinInt = Builtin.Int.asInternal intSort
 
 builtinBool
-    :: Ord (variable Object)
+    :: Ord variable
     => Bool
     -> TermLike variable
 builtinBool = Builtin.Bool.asInternal boolSort

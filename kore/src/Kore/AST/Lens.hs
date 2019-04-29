@@ -26,7 +26,7 @@ patternLens
     => (Sort -> f Sort)  -- ^ Operand sorts
     -> (Sort -> f Sort)
     -- ^ Result sorts, and operand sorts when the two are equal
-    -> (variable1 Object -> f (variable2 Object))  -- ^ Variables
+    -> (variable1 -> f variable2)  -- ^ Variables
     ->  (  PurePattern Object domain variable1 annotation
         -> f (PurePattern Object domain variable2 annotation)
         )

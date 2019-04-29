@@ -21,7 +21,7 @@ import qualified Kore.AST.Sentence as AST
 import qualified Kore.Domain.Builtin as Domain
 
 type Pattern =
-    PurePattern Object Domain.Builtin Variable (Valid (Variable Object) Object)
+    PurePattern Object Domain.Builtin Variable (Valid (Variable) Object)
 
 type Sentence = AST.Sentence Object SortVariable Pattern
 

@@ -122,16 +122,16 @@ test_expandedPattern =
         )
     ]
 
-newtype V level = V Integer
+newtype V = V Integer
     deriving (Show, Eq, Ord)
-newtype W level = W String
+newtype W = W String
     deriving (Show, Eq, Ord)
 
-instance Unparse (V level) where
+instance Unparse V where
     unparse (V n) = "V" <> pretty n <> ":" <> unparse sortVariable
     unparse2 = error "Not implemented"
 
-instance Unparse (W level) where
+instance Unparse W where
     unparse (W name) = "W" <> pretty name <> ":" <> unparse sortVariable
     unparse2 = error "Not implemented"
 
@@ -140,12 +140,12 @@ instance SortedVariable V where
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
 
-instance SumEqualWithExplanation (V level) where
+instance SumEqualWithExplanation V where
     sumConstructorPair (V a1) (V a2) =
         SumConstructorSameWithArguments
             (EqWrap "V" a1 a2)
 
-instance EqualWithExplanation (V level) where
+instance EqualWithExplanation V where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
@@ -154,16 +154,16 @@ instance SortedVariable W where
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
 
-instance SumEqualWithExplanation (W level) where
+instance SumEqualWithExplanation W where
     sumConstructorPair (W a1) (W a2) =
         SumConstructorSameWithArguments (EqWrap "W" a1 a2)
 
-instance EqualWithExplanation (W level) where
+instance EqualWithExplanation W where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 
-showVar :: V level -> W level
+showVar :: V -> W
 showVar (V i) = W (show i)
 
 var :: Integer -> TermLike V
@@ -173,21 +173,21 @@ war :: String -> TermLike W
 war s = mkVar (W s)
 
 makeEq
-    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
+    :: (SortedVariable var, Ord var, Show var, Unparse var)
     => TermLike var
     -> TermLike var
     -> TermLike var
 makeEq = mkEquals sortVariable
 
 makeAnd
-    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
+    :: (SortedVariable var, Ord var, Show var, Unparse var)
     => TermLike var
     -> TermLike var
     -> TermLike var
 makeAnd p1 p2 = mkAnd p1 p2
 
 makeEquals
-    :: (SortedVariable var, Ord (var Meta), Show (var Meta), Unparse (var Meta))
+    :: (SortedVariable var, Ord var, Show var, Unparse var)
     => TermLike var -> TermLike var -> Predicate var
 makeEquals p1 p2 = makeEqualsPredicate p1 p2
 

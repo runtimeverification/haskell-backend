@@ -38,11 +38,9 @@ with the given pattern.
 -}
 mergeWithPredicate
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         , Given (SmtMetadataTools StepperAttributes)
@@ -99,11 +97,9 @@ mergeWithPredicate
 
 mergeWithEvaluatedCondition
     ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
@@ -158,12 +154,10 @@ mergeWithPredicateAssumesEvaluated
     ::  ( FreshVariable variable
         , MetaOrObject level
         , Monad m
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
         , SortedVariable variable
-        , Unparse (variable level)
+        , Unparse variable
         )
     => PredicateMerger level variable m
     -> Predicate level variable

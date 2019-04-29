@@ -123,17 +123,17 @@ test_externalizeFreshVariables =
     becomes original expected =
         equals (externalizeFreshVariables original) expected
 
-x :: Variable Object
+x :: Variable
 x = Mock.x
 
-x_0 :: Variable Object
+x_0 :: Variable
 x_0 = x { variableCounter = Just (Element 0) }
 
-x0 :: Variable Object
+x0 :: Variable
 x0 = x { variableName = "x0" }
 
-x00 :: Variable Object
+x00 :: Variable
 x00 = x { variableName = "x00" }
 
-x1 :: Variable Object
+x1 :: Variable
 x1 = x { variableName = "x1" }

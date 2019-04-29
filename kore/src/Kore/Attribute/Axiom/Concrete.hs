@@ -13,8 +13,7 @@ module Kore.Attribute.Axiom.Concrete
 
 import qualified Control.Monad as Monad
 
-import Kore.Attribute.Parser as Parser hiding
-       ( Concrete )
+import Kore.Attribute.Parser as Parser
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}

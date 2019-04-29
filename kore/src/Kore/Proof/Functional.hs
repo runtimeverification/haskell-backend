@@ -32,7 +32,7 @@ import qualified Kore.Domain.Builtin as Domain
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data FunctionalProof level variable
-    = FunctionalVariable (variable Object)
+    = FunctionalVariable variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
@@ -48,11 +48,11 @@ data FunctionalProof level variable
     -- ^A char literal is a functional constructor without arguments.
   deriving Generic
 
-deriving instance Eq (variable Object) => Eq (FunctionalProof level variable)
-deriving instance Ord (variable Object) => Ord (FunctionalProof level variable)
-deriving instance Show (variable Object) => Show (FunctionalProof level variable)
+deriving instance Eq variable => Eq (FunctionalProof level variable)
+deriving instance Ord variable => Ord (FunctionalProof level variable)
+deriving instance Show variable => Show (FunctionalProof level variable)
 
-instance Hashable (variable Object) => Hashable (FunctionalProof level variable)
+instance Hashable variable => Hashable (FunctionalProof level variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
@@ -67,9 +67,9 @@ data FunctionProof level variable
     | FunctionHead (SymbolOrAlias Object)
     -- ^Head of a partial function.
 
-deriving instance Eq (variable Object) => Eq (FunctionProof level variable)
-deriving instance Ord (variable Object) => Ord (FunctionProof level variable)
-deriving instance Show (variable Object) => Show (FunctionProof level variable)
+deriving instance Eq variable => Eq (FunctionProof level variable)
+deriving instance Ord variable => Ord (FunctionProof level variable)
+deriving instance Show variable => Show (FunctionProof level variable)
 
 -- |'TotalProof' is used for providing arguments that a pattern is
 -- total/not bottom.  Currently we only support arguments stating that a
@@ -83,9 +83,9 @@ data TotalProof level variable
     | TotalHead (SymbolOrAlias Object)
     -- ^Head of a total symbol.
 
-deriving instance Eq (variable Object) => Eq (TotalProof level variable)
-deriving instance Ord (variable Object) => Ord (TotalProof level variable)
-deriving instance Show (variable Object) => Show (TotalProof level variable)
+deriving instance Eq variable => Eq (TotalProof level variable)
+deriving instance Ord variable => Ord (TotalProof level variable)
+deriving instance Show variable => Show (TotalProof level variable)
 
 -- |Used for providing arguments that a pattern is made of constructor-like
 -- elements.
@@ -93,7 +93,7 @@ data ConstructorLikeProof = ConstructorLikeProof
   deriving (Eq, Show)
 
 mapVariables
-    :: (variable1 Object -> variable2 Object)
+    :: (variable1 -> variable2)
     -> FunctionalProof Object variable1
     -> FunctionalProof Object variable2
 mapVariables mapping =

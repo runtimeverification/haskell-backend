@@ -93,8 +93,8 @@ simplifyCombinedItems =
 
 simplifyAnds
     ::  forall variable unifier unifierM .
-        ( Show (variable Object)
-        , Unparse (variable Object)
+        ( Show variable
+        , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
         , unifier ~ unifierM variable
@@ -155,9 +155,9 @@ simplifyAnds
 
 
 groupSubstitutionByVariable
-    :: Ord (variable Object)
-    => [(variable Object, TermLike variable)]
-    -> [[(variable Object, TermLike variable)]]
+    :: Ord variable
+    => [(variable, TermLike variable)]
+    -> [[(variable, TermLike variable)]]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
@@ -170,8 +170,8 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: ( Show (variable Object)
-       , Unparse (variable Object)
+    :: ( Show variable
+       , Unparse variable
        , SortedVariable variable
        , FreshVariable variable
        , MonadUnify unifierM
@@ -181,7 +181,7 @@ solveGroupedSubstitution
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> variable Object
+    -> variable
     -> NonEmpty (TermLike variable)
     -> unifier
         ( Predicate Object variable
@@ -223,8 +223,8 @@ solveGroupedSubstitution
 -- stabilizes.
 normalizeSubstitutionDuplication
     :: forall variable unifier unifierM
-    .   ( Show (variable Object)
-        , Unparse (variable Object)
+    .   ( Show variable
+        , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
         , MonadUnify unifierM
@@ -293,10 +293,10 @@ normalizeSubstitutionDuplication
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions
-        :: [[(variable Object, TermLike variable)]]
+        :: [[(variable, TermLike variable)]]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-    varAndSubstList :: [(variable Object, NonEmpty (TermLike variable))]
+    varAndSubstList :: [(variable, NonEmpty (TermLike variable))]
     varAndSubstList =
         nonSingletonSubstitutions >>= \case
             [] -> []
@@ -304,9 +304,9 @@ normalizeSubstitutionDuplication
 
 
 mergePredicateList
-    :: ( Ord (variable Object)
-       , Show (variable Object)
-       , Unparse (variable Object)
+    :: ( Ord variable
+       , Show variable
+       , Unparse variable
        , SortedVariable variable
        )
     => [(Predicate Object variable, UnificationProof Object variable)]

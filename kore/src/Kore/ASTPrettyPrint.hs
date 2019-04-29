@@ -267,7 +267,7 @@ instance PrettyPrint ModuleName where
             <> dquotes (pretty (getModuleName s))
             )
 
-instance MetaOrObject level => PrettyPrint (Variable level) where
+instance MetaOrObject level => PrettyPrint Variable where
     prettyPrint _ var@(Variable _ _ _) =
         writeStructure "Variable"
             [ writeFieldOneLine "variableName" variableName var
@@ -275,8 +275,8 @@ instance MetaOrObject level => PrettyPrint (Variable level) where
             , writeFieldNewLine "variableSort" variableSort var
             ]
 
-instance PrettyPrint (variable level)
-    => PrettyPrint (SetVariable variable level)
+instance PrettyPrint variable
+    => PrettyPrint (SetVariable variable)
   where
     prettyPrint _ svar@(SetVariable _) =
         writeStructure "SetVariable"
@@ -390,7 +390,7 @@ instance
 
 instance
     ( PrettyPrint child
-    , PrettyPrint (variable level)
+    , PrettyPrint variable
     , MetaOrObject level
     ) => PrettyPrint (Exists level variable child)
   where
@@ -417,7 +417,7 @@ instance
 
 instance
     ( PrettyPrint child
-    , PrettyPrint (variable level)
+    , PrettyPrint variable
     , MetaOrObject level
     ) => PrettyPrint (Forall level variable child) where
     prettyPrint _ p@(Forall _ _ _) =
@@ -525,7 +525,7 @@ instance MetaOrObject level => PrettyPrint (Top level child) where
 instance
     ( PrettyPrint child
     , PrettyPrint (domain child)
-    , PrettyPrint (variable level)
+    , PrettyPrint variable
     , MetaOrObject level
     ) => PrettyPrint (Pattern level domain variable child)
   where
@@ -773,7 +773,7 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 -- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
-instance (MetaOrObject level, PrettyPrint (variable level))
+instance (MetaOrObject level, PrettyPrint variable)
     => PrettyPrint (UnificationProof level variable)
   where
     prettyPrint _ EmptyUnificationProof = "EmptyUnificationProof"
@@ -805,7 +805,7 @@ instance MetaOrObject level => PrettyPrint (ClashReason level) where
     prettyPrint flags (SortInjectionClash s1 s2) =
         writeTwoFieldStruct flags "SortInjectionClash" s1 s2
 
-instance (MetaOrObject level, PrettyPrint (variable level))
+instance (MetaOrObject level, PrettyPrint variable)
     => PrettyPrint (FunctionalProof level variable)
   where
     prettyPrint flags (FunctionalVariable v) =
@@ -819,18 +819,18 @@ instance (MetaOrObject level, PrettyPrint (variable level))
     prettyPrint flags (FunctionalCharLiteral l) =
         writeOneFieldStruct flags "FunctionalCharLiteral" l
 
-instance (MetaOrObject level, PrettyPrint (variable level))
+instance (MetaOrObject level, PrettyPrint variable)
     => PrettyPrint (Predicate variable)
   where
     prettyPrint flags pat =
         prettyPrint flags (unwrapPredicate pat)
 
-instance (MetaOrObject level, PrettyPrint (variable level))
+instance (MetaOrObject level, PrettyPrint variable)
     => PrettyPrint (Substitution variable)
   where
       prettyPrint flags = prettyPrint flags . Substitution.unwrap
 
-instance (MetaOrObject level, PrettyPrint (variable level))
+instance (MetaOrObject level, PrettyPrint variable)
     => PrettyPrint (Step.Pattern level variable)
   where
     prettyPrint flags (Conditional t p s) =

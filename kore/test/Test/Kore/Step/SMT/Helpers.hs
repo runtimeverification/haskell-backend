@@ -219,10 +219,10 @@ constructorAxiom sortName constructors =
             )
             argumentVariables
         where
-        argumentVariables :: [Variable Object]
+        argumentVariables :: [Variable]
         argumentVariables = zipWith makeVariable [1..] argumentSorts
 
-makeVariable :: Natural -> Text -> Variable Object
+makeVariable :: Natural -> Text -> Variable
 makeVariable varIndex sortName =
     Variable
         { variableName = testId "var"

@@ -55,14 +55,14 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 type TermLike variable =
-    PurePattern Object Domain.Builtin variable (Valid (variable Object) Object)
+    PurePattern Object Domain.Builtin variable (Valid variable Object)
 
-freeVariables :: TermLike variable -> Set (variable Object)
+freeVariables :: TermLike variable -> Set variable
 freeVariables termLike = Valid.freeVariables (extract termLike)
 
 hasFreeVariable
-    :: Ord (variable Object)
-    => variable Object
+    :: Ord variable
+    => variable
     -> TermLike variable
     -> Bool
 hasFreeVariable variable = Set.member variable . freeVariables
@@ -73,10 +73,10 @@ Otherwise, the argument is returned.
 
  -}
 withoutFreeVariable
-    ::  ( Ord (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord variable
+        , Unparse variable
         )
-    => variable Object  -- ^ variable
+    => variable  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
     -> a
@@ -105,8 +105,8 @@ See also: 'traverseVariables'
 
  -}
 mapVariables
-    :: Ord (variable2 Object)
-    => (variable1 Object -> variable2 Object)
+    :: Ord variable2
+    => (variable1 -> variable2)
     -> TermLike variable1
     -> TermLike variable2
 mapVariables mapping =
@@ -130,8 +130,8 @@ See also: 'mapVariables'
  -}
 traverseVariables
     ::  forall m variable1 variable2.
-        (Monad m, Ord (variable2 Object))
-    => (variable1 Object -> m (variable2 Object))
+        (Monad m, Ord variable2)
+    => (variable1 -> m variable2)
     -> TermLike variable1
     -> m (TermLike variable2)
 traverseVariables traversing =
@@ -171,7 +171,7 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcreteStepPattern
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike Concrete
     -> TermLike variable
 fromConcreteStepPattern = mapVariables (\case {})
@@ -188,10 +188,10 @@ may appear in the right-hand side of any substitution, but this is not checked.
 substitute
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
+        , Ord variable
         , SortedVariable variable
         )
-    => Map (variable level) (TermLike variable)
+    => Map variable (TermLike variable)
     -> TermLike variable
     -> TermLike variable
 substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
@@ -268,11 +268,11 @@ externalizeFreshVariables termLike =
         ::  Base
                 (TermLike Variable)
                 (Reader
-                    (Map (Variable level) (Variable level))
+                    (Map Variable Variable)
                     (TermLike Variable)
                 )
         ->  (Reader
-                (Map (Variable level) (Variable level))
+                (Map Variable Variable)
                 (TermLike Variable)
             )
     externalizeFreshVariablesWorker (valid :< patt) = do

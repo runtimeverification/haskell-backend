@@ -147,11 +147,9 @@ Equals(a and b, b and a) will not be evaluated to Top.
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -198,11 +196,9 @@ besides the pattern sort, which will make it even more useful to carry around.
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -271,11 +267,9 @@ makeEvaluateFunctionalOr
     :: forall variable level .
         ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -401,11 +395,9 @@ See 'simplify' for detailed documentation.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -537,11 +529,9 @@ makeEvaluate
 makeEvaluateTermsAssumesNoBottom
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -590,11 +580,9 @@ makeEvaluateTermsAssumesNoBottomMaybe
     :: forall level variable .
         ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -641,11 +629,9 @@ See 'simplify' for detailed documentation.
 makeEvaluateTermsToPredicate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes

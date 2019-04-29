@@ -176,7 +176,7 @@ expectBuiltinList ctx =
             empty
 
 returnList
-    :: (Monad m, Ord (variable Object))
+    :: (Monad m, Ord variable)
     => SmtMetadataTools StepperAttributes
     -> Sort
     -> Builtin variable
@@ -200,7 +200,7 @@ evalGet =
     Builtin.functionEvaluator evalGet0
   where
     evalGet0
-        :: Ord (variable Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
         -> Sort
@@ -248,7 +248,7 @@ evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0
-        :: Ord (variable Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
         -> Sort
@@ -299,7 +299,7 @@ builtinFunctions =
 
  -}
 asTermLike
-    :: Ord (variable Object)
+    :: Ord variable
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
@@ -319,7 +319,7 @@ asTermLike builtin =
 {- | Render a 'Seq' as an expanded internal list pattern.
  -}
 asInternal
-    :: Ord (variable Object)
+    :: Ord variable
     => SmtMetadataTools attrs
     -> Sort
     -> Builtin variable
@@ -345,7 +345,7 @@ See also: 'asPattern'
 
  -}
 asPattern
-    ::  ( Ord (variable Object)
+    ::  ( Ord variable
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort
@@ -400,11 +400,9 @@ isSymbolUnit = Builtin.isSymbol unitKey
  -}
 unifyEquals
     :: forall level variable unifier unifierM p expanded proof.
-        ( OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        ( Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MetaOrObject level
         , FreshVariable variable

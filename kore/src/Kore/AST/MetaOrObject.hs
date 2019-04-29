@@ -15,9 +15,6 @@ module Kore.AST.MetaOrObject
     , Object (..)
     , MetaOrObject (..)
     , toProxy
-    , ShowMetaOrObject
-    , EqMetaOrObject
-    , OrdMetaOrObject
     , IsMetaOrObject (..)
     ) where
 
@@ -59,7 +56,3 @@ class (level ~ Object) => MetaOrObject level where
     isMeta _ = False
 
 instance (level ~ Object) => MetaOrObject level
-
-type ShowMetaOrObject thing = (Show (thing Meta), Show (thing Object))
-type EqMetaOrObject thing = (Eq (thing Meta), Eq (thing Object))
-type OrdMetaOrObject thing = (Ord (thing Meta), Ord (thing Object))

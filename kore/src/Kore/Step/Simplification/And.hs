@@ -87,11 +87,9 @@ Also, we have
 simplify
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -142,11 +140,9 @@ besides the pattern sort, which will make it even more useful to carry around.
 simplifyEvaluated
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -195,11 +191,9 @@ See the comment for 'simplify' to find more details.
 makeEvaluate
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , HasCallStack
         )
@@ -229,11 +223,9 @@ makeEvaluate
 makeEvaluateNonBool
     ::  ( MetaOrObject level
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , HasCallStack
         )
@@ -280,10 +272,10 @@ makeEvaluateNonBool
             }
 
 applyAndIdempotence
-    ::  ( Ord (variable level)
+    ::  ( Ord variable
         , MetaOrObject level
-        , Show (variable level)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => TermLike variable
@@ -297,11 +289,9 @@ applyAndIdempotence patt =
 makeTermAnd
     ::  ( MetaOrObject level
         , FreshVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes

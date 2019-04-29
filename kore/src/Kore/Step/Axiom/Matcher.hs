@@ -95,13 +95,13 @@ Left, but inside a constructor we may be able to keep it as bottom.
 matchAsUnification
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Object)
-        , Ord (variable Meta)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Ord variable
+        , Ord variable
+        , Ord variable
+        , Show variable
+        , Show variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -144,13 +144,13 @@ matchAsUnification
 unificationWithAppMatchOnTop
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Object)
-        , Ord (variable Meta)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Ord variable
+        , Ord variable
+        , Ord variable
+        , Show variable
+        , Show variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -230,13 +230,13 @@ unificationWithAppMatchOnTop
 match
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Object)
-        , Ord (variable Meta)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Ord variable
+        , Ord variable
+        , Ord variable
+        , Show variable
+        , Show variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -247,7 +247,7 @@ match
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map (variable level) (variable level)
+    -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
     -- TODO: Use Result here.
@@ -281,15 +281,15 @@ match
 
 matchEqualHeadPatterns
     ::  forall level variable unifier unifierM .
-        ( Show (variable level)
+        ( Show variable
         , SortedVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Unparse (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , Ord variable
+        , Unparse variable
+        , Ord variable
+        , Ord variable
+        , Show variable
+        , Show variable
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -300,7 +300,7 @@ matchEqualHeadPatterns
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map (variable level) (variable level)
+    -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
@@ -552,13 +552,13 @@ matchJoin
     :: forall level variable unifier unifierM .
         ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Ord variable
+        , Ord variable
+        , Ord variable
+        , Show variable
+        , Show variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -569,7 +569,7 @@ matchJoin
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map (variable level) (variable level)
+    -> Map.Map variable variable
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier
         (OrPredicate level variable)
@@ -614,13 +614,13 @@ unifyJoin
     :: forall level variable unifier unifierM .
         ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Ord variable
+        , Ord variable
+        , Ord variable
+        , Show variable
+        , Show variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -688,12 +688,10 @@ unifyJoin
 matchVariableFunction
     ::  ( FreshVariable variable
         , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
         , SortedVariable variable
-        , Unparse (variable level)
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
@@ -703,7 +701,7 @@ matchVariableFunction
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map (variable level) (variable level)
+    -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
@@ -745,32 +743,32 @@ matchVariableFunction _ _ _ _ _ _ _ = nothing
 
 checkVariableEscapeOr
     ::  ( MetaOrObject level
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Ord (variable Object)
-        , Ord (variable Meta)
+        , Show variable
+        , Show variable
+        , Ord variable
+        , Ord variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => [variable level]
+    => [variable]
     -> OrPredicate level variable
     -> OrPredicate level variable
 checkVariableEscapeOr vars = fmap (checkVariableEscape vars)
 
 checkVariableEscape
     ::  ( MetaOrObject level
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Ord (variable Object)
-        , Ord (variable Meta)
+        , Show variable
+        , Show variable
+        , Ord variable
+        , Ord variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => [variable level]
+    => [variable]
     -> Predicate level variable
     -> Predicate level variable
 checkVariableEscape vars predSubst
