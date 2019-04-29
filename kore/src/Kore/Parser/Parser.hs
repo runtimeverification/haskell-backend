@@ -321,8 +321,8 @@ BNF fragments:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 topBottomRemainderParser
-    :: (Sort -> m Object child)  -- ^ Element constructor.
-    -> Parser (m Object child)
+    :: (Sort -> m child)  -- ^ Element constructor.
+    -> Parser (m child)
 topBottomRemainderParser constructor = do
     sort <- inCurlyBracesRemainderParser sortParser
     inParenthesesParser (return ())

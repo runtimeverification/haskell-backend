@@ -12,6 +12,7 @@ module Kore.Step.Simplification.Bottom
     ) where
 
 import           Kore.AST.MetaOrObject
+import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
@@ -23,6 +24,6 @@ import           Kore.Syntax.Bottom
 -}
 simplify
     :: Ord variable
-    => Bottom Object child
+    => Bottom Sort child
     -> (OrPattern Object variable, SimplificationProof Object)
 simplify Bottom {} = (OrPattern.bottom, SimplificationProof)

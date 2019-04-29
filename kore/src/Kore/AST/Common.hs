@@ -911,7 +911,7 @@ data Pattern level domain variable child where
         :: !(Application SymbolOrAlias child)
         -> Pattern level domain variable child
     BottomPattern
-        :: !(Bottom level child) -> Pattern level domain variable child
+        :: !(Bottom Sort child) -> Pattern level domain variable child
     CeilPattern
         :: !(Ceil level child) -> Pattern level domain variable child
     DomainValuePattern

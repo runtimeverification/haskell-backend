@@ -13,46 +13,31 @@ module Kore.Syntax.Bottom
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
-import           Data.Functor.Classes
 import           Data.Hashable
 import           GHC.Generics
                  ( Generic )
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
-{-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
+{- | 'Bottom' corresponds to the @\bottom@ branches of the @pattern@ syntactic
+category from the Semantics of K, Section 9.1.4 (Patterns).
 
 'bottomSort' is the sort of the result.
 
-This represents the ⌈BottomPattern⌉ Matching Logic construct.
--}
-newtype Bottom level child = Bottom { bottomSort :: Sort }
+ -}
+newtype Bottom sort child = Bottom { bottomSort :: sort }
     deriving (Eq, Functor, Foldable, Generic, Ord, Traversable, Show)
 
-$newDefinitionGroup
+Deriving.deriveEq1 ''Bottom
+Deriving.deriveOrd1 ''Bottom
+Deriving.deriveShow1 ''Bottom
 
-instance Eq1 (Bottom level) where
-    liftEq = $(Deriving.makeLiftEq ''Bottom)
+instance Hashable sort => Hashable (Bottom sort child)
 
-instance Ord1 (Bottom level) where
-    liftCompare = $(Deriving.makeLiftCompare ''Bottom)
+instance NFData sort => NFData (Bottom sort child)
 
-instance Show1 (Bottom level) where
-    liftShowsPrec = $(Deriving.makeLiftShowsPrec ''Bottom)
-
-instance Hashable (Bottom level child)
-
-instance NFData (Bottom level child)
-
-instance Unparse (Bottom level child) where
+instance Unparse (Bottom Sort child) where
     unparse Bottom { bottomSort } =
         "\\bottom" <> parameters [bottomSort] <> noArguments
     unparse2 _ = "\\bottom"

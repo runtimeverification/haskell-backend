@@ -260,16 +260,10 @@ existsForallGen constructor childGen patternSort = do
     constructor patternSort var
         <$> Gen.small (Reader.local (addVariable var) $ childGen patternSort)
 
-topBottomGen
-    :: (Sort -> t Object child)
-    -> Sort
-    -> Gen (t Object child)
+topBottomGen :: (Sort -> t child) -> Sort -> Gen (t child)
 topBottomGen constructor = pure . constructor
 
-andGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (And Sort child)
+andGen :: (Sort -> Gen child) -> Sort -> Gen (And Sort child)
 andGen = binaryOperatorGen And
 
 applicationGen
@@ -281,7 +275,7 @@ applicationGen childGen _ =
         <$> Gen.small symbolOrAliasGen
         <*> couple (Gen.small (childGen =<< sortGen))
 
-bottomGen :: Sort -> Gen (Bottom Object child)
+bottomGen :: Sort -> Gen (Bottom Sort child)
 bottomGen = topBottomGen Bottom
 
 ceilGen

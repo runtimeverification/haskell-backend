@@ -304,7 +304,7 @@ instance
             , writeListField "applicationChildren" applicationChildren p
             ]
 
-instance PrettyPrint (Bottom level child) where
+instance PrettyPrint (Bottom Sort child) where
     prettyPrint flags (Bottom p) =
         writeOneFieldStruct flags "Bottom" p
 

@@ -400,7 +400,7 @@ verifyImplies
 verifyImplies = verifyOperands impliesSort
 
 verifyBottom
-    ::  ( logical ~ Bottom Object
+    ::  ( logical ~ Bottom Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)
