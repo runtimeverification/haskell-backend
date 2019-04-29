@@ -9,6 +9,7 @@ module Kore.ModelChecker.Bounded
     , check
     ) where
 
+import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import           Data.Limit
                  ( Limit )
@@ -32,7 +33,7 @@ import           Kore.ModelChecker.Step
 import qualified Kore.ModelChecker.Step as ProofState
                  ( ProofState (..) )
 import qualified Kore.ModelChecker.Step as ModelChecker
-                 ( transitionRule )
+                 ( Transition, transitionRule )
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom) )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -48,7 +49,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
-                 ( Strategy, TransitionT, pickFinal, runStrategy )
+                 ( Strategy, pickFinal, runStrategy )
 import           Numeric.Natural
                  ( Natural )
 
@@ -157,7 +158,9 @@ checkClaim
                 ProofState.GoalLHS
                     Conditional
                         {term = left, predicate = Predicate.makeTruePredicate, substitution = mempty}
-        executionGraph <- runStrategy transitionRule' strategy startState
+        executionGraph <- State.evalStateT
+                            (runStrategy transitionRule' strategy startState)
+                            Nothing
         let
             finalResult = (checkFinalNodes . pickFinal) executionGraph
         trace (show finalResult) (return finalResult)
@@ -165,8 +168,7 @@ checkClaim
     transitionRule'
         :: Prim (CommonModalPattern level) (RewriteRule level Variable)
         -> (CommonProofState level)
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level)
+        -> ModelChecker.Transition (CommonProofState level)
     transitionRule' =
         ModelChecker.transitionRule
             metadataTools
