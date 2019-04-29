@@ -144,10 +144,10 @@ newtype SortName = SortName Text
 newtype SortVariableName = SortVariableName Text
 newtype VariableName = VariableName Text
 newtype NamePrefix = NamePrefix Text
-newtype OperandSort level = OperandSort (Sort level)
-newtype ResultSort level = ResultSort (Sort level)
-newtype DeclaredSort level = DeclaredSort (Sort level)
-newtype TestedPatternSort level = TestedPatternSort (Sort level)
+newtype OperandSort level = OperandSort Sort
+newtype ResultSort level = ResultSort Sort
+newtype DeclaredSort level = DeclaredSort Sort
+newtype TestedPatternSort level = TestedPatternSort Sort
 newtype SortVariablesThatMustBeDeclared level =
     SortVariablesThatMustBeDeclared [SortVariable]
 
@@ -183,13 +183,13 @@ simpleMetaAliasSentence :: AliasName -> SortName -> Verified.Sentence
 simpleMetaAliasSentence alias sort =
     asSentence (simpleAliasSentence alias sort r)
   where
-    r = mkTop (simpleSort sort :: Sort Meta)
+    r = mkTop (simpleSort sort :: Sort)
 
 simpleObjectAliasSentence :: AliasName -> SortName -> Verified.Sentence
 simpleObjectAliasSentence alias sort =
    asSentence (simpleAliasSentence alias sort r)
   where
-    r = mkTop (simpleSort sort :: Sort Object)
+    r = mkTop (simpleSort sort :: Sort)
 
 simpleAliasSentence
     :: AliasName
@@ -282,7 +282,7 @@ sortSentenceWithSortParameters (SortName name) parameters =
         )
 
 aliasSentenceWithSort
-    :: AliasName -> Sort Meta -> Verified.Sentence
+    :: AliasName -> Sort -> Verified.Sentence
 aliasSentenceWithSort (AliasName name) sort =
     SentenceAliasSentence
         SentenceAlias
@@ -306,7 +306,7 @@ aliasSentenceWithSort (AliasName name) sort =
             }
 
 metaAliasSentenceWithSortParameters
-    :: AliasName -> Sort Meta -> [SortVariable] -> Verified.Sentence
+    :: AliasName -> Sort -> [SortVariable] -> Verified.Sentence
 metaAliasSentenceWithSortParameters
     (AliasName name) sort parameters
   =
@@ -368,8 +368,8 @@ aliasSentenceWithSortParameters (AliasName name) (SortName sort) parameters r =
 
 sentenceAliasWithSortArgument
     :: AliasName
-    -> Sort Object
-    -> Sort Object
+    -> Sort
+    -> Sort
     -> [SortVariable]
     -> Verified.Pattern
     -> Verified.SentenceAlias
@@ -410,7 +410,7 @@ sentenceAliasWithSortArgument
 sentenceAliasWithAttributes
     :: AliasName
     -> [SortVariable]
-    -> Sort Object
+    -> Sort
     -> [ParsedPattern]
     -> Application Object (Variable Object)
     -> ParsedPattern
@@ -431,7 +431,7 @@ sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
 sentenceSymbolWithAttributes
     :: SymbolName
     -> [SortVariable]
-    -> Sort Object
+    -> Sort
     -> [ParsedPattern]
     -> ParsedSentenceSymbol
 sentenceSymbolWithAttributes (SymbolName name) params sort attributes =
@@ -446,7 +446,7 @@ sentenceSymbolWithAttributes (SymbolName name) params sort attributes =
         }
 
 metaSymbolSentenceWithSortParameters
-    :: SymbolName -> Sort Meta -> [SortVariable] -> Verified.Sentence
+    :: SymbolName -> Sort -> [SortVariable] -> Verified.Sentence
 metaSymbolSentenceWithSortParameters
     (SymbolName name) sort parameters
   =
@@ -513,7 +513,7 @@ axiomSentenceWithAttributes parameters unifiedPattern attributes =
 
 sentenceAliasWithResultSort
     :: AliasName
-    -> Sort Object
+    -> Sort
     -> [SortVariable]
     -> Verified.Pattern
     -> Verified.SentenceAlias
@@ -540,7 +540,7 @@ sentenceAliasWithResultSort (AliasName name) sort parameters r =
         }
 
 symbolSentenceWithResultSort
-    :: SymbolName -> Sort Object -> [SortVariable] -> Verified.Sentence
+    :: SymbolName -> Sort -> [SortVariable] -> Verified.Sentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
   = SentenceSymbolSentence
@@ -556,19 +556,19 @@ symbolSentenceWithResultSort
             }
 
 objectSymbolSentenceWithArguments
-    :: SymbolName -> Sort Object -> [Sort Object] -> Verified.Sentence
+    :: SymbolName -> Sort -> [Sort] -> Verified.Sentence
 objectSymbolSentenceWithArguments = symbolSentenceWithArguments
 
 symbolSentenceWithArguments
-    :: SymbolName -> Sort Object -> [Sort Object] -> Verified.Sentence
+    :: SymbolName -> Sort -> [Sort] -> Verified.Sentence
 symbolSentenceWithArguments name
   = symbolSentenceWithParametersAndArguments name []
 
 objectSymbolSentenceWithParametersAndArguments
     :: SymbolName
     -> [SortVariable]
-    -> Sort Object
-    -> [Sort Object]
+    -> Sort
+    -> [Sort]
     -> Verified.Sentence
 objectSymbolSentenceWithParametersAndArguments
   = symbolSentenceWithParametersAndArguments
@@ -576,8 +576,8 @@ objectSymbolSentenceWithParametersAndArguments
 symbolSentenceWithParametersAndArguments
     :: SymbolName
     -> [SortVariable]
-    -> Sort Object
-    -> [Sort Object]
+    -> Sort
+    -> [Sort]
     -> Verified.Sentence
 symbolSentenceWithParametersAndArguments
     (SymbolName name) params sort operandSorts
@@ -594,7 +594,7 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort Object -> [Variable Object] -> Verified.Sentence
+    :: AliasName -> Sort -> [Variable Object] -> Verified.Sentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
@@ -607,7 +607,7 @@ objectAliasSentenceWithArguments a b c =
 
 aliasSentenceWithArguments
     :: AliasName
-    -> Sort Object
+    -> Sort
     -> [Variable Object]
     -> Verified.Pattern
     -> Verified.Sentence
@@ -641,11 +641,11 @@ simpleSortActual (SortName sort) =
         , sortActualSorts = []
         }
 
-simpleSort :: SortName -> Sort level
+simpleSort :: SortName -> Sort
 simpleSort sortName =
     SortActualSort (simpleSortActual sortName)
 
-objectVariableSort :: Text -> Sort Object
+objectVariableSort :: Text -> Sort
 objectVariableSort name = sortVariableSort name
 
 unifiedSortVariable :: Object -> SortVariableName -> SortVariable
@@ -654,7 +654,7 @@ unifiedSortVariable _x (SortVariableName name) = sortVariable name
 stringUnifiedPattern :: Text -> TermLike Variable
 stringUnifiedPattern s = (mkStringLiteral s)
 
-variable :: VariableName -> Sort level -> Variable level
+variable :: VariableName -> Sort -> Variable level
 variable (VariableName name) sort =
     Variable
         { variableName = testId name
@@ -664,16 +664,16 @@ variable (VariableName name) sort =
 
 unifiedVariable
     :: MetaOrObject level
-    => VariableName -> Sort level -> Variable level
+    => VariableName -> Sort -> Variable level
 unifiedVariable name sort =
     variable name sort
 
-variablePattern :: VariableName -> Sort level -> Pattern level domain Variable p
+variablePattern :: VariableName -> Sort -> Pattern level domain Variable p
 variablePattern name sort =
     VariablePattern (variable name sort)
 
 unifiedVariablePattern
-    :: MetaOrObject level => VariableName -> Sort level -> TermLike Variable
+    :: MetaOrObject level => VariableName -> Sort -> TermLike Variable
 unifiedVariablePattern name patternSort =
     asPurePattern (valid :< variablePattern name patternSort)
   where
@@ -683,7 +683,7 @@ unifiedVariablePattern name patternSort =
 simpleExistsPattern
     :: MetaOrObject level
     => Variable level
-    -> Sort level
+    -> Sort
     -> Pattern level domain Variable (TermLike Variable)
 simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
@@ -693,19 +693,19 @@ simpleExistsPattern quantifiedVariable resultSort =
         }
 
 simpleExistsUnifiedPattern
-    :: MetaOrObject level => VariableName -> Sort level -> TermLike Variable
+    :: MetaOrObject level => VariableName -> Sort -> TermLike Variable
 simpleExistsUnifiedPattern name sort =
     asPurePattern $ valid :< simpleExistsPattern (variable name sort) sort
   where
     valid = Valid { patternSort = sort, freeVariables = Set.empty }
 
 simpleExistsObjectUnifiedPattern
-    :: VariableName -> Sort Object -> TermLike Variable
+    :: VariableName -> Sort -> TermLike Variable
 simpleExistsObjectUnifiedPattern = simpleExistsUnifiedPattern
 
 simpleExistsUnifiedPatternWithType
     :: MetaOrObject level
-    => level -> VariableName -> Sort level -> TermLike Variable
+    => level -> VariableName -> Sort -> TermLike Variable
 simpleExistsUnifiedPatternWithType _ = simpleExistsUnifiedPattern
 
 simpleExistsEqualsUnifiedPattern
@@ -752,9 +752,9 @@ applicationPatternWithChildren (SymbolName name) unifiedPatterns =
 
 applicationUnifiedPatternWithParams
     :: MetaOrObject level
-    => Sort level
+    => Sort
     -> SymbolName
-    -> [Sort level]
+    -> [Sort]
     -> TermLike Variable
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
     mkApp

@@ -821,13 +821,11 @@ instance StructEqualWithExplanation Id where
             ]
     structConstructorName _ = "Id"
 
-instance EqualWithExplanation Id
-  where
+instance EqualWithExplanation Id where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (Sort Object)
-  where
+instance EqualWithExplanation Sort where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 

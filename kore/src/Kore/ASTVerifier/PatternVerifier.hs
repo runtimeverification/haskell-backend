@@ -231,7 +231,7 @@ This includes verifying that:
 
  -}
 verifyPattern
-    :: Maybe (Sort Object)
+    :: Maybe Sort
     -- ^ If present, represents the expected sort of the pattern.
     -> ParsedPattern
     -> PatternVerifier Verified.Pattern
@@ -251,7 +251,7 @@ See also: 'verifyPattern', 'verifyFreeVariables', 'withDeclaredVariables'
 
  -}
 verifyStandalonePattern
-    :: Maybe (Sort Object)
+    :: Maybe Sort
     -> ParsedPattern
     -> PatternVerifier Verified.Pattern
 verifyStandalonePattern expectedSort korePattern = do
@@ -342,7 +342,7 @@ verifyPatternHead =
   where
     transCofreeF fg (a :< fb) = a :< fg fb
 
-verifyPatternSort :: MetaOrObject level => Sort level -> PatternVerifier ()
+verifyPatternSort :: MetaOrObject level => Sort -> PatternVerifier ()
 verifyPatternSort patternSort = do
     Context { declaredSortVariables } <- Reader.ask
     _ <- verifySort lookupSortDeclaration declaredSortVariables patternSort
@@ -353,7 +353,7 @@ verifyOperands
         , Traversable operator
         , valid ~ Valid (Variable level) level
         )
-    => (forall a. operator a -> Sort level)
+    => (forall a. operator a -> Sort)
     -> operator (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF operator valid Verified.Pattern)
 verifyOperands operandSort = \operator -> do
@@ -449,8 +449,8 @@ verifyPredicate
         , Traversable predicate
         , valid ~ Valid (Variable level) level
         )
-    => (forall a. predicate a -> Sort level)  -- ^ Operand sort
-    -> (forall a. predicate a -> Sort level)  -- ^ Result sort
+    => (forall a. predicate a -> Sort)  -- ^ Operand sort
+    -> (forall a. predicate a -> Sort)  -- ^ Result sort
     -> predicate (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF predicate valid Verified.Pattern)
 verifyPredicate operandSort resultSort = \predicate -> do
@@ -506,7 +506,7 @@ verifyNext = verifyOperands nextSort
 
 verifyPatternsWithSorts
     :: ( Comonad pat, valid ~ Valid (Variable Object) Object )
-    => [Sort Object]
+    => [Sort]
     -> [PatternVerifier (pat valid)]
     -> PatternVerifier [(pat valid)]
 verifyPatternsWithSorts sorts operands = do
@@ -556,7 +556,7 @@ verifyBinder
         , Traversable binder
         , valid ~ Valid (Variable level) level
         )
-    => (forall a. binder a -> Sort level)
+    => (forall a. binder a -> Sort)
     -> (forall a. binder a -> Variable level)
     -> binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
@@ -712,8 +712,8 @@ applicationSortsFromSymbolOrAliasSentence symbolOrAlias sentence = do
     symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) sentence
 
 assertSameSort
-    :: Sort Object
-    -> Sort Object
+    :: Sort
+    -> Sort
     -> PatternVerifier ()
 assertSameSort expectedSort actualSort = do
     koreFailWithLocationsWhen
@@ -728,7 +728,7 @@ assertSameSort expectedSort actualSort = do
         )
 
 assertExpectedSort
-    :: Maybe (Sort Object)
+    :: Maybe Sort
     -> Valid variable Object
     -> PatternVerifier ()
 assertExpectedSort Nothing _ = return ()

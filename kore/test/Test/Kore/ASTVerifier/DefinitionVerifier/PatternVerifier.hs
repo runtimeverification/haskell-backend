@@ -37,7 +37,7 @@ data PatternRestrict
 data TestPattern level = TestPattern
     { testPatternPattern
         :: !(Pattern level Domain.Builtin Variable (TermLike Variable))
-    , testPatternSort       :: !(Sort level)
+    , testPatternSort       :: !Sort
     , testPatternErrorStack :: !ErrorStack
     }
 
@@ -621,7 +621,7 @@ test_patternVerifier =
     ]
   where
     objectSortName = SortName "ObjectSort"
-    objectSort :: Sort Object
+    objectSort :: Sort
     objectSort = simpleSort objectSortName
     objectVariableName = VariableName "ObjectVariable"
     objectVariable' = variable objectVariableName objectSort
@@ -631,16 +631,16 @@ test_patternVerifier =
     dummyMetaSort = updateAstLocation charMetaSort AstLocationTest
     dummyMetaVariable = variable (VariableName "#otherVariable") dummyMetaSort
     anotherSortName = SortName "anotherSort"
-    anotherSort :: Sort Object
+    anotherSort :: Sort
     anotherSort = simpleSort anotherSortName
     anotherVariable = variable objectVariableName anotherSort
     anotherSortSentence = simpleSortSentence anotherSortName
     anotherMetaSort = updateAstLocation stringMetaSort AstLocationTest
     anotherObjectSortName2 = SortName "anotherSort2"
-    anotherObjectSort2 :: Sort Object
+    anotherObjectSort2 :: Sort
     anotherObjectSort2 = simpleSort anotherObjectSortName2
     anotherObjectSortSentence2 = simpleSortSentence anotherObjectSortName2
-    invalidMetaSort :: Sort Meta
+    invalidMetaSort :: Sort
     invalidMetaSort = simpleSort (SortName "#InvalidMetaSort")
     anotherMetaSort2 = updateAstLocation charMetaSort AstLocationTest
     objectSymbolName = SymbolName "ObjectSymbol"
@@ -664,7 +664,7 @@ test_patternVerifier =
                 }
             ]
     objectSortVariable = sortVariable "ObjectSortVariable"
-    objectSortVariableSort :: Sort Object
+    objectSortVariableSort :: Sort
     objectSortVariableSort = sortVariableSort "ObjectSortVariable"
     objectVariableSortVariable =
         variable objectVariableName objectSortVariableSort
@@ -683,7 +683,7 @@ test_patternVerifier =
                 }
             :: Verified.SentenceSymbol)
     intSortName = SortName "Int"
-    intSort :: Sort Object
+    intSort :: Sort
     intSort = simpleSort intSortName
     intSortSentence :: Verified.SentenceHook
     intSortSentence =
@@ -696,7 +696,7 @@ test_patternVerifier =
       where
         SortName name = intSortName
     boolSortName = SortName "Int"
-    boolSort :: Sort Object
+    boolSort :: Sort
     boolSort = simpleSort boolSortName
     boolSortSentence :: Verified.SentenceHook
     boolSortSentence =
@@ -1216,7 +1216,7 @@ objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 patternInQuantifiedPatterns
     :: MetaOrObject level
     => Pattern level Domain.Builtin Variable (TermLike Variable)
-    -> Sort level
+    -> Sort
     -> Variable level
     -> [TestPattern level]
 patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =

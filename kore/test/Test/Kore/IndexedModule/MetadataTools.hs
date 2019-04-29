@@ -35,7 +35,7 @@ import qualified Kore.Verified as Verified
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
 
-objectS1 :: Sort Object
+objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol Object (TermLike Variable)
@@ -161,11 +161,11 @@ test_metadataTools =
   where
     symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
 
-sortA, sortB, sortC, sortD,sortE, sortF, sortG :: Sort Object
+sortA, sortB, sortC, sortD,sortE, sortF, sortG :: Sort
 [sortA, sortB, sortC, sortD, sortE, sortF, sortG] =
     [(sortActual . Text.pack) [c] [] | c <- "ABCDEFG"]
 
-sortVarR :: Sort Object
+sortVarR :: Sort
 sortVarR = sortVariableSort "R"
 
 testSubsorts :: [TestTree]
@@ -227,7 +227,7 @@ testSubsortModule =
         , moduleAttributes = Attributes []
         }
   where
-    subsortAxiom :: Sort Object -> Sort Object -> ParsedSentence
+    subsortAxiom :: Sort -> Sort -> ParsedSentence
     subsortAxiom subSort superSort =
         SentenceAxiomSentence
           (SentenceAxiom
@@ -238,7 +238,7 @@ testSubsortModule =
                   [subsortAttribute subSort superSort]
               })
 
-    sortDecl :: Sort Object -> ParsedSentence
+    sortDecl :: Sort -> ParsedSentence
     sortDecl (SortActualSort (SortActual name [])) =
         SentenceSortSentence
           (SentenceSort

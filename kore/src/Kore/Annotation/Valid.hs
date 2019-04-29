@@ -30,7 +30,7 @@ import Kore.Sort
  -}
 data Valid variable level =
     Valid
-        { patternSort :: !(Sort level)
+        { patternSort :: !Sort
         -- ^ The sort determined by the verifier.
         , freeVariables :: !(Set variable)
         -- ^ The free variables of the pattern.

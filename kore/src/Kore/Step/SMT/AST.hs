@@ -43,8 +43,6 @@ import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Sort as Kore
                  ( Sort )
 import           Kore.Step.SMT.Encoder
@@ -61,13 +59,10 @@ The SmtSort type below instantiates Sort with the types used by the SMT.
 data Sort sort symbol name =
     Sort
         { smtFromSortArgs
-            :: !(  Map (Kore.Id) SmtSort
-                -> [Kore.Sort Object]
-                -> Maybe AST.SExpr
-                )
+            :: !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
         -- ^ Produces the SMT representation of a sort. Given a map with
         -- Smt representations for sorts and a list of sort arguments, returns
-        -- an s-expression that can be used, say, when declaring symbols of
+        -- an S-expression that can be used, say, when declaring symbols of
         -- that sort.
         , declaration :: !(KoreSortDeclaration sort symbol name)
         -- ^ Information needed for declaring the sort, also listing all
@@ -93,7 +88,7 @@ data Symbol sort name =
     Symbol
         { smtFromSortArgs
             :: !(  Map (Kore.Id) SmtSort
-                -> [Kore.Sort Object]
+                -> [Kore.Sort]
                 -> Maybe AST.SExpr
                 )
         -- ^ Produces the SMT representation of a symbol. Given a map with
@@ -164,7 +159,7 @@ data Declarations sort symbol name =
 
 {-| Marks a dependency on a given sort.
 -}
-newtype SortReference = SortReference { getSortReference :: Kore.Sort Object }
+newtype SortReference = SortReference { getSortReference :: Kore.Sort }
     deriving (Eq, Ord, Show)
 
 {-| Marks a dependency on a given symbol.

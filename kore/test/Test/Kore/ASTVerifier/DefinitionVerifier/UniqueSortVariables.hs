@@ -431,9 +431,9 @@ test_uniqueSortVariables =
   where
     topS =
             (mkTop
-                (simpleSort $ SortName "s" :: Sort Object)
+                (simpleSort $ SortName "s" :: Sort)
             )
     topS1 =
             (mkTop
-                (simpleSort $ SortName "s1" :: Sort Object)
+                (simpleSort $ SortName "s1" :: Sort)
             )

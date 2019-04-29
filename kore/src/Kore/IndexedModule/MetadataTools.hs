@@ -42,12 +42,12 @@ data MetadataTools level smt attributes = MetadataTools
     -- ^ get the attributes of a symbol or alias
     , symbolOrAliasType :: SymbolOrAlias level -> HeadType
     -- ^ whether a symbol or alias is a symbol
-    , sortAttributes :: Sort level -> Attribute.Sort
+    , sortAttributes :: Sort -> Attribute.Sort
     -- ^ get the attributes of a sort
-    , isSubsortOf :: Sort level -> Sort level -> Bool
+    , isSubsortOf :: Sort -> Sort -> Bool
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
        including when @a@ equals @b@. -}
-    , subsorts :: Sort level -> Set (Sort level)
+    , subsorts :: Sort -> Set Sort
     -- ^ get the subsorts for a sort
     , applicationSorts :: SymbolOrAlias level -> ApplicationSorts level
     -- ^ Sorts for a specific symbol application.
@@ -83,7 +83,7 @@ extractMetadataTools m smtExtractor =
         , smtData = smtExtractor m
         }
   where
-    subsortTable :: Map (Sort Object) [Sort Object]
+    subsortTable :: Map Sort [Sort]
     subsortTable = Map.unionsWith (++)
         [ Map.insert subsort [] $ Map.singleton supersort [subsort]
         | Subsort subsort supersort <- indexedModuleSubsorts m]
@@ -94,17 +94,17 @@ extractMetadataTools m smtExtractor =
         graphFromEdges [ ((),supersort,subsorts)
                         | (supersort,subsorts)
                             <- Map.toList subsortTable]
-    getSortFromId :: Vertex -> Sort Object
+    getSortFromId :: Vertex -> Sort
     getSortFromId sortId =
         let (_, sort, _) = vertexToSort sortId
         in sort
 
-    getSubsorts :: Sort level -> [Vertex]
+    getSubsorts :: Sort -> [Vertex]
     getSubsorts = case isMetaOrObject @level [] of
         IsObject ->
             maybe [] (reachable sortGraph) . sortToVertex
 
-    checkSubsort :: Sort level -> Sort level -> Bool
+    checkSubsort :: Sort -> Sort -> Bool
     checkSubsort = case isMetaOrObject @level [] of
         IsObject ->
             let

@@ -245,12 +245,8 @@ makeForall variable patterns =
         , forallChild       = OrPattern.fromPatterns patterns
         }
 
-testSort :: Sort Object
-testSort =
-    SortActualSort SortActual
-        { sortActualName  = Id "testSort" AstLocationTest
-        , sortActualSorts = []
-        }
+testSort :: Sort
+testSort = Mock.testSort
 
 evaluate
     :: MetaOrObject level

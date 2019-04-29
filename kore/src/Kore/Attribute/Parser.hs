@@ -144,7 +144,7 @@ failConflicting idents =
 
 withApplication
     :: Id
-    -> ([Sort Object] -> [AttributePattern] -> attrs -> Parser attrs)
+    -> ([Sort] -> [AttributePattern] -> attrs -> Parser attrs)
     -> AttributePattern
     -> attrs
     -> Parser attrs
@@ -163,7 +163,7 @@ withApplication ident go kore =
             SymbolOrAlias { symbolOrAliasParams } = symbol
         _ -> return
 
-getZeroParams :: [Sort Object] -> Parser ()
+getZeroParams :: [Sort] -> Parser ()
 getZeroParams =
     \case
         [] -> return ()
@@ -173,7 +173,7 @@ getZeroParams =
           where
             arity = length params
 
-getTwoParams :: [Sort Object] -> Parser (Sort Object, Sort Object)
+getTwoParams :: [Sort] -> Parser (Sort, Sort)
 getTwoParams =
     \case
         [param1, param2] -> return (param1, param2)

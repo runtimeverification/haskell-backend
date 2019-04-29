@@ -98,7 +98,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 sortParser
     :: MetaOrObject level
     => level        -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Sort level)
+    -> Parser Sort
 sortParser x = do
     identifier <- idParser x
     c <- ParserUtils.peekChar
@@ -126,7 +126,7 @@ Relevant BNF definitions:
 validateMetaSort
     :: MetaOrObject level
     => Id     -- ^ The sort name
-    -> [Sort level] -- ^ The sort arguments
+    -> [Sort] -- ^ The sort arguments
     -> Parser ()
 validateMetaSort identifier [] =
     unless (isJust (metaSortConverter metaId))
@@ -219,7 +219,7 @@ unaryOperatorRemainderParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> child -> m level child)
+    -> (Sort -> child -> m level child)
     -- ^ Element constructor.
     -> Parser (m level child)
 unaryOperatorRemainderParser childParser x constructor =
@@ -245,7 +245,7 @@ binaryOperatorRemainderParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> child -> child -> m level child)
+    -> (Sort -> child -> child -> m level child)
     -- ^ Element constructor.
     -> Parser (m level child)
 binaryOperatorRemainderParser childParser x constructor = do
@@ -272,7 +272,7 @@ existsForallRemainderParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> Variable level -> child
+    -> (Sort -> Variable level -> child
         -> m level Variable child)
     -- ^ Element constructor.
     -> Parser (m level Variable child)
@@ -299,7 +299,7 @@ ceilFloorRemainderParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> Sort level -> child -> m level child)
+    -> (Sort -> Sort -> child -> m level child)
     -- ^ Element constructor.
     -> Parser (m level child)
 ceilFloorRemainderParser childParser x constructor = do
@@ -325,7 +325,7 @@ equalsInRemainderParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> Sort level -> child -> child -> m level child)
+    -> (Sort -> Sort -> child -> child -> m level child)
     -- ^ Element constructor.
     -> Parser (m level child)
 equalsInRemainderParser childParser x constructor = do
@@ -350,7 +350,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 topBottomRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> m level child)  -- ^ Element constructor.
+    -> (Sort -> m level child)  -- ^ Element constructor.
     -> Parser (m level child)
 topBottomRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
@@ -934,8 +934,8 @@ symbolSentenceRemainderParser
     => level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser m  -- Head parser.
     -> (m
-        -> [Sort level]
-        -> Sort level
+        -> [Sort]
+        -> Sort
         -> Attributes
         -> as
        )

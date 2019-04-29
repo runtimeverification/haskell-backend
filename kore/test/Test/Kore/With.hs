@@ -7,8 +7,6 @@ import           Data.List
                  ( foldl' )
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
                  ( Attributes (Attributes), Definition (Definition),
                  Module (Module),
@@ -230,28 +228,22 @@ instance With
             { AST.Constructor.arguments = arguments `with` argument
             }
 
-instance With
-    (Kore.Id, AST.UnresolvedSymbol)
-    (Kore.Sort Object)
-  where
+instance With (Kore.Id, AST.UnresolvedSymbol) Kore.Sort where
     with (symbolId, symbol) sort = (symbolId, symbol `with` sort)
 
-instance With AST.UnresolvedSymbol (Kore.Sort Object)
-  where
+instance With AST.UnresolvedSymbol Kore.Sort where
     with
         s@AST.Symbol {declaration}
         sort
       = s { AST.Symbol.declaration = declaration `with` sort }
 
-instance With AST.UnresolvedKoreSymbolDeclaration (Kore.Sort Object)
-  where
+instance With AST.UnresolvedKoreSymbolDeclaration Kore.Sort where
     with (AST.SymbolDeclaredDirectly _) _ =
         error "Cannot add sorts to SymbolDeclaredDirectly."
     with (AST.SymbolDeclaredIndirectly declaration) sort =
         AST.SymbolDeclaredIndirectly (declaration `with` sort)
 
-instance With AST.UnresolvedIndirectSymbolDeclaration (Kore.Sort Object)
-  where
+instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
     with
         s@AST.IndirectSymbolDeclaration {sorts}
         sort

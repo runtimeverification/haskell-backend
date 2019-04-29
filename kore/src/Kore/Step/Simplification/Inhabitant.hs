@@ -23,7 +23,7 @@ an or containing a term made of that literal.
 -}
 simplify
     :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
-    => Sort level
+    => Sort
     -> ( OrPattern level variable
        , SimplificationProof level
        )

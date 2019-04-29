@@ -315,7 +315,7 @@ sortVisibilityTests =
     sort = SortActualSort SortActual
         { sortActualName = testId "sort1"
         , sortActualSorts = []
-        } :: Sort Object
+        } :: Sort
     sortDeclaration = asSentence
         (SentenceSort
             { sentenceSortName = testId "sort1"
@@ -326,7 +326,7 @@ sortVisibilityTests =
     anotherSort = SortActualSort SortActual
         { sortActualName = testId "sort3"
         , sortActualSorts = []
-        } :: Sort Object
+        } :: Sort
     anotherSortDeclaration = asSentence
         (SentenceSort
             { sentenceSortName = testId "sort3"
@@ -340,7 +340,7 @@ sortVisibilityTests =
         SortActualSort SortActual
             { sortActualName = testId "sort2"
             , sortActualSorts = [ sort ]
-            } :: Sort Object
+            } :: Sort
     sortReferenceInSortSentence =
         SentenceAxiomSentence
             SentenceAxiom
@@ -819,7 +819,7 @@ aliasVisibilityTests =
     aliasDeclaration =
         let aliasConstructor = testId "alias1"
             aliasParams = [SortVariable (testId "sv1")]
-            sentenceAliasResultSort :: Sort Object
+            sentenceAliasResultSort :: Sort
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
         in SentenceAliasSentence
@@ -854,7 +854,7 @@ aliasVisibilityTests =
         let aliasConstructor = testId "#alias1"
             aliasParams = [SortVariable (testId "#sv1")]
             symbolOrAliasParams = SortVariableSort <$> aliasParams
-            sentenceAliasResultSort :: Sort Meta
+            sentenceAliasResultSort :: Sort
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "#sv1"))
         in SentenceAliasSentence
@@ -940,7 +940,7 @@ aliasVisibilityTests =
         let aliasConstructor :: Id
             aliasConstructor = testId "alias2" :: Id
             aliasParams = [SortVariable (testId "sv1")]
-            sentenceAliasResultSort :: Sort Object
+            sentenceAliasResultSort :: Sort
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
         in SentenceAliasSentence
@@ -975,7 +975,7 @@ aliasVisibilityTests =
         : defaultAliasSupportSentences
 
 
-defaultSort :: Sort Object
+defaultSort :: Sort
 defaultSort = SortActualSort SortActual
     { sortActualName = testId "sort1"
     , sortActualSorts = []

@@ -44,7 +44,7 @@ instance ParseAttributes Source where
       where
 
         parseApplication
-            :: [Sort Object]
+            :: [Sort]
             -> [AttributePattern]
             -> Source
             -> AttributeParser.Parser Source

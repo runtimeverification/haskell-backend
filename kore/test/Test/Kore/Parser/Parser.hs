@@ -329,7 +329,7 @@ andPatternParserTests =
     parseTree korePatternParser
         [ success "\\and{s}(\"a\", \"b\")"
             ( asParsedPattern $ AndPattern And
-                { andSort = sortVariableSort "s" :: Sort Object
+                { andSort = sortVariableSort "s" :: Sort
                 , andFirst =
                     asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                 , andSecond =
@@ -406,7 +406,7 @@ bottomPatternParserTests =
     parseTree korePatternParser
         [ success "\\bottom{#Sort}()"
             (asParsedPattern $ BottomPattern $ Bottom
-                (sortVariableSort "#Sort" :: Sort Meta)
+                (sortVariableSort "#Sort" :: Sort)
             )
         , FailureWithoutMessage
             [ ""
@@ -421,7 +421,7 @@ ceilPatternParserTests =
     parseTree korePatternParser
         [ success "\\ceil{s1, s2}(\"a\")"
             (asParsedPattern $ CeilPattern Ceil
-                    { ceilOperandSort = sortVariableSort "s1" :: Sort Object
+                    { ceilOperandSort = sortVariableSort "s1" :: Sort
                     , ceilResultSort = sortVariableSort "s2"
                     , ceilChild =
                         asParsedPattern $ StringLiteralPattern (StringLiteral "a")
@@ -459,7 +459,7 @@ equalsPatternParserTests =
     parseTree korePatternParser
         [ success "\\equals{s1, s2}(\"a\", \"b\")"
             ( asParsedPattern $ EqualsPattern Equals
-                    { equalsOperandSort = sortVariableSort "s1" :: Sort Object
+                    { equalsOperandSort = sortVariableSort "s1" :: Sort
                     , equalsResultSort = sortVariableSort "s2"
                     , equalsFirst =
                         asParsedPattern $ StringLiteralPattern (StringLiteral "a")
@@ -481,7 +481,7 @@ existsPatternParserTests =
     parseTree korePatternParser
         [ success "\\exists{#s}(#v:#Char, \"b\")"
             (asParsedPattern $ ExistsPattern Exists
-                    { existsSort = sortVariableSort "#s" :: Sort Meta
+                    { existsSort = sortVariableSort "#s" :: Sort
                     , existsVariable =
                         Variable
                             { variableName = testId "#v"
@@ -512,7 +512,7 @@ floorPatternParserTests =
     parseTree korePatternParser
         [ success "\\floor{s1, s2}(\"a\")"
             ( asParsedPattern $ FloorPattern Floor
-                    { floorOperandSort = sortVariableSort "s1" :: Sort Object
+                    { floorOperandSort = sortVariableSort "s1" :: Sort
                     , floorResultSort = sortVariableSort "s2"
                     , floorChild =
                         asParsedPattern $ StringLiteralPattern (StringLiteral "a")
@@ -531,7 +531,7 @@ forallPatternParserTests =
     parseTree korePatternParser
         [ success "\\forall{s}(v:s1, \"b\")"
             ( asParsedPattern $ ForallPattern Forall
-                    { forallSort = sortVariableSort "s" :: Sort Object
+                    { forallSort = sortVariableSort "s" :: Sort
                     , forallVariable =
                         Variable
                             { variableName = testId "v"
@@ -562,7 +562,7 @@ iffPatternParserTests =
     parseTree korePatternParser
         [ success "\\iff{s}(\"a\", \"b\")"
             ( asParsedPattern $ IffPattern Iff
-                    { iffSort = sortVariableSort "s" :: Sort Object
+                    { iffSort = sortVariableSort "s" :: Sort
                     , iffFirst =
                         asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , iffSecond =
@@ -582,7 +582,7 @@ impliesPatternParserTests =
     parseTree korePatternParser
         [ success "\\implies{s}(\"a\", \"b\")"
             ( asParsedPattern $ ImpliesPattern Implies
-                    { impliesSort = sortVariableSort "s" :: Sort Object
+                    { impliesSort = sortVariableSort "s" :: Sort
                     , impliesFirst =
                         asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , impliesSecond =
@@ -602,7 +602,7 @@ memPatternParserTests =
     parseTree korePatternParser
         [ success "\\in{s1,s2}(v:s3, \"b\")"
             ( asParsedPattern $ InPattern In
-                    { inOperandSort = sortVariableSort "s1" :: Sort Object
+                    { inOperandSort = sortVariableSort "s1" :: Sort
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild = asParsedPattern $
                         VariablePattern Variable
@@ -616,7 +616,7 @@ memPatternParserTests =
             )
         , success "\\in{s1,s2}(\"a\", \"b\")"
             ( asParsedPattern $ InPattern In
-                    { inOperandSort = sortVariableSort "s1" :: Sort Object
+                    { inOperandSort = sortVariableSort "s1" :: Sort
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild =
                         asParsedPattern $ StringLiteralPattern (StringLiteral "a")
@@ -644,7 +644,7 @@ notPatternParserTests =
     parseTree korePatternParser
         [ success "\\not{s}(\"a\")"
             ( asParsedPattern $ NotPattern Not
-                    { notSort = sortVariableSort "s" :: Sort Object
+                    { notSort = sortVariableSort "s" :: Sort
                     , notChild =
                         asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     }
@@ -684,7 +684,7 @@ orPatternParserTests =
     parseTree korePatternParser
         [ success "\\or{s}(\"a\", \"b\")"
             ( asParsedPattern $ OrPattern Or
-                    { orSort = sortVariableSort "s" :: Sort Object
+                    { orSort = sortVariableSort "s" :: Sort
                     , orFirst =
                         asParsedPattern $ StringLiteralPattern (StringLiteral "a")
                     , orSecond =
@@ -735,7 +735,7 @@ topPatternParserTests =
     parseTree korePatternParser
         [ success "\\top{s}()"
             (asParsedPattern $ TopPattern $ Top
-                (sortVariableSort "s" :: Sort Object)
+                (sortVariableSort "s" :: Sort)
             )
         , FailureWithoutMessage
             ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"]
@@ -1515,10 +1515,8 @@ definitionParserTests =
 -- Generic test utilities
 ------------------------------------
 
-sortVariableSort :: Text -> Sort a
-sortVariableSort name =
-    SortVariableSort (sortVariable name)
+sortVariableSort :: Text -> Sort
+sortVariableSort name = SortVariableSort (sortVariable name)
 
 sortVariable :: Text -> SortVariable
-sortVariable name =
-    SortVariable (testId name)
+sortVariable name = SortVariable (testId name)

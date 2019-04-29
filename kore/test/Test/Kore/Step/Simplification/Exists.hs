@@ -273,12 +273,8 @@ makeExists variable patterns =
         , existsChild = OrPattern.fromPatterns patterns
         }
 
-testSort :: Sort Object
-testSort =
-    SortActualSort SortActual
-        { sortActualName  = Id "testSort" AstLocationTest
-        , sortActualSorts = []
-        }
+testSort :: Sort
+testSort = Mock.testSort
 
 simplify
     :: MetaOrObject level

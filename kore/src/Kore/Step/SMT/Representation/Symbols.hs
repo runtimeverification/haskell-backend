@@ -14,8 +14,6 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
                  ( SentenceSymbol (SentenceSymbol, sentenceSymbolResultSort, sentenceSymbolSorts, sentenceSymbolSymbol) )
 import qualified Kore.AST.Sentence as Sentence
@@ -195,7 +193,7 @@ constructorDeclaration
 emptySortArgsToSmt
     :: SMT.SExpr
     -> Map.Map Id AST.SmtSort
-    -> [Sort Object]
+    -> [Sort]
     -> Maybe SMT.SExpr
 emptySortArgsToSmt representation _ [] = Just representation
 emptySortArgsToSmt representation _ args = (error . unlines)

@@ -206,7 +206,7 @@ expectBuiltinSet ctx tools _set =
 returnSet
     :: (Monad m, Ord (variable Object))
     => SmtMetadataTools attrs
-    -> Sort Object
+    -> Sort
     -> Builtin
     -> m (AttemptedAxiom Object variable)
 returnSet tools resultSort set =
@@ -376,7 +376,7 @@ pattern.
 asInternal
     :: Ord (variable Object)
     => SmtMetadataTools attrs
-    -> Sort Object
+    -> Sort
     -> Builtin
     -> TermLike variable
 asInternal tools builtinSetSort builtinSetChild =
@@ -423,7 +423,7 @@ asPattern
     ::  ( Ord (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => Sort Object
+    => Sort
     -> Builtin
     -> Pattern Object variable
 asPattern resultSort =
@@ -456,7 +456,7 @@ sizeKey = "SET.size"
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
 lookupSymbolIn
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolIn = Builtin.lookupSymbol inKey
@@ -464,7 +464,7 @@ lookupSymbolIn = Builtin.lookupSymbol inKey
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
  -}
 lookupSymbolDifference
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey

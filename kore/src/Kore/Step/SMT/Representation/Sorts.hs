@@ -86,7 +86,7 @@ import qualified SMT as SMT.Constructor
 
 translateSort
     :: Map.Map Id AST.SmtSort
-    -> Sort Object
+    -> Sort
     -> Maybe SMT.SExpr
 translateSort
     sorts
@@ -216,7 +216,7 @@ smtlibSortDeclaration
     applyToArgs
         :: SMT.SExpr
         -> Map.Map Id AST.SmtSort
-        -> [Sort Object]
+        -> [Sort]
         -> Maybe SMT.SExpr
     applyToArgs sExpr definitions children = do
         children' <- mapM (translateSort definitions) children
@@ -254,7 +254,7 @@ simpleSortDeclaration _ = Nothing
 emptySortArgsToSmt
     :: SMT.SExpr
     -> Map.Map Id AST.SmtSort
-    -> [Sort Object]
+    -> [Sort]
     -> Maybe SMT.SExpr
 emptySortArgsToSmt representation _ [] = Just representation
 emptySortArgsToSmt representation _ args = (error . unlines)

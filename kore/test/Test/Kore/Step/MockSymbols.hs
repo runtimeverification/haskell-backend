@@ -1237,7 +1237,7 @@ headTypeMapping =
         )
     ]
 
-sortAttributesMapping :: [(Sort Object, Attribute.Sort)]
+sortAttributesMapping :: [(Sort, Attribute.Sort)]
 sortAttributesMapping =
     [   ( testSort
         , Default.def
@@ -1707,8 +1707,7 @@ builtinZeroarySmtSort sExpr =
                 (SMT.AlreadyEncoded (SMT.nameFromSExpr sExpr))
         }
 
-smtConstructor
-    :: Id -> [Sort Object] -> Sort Object -> SMT.UnresolvedSymbol
+smtConstructor :: Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtConstructor symbolId argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
@@ -1723,7 +1722,7 @@ smtConstructor symbolId argumentSorts resultSort =
     encodedId = SMT.encode encodableId
 
 smtBuiltinSymbol
-    :: Text -> [Sort Object] -> Sort Object -> SMT.UnresolvedSymbol
+    :: Text -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtBuiltinSymbol builtin argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom builtin)))
@@ -1825,91 +1824,91 @@ intSortId = testId "intSort"
 boolSortId :: Id
 boolSortId = testId "boolSort"
 
-testSort :: Sort Object
+testSort :: Sort
 testSort =
     SortActualSort SortActual
         { sortActualName  = testSortId
         , sortActualSorts = []
         }
 
-testSort0 :: Sort Object
+testSort0 :: Sort
 testSort0 =
     SortActualSort SortActual
         { sortActualName  = testSort0Id
         , sortActualSorts = []
         }
 
-testSort1 :: Sort Object
+testSort1 :: Sort
 testSort1 =
     SortActualSort SortActual
         { sortActualName  = testSort1Id
         , sortActualSorts = []
         }
 
-topSort :: Sort Object
+topSort :: Sort
 topSort =
     SortActualSort SortActual
         { sortActualName  = topSortId
         , sortActualSorts = []
         }
 
-subSort :: Sort Object
+subSort :: Sort
 subSort =
     SortActualSort SortActual
         { sortActualName  = subSortId
         , sortActualSorts = []
         }
 
-subSubsort :: Sort Object
+subSubsort :: Sort
 subSubsort =
     SortActualSort SortActual
         { sortActualName  = subSubsortId
         , sortActualSorts = []
         }
 
-otherSort :: Sort Object
+otherSort :: Sort
 otherSort =
     SortActualSort SortActual
         { sortActualName = otherSortId
         , sortActualSorts = []
         }
 
-mapSort :: Sort Object
+mapSort :: Sort
 mapSort =
     SortActualSort SortActual
         { sortActualName  = testId "mapSort"
         , sortActualSorts = []
         }
 
-setSort :: Sort Object
+setSort :: Sort
 setSort =
     SortActualSort SortActual
         { sortActualName  = testId "mapSort"
         , sortActualSorts = []
         }
 
-listSort :: Sort Object
+listSort :: Sort
 listSort =
     SortActualSort SortActual
         { sortActualName  = testId "listSort"
         , sortActualSorts = []
         }
 
-intSort :: Sort Object
+intSort :: Sort
 intSort =
     SortActualSort SortActual
         { sortActualName  = intSortId
         , sortActualSorts = []
         }
 
-boolSort :: Sort Object
+boolSort :: Sort
 boolSort =
     SortActualSort SortActual
         { sortActualName  = boolSortId
         , sortActualSorts = []
         }
 
-subsorts :: [(Sort Object, Sort Object)]
+subsorts :: [(Sort, Sort)]
 subsorts =
     [ (subSubsort, subSort)
     , (subSubsort, topSort)

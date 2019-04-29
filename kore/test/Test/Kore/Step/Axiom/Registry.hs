@@ -72,13 +72,13 @@ sortVar = SortVariable (testId "R")
 sortVar1 :: SortVariable
 sortVar1 = SortVariable (testId "R1")
 
-sortVarS :: Sort Object
+sortVarS :: Sort
 sortVarS = SortVariableSort sortVar
 
-sortVar1S :: Sort Object
+sortVar1S :: Sort
 sortVar1S = SortVariableSort sortVar1
 
-sortS :: Sort level
+sortS :: Sort
 sortS = SortActualSort (SortActual (testId "S") [])
 
 fHead, gHead, sHead, tHead :: SymbolOrAlias level
@@ -86,7 +86,7 @@ fHead = groundHead "f" AstLocationTest
 gHead = groundHead "g" AstLocationTest
 sHead = groundHead "s" AstLocationTest
 tHead = groundHead "t" AstLocationTest
-injHead :: Sort level -> Sort level -> SymbolOrAlias level
+injHead :: Sort -> Sort -> SymbolOrAlias level
 injHead s1 s2 = SymbolOrAlias
     { symbolOrAliasConstructor = testId "inj"
     , symbolOrAliasParams = [s1, s2]

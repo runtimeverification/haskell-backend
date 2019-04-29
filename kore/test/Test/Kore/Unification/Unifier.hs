@@ -65,7 +65,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 applyInj
-    :: Sort Object
+    :: Sort
     -> TermLike Variable
     -> TermLike Variable
 applyInj sortTo pat =
@@ -73,7 +73,7 @@ applyInj sortTo pat =
   where
     sortFrom = getSort pat
 
-s1, s2, s3, s4 :: Sort Object
+s1, s2, s3, s4 :: Sort
 s1 = simpleSort (SortName "s1")
 s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
@@ -163,7 +163,7 @@ xs2 = mkVar Variable { variableName = testId "xs2", variableCounter = mempty, va
 sortParam :: Text -> SortVariable
 sortParam name = SortVariable (testId name)
 
-sortParamSort :: Text -> Sort level
+sortParamSort :: Text -> Sort
 sortParamSort = SortVariableSort . sortParam
 
 injName :: Text
@@ -649,7 +649,7 @@ var' i = mkVar (V i)
 war' :: String -> TermLike W
 war' s = mkVar (W s)
 
-sortVar :: Sort level
+sortVar :: Sort
 sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
 
 injUnificationTests :: [TestTree]

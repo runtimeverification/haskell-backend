@@ -159,7 +159,7 @@ kseqSymbol = builtinSymbol "kseq"
 dotkSymbol :: SymbolOrAlias Object
 dotkSymbol = builtinSymbol "dotk"
 
-injSymbol :: Sort Object -> Sort Object -> SymbolOrAlias Object
+injSymbol :: Sort -> Sort -> SymbolOrAlias Object
 injSymbol lSort rSort =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "inj"
@@ -259,7 +259,7 @@ keysMap map' =
 
 -- ** Pair
 
-pairSymbol :: Sort Object -> Sort Object -> SymbolOrAlias Object
+pairSymbol :: Sort -> Sort -> SymbolOrAlias Object
 pairSymbol lSort rSort =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "pair"
@@ -328,7 +328,7 @@ keccakSymbol = builtinSymbol "KECCAK"
 -- * Sorts
 
 -- | Declare 'a sort' in a Kore module.
-sortDecl :: Sort Object -> ParsedSentence
+sortDecl :: Sort -> ParsedSentence
 sortDecl sort =
     asSentence sentence
   where
@@ -344,7 +344,7 @@ sortDecl sort =
 
 -- | Declare a hooked sort.
 hookedSortDecl
-    :: Sort Object
+    :: Sort
     -- ^ declared sort
     -> [ParsedPattern]
     -- ^ declaration attributes
@@ -365,7 +365,7 @@ hookedSortDecl sort attrs =
 -- ** Bool
 
 -- | A sort to hook to the builtin @BOOL.Bool@.
-boolSort :: Sort Object
+boolSort :: Sort
 boolSort =
     SortActualSort SortActual
         { sortActualName = testId "Bool"
@@ -386,7 +386,7 @@ builtinBool builtinBoolValue =
 -- ** Int
 
 -- | A sort to hook to the builtin @INT.Int@.
-intSort :: Sort Object
+intSort :: Sort
 intSort =
     SortActualSort SortActual
         { sortActualName = testId "Int"
@@ -406,21 +406,21 @@ builtinInt builtinIntValue =
 
 -- ** KEQUAL
 
-kSort :: Sort Object
+kSort :: Sort
 kSort =
     SortActualSort SortActual
         { sortActualName = testId "SortK"
         , sortActualSorts = []
         }
 
-kItemSort :: Sort Object
+kItemSort :: Sort
 kItemSort =
     SortActualSort SortActual
         { sortActualName = testId "SortKItem"
         , sortActualSorts = []
         }
 
-idSort :: Sort Object
+idSort :: Sort
 idSort =
     SortActualSort SortActual
         { sortActualName = testId "SortId"
@@ -431,7 +431,7 @@ idSort =
 -- ** List
 
 -- | A sort to hook to the builtin @LIST.List@.
-listSort :: Sort Object
+listSort :: Sort
 listSort =
     SortActualSort SortActual
         { sortActualName = testId "List"
@@ -462,7 +462,7 @@ builtinList children =
         }
 
 -- | Another sort with the same hook
-listSort2 :: Sort Object
+listSort2 :: Sort
 listSort2 =
     SortActualSort SortActual
         { sortActualName = testId "List2"
@@ -483,7 +483,7 @@ listSortDecl2 =
 -- ** Map
 
 -- | A sort to hook to the builtin @MAP.Map@.
-mapSort :: Sort Object
+mapSort :: Sort
 mapSort =
     SortActualSort SortActual
         { sortActualName = testId "Map"
@@ -515,7 +515,7 @@ builtinMap children =
 
 -- ** Pair
 
-pairSort :: Sort Object -> Sort Object -> Sort Object
+pairSort :: Sort -> Sort -> Sort
 pairSort lSort rSort =
     SortActualSort SortActual
         { sortActualName = testId "Pair"
@@ -545,7 +545,7 @@ pairSortDecl =
 -- ** Set
 
 -- | A sort to hook to the builtin @SET.Set@.
-setSort :: Sort Object
+setSort :: Sort
 setSort =
     SortActualSort SortActual
         { sortActualName = testId "Set"
@@ -578,7 +578,7 @@ builtinSet children =
 -- ** String
 
 -- | A sort to hook to the builtin @STRING.String@.
-stringSort :: Sort Object
+stringSort :: Sort
 stringSort =
     SortActualSort SortActual
         { sortActualName = testId "String"
@@ -599,9 +599,9 @@ stringSortDecl =
 symbolDecl
     :: SymbolOrAlias Object
     -- ^ symbol
-    -> Sort Object
+    -> Sort
     -- ^ result sort
-    -> [Sort Object]
+    -> [Sort]
     -- ^ argument sorts
     -> [ParsedPattern]
     -- ^ declaration attributes
@@ -632,9 +632,9 @@ symbolDecl
 hookedSymbolDecl
     :: SymbolOrAlias Object
     -- ^ symbol
-    -> Sort Object
+    -> Sort
     -- ^ result sort
-    -> [Sort Object]
+    -> [Sort]
     -- ^ argument sorts
     -> [ParsedPattern]
     -- ^ declaration attributes
@@ -665,9 +665,9 @@ hookedSymbolDecl
 unhookedSymbolDecl
     :: SymbolOrAlias Object
     -- ^ symbol
-    -> Sort Object
+    -> Sort
     -- ^ result sort
-    -> [Sort Object]
+    -> [Sort]
     -- ^ argument sorts
     -> [ParsedPattern]
     -- ^ declaration attributes

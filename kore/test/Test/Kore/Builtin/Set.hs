@@ -219,7 +219,7 @@ test_size =
 
 setVariableGen
     :: MetaOrObject level
-    => Sort level
+    => Sort
     -> Gen (Set (Variable level))
 setVariableGen sort =
     Gen.set (Range.linear 0 32) (standaloneGen $ variableGen sort)

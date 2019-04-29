@@ -411,7 +411,7 @@ makeAnd first second =
         , andSecond = OrPattern.fromPatterns second
         }
 
-findSort :: [Pattern Object Variable] -> Sort Object
+findSort :: [Pattern Object Variable] -> Sort
 findSort [] = testSort
 findSort ( Conditional {term} : _ ) = getSort term
 

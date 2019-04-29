@@ -17,8 +17,6 @@ import qualified Data.Map as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Sort as Kore
                  ( Sort )
 import qualified Kore.Step.SMT.AST as AST
@@ -88,7 +86,7 @@ unresolvedSortConstructor identifier =
         }
 
 unresolvedConstructorArg
-    :: Text -> Kore.Sort Object -> AST.UnresolvedConstructorArgument
+    :: Text -> Kore.Sort -> AST.UnresolvedConstructorArgument
 unresolvedConstructorArg name sort =
     AST.ConstructorArgument
         { name = AST.encodable (testId name)
@@ -110,13 +108,13 @@ unresolvedIndirectSort name =
 
 unresolvedConstructorSymbolMap
     :: Kore.Id
-    -> [Kore.Sort Object]
+    -> [Kore.Sort]
     -> (Kore.Id, AST.UnresolvedSymbol)
 unresolvedConstructorSymbolMap identifier sorts =
     (identifier, unresolvedConstructorSymbol identifier sorts)
 
 unresolvedConstructorSymbol
-    :: Kore.Id -> [Kore.Sort Object] -> AST.UnresolvedSymbol
+    :: Kore.Id -> [Kore.Sort] -> AST.UnresolvedSymbol
 unresolvedConstructorSymbol identifier sorts =
     AST.Symbol
         { smtFromSortArgs = const $ const $ Just
@@ -131,16 +129,16 @@ unresolvedConstructorSymbol identifier sorts =
 unresolvedSmtlibSymbolMap
     :: Kore.Id
     -> Text
-    -> [Kore.Sort Object]
-    -> Kore.Sort Object
+    -> [Kore.Sort]
+    -> Kore.Sort
     -> (Kore.Id, AST.UnresolvedSymbol)
 unresolvedSmtlibSymbolMap identifier encodedName inputSorts resultSort =
     ( identifier, unresolvedSmtlibSymbol encodedName inputSorts resultSort )
 
 unresolvedSmtlibSymbol
     :: Text
-    -> [Kore.Sort Object]
-    -> Kore.Sort Object
+    -> [Kore.Sort]
+    -> Kore.Sort
     -> AST.UnresolvedSymbol
 unresolvedSmtlibSymbol encodedName inputSorts resultSort =
     AST.Symbol
@@ -157,13 +155,13 @@ unresolvedSmtlibSymbol encodedName inputSorts resultSort =
 unresolvedSmthookSymbolMap
     :: Kore.Id
     -> Text
-    -> [Kore.Sort Object]
+    -> [Kore.Sort]
     -> (Kore.Id, AST.UnresolvedSymbol)
 unresolvedSmthookSymbolMap identifier encodedName sorts =
     (identifier, unresolvedSmthookSymbol encodedName sorts)
 
 unresolvedSmthookSymbol
-    :: Text -> [Kore.Sort Object] -> AST.UnresolvedSymbol
+    :: Text -> [Kore.Sort] -> AST.UnresolvedSymbol
 unresolvedSmthookSymbol encodedName sorts =
     AST.Symbol
         { smtFromSortArgs = const $ const $ Just

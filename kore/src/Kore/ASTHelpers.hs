@@ -35,8 +35,8 @@ import           Kore.Variables.Free
 
 
 data ApplicationSorts level = ApplicationSorts
-    { applicationSortsOperands :: ![Sort level]
-    , applicationSortsResult   :: !(Sort level)
+    { applicationSortsOperands :: ![Sort]
+    , applicationSortsResult   :: !Sort
     }
     deriving (Eq, Ord, Show)
 
@@ -45,7 +45,7 @@ pattern from the given sort parameters.
 -}
 symbolOrAliasSorts
     :: (SentenceSymbolOrAlias ssoa, MonadError (Error e) m)
-    => [Sort level]
+    => [Sort]
     -> ssoa level pat
     -> m (ApplicationSorts level)
 symbolOrAliasSorts params sentence = do
@@ -72,9 +72,9 @@ symbolOrAliasSorts params sentence = do
 
 substituteSortVariables
     :: MonadError (Error e) m
-    => Map.Map SortVariable (Sort level)
-    -> Sort level
-    -> m (Sort level)
+    => Map.Map SortVariable Sort
+    -> Sort
+    -> m Sort
 substituteSortVariables variableToSort (SortVariableSort variable) =
     case Map.lookup variable variableToSort of
         Just sort -> return sort
@@ -94,8 +94,8 @@ substituteSortVariables
 pairVariablesToSorts
     :: MonadError (Error e) m
     => [SortVariable]
-    -> [Sort level]
-    -> m [(SortVariable, Sort level)]
+    -> [Sort]
+    -> m [(SortVariable, Sort)]
 pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
         koreFail "Application uses more sorts than the declaration."
@@ -111,7 +111,7 @@ It assumes that the pattern has the provided sort.
 -}
 quantifyFreeVariables
     :: (Foldable domain, Functor domain, MetaOrObject level)
-    => Sort level
+    => Sort
     -> PurePattern level domain Variable (Annotation.Null level)
     -> PurePattern level domain Variable (Annotation.Null level)
 quantifyFreeVariables s p =
@@ -122,7 +122,7 @@ quantifyFreeVariables s p =
 
 wrapAndQuantify
     :: Functor domain
-    => Sort level
+    => Sort
     -> CommonPurePattern level domain
     -> Variable level
     -> CommonPurePattern level domain

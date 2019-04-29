@@ -5,7 +5,7 @@ import qualified Kore.Domain.Builtin as Domain
 
 import Test.Kore
 
-objectSort :: Sort Object
+objectSort :: Sort
 objectSort = SortVariableSort (SortVariable (testId "s"))
 
 objectVariable :: Variable Object
@@ -22,7 +22,7 @@ objectVariablePattern = VariablePattern objectVariable
 objectVariableUnifiedPattern :: ParsedPattern
 objectVariableUnifiedPattern = asParsedPattern objectVariablePattern
 
-metaSort :: Sort Meta
+metaSort :: Sort
 metaSort = SortVariableSort (SortVariable (testId "#s"))
 
 metaVariable :: Variable Meta

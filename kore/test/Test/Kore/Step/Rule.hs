@@ -225,7 +225,7 @@ axiomPatternsIntegrationTests =
             )
         ]
 
-sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort Object
+sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")
 sortKItem = simpleSort (SortName "KItem")
 
@@ -233,7 +233,7 @@ sortKCell = simpleSort (SortName "KCell")
 sortStateCell = simpleSort (SortName "StateCell")
 sortTCell = simpleSort (SortName "TCell")
 
-sortABool, sortAInt, sortAExp, sortBExp :: Sort Object
+sortABool, sortAInt, sortAExp, sortBExp :: Sort
 sortABool = simpleSort (SortName "ABool")
 sortAInt = simpleSort (SortName "AInt")
 sortAExp = simpleSort (SortName "AExp")
@@ -266,7 +266,7 @@ sortSentenceKItem =
 sortParam :: Text -> SortVariable
 sortParam name = SortVariable (testId name)
 
-sortParamSort :: Text -> Sort Object
+sortParamSort :: Text -> Sort
 sortParamSort = SortVariableSort . sortParam
 
 symbolTCell, symbolKCell :: SentenceSymbol Object (TermLike Variable)
@@ -303,7 +303,7 @@ applyKSeq kHead kTail =
     applySymbol_ symbolKSeq [kHead, kTail]
 
 applyInj
-    :: Sort Object  -- ^ destination sort
+    :: Sort  -- ^ destination sort
     -> TermLike Variable  -- ^ argument
     -> TermLike Variable
 applyInj sortTo child =

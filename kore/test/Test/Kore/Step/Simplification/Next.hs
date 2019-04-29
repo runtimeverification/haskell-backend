@@ -79,7 +79,7 @@ test_nextSimplification =
         )
     ]
 
-findSort :: [Pattern Object Variable] -> Sort Object
+findSort :: [Pattern Object Variable] -> Sort
 findSort [] = Mock.testSort
 findSort ( Conditional {term} : _ ) = getSort term
 

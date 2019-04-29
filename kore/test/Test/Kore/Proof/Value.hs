@@ -80,7 +80,7 @@ zeroPattern =
             , builtinIntValue = 0
             }
 
-unitSort :: Sort Object
+unitSort :: Sort
 unitSort =
     SortActualSort SortActual
         { sortActualName = testId "Unit"
@@ -94,21 +94,21 @@ unitSymbol =
         , symbolOrAliasParams = []
         }
 
-pairSort :: Sort Object -> Sort Object
+pairSort :: Sort -> Sort
 pairSort sort =
     SortActualSort SortActual
         { sortActualName = testId "Pair"
         , sortActualSorts = [sort]
         }
 
-pairSymbol :: Sort Object -> SymbolOrAlias Object
+pairSymbol :: Sort -> SymbolOrAlias Object
 pairSymbol sort =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "pair"
         , symbolOrAliasParams = [sort]
         }
 
-injSymbol :: Sort Object -> Sort Object -> SymbolOrAlias Object
+injSymbol :: Sort -> Sort -> SymbolOrAlias Object
 injSymbol sub sup =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "inj"
@@ -122,10 +122,10 @@ funSymbol =
         , symbolOrAliasParams = []
         }
 
-subSort :: Sort level
+subSort :: Sort
 subSort = (SortVariableSort . SortVariable) (testId "sub")
 
-supSort :: Sort level
+supSort :: Sort
 supSort = (SortVariableSort . SortVariable) (testId "sup")
 
 symbolOrAliasAttrs :: [(SymbolOrAlias Object, StepperAttributes)]

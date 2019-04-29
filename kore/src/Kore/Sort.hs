@@ -69,7 +69,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SortActual level = SortActual
     { sortActualName  :: !Id
-    , sortActualSorts :: ![Sort level]
+    , sortActualSorts :: ![Sort]
     }
     deriving (Show, Eq, Ord, Generic)
 
@@ -96,16 +96,16 @@ Section 9.1.2 (Sorts).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data Sort level
+data Sort
     = SortVariableSort !SortVariable
-    | SortActualSort !(SortActual level)
+    | SortActualSort !(SortActual Object)
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (Sort level)
+instance Hashable Sort
 
-instance NFData (Sort level)
+instance NFData Sort
 
-instance Unparse (Sort level) where
+instance Unparse Sort where
     unparse =
         \case
             SortVariableSort sortVariable -> unparse sortVariable
@@ -120,10 +120,10 @@ Sort variables that are not in the substitution are not changed.
 
  -}
 substituteSortVariables
-    :: Map.Map SortVariable (Sort level)
+    :: Map.Map SortVariable Sort
     -- ^ Sort substitution
-    -> Sort level
-    -> Sort level
+    -> Sort
+    -> Sort
 substituteSortVariables substitution sort =
     case sort of
         SortVariableSort var ->
@@ -180,7 +180,7 @@ charMetaSortId = implicitId "#Char"
 charMetaSortActual :: SortActual Meta
 charMetaSortActual = SortActual charMetaSortId []
 
-charMetaSort :: Sort Meta
+charMetaSort :: Sort
 charMetaSort = SortActualSort charMetaSortActual
 
 stringMetaSortId :: Id
@@ -189,7 +189,7 @@ stringMetaSortId = implicitId "#String"
 stringMetaSortActual :: SortActual Meta
 stringMetaSortActual = SortActual stringMetaSortId []
 
-stringMetaSort :: Sort Meta
+stringMetaSort :: Sort
 stringMetaSort = SortActualSort stringMetaSortActual
 
 predicateSortId :: Id
@@ -203,12 +203,12 @@ predicateSortActual = SortActual predicateSortId []
 The final predicate sort is unknown until the predicate is attached to a
 pattern.
  -}
-predicateSort :: Sort level
+predicateSort :: Sort
 {- TODO PREDICATE (thomas.tuegel):
 
 Add a constructor
 
-> data Sort level = ... | FlexibleSort
+> data Sort = ... | FlexibleSort
 
 to use internally as a placeholder where the predicate sort is not yet
 known. Using the sort _PREDICATE{} is a kludge; the backend will melt down if

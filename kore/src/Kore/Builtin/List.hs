@@ -178,7 +178,7 @@ expectBuiltinList ctx =
 returnList
     :: (Monad m, Ord (variable Object))
     => SmtMetadataTools StepperAttributes
-    -> Sort Object
+    -> Sort
     -> Builtin variable
     -> m (AttemptedAxiom Object variable)
 returnList tools builtinListSort builtinListChild =
@@ -203,7 +203,7 @@ evalGet =
         :: Ord (variable Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
-        -> Sort Object
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
     evalGet0 _ _ _ = \arguments ->
@@ -251,7 +251,7 @@ evalConcat =
         :: Ord (variable Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
-        -> Sort Object
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
     evalConcat0 tools _ resultSort = \arguments ->
@@ -321,7 +321,7 @@ asTermLike builtin =
 asInternal
     :: Ord (variable Object)
     => SmtMetadataTools attrs
-    -> Sort Object
+    -> Sort
     -> Builtin variable
     -> TermLike variable
 asInternal tools builtinListSort builtinListChild =
@@ -348,7 +348,7 @@ asPattern
     ::  ( Ord (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => Sort Object
+    => Sort
     -> Builtin variable
     -> Pattern Object variable
 asPattern resultSort =
@@ -360,7 +360,7 @@ asPattern resultSort =
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
 lookupSymbolGet
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolGet = Builtin.lookupSymbol getKey

@@ -26,7 +26,7 @@ verifySort
     -- ^ Provides a sortMetaSorts description.
     -> Set.Set SortVariable
     -- ^ Sort variables visible here.
-    -> Sort Object
+    -> Sort
     -> m VerifySuccess
 verifySort _ declaredSortVariables (SortVariableSort variable)
   = do

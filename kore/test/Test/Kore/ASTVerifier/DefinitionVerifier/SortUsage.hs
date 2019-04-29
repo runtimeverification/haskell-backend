@@ -496,7 +496,7 @@ applyOneTestConfiguration testConfiguration flaggedTestData =
             (`elem` flaggedTestDataFlags flaggedTestData)
             (fst configurationWithFlags)
 
-newtype TestedSort level = TestedSort (Sort level)
+newtype TestedSort level = TestedSort Sort
 newtype SortActualThatIsDeclared level =
     SortActualThatIsDeclared (SortActual level)
 

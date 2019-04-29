@@ -180,7 +180,7 @@ bottom =
 The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
-bottomOf :: Ord (variable Object) => Sort Object -> Pattern Object variable
+bottomOf :: Ord (variable Object) => Sort -> Pattern Object variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
@@ -201,7 +201,7 @@ top =
 
 {- | An 'Pattern' where the 'term' is 'Top' of the given 'Sort'.
  -}
-topOf :: Ord (variable Object) => Sort Object -> Pattern Object variable
+topOf :: Ord (variable Object) => Sort -> Pattern Object variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort

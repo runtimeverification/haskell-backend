@@ -155,7 +155,7 @@ parse = (Parsec.<|>) true false
  -}
 asInternal
     :: Ord (variable Object)
-    => Sort Object  -- ^ resulting sort
+    => Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
@@ -192,7 +192,7 @@ asTermLike builtin =
 
 asPattern
     :: Ord (variable Object)
-    => Sort Object  -- ^ resulting sort
+    => Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> Pattern Object variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort

@@ -142,7 +142,7 @@ fromPredicate
     :: ( Unparse (variable Object)
        , HasCallStack
        )
-    => Sort Object  -- ^ Sort of resulting pattern
+    => Sort  -- ^ Sort of resulting pattern
     -> Predicate variable
     -> TermLike variable
 fromPredicate sort (GenericPredicate p) = forceSort sort p

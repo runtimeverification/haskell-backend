@@ -31,7 +31,7 @@ import qualified Kore.Verified as Verified
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
 
-objectS1 :: Sort Object
+objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol Object (TermLike Variable)

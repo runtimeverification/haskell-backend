@@ -8,7 +8,7 @@ constructs.
 
 Unified constructs are those that represent both meta and object versions of
 an AST term in a single data type (e.g. 'UnifiedSort' that can be either
-'Sort Object' or 'Sort Meta')
+'Sort' or 'Sort')
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
@@ -152,8 +152,8 @@ versions of symbol declarations. It should implement 'MetaOrObject level'.
 data SentenceAlias (level :: *) (patternType :: *) =
     SentenceAlias
         { sentenceAliasAlias        :: !(Alias level)
-        , sentenceAliasSorts        :: ![Sort level]
-        , sentenceAliasResultSort   :: !(Sort level)
+        , sentenceAliasSorts        :: ![Sort]
+        , sentenceAliasResultSort   :: !Sort
         , sentenceAliasLeftPattern  :: !(Application level (Variable level))
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
@@ -219,8 +219,8 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 data SentenceSymbol (level :: *) (patternType :: *) =
     SentenceSymbol
         { sentenceSymbolSymbol     :: !(Symbol level)
-        , sentenceSymbolSorts      :: ![Sort level]
-        , sentenceSymbolResultSort :: !(Sort level)
+        , sentenceSymbolSorts      :: ![Sort]
+        , sentenceSymbolResultSort :: !Sort
         , sentenceSymbolAttributes :: !Attributes
         }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
@@ -694,16 +694,16 @@ class SentenceSymbolOrAlias (sentence :: * -> * -> *) where
     getSentenceSymbolOrAliasSortParams
         :: sentence level patternType -> [SortVariable]
     getSentenceSymbolOrAliasArgumentSorts
-        :: sentence level patternType -> [Sort level]
+        :: sentence level patternType -> [Sort]
     getSentenceSymbolOrAliasResultSort
-        :: sentence level patternType -> Sort level
+        :: sentence level patternType -> Sort
     getSentenceSymbolOrAliasAttributes
         :: sentence level patternType -> Attributes
     getSentenceSymbolOrAliasSentenceName
         :: sentence level patternType -> String
     getSentenceSymbolOrAliasHead
         :: sentence level patternType
-        -> [Sort level]
+        -> [Sort]
         -> SymbolOrAlias level
     getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
         { symbolOrAliasConstructor =

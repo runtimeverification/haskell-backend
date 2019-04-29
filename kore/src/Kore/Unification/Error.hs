@@ -61,7 +61,7 @@ instance Pretty UnificationError where
 data ClashReason level
     = HeadClash (SymbolOrAlias level)
     | DomainValueClash String
-    | SortInjectionClash (Sort level) (Sort level)
+    | SortInjectionClash Sort Sort
     deriving (Eq, Show)
 
 {-| 'SubstitutionError' specifies the various error cases related to

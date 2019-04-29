@@ -208,7 +208,7 @@ instance MetaOrObject level => PrettyPrint SortVariable where
     prettyPrint flags sv =
         writeOneFieldStruct flags "SortVariable" (getSortVariable sv)
 
-instance MetaOrObject level => PrettyPrint (Sort level) where
+instance MetaOrObject level => PrettyPrint Sort where
     prettyPrint flags (SortVariableSort sv) =
         writeOneFieldStruct flags "SortVariableSort" sv
     prettyPrint flags (SortActualSort sa)   =

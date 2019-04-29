@@ -11,7 +11,7 @@ constructs.
 
 Unified constructs are those that represent both meta and object versions of
 an AST term in a single data type (e.g. 'UnifiedSort' that can be either
-'Sort Object' or 'Sort Meta')
+'Sort' or 'Sort')
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
@@ -89,7 +89,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SymbolOrAlias level = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
-    , symbolOrAliasParams      :: ![Sort level]
+    , symbolOrAliasParams      :: ![Sort]
     }
     deriving (Show, Eq, Ord, Generic)
 
@@ -141,7 +141,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 data Variable level = Variable
     { variableName :: !Id
     , variableCounter :: !(Maybe (Sup Natural))
-    , variableSort :: !(Sort level)
+    , variableSort :: !Sort
     }
     deriving (Show, Eq, Ord, Generic)
 
@@ -245,7 +245,7 @@ but the reverse is not required.
  -}
 class SortedVariable (variable :: * -> *) where
     -- | The known 'Sort' of the given variable.
-    sortedVariableSort :: variable level -> Sort level
+    sortedVariableSort :: variable level -> Sort
     sortedVariableSort variable =
         variableSort
       where
@@ -339,7 +339,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
 data And level child = And
-    { andSort   :: !(Sort level)
+    { andSort   :: !Sort
     , andFirst  :: child
     , andSecond :: child
     }
@@ -454,7 +454,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
-newtype Bottom level child = Bottom { bottomSort :: Sort level }
+newtype Bottom level child = Bottom { bottomSort :: Sort }
     deriving (Functor, Foldable, Show, Traversable, Generic)
 
 $newDefinitionGroup
@@ -498,8 +498,8 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the ⌈ceilPattern⌉ Matching Logic construct.
 -}
 data Ceil level child = Ceil
-    { ceilOperandSort :: !(Sort level)
-    , ceilResultSort  :: !(Sort level)
+    { ceilOperandSort :: !Sort
+    , ceilResultSort  :: !Sort
     , ceilChild       :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
@@ -553,7 +553,7 @@ This represents the encoding of an object constant, e.g. we may use
 e.g. succesor(succesor(...succesor(0)...))
 -}
 data DomainValue level domain child = DomainValue
-    { domainValueSort  :: !(Sort level)
+    { domainValueSort  :: !Sort
     , domainValueChild :: !(domain child)
     }
     deriving (Foldable, Functor, Generic, Traversable)
@@ -603,8 +603,8 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the 'equalsFirst = equalsSecond' Matching Logic construct.
 -}
 data Equals level child = Equals
-    { equalsOperandSort :: !(Sort level)
-    , equalsResultSort  :: !(Sort level)
+    { equalsOperandSort :: !Sort
+    , equalsResultSort  :: !Sort
     , equalsFirst       :: child
     , equalsSecond      :: child
     }
@@ -670,7 +670,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the '∃existsVariable(existsChild)' Matching Logic construct.
 -}
 data Exists level v child = Exists
-    { existsSort     :: !(Sort level)
+    { existsSort     :: !Sort
     , existsVariable :: !(v level)
     , existsChild    :: child
     }
@@ -732,8 +732,8 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the '⌊floorPattern⌋' Matching Logic construct.
 -}
 data Floor level child = Floor
-    { floorOperandSort :: !(Sort level)
-    , floorResultSort  :: !(Sort level)
+    { floorOperandSort :: !Sort
+    , floorResultSort  :: !Sort
     , floorChild       :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
@@ -783,7 +783,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the '∀forallVariable(forallChild)' Matching Logic construct.
 -}
 data Forall level v child = Forall
-    { forallSort     :: !(Sort level)
+    { forallSort     :: !Sort
     , forallVariable :: !(v level)
     , forallChild    :: child
     }
@@ -843,7 +843,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the 'iffFirst ⭤ iffSecond' Matching Logic construct.
 -}
 data Iff level child = Iff
-    { iffSort   :: !(Sort level)
+    { iffSort   :: !Sort
     , iffFirst  :: child
     , iffSecond :: child
     }
@@ -898,7 +898,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the 'impliesFirst ⭢ impliesSecond' Matching Logic construct.
 -}
 data Implies level child = Implies
-    { impliesSort   :: !(Sort level)
+    { impliesSort   :: !Sort
     , impliesFirst  :: child
     , impliesSecond :: child
     }
@@ -958,8 +958,8 @@ represents the set membership. However, in general, it actually means that the
 two patterns have a non-empty intersection.
 -}
 data In level child = In
-    { inOperandSort     :: !(Sort level)
-    , inResultSort      :: !(Sort level)
+    { inOperandSort     :: !Sort
+    , inResultSort      :: !Sort
     , inContainedChild  :: child
     , inContainingChild :: child
     }
@@ -1025,7 +1025,7 @@ done at the 'Pattern' level.
 This represents the '∘ nextChild' Matching Logic construct.
 -}
 data Next level child = Next
-    { nextSort  :: !(Sort level)
+    { nextSort  :: !Sort
     , nextChild :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
@@ -1075,7 +1075,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the '¬ notChild' Matching Logic construct.
 -}
 data Not level child = Not
-    { notSort  :: !(Sort level)
+    { notSort  :: !Sort
     , notChild :: child
     }
     deriving (Functor, Foldable, Traversable, Generic)
@@ -1125,7 +1125,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the 'orFirst ∨ orSecond' Matching Logic construct.
 -}
 data Or level child = Or
-    { orSort   :: !(Sort level)
+    { orSort   :: !Sort
     , orFirst  :: child
     , orSecond :: child
     }
@@ -1181,7 +1181,7 @@ This represents the 'rewritesFirst ⇒ rewritesSecond' Matching Logic construct.
 -}
 
 data Rewrites level child = Rewrites
-    { rewritesSort   :: !(Sort level)
+    { rewritesSort   :: !Sort
     , rewritesFirst  :: child
     , rewritesSecond :: child
     }
@@ -1235,7 +1235,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
-newtype Top level child = Top { topSort :: Sort level}
+newtype Top level child = Top { topSort :: Sort}
     deriving (Functor, Foldable, Show, Traversable, Generic)
 
 $newDefinitionGroup
@@ -1315,7 +1315,7 @@ data Pattern level domain variable child where
     VariablePattern
         :: !(variable level) -> Pattern level domain variable child
     InhabitantPattern
-        :: !(Sort level) -> Pattern level domain variable child
+        :: !Sort -> Pattern level domain variable child
     SetVariablePattern
         :: !(SetVariable variable level) -> Pattern level domain variable child
 
@@ -1441,7 +1441,7 @@ instance
 {-|'dummySort' is used in error messages when we want to convert an
 'UnsortedPatternStub' to a pattern that can be displayed.
 -}
-dummySort :: MetaOrObject level => proxy level -> Sort level
+dummySort :: MetaOrObject level => proxy level -> Sort
 dummySort _ = SortVariableSort (SortVariable (noLocationId "dummy"))
 
 {-|'getMetaOrObjectPatternType' is a helper function useful to determine

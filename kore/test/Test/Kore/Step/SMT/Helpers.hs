@@ -229,7 +229,7 @@ makeVariable varIndex sortName =
         , variableSort = makeSort sortName
         }
 
-makeSort :: Text -> Sort Object
+makeSort :: Text -> Sort
 makeSort name =
     SortActualSort SortActual
         { sortActualName  = testId name

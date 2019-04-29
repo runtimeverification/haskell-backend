@@ -196,7 +196,7 @@ expectBuiltinMap ctx _map =
 returnMap
     :: (Monad m, Ord (variable Object))
     => SmtMetadataTools attrs
-    -> Sort Object
+    -> Sort
     -> Builtin variable
     -> m (AttemptedAxiom Object variable)
 returnMap tools resultSort map' =
@@ -376,7 +376,7 @@ See also: 'sort'
 asInternal
     :: Ord (variable Object)
     => SmtMetadataTools attrs
-    -> Sort Object
+    -> Sort
     -> Builtin variable
     -> TermLike variable
 asInternal tools builtinMapSort builtinMapChild =
@@ -424,7 +424,7 @@ asPattern
     ::  ( Ord (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => Sort Object
+    => Sort
     -> Builtin variable
     -> Pattern Object variable
 asPattern resultSort =
@@ -457,7 +457,7 @@ keysKey = "MAP.keys"
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
 lookupSymbolUpdate
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolUpdate = Builtin.lookupSymbol updateKey
@@ -465,7 +465,7 @@ lookupSymbolUpdate = Builtin.lookupSymbol updateKey
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
  -}
 lookupSymbolLookup
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolLookup = Builtin.lookupSymbol lookupKey
@@ -473,7 +473,7 @@ lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}
 lookupSymbolInKeys
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
@@ -481,7 +481,7 @@ lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
 {- | Find the symbol hooked to @MAP.keys@ in an indexed module.
  -}
 lookupSymbolKeys
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
     -> Either (Kore.Error e) (SymbolOrAlias Object)
 lookupSymbolKeys = Builtin.lookupSymbol keysKey

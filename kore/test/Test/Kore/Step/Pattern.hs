@@ -191,5 +191,5 @@ makeEquals
     => TermLike var -> TermLike var -> Predicate var
 makeEquals p1 p2 = makeEqualsPredicate p1 p2
 
-sortVariable :: Sort level
+sortVariable :: Sort
 sortVariable = SortVariableSort (SortVariable (Id "#a" AstLocationTest))

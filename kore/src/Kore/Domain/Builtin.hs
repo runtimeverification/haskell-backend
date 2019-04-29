@@ -93,7 +93,7 @@ unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
  -}
 data InternalMap child =
     InternalMap
-        { builtinMapSort :: !(Sort Object)
+        { builtinMapSort :: !Sort
         , builtinMapUnit :: !(SymbolOrAlias Object)
         , builtinMapElement :: !(SymbolOrAlias Object)
         , builtinMapConcat :: !(SymbolOrAlias Object)
@@ -153,7 +153,7 @@ instance Unparse child => Unparse (InternalMap child) where
  -}
 data InternalList child =
     InternalList
-        { builtinListSort :: !(Sort Object)
+        { builtinListSort :: !Sort
         , builtinListUnit :: !(SymbolOrAlias Object)
         , builtinListElement :: !(SymbolOrAlias Object)
         , builtinListConcat :: !(SymbolOrAlias Object)
@@ -209,7 +209,7 @@ instance Unparse child => Unparse (InternalList child) where
  -}
 data InternalSet =
     InternalSet
-        { builtinSetSort :: !(Sort Object)
+        { builtinSetSort :: !Sort
         , builtinSetUnit :: !(SymbolOrAlias Object)
         , builtinSetElement :: !(SymbolOrAlias Object)
         , builtinSetConcat :: !(SymbolOrAlias Object)
@@ -256,7 +256,7 @@ instance Unparse InternalSet where
  -}
 data InternalInt =
     InternalInt
-        { builtinIntSort :: !(Sort Object)
+        { builtinIntSort :: !Sort
         , builtinIntValue :: !Integer
         }
     deriving (Eq, Generic, Ord, Show)
@@ -282,7 +282,7 @@ instance Unparse InternalInt where
  -}
 data InternalBool =
     InternalBool
-        { builtinBoolSort :: !(Sort Object)
+        { builtinBoolSort :: !Sort
         , builtinBoolValue :: !Bool
         }
     deriving (Eq, Generic, Ord, Show)

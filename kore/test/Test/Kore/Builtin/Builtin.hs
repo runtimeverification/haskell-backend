@@ -69,8 +69,8 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.SMT
 
 mkPair
-    :: Sort Object
-    -> Sort Object
+    :: Sort
+    -> Sort
     -> TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
@@ -93,7 +93,7 @@ testSymbolWithSolver
     -- ^ evaluator function for the builtin
     -> String
     -- ^ test name
-    -> Sort Object
+    -> Sort
     -- ^ symbol result sort
     -> SymbolOrAlias Object
     -- ^ symbol being tested

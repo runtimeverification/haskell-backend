@@ -94,7 +94,7 @@ getHeadApplicationSorts m patternHead =
     applyToHeadSentence sentenceSorts m patternHead
   where
     sentenceSorts :: SentenceSymbolOrAlias ssoa
-                  => [Sort level] -> ssoa level pat -> ApplicationSorts level
+                  => [Sort] -> ssoa level pat -> ApplicationSorts level
     sentenceSorts sortParameters sentence =
         assertRight $ symbolOrAliasSorts sortParameters sentence
 
@@ -135,7 +135,7 @@ getHeadType m patternHead =
 getSortAttributes
     :: (HasCallStack, MetaOrObject level)
     => IndexedModule sortParam patternType declAtts axiomAtts
-    -> Sort level
+    -> Sort
     -> Attribute.Sort
 getSortAttributes m (SortActualSort (SortActual sortId _)) =
   case resolveSort m sortId of
@@ -249,7 +249,7 @@ resolveSort m sortId =
 resolveHook
     :: IndexedModule sortParam patternType declAtts axiomAtts
     -> Text
-    -> Sort Object
+    -> Sort
     -> Either (Error e) Id
 resolveHook indexedModule builtinName builtinSort =
     resolveHookHandler builtinName
@@ -261,7 +261,7 @@ resolveHook indexedModule builtinName builtinSort =
 
 involvesSort
     :: IndexedModule sortParam patternType declAtts axiomAtts
-    -> Sort Object
+    -> Sort
     -> SymbolOrAlias Object
     -> Bool
 involvesSort indexedModule builtinSort sym =
@@ -324,7 +324,7 @@ findIndexedSort indexedModule sort =
 applyToHeadSentence
     :: (MetaOrObject level)
     => (forall ssoa .  SentenceSymbolOrAlias ssoa
-       => [Sort level]
+       => [Sort]
        -> ssoa level pat
        -> result)
     -> IndexedModule param pat declAtts axiomAtts
@@ -350,7 +350,7 @@ applyToAttributes f =
 applyToResolution
     :: (HasCallStack, MetaOrObject level)
     => (forall ssoa .  SentenceSymbolOrAlias ssoa
-        => [Sort level]
+        => [Sort]
         -> (declAtts, ssoa level pat)
         -> result)
     -> IndexedModule param pat declAtts axiomAtts

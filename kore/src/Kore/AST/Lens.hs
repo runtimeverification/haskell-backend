@@ -23,8 +23,8 @@ import Kore.Domain.Class
 patternLens
     ::  forall f domain variable1 variable2 annotation
     .   (Applicative f, Domain domain, Traversable domain)
-    => (Sort Object -> f (Sort Object))  -- ^ Operand sorts
-    -> (Sort Object -> f (Sort Object))
+    => (Sort -> f Sort)  -- ^ Operand sorts
+    -> (Sort -> f Sort)
     -- ^ Result sorts, and operand sorts when the two are equal
     -> (variable1 Object -> f (variable2 Object))  -- ^ Variables
     ->  (  PurePattern Object domain variable1 annotation
@@ -206,7 +206,7 @@ patternLens
 -- | The sort returned by a top-level constructor.
 resultSort
     :: (Domain domain, Traversable domain)
-    => Traversal' (PurePattern Object domain variable annotation) (Sort Object)
+    => Traversal' (PurePattern Object domain variable annotation) Sort
 resultSort = \f -> patternLens pure f pure pure
 
 -- | All sub-expressions which are 'Pattern's.

@@ -396,7 +396,7 @@ The requires clause must be a predicate, i.e. it can occur in any sort.
 mkRewriteAxiom
     :: TermLike Variable  -- ^ left-hand side
     -> TermLike Variable  -- ^ right-hand side
-    -> Maybe (Sort Object -> TermLike Variable)  -- ^ requires clause
+    -> Maybe (Sort -> TermLike Variable)  -- ^ requires clause
     -> Verified.Sentence
 mkRewriteAxiom lhs rhs requires =
     (SentenceAxiomSentence . mkAxiom_)
@@ -415,7 +415,7 @@ The requires clause must be a predicate, i.e. it can occur in any sort.
 mkEqualityAxiom
     :: TermLike Variable  -- ^ left-hand side
     -> TermLike Variable  -- ^ right-hand side
-    -> Maybe (Sort Object -> TermLike Variable)  -- ^ requires clause
+    -> Maybe (Sort -> TermLike Variable)  -- ^ requires clause
     -> Verified.Sentence
 mkEqualityAxiom lhs rhs requires =
     SentenceAxiomSentence

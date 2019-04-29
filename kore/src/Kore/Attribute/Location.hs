@@ -46,7 +46,7 @@ instance ParseAttributes Location where
     parseAttribute = AttributeParser.withApplication locationId parseApplication
       where
         parseApplication
-            :: [Sort Object]
+            :: [Sort]
             -> [AttributePattern]
             -> Location
             -> AttributeParser.Parser Location

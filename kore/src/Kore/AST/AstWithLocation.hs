@@ -49,7 +49,7 @@ instance AstWithLocation (SortActual level) where
     updateAstLocation sa loc =
         sa { sortActualName = updateAstLocation (sortActualName sa) loc }
 
-instance AstWithLocation (Sort level) where
+instance AstWithLocation Sort where
     locationFromAst (SortVariableSort sortVariable) =
         locationFromAst sortVariable
     locationFromAst (SortActualSort sortActual) =

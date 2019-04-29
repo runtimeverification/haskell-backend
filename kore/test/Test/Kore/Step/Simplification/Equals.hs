@@ -987,10 +987,10 @@ mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetaMetadataTools =
     Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
-testSort :: Sort Object
+testSort :: Sort
 testSort = Mock.testSort
 
-testSort2 :: Sort Object
+testSort2 :: Sort
 testSort2 =
     SortActualSort SortActual
         { sortActualName  = Id "testSort2" AstLocationTest

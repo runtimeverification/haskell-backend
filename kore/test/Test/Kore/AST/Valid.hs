@@ -38,16 +38,16 @@ test_sortAgreement = testGroup "Sort agreement"
     , testCase "predicateSort.1" $
         assertEqual ""
             ((mkBottom_ :: TermLike Variable) ^? resultSort)
-            (Just (predicateSort :: Sort Object))
+            (Just (predicateSort :: Sort))
     , testCase "predicateSort.2" $
         assertEqual ""
             ((mkTop_ :: TermLike Variable) ^? resultSort)
-            (Just (predicateSort :: Sort Object))
+            (Just (predicateSort :: Sort))
     , testCase "predicateSort.3" $
         assertEqual ""
             ((mkExists (var_ "a" "A") mkBottom_
                     :: TermLike Variable) ^? resultSort)
-            (Just (predicateSort :: Sort Object))
+            (Just (predicateSort :: Sort))
     , testGroup "sortAgreementManySimplePatterns"
         sortAgreementManySimplePatterns
     ]

@@ -40,8 +40,8 @@ import qualified Kore.Step.SMT.AST as SMT.AST
 makeMetadataTools
     :: [(SymbolOrAlias Object, StepperAttributes)]
     -> [(SymbolOrAlias Object, HeadType)]
-    -> [(Sort Object, Attribute.Sort)]
-    -> [(Sort Object, Sort Object)]
+    -> [(Sort, Attribute.Sort)]
+    -> [(Sort, Sort)]
     -> [(SymbolOrAlias Object, ApplicationSorts Object)]
     -> SMT.AST.SmtDeclarations
     -> SmtMetadataTools StepperAttributes

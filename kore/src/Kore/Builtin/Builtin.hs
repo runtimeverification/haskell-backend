@@ -164,7 +164,7 @@ type SortDeclVerifier =
 type SortVerifier =
         (Id -> Either (Error VerifyError) HookedSortDescription)
     -- ^ Find a sort declaration
-    -> Sort Object
+    -> Sort
     -- ^ Sort to verify
     -> Either (Error VerifyError) ()
 
@@ -364,7 +364,7 @@ assertSymbolResultSort
     :: KoreIndexedModule declAttrs axiomAttrs
     -> Id
     -- ^ Symbol identifier
-    -> Sort Object
+    -> Sort
     -- ^ Expected result sort
     -> Either (Error VerifyError) ()
 assertSymbolResultSort indexedModule symbolId expectedSort = do
@@ -387,7 +387,7 @@ assertSymbolResultSort indexedModule symbolId expectedSort = do
 verifySort
     :: (Id -> Either (Error VerifyError) HookedSortDescription)
     -> Text
-    -> Sort Object
+    -> Sort
     -> Either (Error VerifyError) ()
 verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
     do
@@ -409,7 +409,7 @@ acceptAnySort = const $ const $ return ()
 {- | Find the hooked sort for a domain value sort. -}
 lookupHookSort
     :: (Id -> Either (Error VerifyError) HookedSortDescription)
-    -> Sort Object
+    -> Sort
     -> Either (Error VerifyError) (Maybe Text)
 lookupHookSort findSort (SortActualSort SortActual { sortActualName }) = do
     SentenceSort { sentenceSortAttributes } <- findSort sortActualName
@@ -646,7 +646,7 @@ unaryOperator
     -- ^ Parse operand
     ->  (   forall variable.
             Ord (variable Object)
-        => Sort Object -> b -> Pattern Object variable
+        => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -668,7 +668,7 @@ unaryOperator
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
-        -> Sort level
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     unaryOperator0 _ _ resultSort children =
@@ -699,7 +699,7 @@ binaryOperator
         )
     -- ^ Extract domain value
     ->  (  forall variable . Ord (variable Object)
-        => Sort Object -> b -> Pattern Object variable
+        => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -721,7 +721,7 @@ binaryOperator
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
-        -> Sort level
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     binaryOperator0 _ _ resultSort children =
@@ -752,7 +752,7 @@ ternaryOperator
         )
     -- ^ Extract domain value
     ->  (  forall variable. Ord (variable Object)
-        => Sort Object -> b -> Pattern Object variable
+        => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -774,7 +774,7 @@ ternaryOperator
         :: (Ord (variable level), level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
-        -> Sort level
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     ternaryOperator0 _ _ resultSort children =
@@ -791,7 +791,7 @@ type FunctionImplementation
         .  Ord (variable Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
-        -> Sort Object
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
 
@@ -837,7 +837,7 @@ runParser ctx result =
 lookupSymbol
     :: Text
     -- ^ builtin name
-    -> Sort Object
+    -> Sort
     -- ^ the hooked sort
     -> VerifiedModule declAtts axiomAtts
     -> Either (Error e) (SymbolOrAlias Object)
@@ -857,7 +857,7 @@ during verification.
 
  -}
 lookupSymbolUnit
-    :: Sort Object
+    :: Sort
     -> Attribute.Sort
     -> SymbolOrAlias Object
 lookupSymbolUnit theSort attrs =
@@ -877,7 +877,7 @@ checked during verification.
 
  -}
 lookupSymbolElement
-    :: Sort Object
+    :: Sort
     -> Attribute.Sort
     -> SymbolOrAlias Object
 lookupSymbolElement theSort attrs =
@@ -897,7 +897,7 @@ checked during verification.
 
  -}
 lookupSymbolConcat
-    :: Sort Object
+    :: Sort
     -> Attribute.Sort
     -> SymbolOrAlias Object
 lookupSymbolConcat theSort attrs =

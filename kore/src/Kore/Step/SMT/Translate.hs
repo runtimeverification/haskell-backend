@@ -230,7 +230,7 @@ translatePredicate translateUninterpreted predicate =
         ::  ( Given (SmtMetadataTools StepperAttributes)
             , p ~ TermLike variable
             )
-        => Sort Object
+        => Sort
         -> p
         -> Translator p SExpr
     translatePattern sort pat =

@@ -13,8 +13,8 @@ import Kore.Attribute.Parser as Parser
 
 {- | The @subsort@ attribute. -}
 data Subsort = Subsort
-    { subsort :: Sort Object
-    , supersort :: Sort Object
+    { subsort :: Sort
+    , supersort :: Sort
     }
     deriving (Eq, Generic, Ord, Show)
 
@@ -36,7 +36,7 @@ Kore syntax: @subsort{Sub,Super}@
 where @Sub@ is the subsort and @Super@ is the supersort.
 
  -}
-subsortSymbol :: Sort Object -> Sort Object -> SymbolOrAlias Object
+subsortSymbol :: Sort -> Sort -> SymbolOrAlias Object
 subsortSymbol subsort supersort =
     SymbolOrAlias
         { symbolOrAliasConstructor = subsortId
@@ -49,7 +49,7 @@ Kore syntax: @subsort{Sub,Super}()@
 where @Sub@ is the subsort and @Super@ is the supersort.
 
  -}
-subsortAttribute :: Sort Object -> Sort Object -> AttributePattern
+subsortAttribute :: Sort -> Sort -> AttributePattern
 subsortAttribute subsort supersort =
     attributePattern_ $ subsortSymbol subsort supersort
 

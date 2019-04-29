@@ -114,7 +114,7 @@ import qualified Kore.Unparser as Unparse
 getSort
     :: Functor domain
     => PurePattern level domain variable (Valid (variable level) level)
-    -> Sort level
+    -> Sort
 getSort (extract -> Valid { patternSort }) = patternSort
 
 -- | Attempts to modify p to have sort s.
@@ -125,7 +125,7 @@ forceSort
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => Sort level
+    => Sort
     -> pattern'
     -> pattern'
 forceSort forcedSort = Recursive.apo forceSortWorker
@@ -230,7 +230,7 @@ makeSortsAgree
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => (pattern' -> pattern' -> Sort level -> a)
+    => (pattern' -> pattern' -> Sort -> a)
     -> pattern'
     -> pattern'
     -> a
@@ -250,7 +250,7 @@ getRigidSort
         , valid ~ Valid (variable level) level
         )
     => PurePattern level domain variable valid
-    -> Maybe (Sort level)
+    -> Maybe Sort
 getRigidSort pattern' =
     case getSort pattern' of
         sort
@@ -299,7 +299,7 @@ mkApp
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => Sort level
+    => Sort
     -- ^ Result sort
     -> SymbolOrAlias level
     -- ^ Application symbol or alias
@@ -318,8 +318,8 @@ mkApp patternSort applicationSymbolOrAlias applicationChildren =
  -}
 sortSubstitution
     :: [SortVariable]
-    -> [Sort level]
-    -> Map.Map SortVariable (Sort level)
+    -> [Sort]
+    -> Map.Map SortVariable Sort
 sortSubstitution variables sorts =
     foldl' insertSortVariable Map.empty (align variables sorts)
   where
@@ -352,7 +352,7 @@ applyAlias
         )
     => SentenceAlias level pattern'
     -- ^ 'Alias' declaration
-    -> [Sort level]
+    -> [Sort]
     -- ^ 'Alias' sort parameters
     -> [pattern']
     -- ^ 'Application' arguments
@@ -426,7 +426,7 @@ applySymbol
         )
     => SentenceSymbol level pattern''
     -- ^ 'Symbol' declaration
-    -> [Sort level]
+    -> [Sort]
     -- ^ 'Symbol' sort parameters
     -> [pattern']
     -- ^ 'Application' arguments
@@ -493,7 +493,7 @@ mkBottom
     ::  ( Functor domain
         , valid ~ Valid (variable level) level
         )
-    => Sort level
+    => Sort
     -> PurePattern level domain variable valid
 mkBottom bottomSort =
     asPurePattern (valid :< BottomPattern bottom)
@@ -526,7 +526,7 @@ mkCeil
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => Sort level
+    => Sort
     -> pattern'
     -> pattern'
 mkCeil ceilResultSort ceilChild =
@@ -585,7 +585,7 @@ mkEquals
         , pattern' ~ PurePattern level domain variable valid
         , Unparse pattern'
         )
-    => Sort level
+    => Sort
     -> pattern'
     -> pattern'
     -> pattern'
@@ -661,7 +661,7 @@ mkFloor
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => Sort level
+    => Sort
     -> pattern'
     -> pattern'
 mkFloor floorResultSort floorChild =
@@ -775,7 +775,7 @@ mkIn
         , valid ~ Valid (variable level) level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => Sort level
+    => Sort
     -> pattern'
     -> pattern'
     -> pattern'
@@ -911,7 +911,7 @@ mkTop
     ::  ( Functor domain
         , valid ~ Valid (variable level) level
         )
-    => Sort level
+    => Sort
     -> PurePattern level domain variable valid
 mkTop topSort =
     asPurePattern (valid :< TopPattern top)
@@ -999,7 +999,7 @@ mkInhabitantPattern
     ::  ( Functor domain
         , valid ~ Valid (variable level) level
         )
-    => Sort level
+    => Sort
     -> PurePattern level domain variable valid
 mkInhabitantPattern s =
     asPurePattern (valid :< InhabitantPattern s)
@@ -1008,15 +1008,15 @@ mkInhabitantPattern s =
     patternSort = s
     valid = Valid { patternSort, freeVariables }
 
-mkSort :: Id -> Sort level
+mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []
 
-mkSortVariable :: Id -> Sort level
+mkSortVariable :: Id -> Sort
 mkSortVariable name = SortVariableSort $ SortVariable name
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s
-varS :: MetaOrObject level => Text -> Sort level -> Variable level
+varS :: MetaOrObject level => Text -> Sort -> Variable level
 varS x variableSort =
     Variable
         { variableName = noLocationId x
@@ -1028,7 +1028,7 @@ varS x variableSort =
 -- "mult" `symS` [s, s]
 -- Since the return sort is only found in MetadataTools, this is
 -- mostly useful for testing.
-symS :: MetaOrObject level => Text -> [Sort level] -> SymbolOrAlias level
+symS :: MetaOrObject level => Text -> [Sort] -> SymbolOrAlias level
 symS x s =
     SymbolOrAlias (noLocationId x) s
 
@@ -1070,8 +1070,8 @@ mkSymbol
         )
     => Id
     -> [sortParam]
-    -> [Sort level]
-    -> Sort level
+    -> [Sort]
+    -> Sort
     -> SentenceSymbol level patternType
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
@@ -1096,8 +1096,8 @@ mkSymbol_
         , sortParam ~ SortVariable
         )
     => Id
-    -> [Sort level]
-    -> Sort level
+    -> [Sort]
+    -> Sort
     -> SentenceSymbol level patternType
 mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 
@@ -1110,7 +1110,7 @@ mkAlias
         )
     => Id
     -> [sortParam]
-    -> Sort level
+    -> Sort
     -> [Variable level]
     -> patternType
     -> SentenceAlias level patternType
@@ -1150,7 +1150,7 @@ mkAlias_
         , sortParam ~ SortVariable
         )
     => Id
-    -> Sort level
+    -> Sort
     -> [Variable level]
     -> patternType
     -> SentenceAlias level patternType
@@ -1158,7 +1158,7 @@ mkAlias_ aliasConstructor = mkAlias aliasConstructor []
 
 pattern And_
     :: Functor dom
-    => Sort level
+    => Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
@@ -1171,102 +1171,102 @@ pattern App_
 
 pattern Bottom_
     :: Functor dom
-    => Sort level
+    => Sort
     -> PurePattern level dom var annotation
 
 pattern Ceil_
     :: Functor dom
-    => Sort level
-    -> Sort level
+    => Sort
+    -> Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern DV_
   :: Domain dom
-  => Sort Object
+  => Sort
   -> dom (PurePattern Object dom var annotation)
   -> PurePattern Object dom var annotation
 
 pattern Equals_
     :: Functor dom
-    => Sort level
-    -> Sort level
+    => Sort
+    -> Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Exists_
     :: Functor dom
-    => Sort level
+    => Sort
     -> var level
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Floor_
     :: Functor dom
-    => Sort level
-    -> Sort level
+    => Sort
+    -> Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Forall_
     :: Functor dom
-    => Sort level
+    => Sort
     -> var level
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Iff_
     :: Functor dom
-    => Sort level
+    => Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Implies_
     :: Functor dom
-    => Sort level
+    => Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern In_
     :: Functor dom
-    => Sort level
-    -> Sort level
+    => Sort
+    -> Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Next_
     :: Functor dom
-    => Sort level
+    => Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Not_
     :: Functor dom
-    => Sort level
+    => Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Or_
     :: Functor dom
-    => Sort level
+    => Sort
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
     -> PurePattern level dom var annotation
 
 pattern Rewrites_
   :: Functor dom
-  => Sort level
+  => Sort
   -> PurePattern level dom var annotation
   -> PurePattern level dom var annotation
   -> PurePattern level dom var annotation
 
 pattern Top_
     :: Functor dom
-    => Sort level
+    => Sort
     -> PurePattern level dom var annotation
 
 pattern Var_
