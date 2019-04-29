@@ -214,7 +214,7 @@ instance MetaOrObject level => PrettyPrint Sort where
     prettyPrint flags (SortActualSort sa)   =
         writeOneFieldStruct flags "SortActualSort" sa
 
-instance MetaOrObject level => PrettyPrint (SortActual level) where
+instance MetaOrObject level => PrettyPrint SortActual where
     prettyPrint _ sa@(SortActual _ _) =
         writeStructure "SortActual"
             [ writeFieldOneLine "sortActualName" sortActualName sa

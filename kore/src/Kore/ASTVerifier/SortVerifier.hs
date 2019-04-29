@@ -63,7 +63,7 @@ verifySortMatchesDeclaration
     :: MonadError (Error VerifyError) m
     => (Id -> m (SortDescription Object dom))
     -> Set.Set SortVariable
-    -> SortActual Object
+    -> SortActual
     -> SortDescription Object dom
     -> m VerifySuccess
 verifySortMatchesDeclaration

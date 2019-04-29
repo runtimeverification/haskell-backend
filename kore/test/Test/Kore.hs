@@ -193,7 +193,7 @@ aliasGen = symbolOrAliasDeclarationRawGen Alias
 sortVariableGen :: (MetaOrObject level, MonadGen m) => m SortVariable
 sortVariableGen = SortVariable <$> idGen (isMetaOrObject Proxy)
 
-sortActualGen :: IsMetaOrObject level -> Gen (SortActual level)
+sortActualGen :: IsMetaOrObject level -> Gen SortActual
 sortActualGen =
     \case
         IsObject ->

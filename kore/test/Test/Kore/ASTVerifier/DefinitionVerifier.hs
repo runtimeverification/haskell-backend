@@ -634,7 +634,7 @@ aliasSentenceWithArguments (AliasName name) sort operands r =
             , sentenceAliasAttributes = Attributes []
             }
 
-simpleSortActual :: SortName -> SortActual level
+simpleSortActual :: SortName -> SortActual
 simpleSortActual (SortName sort) =
     SortActual
         { sortActualName = testId sort

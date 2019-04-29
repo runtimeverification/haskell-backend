@@ -44,7 +44,7 @@ instance AstWithLocation SortVariable where
     updateAstLocation (SortVariable v) loc =
         SortVariable (updateAstLocation v loc)
 
-instance AstWithLocation (SortActual level) where
+instance AstWithLocation SortActual where
     locationFromAst = locationFromAst . sortActualName
     updateAstLocation sa loc =
         sa { sortActualName = updateAstLocation (sortActualName sa) loc }

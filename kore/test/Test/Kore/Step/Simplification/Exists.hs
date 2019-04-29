@@ -277,9 +277,8 @@ testSort :: Sort
 testSort = Mock.testSort
 
 simplify
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> Exists level Variable (OrPattern Object Variable)
+    :: SmtMetadataTools StepperAttributes
+    -> Exists Object Variable (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 simplify tools exists =
     (<$>) fst
@@ -293,9 +292,8 @@ simplify tools exists =
         exists
 
 makeEvaluate
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> Variable level
+    :: SmtMetadataTools StepperAttributes
+    -> Variable Object
     -> Pattern Object Variable
     -> IO (OrPattern Object Variable)
 makeEvaluate tools variable child =

@@ -27,7 +27,6 @@ module Kore.Sort
     , predicateSort
     -- * Re-exports
     , module Kore.Syntax.Id
-    , module Kore.AST.MetaOrObject
     ) where
 
 import           Control.DeepSeq
@@ -38,7 +37,6 @@ import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.MetaOrObject
 import Kore.Syntax.Id
 import Kore.Unparser
 
@@ -67,17 +65,17 @@ Section 9.1.2 (Sorts).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SortActual level = SortActual
+data SortActual = SortActual
     { sortActualName  :: !Id
     , sortActualSorts :: ![Sort]
     }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (SortActual level)
+instance Hashable SortActual
 
-instance NFData (SortActual level)
+instance NFData SortActual
 
-instance Unparse (SortActual level) where
+instance Unparse SortActual where
     unparse SortActual { sortActualName, sortActualSorts } =
         unparse sortActualName <> parameters sortActualSorts
     unparse2 SortActual { sortActualName, sortActualSorts } =
@@ -98,7 +96,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data Sort
     = SortVariableSort !SortVariable
-    | SortActualSort !(SortActual Object)
+    | SortActualSort !SortActual
     deriving (Show, Eq, Ord, Generic)
 
 instance Hashable Sort
@@ -177,7 +175,7 @@ instance Show MetaSortType where
 charMetaSortId :: Id
 charMetaSortId = implicitId "#Char"
 
-charMetaSortActual :: SortActual Meta
+charMetaSortActual :: SortActual
 charMetaSortActual = SortActual charMetaSortId []
 
 charMetaSort :: Sort
@@ -186,7 +184,7 @@ charMetaSort = SortActualSort charMetaSortActual
 stringMetaSortId :: Id
 stringMetaSortId = implicitId "#String"
 
-stringMetaSortActual :: SortActual Meta
+stringMetaSortActual :: SortActual
 stringMetaSortActual = SortActual stringMetaSortId []
 
 stringMetaSort :: Sort
@@ -195,7 +193,7 @@ stringMetaSort = SortActualSort stringMetaSortActual
 predicateSortId :: Id
 predicateSortId = implicitId "_PREDICATE"
 
-predicateSortActual :: SortActual level
+predicateSortActual :: SortActual
 predicateSortActual = SortActual predicateSortId []
 
 {- | Placeholder sort for constructing new predicates.

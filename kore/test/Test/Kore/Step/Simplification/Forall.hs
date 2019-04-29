@@ -249,15 +249,13 @@ testSort :: Sort
 testSort = Mock.testSort
 
 evaluate
-    :: MetaOrObject level
-    => Forall level Variable (OrPattern Object Variable)
+    :: Forall Object Variable (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate forall =
     fst $ Forall.simplify forall
 
 makeEvaluate
-    :: MetaOrObject level
-    => Variable level
+    :: Variable Object
     -> Pattern Object Variable
     -> Pattern Object Variable
 makeEvaluate variable child =

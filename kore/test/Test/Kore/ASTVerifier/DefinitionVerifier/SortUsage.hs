@@ -498,7 +498,7 @@ applyOneTestConfiguration testConfiguration flaggedTestData =
 
 newtype TestedSort level = TestedSort Sort
 newtype SortActualThatIsDeclared level =
-    SortActualThatIsDeclared (SortActual level)
+    SortActualThatIsDeclared SortActual
 
 unfilteredTestExamplesForSort
     :: forall level . MetaOrObject level
