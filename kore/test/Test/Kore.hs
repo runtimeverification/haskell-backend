@@ -233,10 +233,10 @@ binaryOperatorGen constructor childGen patternSort =
         <*> Gen.small (childGen patternSort)
 
 ceilFloorGen
-    :: (Sort -> Sort -> child -> c Object child)
+    :: (Sort -> Sort -> child -> c child)
     -> (Sort -> Gen child)
     -> Sort
-    -> Gen (c Object child)
+    -> Gen (c child)
 ceilFloorGen constructor childGen resultSort = do
     operandSort <- Gen.small sortGen
     constructor resultSort operandSort <$> Gen.small (childGen operandSort)
@@ -281,7 +281,7 @@ applicationGen childGen _ =
 bottomGen :: Sort -> Gen (Bottom Sort child)
 bottomGen = topBottomGen Bottom
 
-ceilGen :: (Sort -> Gen child) -> Sort -> Gen (Ceil Object child)
+ceilGen :: (Sort -> Gen child) -> Sort -> Gen (Ceil Sort child)
 ceilGen = ceilFloorGen Ceil
 
 equalsGen

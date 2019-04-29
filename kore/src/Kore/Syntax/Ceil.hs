@@ -10,9 +10,7 @@ module Kore.Syntax.Ceil where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Functor.Classes
+import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
@@ -20,15 +18,10 @@ import           GHC.Generics
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'ceilOperandSort' is the sort of the operand.
 
@@ -36,38 +29,22 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈ceilPattern⌉ Matching Logic construct.
 -}
-data Ceil level child = Ceil
-    { ceilOperandSort :: !Sort
-    , ceilResultSort  :: !Sort
+data Ceil sort child = Ceil
+    { ceilOperandSort :: !sort
+    , ceilResultSort  :: !sort
     , ceilChild       :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Functor, Foldable, Generic, Ord, Traversable, Show)
 
-$newDefinitionGroup
+Deriving.deriveEq1 ''Ceil
+Deriving.deriveOrd1 ''Ceil
+Deriving.deriveShow1 ''Ceil
 
-instance Eq1 (Ceil level) where
-    liftEq = $(makeLiftEq ''Ceil)
+instance (Hashable sort, Hashable child) => Hashable (Ceil sort child)
 
-instance Ord1 (Ceil level) where
-    liftCompare = $(makeLiftCompare ''Ceil)
+instance (NFData sort, NFData child) => NFData (Ceil sort child)
 
-instance Show1 (Ceil level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Ceil)
-
-instance Eq child => Eq (Ceil level child) where
-    (==) = eq1
-
-instance Ord child => Ord (Ceil level child) where
-    compare = compare1
-
-instance Show child => Show (Ceil level child) where
-    showsPrec = showsPrec1
-
-instance Hashable child => Hashable (Ceil level child)
-
-instance NFData child => NFData (Ceil level child)
-
-instance Unparse child => Unparse (Ceil level child) where
+instance Unparse child => Unparse (Ceil Sort child) where
     unparse Ceil { ceilOperandSort, ceilResultSort, ceilChild } =
         "\\ceil"
         <> parameters [ceilOperandSort, ceilResultSort]

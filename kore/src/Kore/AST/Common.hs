@@ -765,7 +765,7 @@ data Pattern level domain variable child where
     BottomPattern
         :: !(Bottom Sort child) -> Pattern level domain variable child
     CeilPattern
-        :: !(Ceil level child) -> Pattern level domain variable child
+        :: !(Ceil Sort child) -> Pattern level domain variable child
     DomainValuePattern
         :: !(domain child)
         -> Pattern level domain variable child

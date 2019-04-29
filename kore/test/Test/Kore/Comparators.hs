@@ -480,7 +480,7 @@ instance (EqualWithExplanation child, Eq child, Show child)
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
-    => StructEqualWithExplanation (Ceil Object child)
+    => StructEqualWithExplanation (Ceil Sort child)
   where
     structFieldsWithNames
         expected@(Ceil _ _ _)
@@ -500,7 +500,7 @@ instance (Show child, EqualWithExplanation child)
         ]
     structConstructorName _ = "Ceil"
 instance (EqualWithExplanation child, Show child)
-    => EqualWithExplanation (Ceil Object child)
+    => EqualWithExplanation (Ceil Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

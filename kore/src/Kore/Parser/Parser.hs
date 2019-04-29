@@ -275,9 +275,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 ceilFloorRemainderParser
     :: Parser child
-    -> (Sort -> Sort -> child -> m Object child)
+    -> (Sort -> Sort -> child -> m child)
     -- ^ Element constructor.
-    -> Parser (m Object child)
+    -> Parser (m child)
 ceilFloorRemainderParser childParser constructor = do
     (sort1, sort2) <- curlyPairRemainderParser sortParser
     cfChild <- inParenthesesParser childParser

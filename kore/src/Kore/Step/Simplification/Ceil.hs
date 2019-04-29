@@ -87,7 +87,7 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Ceil Object (OrPattern Object variable)
+    -> Ceil Sort (OrPattern Object variable)
     -> Simplifier
         ( OrPattern Object variable
         , SimplificationProof Object

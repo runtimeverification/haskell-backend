@@ -308,7 +308,7 @@ instance PrettyPrint (Bottom Sort child) where
     prettyPrint flags (Bottom p) =
         writeOneFieldStruct flags "Bottom" p
 
-instance PrettyPrint child => PrettyPrint (Ceil level child) where
+instance PrettyPrint child => PrettyPrint (Ceil Sort child) where
     prettyPrint _ p@(Ceil _ _ _) =
         writeStructure
             "Ceil"

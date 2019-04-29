@@ -447,8 +447,8 @@ verifyPredicate operandSort resultSort = \predicate -> do
 {-# INLINE verifyPredicate #-}
 
 verifyCeil
-    ::  ( predicate ~ Ceil Object
-        , valid ~ Valid (Variable) Object
+    ::  ( predicate ~ Ceil Sort
+        , valid ~ Valid Variable Object
         )
     => predicate (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF predicate valid Verified.Pattern)

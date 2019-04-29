@@ -510,7 +510,7 @@ mapVariables =
 makeCeil
     :: Ord variable
     => [Pattern Object variable]
-    -> Ceil Object (OrPattern Object variable)
+    -> Ceil Sort (OrPattern Object variable)
 makeCeil patterns =
     Ceil
         { ceilOperandSort = testSort
@@ -520,7 +520,7 @@ makeCeil patterns =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> Ceil Object (OrPattern Object Variable)
+    -> Ceil Sort (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 evaluate tools ceil =
     (<$>) fst
