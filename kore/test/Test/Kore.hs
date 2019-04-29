@@ -64,6 +64,7 @@ import           Kore.Syntax.And
 import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
 import           Kore.Syntax.CharLiteral
+import           Kore.Syntax.Or
 import           Kore.Syntax.StringLiteral
 import           Kore.Syntax.Top
 
@@ -373,7 +374,7 @@ orGen
     :: (Sort -> Gen child)
     -> Sort
     -> Gen (Or Object child)
-orGen = binaryOperatorGen Common.Or
+orGen = binaryOperatorGen Or
 
 rewritesGen
     :: (Sort -> Gen child)

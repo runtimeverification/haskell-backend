@@ -21,7 +21,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import qualified Data.Function as Function
 
-import           Kore.AST.Common (Or(..))
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.Conditional as Conditional
@@ -32,6 +31,8 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Or
+                 ( Or(..) )
 import           Kore.Unparser
 \end{code}
 

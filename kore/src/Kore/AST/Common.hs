@@ -42,6 +42,7 @@ import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.CharLiteral
+import Kore.Syntax.Or
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
@@ -743,61 +744,6 @@ instance Unparse child => Unparse (Not level child) where
 
     unparse2 Not { notChild } =
         Pretty.parens (Pretty.fillSep ["\\not", unparse2 notChild])
-
-{-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-'orSort' is both the sort of the operands and the sort of the result.
-
-This represents the 'orFirst ∨ orSecond' Matching Logic construct.
--}
-data Or level child = Or
-    { orSort   :: !Sort
-    , orFirst  :: child
-    , orSecond :: child
-    }
-    deriving (Functor, Foldable, Traversable, Generic)
-
-$newDefinitionGroup
-
-instance Eq1 (Or level) where
-    liftEq = $(makeLiftEq ''Or)
-
-instance Ord1 (Or level) where
-    liftCompare = $(makeLiftCompare ''Or)
-
-instance Show1 (Or level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Or)
-
-instance Eq child => Eq (Or level child) where
-    (==) = eq1
-
-instance Ord child => Ord (Or level child) where
-    compare = compare1
-
-instance Show child => Show (Or level child) where
-    showsPrec = showsPrec1
-
-instance Hashable child => Hashable (Or level child)
-
-instance NFData child => NFData (Or level child)
-
-instance Unparse child => Unparse (Or level child) where
-    unparse Or { orSort, orFirst, orSecond } =
-        "\\or"
-        <> parameters [orSort]
-        <> arguments [orFirst, orSecond]
-
-    unparse2 Or { orFirst, orSecond } =
-        Pretty.parens (Pretty.fillSep
-            [ "\\or"
-            , unparse2 orFirst
-            , unparse2 orSecond
-            ])
 
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).

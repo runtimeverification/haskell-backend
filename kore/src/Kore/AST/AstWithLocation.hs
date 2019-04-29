@@ -21,6 +21,7 @@ import Kore.Sort
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
+import Kore.Syntax.Or
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
