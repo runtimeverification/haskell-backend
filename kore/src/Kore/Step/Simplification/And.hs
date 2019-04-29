@@ -22,8 +22,6 @@ import           Data.List
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Common
-                 ( And (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -44,6 +42,7 @@ import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, SimplificationProof (..),
                  Simplifier, TermLikeSimplifier, gather, scatter )
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.Syntax.And
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

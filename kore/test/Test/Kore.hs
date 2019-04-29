@@ -60,6 +60,7 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
+import           Kore.Syntax.And
 import           Kore.Syntax.Application
 import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
@@ -268,7 +269,7 @@ andGen
     :: (Sort -> Gen child)
     -> Sort
     -> Gen (And Object child)
-andGen = binaryOperatorGen Common.And
+andGen = binaryOperatorGen And
 
 applicationGen
     :: (Sort -> Gen child)

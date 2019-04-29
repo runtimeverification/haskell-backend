@@ -21,8 +21,6 @@ import           Data.List
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 
-import           Kore.AST.Common
-                 ( And (..) )
 import qualified Kore.AST.Common as Common
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -39,6 +37,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), TermLikeSimplifier )
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.And
 import           Kore.Unification.Data
 import           Kore.Unification.Substitution
                  ( Substitution )

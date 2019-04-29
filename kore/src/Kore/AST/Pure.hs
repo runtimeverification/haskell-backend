@@ -28,6 +28,7 @@ module Kore.AST.Pure
     , Base, CofreeF (..)
     , module Control.Comonad
     , module Kore.AST.Common
+    , module Kore.Syntax.And
     , module Kore.Syntax.Application
     , module Kore.Syntax.Id
     , module Kore.Syntax.SetVariable
@@ -72,6 +73,7 @@ import           Kore.AST.Common hiding
 import qualified Kore.AST.Common as Head
 import           Kore.AST.MetaOrObject
 import           Kore.Sort
+import           Kore.Syntax.And
 import           Kore.Syntax.Application
 import           Kore.Syntax.Id
 import           Kore.Syntax.SetVariable

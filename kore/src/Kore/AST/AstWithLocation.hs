@@ -18,6 +18,7 @@ import Kore.AST.Common
 import Kore.AST.Sentence
 import Kore.Domain.Class
 import Kore.Sort
+import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
