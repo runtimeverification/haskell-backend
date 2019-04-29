@@ -79,7 +79,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 sortVariableParser
     :: MetaOrObject level
     => level        -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (SortVariable level)
+    -> Parser SortVariable
 sortVariableParser x = SortVariable <$> idParser x
 
 {-|'sortParser' parses either an @object-sort@, or a @meta-sort@.
@@ -150,7 +150,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 symbolOrAliasDeclarationRawParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Id -> [SortVariable level] -> m level)  -- ^ Element constructor.
+    -> (Id -> [SortVariable] -> m level)  -- ^ Element constructor.
     -> Parser (m level)
 symbolOrAliasDeclarationRawParser x constructor = do
     headConstructor <- idParser x
@@ -171,7 +171,7 @@ Always starts with @{@.
 symbolOrAliasDeclarationRemainderRawParser
     :: MetaOrObject level
     => level   -- ^ Distinguishes between the meta and non-meta elements.
-    -> ([SortVariable level] -> m level)  -- ^ Element constructor.
+    -> ([SortVariable] -> m level)  -- ^ Element constructor.
     -> Parser (m level)
 symbolOrAliasDeclarationRemainderRawParser x constructor =
     constructor <$> inCurlyBracesListParser (sortVariableParser x)
@@ -1009,8 +1009,8 @@ BNF example:
 Always starts with @{@.
 -}
 axiomSentenceRemainderParser
-    ::  (  SentenceAxiom (SortVariable Object) ParsedPattern
-        -> Sentence Meta (SortVariable Object) ParsedPattern
+    ::  (  SentenceAxiom SortVariable ParsedPattern
+        -> Sentence Meta SortVariable ParsedPattern
         )
     -> Parser ParsedSentence
 axiomSentenceRemainderParser ctor =

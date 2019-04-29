@@ -66,10 +66,10 @@ updateAttributes attrs = updateAttrs
             (ss { sentenceSymbolAttributes = attrs })
     updateAttrs _ = error "unsupported non-symbol sentence"
 
-sortVar :: SortVariable Object
+sortVar :: SortVariable
 sortVar = SortVariable (testId "R")
 
-sortVar1 :: SortVariable Object
+sortVar1 :: SortVariable
 sortVar1 = SortVariable (testId "R1")
 
 sortVarS :: Sort Object

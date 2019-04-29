@@ -112,7 +112,7 @@ applicationSorts operandSorts resultSort =
         }
 
 symbolSentence
-    :: [SortVariable Object]
+    :: [SortVariable]
     -> [Sort Object]
     -> Sort Object
     -> ParsedSentenceSymbol

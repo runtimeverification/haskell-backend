@@ -39,7 +39,7 @@ instance AstWithLocation Id where
     locationFromAst = idLocation
     updateAstLocation id' loc = id' { idLocation = loc }
 
-instance AstWithLocation (SortVariable level) where
+instance AstWithLocation SortVariable where
     locationFromAst = locationFromAst . getSortVariable
     updateAstLocation (SortVariable v) loc =
         SortVariable (updateAstLocation v loc)

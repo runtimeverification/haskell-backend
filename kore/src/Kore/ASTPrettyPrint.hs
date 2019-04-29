@@ -204,7 +204,7 @@ inCurlyBracesIndent = listWithDelimiters "{" "}"
 inSquareBracketsIndent :: [Doc ann] -> Doc ann
 inSquareBracketsIndent = listWithDelimiters "[" "]"
 
-instance MetaOrObject level => PrettyPrint (SortVariable level) where
+instance MetaOrObject level => PrettyPrint SortVariable where
     prettyPrint flags sv =
         writeOneFieldStruct flags "SortVariable" (getSortVariable sv)
 

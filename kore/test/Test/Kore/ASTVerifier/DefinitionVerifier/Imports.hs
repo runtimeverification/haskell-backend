@@ -1304,34 +1304,33 @@ nameDuplicationTests =
             , moduleAttributes = Attributes []
             }
     aliasDeclarationModule modName (AliasName aliasName) =
-        let sv1 = SortVariable (testId "sv1") :: SortVariable Object
+        let sv1 = SortVariable (testId "sv1") :: SortVariable
             aliasConstructor = testId aliasName :: Id
         in Module
             { moduleName = modName
             , moduleSentences =
-                [ asSentence
-                    SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor
-                            , aliasParams = [sv1]
-                            }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort = SortVariableSort sv1
-                        , sentenceAliasLeftPattern =
-                            Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor =
-                                            aliasConstructor
-                                        , symbolOrAliasParams =
-                                            [SortVariableSort sv1]
-                                        }
-                                , applicationChildren = []
-                                }
-                        , sentenceAliasRightPattern =
-                            mkTop (SortVariableSort sv1)
-                        , sentenceAliasAttributes = Attributes []
+                [ SentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias = Alias
+                        { aliasConstructor
+                        , aliasParams = [sv1]
                         }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasResultSort = SortVariableSort sv1
+                    , sentenceAliasLeftPattern =
+                        Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor =
+                                        aliasConstructor
+                                    , symbolOrAliasParams =
+                                        [SortVariableSort sv1]
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        mkTop (SortVariableSort sv1)
+                    , sentenceAliasAttributes = Attributes []
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

@@ -72,7 +72,7 @@ symbolOrAliasSorts params sentence = do
 
 substituteSortVariables
     :: MonadError (Error e) m
-    => Map.Map (SortVariable level) (Sort level)
+    => Map.Map SortVariable (Sort level)
     -> Sort level
     -> m (Sort level)
 substituteSortVariables variableToSort (SortVariableSort variable) =
@@ -93,9 +93,9 @@ substituteSortVariables
 
 pairVariablesToSorts
     :: MonadError (Error e) m
-    => [SortVariable level]
+    => [SortVariable]
     -> [Sort level]
-    -> m [(SortVariable level, Sort level)]
+    -> m [(SortVariable, Sort level)]
 pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
         koreFail "Application uses more sorts than the declaration."

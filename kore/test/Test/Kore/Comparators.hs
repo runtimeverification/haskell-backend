@@ -1736,14 +1736,14 @@ instance
 
 instance
     MetaOrObject Object
-    => EqualWithExplanation (SortVariable Object)
+    => EqualWithExplanation SortVariable
   where
     compareWithExplanation a@(SortVariable _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
     MetaOrObject Object
-    => WrapperEqualWithExplanation (SortVariable Object)
+    => WrapperEqualWithExplanation SortVariable
   where
     wrapperField = Function.on (EqWrap "getSortVariable = ") getSortVariable
     wrapperConstructorName _ = "SortVariable"

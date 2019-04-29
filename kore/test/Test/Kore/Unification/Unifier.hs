@@ -160,7 +160,7 @@ x = mkVar Variable { variableName = testId "x", variableCounter = mempty, variab
 xs2 :: TermLike Variable
 xs2 = mkVar Variable { variableName = testId "xs2", variableCounter = mempty, variableSort = s2 }
 
-sortParam :: Text -> SortVariable level
+sortParam :: Text -> SortVariable
 sortParam name = SortVariable (testId name)
 
 sortParamSort :: Text -> Sort level

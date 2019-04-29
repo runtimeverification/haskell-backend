@@ -264,9 +264,9 @@ mapIndexedModulePatterns mapping indexedModule =
         )
 
 type KoreIndexedModule =
-    IndexedModule (SortVariable Object) ParsedPattern
+    IndexedModule SortVariable ParsedPattern
 
-type VerifiedModule = IndexedModule (SortVariable Object) Verified.Pattern
+type VerifiedModule = IndexedModule SortVariable Verified.Pattern
 
 {- | Convert a 'VerifiedModule' back into a 'Module'.
 
@@ -355,7 +355,7 @@ newtype ImplicitIndexedModule param pat declAtts axiomAtts =
     deriving (Show)
 
 type KoreImplicitIndexedModule =
-    ImplicitIndexedModule (SortVariable Object) ParsedPattern
+    ImplicitIndexedModule SortVariable ParsedPattern
 
 emptyIndexedModule
     ::  ( Default parsedDeclAttributes

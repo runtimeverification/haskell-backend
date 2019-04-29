@@ -1519,6 +1519,6 @@ sortVariableSort :: Text -> Sort a
 sortVariableSort name =
     SortVariableSort (sortVariable name)
 
-sortVariable :: Text -> SortVariable a
+sortVariable :: Text -> SortVariable
 sortVariable name =
     SortVariable (testId name)

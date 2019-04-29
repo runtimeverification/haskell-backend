@@ -73,7 +73,7 @@ emptyDeclaredVariables = mempty
 data Context =
     Context
         { declaredVariables :: !DeclaredVariables
-        , declaredSortVariables :: !(Set (SortVariable Object))
+        , declaredSortVariables :: !(Set SortVariable)
         -- ^ The sort variables in scope.
         , indexedModule :: !(KoreIndexedModule Attribute.Null Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.

@@ -67,7 +67,7 @@ import           Kore.Step.TermLike as TermLike
 data Context =
     Context
         { objectVariables :: ![Variable Object]
-        , objectSortVariables :: ![SortVariable Object]
+        , objectSortVariables :: ![SortVariable]
         }
 
 emptyContext :: Context
@@ -101,18 +101,16 @@ addVariables vars = \ctx -> foldr addVariable ctx vars
 addSortVariable
     ::  forall level.
         MetaOrObject level
-    => SortVariable level
+    => SortVariable
     -> Context
     -> Context
-addSortVariable var =
-    case isMetaOrObject var of
-        IsObject -> \ctx@Context { objectSortVariables } ->
-            ctx { objectSortVariables = var : objectSortVariables }
+addSortVariable var ctx@Context { objectSortVariables } =
+    ctx { objectSortVariables = var : objectSortVariables }
 
 addSortVariables
     ::  forall level.
         MetaOrObject level
-    => [SortVariable level]
+    => [SortVariable]
     -> Context
     -> Context
 addSortVariables vars = \ctx -> foldr addSortVariable ctx vars
@@ -174,7 +172,7 @@ symbolOrAliasRawGen constructor =
 
 symbolOrAliasDeclarationRawGen
     :: (MetaOrObject level, MonadGen m)
-    => (Id -> [SortVariable level] -> s level)
+    => (Id -> [SortVariable] -> s level)
     -> m (s level)
 symbolOrAliasDeclarationRawGen constructor =
     constructor
@@ -192,7 +190,7 @@ symbolGen = symbolOrAliasDeclarationRawGen Symbol
 aliasGen :: (MetaOrObject level, MonadGen m) => m (Alias level)
 aliasGen = symbolOrAliasDeclarationRawGen Alias
 
-sortVariableGen :: (MetaOrObject level, MonadGen m) => m (SortVariable level)
+sortVariableGen :: (MetaOrObject level, MonadGen m) => m SortVariable
 sortVariableGen = SortVariable <$> idGen (isMetaOrObject Proxy)
 
 sortActualGen :: IsMetaOrObject level -> Gen (SortActual level)
@@ -211,7 +209,7 @@ sortGen =
             sortGenWorker objectSortVariables
   where
     level = isMetaOrObject (Proxy @level)
-    sortGenWorker :: [SortVariable level] -> Gen (Sort level)
+    sortGenWorker :: [SortVariable] -> Gen (Sort level)
     sortGenWorker =
         \case
             [] -> actualSort
@@ -767,7 +765,7 @@ sentenceImportGen =
 
 sentenceAxiomGen
    :: Gen patternType
-   -> Gen (SentenceAxiom (SortVariable Object) patternType)
+   -> Gen (SentenceAxiom SortVariable patternType)
 sentenceAxiomGen patGen = do
     sentenceAxiomParameters <- couple sortVariableGen
     Reader.local (addSortVariables sentenceAxiomParameters) $ do
@@ -835,7 +833,7 @@ testId name =
         , idLocation = AstLocationTest
         }
 
-sortVariable :: Text -> SortVariable level
+sortVariable :: Text -> SortVariable
 sortVariable name =
     SortVariable { getSortVariable = testId name }
 

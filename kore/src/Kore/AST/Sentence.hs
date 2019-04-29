@@ -90,7 +90,7 @@ Note that this is very similar to 'SymbolOrAlias'.
 -}
 data Symbol level = Symbol
     { symbolConstructor :: !Id
-    , symbolParams      :: ![SortVariable level]
+    , symbolParams      :: ![SortVariable]
     }
     deriving (Show, Eq, Ord, Generic)
 
@@ -127,7 +127,7 @@ Note that this is very similar to 'SymbolOrAlias'.
 -}
 data Alias level = Alias
     { aliasConstructor :: !Id
-    , aliasParams      :: ![SortVariable level]
+    , aliasParams      :: ![SortVariable]
     }
     deriving (Show, Eq, Ord, Generic)
 
@@ -333,7 +333,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 data SentenceSort (level :: *) (patternType :: *) =
     SentenceSort
         { sentenceSortName       :: !Id
-        , sentenceSortParameters :: ![SortVariable level]
+        , sentenceSortParameters :: ![SortVariable]
         , sentenceSortAttributes :: !Attributes
         }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
@@ -692,7 +692,7 @@ class SentenceSymbolOrAlias (sentence :: * -> * -> *) where
     getSentenceSymbolOrAliasConstructor
         :: sentence level patternType -> Id
     getSentenceSymbolOrAliasSortParams
-        :: sentence level patternType -> [SortVariable level]
+        :: sentence level patternType -> [SortVariable]
     getSentenceSymbolOrAliasArgumentSorts
         :: sentence level patternType -> [Sort level]
     getSentenceSymbolOrAliasResultSort
@@ -733,7 +733,7 @@ class AsSentence sentenceType s | s -> sentenceType where
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level domain =
-    SentenceAxiom (SortVariable level) (ParsedPurePattern level domain)
+    SentenceAxiom SortVariable (ParsedPurePattern level domain)
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
 type PureSentenceAlias level domain =
@@ -752,11 +752,11 @@ type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level domain =
-    Sentence level (SortVariable level) (ParsedPurePattern level domain)
+    Sentence level SortVariable (ParsedPurePattern level domain)
 
 instance
     ( MetaOrObject level
-    , sortParam ~ SortVariable level
+    , sortParam ~ SortVariable
     ) =>
     AsSentence
         (Sentence
@@ -770,7 +770,7 @@ instance
 
 instance
     ( MetaOrObject level
-    , sortParam ~ SortVariable level
+    , sortParam ~ SortVariable
     ) =>
     AsSentence
         (Sentence
@@ -783,7 +783,7 @@ instance
     asSentence = SentenceSymbolSentence
 
 instance
-    ( sortParam ~ SortVariable level
+    ( sortParam ~ SortVariable
     , level ~ Meta
     ) =>
     AsSentence
@@ -798,7 +798,7 @@ instance
 
 instance
     ( level ~ Meta
-    , sortParam ~ SortVariable level
+    , sortParam ~ SortVariable
     ) =>
     AsSentence
         (Sentence
@@ -812,7 +812,7 @@ instance
 
 instance
     ( MetaOrObject level
-    , sortParam ~ SortVariable level
+    , sortParam ~ SortVariable
     ) =>
     AsSentence
         (Sentence
@@ -827,7 +827,7 @@ instance
 
 instance
     ( level ~ Object
-    , sortParam ~ SortVariable level
+    , sortParam ~ SortVariable
     ) =>
     AsSentence
         (Sentence
@@ -859,7 +859,7 @@ type ParsedSentenceImport =
 
 type ParsedSentenceAxiom =
     SentenceAxiom
-        (SortVariable Object)
+        SortVariable
         (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedSentenceHook =
@@ -868,7 +868,7 @@ type ParsedSentenceHook =
 type ParsedSentence =
     Sentence
         Object
-        (SortVariable Object)
+        SortVariable
         (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedModule = Module ParsedSentence

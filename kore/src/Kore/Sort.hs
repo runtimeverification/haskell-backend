@@ -48,15 +48,15 @@ import Kore.Unparser
 Semantics of K, Section 9.1.2 (Sorts).
 
  -}
-newtype SortVariable level = SortVariable
+newtype SortVariable = SortVariable
     { getSortVariable  :: Id }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (SortVariable level)
+instance Hashable SortVariable
 
-instance NFData (SortVariable level)
+instance NFData SortVariable
 
-instance Unparse (SortVariable level) where
+instance Unparse SortVariable where
     unparse = unparse . getSortVariable
     unparse2 SortVariable { getSortVariable } = unparseIdLower getSortVariable
 
@@ -97,7 +97,7 @@ The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data Sort level
-    = SortVariableSort !(SortVariable level)
+    = SortVariableSort !SortVariable
     | SortActualSort !(SortActual level)
     deriving (Show, Eq, Ord, Generic)
 
@@ -120,7 +120,7 @@ Sort variables that are not in the substitution are not changed.
 
  -}
 substituteSortVariables
-    :: Map.Map (SortVariable level) (Sort level)
+    :: Map.Map SortVariable (Sort level)
     -- ^ Sort substitution
     -> Sort level
     -> Sort level

@@ -269,7 +269,7 @@ verifySortDecl _ SentenceSort { sentenceSortParameters } _ =
 
 {- | Throw a 'VerifyError' if there are any sort parameters.
  -}
-getZeroParams :: [SortVariable level] -> Either (Error VerifyError) ()
+getZeroParams :: [SortVariable] -> Either (Error VerifyError) ()
 getZeroParams =
     \case
         [] -> return ()

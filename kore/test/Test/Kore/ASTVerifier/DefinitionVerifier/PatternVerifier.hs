@@ -663,7 +663,7 @@ test_patternVerifier =
                 , variableSort = anotherObjectSort2
                 }
             ]
-    objectSortVariable = sortVariable @Object "ObjectSortVariable"
+    objectSortVariable = sortVariable "ObjectSortVariable"
     objectSortVariableSort :: Sort Object
     objectSortVariableSort = sortVariableSort "ObjectSortVariable"
     objectVariableSortVariable =

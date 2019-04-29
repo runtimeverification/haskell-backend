@@ -317,9 +317,9 @@ mkApp patternSort applicationSymbolOrAlias applicationChildren =
 {- | The 'Sort' substitution from applying the given sort parameters.
  -}
 sortSubstitution
-    :: [SortVariable level]
+    :: [SortVariable]
     -> [Sort level]
-    -> Map.Map (SortVariable level) (Sort level)
+    -> Map.Map SortVariable (Sort level)
 sortSubstitution variables sorts =
     foldl' insertSortVariable Map.empty (align variables sorts)
   where
@@ -1066,7 +1066,7 @@ mkAxiom_ = mkAxiom []
 mkSymbol
     ::  ( valid ~ Valid (variable level) level
         , patternType ~ PurePattern level domain variable valid
-        , sortParam ~ SortVariable level
+        , sortParam ~ SortVariable
         )
     => Id
     -> [sortParam]
@@ -1093,7 +1093,7 @@ See also: 'mkSymbol'
 mkSymbol_
     ::  ( valid ~ Valid (variable level) level
         , patternType ~ PurePattern level domain variable valid
-        , sortParam ~ SortVariable level
+        , sortParam ~ SortVariable
         )
     => Id
     -> [Sort level]
@@ -1106,7 +1106,7 @@ mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 mkAlias
     ::  ( valid ~ Valid (Variable level) level
         , patternType ~ PurePattern level domain Variable valid
-        , sortParam ~ SortVariable level
+        , sortParam ~ SortVariable
         )
     => Id
     -> [sortParam]
@@ -1147,7 +1147,7 @@ See also: 'mkAlias'
 mkAlias_
     ::  ( valid ~ Valid (Variable level) level
         , patternType ~ PurePattern level domain Variable valid
-        , sortParam ~ SortVariable level
+        , sortParam ~ SortVariable
         )
     => Id
     -> Sort level

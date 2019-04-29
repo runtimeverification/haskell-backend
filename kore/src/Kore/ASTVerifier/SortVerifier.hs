@@ -24,7 +24,7 @@ verifySort
     :: MonadError (Error VerifyError) m
     => (Id -> m (SortDescription Object dom))
     -- ^ Provides a sortMetaSorts description.
-    -> Set.Set (SortVariable Object)
+    -> Set.Set SortVariable
     -- ^ Sort variables visible here.
     -> Sort Object
     -> m VerifySuccess
@@ -62,7 +62,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
 verifySortMatchesDeclaration
     :: MonadError (Error VerifyError) m
     => (Id -> m (SortDescription Object dom))
-    -> Set.Set (SortVariable Object)
+    -> Set.Set SortVariable
     -> SortActual Object
     -> SortDescription Object dom
     -> m VerifySuccess

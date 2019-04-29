@@ -329,8 +329,8 @@ verifySortSentence sentenceSort = do
     traverse verifyNoPatterns sentenceSort
 
 buildDeclaredSortVariables
-    :: [SortVariable Object]
-    -> Either (Error VerifyError) (Set.Set (SortVariable Object))
+    :: [SortVariable]
+    -> Either (Error VerifyError) (Set.Set SortVariable)
 buildDeclaredSortVariables [] = Right Set.empty
 buildDeclaredSortVariables (unifiedVariable : list) = do
     variables <- buildDeclaredSortVariables list

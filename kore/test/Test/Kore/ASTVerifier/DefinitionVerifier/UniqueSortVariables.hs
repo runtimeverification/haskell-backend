@@ -26,22 +26,22 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ sortSentenceWithSortParameters
                 (SortName "s")
-                [ sortVariable @Object "sv1" ]
+                [ sortVariable "sv1" ]
             ]
         )
     , expectSuccess "Sort with one sort parameter with same name"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ sortSentenceWithSortParameters
                 (SortName "s")
-                [ sortVariable @Object "s" ]
+                [ sortVariable "s" ]
             ]
         )
     , expectSuccess "Sort with two sort parameters"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ sortSentenceWithSortParameters
                 (SortName "s")
-                [ sortVariable @Object "sv1"
-                , sortVariable @Object "sv2"
+                [ sortVariable "sv1"
+                , sortVariable "sv2"
                 ]
             ]
         )
@@ -57,7 +57,7 @@ test_uniqueSortVariables =
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#sv" ]
+                [ sortVariable "#sv" ]
             ]
         )
     , expectSuccess "Meta alias with one sort parameter with same name"
@@ -65,7 +65,7 @@ test_uniqueSortVariables =
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#a" ]
+                [ sortVariable "#a" ]
             ]
         )
     , expectSuccess
@@ -74,7 +74,7 @@ test_uniqueSortVariables =
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#String" ]
+                [ sortVariable "#String" ]
             ]
         )
     , expectSuccess
@@ -83,8 +83,8 @@ test_uniqueSortVariables =
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#sv1"
-                , sortVariable @Meta "#sv2"
+                [ sortVariable "#sv1"
+                , sortVariable "#sv2"
                 ]
             ]
         )
@@ -108,7 +108,7 @@ test_uniqueSortVariables =
                 (aliasSentenceWithSortParameters
                     (AliasName "a")
                     (SortName "s")
-                    [ sortVariable @Object "sv" ]
+                    [ sortVariable "sv" ]
                     topS
                 )
             , simpleSortSentence (SortName "s")
@@ -120,7 +120,7 @@ test_uniqueSortVariables =
                 (aliasSentenceWithSortParameters
                     (AliasName "a")
                     (SortName "s")
-                    [ sortVariable @Object "a" ]
+                    [ sortVariable "a" ]
                     topS
                 )
             , simpleSortSentence (SortName "s")
@@ -133,7 +133,7 @@ test_uniqueSortVariables =
                 (aliasSentenceWithSortParameters
                     (AliasName "a")
                     (SortName "s")
-                    [ sortVariable @Object "s" ]
+                    [ sortVariable "s" ]
                     topS
                 )
             , simpleSortSentence (SortName "s")
@@ -145,8 +145,8 @@ test_uniqueSortVariables =
                 (aliasSentenceWithSortParameters
                     (AliasName "a")
                     (SortName "s")
-                    [ sortVariable @Object "sv1"
-                    , sortVariable @Object "sv2"
+                    [ sortVariable "sv1"
+                    , sortVariable "sv2"
                     ]
                     topS
                 )
@@ -165,7 +165,7 @@ test_uniqueSortVariables =
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#sv" ]
+                [ sortVariable "#sv" ]
             ]
         )
     , expectSuccess "Meta symbol with one sort parameter with same name"
@@ -173,7 +173,7 @@ test_uniqueSortVariables =
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#a" ]
+                [ sortVariable "#a" ]
             ]
         )
     , expectSuccess
@@ -182,7 +182,7 @@ test_uniqueSortVariables =
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#String" ]
+                [ sortVariable "#String" ]
             ]
         )
     , expectSuccess
@@ -191,8 +191,8 @@ test_uniqueSortVariables =
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#sv1"
-                , sortVariable @Meta "#sv2"
+                [ sortVariable "#sv1"
+                , sortVariable "#sv2"
                 ]
             ]
         )
@@ -213,7 +213,7 @@ test_uniqueSortVariables =
                 (symbolSentenceWithSortParameters
                     (SymbolName "a")
                     (SortName "s")
-                    [ sortVariable @Object "sv" ]
+                    [ sortVariable "sv" ]
                 )
             , simpleSortSentence (SortName "s")
             ]
@@ -224,7 +224,7 @@ test_uniqueSortVariables =
                 (symbolSentenceWithSortParameters
                     (SymbolName "a")
                     (SortName "s")
-                    [ sortVariable @Object  "a" ]
+                    [ sortVariable  "a" ]
                 )
             , simpleSortSentence (SortName "s")
             ]
@@ -236,7 +236,7 @@ test_uniqueSortVariables =
                 (symbolSentenceWithSortParameters
                     (SymbolName "a")
                     (SortName "s")
-                    [ sortVariable @Object "s" ]
+                    [ sortVariable "s" ]
                 )
             , simpleSortSentence (SortName "s")
             ]
@@ -247,8 +247,8 @@ test_uniqueSortVariables =
                 (symbolSentenceWithSortParameters
                     (SymbolName "a")
                     (SortName "s")
-                    [ sortVariable @Object  "sv1"
-                    , sortVariable @Object  "sv2"
+                    [ sortVariable  "sv1"
+                    , sortVariable  "sv2"
                     ]
                 )
             , simpleSortSentence (SortName "s")
@@ -315,8 +315,8 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ sortSentenceWithSortParameters
                 (SortName "s")
-                [ sortVariable @Object "sv"
-                , sortVariable @Object "sv"
+                [ sortVariable "sv"
+                , sortVariable "sv"
                 ]
             ]
         )
@@ -333,8 +333,8 @@ test_uniqueSortVariables =
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#sv"
-                , sortVariable @Meta "#sv"
+                [ sortVariable "#sv"
+                , sortVariable "#sv"
                 ]
             ]
         )
@@ -352,8 +352,8 @@ test_uniqueSortVariables =
                 (aliasSentenceWithSortParameters
                     (AliasName "a")
                     (SortName "s")
-                    [ sortVariable @Object "sv"
-                    , sortVariable @Object "sv"
+                    [ sortVariable "sv"
+                    , sortVariable "sv"
                     ]
                     topS1
                 )
@@ -373,8 +373,8 @@ test_uniqueSortVariables =
             [ metaSymbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
-                [ sortVariable @Meta "#sv"
-                , sortVariable @Meta "#sv"
+                [ sortVariable "#sv"
+                , sortVariable "#sv"
                 ]
             ]
         )
@@ -392,8 +392,8 @@ test_uniqueSortVariables =
                 (symbolSentenceWithSortParameters
                     (SymbolName "a")
                     (SortName "s")
-                    [ sortVariable @Object "sv"
-                    , sortVariable @Object "sv"
+                    [ sortVariable "sv"
+                    , sortVariable "sv"
                     ]
                 )
             , simpleSortSentence (SortName "s")

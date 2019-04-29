@@ -263,7 +263,7 @@ sortSentenceKItem =
             , sentenceSortAttributes = Attributes []
             }
 
-sortParam :: Text -> SortVariable Object
+sortParam :: Text -> SortVariable
 sortParam name = SortVariable (testId name)
 
 sortParamSort :: Text -> Sort Object
@@ -312,7 +312,7 @@ applyInj sortTo child =
     Valid { patternSort = sortFrom } = extract child
 
 symbolSentenceInj
-    :: Sentence Object (SortVariable Object) (TermLike Variable)
+    :: Sentence Object SortVariable (TermLike Variable)
 symbolSentenceInj = asSentence symbolInj
 -- symbol inj{From,To}(From) : To []
 

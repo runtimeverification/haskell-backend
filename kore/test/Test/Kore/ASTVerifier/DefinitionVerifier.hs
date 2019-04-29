@@ -149,7 +149,7 @@ newtype ResultSort level = ResultSort (Sort level)
 newtype DeclaredSort level = DeclaredSort (Sort level)
 newtype TestedPatternSort level = TestedPatternSort (Sort level)
 newtype SortVariablesThatMustBeDeclared level =
-    SortVariablesThatMustBeDeclared [SortVariable level]
+    SortVariablesThatMustBeDeclared [SortVariable]
 
 simpleDefinitionFromSentences
     :: ModuleName
@@ -270,7 +270,7 @@ importSentence name =
         )
 
 sortSentenceWithSortParameters
-    :: SortName -> [SortVariable Object] -> Verified.Sentence
+    :: SortName -> [SortVariable] -> Verified.Sentence
 sortSentenceWithSortParameters (SortName name) parameters =
     asSentence
         (SentenceSort
@@ -306,7 +306,7 @@ aliasSentenceWithSort (AliasName name) sort =
             }
 
 metaAliasSentenceWithSortParameters
-    :: AliasName -> Sort Meta -> [SortVariable Meta] -> Verified.Sentence
+    :: AliasName -> Sort Meta -> [SortVariable] -> Verified.Sentence
 metaAliasSentenceWithSortParameters
     (AliasName name) sort parameters
   =
@@ -338,7 +338,7 @@ metaAliasSentenceWithSortParameters
 aliasSentenceWithSortParameters
     :: AliasName
     -> SortName
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> Verified.Pattern
     -> Verified.SentenceAlias
 aliasSentenceWithSortParameters (AliasName name) (SortName sort) parameters r =
@@ -370,7 +370,7 @@ sentenceAliasWithSortArgument
     :: AliasName
     -> Sort Object
     -> Sort Object
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> Verified.Pattern
     -> Verified.SentenceAlias
 sentenceAliasWithSortArgument
@@ -409,7 +409,7 @@ sentenceAliasWithSortArgument
 
 sentenceAliasWithAttributes
     :: AliasName
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> Sort Object
     -> [ParsedPattern]
     -> Application Object (Variable Object)
@@ -430,7 +430,7 @@ sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
 
 sentenceSymbolWithAttributes
     :: SymbolName
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> Sort Object
     -> [ParsedPattern]
     -> ParsedSentenceSymbol
@@ -446,7 +446,7 @@ sentenceSymbolWithAttributes (SymbolName name) params sort attributes =
         }
 
 metaSymbolSentenceWithSortParameters
-    :: SymbolName -> Sort Meta -> [SortVariable Meta] -> Verified.Sentence
+    :: SymbolName -> Sort Meta -> [SortVariable] -> Verified.Sentence
 metaSymbolSentenceWithSortParameters
     (SymbolName name) sort parameters
   =
@@ -466,7 +466,7 @@ metaSymbolSentenceWithSortParameters
 symbolSentenceWithSortParameters
     :: SymbolName
     -> SortName
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> Verified.SentenceSymbol
 symbolSentenceWithSortParameters
     (SymbolName name) (SortName sort) parameters
@@ -486,7 +486,7 @@ symbolSentenceWithSortParameters
         }
 
 axiomSentenceWithSortParameters
-    :: Verified.Pattern -> [SortVariable Object] -> Verified.Sentence
+    :: Verified.Pattern -> [SortVariable] -> Verified.Sentence
 axiomSentenceWithSortParameters unifiedPattern parameters =
     SentenceAxiomSentence
         (SentenceAxiom
@@ -498,7 +498,7 @@ axiomSentenceWithSortParameters unifiedPattern parameters =
         )
 
 axiomSentenceWithAttributes
-    :: [SortVariable Object]
+    :: [SortVariable]
     -> ParsedPattern
     -> [ParsedPattern]
     -> ParsedSentence
@@ -514,7 +514,7 @@ axiomSentenceWithAttributes parameters unifiedPattern attributes =
 sentenceAliasWithResultSort
     :: AliasName
     -> Sort Object
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> Verified.Pattern
     -> Verified.SentenceAlias
 sentenceAliasWithResultSort (AliasName name) sort parameters r =
@@ -540,7 +540,7 @@ sentenceAliasWithResultSort (AliasName name) sort parameters r =
         }
 
 symbolSentenceWithResultSort
-    :: SymbolName -> Sort Object -> [SortVariable Object] -> Verified.Sentence
+    :: SymbolName -> Sort Object -> [SortVariable] -> Verified.Sentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
   = SentenceSymbolSentence
@@ -566,7 +566,7 @@ symbolSentenceWithArguments name
 
 objectSymbolSentenceWithParametersAndArguments
     :: SymbolName
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> Sort Object
     -> [Sort Object]
     -> Verified.Sentence
@@ -575,7 +575,7 @@ objectSymbolSentenceWithParametersAndArguments
 
 symbolSentenceWithParametersAndArguments
     :: SymbolName
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> Sort Object
     -> [Sort Object]
     -> Verified.Sentence
@@ -648,11 +648,8 @@ simpleSort sortName =
 objectVariableSort :: Text -> Sort Object
 objectVariableSort name = sortVariableSort name
 
-unifiedSortVariable
-    :: forall level . MetaOrObject level
-    => level -> SortVariableName -> (SortVariable level)
-unifiedSortVariable _x (SortVariableName name) =
-    (sortVariable name :: SortVariable level)
+unifiedSortVariable :: Object -> SortVariableName -> SortVariable
+unifiedSortVariable _x (SortVariableName name) = sortVariable name
 
 stringUnifiedPattern :: Text -> TermLike Variable
 stringUnifiedPattern s = (mkStringLiteral s)

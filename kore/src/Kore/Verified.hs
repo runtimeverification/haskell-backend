@@ -23,11 +23,11 @@ import qualified Kore.Domain.Builtin as Domain
 type Pattern =
     PurePattern Object Domain.Builtin Variable (Valid (Variable Object) Object)
 
-type Sentence = AST.Sentence Object (SortVariable Object) Pattern
+type Sentence = AST.Sentence Object SortVariable Pattern
 
 type SentenceAlias = AST.SentenceAlias Object Pattern
 
-type SentenceAxiom = AST.SentenceAxiom (SortVariable Object) Pattern
+type SentenceAxiom = AST.SentenceAxiom SortVariable Pattern
 
 type SentenceHook = AST.SentenceHook Pattern
 
