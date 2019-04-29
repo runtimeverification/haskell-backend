@@ -63,6 +63,7 @@ import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.And
 import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
+import           Kore.Syntax.Ceil
 import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.Or
 import           Kore.Syntax.StringLiteral
@@ -280,11 +281,8 @@ applicationGen childGen _ =
 bottomGen :: Sort -> Gen (Bottom Sort child)
 bottomGen = topBottomGen Bottom
 
-ceilGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Ceil Object child)
-ceilGen = ceilFloorGen Common.Ceil
+ceilGen :: (Sort -> Gen child) -> Sort -> Gen (Ceil Object child)
+ceilGen = ceilFloorGen Ceil
 
 equalsGen
     :: (Sort -> Gen child)
