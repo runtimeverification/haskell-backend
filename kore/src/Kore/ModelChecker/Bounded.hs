@@ -28,12 +28,12 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.ModelChecker.Step
-                 ( BMCTransition, CommonModalPattern, CommonProofState,
-                 ModalPattern (..), Prim (..), defaultOneStepStrategy )
+                 ( CommonModalPattern, CommonProofState, ModalPattern (..),
+                 Prim (..), defaultOneStepStrategy )
 import qualified Kore.ModelChecker.Step as ProofState
                  ( ProofState (..) )
 import qualified Kore.ModelChecker.Step as ModelChecker
-                 ( transitionRule )
+                 ( Transition, transitionRule )
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom) )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -160,7 +160,7 @@ checkClaim
                         {term = left, predicate = Predicate.makeTruePredicate, substitution = mempty}
         executionGraph <- State.evalStateT
                             (runStrategy transitionRule' strategy startState)
-                            (Just ())
+                            Nothing
         let
             finalResult = (checkFinalNodes . pickFinal) executionGraph
         trace (show finalResult) (return finalResult)
@@ -168,7 +168,7 @@ checkClaim
     transitionRule'
         :: Prim (CommonModalPattern level) (RewriteRule level Variable)
         -> (CommonProofState level)
-        -> BMCTransition (CommonProofState level)
+        -> ModelChecker.Transition (CommonProofState level)
     transitionRule' =
         ModelChecker.transitionRule
             metadataTools
