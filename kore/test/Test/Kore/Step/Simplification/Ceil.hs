@@ -10,7 +10,9 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Ceil (..), SortedVariable (..) )
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -33,23 +35,19 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom, mapVariables, top )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
+                 ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
-                 StepPatternSimplifier, evalSimplifier )
+                 TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -69,13 +67,13 @@ test_ceilSimplification =
     [ testCase "Ceil - or distribution" $ do
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfA
                     , substitution = mempty
                     }
-                , Predicated
+                , Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfB
                     , substitution = mempty
@@ -91,11 +89,11 @@ test_ceilSimplification =
             -- ceil(top) = top
             actual1 <- evaluate mockMetadataTools
                 (makeCeil
-                    [ExpandedPattern.top]
+                    [Pattern.top]
                 )
             assertEqualWithExplanation "ceil(top)"
-                (MultiOr.make
-                    [ ExpandedPattern.top ]
+                (OrPattern.fromPatterns
+                    [ Pattern.top ]
                 )
                 actual1
             -- ceil(bottom) = bottom
@@ -104,7 +102,7 @@ test_ceilSimplification =
                     []
                 )
             assertEqualWithExplanation "ceil(bottom)"
-                (MultiOr.make
+                (OrPattern.fromPatterns
                     []
                 )
                 actual2
@@ -113,17 +111,17 @@ test_ceilSimplification =
         (do
             -- ceil(top) = top
             actual1 <- makeEvaluate mockMetadataTools
-                (ExpandedPattern.top :: CommonExpandedPattern Object)
+                (Pattern.top :: Pattern Object Variable)
             assertEqualWithExplanation "ceil(top)"
-                (MultiOr.make
-                    [ ExpandedPattern.top ]
+                (OrPattern.fromPatterns
+                    [ Pattern.top ]
                 )
                 actual1
             -- ceil(bottom) = bottom
             actual2 <- makeEvaluate mockMetadataTools
-                (ExpandedPattern.bottom :: CommonExpandedPattern Object)
+                (Pattern.bottom :: Pattern Object Variable)
             assertEqualWithExplanation "ceil(bottom)"
-                (MultiOr.make
+                (OrPattern.fromPatterns
                     []
                 )
                 actual2
@@ -133,8 +131,8 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(term) and predicate) and subst
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -144,7 +142,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = somethingOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -160,8 +158,8 @@ test_ceilSimplification =
             -- ceil(term and predicate and subst)
             --     = top and (ceil(term) and predicate) and subst
             let
-                expected = MultiOr.make
-                    [ Predicated
+                expected = OrPattern.fromPatterns
+                    [ Conditional
                         { term = mkTop_
                         , predicate =
                             makeAndPredicate
@@ -175,7 +173,7 @@ test_ceilSimplification =
                         }
                     ]
             actual <- makeEvaluate mockMetadataTools
-                Predicated
+                Conditional
                     { term = constructorTerm
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -186,9 +184,9 @@ test_ceilSimplification =
                 actual
     , testCase "ceil of constructors is top" $ do
         let
-            expected = MultiOr.make [ExpandedPattern.top]
+            expected = OrPattern.fromPatterns [Pattern.top]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.constr10 Mock.a
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -199,8 +197,8 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(params) and predicate) and subst
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -213,7 +211,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.functional20 somethingOfA somethingOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -227,8 +225,8 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(term) and predicate) and subst
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -238,7 +236,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -252,8 +250,8 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(params) and predicate) and subst
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -263,7 +261,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -277,15 +275,15 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and predicate and subst
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.a
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -301,8 +299,8 @@ test_ceilSimplification =
         --       ceil(non-funct) and ceil(non-funct) and predicate and
         --       subst
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -315,7 +313,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -331,8 +329,8 @@ test_ceilSimplification =
         --       ceil(non-funct) and ceil(non-funct) and predicate and
         --       subst
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -348,14 +346,14 @@ test_ceilSimplification =
                     (AxiomIdentifier.Application Mock.fId)
                 )
                 (appliedMockEvaluator
-                    Predicated
+                    Conditional
                         { term = mkTop_
                         , predicate = makeEqualsPredicate Mock.a Mock.cf
                         , substitution = mempty
                         }
                 )
             )
-            Predicated
+            Conditional
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
@@ -367,21 +365,21 @@ test_ceilSimplification =
     , testCase "ceil with normal domain value" $ do
         -- ceil(1) = top
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term =
                     mkDomainValue
                         (Domain.BuiltinExternal Domain.External
                             { domainValueSort = Mock.testSort
                             , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "a"
+                                AST.eraseAnnotations $ mkStringLiteral "a"
                             }
                         )
                 , predicate = makeTruePredicate
@@ -392,8 +390,8 @@ test_ceilSimplification =
         -- maps assume that their keys are relatively functional, so
         -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -403,7 +401,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term =
                     Mock.builtinMap
                         [(asConcrete fOfA, fOfB), (asConcrete gOfA, gOfB)]
@@ -414,8 +412,8 @@ test_ceilSimplification =
     , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)
         let
-            expected = MultiOr.make
-                [ Predicated
+            expected = OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
@@ -425,7 +423,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.builtinList [fOfA, fOfB]
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -435,9 +433,9 @@ test_ceilSimplification =
         -- sets assume that their elements are relatively functional,
         -- so ceil({a, b}) = top
         let
-            expected = MultiOr.make [ ExpandedPattern.top ]
+            expected = OrPattern.fromPatterns [ Pattern.top ]
         actual <- makeEvaluate mockMetadataTools
-            Predicated
+            Conditional
                 { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
                 , predicate = makeTruePredicate
                 , substitution = mempty
@@ -445,20 +443,20 @@ test_ceilSimplification =
         assertEqualWithExplanation "ceil(set)" expected actual
     ]
   where
-    fOfA :: StepPattern Object Variable
+    fOfA :: TermLike Variable
     fOfA = Mock.f Mock.a
-    fOfB :: StepPattern Object Variable
+    fOfB :: TermLike Variable
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
     somethingOfA = Mock.plain10 Mock.a
     somethingOfB = Mock.plain10 Mock.b
-    somethingOfAExpanded = Predicated
+    somethingOfAExpanded = Conditional
         { term = somethingOfA
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    somethingOfBExpanded = Predicated
+    somethingOfBExpanded = Conditional
         { term = somethingOfB
         , predicate = makeTruePredicate
         , substitution = mempty
@@ -475,23 +473,23 @@ test_ceilSimplification =
         let Just r = asConcreteStepPattern p in r
 
 appliedMockEvaluator
-    :: CommonExpandedPattern level -> BuiltinAndAxiomSimplifier level
+    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier level
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
     $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = MultiOr.make
+        { results = OrPattern.fromPatterns
             [Test.Kore.Step.Simplification.Ceil.mapVariables result]
-        , remainders = MultiOr.make []
+        , remainders = OrPattern.fromPatterns []
         }
 
 mockEvaluator
     :: AttemptedAxiom level variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 mockEvaluator evaluation _ _ _ _ _ =
@@ -503,29 +501,29 @@ mapVariables
         , MetaOrObject level
         , Ord (variable level)
         )
-    => CommonExpandedPattern level
-    -> ExpandedPattern level variable
+    => Pattern Object Variable
+    -> Pattern level variable
 mapVariables =
-    ExpandedPattern.mapVariables $ \v ->
+    Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Sup.Element 1) }
 
 makeCeil
     :: Ord (variable Object)
-    => [ExpandedPattern Object variable]
-    -> Ceil Object (OrOfExpandedPattern Object variable)
+    => [Pattern Object variable]
+    -> Ceil Object (OrPattern Object variable)
 makeCeil patterns =
     Ceil
         { ceilOperandSort = testSort
         , ceilResultSort  = testSort
-        , ceilChild       = MultiOr.make patterns
+        , ceilChild       = OrPattern.fromPatterns patterns
         }
 
 evaluate
     ::  ( MetaOrObject level
         )
     => SmtMetadataTools StepperAttributes
-    -> Ceil level (CommonOrOfExpandedPattern level)
-    -> IO (CommonOrOfExpandedPattern level)
+    -> Ceil level (OrPattern Object Variable)
+    -> IO (OrPattern Object Variable)
 evaluate tools ceil =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -540,8 +538,8 @@ evaluate tools ceil =
 makeEvaluate
     ::  ( MetaOrObject level )
     => SmtMetadataTools StepperAttributes
-    -> CommonExpandedPattern level
-    -> IO (CommonOrOfExpandedPattern level)
+    -> Pattern Object Variable
+    -> IO (OrPattern Object Variable)
 makeEvaluate tools child =
     makeEvaluateWithAxioms tools Map.empty child
 
@@ -550,8 +548,8 @@ makeEvaluateWithAxioms
     => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> CommonExpandedPattern level
-    -> IO (CommonOrOfExpandedPattern level)
+    -> Pattern Object Variable
+    -> IO (OrPattern Object Variable)
 makeEvaluateWithAxioms tools axiomIdToSimplifier child =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

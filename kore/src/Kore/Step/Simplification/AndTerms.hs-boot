@@ -11,12 +11,12 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Pattern
-       ( StepPattern )
-import Kore.Step.Representation.ExpandedPattern
-       ( ExpandedPattern )
+       ( Pattern )
 import Kore.Step.Simplification.Data
-       ( PredicateSubstitutionSimplifier, SimplificationProof, Simplifier,
-       StepPatternSimplifier )
+       ( PredicateSimplifier, SimplificationProof, Simplifier,
+       TermLikeSimplifier )
+import Kore.Step.TermLike
+       ( TermLike )
 import Kore.Unification.Unify
        ( MonadUnify )
 import Kore.Unparser
@@ -35,12 +35,12 @@ termAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
-    -> StepPattern level variable
-    -> Simplifier (ExpandedPattern level variable, SimplificationProof level)
+    -> TermLike variable
+    -> TermLike variable
+    -> Simplifier (Pattern level variable, SimplificationProof level)
 
 termUnification
     :: forall level variable unifier unifierM .
@@ -56,9 +56,9 @@ termUnification
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
-    -> StepPattern level variable
-    -> StepPattern level variable
-    -> unifier (ExpandedPattern level variable, SimplificationProof level)
+    -> TermLike variable
+    -> TermLike variable
+    -> unifier (Pattern level variable, SimplificationProof level)

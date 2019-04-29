@@ -13,14 +13,10 @@ module Kore.Step.Simplification.CharLiteral
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 
@@ -30,16 +26,8 @@ an or containing a term made of that literal.
 simplify
     :: Ord (variable Meta)
     => CharLiteral
-    -> ( OrOfExpandedPattern Meta variable
-       , SimplificationProof Meta
-       )
+    -> (OrPattern Meta variable, SimplificationProof Meta)
 simplify (CharLiteral char) =
-    ( MultiOr.make
-        [Predicated
-            { term = mkCharLiteral char
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        ]
+    ( OrPattern.fromPattern $ Pattern.fromTermLike $ mkCharLiteral char
     , SimplificationProof
     )

@@ -10,10 +10,12 @@ import           Data.Maybe
                  ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
-import           Data.Text
-                 ( Text )
 
+import           Kore.AST.Common
+                 ( Application (..) )
+import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
+                 ( groundHead )
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -32,27 +34,25 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Sort
 import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( extractRewriteAxioms )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Verified as Verified
 import qualified SMT
 
 import           Test.Kore
-                 ( asParsedPattern, emptyLogger )
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
@@ -88,10 +88,7 @@ sHead = groundHead "s" AstLocationTest
 tHead = groundHead "t" AstLocationTest
 injHead :: Sort level -> Sort level -> SymbolOrAlias level
 injHead s1 s2 = SymbolOrAlias
-    { symbolOrAliasConstructor = Id
-        { getId = "inj"
-        , idLocation = AstLocationTest
-        }
+    { symbolOrAliasConstructor = testId "inj"
     , symbolOrAliasParams = [s1, s2]
     }
 
@@ -180,7 +177,7 @@ testDef =
                                 )
                                 (mkTop sortVarS)
                             )
-                        :: CommonStepPattern Object)
+                        :: TermLike Variable)
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -196,7 +193,7 @@ testDef =
                                 )
                                 (mkTop sortVarS)
                             )
-                        :: CommonStepPattern Object)
+                        :: TermLike Variable)
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -204,7 +201,7 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes
                         [ asParsedPattern
-                            (ApplicationPattern Application
+                            (Common.ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     simplificationSymbol
                                 , applicationChildren = []
@@ -221,14 +218,14 @@ testDef =
                                 )
                                 (mkTop sortVarS)
                             )
-                        :: CommonStepPattern Object)
+                        :: TermLike Variable)
                 }
         , SentenceAxiomSentence
             SentenceAxiom
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                        (mkTop sortS :: CommonStepPattern Object)
+                        (mkTop sortS :: TermLike Variable)
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -255,7 +252,7 @@ testDef =
                                 )
                                 (mkTop sortVarS)
                             )
-                        :: CommonStepPattern Object)
+                        :: TermLike Variable)
                 }
         ]
 
@@ -274,13 +271,6 @@ testIndexedModule =
                 fromMaybe
                     (error "Module not found. Should not be possible.")
                     (Map.lookup (ModuleName "test") indexedModules)
-
-testId :: Text -> Id level
-testId name =
-    Id
-        { getId = name
-        , idLocation = AstLocationTest
-        }
 
 testEvaluators
     :: BuiltinAndAxiomSimplifierMap Object
@@ -333,23 +323,23 @@ test_functionRegistry =
         (simplified, _) <-
             SMT.runSMT SMT.defaultConfig
             $ evalSimplifier emptyLogger
-            $ ExpandedPattern.simplify
+            $ Pattern.simplify
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)
                 (Simplifier.create testMetadataTools testEvaluators)
                 testEvaluators
-                (makeExpandedPattern (mkApp sortS gHead []))
+                (makePattern (mkApp sortS gHead []))
         let actual =
-                ExpandedPattern.term $ head
+                Pattern.term $ head
                 $ MultiOr.extractPatterns simplified
         assertEqual "" expect actual
     ]
   where
-    makeExpandedPattern
-        :: CommonStepPattern Object
-        -> CommonExpandedPattern Object
-    makeExpandedPattern pat =
-        Predicated
+    makePattern
+        :: TermLike Variable
+        -> Pattern Object Variable
+    makePattern pat =
+        Conditional
         { term = pat
         , predicate = makeTruePredicate
         , substitution = mempty

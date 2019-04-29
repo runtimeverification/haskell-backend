@@ -12,19 +12,17 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Forall (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fmapWithPairs )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -32,7 +30,7 @@ import           Kore.Unparser
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
-{-|'simplify' simplifies an 'Forall' pattern with an 'OrOfExpandedPattern'
+{-|'simplify' simplifies an 'Forall' pattern with an 'OrPattern'
 child.
 
 Right now this has special cases only for top and bottom children.
@@ -47,15 +45,14 @@ For this reason, we don't even try to see if the variable actually occurs in
 the pattern except for the top/bottom cases.
 -}
 simplify
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => Forall level variable (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
-        , SimplificationProof level
+    => Forall Object variable (OrPattern Object variable)
+    ->  ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplify
     Forall { forallVariable = variable, forallChild = child }
@@ -67,27 +64,26 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Forall level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (Forall Object) (Valid Object) (OrPattern Object variable)
 
-instead of a 'variable level' and an 'OrOfExpandedPattern' argument. The type of
+instead of a 'variable Object' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => variable level
-    -> OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => variable Object
+    -> OrPattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated variable simplified
-  | OrOfExpandedPattern.isTrue simplified = (simplified, SimplificationProof)
-  | OrOfExpandedPattern.isFalse simplified = (simplified, SimplificationProof)
+  | OrPattern.isTrue simplified = (simplified, SimplificationProof)
+  | OrPattern.isFalse simplified = (simplified, SimplificationProof)
   | otherwise =
     let
         (patt, _proofs) =
@@ -97,32 +93,31 @@ simplifyEvaluated variable simplified
         , SimplificationProof
         )
 
-{-| evaluates an 'Forall' given its two 'ExpandedPattern' children.
+{-| evaluates an 'Forall' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => variable level
-    -> ExpandedPattern level variable
-    -> (ExpandedPattern level variable, SimplificationProof level)
+    => variable Object
+    -> Pattern Object variable
+    -> (Pattern Object variable, SimplificationProof Object)
 makeEvaluate variable patt
-  | ExpandedPattern.isTop patt =
-    (ExpandedPattern.top, SimplificationProof)
-  | ExpandedPattern.isBottom patt =
-    ( ExpandedPattern.bottom
+  | Pattern.isTop patt =
+    (Pattern.top, SimplificationProof)
+  | Pattern.isBottom patt =
+    ( Pattern.bottom
     , SimplificationProof
     )
   | otherwise =
-    ( Predicated
+    ( Conditional
         { term = mkForall
             variable
-            (ExpandedPattern.toMLPattern patt)
+            (Pattern.toMLPattern patt)
         , predicate = makeTruePredicate
         , substitution = mempty
         }

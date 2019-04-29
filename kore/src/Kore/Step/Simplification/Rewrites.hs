@@ -11,40 +11,31 @@ module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Rewrites (..) )
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( toMLPattern )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
 
-{-|'simplify' simplifies a 'Rewrites' pattern with an 'OrOfExpandedPattern'
-child.
+{- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 
 Right now this does not do any actual simplification.
 
 TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Rewrites Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Rewrites Object (OrPattern Object variable)
+    ->  ( OrPattern Object variable
         , SimplificationProof Object
         )
 simplify
@@ -60,48 +51,42 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedRewrites' take an argument of type
 
-> CofreeF (Or level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (Or Object) (Valid Object) (OrPattern Object variable)
 
-instead of two 'OrOfExpandedPattern' arguments. The type of
+instead of two 'OrPattern' arguments. The type of
 'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
 
 -}
 simplifyEvaluatedRewrites
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => OrPattern Object variable
+    -> OrPattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
-        (OrOfExpandedPattern.toExpandedPattern first)
-        (OrOfExpandedPattern.toExpandedPattern second)
+        (OrPattern.toExpandedPattern first)
+        (OrPattern.toExpandedPattern second)
 
 makeEvaluateRewrites
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord (variable Object)
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => ExpandedPattern Object variable
-    -> ExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => Pattern Object variable
+    -> Pattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
-    ( MultiOr.make
-        [ Predicated
-            { term = mkRewrites
-                (ExpandedPattern.toMLPattern first)
-                (ExpandedPattern.toMLPattern second)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        ]
+    ( OrPattern.fromPattern
+        $ Pattern.fromTermLike
+        $ mkRewrites
+            (Pattern.toMLPattern first)
+            (Pattern.toMLPattern second)
     , SimplificationProof
     )

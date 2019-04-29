@@ -1,226 +1,143 @@
-{-|
-Module      : Kore.Step.Simplification.Pattern
-Description : Tools for Pattern simplification.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
 module Kore.Step.Simplification.Pattern
     ( simplify
-    , simplifyToOr
+    , simplifyPredicate
     ) where
 
+import           Data.Reflection
+import           Kore.AST.Common
+                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
-import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Condition.Evaluator as Predicate
+                 ( evaluate )
+import qualified Kore.Step.Merging.Pattern as Pattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
-import qualified Kore.Step.Simplification.And as And
-                 ( simplify )
-import qualified Kore.Step.Simplification.Application as Application
-                 ( simplify )
-import qualified Kore.Step.Simplification.Bottom as Bottom
-                 ( simplify )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( simplify )
-import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
-                 ( simplify )
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Representation.MultiOr as MultiOr
+                 ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier, simplifyTerm,
-                 stepPatternSimplifier )
-import qualified Kore.Step.Simplification.DomainValue as DomainValue
-                 ( simplify )
-import qualified Kore.Step.Simplification.Equals as Equals
-                 ( simplify )
-import qualified Kore.Step.Simplification.Exists as Exists
-                 ( simplify )
-import qualified Kore.Step.Simplification.Floor as Floor
-                 ( simplify )
-import qualified Kore.Step.Simplification.Forall as Forall
-                 ( simplify )
-import qualified Kore.Step.Simplification.Iff as Iff
-                 ( simplify )
-import qualified Kore.Step.Simplification.Implies as Implies
-                 ( simplify )
-import qualified Kore.Step.Simplification.In as In
-                 ( simplify )
-import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
-                 ( simplify )
-import qualified Kore.Step.Simplification.Next as Next
-                 ( simplify )
-import qualified Kore.Step.Simplification.Not as Not
-                 ( simplify )
-import qualified Kore.Step.Simplification.Or as Or
-                 ( simplify )
-import qualified Kore.Step.Simplification.Rewrites as Rewrites
-                 ( simplify )
-import qualified Kore.Step.Simplification.SetVariable as SetVariable
-                 ( simplify )
-import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
-                 ( simplify )
-import qualified Kore.Step.Simplification.Top as Top
-                 ( simplify )
-import qualified Kore.Step.Simplification.Variable as Variable
-                 ( simplify )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 TermLikeSimplifier, simplifyTerm )
+import           Kore.Step.Substitution
+                 ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
--- TODO(virgil): Add a Simplifiable class and make all pattern types
--- instances of that.
-
-{-|'simplify' simplifies a StepPattern level variable, returning an
-'ExpandedPattern'.
+{-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
         , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
-        )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
-    -> Simplifier
-        ( ExpandedPattern level variable
-        , SimplificationProof level
-        )
-simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
-    (orPatt, proof) <-
-        simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
-    return
-        ( OrOfExpandedPattern.toExpandedPattern orPatt
-        , proof
-        )
-
-{-|'simplifyToOr' simplifies a StepPattern level variable, returning an
-'OrOfExpandedPattern'.
--}
-simplifyToOr
-    ::  ( MetaOrObject level
         , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
+    -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSubstitutionSimplifier level
-    -> StepPattern level variable
+    -> Pattern level variable
     -> Simplifier
-        ( OrOfExpandedPattern level variable
+        ( OrPattern level variable
         , SimplificationProof level
         )
-simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
-    simplifyInternal
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
-        (fromPurePattern patt)
+simplify
+    tools
+    substitutionSimplifier
+    termSimplifier
+    axiomIdToSimplifier
+    Conditional {term, predicate, substitution}
+  = do
+    (simplifiedTerm, _) <- simplifyTerm' term
+    (simplifiedPatt, _) <-
+        MultiOr.traverseWithPairs
+            (give tools $ Pattern.mergeWithPredicate
+                tools
+                substitutionSimplifier
+                termSimplifier
+                axiomIdToSimplifier
+                Conditional
+                    { term = ()
+                    , predicate
+                    , substitution
+                    }
+            )
+            simplifiedTerm
+    return (simplifiedPatt, SimplificationProof)
   where
-    simplifier = stepPatternSimplifier
-        (simplifyToOr tools axiomIdToEvaluator)
+    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
-simplifyInternal
+{-| Simplifies the predicate inside an 'Pattern'.
+-}
+simplifyPredicate
     ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
         , Ord (variable level)
+        , Show (variable level)
         , Unparse (variable level)
         , OrdMetaOrObject variable
         , ShowMetaOrObject variable
         , FreshVariable variable
+        , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -- ^ Tools for finding additional information about patterns
+    -- such as their sorts, whether they are constructors or hooked.
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
+    -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Base (StepPattern level variable) (StepPattern level variable)
-    -> Simplifier
-        ( OrOfExpandedPattern level variable
-        , SimplificationProof level
-        )
-simplifyInternal
+    -> Pattern level variable
+    -- ^ The condition to be evaluated.
+    -> Simplifier (Pattern level variable, SimplificationProof level)
+simplifyPredicate
     tools
     substitutionSimplifier
     simplifier
-    axiomIdToEvaluator
-    (valid :< patt)
+    axiomIdToSimplifier
+    Conditional {term, predicate, substitution}
   = do
-    halfSimplified <- traverse simplifyTerm' patt
-    -- TODO: Remove fst
-    case fmap fst halfSimplified of
-        AndPattern p ->
-            And.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        ApplicationPattern p ->
-            --  TODO: Re-evaluate outside of the application and stop passing
-            -- the simplifier.
-            Application.simplify
-                tools
+    (evaluated, _proof) <-
+        give tools
+            $ Predicate.evaluate
                 substitutionSimplifier
                 simplifier
-                axiomIdToEvaluator
-                (valid :< p)
-        BottomPattern p -> return $ Bottom.simplify p
-        CeilPattern p ->
-            Ceil.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        DomainValuePattern p -> return $ DomainValue.simplify tools p
-        EqualsPattern p ->
-            Equals.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        ExistsPattern p ->
-            Exists.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        FloorPattern p -> return $ Floor.simplify p
-        ForallPattern p -> return $ Forall.simplify p
-        IffPattern p ->
-            Iff.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        ImpliesPattern p ->
-            Implies.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        InPattern p ->
-            In.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        -- TODO(virgil): Move next up through patterns.
-        NextPattern p -> return $ Next.simplify p
-        NotPattern p ->
-            fmap withProof $ Not.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        OrPattern p -> return $ Or.simplify p
-        RewritesPattern p -> return $ Rewrites.simplify p
-        StringLiteralPattern p -> return $ StringLiteral.simplify p
-        CharLiteralPattern p -> return $ CharLiteral.simplify p
-        TopPattern p -> return $ Top.simplify p
-        VariablePattern p -> return $ Variable.simplify p
-        InhabitantPattern s -> return $ Inhabitant.simplify s
-        SetVariablePattern p -> return $ SetVariable.simplify p
-  where
-    simplifyTerm' = simplifyTerm simplifier substitutionSimplifier
-    withProof a = (a, SimplificationProof)
+                predicate
+    let Conditional { predicate = evaluatedPredicate } = evaluated
+        Conditional { substitution = evaluatedSubstitution } = evaluated
+    (merged, _proof) <-
+        mergePredicatesAndSubstitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            [evaluatedPredicate]
+            [substitution, evaluatedSubstitution]
+    let Conditional { predicate = mergedPredicate } = merged
+        Conditional { substitution = mergedSubstitution } = merged
+    -- TODO(virgil): Do I need to re-evaluate the predicate?
+    return
+        ( Conditional
+            { term = term
+            , predicate = mergedPredicate
+            , substitution = mergedSubstitution
+            }
+        , SimplificationProof
+        )

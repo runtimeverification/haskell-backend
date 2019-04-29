@@ -7,16 +7,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Next (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Next
                  ( simplify )
 
@@ -28,8 +27,8 @@ test_nextSimplification :: [TestTree]
 test_nextSimplification =
     [ testCase "Next evaluates to Next"
         (assertEqualWithExplanation ""
-            (MultiOr.make
-                [ Predicated
+            (OrPattern.fromPatterns
+                [ Conditional
                     { term = mkNext Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -38,7 +37,7 @@ test_nextSimplification =
             )
             (evaluate
                 (makeNext
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.a
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -49,8 +48,8 @@ test_nextSimplification =
         )
     , testCase "Next collapses or"
         (assertEqualWithExplanation ""
-            (MultiOr.make
-                [ Predicated
+            (OrPattern.fromPatterns
+                [ Conditional
                     { term =
                         mkNext
                             (mkOr
@@ -64,12 +63,12 @@ test_nextSimplification =
             )
             (evaluate
                 (makeNext
-                    [ Predicated
+                    [ Conditional
                         { term = Mock.a
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.b
                         , predicate = makeEqualsPredicate Mock.a Mock.b
                         , substitution = mempty
@@ -80,22 +79,22 @@ test_nextSimplification =
         )
     ]
 
-findSort :: [CommonExpandedPattern Object] -> Sort Object
+findSort :: [Pattern Object Variable] -> Sort Object
 findSort [] = Mock.testSort
-findSort ( Predicated {term} : _ ) = getSort term
+findSort ( Conditional {term} : _ ) = getSort term
 
 evaluate
-    :: Next Object (CommonOrOfExpandedPattern Object)
-    -> CommonOrOfExpandedPattern Object
+    :: Next Object (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate next =
     case simplify next of
         (result, _proof) -> result
 
 makeNext
-    :: [CommonExpandedPattern Object]
-    -> Next Object (CommonOrOfExpandedPattern Object)
+    :: [Pattern Object Variable]
+    -> Next Object (OrPattern Object Variable)
 makeNext child =
     Next
         { nextSort = findSort child
-        , nextChild = MultiOr.make child
+        , nextChild = OrPattern.fromPatterns child
         }

@@ -21,10 +21,9 @@ module Kore.Builtin.Bool
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
-    , asMetaPattern
     , asInternal
+    , asTermLike
     , asPattern
-    , asExpandedPattern
     , extractBoolDomainValue
     , parse
       -- * Keys
@@ -53,16 +52,14 @@ import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
+import           Kore.Step.TermLike
+                 ( TermLike )
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -160,7 +157,7 @@ asInternal
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
     (mkDomainValue . Domain.BuiltinBool)
         Domain.InternalBool
@@ -176,34 +173,29 @@ asInternal builtinBoolSort builtinBoolValue =
   See also: 'sort'
 
  -}
-asPattern
+asTermLike
     :: Ord (variable Object)
     => Domain.InternalBool  -- ^ builtin value to render
-    -> StepPattern Object variable
-asPattern builtin =
+    -> TermLike variable
+asTermLike builtin =
     (mkDomainValue . Domain.BuiltinExternal)
         Domain.External
             { domainValueSort = builtinBoolSort
-            , domainValueChild = eraseAnnotations $ asMetaPattern bool
+            , domainValueChild = AST.eraseAnnotations $ mkStringLiteral literal
             }
   where
     Domain.InternalBool { builtinBoolSort } = builtin
     Domain.InternalBool { builtinBoolValue = bool } = builtin
+    literal
+      | bool      = "true"
+      | otherwise = "false"
 
-asMetaPattern
-    :: Functor domain
-    => Bool
-    -> PurePattern Meta domain variable (Valid (variable Meta) Meta)
-asMetaPattern True = mkStringLiteral "true"
-asMetaPattern False = mkStringLiteral "false"
-
-asExpandedPattern
+asPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> ExpandedPattern Object variable
-asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asInternal resultSort
+    -> Pattern Object variable
+asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}
@@ -222,9 +214,9 @@ builtinFunctions =
     ]
   where
     unaryOperator =
-        Builtin.unaryOperator extractBoolDomainValue asExpandedPattern
+        Builtin.unaryOperator extractBoolDomainValue asPattern
     binaryOperator =
-        Builtin.binaryOperator extractBoolDomainValue asExpandedPattern
+        Builtin.binaryOperator extractBoolDomainValue asPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
 

@@ -26,12 +26,11 @@ module Kore.Builtin.Int
     , builtinFunctions
     , expectBuiltinInt
     , extractIntDomainValue
-    , asMetaPattern
-    , asPattern
+    , asTermLike
     , asInternal
     , asConcretePattern
-    , asExpandedPattern
-    , asPartialExpandedPattern
+    , asPattern
+    , asPartialPattern
     , parse
       -- * keys
     , bitRangeKey
@@ -88,17 +87,14 @@ import           GHC.Integer.Logarithms
                  ( integerLog2# )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.Pattern as Pattern
+import           Kore.Step.TermLike as TermLike
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -231,7 +227,7 @@ by a 'BuiltinDomainMap', it is a bug.
 expectBuiltinInt
     :: Monad m
     => Text  -- ^ Context for error message
-    -> StepPattern Object variable  -- ^ Operand pattern
+    -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Integer
 expectBuiltinInt ctx =
     \case
@@ -264,9 +260,9 @@ asInternal
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal builtinIntSort builtinIntValue =
-    (fromConcreteStepPattern . mkDomainValue . Domain.BuiltinInt)
+    (TermLike.fromConcreteStepPattern . mkDomainValue . Domain.BuiltinInt)
         Domain.InternalInt
             { builtinIntSort
             , builtinIntValue
@@ -280,15 +276,18 @@ asInternal builtinIntSort builtinIntValue =
   See also: 'sort'
 
  -}
-asPattern
+asTermLike
     :: Ord (variable Object)
     => Domain.InternalInt  -- ^ builtin value to render
-    -> StepPattern Object variable
-asPattern builtin =
+    -> TermLike variable
+asTermLike builtin =
     (mkDomainValue . Domain.BuiltinExternal)
         Domain.External
             { domainValueSort = builtinIntSort
-            , domainValueChild = eraseAnnotations $ asMetaPattern int
+            , domainValueChild =
+                AST.eraseAnnotations
+                $ mkStringLiteral . Text.pack
+                $ show int
             }
   where
     Domain.InternalInt { builtinIntSort } = builtin
@@ -305,36 +304,31 @@ asPattern builtin =
 asConcretePattern
     :: Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> ConcreteStepPattern Object
+    -> TermLike Concrete
 asConcretePattern domainValueSort builtinIntChild =
     (mkDomainValue . Domain.BuiltinExternal)
         Domain.External
             { domainValueSort
             , domainValueChild =
-                eraseAnnotations $ asMetaPattern builtinIntChild
+                AST.eraseAnnotations
+                $ mkStringLiteral . Text.pack
+                $ show builtinIntChild
             }
 
-asMetaPattern
-    :: Functor domain
-    => Integer
-    -> PurePattern Meta domain variable (Valid (variable Meta) Meta)
-asMetaPattern result = mkStringLiteral $ Text.pack $ show result
-
-asExpandedPattern
+asPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> ExpandedPattern Object variable
-asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asInternal resultSort
+    -> Pattern Object variable
+asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
-asPartialExpandedPattern
+asPartialPattern
     :: Ord (variable Object)
     => Sort Object  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
-    -> ExpandedPattern Object variable
-asPartialExpandedPattern resultSort =
-    maybe ExpandedPattern.bottom (asExpandedPattern resultSort)
+    -> Pattern Object variable
+asPartialPattern resultSort =
+    maybe Pattern.bottom (asPattern resultSort)
 
 {- | Implement builtin function evaluation.
  -}
@@ -390,22 +384,22 @@ builtinFunctions =
   where
     unaryOperator name op =
         ( name, Builtin.unaryOperator extractIntDomainValue
-            asExpandedPattern name op )
+            asPattern name op )
     binaryOperator name op =
         ( name, Builtin.binaryOperator extractIntDomainValue
-            asExpandedPattern name op )
+            asPattern name op )
     comparator name op =
         ( name, Builtin.binaryOperator extractIntDomainValue
-            Bool.asExpandedPattern name op )
+            Bool.asPattern name op )
     partialUnaryOperator name op =
         ( name, Builtin.unaryOperator extractIntDomainValue
-            asPartialExpandedPattern name op )
+            asPartialPattern name op )
     partialBinaryOperator name op =
         ( name, Builtin.binaryOperator extractIntDomainValue
-            asPartialExpandedPattern name op )
+            asPartialPattern name op )
     partialTernaryOperator name op =
         ( name, Builtin.ternaryOperator extractIntDomainValue
-            asPartialExpandedPattern name op )
+            asPartialPattern name op )
     tdiv n d
         | d == 0 = Nothing
         | otherwise = Just (quot n d)

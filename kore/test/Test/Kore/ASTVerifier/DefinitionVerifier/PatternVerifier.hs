@@ -21,7 +21,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.Step.Pattern hiding
+import           Kore.Step.TermLike hiding
                  ( freeVariables )
 import qualified Kore.Verified as Verified
 
@@ -36,7 +36,7 @@ data PatternRestrict
 
 data TestPattern level = TestPattern
     { testPatternPattern
-        :: !(Pattern level Domain.Builtin Variable (StepPattern level Variable))
+        :: !(Pattern level Domain.Builtin Variable (TermLike Variable))
     , testPatternSort       :: !(Sort level)
     , testPatternErrorStack :: !ErrorStack
     }
@@ -50,7 +50,7 @@ testPatternErrorStackStrings
     strings
 
 testPatternUnifiedPattern
-    :: MetaOrObject level => TestPattern level -> StepPattern level Variable
+    :: MetaOrObject level => TestPattern level -> TermLike Variable
 testPatternUnifiedPattern
     TestPattern { testPatternPattern, testPatternSort }
   =
@@ -755,7 +755,7 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
+    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -800,7 +800,7 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Meta Domain.Builtin Variable (StepPattern Object Variable)
+    -> Pattern Meta Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -842,7 +842,7 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
+    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -899,7 +899,7 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Meta Domain.Builtin Variable (StepPattern Object Variable)
+    -> Pattern Meta Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -945,7 +945,7 @@ failureTestsForMetaPattern
 genericPatternInAllContexts
     :: MetaOrObject level
     => level
-    -> Pattern level Domain.Builtin Variable (StepPattern level Variable)
+    -> Pattern level Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort level
     -> SortVariablesThatMustBeDeclared level
@@ -1013,7 +1013,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
+    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -1136,8 +1136,8 @@ patternsInAllContexts
 
 genericPatternInPatterns
     :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable (StepPattern level Variable)
-    -> Pattern level Domain.Builtin Variable (StepPattern level Variable)
+    => Pattern level Domain.Builtin Variable (TermLike Variable)
+    -> Pattern level Domain.Builtin Variable (TermLike Variable)
     -> OperandSort level
     -> Helpers.ResultSort level
     -> VariableOfDeclaredSort level
@@ -1207,15 +1207,15 @@ genericPatternInPatterns
             }
 
 objectPatternInPatterns
-    :: Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
-    -> Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
+    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
     -> OperandSort Object
     -> [TestPattern Object]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
     :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable (StepPattern level Variable)
+    => Pattern level Domain.Builtin Variable (TermLike Variable)
     -> Sort level
     -> Variable level
     -> [TestPattern level]
@@ -1263,8 +1263,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
 
 patternInUnquantifiedGenericPatterns
     :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable (StepPattern level Variable)
-    -> Pattern level Domain.Builtin Variable (StepPattern level Variable)
+    => Pattern level Domain.Builtin Variable (TermLike Variable)
+    -> Pattern level Domain.Builtin Variable (TermLike Variable)
     -> OperandSort level
     -> Helpers.ResultSort level
     -> [TestPattern level]
@@ -1428,8 +1428,8 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asPurePattern (valid :< testedPattern)
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
-    -> Pattern Object Domain.Builtin Variable (StepPattern Object Variable)
+    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
     -> OperandSort Object
     -> [TestPattern Object]
 patternInUnquantifiedObjectPatterns

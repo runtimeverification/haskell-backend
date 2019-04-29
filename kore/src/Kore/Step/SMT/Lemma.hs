@@ -32,10 +32,10 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
                  ( declare )
 import           Kore.Step.SMT.Translate
+import           Kore.Step.TermLike
 import           Kore.Unparser
 import           SMT
                  ( MonadSMT, SExpr (..), SMT )
@@ -63,7 +63,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
     declareRule
         :: forall sortParam . (Given (SmtMetadataTools StepperAttributes))
         => ( Attribute.Axiom
-           , SentenceAxiom sortParam (StepPattern Object Variable)
+           , SentenceAxiom sortParam (TermLike Variable)
            )
         -> SMT (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
@@ -84,7 +84,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
 
 translateUninterpreted
     :: ( Ord p
-       , p ~ StepPattern Object variable
+       , p ~ TermLike variable
        , Unparse (variable Object)
        )
     => SExpr  -- ^ type name

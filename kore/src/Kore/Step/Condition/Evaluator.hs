@@ -13,19 +13,17 @@ module Kore.Step.Condition.Evaluator
 
 import Data.Reflection
 
-import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Predicate.Predicate
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse, isTrue, toExpandedPattern )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier,
+                 ( PredicateSimplifier,
                  SimplificationProof (SimplificationProof), Simplifier,
-                 StepPatternSimplifier, simplifyTerm )
+                 TermLikeSimplifier, simplifyTerm )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -38,63 +36,62 @@ If the predicate is non-trivial (not @\\top{_}()@ or @\\bottom{_}()@),
 
  -}
 evaluate
-    ::  forall level variable .
+    ::  forall variable .
         ( FreshVariable variable
-        , Given (SmtMetadataTools StepperAttributes)
-        , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
         , SortedVariable variable
-        , Unparse (variable level)
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
+        , Given (SmtMetadataTools StepperAttributes)
         )
-    => PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    => PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in a pattern.
-    -> Predicate level variable
+    -> Syntax.Predicate variable
     -- ^ The condition to be evaluated.
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
     -> Simplifier
-        (PredicateSubstitution level variable, SimplificationProof level)
+        (Predicate Object variable, SimplificationProof Object)
 evaluate
     substitutionSimplifier
     termSimplifier
     predicate
   = do
-    (simplified, _proof) <- simplifyTerm' (unwrapPredicate predicate)
+    (simplified, _proof) <-
+        simplifyTerm' (Syntax.Predicate.unwrapPredicate predicate)
     refute <-
         case () of
-            _ | OrOfExpandedPattern.isTrue simplified -> return (Just True)
-              | OrOfExpandedPattern.isFalse simplified -> return (Just False)
+            _ | OrPattern.isTrue simplified  -> return (Just True)
+              | OrPattern.isFalse simplified -> return (Just False)
               | otherwise -> SMT.Evaluator.decidePredicate predicate
     let simplified' =
             case refute of
-                Just False -> ExpandedPattern.bottom
-                Just True -> ExpandedPattern.top
-                _ -> OrOfExpandedPattern.toExpandedPattern simplified
-        (subst, _proof) = asPredicateSubstitution simplified'
+                Just False -> Pattern.bottom
+                Just True -> Pattern.top
+                _ -> OrPattern.toExpandedPattern simplified
+        (subst, _proof) = asPredicate simplified'
     return (subst, SimplificationProof)
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
-asPredicateSubstitution
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+asPredicate
+    ::  ( SortedVariable variable
+        , Ord (variable Object)
+        , Show (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
-    -> (PredicateSubstitution level variable, SimplificationProof level)
-asPredicateSubstitution
-    Predicated {term, predicate, substitution}
+    => Pattern Object variable
+    -> (Predicate Object variable, SimplificationProof Object)
+asPredicate
+    Conditional {term, predicate, substitution}
   =
     let
-        andPatt = makeAndPredicate predicate (wrapPredicate term)
+        andPatt =
+            Syntax.Predicate.makeAndPredicate predicate
+            $ Syntax.Predicate.wrapPredicate term
     in
-        ( Predicated
+        ( Conditional
             { term = ()
             , predicate = andPatt
             , substitution = substitution

@@ -15,11 +15,11 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Proof.Functional
-import           Kore.Step.Pattern
 import           Kore.Step.PatternAttributes
 import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..) )
+import           Kore.Step.TermLike
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
@@ -86,7 +86,7 @@ test_patternAttributes =
                     (mkVar Mock.x)
                 )
             let
-                functionalConstant :: CommonStepPattern Object
+                functionalConstant :: TermLike Variable
                 functionalConstant = Mock.functional00
             assertEqualWithExplanation "functional symbols are functional"
                 (Right [FunctionalHead Mock.functional00Symbol])
@@ -95,7 +95,7 @@ test_patternAttributes =
                     functionalConstant
                 )
             let
-                str :: CommonStepPattern Meta
+                str :: TermLike Variable
                 str = mkStringLiteral "10"
             assertEqualWithExplanation "string literals are functional"
                 (Right [FunctionalStringLiteral (StringLiteral "10")])
@@ -104,7 +104,7 @@ test_patternAttributes =
                     str
                 )
             let
-                chr :: CommonStepPattern Meta
+                chr :: TermLike Variable
                 chr = mkCharLiteral 'a'
             assertEqualWithExplanation "char literals are functional"
                 (Right [FunctionalCharLiteral (CharLiteral 'a')])
@@ -113,7 +113,7 @@ test_patternAttributes =
                     chr
                 )
             let
-                functionConstant :: CommonStepPattern Object
+                functionConstant :: TermLike Variable
                 functionConstant = Mock.cf
             assertEqualWithExplanation "function symbols are not functional"
                 (Left (NonFunctionalHead Mock.cfSymbol))
@@ -122,7 +122,7 @@ test_patternAttributes =
                     functionConstant
                 )
             let
-                plainConstant :: CommonStepPattern Object
+                plainConstant :: TermLike Variable
                 plainConstant = Mock.plain00
             assertEqualWithExplanation "plain symbols are not functional"
                 (Left (NonFunctionalHead Mock.plain00Symbol))
@@ -131,7 +131,7 @@ test_patternAttributes =
                     plainConstant
                 )
             let
-                functionalPatt :: CommonStepPattern Object
+                functionalPatt :: TermLike Variable
                 functionalPatt = Mock.functional10 Mock.a
             assertEqualWithExplanation "functional composition is functional"
                 (Right
@@ -144,7 +144,7 @@ test_patternAttributes =
                     functionalPatt
                 )
             let
-                nonFunctionalPatt :: CommonStepPattern Object
+                nonFunctionalPatt :: TermLike Variable
                 nonFunctionalPatt =
                     mkOr Mock.a Mock.b
             assertEqualWithExplanation "or is not functional"
@@ -163,7 +163,7 @@ test_patternAttributes =
                     (mkVar Mock.x)
                 )
             let
-                functionalConstant :: CommonStepPattern Object
+                functionalConstant :: TermLike Variable
                 functionalConstant = Mock.functional00
             assertEqualWithExplanation "functional symbols are function-like"
                 (Right
@@ -175,7 +175,7 @@ test_patternAttributes =
                     functionalConstant
                 )
             let
-                str :: CommonStepPattern Meta
+                str :: TermLike Variable
                 str = mkStringLiteral "10"
             assertEqualWithExplanation "string literals are function-like"
                 (Right
@@ -188,7 +188,7 @@ test_patternAttributes =
                     str
                 )
             let
-                chr :: CommonStepPattern Meta
+                chr :: TermLike Variable
                 chr = mkCharLiteral 'a'
             assertEqualWithExplanation "char literals are function-like"
                 (Right
@@ -201,7 +201,7 @@ test_patternAttributes =
                     chr
                 )
             let
-                functionConstant :: CommonStepPattern Object
+                functionConstant :: TermLike Variable
                 functionConstant = Mock.cf
             assertEqualWithExplanation "function symbols are function-like"
                 (Right [FunctionHead Mock.cfSymbol])
@@ -210,7 +210,7 @@ test_patternAttributes =
                     functionConstant
                 )
             let
-                plainConstant :: CommonStepPattern Object
+                plainConstant :: TermLike Variable
                 plainConstant = Mock.plain00
             assertEqualWithExplanation "plain symbols are not function-like"
                 (Left (NonFunctionHead Mock.plain00Symbol))
@@ -219,7 +219,7 @@ test_patternAttributes =
                     plainConstant
                 )
             let
-                functionalPatt :: CommonStepPattern Object
+                functionalPatt :: TermLike Variable
                 functionalPatt = Mock.functional10 Mock.a
             assertEqualWithExplanation "functional composition is function-like"
                 (Right
@@ -232,7 +232,7 @@ test_patternAttributes =
                     functionalPatt
                 )
             let
-                nonFunctionPatt :: CommonStepPattern Object
+                nonFunctionPatt :: TermLike Variable
                 nonFunctionPatt =
                     mkOr Mock.a Mock.a
             assertEqualWithExplanation "or is not function-like"
@@ -251,7 +251,7 @@ test_patternAttributes =
                     (mkVar Mock.x)
                 )
             let
-                constructor :: CommonStepPattern Object
+                constructor :: TermLike Variable
                 constructor = Mock.a
             assertEqualWithExplanation "constructors are constructor-like"
                 (Right [ConstructorLikeProof])
@@ -260,7 +260,7 @@ test_patternAttributes =
                     constructor
                 )
             let
-                sortInjection :: CommonStepPattern Object
+                sortInjection :: TermLike Variable
                 sortInjection = Mock.sortInjection10 Mock.a
             assertEqualWithExplanation "sort injections are constructor-like"
                 (Right [ConstructorLikeProof, ConstructorLikeProof])
@@ -269,7 +269,7 @@ test_patternAttributes =
                     sortInjection
                 )
             let
-                mapElement :: CommonStepPattern Object
+                mapElement :: TermLike Variable
                 mapElement = Mock.elementMap Mock.a Mock.b
             assertEqualWithExplanation
                 "constructors-modulo are not constructor-like"
@@ -279,7 +279,7 @@ test_patternAttributes =
                     mapElement
                 )
             let
-                str :: CommonStepPattern Meta
+                str :: TermLike Variable
                 str = mkStringLiteral "10"
             assertEqualWithExplanation "string literals are constructor-like"
                 (Right [ConstructorLikeProof])
@@ -288,7 +288,7 @@ test_patternAttributes =
                     str
                 )
             let
-                chr :: CommonStepPattern Meta
+                chr :: TermLike Variable
                 chr = mkCharLiteral 'a'
             assertEqualWithExplanation "char literals are constructor-like"
                 (Right [ConstructorLikeProof])
@@ -297,7 +297,7 @@ test_patternAttributes =
                     chr
                 )
             let
-                dv :: CommonStepPattern Object
+                dv :: TermLike Variable
                 dv = mkDomainValue
                         (Domain.BuiltinExternal Domain.External
                             { domainValueSort = Mock.testSort
@@ -313,7 +313,7 @@ test_patternAttributes =
                 )
 
             let
-                functionConstant :: CommonStepPattern Object
+                functionConstant :: TermLike Variable
                 functionConstant = Mock.cf
             assertEqualWithExplanation
                 "function symbols are not constructor-like"
@@ -323,7 +323,7 @@ test_patternAttributes =
                     functionConstant
                 )
             let
-                injectionConstant :: CommonStepPattern Object
+                injectionConstant :: TermLike Variable
                 injectionConstant = Mock.injective10 Mock.a
             assertEqualWithExplanation "injections are not constructor-like"
                 (Left NonConstructorLikeHead)
@@ -341,7 +341,7 @@ test_patternAttributes =
                     (mkVar Mock.x)
                 )
             let
-                constructor :: CommonStepPattern Object
+                constructor :: TermLike Variable
                 constructor = Mock.a
             assertEqualWithExplanation
                 "constructors are constructor-modulo-like"
@@ -351,7 +351,7 @@ test_patternAttributes =
                     constructor
                 )
             let
-                sortInjection :: CommonStepPattern Object
+                sortInjection :: TermLike Variable
                 sortInjection = Mock.sortInjection10 Mock.a
             assertEqualWithExplanation
                 "sort injections are constructor-modulo-like"
@@ -361,7 +361,7 @@ test_patternAttributes =
                     sortInjection
                 )
             let
-                mapElement :: CommonStepPattern Object
+                mapElement :: TermLike Variable
                 mapElement = Mock.elementMap Mock.a Mock.b
             assertEqualWithExplanation
                 "constructors-modulo are constructor-modulo-like"
@@ -376,7 +376,7 @@ test_patternAttributes =
                     mapElement
                 )
             let
-                str :: CommonStepPattern Meta
+                str :: TermLike Variable
                 str = mkStringLiteral "10"
             assertEqualWithExplanation
                 "string literals are constructor-modulo-like"
@@ -386,7 +386,7 @@ test_patternAttributes =
                     str
                 )
             let
-                chr :: CommonStepPattern Meta
+                chr :: TermLike Variable
                 chr = mkCharLiteral 'a'
             assertEqualWithExplanation
                 "char literals are constructor-modulo-like"
@@ -396,7 +396,7 @@ test_patternAttributes =
                     chr
                 )
             let
-                dv :: CommonStepPattern Object
+                dv :: TermLike Variable
                 dv = mkDomainValue
                         (Domain.BuiltinExternal Domain.External
                             { domainValueSort = Mock.testSort
@@ -413,7 +413,7 @@ test_patternAttributes =
                 )
 
             let
-                functionConstant :: CommonStepPattern Object
+                functionConstant :: TermLike Variable
                 functionConstant = Mock.cf
             assertEqualWithExplanation
                 "function symbols are not constructor-modulo-like"
@@ -423,7 +423,7 @@ test_patternAttributes =
                     functionConstant
                 )
             let
-                injectionConstant :: CommonStepPattern Object
+                injectionConstant :: TermLike Variable
                 injectionConstant = Mock.injective10 Mock.a
             assertEqualWithExplanation
                 "injections are not constructor-modulo-like"

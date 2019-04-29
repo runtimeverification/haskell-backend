@@ -12,7 +12,7 @@ import           Control.Error
 import qualified Control.Error as Error
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -21,17 +21,14 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom )
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -49,7 +46,7 @@ test_andTermsSimplification =
     [ testGroup "Predicates"
         [ testCase "\\and{s}(f{}(a), \\top{s}())" $ do
             let expected =
-                    Predicated
+                    Conditional
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -59,7 +56,7 @@ test_andTermsSimplification =
 
         , testCase "\\and{s}(\\top{s}(), f{}(a))" $ do
             let expected =
-                    Predicated
+                    Conditional
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -69,16 +66,16 @@ test_andTermsSimplification =
 
         , testCase "\\and{s}(f{}(a), \\bottom{s}())" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <- simplifyUnify mockMetadataTools fOfA mkBottom_
             assertEqualWithExplanation "" expect actual
 
         , testCase "\\and{s}(\\bottom{s}(), f{}(a))" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -90,7 +87,7 @@ test_andTermsSimplification =
 
     , testCase "equal patterns and" $ do
         let expect =
-                Predicated
+                Conditional
                     { term = fOfA
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -104,7 +101,7 @@ test_andTermsSimplification =
     , testGroup "variable function and"
         [ testCase "\\and{s}(x:s, f{}(a))" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution =
@@ -118,7 +115,7 @@ test_andTermsSimplification =
 
         , testCase "\\and{s}(f{}(a), x:s)" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution =
@@ -134,7 +131,7 @@ test_andTermsSimplification =
     , testGroup "injective head and"
         [ testCase "same head, different child" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term = Mock.injective10 fOfA
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution = mempty
@@ -146,7 +143,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" (expect, Just expect) actual
         , testCase "same head, same child" $ do
             let expected =
-                    Predicated
+                    Conditional
                         { term = Mock.injective10 fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -158,7 +155,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" (expected, Just expected) actual
         , testCase "different head" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term =
                             mkAnd
                                 (Mock.injective10 fOfA)
@@ -178,7 +175,7 @@ test_andTermsSimplification =
     , testGroup "sort injection and"
         [ testCase "same head, different child" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term = Mock.sortInjection10 Mock.cfSort0
                         , predicate =
                             makeEqualsPredicate Mock.cfSort0 Mock.cgSort0
@@ -192,7 +189,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" (expect, Just expect) actual
         , testCase "same head, same child" $ do
             let expect =
-                    Predicated
+                    Conditional
                         { term =
                             Mock.sortInjection10 Mock.cfSort0
                         , predicate = makeTruePredicate
@@ -206,7 +203,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" (expect, Just expect) actual
         , testCase "different head, not subsort" $ do
             let expect =
-                    (ExpandedPattern.bottom, Just ExpandedPattern.bottom)
+                    (Pattern.bottom, Just Pattern.bottom)
             actual <-
                 simplifyUnify
                     mockMetadataTools
@@ -215,7 +212,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head, subsort first" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term =
                             Mock.sortInjectionSubToTop
                                 (mkAnd
@@ -237,7 +234,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head, subsort second" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term =
                             Mock.sortInjectionSubToTop
                                 (mkAnd
@@ -259,8 +256,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors not subsort" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -270,8 +267,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors subsort" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -281,8 +278,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -292,8 +289,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort reversed" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -307,7 +304,7 @@ test_andTermsSimplification =
         [ testCase "same head" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeEqualsPredicate Mock.cf Mock.cg
                             , substitution = mempty
@@ -323,7 +320,7 @@ test_andTermsSimplification =
         , testCase "same head same child" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -338,8 +335,8 @@ test_andTermsSimplification =
 
         , testCase "different head" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -351,8 +348,8 @@ test_andTermsSimplification =
 
     , testCase "constructor-sortinjection and" $ do
         let expect =
-                ( ExpandedPattern.bottom
-                , Just ExpandedPattern.bottom
+                ( Pattern.bottom
+                , Just Pattern.bottom
                 )
         actual <-
             simplifyUnify
@@ -365,7 +362,7 @@ test_andTermsSimplification =
         [ testCase "equal values" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = aDomainValue
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -379,8 +376,8 @@ test_andTermsSimplification =
 
         , testCase "different values" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -393,7 +390,7 @@ test_andTermsSimplification =
         [ testCase "equal values" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = mkStringLiteral "a"
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -408,8 +405,8 @@ test_andTermsSimplification =
 
         , testCase "different values" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -423,7 +420,7 @@ test_andTermsSimplification =
         [ testCase "equal values" $ do
             let expect =
                     let
-                        expected = Predicated
+                        expected = Conditional
                             { term = mkCharLiteral 'a'
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -438,8 +435,8 @@ test_andTermsSimplification =
 
         , testCase "different values" $ do
             let expect =
-                    ( ExpandedPattern.bottom
-                    , Just ExpandedPattern.bottom
+                    ( Pattern.bottom
+                    , Just Pattern.bottom
                     )
             actual <-
                 simplifyUnify
@@ -453,7 +450,7 @@ test_andTermsSimplification =
         [ testCase "equal values" $ do
             let expect =
                     let
-                        expanded = Predicated
+                        expanded = Conditional
                             { term = fOfA
                             , predicate = makeTruePredicate
                             , substitution = mempty
@@ -468,7 +465,7 @@ test_andTermsSimplification =
         , testCase "not equal values" $ do
             let expect =
                     let
-                        expanded = Predicated
+                        expanded = Conditional
                             { term = fOfA
                             , predicate = makeEqualsPredicate fOfA gOfA
                             , substitution = mempty
@@ -484,7 +481,7 @@ test_andTermsSimplification =
     , testGroup "unhandled cases"
         [ testCase "top level" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term = mkAnd plain0OfA plain1OfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -499,7 +496,7 @@ test_andTermsSimplification =
 
         , testCase "one level deep" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -514,7 +511,7 @@ test_andTermsSimplification =
 
         , testCase "two levels deep" $ do
             let expect =
-                    ( Predicated
+                    ( Conditional
                         { term =
                             Mock.constr10
                                 (Mock.constr10 (mkAnd plain0OfA plain1OfA))
@@ -533,7 +530,7 @@ test_andTermsSimplification =
 
     , testCase "binary constructor of non-specialcased values" $ do
         let expect =
-                ( Predicated
+                ( Conditional
                     { term =
                         Mock.functionalConstr20
                             (mkAnd plain0OfA plain1OfA)
@@ -553,7 +550,7 @@ test_andTermsSimplification =
     , testGroup "builtin Map domain"
         [ testCase "concrete Map, same keys" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term = Mock.builtinMap [(Mock.aConcrete, Mock.b)]
                         , predicate = makeTruePredicate
                         , substitution =
@@ -567,7 +564,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map, different keys" $ do
-            let expect = Just ExpandedPattern.bottom
+            let expect = Just Pattern.bottom
             actual <-
                 unify
                     mockMetadataTools
@@ -577,7 +574,7 @@ test_andTermsSimplification =
 
         , testCase "concrete Map with framed Map" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -605,7 +602,7 @@ test_andTermsSimplification =
 
         , testCase "concrete Map with framed Map" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -633,7 +630,7 @@ test_andTermsSimplification =
 
         , testCase "framed Map with concrete Map" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -661,7 +658,7 @@ test_andTermsSimplification =
 
         , testCase "framed Map with concrete Map" $ do
             let expect =
-                    Just Predicated
+                    Just Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -697,7 +694,7 @@ test_andTermsSimplification =
                         , Mock.constr11 Mock.cf
                         ]
                 expect =
-                    Just Predicated
+                    Just Conditional
                         { term = term1
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -709,7 +706,7 @@ test_andTermsSimplification =
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
                 expect =
-                    Just Predicated
+                    Just Conditional
                         { term = Mock.builtinList [Mock.a, mkBottom_]
                         , predicate = makeFalsePredicate
                         , substitution = mempty
@@ -723,7 +720,7 @@ test_andTermsSimplification =
                         (mkVar Mock.x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
                 expect =
-                    Just Predicated
+                    Just Conditional
                         { term = Mock.builtinList [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
@@ -735,7 +732,7 @@ test_andTermsSimplification =
         , testCase "different lengths" $ do
             let term7 = Mock.builtinList [Mock.a, Mock.a]
                 term8 = Mock.builtinList [Mock.a]
-                expect = Just ExpandedPattern.bottom
+                expect = Just Pattern.bottom
             actual <- unify mockMetadataTools term7 term8
             assertEqualWithExplanation "" expect actual
 
@@ -744,25 +741,25 @@ test_andTermsSimplification =
     -- TODO: Add tests for set unification.
     ]
 
-fOfA :: CommonStepPattern Object
+fOfA :: TermLike Variable
 fOfA = Mock.f Mock.a
 
-fOfB :: CommonStepPattern Object
+fOfB :: TermLike Variable
 fOfB = Mock.f Mock.b
 
-gOfA :: CommonStepPattern Object
+gOfA :: TermLike Variable
 gOfA = Mock.g Mock.a
 
-plain0OfA :: CommonStepPattern Object
+plain0OfA :: TermLike Variable
 plain0OfA = Mock.plain10 Mock.a
 
-plain1OfA :: CommonStepPattern Object
+plain1OfA :: TermLike Variable
 plain1OfA = Mock.plain11 Mock.a
 
-plain0OfB :: CommonStepPattern Object
+plain0OfB :: TermLike Variable
 plain0OfB = Mock.plain10 Mock.b
 
-plain1OfB :: CommonStepPattern Object
+plain1OfB :: TermLike Variable
 plain1OfB = Mock.plain11 Mock.b
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes
@@ -779,26 +776,26 @@ mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetaMetadataTools =
     Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
-aDomainValue :: CommonStepPattern Object
+aDomainValue :: TermLike Variable
 aDomainValue =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = Mock.testSort
-        , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
         }
 
-bDomainValue :: CommonStepPattern Object
+bDomainValue :: TermLike Variable
 bDomainValue =
     mkDomainValue $ Domain.BuiltinExternal Domain.External
         { domainValueSort = Mock.testSort
-        , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
+        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
         }
 
 simplifyUnify
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
-    -> IO (CommonExpandedPattern level, Maybe (CommonExpandedPattern level))
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Pattern Object Variable, Maybe (Pattern Object Variable))
 simplifyUnify tools first second =
     (,)
         <$> simplify tools first second
@@ -808,9 +805,9 @@ simplifyUnify tools first second =
 unify
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
-    -> IO (Maybe (CommonExpandedPattern level))
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Maybe (Pattern Object Variable))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
@@ -834,9 +831,9 @@ unify tools first second =
 simplify
     :: MetaOrObject level
     => SmtMetadataTools StepperAttributes
-    -> CommonStepPattern level
-    -> CommonStepPattern level
-    -> IO (CommonExpandedPattern level)
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Pattern Object Variable)
 simplify tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

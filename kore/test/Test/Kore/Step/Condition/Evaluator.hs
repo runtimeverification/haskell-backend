@@ -10,12 +10,14 @@ import           Data.Reflection
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
+                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeNotPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
 import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
@@ -53,15 +55,15 @@ test_andNegation =
                 )
         expected === actual
     expected =
-        Predicated
+        Conditional
             { term = ()
             , predicate = makeFalsePredicate
             , substitution = mempty
             }
 
 evaluate
-    :: Predicate Object Variable
-    -> PropertyT SMT (PredicateSubstitution Object Variable)
+    :: Syntax.Predicate Variable
+    -> PropertyT SMT (Predicate Object Variable)
 evaluate predicate =
     (<$>) fst
     $ give testMetadataTools
@@ -73,8 +75,8 @@ evaluate predicate =
         predicate
 
 noSimplification
-    ::  [   ( StepPattern level Variable
-            , ([ExpandedPattern level Variable], SimplificationProof level)
+    ::  [   ( TermLike Variable
+            , ([Pattern level Variable], SimplificationProof level)
             )
         ]
 noSimplification = []
@@ -82,31 +84,31 @@ noSimplification = []
 -- ----------------------------------------------------------------
 -- Refute Int predicates
 
-vInt :: Text -> CommonStepPattern Object
+vInt :: Text -> TermLike Variable
 vInt s = mkVar (varS s Builtin.intSort)
 
-a, b, c :: CommonStepPattern Object
+a, b, c :: TermLike Variable
 a = vInt "a"
 b = vInt "b"
 c = vInt "c"
 
-vBool :: Text -> CommonStepPattern Object
+vBool :: Text -> TermLike Variable
 vBool s = mkVar (varS s Builtin.boolSort)
 
-p, q :: CommonStepPattern Object
+p, q :: TermLike Variable
 p = vBool "p"
 q = vBool "q"
 
 add, sub, mul, div
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 add i j = mkApp intSort Builtin.addIntSymbol  [i, j]
 sub i j = mkApp intSort Builtin.subIntSymbol  [i, j]
 mul i j = mkApp intSort Builtin.mulIntSymbol  [i, j]
 div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 
-assertRefuted :: CommonPredicate Object -> Assertion
+assertRefuted :: Syntax.Predicate Variable -> Assertion
 assertRefuted prop = give testMetadataTools $ do
     let expect = Just False
     actual <- SMT.runSMT SMT.defaultConfig $ SMT.Evaluator.decidePredicate prop

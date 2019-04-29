@@ -20,7 +20,7 @@ import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
 import           Kore.Domain.Builtin
-import           Kore.Step.Pattern
+import           Kore.Step.TermLike
 
 import Test.Kore
 
@@ -212,48 +212,48 @@ inKeysMapSymbol = builtinSymbol "inKeysMap"
 keysMapSymbol :: SymbolOrAlias Object
 keysMapSymbol = builtinSymbol "keysMap"
 
-unitMap :: CommonStepPattern Object
+unitMap :: TermLike Variable
 unitMap = mkApp mapSort unitMapSymbol []
 
 updateMap
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 updateMap map' key value =
     mkApp mapSort updateMapSymbol [map', key, value]
 
 lookupMap
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 lookupMap map' key =
     mkApp intSort lookupMapSymbol [map', key]
 
 elementMap
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 elementMap key value =
     mkApp mapSort elementMapSymbol [key, value]
 
 concatMap
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 concatMap map1 map2 =
     mkApp mapSort concatMapSymbol [map1, map2]
 
 inKeysMap
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 inKeysMap key map' =
     mkApp boolSort inKeysMapSymbol [key, map']
 
 keysMap
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
 keysMap map' =
     mkApp setSort keysMapSymbol [map']
 
@@ -450,8 +450,8 @@ listSortDecl =
         ]
 
 builtinList
-    :: [CommonStepPattern Object]
-    -> InternalList (CommonStepPattern Object)
+    :: [TermLike Variable]
+    -> InternalList (TermLike Variable)
 builtinList children =
     InternalList
         { builtinListSort = listSort
@@ -502,8 +502,8 @@ mapSortDecl =
         ]
 
 builtinMap
-    :: [(ConcreteStepPattern Object, CommonStepPattern Object)]
-    -> InternalMap (CommonStepPattern Object)
+    :: [(TermLike Concrete, TermLike Variable)]
+    -> InternalMap (TermLike Variable)
 builtinMap children =
     InternalMap
         { builtinMapSort = mapSort
@@ -564,7 +564,7 @@ setSortDecl =
         ]
 
 builtinSet
-    :: [ConcreteStepPattern Object]
+    :: [TermLike Concrete]
     -> InternalSet
 builtinSet children =
     InternalSet

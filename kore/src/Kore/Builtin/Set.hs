@@ -24,7 +24,7 @@ module Kore.Builtin.Set
     , returnSet
     , asInternal
     , asPattern
-    , asExpandedPattern
+    , asTermLike
       -- * Symbols
     , lookupSymbolIn
     , lookupSymbolDifference
@@ -69,7 +69,6 @@ import qualified Data.Text as Text
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Pure as Kore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
@@ -92,13 +91,12 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (..), SimplificationType,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier (..), SimplificationProof (..),
+                 SimplificationType, TermLikeSimplifier )
+import           Kore.Step.TermLike
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -176,7 +174,7 @@ symbolVerifiers =
       )
     ]
 
-type Builtin = Set (ConcreteStepPattern Object)
+type Builtin = Set (TermLike Concrete)
 
 {- | Abort function evaluation if the argument is not a @Set@ domain value.
 
@@ -189,7 +187,7 @@ expectBuiltinSet
     :: Monad m
     => Text  -- ^ Context for error message
     -> SmtMetadataTools StepperAttributes
-    -> StepPattern Object variable  -- ^ Operand pattern
+    -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Builtin
 expectBuiltinSet ctx tools _set =
     do
@@ -213,7 +211,7 @@ returnSet
     -> m (AttemptedAxiom Object variable)
 returnSet tools resultSort set =
     Builtin.appliedFunction
-    $ ExpandedPattern.fromPurePattern
+    $ Pattern.fromTermLike
     $ asInternal tools resultSort set
 
 evalElement :: Builtin.Function
@@ -247,7 +245,7 @@ evalIn =
                 (Set.member _elem _set)
         )
       where
-        asExpandedBoolPattern = Bool.asExpandedPattern resultSort
+        asExpandedBoolPattern = Bool.asPattern resultSort
 
 evalUnit :: Builtin.Function
 evalUnit =
@@ -276,14 +274,14 @@ evalConcat =
                     if Set.null _set1
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _set2
+                            $ Pattern.fromTermLike _set2
                         else empty
                 rightIdentity = do
                     _set2 <- expectBuiltinSet ctx tools _set2
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _set1
+                            $ Pattern.fromTermLike _set1
                         else empty
                 bothConcrete = do
                     _set1 <- expectBuiltinSet ctx tools _set1
@@ -310,7 +308,7 @@ evalDifference =
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _set1
+                            $ Pattern.fromTermLike _set1
                         else empty
                 bothConcrete = do
                     _set1 <- expectBuiltinSet ctx tools _set1
@@ -348,7 +346,7 @@ evalSize = Builtin.functionEvaluator evalSize0
                             _      -> Builtin.wrongArity sizeKey
             _set <- expectBuiltinSet sizeKey tools _set
             Builtin.appliedFunction
-                . Int.asExpandedPattern resultSort
+                . Int.asPattern resultSort
                 . toInteger
                 . Set.size
                 $ _set
@@ -380,7 +378,7 @@ asInternal
     => SmtMetadataTools attrs
     -> Sort Object
     -> Builtin
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal tools builtinSetSort builtinSetChild =
     (mkDomainValue . Domain.BuiltinSet)
         Domain.InternalSet
@@ -396,18 +394,13 @@ asInternal tools builtinSetSort builtinSetChild =
   where
     attrs = sortAttributes tools builtinSetSort
 
-{- | Render a 'Set' as a domain value pattern of the given sort.
-
-The result sort must be hooked to the builtin @Set@ sort.
-
-See also: 'sort'
-
+{- | Render an 'Domain.InternalSet' as a 'TermLike' domain value.
  -}
-asPattern
+asTermLike
     :: Ord (variable Object)
     => Domain.InternalSet
-    -> StepPattern Object variable
-asPattern builtin =
+    -> TermLike variable
+asTermLike builtin =
     foldr concat' unit (element <$> Foldable.toList set)
   where
     Domain.InternalSet { builtinSetSort = builtinSort } = builtin
@@ -426,15 +419,15 @@ asPattern builtin =
     See also: 'asPattern'
 
  -}
-asExpandedPattern
+asPattern
     ::  ( Ord (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort Object
     -> Builtin
-    -> ExpandedPattern Object variable
-asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asInternal tools resultSort
+    -> Pattern Object variable
+asPattern resultSort =
+    Pattern.fromTermLike . asInternal tools resultSort
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given
@@ -516,16 +509,16 @@ unifyEquals
         , Unparse (variable level)
         , MetaOrObject level
         , FreshVariable variable
-        , p ~ StepPattern level variable
-        , expanded ~ ExpandedPattern level variable
+        , p ~ TermLike variable
+        , expanded ~ Pattern level variable
         , proof ~ SimplificationProof level
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -547,18 +540,18 @@ unifyEquals
   where
     hookTools = StepperAttributes.hook <$> tools
 
-    -- | Given a collection 't' of 'Predicated' values, propagate all the
-    -- predicates to the top level, returning a 'Predicated' collection.
+    -- | Given a collection 't' of 'Conditional' values, propagate all the
+    -- predicates to the top level, returning a 'Conditional' collection.
     propagatePredicates
         :: (level ~ Object, Traversable t)
-        => t (Predicated level variable a)
-        -> Predicated level variable (t a)
+        => t (Conditional level variable a)
+        -> Conditional level variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: StepPattern level variable
-        -> StepPattern level variable
+        :: TermLike variable
+        -> TermLike variable
         -> MaybeT unifier (expanded, proof)
     unifyEquals0
         (DV_ _ (Domain.BuiltinSet builtin1))
@@ -614,7 +607,7 @@ unifyEquals
             :: Domain.InternalSet          -- ^ concrete set
             -> SymbolOrAlias Object        -- ^ 'element' symbol
             -> p                           -- ^ key
-            -> StepPattern Object variable -- ^ framing variable
+            -> TermLike variable -- ^ framing variable
             -> unifier (expanded, proof)
         unifyEqualsSelect builtin1' _ key2 set2
           | set1 == Set.empty = bottomWithExplanation
@@ -664,14 +657,14 @@ unifyEquals
         Domain.InternalSet { builtinSetChild = set2 } = builtin2
         unified =
             Reflection.give tools
-            $ asExpandedPattern builtinSetSort set1
+            $ asPattern builtinSetSort set1
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
-        :: (level ~ Object, k ~ ConcreteStepPattern Object)
+        :: (level ~ Object, k ~ TermLike Concrete)
         => Domain.InternalSet  -- ^ concrete set
         -> Domain.InternalSet -- ^ framed concrete set
-        -> StepPattern level variable  -- ^ framing variable
+        -> TermLike variable  -- ^ framing variable
         -> unifier (expanded, proof)
     unifyEqualsFramed builtin1 builtin2 var
       | Set.isSubsetOf set2 set1 =
@@ -683,7 +676,7 @@ unifyEquals
             let result =
                     -- Return the concrete set, but capture any predicates and
                     -- substitutions from unifying the framing variable.
-                    asExpandedPattern builtinSetSort set1 <* remainder
+                    asPattern builtinSetSort set1 <* remainder
             return (result, SimplificationProof)
 
       | otherwise = bottomWithExplanation
@@ -716,7 +709,7 @@ unifyEquals
             "Cannot unify sets with different sizes."
             first
             second
-        return (ExpandedPattern.bottom, SimplificationProof)
+        return (Pattern.bottom, SimplificationProof)
 
 -- Setup: we are unifying against a concrete (no variables) pattern
 -- If the unification problem is completely solved, we expect that
@@ -735,12 +728,12 @@ errorIfIncompletelyUnified
         , Unparse (variable Object)
         , HasCallStack
         )
-    => StepPattern Object variable
-    -> StepPattern Object variable
-    -> ExpandedPattern Object variable
+    => TermLike variable
+    -> TermLike variable
+    -> Pattern Object variable
     -> m ()
-errorIfIncompletelyUnified expected patt unifiedExpandedPattern =
-    Monad.when (term unifiedExpandedPattern /= expected)
+errorIfIncompletelyUnified expected patt unifiedPattern =
+    Monad.when (term unifiedPattern /= expected)
         $ error
             (  "Unification problem not completely solved. "
             ++ "When unfying against concrete pattern\n\t"
@@ -748,7 +741,7 @@ errorIfIncompletelyUnified expected patt unifiedExpandedPattern =
             ++ "\nwith pattern\n\t"
             ++ show (unparseToString patt)
             ++ "\nExpecting to get the concrete pattern back but got\n\t"
-            ++ show (unparseToString unifiedExpandedPattern)
+            ++ show (unparseToString unifiedPattern)
             ++ "\nHandling this is currently not implemented."
             ++ "\nPlease file an issue if this should work for you."
             )

@@ -21,7 +21,7 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Pure
+import qualified Kore.AST.Pure as AST
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -41,18 +41,18 @@ import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( Conditional (..), Pattern )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.Predicate as Predicate
+import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
+import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
@@ -71,23 +71,23 @@ import           Test.SMT
 mkPair
     :: Sort Object
     -> Sort Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonStepPattern Object
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
 mkPair lSort rSort l r =
     mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
 substitutionSimplifier tools =
-    PredicateSubstitution.create tools stepSimplifier evaluators
+    Predicate.create tools stepSimplifier evaluators
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
     ::  ( HasCallStack
-        , p ~ CommonStepPattern Object
-        , expanded ~ CommonExpandedPattern Object
+        , p ~ TermLike Variable
+        , expanded ~ Pattern Object Variable
         )
     => (p -> SMT expanded)
     -- ^ evaluator function for the builtin
@@ -170,24 +170,24 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
 indexedModule =
     makeIndexedModuleAttributesNull
-    $ mapIndexedModulePatterns eraseAnnotations verifiedModule
+    $ mapIndexedModulePatterns AST.eraseAnnotations verifiedModule
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 
-testSubstitutionSimplifier :: PredicateSubstitutionSimplifier Object
+testSubstitutionSimplifier :: PredicateSimplifier Object
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
 evaluators :: BuiltinAndAxiomSimplifierMap Object
 evaluators = Builtin.koreEvaluators verifiedModule
 
-stepSimplifier :: StepPatternSimplifier Object
+stepSimplifier :: TermLikeSimplifier Object
 stepSimplifier =
-    stepPatternSimplifier
+    termLikeSimplifier
         (\_ p ->
             return
-                ( MultiOr.make
-                    [ Predicated
+                ( OrPattern.fromPatterns
+                    [ Conditional
                         { term = mkTop_
                         , predicate = Predicate.wrapPredicate p
                         , substitution = mempty
@@ -199,40 +199,40 @@ stepSimplifier =
 
 evaluate
     :: MonadSMT m
-    => CommonStepPattern Object
-    -> m (CommonExpandedPattern Object)
+    => TermLike Variable
+    -> m (Pattern Object Variable)
 evaluate =
     (<$>) fst
     . liftSMT
     . evalSimplifier emptyLogger
-    . Pattern.simplify
+    . TermLike.simplify
         testMetadataTools
         testSubstitutionSimplifier
         evaluators
 
 evaluateWith
     :: MVar Solver
-    -> CommonStepPattern Object
-    -> IO (CommonExpandedPattern Object)
+    -> TermLike Variable
+    -> IO (Pattern Object Variable)
 evaluateWith solver patt =
     runReaderT (SMT.getSMT $ evaluate patt) solver
 
 runStep
-    :: CommonExpandedPattern Object
+    :: Pattern Object Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (CommonExpandedPattern Object))
+            (MultiOr (Pattern Object Variable))
         )
 runStep configuration axiom = do
     result <- runStepResult configuration axiom
     return (Step.gatherResults <$> result)
 
 runStepResult
-    :: CommonExpandedPattern Object
+    :: Pattern Object Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
@@ -259,14 +259,14 @@ runSMT = SMT.runSMT SMT.defaultConfig
 
 runStepWith
     :: MVar Solver
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (CommonExpandedPattern Object))
+            (MultiOr (Pattern Object Variable))
         )
 runStepWith solver configuration axiom = do
     result <- runStepResultWith solver configuration axiom
@@ -274,7 +274,7 @@ runStepWith solver configuration axiom = do
 
 runStepResultWith
     :: MVar Solver
-    -> CommonExpandedPattern Object
+    -> Pattern Object Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
@@ -300,11 +300,11 @@ runStepResultWith solver configuration axiom =
 
 -- | Test unparsing internalized patterns.
 hpropUnparse
-    :: Hedgehog.Gen (CommonStepPattern Object)
+    :: Hedgehog.Gen (TermLike Variable)
     -- ^ Generate patterns with internal representations
     -> Hedgehog.Property
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
     let syntax = unparseToString builtin
-        expected = eraseAnnotations (Builtin.externalizePattern builtin)
+        expected = AST.eraseAnnotations (Builtin.externalizePattern builtin)
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

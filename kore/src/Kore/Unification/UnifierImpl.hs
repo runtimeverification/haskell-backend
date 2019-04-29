@@ -21,24 +21,24 @@ import           Data.List
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( And (..) )
+import qualified Kore.AST.Common as Common
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.Predicated as Predicated
-import           Kore.Step.Representation.PredicateSubstitution
-                 ( PredicateSubstitution, Predicated (..) )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.Pattern as Pattern
+import           Kore.Step.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier (..), TermLikeSimplifier )
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unification.Data
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -55,8 +55,8 @@ import {-# SOURCE #-} Kore.Step.Substitution
        ( mergePredicatesAndSubstitutionsExcept )
 
 simplifyUnificationProof
-    :: UnificationProof level variable
-    -> UnificationProof level variable
+    :: UnificationProof Object variable
+    -> UnificationProof Object variable
 simplifyUnificationProof EmptyUnificationProof = EmptyUnificationProof
 simplifyUnificationProof (CombinedUnificationProof []) =
     EmptyUnificationProof
@@ -78,39 +78,34 @@ simplifyUnificationProof
 simplifyUnificationProof a@(SubstitutionMerge _ _ _) = a
 
 simplifyCombinedItems
-    :: [UnificationProof level variable] -> [UnificationProof level variable]
+    :: [UnificationProof Object variable] -> [UnificationProof Object variable]
 simplifyCombinedItems =
     foldr (addContents . simplifyUnificationProof) []
   where
     addContents
-        :: UnificationProof level variable
-        -> [UnificationProof level variable]
-        -> [UnificationProof level variable]
+        :: UnificationProof Object variable
+        -> [UnificationProof Object variable]
+        -> [UnificationProof Object variable]
     addContents EmptyUnificationProof  proofItems           = proofItems
     addContents (CombinedUnificationProof items) proofItems =
         items ++ proofItems
     addContents other proofItems = other : proofItems
 
 simplifyAnds
-    ::  forall level variable unifier unifierM .
-        ( MetaOrObject level
-        , Eq level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  forall variable unifier unifierM .
+        ( Show (variable Object)
+        , Unparse (variable Object)
         , SortedVariable variable
         , FreshVariable variable
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -> NonEmpty (StepPattern level variable)
-    -> unifier (ExpandedPattern level variable, UnificationProof level variable)
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> NonEmpty (TermLike variable)
+    -> unifier (Pattern Object variable, UnificationProof Object variable)
 simplifyAnds
     tools
     substitutionSimplifier
@@ -118,18 +113,18 @@ simplifyAnds
     axiomIdToSimplifier
     patterns
   = do
-    result <- foldM simplifyAnds' ExpandedPattern.top patterns
-    if Predicate.isFalse . ExpandedPattern.predicate $ result
-        then return ( ExpandedPattern.bottom, EmptyUnificationProof )
+    result <- foldM simplifyAnds' Pattern.top patterns
+    if Predicate.isFalse . Pattern.predicate $ result
+        then return ( Pattern.bottom, EmptyUnificationProof )
         else return ( result, EmptyUnificationProof )
   where
     simplifyAnds'
-        :: ExpandedPattern level variable
-        -> StepPattern level variable
-        -> unifier (ExpandedPattern level variable)
+        :: Pattern Object variable
+        -> TermLike variable
+        -> unifier (Pattern Object variable)
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
-            AndPattern And { andFirst = lhs, andSecond = rhs } ->
+            Common.AndPattern And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
                 (result, _) <-
@@ -138,7 +133,7 @@ simplifyAnds
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
-                        (ExpandedPattern.term intermediate)
+                        (Pattern.term intermediate)
                         pat
                 (predSubst, _) <-
                     mergePredicatesAndSubstitutionsExcept
@@ -146,56 +141,51 @@ simplifyAnds
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
-                        [ ExpandedPattern.predicate result
-                        , ExpandedPattern.predicate intermediate
+                        [ Pattern.predicate result
+                        , Pattern.predicate intermediate
                         ]
-                        [ ExpandedPattern.substitution result
-                        , ExpandedPattern.substitution intermediate
+                        [ Pattern.substitution result
+                        , Pattern.substitution intermediate
                         ]
-                return ExpandedPattern.Predicated
-                    { term = ExpandedPattern.term result
-                    , predicate = Predicated.predicate predSubst
-                    , substitution = Predicated.substitution predSubst
+                return Pattern.Conditional
+                    { term = Pattern.term result
+                    , predicate = Conditional.predicate predSubst
+                    , substitution = Conditional.substitution predSubst
                     }
 
 
 groupSubstitutionByVariable
-    :: Ord (variable level)
-    => [(variable level, StepPattern level variable)]
-    -> [[(variable level, StepPattern level variable)]]
+    :: Ord (variable Object)
+    => [(variable Object, TermLike variable)]
+    -> [[(variable Object, TermLike variable)]]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Recursive.project -> ann :< VariablePattern var')
+    sortRenaming (var, Recursive.project -> ann :< Common.VariablePattern var')
         | var' < var =
-          (var', Recursive.embed (ann :< VariablePattern var))
+          (var', Recursive.embed (ann :< Common.VariablePattern var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: ( MetaOrObject level
-       , Eq level
-       , Ord (variable level)
-       , Show (variable level)
-       , Unparse (variable level)
-       , OrdMetaOrObject variable
-       , ShowMetaOrObject variable
+    :: ( Show (variable Object)
+       , Unparse (variable Object)
        , SortedVariable variable
        , FreshVariable variable
        , MonadUnify unifierM
        , unifier ~ unifierM variable
       )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -> variable level
-    -> NonEmpty (StepPattern level variable)
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> variable Object
+    -> NonEmpty (TermLike variable)
     -> unifier
-        ( PredicateSubstitution level variable
-        , UnificationProof level variable
+        ( Predicate Object variable
+        , UnificationProof Object variable
         )
 solveGroupedSubstitution
     tools
@@ -213,17 +203,17 @@ solveGroupedSubstitution
             axiomIdToSimplifier
             patterns
     return
-        ( Predicated
+        ( Conditional
             { term = ()
-            , predicate = ExpandedPattern.predicate predSubst
+            , predicate = Pattern.predicate predSubst
             , substitution = Substitution.wrap $ termAndSubstitution predSubst
             }
         , proof
         )
   where
     termAndSubstitution s =
-        (var, ExpandedPattern.term s)
-        : Substitution.unwrap (ExpandedPattern.substitution s)
+        (var, Pattern.term s)
+        : Substitution.unwrap (Pattern.substitution s)
 
 -- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
@@ -232,27 +222,22 @@ solveGroupedSubstitution
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: forall variable level unifier unifierM
-    .   ( MetaOrObject level
-        , Eq level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    :: forall variable unifier unifierM
+    .   ( Show (variable Object)
+        , Unparse (variable Object)
         , SortedVariable variable
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -> Substitution level variable
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> Substitution variable
     -> unifier
-        ( PredicateSubstitution level variable
-        , UnificationProof level variable
+        ( Predicate Object variable
+        , UnificationProof Object variable
         )
 normalizeSubstitutionDuplication
     tools
@@ -263,12 +248,12 @@ normalizeSubstitutionDuplication
   =
     if null nonSingletonSubstitutions || Substitution.isNormalized subst
         then return
-            ( Predicated () Predicate.makeTruePredicate subst
+            ( Conditional () Predicate.makeTruePredicate subst
             , EmptyUnificationProof
             )
         else do
             (predSubst, proof') <-
-                mergePredicateSubstitutionList
+                mergePredicateList
                 <$> mapM
                     (uncurry
                         $ solveGroupedSubstitution
@@ -285,18 +270,18 @@ normalizeSubstitutionDuplication
                     simplifier
                     axiomIdToSimplifier
                     (  Substitution.wrap (concat singletonSubstitutions)
-                    <> Predicated.substitution predSubst
+                    <> Conditional.substitution predSubst
                     )
             let
                 pred' =
                     Predicate.makeAndPredicate
-                        (Predicated.predicate predSubst)
-                        (Predicated.predicate finalSubst)
+                        (Conditional.predicate predSubst)
+                        (Conditional.predicate finalSubst)
             return
-                ( Predicated
+                ( Conditional
                     { term = ()
                     , predicate = pred'
-                    , substitution = Predicated.substitution finalSubst
+                    , substitution = Conditional.substitution finalSubst
                     }
                 , CombinedUnificationProof
                     [ proof'
@@ -308,38 +293,35 @@ normalizeSubstitutionDuplication
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions
-        :: [[(variable level, StepPattern level variable)]]
+        :: [[(variable Object, TermLike variable)]]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-    varAndSubstList :: [(variable level, NonEmpty (StepPattern level variable))]
+    varAndSubstList :: [(variable Object, NonEmpty (TermLike variable))]
     varAndSubstList =
         nonSingletonSubstitutions >>= \case
             [] -> []
             ((x, y) : ys) -> [(x, y :| (snd <$> ys))]
 
 
-mergePredicateSubstitutionList
-    :: ( MetaOrObject level
-       , Eq level
-       , Ord (variable level)
-       , OrdMetaOrObject variable
+mergePredicateList
+    :: ( Ord (variable Object)
+       , Show (variable Object)
+       , Unparse (variable Object)
        , SortedVariable variable
-       , Show (variable level)
-       , Unparse (variable level)
        )
-    => [(PredicateSubstitution level variable, UnificationProof level variable)]
-    -> (PredicateSubstitution level variable, UnificationProof level variable)
-mergePredicateSubstitutionList [] =
-    ( PredicateSubstitution.top
+    => [(Predicate Object variable, UnificationProof Object variable)]
+    -> (Predicate Object variable, UnificationProof Object variable)
+mergePredicateList [] =
+    ( Predicate.top
     , EmptyUnificationProof
     )
-mergePredicateSubstitutionList (p:ps) =
-    foldl' mergePredicateSubstitutions p ps
+mergePredicateList (p:ps) =
+    foldl' mergePredicates p ps
   where
-    mergePredicateSubstitutions
-        ( Predicated { predicate = p1, substitution = s1 }, proofs)
-        ( Predicated { predicate = p2, substitution = s2 }, proof) =
-        ( Predicated
+    mergePredicates
+        ( Conditional { predicate = p1, substitution = s1 }, proofs)
+        ( Conditional { predicate = p2, substitution = s2 }, proof) =
+        ( Conditional
             { term = ()
             , predicate = Predicate.makeAndPredicate p1 p2
             , substitution = s1 <> s2

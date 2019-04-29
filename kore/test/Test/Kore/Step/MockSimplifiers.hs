@@ -11,30 +11,29 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( wrapPredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (Predicated) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern
+                 ( Conditional (Conditional) )
+import qualified Kore.Step.Pattern as Pattern
+                 ( Conditional (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
+                 ( PredicateSimplifier (..),
                  SimplificationProof (SimplificationProof),
-                 stepPatternSimplifier )
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+                 termLikeSimplifier )
+import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier Object
+    -> PredicateSimplifier Object
 substitutionSimplifier tools =
-    PredicateSubstitution.create
+    Predicate.create
         tools
-        (stepPatternSimplifier
+        (termLikeSimplifier
             (\_ p ->
                 return
-                    ( MultiOr.make
-                        [ Predicated
+                    ( OrPattern.fromPatterns
+                        [ Conditional
                             { term = mkTop_
                             , predicate = Predicate.wrapPredicate p
                             , substitution = mempty

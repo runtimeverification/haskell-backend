@@ -16,27 +16,31 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate as Predicate
+                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
+                 makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution, Predicated (..) )
+import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
+import           Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern, OrOfPredicateSubstitution )
-import qualified Kore.Step.Representation.Predicated as Predicated
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
 import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step hiding
@@ -84,12 +88,12 @@ evalUnifier =
     . gather
 
 applyInitialConditions
-    :: PredicateSubstitution Object Variable
-    -> PredicateSubstitution Object Variable
+    :: Predicate Object Variable
+    -> Predicate Object Variable
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [OrOfPredicateSubstitution Object Variable]
+            [OrPredicate Object Variable]
         )
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
@@ -104,7 +108,7 @@ applyInitialConditions initial unification =
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -118,26 +122,26 @@ test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
     [ testCase "\\bottom initial condition" $ do
         let unification =
-                Predicated
+                Conditional
                     { term = ()
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
-            initial = PredicateSubstitution.bottom
+            initial = Predicate.bottom
             expect = Right mempty
         actual <- applyInitialConditions initial unification
         assertEqualWithExplanation "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
-        let unification = PredicateSubstitution.top
-            initial = PredicateSubstitution.top
+        let unification = Predicate.top
+            initial = Predicate.top
             expect = Right [MultiOr.singleton initial]
         actual <- applyInitialConditions initial unification
         assertEqualWithExplanation "" expect actual
 
     , testCase "combine initial and rule conditions" $ do
-        let unification = PredicateSubstitution.fromPredicate expect2
-            initial = PredicateSubstitution.fromPredicate expect1
+        let unification = Predicate.fromPredicate expect2
+            initial = Predicate.fromPredicate expect1
             expect1 =
                 Predicate.makeEqualsPredicate
                     (Mock.f $ mkVar Mock.x)
@@ -149,14 +153,14 @@ test_applyInitialConditions =
             expect =
                 MultiOr.singleton (Predicate.makeAndPredicate expect1 expect2)
         Right [applied] <- applyInitialConditions initial unification
-        let actual = Predicated.predicate <$> applied
+        let actual = Conditional.predicate <$> applied
         assertEqual "" expect actual
 
     , testCase "conflicting initial and rule conditions" $ do
         let predicate = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
-            unification = PredicateSubstitution.fromPredicate predicate
+            unification = Predicate.fromPredicate predicate
             initial =
-                PredicateSubstitution.fromPredicate
+                Predicate.fromPredicate
                 $ Predicate.makeNotPredicate predicate
             expect = Right mempty
         actual <- applyInitialConditions initial unification
@@ -165,12 +169,12 @@ test_applyInitialConditions =
     ]
 
 unifyRule
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -> RulePattern Object Variable
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [Predicated Object Variable (RulePattern Object Variable)]
+            [Conditional Object Variable (RulePattern Object Variable)]
         )
 unifyRule initial rule =
     evalUnifier
@@ -186,7 +190,7 @@ unifyRule initial rule =
     metadataTools = mockMetadataTools
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -210,7 +214,7 @@ test_unifyRule =
                     , attributes = Default.def
                     }
         Right unified <- unifyRule initial axiom
-        let actual = Predicated.term <$> unified
+        let actual = Conditional.term <$> unified
         assertBool ""
             $ Foldable.all (Set.notMember Mock.x)
             $ RulePattern.freeVariables <$> actual
@@ -248,14 +252,14 @@ test_unifyRule =
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
 applyRewriteRule_
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -- ^ Configuration
     -> RewriteRule Object Variable
     -- ^ Rewrite rule
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [OrOfExpandedPattern Object Variable]
+            [OrPattern Object Variable]
         )
 applyRewriteRule_ initial rule = do
     result <- applyRewriteRules initial [rule]
@@ -266,26 +270,26 @@ applyRewriteRule_ initial rule = do
 test_applyRewriteRule_ :: [TestTree]
 test_applyRewriteRule_ =
     [ testCase "apply identity axiom" $ do
-        let expect = Right [ MultiOr.make [initial] ]
+        let expect = Right [ OrPattern.fromPatterns [initial] ]
             initial = pure (mkVar Mock.x)
         actual <- applyRewriteRule_ initial axiomId
         assertEqualWithExplanation "" expect actual
 
     , testCase "apply identity without renaming" $ do
-        let expect = Right [ MultiOr.make [initial] ]
+        let expect = Right [ OrPattern.fromPatterns [initial] ]
             initial = pure (mkVar Mock.y)
         actual <- applyRewriteRule_ initial axiomId
         assertEqualWithExplanation "" expect actual
 
     , testCase "substitute variable with itself" $ do
-        let expect = Right [ MultiOr.make [initial { term = mkVar Mock.x }] ]
+        let expect = Right [ OrPattern.fromPatterns [initial { term = mkVar Mock.x }] ]
             initial = pure (Mock.sigma (mkVar Mock.x) (mkVar Mock.x))
         actual <- applyRewriteRule_ initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
 
     , testCase "merge configuration patterns" $ do
         let term = Mock.functionalConstr10 (mkVar Mock.y)
-            expect = Right [ MultiOr.make [initial { term, substitution }] ]
+            expect = Right [ OrPattern.fromPatterns [initial { term, substitution }] ]
               where
                 substitution = Substitution.wrap [ (Mock.x, term) ]
             initial = pure (Mock.sigma (mkVar Mock.x) term)
@@ -294,7 +298,7 @@ test_applyRewriteRule_ =
 
     , testCase "substitution with symbol matching" $ do
         let expect =
-                Right [ MultiOr.make [initial { term = fz, substitution }] ]
+                Right [ OrPattern.fromPatterns [initial { term = fz, substitution }] ]
               where
                 substitution = Substitution.wrap [ (Mock.y, mkVar Mock.z) ]
             fy = Mock.functionalConstr10 (mkVar Mock.y)
@@ -305,7 +309,7 @@ test_applyRewriteRule_ =
 
     , testCase "merge multiple variables" $ do
         let expect =
-                Right [ MultiOr.make [initial { term = yy, substitution }] ]
+                Right [ OrPattern.fromPatterns [initial { term = yy, substitution }] ]
               where
                 substitution = Substitution.wrap [ (Mock.x, mkVar Mock.y) ]
             xy = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
@@ -316,7 +320,7 @@ test_applyRewriteRule_ =
         assertEqualWithExplanation "" expect actual
 
     , testCase "rename quantified right variables" $ do
-        let expect = Right [ MultiOr.make [pure final] ]
+        let expect = Right [ OrPattern.fromPatterns [pure final] ]
             final = mkExists (nextVariable Mock.y) (mkVar Mock.y)
             initial = pure (mkVar Mock.y)
             axiom =
@@ -355,7 +359,7 @@ test_applyRewriteRule_ =
     , testCase "impossible substitution (ctor)" $ do
         let expect = Right mempty
             initial =
-                Predicated
+                Conditional
                     { term =
                         Mock.sigma
                             (mkVar Mock.x)
@@ -377,7 +381,7 @@ test_applyRewriteRule_ =
                 $ SubstitutionError
                 $ NonCtorCircularVariableDependency [Mock.y]
             initial =
-                Predicated
+                Conditional
                     { term =
                         Mock.sigma
                             (mkVar Mock.x)
@@ -404,8 +408,8 @@ test_applyRewriteRule_ =
     , testCase "unify all children" $ do
         let expect =
                 Right
-                    [ MultiOr.make
-                        [ Predicated
+                    [ OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.sigma zz zz
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap
@@ -432,8 +436,8 @@ test_applyRewriteRule_ =
             fb = Mock.functional10 (mkVar Mock.y)
             expect =
                 Right
-                    [ MultiOr.make
-                        [ Predicated
+                    [ OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.sigma fb fb
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap [(Mock.x, fb)]
@@ -455,8 +459,8 @@ test_applyRewriteRule_ =
             fz = Mock.functionalConstr10 (mkVar Mock.z)
             expect =
                 Right
-                    [ MultiOr.make
-                        [ Predicated
+                    [ OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.sigma fz fz
                             , predicate = makeTruePredicate
                             , substitution =
@@ -468,7 +472,7 @@ test_applyRewriteRule_ =
                         ]
                     ]
             initial =
-                Predicated
+                Conditional
                     { term =
                         Mock.sigma (Mock.sigma (mkVar Mock.x) fy) (mkVar Mock.x)
                     , predicate = makeTruePredicate
@@ -500,13 +504,13 @@ test_applyRewriteRule_ =
     -- a and g(a)=f(a)
     -- Expected: a and g(a)=f(a)
     , testCase "preserve initial condition" $ do
-        let expect = Right [ MultiOr.make [initial] ]
+        let expect = Right [ OrPattern.fromPatterns [initial] ]
             predicate =
                 makeEqualsPredicate
                     (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
             initial =
-                Predicated
+                Conditional
                     { term = Mock.a
                     , predicate
                     , substitution = mempty
@@ -523,8 +527,8 @@ test_applyRewriteRule_ =
             fb = Mock.functional10 (mkVar Mock.y)
             expect =
                 Right
-                    [ MultiOr.make
-                        [ Predicated
+                    [ OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.sigma fb fb
                             , predicate =
                                 makeEqualsPredicate
@@ -535,7 +539,7 @@ test_applyRewriteRule_ =
                         ]
                     ]
             initial =
-                Predicated
+                Conditional
                     { term =
                         Mock.sigma
                             (Mock.sigma (mkVar Mock.x) fb)
@@ -559,7 +563,7 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional11 (mkVar Mock.x))
                     (Mock.functional10 (mkVar Mock.x))
-            expect = Right [ MultiOr.make [initial { predicate = ensures }] ]
+            expect = Right [ OrPattern.fromPatterns [initial { predicate = ensures }] ]
             initial = pure (mkVar Mock.x)
             axiom = RewriteRule ruleId { ensures }
         actual <- applyRewriteRule_ initial axiom
@@ -575,20 +579,20 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional11 (mkVar Mock.x))
                     (Mock.functional10 (mkVar Mock.x))
-            expect = Right [ MultiOr.make [initial { predicate = requires }] ]
+            expect = Right [ OrPattern.fromPatterns [initial { predicate = requires }] ]
             initial = pure (mkVar Mock.x)
             axiom = RewriteRule ruleId { requires }
         actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual
 
     , testCase "rule a => \\bottom" $ do
-        let expect = Right [ MultiOr.make [] ]
+        let expect = Right [ OrPattern.fromPatterns [] ]
             initial = pure Mock.a
         actual <- applyRewriteRule_ initial axiomBottom
         assertEqualWithExplanation "" expect actual
 
     , testCase "rule a => b ensures \\bottom" $ do
-        let expect = Right [ MultiOr.make [] ]
+        let expect = Right [ OrPattern.fromPatterns [] ]
             initial = pure Mock.a
         actual <- applyRewriteRule_ initial axiomEnsuresBottom
         assertEqualWithExplanation "" expect actual
@@ -678,7 +682,7 @@ test_applyRewriteRule_ =
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRules
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
@@ -701,7 +705,7 @@ applyRewriteRules initial rules =
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -715,7 +719,7 @@ applyRewriteRules initial rules =
 
 checkResults
     :: HasCallStack
-    => MultiOr (ExpandedPattern Object Variable)
+    => MultiOr (Pattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkResults expect actual =
@@ -725,7 +729,7 @@ checkResults expect actual =
 
 checkRemainders
     :: HasCallStack
-    => MultiOr (ExpandedPattern Object Variable)
+    => MultiOr (Pattern Object Variable)
     -> Step.Results Variable
     -> Assertion
 checkRemainders expect actual =
@@ -750,15 +754,15 @@ test_applyRewriteRules =
         --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap [(Mock.x, Mock.a)]
                     }
             remainders =
-                MultiOr.make
-                    [ Predicated
+                OrPattern.fromPatterns
+                    [ Conditional
                         { term = initialTerm
                         , predicate =
                             makeNotPredicate
@@ -789,7 +793,7 @@ test_applyRewriteRules =
         --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.cg
                     , predicate =
                         makeAndPredicate
@@ -800,8 +804,8 @@ test_applyRewriteRules =
                             [(Mock.x, Mock.a)]
                     }
             remainders =
-                MultiOr.make
-                    [ Predicated
+                OrPattern.fromPatterns
+                    [ Conditional
                         { term =
                             Mock.functionalConstr20
                                 (mkVar Mock.x)
@@ -817,7 +821,7 @@ test_applyRewriteRules =
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial =
-                Predicated
+                Conditional
                     { term = initialTerm
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = mempty
@@ -841,13 +845,13 @@ test_applyRewriteRules =
         --   remainder: functionalConstr10(x), with ¬(f(x) == b)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.a
                     , predicate = requirement
                     , substitution = mempty
                     }
             remainders =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.functionalConstr10 (mkVar Mock.x)
                     , predicate = makeNotPredicate requirement
                     , substitution = mempty
@@ -873,14 +877,14 @@ test_applyRewriteRules =
         --   remainder: functionalConstr20(x, cg), with ¬(⌈cg⌉ and x=a)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap [(Mock.x, Mock.a)]
                     }
             remainders =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ initial
                         { predicate =
                             makeNotPredicate
@@ -922,14 +926,14 @@ test_applyRewriteRules =
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
             results =
-                MultiOr.make
-                    [ Predicated
+                OrPattern.fromPatterns
+                    [ Conditional
                         { term = Mock.cf
                         , predicate = definedBranches
                         , substitution =
                             Substitution.wrap [(Mock.x, Mock.a)]
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
@@ -937,7 +941,7 @@ test_applyRewriteRules =
                         }
                     ]
             remainders =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ initial
                         { predicate =
                             Predicate.makeAndPredicate
@@ -976,14 +980,14 @@ test_applyRewriteRules =
         --   remainder: functionalConstr20(x, cg), with ¬(⌈cg⌉ and x=a)
         let
             results =
-                MultiOr.singleton Predicated
+                MultiOr.singleton Conditional
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap [(Mock.x, Mock.a)]
                     }
             remainders =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ initial
                         { predicate =
                             makeNotPredicate
@@ -1053,7 +1057,7 @@ axiomsCase = [axiomCaseA, axiomCaseB]
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 sequenceRewriteRules
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
@@ -1076,7 +1080,7 @@ sequenceRewriteRules initial rules =
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -1117,14 +1121,14 @@ test_sequenceRewriteRules =
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
             results =
-                MultiOr.make
-                    [ Predicated
+                OrPattern.fromPatterns
+                    [ Conditional
                         { term = Mock.cf
                         , predicate = definedBranches
                         , substitution =
                             Substitution.wrap [(Mock.x, Mock.a)]
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
@@ -1132,7 +1136,7 @@ test_sequenceRewriteRules =
                         }
                     ]
             remainders =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ initial
                         { predicate =
                             Predicate.makeAndPredicate
@@ -1176,7 +1180,7 @@ axiomFunctionalSigma =
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 sequenceMatchingRules
-    :: ExpandedPattern Object Variable
+    :: Pattern Object Variable
     -- ^ Configuration
     -> [EqualityRule Object Variable]
     -- ^ Rewrite rule
@@ -1199,7 +1203,7 @@ sequenceMatchingRules initial rules =
   where
     metadataTools = mockMetadataTools
     predicateSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             axiomSimplifiers
@@ -1220,15 +1224,15 @@ test_sequenceMatchingRules =
             x' = nextVariable Mock.x
             sigma = Mock.sigma (mkVar x') (mkVar Mock.y)
             results =
-                MultiOr.make
-                    [ Predicated
+                OrPattern.fromPatterns
+                    [ Conditional
                         { term = Mock.a
                         , predicate = Predicate.makeTruePredicate
                         , substitution = Substitution.wrap [(Mock.x, sigma)]
                         }
                     ]
             remainders =
-                MultiOr.make
+                OrPattern.fromPatterns
                     [ initial
                         { predicate =
                             Predicate.makeNotPredicate

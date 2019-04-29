@@ -15,16 +15,16 @@ import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.PredicateSubstitution as PredicateSubstitution
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
@@ -43,8 +43,8 @@ import           Test.Tasty.HUnit.Extensions
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
-    [ [ExpandedPattern.top] `becomes_` []
-    , [] `becomes_` [ExpandedPattern.top]
+    [ [Pattern.top] `becomes_` []
+    , [] `becomes_` [Pattern.top]
     , [termX] `becomes_` [mkNot <$> termX]
     , [equalsXA] `becomes_` [notEqualsXA]
     , [substXA] `becomes_` [notEqualsXA]
@@ -53,52 +53,52 @@ test_simplifyEvaluated =
   where
     becomes_ original expected =
         testCase "becomes" $ do
-            actual <- simplifyEvaluated (MultiOr.make original)
-            assertEqualWithExplanation "" (MultiOr.make expected) actual
+            actual <- simplifyEvaluated (OrPattern.fromPatterns original)
+            assertEqualWithExplanation "" (OrPattern.fromPatterns expected) actual
 
-termX :: ExpandedPattern Object Variable
-termX = ExpandedPattern.fromPurePattern (mkVar Mock.x)
+termX :: Pattern Object Variable
+termX = Pattern.fromTermLike (mkVar Mock.x)
 
-equalsXA :: ExpandedPattern Object Variable
+equalsXA :: Pattern Object Variable
 equalsXA = fromPredicate equalsXA_
 
-equalsXB :: ExpandedPattern Object Variable
+equalsXB :: Pattern Object Variable
 equalsXB = fromPredicate equalsXB_
 
-equalsXA_ :: Predicate Object Variable
-equalsXA_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+equalsXA_ :: Syntax.Predicate Variable
+equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
 
-equalsXB_ :: Predicate Object Variable
-equalsXB_ = Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
+equalsXB_ :: Syntax.Predicate Variable
+equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
 
-notEqualsXA :: ExpandedPattern Object Variable
-notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
+notEqualsXA :: Pattern Object Variable
+notEqualsXA = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXA_
 
-neitherXAB :: ExpandedPattern Object Variable
+neitherXAB :: Pattern Object Variable
 neitherXAB =
     fromPredicate
-    $ Predicate.makeAndPredicate
-        (Predicate.makeNotPredicate equalsXA_)
-        (Predicate.makeNotPredicate equalsXB_)
+    $ Syntax.Predicate.makeAndPredicate
+        (Syntax.Predicate.makeNotPredicate equalsXA_)
+        (Syntax.Predicate.makeNotPredicate equalsXB_)
 
-substXA :: ExpandedPattern Object Variable
+substXA :: Pattern Object Variable
 substXA = fromSubstitution $ Substitution.unsafeWrap [(Mock.x, Mock.a)]
 
-fromPredicate :: Predicate Object Variable -> ExpandedPattern Object Variable
+fromPredicate :: Syntax.Predicate Variable -> Pattern Object Variable
 fromPredicate =
-    ExpandedPattern.fromPredicateSubstitution
-    . PredicateSubstitution.fromPredicate
+    Pattern.fromPredicate
+    . Predicate.fromPredicate
 
 fromSubstitution
-    :: Substitution Object Variable
-    -> ExpandedPattern Object Variable
+    :: Substitution Variable
+    -> Pattern Object Variable
 fromSubstitution =
-    ExpandedPattern.fromPredicateSubstitution
-    . PredicateSubstitution.fromSubstitution
+    Pattern.fromPredicate
+    . Predicate.fromSubstitution
 
 simplifyEvaluated
-    :: OrOfExpandedPattern Object Variable
-    -> IO (OrOfExpandedPattern Object Variable)
+    :: OrPattern Object Variable
+    -> IO (OrPattern Object Variable)
 simplifyEvaluated =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger

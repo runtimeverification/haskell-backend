@@ -15,15 +15,12 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern
+                 ( Conditional (..) )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
@@ -31,7 +28,7 @@ import           Kore.Unparser
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
-{-|'simplify' simplifies a 'Next' pattern with an 'OrOfExpandedPattern'
+{-|'simplify' simplifies a 'Next' pattern with an 'OrPattern'
 child.
 
 Right now this does not do any actual simplification.
@@ -43,8 +40,8 @@ simplify
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => Next Object (OrOfExpandedPattern Object variable)
-    ->  ( OrOfExpandedPattern Object variable
+    => Next Object (OrPattern Object variable)
+    ->  ( OrPattern Object variable
         , SimplificationProof Object
         )
 simplify
@@ -59,15 +56,15 @@ simplifyEvaluated
         , Show (variable Object)
         , Unparse (variable Object)
         )
-    => OrOfExpandedPattern Object variable
-    -> (OrOfExpandedPattern Object variable, SimplificationProof Object)
+    => OrPattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated simplified =
-    ( MultiOr.make
-        [ Predicated
+    ( OrPattern.fromPatterns
+        [ Conditional
             { term =
                 mkNext
-                    $ ExpandedPattern.toMLPattern
-                    $ OrOfExpandedPattern.toExpandedPattern simplified
+                $ Pattern.toMLPattern
+                $ OrPattern.toExpandedPattern simplified
             , predicate = makeTruePredicate
             , substitution = mempty
             }

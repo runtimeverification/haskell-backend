@@ -46,21 +46,20 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Conditional as Conditional
+import           Kore.Step.Pattern
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Proof
                  ( StepProof )
 import qualified Kore.Step.Proof as Step.Proof
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import qualified Kore.Step.Representation.Predicated as Predicated
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
@@ -173,8 +172,8 @@ strategyPattern
         Stuck patt -> stuckTransformer patt
         Bottom -> bottomValue
 
--- | A 'StrategyPattern' instantiated to 'CommonExpandedPattern' for convenience.
-type CommonStrategyPattern level = StrategyPattern (CommonExpandedPattern level)
+-- | A 'StrategyPattern' instantiated to 'Pattern Object Variable' for convenience.
+type CommonStrategyPattern level = StrategyPattern (Pattern Object Variable)
 
 instance Hashable patt => Hashable (StrategyPattern patt)
 
@@ -231,12 +230,12 @@ and n destinations.
 transitionRule
     :: forall level . (MetaOrObject level)
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (CommonExpandedPattern level) (RewriteRule level Variable)
+    -> Prim (Pattern Object Variable) (RewriteRule level Variable)
     -> (CommonStrategyPattern  level, StepProof level Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule level Variable) Simplifier
@@ -268,7 +267,7 @@ transitionRule
         do
             (configs, proof') <-
                 Monad.Trans.lift
-                $ ExpandedPattern.simplify
+                $ Pattern.simplify
                     tools
                     substitutionSimplifier
                     simplifier
@@ -300,11 +299,11 @@ transitionRule
 
     transitionMultiApplyWithRemainders
         :: [RewriteRule level Variable]
-        -> (CommonExpandedPattern level, StepProof level Variable)
+        -> (Pattern Object Variable, StepProof level Variable)
         -> Transition
             (CommonStrategyPattern level, StepProof level Variable)
     transitionMultiApplyWithRemainders _ (config, _)
-        | ExpandedPattern.isBottom config = empty
+        | Pattern.isBottom config = empty
     transitionMultiApplyWithRemainders rules (config, proof) = do
         result <-
             Monad.Trans.lift
@@ -343,7 +342,7 @@ transitionRule
                 Result.transitionResults (mapConfigs $ mapRules results)
 
     transitionRemoveDestination
-        :: CommonExpandedPattern level
+        :: Pattern Object Variable
         ->  ( CommonStrategyPattern level
             , StepProof level Variable
             )
@@ -354,10 +353,10 @@ transitionRule
     transitionRemoveDestination destination (RewritePattern patt, proof1) = do
         let
             removal = removalPredicate destination patt
-            result = patt `Predicated.andPredicate` removal
+            result = patt `Conditional.andPredicate` removal
         (orResult, proof) <-
             Monad.Trans.lift
-            $ ExpandedPattern.simplify
+            $ Pattern.simplify
                 tools
                 substitutionSimplifier
                 simplifier
@@ -385,11 +384,11 @@ removalPredicate
         , Unparse (variable Object)
         , SortedVariable variable
         )
-    => ExpandedPattern Object variable
+    => Pattern Object variable
     -- ^ Destination
-    -> ExpandedPattern Object variable
+    -> Pattern Object variable
     -- ^ Current configuration
-    -> Predicate Object variable
+    -> Predicate variable
 removalPredicate destination config =
     let
         -- The variables of the destination that are missing from the
@@ -397,16 +396,16 @@ removalPredicate destination config =
         -- quantified in the removal predicate.
         extraVariables =
             Set.difference
-                (ExpandedPattern.freeVariables destination)
-                (ExpandedPattern.freeVariables config)
+                (Pattern.freeVariables destination)
+                (Pattern.freeVariables config)
         quantifyPredicate = Predicate.makeMultipleExists extraVariables
     in
         Predicate.makeNotPredicate
         $ quantifyPredicate
         $ Predicate.makeCeilPredicate
         $ mkAnd
-            (ExpandedPattern.toStepPattern destination)
-            (ExpandedPattern.toStepPattern config)
+            (Pattern.toStepPattern destination)
+            (Pattern.toStepPattern config)
 
 
 {-| A strategy for doing the first step of a one-path verification.

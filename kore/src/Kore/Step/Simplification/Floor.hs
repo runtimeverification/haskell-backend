@@ -12,24 +12,22 @@ module Kore.Step.Simplification.Floor
     , makeEvaluateFloor
     ) where
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Floor (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfExpandedPattern )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( toExpandedPattern )
+                 ( extractPatterns )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
 import           Kore.Unparser
 
-{-| 'simplify' simplifies a 'Floor' of 'OrOfExpandedPattern'.
+{-| 'simplify' simplifies a 'Floor' of 'OrPattern'.
 
 We also take into account that
 * floor(top) = top
@@ -41,15 +39,14 @@ However, we don't take into account things like
 floor(a and b) = floor(a) and floor(b).
 -}
 simplify
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Unparse (variable level)
-        , Show (variable level)
-        , Ord (variable level)
+    ::  ( SortedVariable variable
+        , Unparse (variable Object)
+        , Show (variable Object)
+        , Ord (variable Object)
         )
-    => Floor level (OrOfExpandedPattern level variable)
-    ->  ( OrOfExpandedPattern level variable
-        , SimplificationProof level
+    => Floor Object (OrPattern Object variable)
+    ->  ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplify
     Floor { floorChild = child }
@@ -61,73 +58,70 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Floor level) (Valid level) (OrOfExpandedPattern level variable)
+> CofreeF (Floor Object) (Valid Object) (OrPattern Object variable)
 
-instead of an 'OrOfExpandedPattern' argument. The type of 'makeEvaluateFloor'
+instead of an 'OrPattern' argument. The type of 'makeEvaluateFloor'
 may be changed analogously. The 'Valid' annotation will eventually cache
 information besides the pattern sort, which will make it even more useful to
 carry around.
 
 -}
 simplifyEvaluatedFloor
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Show (variable Object)
+        , Ord (variable Object)
+        , Unparse (variable Object)
         )
-    => OrOfExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => OrPattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluatedFloor child =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
         _ ->
             makeEvaluateFloor
-                (OrOfExpandedPattern.toExpandedPattern child)
+                (OrPattern.toExpandedPattern child)
 
-{-| 'makeEvaluateFloor' simplifies a 'Floor' of 'ExpandedPattern'.
+{-| 'makeEvaluateFloor' simplifies a 'Floor' of 'Pattern'.
 
 See 'simplify' for details.
 -}
 makeEvaluateFloor
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Show (variable Object)
+        , Ord (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => Pattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateFloor child
-  | ExpandedPattern.isTop child =
-    (MultiOr.make [ExpandedPattern.top], SimplificationProof)
-  | ExpandedPattern.isBottom child =
-    (MultiOr.make [ExpandedPattern.bottom], SimplificationProof)
+  | Pattern.isTop child =
+    (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
+  | Pattern.isBottom child =
+    (OrPattern.fromPatterns [Pattern.bottom], SimplificationProof)
   | otherwise =
     makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Show (variable level)
-        , Ord (variable level)
-        , Unparse (variable level)
+    ::  ( SortedVariable variable
+        , Show (variable Object)
+        , Ord (variable Object)
+        , Unparse (variable Object)
         )
-    => ExpandedPattern level variable
-    -> (OrOfExpandedPattern level variable, SimplificationProof level)
+    => Pattern Object variable
+    -> (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateNonBoolFloor
-    patt@Predicated { term = Top_ _ }
+    patt@Conditional { term = Top_ _ }
   =
-    ( MultiOr.make [patt]
+    ( OrPattern.fromPatterns [patt]
     , SimplificationProof
     )
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
-    Predicated {term, predicate, substitution}
+    Conditional {term, predicate, substitution}
   =
-    ( MultiOr.make
-        [ Predicated
+    ( OrPattern.fromPatterns
+        [ Conditional
             { term = mkTop_
             , predicate = makeAndPredicate (makeFloorPredicate term) predicate
             , substitution = substitution

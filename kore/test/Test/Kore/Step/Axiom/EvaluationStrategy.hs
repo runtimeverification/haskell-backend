@@ -16,7 +16,7 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
-                 ( CommonPredicate, makeAndPredicate, makeEqualsPredicate,
+                 ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
@@ -28,26 +28,25 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
-                 ( CommonStepPattern )
-import           Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (Predicated) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
+                 ( Conditional (Conditional) )
+import qualified Kore.Step.Pattern as Pattern
+                 ( Conditional (..) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier (..),
-                 SimplificationProof (SimplificationProof),
-                 StepPatternSimplifier, evalSimplifier )
-import qualified Kore.Step.Simplification.PredicateSubstitution as PredicateSubstitution
+                 ( PredicateSimplifier (..),
+                 SimplificationProof (SimplificationProof), TermLikeSimplifier,
+                 evalSimplifier )
+import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
+                 ( TermLike )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -64,14 +63,14 @@ test_definitionEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.g Mock.c
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
         actual <-
             evaluate
@@ -89,16 +88,16 @@ test_definitionEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = Substitution.wrap
                                     [(Mock.x, Mock.a)]
                                 }
                             ]
-                        , remainders = MultiOr.make
-                            [ Predicated
+                        , remainders = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate =
                                     makeNotPredicate
@@ -126,9 +125,9 @@ test_definitionEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make []
-                        , remainders = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns []
+                        , remainders = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.functionalConstr10 Mock.b
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
@@ -151,22 +150,22 @@ test_definitionEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = Substitution.wrap
                                     [(Mock.x, Mock.a)]
                                 }
-                            , Predicated
+                            , Conditional
                                 { term = Mock.g Mock.b
                                 , predicate = makeTruePredicate
                                 , substitution = Substitution.wrap
                                     [(Mock.x, Mock.b)]
                                 }
                             ]
-                        , remainders = MultiOr.make
-                            [ Predicated
+                        , remainders = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate = makeAndPredicate
                                     (makeNotPredicate
@@ -209,14 +208,14 @@ test_firstFullEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.g Mock.c
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
         actual <-
             evaluate
@@ -233,14 +232,14 @@ test_firstFullEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
         actual <-
             evaluate
@@ -263,14 +262,14 @@ test_firstFullEvaluation =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
         actual <-
             evaluate
@@ -355,14 +354,14 @@ test_simplifierWithFallback =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
         actual <-
             evaluate
@@ -383,16 +382,16 @@ test_simplifierWithFallback =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = Substitution.wrap
                                     [(Mock.x, Mock.b)]
                                 }
                             ]
-                        , remainders = MultiOr.make
-                            [ Predicated
+                        , remainders = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.functionalConstr10 (mkVar Mock.x)
                                 , predicate =
                                     makeNotPredicate
@@ -423,14 +422,14 @@ test_simplifierWithFallback =
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
         actual <-
             evaluate
@@ -474,14 +473,14 @@ test_builtinEvaluation =
             expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
         actual <-
             evaluate
@@ -515,24 +514,24 @@ failingEvaluator =
         )
 
 axiomEvaluator
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
         (equalityRuleEvaluator (axiom left right makeTruePredicate))
 
 axiomEvaluatorWithRemainder
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
+    :: TermLike Variable
+    -> TermLike Variable
     -> BuiltinAndAxiomSimplifier Object
 axiomEvaluatorWithRemainder left right =
     definitionEvaluation [axiom left right makeTruePredicate]
 
 axiom
-    :: CommonStepPattern Object
-    -> CommonStepPattern Object
-    -> CommonPredicate Object
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Predicate Variable
     -> EqualityRule Object Variable
 axiom left right predicate =
     EqualityRule RulePattern
@@ -557,7 +556,7 @@ evaluate
     :: forall level . MetaOrObject level
     => SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifier level
-    -> CommonStepPattern level
+    -> TermLike Variable
     -> IO (CommonAttemptedAxiom level)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     (<$>) fst
@@ -566,13 +565,13 @@ evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where
-    substitutionSimplifier :: PredicateSubstitutionSimplifier level
+    substitutionSimplifier :: PredicateSimplifier level
     substitutionSimplifier =
-        PredicateSubstitution.create
+        Predicate.create
             metadataTools
             patternSimplifier
             Map.empty
     patternSimplifier
         ::  ( MetaOrObject level )
-        => StepPatternSimplifier level
+        => TermLikeSimplifier level
     patternSimplifier = Simplifier.create metadataTools Map.empty

@@ -11,12 +11,11 @@ import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern
+                 ( Conditional (..) )
 import           Kore.Step.Simplification.CharLiteral
                  ( simplify )
 
@@ -27,8 +26,8 @@ test_charLiteralSimplification :: [TestTree]
 test_charLiteralSimplification =
     [ testCase "CharLiteral evaluates to CharLiteral"
         (assertEqualWithExplanation ""
-            (MultiOr.make
-                [ Predicated
+            (OrPattern.fromPatterns
+                [ Conditional
                     { term = mkCharLiteral 'a'
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -44,7 +43,7 @@ test_charLiteralSimplification =
 evaluate
     ::  ( MetaOrObject Meta)
     => CharLiteral
-    -> CommonOrOfExpandedPattern Meta
+    -> OrPattern Object Variable
 evaluate charLiteral =
     case simplify charLiteral of
         (result, _proof) -> result

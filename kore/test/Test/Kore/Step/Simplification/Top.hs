@@ -8,10 +8,10 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import           Kore.AST.Pure
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Top
                  ( simplify )
 
@@ -24,8 +24,8 @@ test_topSimplification :: [TestTree]
 test_topSimplification =
     [ testCase "Top evaluates to top"
         (assertEqualWithExplanation ""
-            (MultiOr.make
-                [ ExpandedPattern.top ]
+            (OrPattern.fromPatterns
+                [ Pattern.top ]
             )
             (evaluate
                 Top {topSort = testSort}
@@ -35,8 +35,8 @@ test_topSimplification =
 
 evaluate
     ::  ( MetaOrObject level)
-    => Top level (CommonOrOfExpandedPattern level)
-    -> CommonOrOfExpandedPattern level
+    => Top level (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate top =
     case simplify top of
         (result, _proof) -> result

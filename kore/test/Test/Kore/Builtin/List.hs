@@ -12,7 +12,6 @@ import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -23,8 +22,8 @@ import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+import qualified Kore.Step.Pattern as Pattern
+import           Kore.Step.TermLike
 
 import           Test.Kore
                  ( testId )
@@ -52,8 +51,8 @@ test_getUnit =
                     , Test.Int.asInternal k
                     ]
             predicate = mkEquals_ mkBottom_ patGet
-        (===) ExpandedPattern.bottom =<< evaluate patGet
-        (===) ExpandedPattern.top =<< evaluate predicate
+        (===) Pattern.bottom =<< evaluate patGet
+        (===) Pattern.top =<< evaluate predicate
 
 test_getFirstElement :: TestTree
 test_getFirstElement =
@@ -65,16 +64,16 @@ test_getFirstElement =
         values <- forAll genSeqInteger
         let patGet =
                 mkApp intSort getListSymbol [ patList , Test.Int.asInternal 0 ]
-            patList = asPattern (Test.Int.asInternal <$> values)
+            patList = asTermLike (Test.Int.asInternal <$> values)
             value =
                 case values of
                     Seq.Empty -> Nothing
                     v Seq.:<| _ -> Just v
             patFirst = maybe mkBottom_ Test.Int.asInternal value
             predicate = mkEquals_ patGet patFirst
-        let expectGet = Test.Int.asPartialExpandedPattern value
+        let expectGet = Test.Int.asPartialPattern value
         (===) expectGet =<< evaluate patGet
-        (===) ExpandedPattern.top =<< evaluate predicate
+        (===) Pattern.top =<< evaluate predicate
 
 test_getLastElement :: TestTree
 test_getLastElement =
@@ -85,16 +84,16 @@ test_getLastElement =
     prop = do
         values <- forAll genSeqInteger
         let patGet = mkApp intSort getListSymbol [ patList , Test.Int.asInternal (-1) ]
-            patList = asPattern (Test.Int.asInternal <$> values)
+            patList = asTermLike (Test.Int.asInternal <$> values)
             value =
                 case values of
                     Seq.Empty -> Nothing
                     _ Seq.:|> v -> Just v
             patFirst = maybe mkBottom_ Test.Int.asInternal value
             predicate = mkEquals_ patGet patFirst
-        let expectGet = Test.Int.asPartialExpandedPattern value
+        let expectGet = Test.Int.asPartialPattern value
         (===) expectGet =<< evaluate patGet
-        (===) ExpandedPattern.top =<< evaluate predicate
+        (===) Pattern.top =<< evaluate predicate
 
 test_concatUnit :: TestTree
 test_concatUnit =
@@ -105,7 +104,7 @@ test_concatUnit =
     prop = do
         values <- forAll genSeqInteger
         let patUnit = mkApp listSort unitListSymbol []
-            patValues = asPattern (Test.Int.asInternal <$> values)
+            patValues = asTermLike (Test.Int.asInternal <$> values)
             patConcat1 = mkApp listSort concatListSymbol [ patUnit, patValues ]
             patConcat2 = mkApp listSort concatListSymbol [ patValues, patUnit ]
             predicate1 = mkEquals_ patValues patConcat1
@@ -113,8 +112,8 @@ test_concatUnit =
         expectValues <- evaluate patValues
         (===) expectValues =<< evaluate patConcat1
         (===) expectValues =<< evaluate patConcat2
-        (===) ExpandedPattern.top =<< evaluate predicate1
-        (===) ExpandedPattern.top =<< evaluate predicate2
+        (===) Pattern.top =<< evaluate predicate1
+        (===) Pattern.top =<< evaluate predicate2
 
 test_concatAssociates :: TestTree
 test_concatAssociates =
@@ -126,9 +125,9 @@ test_concatAssociates =
         values1 <- forAll genSeqInteger
         values2 <- forAll genSeqInteger
         values3 <- forAll genSeqInteger
-        let patList1 = asPattern $ Test.Int.asInternal <$> values1
-            patList2 = asPattern $ Test.Int.asInternal <$> values2
-            patList3 = asPattern $ Test.Int.asInternal <$> values3
+        let patList1 = asTermLike $ Test.Int.asInternal <$> values1
+            patList2 = asTermLike $ Test.Int.asInternal <$> values2
+            patList3 = asTermLike $ Test.Int.asInternal <$> values3
             patConcat12 = mkApp listSort concatListSymbol [ patList1, patList2 ]
             patConcat23 = mkApp listSort concatListSymbol [ patList2, patList3 ]
             patConcat12_3 =
@@ -139,7 +138,7 @@ test_concatAssociates =
         evalConcat12_3 <- evaluate patConcat12_3
         evalConcat1_23 <- evaluate patConcat1_23
         (===) evalConcat12_3 evalConcat1_23
-        (===) ExpandedPattern.top =<< evaluate predicate
+        (===) Pattern.top =<< evaluate predicate
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
@@ -153,7 +152,7 @@ test_simplify =
                     , variableSort = intSort
                     }
             original = asInternal [mkAnd x mkTop_]
-            expected = asExpandedPattern [x]
+            expected = asPattern [x]
         (===) expected =<< evaluate original
 
 test_isBuiltin :: [TestTree]
@@ -195,32 +194,32 @@ mockHookTools :: SmtMetadataTools Hook
 mockHookTools = StepperAttributes.hook <$> mockMetadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
-asPattern
+asTermLike
     :: Foldable f
-    => f (CommonStepPattern Object)
-    -> CommonStepPattern Object
-asPattern =
-    Reflection.give testMetadataTools List.asPattern
+    => f (TermLike Variable)
+    -> TermLike Variable
+asTermLike =
+    Reflection.give testMetadataTools List.asTermLike
     . builtinList
     . Foldable.toList
 
 -- | Specialize 'List.asInternal' to the builtin sort 'listSort'.
 asInternal
     :: Foldable f
-    => f (CommonStepPattern Object)
-    -> CommonStepPattern Object
+    => f (TermLike Variable)
+    -> TermLike Variable
 asInternal =
     List.asInternal testMetadataTools listSort
     . Seq.fromList
     . Foldable.toList
 
--- | Specialize 'List.asExpandedPattern' to the builtin sort 'listSort'.
-asExpandedPattern
+-- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
+asPattern
     :: Foldable f
-    => f (CommonStepPattern Object)
-    -> CommonExpandedPattern Object
-asExpandedPattern =
-    Reflection.give testMetadataTools List.asExpandedPattern listSort
+    => f (TermLike Variable)
+    -> Pattern Object Variable
+asPattern =
+    Reflection.give testMetadataTools List.asPattern listSort
     . Seq.fromList
     . Foldable.toList
 

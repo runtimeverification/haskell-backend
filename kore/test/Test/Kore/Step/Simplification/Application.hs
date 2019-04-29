@@ -13,7 +13,8 @@ import qualified Data.Set as Set
 
 import           Data.Sup
 import qualified Kore.Annotation.Valid as Valid
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( SortedVariable (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -28,21 +29,15 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Pattern hiding
-                 ( freeVariables )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Application
-                 ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), StepPatternSimplifier,
+                 ( SimplificationProof (..), TermLikeSimplifier,
                  evalSimplifier )
+import           Kore.Step.TermLike as TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -67,23 +62,23 @@ test_applicationSimplification =
         -- sigma(a or b, c or d) =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         let expect =
-                MultiOr.make
-                    [ Predicated
+                OrPattern.fromPatterns
+                    [ Conditional
                         { term = Mock.sigma Mock.a Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.sigma Mock.a Mock.d
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-                    , Predicated
+                    , Conditional
                         { term = Mock.sigma Mock.b Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-                    ,  Predicated
+                    ,  Conditional
                         { term = Mock.sigma Mock.b Mock.d
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -105,7 +100,7 @@ test_applicationSimplification =
 
     , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
-        let expect = MultiOr.make [ ExpandedPattern.bottom ]
+        let expect = OrPattern.fromPatterns [ Pattern.bottom ]
         actual <-
             evaluate
                 mockMetadataTools
@@ -122,7 +117,7 @@ test_applicationSimplification =
 
     , testCase "Applies functions" $ do
         -- f(a) evaluated to g(a).
-        let expect = MultiOr.make [ gOfAExpanded ]
+        let expect = OrPattern.fromPatterns [ gOfAExpanded ]
         actual <-
             evaluate
                 mockMetadataTools
@@ -134,8 +129,8 @@ test_applicationSimplification =
                             (const $ const $ const $ const $ const $ return
                                 ( AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results =
-                                        MultiOr.make [gOfAExpanded]
-                                    , remainders = MultiOr.make []
+                                        OrPattern.fromPatterns [gOfAExpanded]
+                                    , remainders = OrPattern.fromPatterns []
                                     }
                                 , SimplificationProof
                                 )
@@ -157,8 +152,8 @@ test_applicationSimplification =
             --        and (f(a)=f(b) and g(a)=g(b))
             --        and [x=f(a), y=g(a)]
             let expect =
-                    MultiOr.make
-                        [ Predicated
+                    OrPattern.fromPatterns
+                        [ Conditional
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
                                 makeAndPredicate
@@ -178,14 +173,14 @@ test_applicationSimplification =
                     (makeApplication
                         testSort
                         Mock.sigmaSymbol
-                        [   [ Predicated
+                        [   [ Conditional
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
                                     Substitution.wrap [ (Mock.x, fOfA) ]
                                 }
                             ]
-                        ,   [ Predicated
+                        ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
@@ -205,8 +200,8 @@ test_applicationSimplification =
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
             let z' = Mock.z { variableCounter = Just (Element 1) }
                 expect =
-                    MultiOr.make
-                        [ Predicated
+                    OrPattern.fromPatterns
+                        [ Conditional
                             { term = fOfA
                             , predicate =
                                 makeAndPredicate
@@ -244,15 +239,15 @@ test_applicationSimplification =
                             )
                         => AttemptedAxiom Object variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results = MultiOr.make
-                            [ Predicated
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate fOfA gOfA
                                 , substitution =
                                     Substitution.wrap [ (zvar, gOfB) ]
                                 }
                             ]
-                        , remainders = MultiOr.make []
+                        , remainders = OrPattern.fromPatterns []
                         }
                 in
                     evaluate
@@ -271,14 +266,14 @@ test_applicationSimplification =
                     (makeApplication
                         testSort
                         Mock.sigmaSymbol
-                        [   [ Predicated
+                        [   [ Conditional
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
                                     Substitution.wrap [ (Mock.x, fOfA) ]
                                 }
                             ]
-                        ,   [ Predicated
+                        ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
@@ -291,37 +286,37 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB :: Ord (variable Object) => StepPattern Object variable
+    fOfA, fOfB :: Ord (variable Object) => TermLike variable
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
 
-    gOfA, gOfB :: Ord (variable Object) => StepPattern Object variable
+    gOfA, gOfB :: Ord (variable Object) => TermLike variable
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
 
-    aExpanded = Predicated
+    aExpanded = Conditional
         { term = Mock.a
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    bExpanded = Predicated
+    bExpanded = Conditional
         { term = Mock.b
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    cExpanded = Predicated
+    cExpanded = Conditional
         { term = Mock.c
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    dExpanded = Predicated
+    dExpanded = Conditional
         { term = Mock.d
         , predicate = makeTruePredicate
         , substitution = mempty
         }
 
-    gOfAExpanded :: Ord (variable Object) => ExpandedPattern Object variable
-    gOfAExpanded = Predicated
+    gOfAExpanded :: Ord (variable Object) => Pattern Object variable
+    gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
         , substitution = mempty
@@ -337,8 +332,8 @@ test_applicationSimplification =
             Mock.smtDeclarations
 
     noSimplification
-        ::  [   ( StepPattern level Variable
-                , ([ExpandedPattern level Variable], SimplificationProof level)
+        ::  [   ( TermLike Variable
+                , ([Pattern level Variable], SimplificationProof level)
                 )
             ]
     noSimplification = []
@@ -349,39 +344,42 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: (MetaOrObject level, Ord (variable level), HasCallStack)
-    => Sort level
-    -> SymbolOrAlias level
-    -> [[ExpandedPattern level variable]]
+    :: (Ord (variable Object), Show (variable Object), HasCallStack)
+    => Sort Object
+    -> SymbolOrAlias Object
+    -> [[Pattern Object variable]]
     -> CofreeF
-        (Application level)
-        (Valid (variable level) level)
-        (OrOfExpandedPattern level variable)
+        (Application Object)
+        (Valid (variable Object) Object)
+        (OrPattern Object variable)
 makeApplication patternSort symbol patterns =
     (:<)
         valid
         Application
             { applicationSymbolOrAlias = symbol
-            , applicationChildren = map MultiOr.make patterns
+            , applicationChildren = map OrPattern.fromPatterns patterns
             }
   where
-    valid = Valid { patternSort, freeVariables }
-    expandedFreeVariables = (<$>) (Valid.freeVariables . extract . term)
-    freeVariables =
-        Set.unions (Set.unions . expandedFreeVariables <$> patterns)
+    termFreeVariables = TermLike.freeVariables . Pattern.term
+    valid =
+        Valid
+            { patternSort
+            , freeVariables =
+                Set.unions (Set.unions . map termFreeVariables <$> patterns)
+            }
 
 evaluate
     ::  ( MetaOrObject level)
     => SmtMetadataTools StepperAttributes
-    -> StepPatternSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application level)
         (Valid (Variable level) level)
-        (CommonOrOfExpandedPattern level)
-    -> IO (CommonOrOfExpandedPattern level)
+        (OrPattern level Variable)
+    -> IO (OrPattern level Variable)
 evaluate
     tools
     simplifier

@@ -22,7 +22,6 @@ import System.IO
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
@@ -42,14 +41,14 @@ import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, Predicated (..) )
+                 ( Conditional (..), Pattern )
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.SMT.Lemma
+import           Kore.Step.TermLike
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT
@@ -406,19 +405,19 @@ mainPatternParse = mainParse parseKorePattern
 mainPatternParseAndVerify
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
-    -> IO (CommonStepPattern Object)
+    -> IO (TermLike Variable)
 mainPatternParseAndVerify indexedModule patternFileName =
     mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 
 mainParseSearchPattern
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
-    -> IO (CommonExpandedPattern Object)
+    -> IO (Pattern Object Variable)
 mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of
         And_ _ term predicateTerm -> return
-            Predicated
+            Conditional
                 { term
                 , predicate =
                     either (error . printError) id

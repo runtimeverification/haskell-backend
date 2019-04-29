@@ -14,8 +14,8 @@ import Prelude hiding
 
 import Kore.AST.Pure hiding
        ( mapVariables )
-import Kore.Step.Pattern
-       ( StepPattern )
+import Kore.Step.TermLike
+       ( TermLike )
 import Kore.TopBottom
        ( isBottom, isTop )
 import Kore.Unification.Substitution
@@ -43,7 +43,7 @@ propertyTests =
   , null `gives_`         [(empty, True),  (normalized, False), (unnormalized, False) ]
   ]
   where
-    empty = (mempty :: Substitution Object Variable)
+    empty = (mempty :: Substitution Variable)
     normalized = unsafeWrap [(Mock.x, Mock.a)]
     unnormalized = wrap [(Mock.x, Mock.a)]
 
@@ -192,11 +192,11 @@ variablesTests =
            . variables $ wrap singletonSubst
     ]
 
-emptyRawSubst :: [(Variable Object, StepPattern Object Variable)]
+emptyRawSubst :: [(Variable Object, TermLike Variable)]
 emptyRawSubst = mempty
 
-emptySubst :: Substitution Object Variable
+emptySubst :: Substitution Variable
 emptySubst = mempty
 
-singletonSubst :: [(Variable Object, StepPattern Object Variable)]
+singletonSubst :: [(Variable Object, TermLike Variable)]
 singletonSubst = [(Mock.x, Mock.a)]

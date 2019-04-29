@@ -8,14 +8,13 @@ import           Test.Terse
 
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
+import           Kore.Step.TermLike
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -54,12 +53,12 @@ test_implies = testBinary impliesBoolSymbol implies
     implies u v = not u || v
 
 -- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
-asInternal :: Bool -> CommonStepPattern Object
+asInternal :: Bool -> TermLike Variable
 asInternal = Bool.asInternal boolSort
 
--- | Specialize 'Bool.asExpandedPattern' to the builtin sort 'boolSort'.
-asExpandedPattern :: Bool -> CommonExpandedPattern Object
-asExpandedPattern = Bool.asExpandedPattern boolSort
+-- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
+asPattern :: Bool -> Pattern Object Variable
+asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary
@@ -72,7 +71,7 @@ testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         b <- forAll Gen.bool
-        let expect = asExpandedPattern $ impl a b
+        let expect = asPattern $ impl a b
         actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
@@ -89,7 +88,7 @@ testUnary
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
-        let expect = asExpandedPattern $ impl a
+        let expect = asPattern $ impl a
         actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a])
         (===) expect actual
   where
@@ -117,8 +116,8 @@ test_simplification =
         _False = asInternal False
 
         becomes :: HasCallStack
-                => CommonStepPattern Object
-                -> CommonExpandedPattern Object
+                => TermLike Variable
+                -> Pattern Object Variable
                 -> TestTree
         becomes makerInput =
             wrapped_maker_expected withSolver

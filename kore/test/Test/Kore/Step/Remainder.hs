@@ -4,8 +4,6 @@ import Test.Tasty
 
 import           Kore.AST.Common
                  ( Variable )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -18,7 +16,15 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Terse
 
-target :: Predicate Object (Target Variable)
+test_existentiallyQuantifyTarget :: [TestTree]
+test_existentiallyQuantifyTarget =
+    [ target `becomes` quantified $  "quantifies target variables"
+    ]
+  where
+    becomes original expect =
+        equals (Remainder.existentiallyQuantifyTarget original) expect
+
+target :: Predicate (Target Variable)
 target =
     Predicate.makeEqualsPredicate
         (mkVar $ NonTarget Mock.x)
@@ -27,17 +33,9 @@ target =
             (mkVar $ Target Mock.z)
         )
 
-quantified :: Predicate Object Variable
+quantified :: Predicate Variable
 quantified =
     Predicate.makeMultipleExists [Mock.y, Mock.z]
     $ Predicate.makeEqualsPredicate
         (mkVar Mock.x)
         (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
-
-test_quantifyTarget :: [TestTree]
-test_quantifyTarget =
-    [ target `becomes` quantified $  "quantifies target variables"
-    ]
-  where
-    becomes original expect =
-        equals (Remainder.existentiallyQuantifyTarget original) expect

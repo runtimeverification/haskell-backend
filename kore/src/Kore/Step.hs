@@ -36,25 +36,24 @@ import           Numeric.Natural
 import           Kore.AST.Common
                  ( Variable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
+                 ( MetaOrObject, Object )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Pattern
+                 ( Pattern )
 import           Kore.Step.Proof
                  ( StepProof (..) )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
-import qualified Kore.Step.Simplification.ExpandedPattern as ExpandedPattern
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
@@ -79,7 +78,7 @@ simplify = Simplify
 {- | A single-step strategy which applies the given rewrite rule.
 
 If the rewrite is successful, the built-in simplification rules and function
-evaluator are applied (see 'ExpandedPattern.simplify' for details).
+evaluator are applied (see 'Pattern.simplify' for details).
 
  -}
 rewriteStep :: rewrite -> Strategy (Prim rewrite)
@@ -92,18 +91,18 @@ rewriteStep a =
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: (HasCallStack, MetaOrObject level)
+    :: (HasCallStack, MetaOrObject Object)
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (RewriteRule level Variable)
-    -> (CommonExpandedPattern level, StepProof level Variable)
+    -> Prim (RewriteRule Object Variable)
+    -> (Pattern Object Variable, StepProof Object Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule level Variable) Simplifier
-        (CommonExpandedPattern level, StepProof level Variable)
+    -> TransitionT (RewriteRule Object Variable) Simplifier
+        (Pattern Object Variable, StepProof Object Variable)
 transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
@@ -113,7 +112,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
         do
             (configs, _) <-
                 Monad.Trans.lift
-                $ ExpandedPattern.simplify
+                $ Pattern.simplify
                     tools
                     substitutionSimplifier
                     simplifier
@@ -156,7 +155,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
 {- | A strategy that applies all the rewrites in parallel.
 
 After each successful rewrite, the built-in simplification rules and function
-evaluator are applied (see 'ExpandedPattern.simplify' for details).
+evaluator are applied (see 'Pattern.simplify' for details).
 
 See also: 'Strategy.all'
 
@@ -171,7 +170,7 @@ allRewrites rewrites =
 
 The rewrites are attempted in order until one succeeds. After a successful
 rewrite, the built-in simplification rules and function evaluator are applied
-(see 'ExpandedPattern.simplify' for details).
+(see 'Pattern.simplify' for details).
 
 See also: 'Strategy.any'
 
@@ -190,8 +189,8 @@ anyRewrite rewrites =
 heatingCooling
     :: (forall rewrite. [rewrite] -> Strategy (Prim rewrite))
     -- ^ 'allRewrites' or 'anyRewrite'
-    -> [RewriteRule level Variable]
-    -> Strategy (Prim (RewriteRule level Variable))
+    -> [RewriteRule Object Variable]
+    -> Strategy (Prim (RewriteRule Object Variable))
 heatingCooling rewriteStrategy rewrites =
     Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where

@@ -9,7 +9,8 @@ import Test.Tasty.HUnit
 import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Pure
+import           Kore.AST.Common
+                 ( Iff (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
@@ -17,14 +18,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( bottom, top )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
+import           Kore.Step.OrPattern
+                 ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
@@ -55,7 +52,7 @@ test_simplify =
   where
     becomes (a, b) rs name =
         testCase name $ do
-            let expect = MultiOr.make rs
+            let expect = OrPattern.fromPatterns rs
             actual <- simplify $ makeIff [a] [b]
             assertEqualWithExplanation "" expect actual
 
@@ -73,8 +70,8 @@ test_makeEvaluate =
         -- iff(top and predicate1 and subst1, top and predicate2 and subst2)
         --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
         (assertEqualWithExplanation "iff(top and predicate, top and predicate)"
-            (MultiOr.make
-                [ Predicated
+            (OrPattern.fromPatterns
+                [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeIffPredicate
@@ -91,12 +88,12 @@ test_makeEvaluate =
                 ]
             )
             ( makeEvaluate
-                Predicated
+                Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                     }
-                Predicated
+                Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution = Substitution.wrap [(Mock.y, Mock.b)]
@@ -105,8 +102,8 @@ test_makeEvaluate =
         )
     , testCase "iff with generic patterns"
         (assertEqualWithExplanation "iff(generic, generic)"
-            (MultiOr.make
-                [ Predicated
+            (OrPattern.fromPatterns
+                [ Conditional
                     { term =
                         mkIff
                             (mkAnd
@@ -129,12 +126,12 @@ test_makeEvaluate =
                 ]
             )
             ( makeEvaluate
-                Predicated
+                Conditional
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                     }
-                Predicated
+                Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution = Substitution.wrap [(Mock.y, Mock.b)]
@@ -146,27 +143,27 @@ test_makeEvaluate =
     becomes (a, b) rs =
         Terse.equals
             (makeEvaluate a b)
-            (MultiOr.make rs)
+            (OrPattern.fromPatterns rs)
 
 testSimplifyBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testSimplifyBoolean a b =
     testCase ("iff(" ++ name a ++ ", " ++ name b ++ ")") $ do
         actual <- simplify $ makeIff [value a] [value b]
-        let expect = MultiOr.make [value r]
+        let expect = OrPattern.fromPatterns [value r]
         assertEqualWithExplanation ("expected: " ++ name r) expect actual
   where
     name x
       | x = "⊤"
       | otherwise = "⊥"
     value x
-      | x = ExpandedPattern.top
-      | otherwise = ExpandedPattern.bottom
+      | x = Pattern.top
+      | otherwise = Pattern.bottom
     r = a == b
 
 testEvaluateBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testEvaluateBoolean a b =
     Terse.equals
-        (MultiOr.make [value r])
+        (OrPattern.fromPatterns [value r])
         (Function.on makeEvaluate value a b)
         ("iff(" ++ name a ++ ", " ++ name b ++ ")")
   where
@@ -174,41 +171,36 @@ testEvaluateBoolean a b =
       | x = "⊤"
       | otherwise = "⊥"
     value x
-      | x = ExpandedPattern.top
-      | otherwise = ExpandedPattern.bottom
+      | x = Pattern.top
+      | otherwise = Pattern.bottom
     r = a == b
 
-termA :: CommonExpandedPattern Object
+termA :: Pattern Object Variable
 termA =
-    Predicated
+    Conditional
         { term = Mock.a
         , predicate = makeTruePredicate
         , substitution = mempty
         }
 
-termNotA :: CommonExpandedPattern Object
+termNotA :: Pattern Object Variable
 termNotA = mkNot <$> termA
-
-top, bottom :: CommonExpandedPattern Object
-top = ExpandedPattern.top
-bottom = ExpandedPattern.bottom
 
 makeIff
     :: (Ord (variable Object))
-    => [ExpandedPattern Object variable]
-    -> [ExpandedPattern Object variable]
-    -> Iff Object (OrOfExpandedPattern Object variable)
+    => [Pattern Object variable]
+    -> [Pattern Object variable]
+    -> Iff Object (OrPattern Object variable)
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
-        , iffFirst  = MultiOr.make first
-        , iffSecond = MultiOr.make second
+        , iffFirst  = OrPattern.fromPatterns first
+        , iffSecond = OrPattern.fromPatterns second
         }
 
 simplify
-    :: MetaOrObject level
-    => Iff level (CommonOrOfExpandedPattern level)
-    -> IO (CommonOrOfExpandedPattern level)
+    :: Iff Object (OrPattern Object Variable)
+    -> IO (OrPattern Object Variable)
 simplify iff0 =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -221,10 +213,9 @@ simplify iff0 =
         iff0
 
 makeEvaluate
-    :: MetaOrObject level
-    => CommonExpandedPattern level
-    -> CommonExpandedPattern level
-    -> CommonOrOfExpandedPattern level
+    :: Pattern Object Variable
+    -> Pattern Object Variable
+    -> OrPattern Object Variable
 makeEvaluate = Iff.makeEvaluate
 
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol

@@ -82,9 +82,7 @@ import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
 import           Kore.Step.Pattern
-                 ( StepPattern )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
+                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
@@ -93,6 +91,8 @@ import qualified Kore.Step.Rule as Axiom
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Step.TermLike
+                 ( TermLike )
 import           Kore.Unparser
                  ( unparseToString )
 
@@ -537,8 +537,8 @@ tryAxiomClaim eac = do
                         }
                     second
     unify
-        :: StepPattern Object Variable
-        -> StepPattern Object Variable
+        :: TermLike Variable
+        -> TermLike Variable
         -> ReplM claim level ()
     unify first second = do
         unifier <- Lens.use lensUnifier
@@ -549,7 +549,7 @@ tryAxiomClaim eac = do
             Just doc -> putStrLn' $ show doc
     extractLeftPattern
         :: Either (Axiom level) claim
-        -> StepPattern level Variable
+        -> TermLike Variable
     extractLeftPattern =
             left . getRewriteRule . either unAxiom coerce
 
@@ -735,10 +735,10 @@ unparseStrategy omitList =
         , bottomValue = "Reached bottom"
         }
   where
-    hide :: StepPattern level Variable -> StepPattern level Variable
+    hide :: TermLike Variable -> TermLike Variable
     hide =
-        Recursive.unfold $ \stepPattern ->
-            case Recursive.project stepPattern of
+        Recursive.unfold $ \termLike ->
+            case Recursive.project termLike of
                 ann :< ApplicationPattern app
                   | shouldBeExcluded (applicationSymbolOrAlias app) ->
                     -- Do not display children

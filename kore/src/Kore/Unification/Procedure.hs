@@ -21,24 +21,23 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Merging.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( mergeWithPredicateSubstitutionAssumesEvaluated )
+import qualified Kore.Step.Merging.OrPattern as OrPattern
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+                 ( Conditional (..) )
+import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
+import           Kore.Step.TermLike
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Unify
@@ -67,16 +66,16 @@ unificationProcedure
         )
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> StepPattern level variable
+    -> TermLike variable
     -- ^left-hand-side of unification
-    -> StepPattern level variable
+    -> TermLike variable
     -> unifier
-        ( OrOfPredicateSubstitution level variable
+        ( OrPredicate level variable
         , UnificationProof level variable
         )
 unificationProcedure
@@ -93,8 +92,8 @@ unificationProcedure
                 axiomIdToSimplifier
                 p1
                 p2
-    (pat@Predicated { term, predicate, substitution }, _) <- getUnifiedTerm
-    if Predicated.isBottom pat
+    (pat@Conditional { term, predicate, substitution }, _) <- getUnifiedTerm
+    if Conditional.isBottom pat
         then return
             (MultiOr.make [], EmptyUnificationProof)
         else Monad.Unify.liftSimplifier $ do
@@ -106,14 +105,14 @@ unificationProcedure
                     axiomIdToSimplifier
                     term
             (result, _proof) <-
-                OrOfExpandedPattern.mergeWithPredicateSubstitutionAssumesEvaluated
+                OrPattern.mergeWithPredicateAssumesEvaluated
                     (createPredicatesAndSubstitutionsMerger
                         tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
                     )
-                    Predicated
+                    Conditional
                         { term = ()
                         , predicate
                         , substitution

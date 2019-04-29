@@ -12,7 +12,7 @@ import qualified Data.Set as Set
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
@@ -39,9 +39,9 @@ test_predicate =
         )
     , let
         makeOr
-            :: CommonPredicate Meta
-            -> CommonPredicate Meta
-            -> CommonPredicate Meta
+            :: Predicate Variable
+            -> Predicate Variable
+            -> Predicate Variable
         makeOr c1 c2 = makeOrPredicate c1 c2
       in
         testCase "Or truth table"
@@ -61,9 +61,9 @@ test_predicate =
             )
     , let
         makeImplies
-            :: CommonPredicate Meta
-            -> CommonPredicate Meta
-            -> CommonPredicate Meta
+            :: Predicate Variable
+            -> Predicate Variable
+            -> Predicate Variable
         makeImplies c1 c2 = makeImpliesPredicate c1 c2
       in
         testCase "Implies truth table"
@@ -83,9 +83,9 @@ test_predicate =
             )
     , let
         makeIff
-            :: CommonPredicate Meta
-            -> CommonPredicate Meta
-            -> CommonPredicate Meta
+            :: Predicate Variable
+            -> Predicate Variable
+            -> Predicate Variable
         makeIff c1 c2 = makeIffPredicate c1 c2
       in
         testCase "Iff truth table"
@@ -104,7 +104,7 @@ test_predicate =
                     (makeIff makeTruePredicate makeTruePredicate)
             )
     , let
-        makeNot :: CommonPredicate Meta -> CommonPredicate Meta
+        makeNot :: Predicate Variable -> Predicate Variable
         makeNot p = makeNotPredicate p
       in
         testCase "Not truth table"
@@ -124,9 +124,9 @@ test_predicate =
                     (\_ ->
                         fmap
                             (const "a")
-                            (makeTruePredicate :: CommonPredicate Meta)
+                            (makeTruePredicate :: Predicate Variable)
                     )
-                    (makeFalsePredicate :: CommonPredicate Meta)
+                    (makeFalsePredicate :: Predicate Variable)
             )
         )
     ,  testCase "Wrapping and predicates without full simplification"
@@ -231,12 +231,12 @@ test_predicate =
     , testCase "isFalsePredicate True"
         (assertEqual ""
             True
-            (Predicate.isFalse (makeFalsePredicate::CommonPredicate Object))
+            (Predicate.isFalse (makeFalsePredicate::Predicate Variable))
         )
     , testCase "isFalsePredicate False"
         (assertEqual ""
             False
-            (Predicate.isFalse (makeTruePredicate::CommonPredicate Meta))
+            (Predicate.isFalse (makeTruePredicate::Predicate Variable))
         )
     , testCase "isFalsePredicate False for generic predicate"
         (assertEqual ""
@@ -274,7 +274,7 @@ test_predicate =
             assertEqual "top has no free variables"
                 Set.empty
                 (Predicate.freeVariables
-                    (makeTruePredicate :: CommonPredicate Meta)
+                    (makeTruePredicate :: Predicate Variable)
                 )
             assertEqual "equals predicate has two variables"
                 (Set.fromList
@@ -296,7 +296,7 @@ test_predicate =
         ( do
             assertEqual "null substitutions is top"
                 makeTruePredicate
-                (substitutionToPredicate mempty :: CommonPredicate Meta)
+                (substitutionToPredicate mempty :: Predicate Variable)
             assertEqual "a = b"
                 (makeAndPredicate pr1 makeTruePredicate)
                 (substitutionToPredicate $ Substitution.wrap
@@ -304,7 +304,7 @@ test_predicate =
                 )
         )
     , let
-        makeExists :: CommonPredicate Meta -> CommonPredicate Meta
+        makeExists :: Predicate Variable -> Predicate Variable
         makeExists p = makeExistsPredicate (a Mock.testSort) p
       in
         testCase "Exists truth table"
@@ -317,7 +317,7 @@ test_predicate =
                     (makeExists makeFalsePredicate)
             )
     , let
-        makeForall :: CommonPredicate Meta -> CommonPredicate Meta
+        makeForall :: Predicate Variable -> Predicate Variable
         makeForall p = makeForallPredicate (a Mock.testSort) p
       in
         testCase "Forall truth table"
@@ -355,55 +355,55 @@ makePredicateYieldsWrapPredicate
         , Show level
         , MetaOrObject level
         )
-    => String -> CommonStepPattern level -> IO ()
+    => String -> TermLike Variable -> IO ()
 makePredicateYieldsWrapPredicate msg p =
     assertEqual msg
         (Right (wrapPredicate p))
         (makePredicate p)
 
 
-pr1 :: CommonPredicate Meta
+pr1 :: Predicate Variable
 pr1 =
     makeEqualsPredicate
         (mkVar $ a Mock.testSort)
         (mkVar $ b Mock.testSort)
 
-pr2 :: CommonPredicate Meta
+pr2 :: Predicate Variable
 pr2 =
     makeEqualsPredicate
         (mkVar $ c Mock.testSort)
         (mkVar $ d Mock.testSort)
 
-pa1 :: CommonStepPattern Meta
+pa1 :: TermLike Variable
 pa1 =
     mkEquals_
         (mkVar $ a Mock.testSort)
         (mkVar $ b Mock.testSort)
 
-pa2 :: CommonStepPattern Meta
+pa2 :: TermLike Variable
 pa2 =
     mkEquals_
         (mkVar $ c Mock.testSort)
         (mkVar $ d Mock.testSort)
 
-ceilA :: CommonStepPattern Meta
+ceilA :: TermLike Variable
 ceilA =
     mkCeil_
         (mkVar $ a Mock.testSort)
 
-inA :: CommonStepPattern Meta
+inA :: TermLike Variable
 inA =
     mkIn_
         (mkVar $ a Mock.testSort)
         (mkVar $ b Mock.testSort)
 
-floorA :: CommonStepPattern Meta
+floorA :: TermLike Variable
 floorA = mkFloor_ (mkVar $ a Mock.testSort)
 
 makeAnd
-    :: CommonPredicate Meta
-    -> CommonPredicate Meta
-    -> CommonPredicate Meta
+    :: Predicate Variable
+    -> Predicate Variable
+    -> Predicate Variable
 makeAnd p1 p2 = makeAndPredicate p1 p2
 
 a, b, c, d :: Sort level -> Variable level

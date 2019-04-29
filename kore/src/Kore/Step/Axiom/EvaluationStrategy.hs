@@ -46,25 +46,23 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
-                 ( StepPattern, asConcreteStepPattern )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
-                 ( fromPurePattern )
+                 ( Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
-import qualified Kore.Step.Representation.OrOfExpandedPattern as OrOfExpandedPattern
-                 ( isFalse )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, SimplificationProof (..),
-                 Simplifier, StepPatternSimplifier )
+                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
+                 TermLikeSimplifier )
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
+import           Kore.Step.TermLike
+                 ( TermLike, asConcreteStepPattern )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
@@ -123,10 +121,10 @@ totalDefinitionEvaluation rules =
             , ShowMetaOrObject variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSubstitutionSimplifier level
-        -> StepPatternSimplifier level
+        -> PredicateSimplifier level
+        -> TermLikeSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
-        -> StepPattern level variable
+        -> TermLike variable
         -> Simplifier
             ( AttemptedAxiom level variable
             , SimplificationProof level
@@ -199,11 +197,11 @@ evaluateBuiltin
         )
     => BuiltinAndAxiomSimplifier level
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 evaluateBuiltin
@@ -258,11 +256,11 @@ applyFirstSimplifierThatWorks
     => [BuiltinAndAxiomSimplifier level]
     -> AcceptsMultipleResults
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
@@ -304,7 +302,7 @@ applyFirstSimplifierThatWorks
                         )
                     )
                 when
-                    (not (OrOfExpandedPattern.isFalse orRemainders)
+                    (not (OrPattern.isFalse orRemainders)
                     && not (acceptsMultipleResults multipleResults)
                     )
                     -- It's not obvious that we should accept simplifications
@@ -350,11 +348,11 @@ evaluateWithDefinitionAxioms
         )
     => [EqualityRule level Variable]
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
-    -> StepPattern level variable
+    -> TermLike variable
     -> Simplifier
         (AttemptedAxiom level variable, SimplificationProof level)
 evaluateWithDefinitionAxioms
@@ -369,8 +367,8 @@ evaluateWithDefinitionAxioms
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
-        expanded :: ExpandedPattern level variable
-        expanded = ExpandedPattern.fromPurePattern patt
+        expanded :: Pattern level variable
+        expanded = Pattern.fromTermLike patt
 
     let unwrapEqualityRule =
             \(EqualityRule rule) ->

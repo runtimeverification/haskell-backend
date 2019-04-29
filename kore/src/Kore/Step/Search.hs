@@ -40,16 +40,15 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, PredicateSubstitution )
-import qualified Kore.Step.Representation.ExpandedPattern as Predicated
+import           Kore.Step.OrPredicate
+                 ( OrPredicate )
+import           Kore.Step.Pattern
+                 ( Pattern, Predicate )
+import qualified Kore.Step.Pattern as Conditional
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( traverseWithPairs )
-import           Kore.Step.Representation.OrOfExpandedPattern
-                 ( OrOfPredicateSubstitution )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSubstitutionSimplifier, Simplifier,
-                 StepPatternSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -135,14 +134,14 @@ matchWith
         , Unparse (variable level)
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from symbol IDs to defined functions
-    -> ExpandedPattern level variable
-    -> ExpandedPattern level variable
-    -> MaybeT Simplifier (OrOfPredicateSubstitution level variable)
+    -> Pattern level variable
+    -> Pattern level variable
+    -> MaybeT Simplifier (OrPredicate level variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-
         hushT . Monad.Unify.getUnifier $
@@ -155,9 +154,9 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                 t2
     let
         mergeAndEvaluate
-            :: PredicateSubstitution level variable
+            :: Predicate level variable
             -> Simplifier
-                ( PredicateSubstitution level variable
+                ( Predicate level variable
                 , UnificationProof level variable
                 )
         mergeAndEvaluate predSubst = do
@@ -167,24 +166,24 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
-                    [ Predicated.predicate predSubst
-                    , Predicated.predicate e1
-                    , Predicated.predicate e2
+                    [ Conditional.predicate predSubst
+                    , Conditional.predicate e1
+                    , Conditional.predicate e2
                     ]
-                    [ Predicated.substitution predSubst]
+                    [ Conditional.substitution predSubst]
             (evaluated, _proof) <-
                 give tools
                 $ Predicate.evaluate substitutionSimplifier simplifier
-                $ Predicated.predicate merged
+                $ Conditional.predicate merged
             mergePredicatesAndSubstitutions
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-                [ Predicated.predicate evaluated
+                [ Conditional.predicate evaluated
                 ]
-                [ Predicated.substitution merged
-                , Predicated.substitution evaluated
+                [ Conditional.substitution merged
+                , Conditional.substitution evaluated
                 ]
     (result, _proof) <-
         lift $ MultiOr.traverseWithPairs mergeAndEvaluate unifier
@@ -192,5 +191,5 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
         then nothing
         else return result
   where
-    t1 = Predicated.term e1
-    t2 = Predicated.term e2
+    t1 = Conditional.term e1
+    t2 = Conditional.term e2

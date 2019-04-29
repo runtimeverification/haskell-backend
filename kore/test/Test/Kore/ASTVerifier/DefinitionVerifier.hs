@@ -19,7 +19,7 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Step.Pattern hiding
+import           Kore.Step.TermLike hiding
                  ( freeVariables )
 import           Kore.Unparser
                  ( unparseToString )
@@ -654,7 +654,7 @@ unifiedSortVariable
 unifiedSortVariable _x (SortVariableName name) =
     (sortVariable name :: SortVariable level)
 
-stringUnifiedPattern :: Text -> StepPattern Meta Variable
+stringUnifiedPattern :: Text -> TermLike Variable
 stringUnifiedPattern s = (mkStringLiteral s)
 
 variable :: VariableName -> Sort level -> Variable level
@@ -676,7 +676,7 @@ variablePattern name sort =
     VariablePattern (variable name sort)
 
 unifiedVariablePattern
-    :: MetaOrObject level => VariableName -> Sort level -> StepPattern level Variable
+    :: MetaOrObject level => VariableName -> Sort level -> TermLike Variable
 unifiedVariablePattern name patternSort =
     asPurePattern (valid :< variablePattern name patternSort)
   where
@@ -687,7 +687,7 @@ simpleExistsPattern
     :: MetaOrObject level
     => Variable level
     -> Sort level
-    -> Pattern level domain Variable (StepPattern level Variable)
+    -> Pattern level domain Variable (TermLike Variable)
 simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
@@ -696,19 +696,19 @@ simpleExistsPattern quantifiedVariable resultSort =
         }
 
 simpleExistsUnifiedPattern
-    :: MetaOrObject level => VariableName -> Sort level -> StepPattern level Variable
+    :: MetaOrObject level => VariableName -> Sort level -> TermLike Variable
 simpleExistsUnifiedPattern name sort =
     asPurePattern $ valid :< simpleExistsPattern (variable name sort) sort
   where
     valid = Valid { patternSort = sort, freeVariables = Set.empty }
 
 simpleExistsObjectUnifiedPattern
-    :: VariableName -> Sort Object -> StepPattern Object Variable
+    :: VariableName -> Sort Object -> TermLike Variable
 simpleExistsObjectUnifiedPattern = simpleExistsUnifiedPattern
 
 simpleExistsUnifiedPatternWithType
     :: MetaOrObject level
-    => level -> VariableName -> Sort level -> StepPattern level Variable
+    => level -> VariableName -> Sort level -> TermLike Variable
 simpleExistsUnifiedPatternWithType _ = simpleExistsUnifiedPattern
 
 simpleExistsEqualsUnifiedPattern
@@ -716,7 +716,7 @@ simpleExistsEqualsUnifiedPattern
     => VariableName
     -> OperandSort level
     -> ResultSort level
-    -> StepPattern level Variable
+    -> TermLike Variable
 simpleExistsEqualsUnifiedPattern
     (VariableName name)
     (OperandSort operandSort)
@@ -758,7 +758,7 @@ applicationUnifiedPatternWithParams
     => Sort level
     -> SymbolName
     -> [Sort level]
-    -> StepPattern level Variable
+    -> TermLike Variable
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
     mkApp
         resultSort

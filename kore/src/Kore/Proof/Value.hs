@@ -40,7 +40,8 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.Pattern
+import           Kore.Step.TermLike
+                 ( Concrete, TermLike )
 
 {- | Proof (by construction) that a pattern is a normalized value.
 
@@ -108,7 +109,7 @@ eraseSortInjection (Recursive.project -> ann :< value) =
  -}
 fromPattern
     :: SmtMetadataTools StepperAttributes
-    -> Base (ConcreteStepPattern Object) (Maybe (Value Object))
+    -> Base (TermLike Concrete) (Maybe (Value Object))
     -> Maybe (Value Object)
 fromPattern tools (ann :< pat) =
     case pat of
@@ -148,14 +149,14 @@ See also: 'fromPattern'
  -}
 fromConcreteStepPattern
     :: SmtMetadataTools StepperAttributes
-    -> ConcreteStepPattern Object
+    -> TermLike Concrete
     -> Maybe (Value Object)
 fromConcreteStepPattern tools =
     Recursive.fold (fromPattern tools)
 
 {- | Project a 'Value' to a concrete 'Pattern' head.
  -}
-asPattern :: Value level -> Base (ConcreteStepPattern level) (Value level)
+asPattern :: Value Object -> Base (TermLike Concrete) (Value Object)
 asPattern (Recursive.project -> ann :< val) =
     case val of
         Constructor appP -> ann :< ApplicationPattern appP
@@ -164,5 +165,5 @@ asPattern (Recursive.project -> ann :< val) =
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}
-asConcreteStepPattern :: Value level -> ConcreteStepPattern level
+asConcreteStepPattern :: Value Object -> TermLike Concrete
 asConcreteStepPattern = Recursive.unfold asPattern

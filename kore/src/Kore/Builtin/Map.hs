@@ -22,7 +22,7 @@ module Kore.Builtin.Map
     , Builtin
     , asPattern
     , asInternal
-    , asExpandedPattern
+    , asTermLike
       -- * Symbols
     , lookupSymbolUpdate
     , lookupSymbolLookup
@@ -65,7 +65,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure as Kore
 import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
@@ -87,10 +86,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
-import           Kore.Step.Representation.ExpandedPattern
-                 ( ExpandedPattern, Predicated (..) )
-import qualified Kore.Step.Representation.ExpandedPattern as ExpandedPattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
+import           Kore.Step.TermLike
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -167,8 +166,7 @@ symbolVerifiers =
       )
     ]
 
-type Builtin variable =
-    Map (ConcreteStepPattern Object) (StepPattern Object variable)
+type Builtin variable = Map (TermLike Concrete) (TermLike variable)
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
@@ -180,7 +178,7 @@ type Builtin variable =
 expectBuiltinMap
     :: Monad m
     => Text  -- ^ Context for error message
-    -> StepPattern Object variable  -- ^ Operand pattern
+    -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
 expectBuiltinMap ctx _map =
     do
@@ -203,7 +201,7 @@ returnMap
     -> m (AttemptedAxiom Object variable)
 returnMap tools resultSort map' =
     Builtin.appliedFunction
-    $ ExpandedPattern.fromPurePattern
+    $ Pattern.fromTermLike
     $ asInternal tools resultSort map'
 
 evalLookup :: Builtin.Function
@@ -221,7 +219,7 @@ evalLookup =
                 emptyMap = do
                     _map <- expectBuiltinMap lookupKey _map
                     if Map.null _map
-                        then Builtin.appliedFunction ExpandedPattern.bottom
+                        then Builtin.appliedFunction Pattern.bottom
                         else empty
                 bothConcrete = do
                     _key <- Builtin.expectNormalConcreteTerm tools _key
@@ -231,7 +229,7 @@ evalLookup =
         )
       where
         maybeBottom =
-            maybe ExpandedPattern.bottom ExpandedPattern.fromPurePattern
+            maybe Pattern.bottom Pattern.fromTermLike
 
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function
@@ -266,7 +264,7 @@ evalConcat =
                     if Map.null _map1
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _map2
+                            $ Pattern.fromTermLike _map2
                         else
                             empty
                 rightIdentity = do
@@ -274,7 +272,7 @@ evalConcat =
                     if Map.null _map2
                         then
                             Builtin.appliedFunction
-                            $ ExpandedPattern.fromPurePattern _map1
+                            $ Pattern.fromTermLike _map1
                         else
                             empty
                 bothConcrete = do
@@ -290,7 +288,7 @@ evalConcat =
                         then
                             -- Result is ‘\bottom{}()’ when there is overlap
                             -- between the keys of the operands.
-                            Builtin.appliedFunction ExpandedPattern.bottom
+                            Builtin.appliedFunction Pattern.bottom
                         else
                             returnMap tools resultSort (Map.union _map1 _map2)
             leftIdentity <|> rightIdentity <|> bothConcrete
@@ -335,7 +333,7 @@ evalInKeys =
             _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinMap in_keysKey _map
             Builtin.appliedFunction
-                $ Bool.asExpandedPattern resultSort
+                $ Bool.asPattern resultSort
                 $ Map.member _key _map
         )
 
@@ -380,7 +378,7 @@ asInternal
     => SmtMetadataTools attrs
     -> Sort Object
     -> Builtin variable
-    -> StepPattern Object variable
+    -> TermLike variable
 asInternal tools builtinMapSort builtinMapChild =
     (mkDomainValue . Domain.BuiltinMap)
         Domain.InternalMap
@@ -396,18 +394,13 @@ asInternal tools builtinMapSort builtinMapChild =
   where
     attrs = sortAttributes tools builtinMapSort
 
-{- | Render a 'Map' as a domain value pattern of the given sort.
-
-The result sort must be hooked to the builtin @Map@ sort.
-
-See also: 'sort'
-
+{- | Render an 'Domain.InternalMap' as a 'TermLike' domain value pattern.
  -}
-asPattern
+asTermLike
     :: Ord (variable Object)
-    => Domain.InternalMap (StepPattern Object variable)
-    -> StepPattern Object variable
-asPattern builtin =
+    => Domain.InternalMap (TermLike variable)
+    -> TermLike variable
+asTermLike builtin =
     foldr concat' unit (element <$> Map.toAscList map')
   where
     Domain.InternalMap { builtinMapSort = builtinSort } = builtin
@@ -422,20 +415,20 @@ asPattern builtin =
         apply elementSymbol [fromConcreteStepPattern key, value]
     concat' map1 map2 = apply concatSymbol [map1, map2]
 
-{- | Render a 'Map' as an extended domain value pattern.
+{- | Render a 'Map' a domain value 'Pattern'.
 
-    See also: 'asPattern'
+See also: 'asPattern'
 
  -}
-asExpandedPattern
+asPattern
     ::  ( Ord (variable Object)
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => Kore.Sort Object
+    => Sort Object
     -> Builtin variable
-    -> ExpandedPattern Object variable
-asExpandedPattern resultSort =
-    ExpandedPattern.fromPurePattern . asInternal tools resultSort
+    -> Pattern Object variable
+asPattern resultSort =
+    Pattern.fromTermLike . asInternal tools resultSort
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = Reflection.given
@@ -557,16 +550,16 @@ unifyEquals
         , FreshVariable variable
         , Show (variable level)
         , Unparse (variable level)
-        , p ~ StepPattern level variable
-        , expanded ~ ExpandedPattern level variable
+        , p ~ TermLike variable
+        , expanded ~ Pattern level variable
         , proof ~ SimplificationProof level
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSubstitutionSimplifier level
-    -> StepPatternSimplifier level
+    -> PredicateSimplifier level
+    -> TermLikeSimplifier level
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap level
     -- ^ Map from axiom IDs to axiom evaluators
@@ -592,18 +585,18 @@ unifyEquals
     discardProofs :: Map k (expanded, proof) -> Map k expanded
     discardProofs = Map.map fst
 
-    -- | Given a collection 't' of 'Predicated' values, propagate all the
-    -- predicates to the top level, returning a 'Predicated' collection.
+    -- | Given a collection 't' of 'Conditional' values, propagate all the
+    -- predicates to the top level, returning a 'Conditional' collection.
     propagatePredicates
         :: (level ~ Object, Traversable t)
-        => t (Predicated level variable a)
-        -> Predicated level variable (t a)
+        => t (Conditional level variable a)
+        -> Conditional level variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: StepPattern level variable
-        -> StepPattern level variable
+        :: TermLike variable
+        -> TermLike variable
         -> MaybeT unifier (expanded, proof)
 
     unifyEquals0 dv1@(DV_ _ (Domain.BuiltinMap builtin1)) =
@@ -660,8 +653,8 @@ unifyEquals
     -- | Unify two concrete maps.
     unifyEqualsConcrete
         :: level ~ Object
-        => Domain.InternalMap (StepPattern level variable)
-        -> Domain.InternalMap (StepPattern level variable)
+        => Domain.InternalMap (TermLike variable)
+        -> Domain.InternalMap (TermLike variable)
         -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2 = do
         intersect <-
@@ -691,9 +684,9 @@ unifyEquals
     -- | Unify one concrete map with one framed concrete map.
     unifyEqualsFramed1
         :: level ~ Object
-        => Domain.InternalMap (StepPattern Object variable)  -- ^ concrete map
-        -> Domain.InternalMap (StepPattern Object variable)  -- ^ framed map
-        -> StepPattern Object variable  -- ^ framing variable
+        => Domain.InternalMap (TermLike variable)  -- ^ concrete map
+        -> Domain.InternalMap (TermLike variable)  -- ^ framed map
+        -> TermLike variable  -- ^ framing variable
         -> unifier (expanded, proof)
     unifyEqualsFramed1 builtin1 builtin2 x = do
         intersect <-
@@ -704,7 +697,7 @@ unifyEquals
         (frame, _) <- unifyEqualsChildren x (asBuiltinMap remainder1)
         let
             -- The concrete part of the unification result.
-            concrete :: ExpandedPattern level variable
+            concrete :: Pattern level variable
             concrete =
                 asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
 
@@ -712,7 +705,7 @@ unifyEquals
               | not (Map.null remainder2) = bottomWithExplanation
               | otherwise =
                 return $
-                    Reflection.give tools asExpandedPattern builtinMapSort map1
+                    Reflection.give tools asPattern builtinMapSort map1
                     <* concrete
                     <* frame
               where
@@ -728,10 +721,10 @@ unifyEquals
 
     unifyEqualsElement
         :: level ~ Object
-        => Domain.InternalMap (StepPattern Object variable)  -- ^ concrete map
+        => Domain.InternalMap (TermLike variable)  -- ^ concrete map
         -> SymbolOrAlias level  -- ^ 'element' symbol
-        -> StepPattern Object variable  -- ^ key
-        -> StepPattern Object variable  -- ^ value
+        -> TermLike variable  -- ^ key
+        -> TermLike variable  -- ^ value
         -> unifier (expanded, proof)
     unifyEqualsElement builtin1 element' key2 value2 =
         case Map.toList map1 of
@@ -753,6 +746,6 @@ unifyEquals
             "Cannot unify a non-element map with an element map."
             first
             second
-        return ExpandedPattern.bottom
+        return Pattern.bottom
     withProof :: Applicative f => f a -> f (a, proof)
     withProof fa = (,) <$> fa <*> pure SimplificationProof
