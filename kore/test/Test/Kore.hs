@@ -134,7 +134,7 @@ genericIdGen firstChar nextChar = do
             <*> Gen.list (Range.linear 0 32) nextChar
     return (Text.pack chars)
 
-idGen :: MonadGen m => IsMetaOrObject level -> m (Id level)
+idGen :: MonadGen m => IsMetaOrObject level -> m Id
 idGen =
     \case
         IsObject -> testId <$> objectIdGen
@@ -163,7 +163,7 @@ charGen =
 
 symbolOrAliasRawGen
     :: MetaOrObject level
-    => (Id level -> [Sort level] -> s level)
+    => (Id -> [Sort level] -> s level)
     -> Gen (s level)
 symbolOrAliasRawGen constructor =
     constructor
@@ -174,7 +174,7 @@ symbolOrAliasRawGen constructor =
 
 symbolOrAliasDeclarationRawGen
     :: (MetaOrObject level, MonadGen m)
-    => (Id level -> [SortVariable level] -> s level)
+    => (Id -> [SortVariable level] -> s level)
     -> m (s level)
 symbolOrAliasDeclarationRawGen constructor =
     constructor
@@ -828,7 +828,7 @@ definitionGen senGen =
         <$> attributesGen
         <*> couple1 (moduleGen senGen)
 
-testId :: Text -> Id level
+testId :: Text -> Id
 testId name =
     Id
         { getId = name

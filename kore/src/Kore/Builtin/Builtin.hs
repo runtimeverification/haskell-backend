@@ -162,7 +162,7 @@ type SortDeclVerifier =
     ->  Either (Error VerifyError) ()
 
 type SortVerifier =
-        (Id Object -> Either (Error VerifyError) HookedSortDescription)
+        (Id -> Either (Error VerifyError) HookedSortDescription)
     -- ^ Find a sort declaration
     -> Sort Object
     -- ^ Sort to verify
@@ -172,7 +172,7 @@ type SortVerifier =
 type SortDeclVerifiers = HashMap Text SortDeclVerifier
 
 type SymbolVerifier =
-        (Id Object -> Either (Error VerifyError) HookedSortDescription)
+        (Id -> Either (Error VerifyError) HookedSortDescription)
     -- ^ Find a sort declaration
     -> ParsedSentenceSymbol
     -- ^ Symbol declaration to verify
@@ -285,7 +285,7 @@ Fail if the attribute is missing.
 getUnitId
     :: Attribute.Sort
     -- ^ Sort attributes
-    -> Either (Error VerifyError) (Id Object)
+    -> Either (Error VerifyError) Id
 getUnitId Attribute.Sort { unit = Attribute.Sort.Unit sortUnit } =
     case sortUnit of
         Just SymbolOrAlias { symbolOrAliasConstructor } ->
@@ -300,7 +300,7 @@ Fail if the attribute is missing.
 getElementId
     :: Attribute.Sort
     -- ^ Sort attributes
-    -> Either (Error VerifyError) (Id Object)
+    -> Either (Error VerifyError) Id
 getElementId Attribute.Sort { element = Attribute.Sort.Element sortElement } =
     case sortElement of
         Just SymbolOrAlias { symbolOrAliasConstructor } ->
@@ -315,7 +315,7 @@ Fail if the attribute is missing.
 getConcatId
     :: Attribute.Sort
     -- ^ Sort attributes
-    -> Either (Error VerifyError) (Id Object)
+    -> Either (Error VerifyError) Id
 getConcatId Attribute.Sort { concat = Attribute.Sort.Concat sortConcat } =
     case sortConcat of
         Just SymbolOrAlias { symbolOrAliasConstructor } ->
@@ -329,7 +329,7 @@ Fail if the symbol is not defined or the attribute is missing.
  -}
 assertSymbolHook
     :: KoreIndexedModule declAttrs axiomAttrs
-    -> Id Object
+    -> Id
     -- ^ Symbol identifier
     -> Text
     -- ^ Expected hook
@@ -362,7 +362,7 @@ Fail if the symbol is not defined.
  -}
 assertSymbolResultSort
     :: KoreIndexedModule declAttrs axiomAttrs
-    -> Id Object
+    -> Id
     -- ^ Symbol identifier
     -> Sort Object
     -- ^ Expected result sort
@@ -385,7 +385,7 @@ assertSymbolResultSort indexedModule symbolId expectedSort = do
 
  -}
 verifySort
-    :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
+    :: (Id -> Either (Error VerifyError) HookedSortDescription)
     -> Text
     -> Sort Object
     -> Either (Error VerifyError) ()
@@ -408,7 +408,7 @@ acceptAnySort = const $ const $ return ()
 
 {- | Find the hooked sort for a domain value sort. -}
 lookupHookSort
-    :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
+    :: (Id -> Either (Error VerifyError) HookedSortDescription)
     -> Sort Object
     -> Either (Error VerifyError) (Maybe Text)
 lookupHookSort findSort (SortActualSort SortActual { sortActualName }) = do
@@ -473,7 +473,7 @@ verifySymbolArguments
 -}
 verifyDomainValue
     :: DomainValueVerifiers child
-    -> (Id Object -> Either (Error VerifyError) HookedSortDescription)
+    -> (Id -> Either (Error VerifyError) HookedSortDescription)
     -> Domain.Builtin child
     -> Either (Error VerifyError) (Domain.Builtin child)
 verifyDomainValue

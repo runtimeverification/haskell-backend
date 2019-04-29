@@ -36,7 +36,7 @@ instance Default Source where
     def = Source Nothing
 
 -- | Kore identifier representing the @location@ attribute symbol.
-sourceId :: Id Object
+sourceId :: Id
 sourceId = "org'Stop'kframework'Stop'attributes'Stop'Source"
 
 instance ParseAttributes Source where

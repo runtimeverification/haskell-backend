@@ -34,7 +34,7 @@ instance Default HeatCool where
     def = Normal
 
 -- | Kore identifier representing the @heat@ attribute symbol.
-heatId :: Id Object
+heatId :: Id
 heatId = "heat"
 
 -- | Kore symbol representing the @heat@ attribute.
@@ -50,7 +50,7 @@ heatAttribute :: AttributePattern
 heatAttribute = attributePattern_ heatSymbol
 
 -- | Kore identifier representing the @cool@ attribute symbol.
-coolId :: Id Object
+coolId :: Id
 coolId = "cool"
 
 -- | Kore symbol representing the @cool@ attribute.

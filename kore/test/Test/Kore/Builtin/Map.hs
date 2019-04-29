@@ -509,7 +509,7 @@ asInternal = Map.asInternal testMetadataTools mapSort
 
 -- * Constructors
 
-mkIntVar :: Id Object -> TermLike Variable
+mkIntVar :: Id -> TermLike Variable
 mkIntVar variableName =
     mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
 

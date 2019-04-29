@@ -49,7 +49,7 @@ instance ParseAttributes Unit where
         failDuplicate' = failDuplicate unitId
 
 -- | Kore identifier representing the @unit@ attribute symbol.
-unitId :: Id Object
+unitId :: Id
 unitId = "unit"
 
 -- | Kore symbol representing the @unit@ attribute.

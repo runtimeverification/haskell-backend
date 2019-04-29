@@ -27,7 +27,7 @@ instance Default Concrete where
     def = Concrete False
 
 -- | Kore identifier representing the @concrete@ attribute symbol.
-concreteId :: Id Object
+concreteId :: Id
 concreteId = "concrete"
 
 -- | Kore symbol representing the @concrete@ attribute.

@@ -40,7 +40,7 @@ The expectation is that an axiom can be applied to a term only if the
 identifier of its left-hand-side is the same as the term's identifier.
 -}
 data AxiomIdentifier level
-    = Application !(Id level)
+    = Application !Id
     -- ^ Identifier for an application pattern whose symbol has the given id
     -- as name and which has no parameters.
     | Ceil !(AxiomIdentifier level)

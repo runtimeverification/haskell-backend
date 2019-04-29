@@ -24,7 +24,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 parseOverload :: Attributes -> Parser Overload
 parseOverload = parseAttributes
 
-superId :: Id Object
+superId :: Id
 superId = testId "super"
 
 superSymbol :: SymbolOrAlias Object
@@ -34,7 +34,7 @@ superSymbol =
         , symbolOrAliasParams = []
         }
 
-subId :: Id Object
+subId :: Id
 subId = testId "sub"
 
 subSymbol :: SymbolOrAlias Object

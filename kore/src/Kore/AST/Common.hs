@@ -88,7 +88,7 @@ The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SymbolOrAlias level = SymbolOrAlias
-    { symbolOrAliasConstructor :: !(Id level)
+    { symbolOrAliasConstructor :: !Id
     , symbolOrAliasParams      :: ![Sort level]
     }
     deriving (Show, Eq, Ord, Generic)
@@ -139,7 +139,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -- This value of variableCounter may only be used in refreshVariable to pivot
 -- the set of variables that must not be captured.
 data Variable level = Variable
-    { variableName :: !(Id level)
+    { variableName :: !Id
     , variableCounter :: !(Maybe (Sup Natural))
     , variableSort :: !(Sort level)
     }

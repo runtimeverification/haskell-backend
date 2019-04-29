@@ -813,7 +813,7 @@ instance EqualWithExplanation (Concrete Object) where
     compareWithExplanation = \case {}
     printWithExplanation = \case {}
 
-instance StructEqualWithExplanation (Id Object) where
+instance StructEqualWithExplanation Id where
     structFieldsWithNames expected@(Id _ _) actual@(Id _ _) =
         map (\f -> f expected actual)
             [ Function.on (EqWrap "getId = ") getIdForError
@@ -821,7 +821,7 @@ instance StructEqualWithExplanation (Id Object) where
             ]
     structConstructorName _ = "Id"
 
-instance EqualWithExplanation (Id Object)
+instance EqualWithExplanation Id
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

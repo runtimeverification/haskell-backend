@@ -60,7 +60,7 @@ emptyHook = Hook Nothing
 
 {- | Kore identifier representing a @hook@ attribute symbol.
  -}
-hookId :: Id Object
+hookId :: Id
 hookId = "hook"
 
 {- | Kore symbol representing the head of a @hook@ attribute.

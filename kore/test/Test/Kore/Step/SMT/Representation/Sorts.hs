@@ -3,8 +3,6 @@ module Test.Kore.Step.SMT.Representation.Sorts where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -114,7 +112,7 @@ test_sortParsing =
         ::  ( HasCallStack
             , EqualWithExplanation (AST.Sort sort symbol name)
             )
-        => (Kore.Id Object, AST.Sort sort symbol name)
+        => (Kore.Id, AST.Sort sort symbol name)
         -> AST.Declarations sort symbol name
         -> TestTree
     inDeclarations = testContainedIn

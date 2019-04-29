@@ -64,123 +64,123 @@ import           Test.Kore
                  ( testId )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
-aId :: Id Object
+aId :: Id
 aId = testId "a"
-aSort0Id :: Id Object
+aSort0Id :: Id
 aSort0Id = testId "aSort0"
-aSort1Id :: Id Object
+aSort1Id :: Id
 aSort1Id = testId "aSort1"
-aSubsortId :: Id Object
+aSubsortId :: Id
 aSubsortId = testId "aSubSubsort"
-aSubSubsortId :: Id Object
+aSubSubsortId :: Id
 aSubSubsortId = testId "aSubSubsort"
-aOtherSortId :: Id Object
+aOtherSortId :: Id
 aOtherSortId = testId "aOtherSort"
-bId :: Id Object
+bId :: Id
 bId = testId "b"
-bSort0Id :: Id Object
+bSort0Id :: Id
 bSort0Id = testId "bSort0"
-cId :: Id Object
+cId :: Id
 cId = testId "c"
-dId :: Id Object
+dId :: Id
 dId = testId "d"
-eId :: Id Object
+eId :: Id
 eId = testId "e"
-fId :: Id Object
+fId :: Id
 fId = testId "f"
-gId :: Id Object
+gId :: Id
 gId = testId "g"
-hId :: Id Object
+hId :: Id
 hId = testId "h"
-cfId :: Id Object
+cfId :: Id
 cfId = testId "cf"
-cfSort0Id :: Id Object
+cfSort0Id :: Id
 cfSort0Id = testId "cfSort0"
-cfSort1Id :: Id Object
+cfSort1Id :: Id
 cfSort1Id = testId "cfSort1"
-cgId :: Id Object
+cgId :: Id
 cgId = testId "cg"
-cgSort0Id :: Id Object
+cgSort0Id :: Id
 cgSort0Id = testId "cgSort0"
-chId :: Id Object
+chId :: Id
 chId = testId "ch"
-plain00Id :: Id Object
+plain00Id :: Id
 plain00Id = testId "plain00"
-plain00Sort0Id :: Id Object
+plain00Sort0Id :: Id
 plain00Sort0Id = testId "plain00Sort0"
-plain00SubsortId :: Id Object
+plain00SubsortId :: Id
 plain00SubsortId = testId "plain00Subsort"
-plain00SubSubsortId :: Id Object
+plain00SubSubsortId :: Id
 plain00SubSubsortId = testId "plain00SubSubsort"
-plain10Id :: Id Object
+plain10Id :: Id
 plain10Id = testId "plain10"
-plain11Id :: Id Object
+plain11Id :: Id
 plain11Id = testId "plain11"
-plain20Id :: Id Object
+plain20Id :: Id
 plain20Id = testId "plain20"
-constr10Id :: Id Object
+constr10Id :: Id
 constr10Id = testId "constr10"
-constr11Id :: Id Object
+constr11Id :: Id
 constr11Id = testId "constr11"
-constr20Id :: Id Object
+constr20Id :: Id
 constr20Id = testId "constr20"
-function20MapTestId :: Id Object
+function20MapTestId :: Id
 function20MapTestId = testId "function20MapTest"
-functional00Id :: Id Object
+functional00Id :: Id
 functional00Id = testId "functional00"
-functional01Id :: Id Object
+functional01Id :: Id
 functional01Id = testId "functional01"
-functional10Id :: Id Object
+functional10Id :: Id
 functional10Id = testId "functional10"
-functional11Id :: Id Object
+functional11Id :: Id
 functional11Id = testId "functional11"
-functional20Id :: Id Object
+functional20Id :: Id
 functional20Id = testId "functional20"
-functional00SubSubSortId :: Id Object
+functional00SubSubSortId :: Id
 functional00SubSubSortId = testId "functional00SubSubSort"
-functionalConstr10Id :: Id Object
+functionalConstr10Id :: Id
 functionalConstr10Id = testId "functionalConstr10"
-functionalConstr11Id :: Id Object
+functionalConstr11Id :: Id
 functionalConstr11Id = testId "functionalConstr11"
-functionalConstr12Id :: Id Object
+functionalConstr12Id :: Id
 functionalConstr12Id = testId "functionalConstr12"
-functionalConstr20Id :: Id Object
+functionalConstr20Id :: Id
 functionalConstr20Id = testId "functionalConstr20"
-functionalConstr30Id :: Id Object
+functionalConstr30Id :: Id
 functionalConstr30Id = testId "functionalConstr30"
-functionalTopConstr20Id :: Id Object
+functionalTopConstr20Id :: Id
 functionalTopConstr20Id = testId "functionalTopConstr20"
-functionalTopConstr21Id :: Id Object
+functionalTopConstr21Id :: Id
 functionalTopConstr21Id = testId "functionalTopConstr21"
-injective10Id :: Id Object
+injective10Id :: Id
 injective10Id = testId "injective10"
-injective11Id :: Id Object
+injective11Id :: Id
 injective11Id = testId "injective11"
-sortInjectionId :: Id Object
+sortInjectionId :: Id
 sortInjectionId = testId "sortInjection"
-unitMapId :: Id level
+unitMapId :: Id
 unitMapId = testId "unitMap"
-elementMapId :: Id level
+elementMapId :: Id
 elementMapId = testId "elementMap"
-concatMapId :: Id level
+concatMapId :: Id
 concatMapId = testId "concatMap"
-lessIntId :: Id level
+lessIntId :: Id
 lessIntId = testId "lessIntId"
-greaterEqIntId :: Id level
+greaterEqIntId :: Id
 greaterEqIntId = testId "greaterEqIntId"
-concatListId :: Id level
+concatListId :: Id
 concatListId = testId "concatList"
-elementListId :: Id level
+elementListId :: Id
 elementListId = testId "elementList"
-unitListId :: Id level
+unitListId :: Id
 unitListId = testId "unitList"
-concatSetId :: Id level
+concatSetId :: Id
 concatSetId = testId "concatSet"
-elementSetId :: Id level
+elementSetId :: Id
 elementSetId = testId "elementSet"
-unitSetId :: Id level
+unitSetId :: Id
 unitSetId = testId "unitSet"
-sigmaId :: Id level
+sigmaId :: Id
 sigmaId = testId "sigma"
 
 aSymbol :: SymbolOrAlias Object
@@ -1686,7 +1686,7 @@ headSortsMapping =
         )
     ]
 
-zeroarySmtSort :: Id Object -> SMT.UnresolvedSort
+zeroarySmtSort :: Id -> SMT.UnresolvedSort
 zeroarySmtSort sortId =
     SMT.Sort
         { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
@@ -1708,7 +1708,7 @@ builtinZeroarySmtSort sExpr =
         }
 
 smtConstructor
-    :: Id Object -> [Sort Object] -> Sort Object -> SMT.UnresolvedSymbol
+    :: Id -> [Sort Object] -> Sort Object -> SMT.UnresolvedSymbol
 smtConstructor symbolId argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
@@ -1806,23 +1806,23 @@ smtUnresolvedDeclarations = SMT.Declarations
         ]
     }
 
-testSortId :: Id Object
+testSortId :: Id
 testSortId = testId "testSort"
-testSort0Id :: Id Object
+testSort0Id :: Id
 testSort0Id = testId "testSort0"
-testSort1Id :: Id Object
+testSort1Id :: Id
 testSort1Id = testId "testSort1"
-topSortId :: Id Object
+topSortId :: Id
 topSortId = testId "topSort"
-subSortId :: Id Object
+subSortId :: Id
 subSortId = testId "subSort"
-subSubsortId :: Id Object
+subSubsortId :: Id
 subSubsortId = testId "subSubsort"
-otherSortId :: Id Object
+otherSortId :: Id
 otherSortId = testId "otherSort"
-intSortId :: Id Object
+intSortId :: Id
 intSortId = testId "intSort"
-boolSortId :: Id Object
+boolSortId :: Id
 boolSortId = testId "boolSort"
 
 testSort :: Sort Object

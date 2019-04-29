@@ -154,7 +154,7 @@ evaluators builtins indexedModule =
   where
     hookedSymbolAttributes
         :: VerifiedModule StepperAttributes Attribute.Axiom
-        -> Map (Id Object) StepperAttributes
+        -> Map Id StepperAttributes
     hookedSymbolAttributes im =
         Map.union
             (justAttributes <$> IndexedModule.hookedObjectSymbolSentences im)
@@ -166,7 +166,7 @@ evaluators builtins indexedModule =
 
     importHookedSymbolAttributes
         :: (a, b, VerifiedModule StepperAttributes Attribute.Axiom)
-        -> Map (Id Object) StepperAttributes
+        -> Map Id StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
     lookupBuiltins :: StepperAttributes -> Maybe Builtin.Function

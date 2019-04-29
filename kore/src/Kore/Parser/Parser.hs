@@ -125,7 +125,7 @@ Relevant BNF definitions:
 -}
 validateMetaSort
     :: MetaOrObject level
-    => Id level     -- ^ The sort name
+    => Id     -- ^ The sort name
     -> [Sort level] -- ^ The sort arguments
     -> Parser ()
 validateMetaSort identifier [] =
@@ -150,7 +150,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 symbolOrAliasDeclarationRawParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Id level -> [SortVariable level] -> m level)  -- ^ Element constructor.
+    -> (Id -> [SortVariable level] -> m level)  -- ^ Element constructor.
     -> Parser (m level)
 symbolOrAliasDeclarationRawParser x constructor = do
     headConstructor <- idParser x
@@ -377,7 +377,7 @@ symbolOrAliasPatternRemainderParser
     :: MetaOrObject level
     => Parser child
     -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Id level  -- ^ The already parsed prefix.
+    -> Id  -- ^ The already parsed prefix.
     -> Parser (Pattern level domain Variable child)
 symbolOrAliasPatternRemainderParser childParser x identifier =
     ApplicationPattern
@@ -412,7 +412,7 @@ Always starts with @:@.
 variableRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Id level  -- ^ The already parsed prefix.
+    -> Id  -- ^ The already parsed prefix.
     -> Parser (Variable level)
 variableRemainderParser x identifier = do
     colonParser

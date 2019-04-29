@@ -32,7 +32,7 @@ instance Default Overload where
 instance NFData Overload
 
 -- | Kore identifier representing the @overload@ attribute symbol.
-overloadId :: Id Object
+overloadId :: Id
 overloadId = "overload"
 
 -- | Kore symbol representing the @overload@ attribute.

@@ -174,16 +174,10 @@ instance PrettyPrint () where
 instance PrettyPrint Natural where
     prettyPrint _  = pretty
 
-instance MetaOrObject level => PrettyPrint (Id level) where
-    prettyPrint flags id'@(Id _ _) =
-        betweenParentheses
-            flags
-            ("(Id "
-            <> (dquotes . pretty) (getId id')
-                -- TODO(virgil): use flags to qualify id only if necessary
-            <> " AstLocationNone) :: Id "
-            <> viaShow (isMetaOrObject id')
-            )
+instance PrettyPrint Id where
+    prettyPrint flags (Id name _) =
+        betweenParentheses flags
+        $ Doc.sep [ "Id", (dquotes . pretty) name, "AstLocationNone" ]
 
 instance PrettyPrint a => PrettyPrint [a] where
     prettyPrint _ items =

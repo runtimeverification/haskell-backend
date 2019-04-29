@@ -31,7 +31,7 @@ instance Default Constructor where
 instance NFData Constructor
 
 -- | Kore identifier representing the @constructor@ attribute symbol.
-constructorId :: Id Object
+constructorId :: Id
 constructorId = "constructor"
 
 -- | Kore symbol representing the @constructor@ attribute.

@@ -100,7 +100,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 idParser :: MetaOrObject level
          => level  -- ^ Distinguishes between the meta and non-meta elements.
-         -> Parser (Id level)
+         -> Parser Id
 idParser _ = do
     pos <- sourcePosToFileLocation <$> getSourcePos
     name <- lexeme (objectIdRawParser KeywordsForbidden <|> metaIdRawParser)

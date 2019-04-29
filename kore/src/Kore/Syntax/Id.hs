@@ -43,36 +43,36 @@ import Kore.Unparser
 Section 9.1.1 (Lexicon).
 
  -}
-data Id level = Id
+data Id = Id
     { getId      :: !Text
     , idLocation :: !AstLocation
     }
     deriving (Show, Generic)
 
 -- | 'Ord' ignores the 'AstLocation'
-instance Ord (Id level) where
+instance Ord Id where
     compare first@(Id _ _) second@(Id _ _) =
         compare (getId first) (getId second)
 
 {-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
 -- | 'Eq' ignores the 'AstLocation'
-instance Eq (Id level) where
+instance Eq Id where
     first == second = compare first second == EQ
 
-instance Hashable (Id level)
+instance Hashable Id
 
-instance NFData (Id level)
+instance NFData Id
 
-instance IsString (Id level) where
+instance IsString Id where
     fromString = noLocationId . fromString
 
-instance Unparse (Id level) where
+instance Unparse Id where
     unparse = Pretty.pretty . getId
     unparse2 = Pretty.pretty . getId
 
 {- | 'unparseIdLower' prints an identifier in lower case.
  -}
-unparseIdLower :: Id leve -> Pretty.Doc ann
+unparseIdLower :: Id -> Pretty.Doc ann
 unparseIdLower Id { getId } = Pretty.pretty (Text.toLower getId)
 
 {- | Create an 'Id' without location.
@@ -81,16 +81,16 @@ Before doing this, you should consider using an existing case or adding a new
 constructor to 'AstLocation'.
 
  -}
-noLocationId :: Text -> Id level
+noLocationId :: Text -> Id
 noLocationId name = Id name AstLocationNone
 
 -- | Create an implicit 'Id'.
-implicitId :: Text -> Id level
+implicitId :: Text -> Id
 implicitId name = Id name AstLocationImplicit
 
 {- | Get the identifier name for an error message 'String'.
  -}
-getIdForError :: Id level -> String
+getIdForError :: Id -> String
 getIdForError = Text.unpack . getId
 
 {-| 'AstLocation' represents the origin of an AST node.

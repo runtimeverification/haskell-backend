@@ -27,7 +27,7 @@ instance Default Subsorts where
     def = Subsorts []
 
 -- | Kore identifier representing a @subsort@ attribute symbol.
-subsortId :: Id Object
+subsortId :: Id
 subsortId = "subsort"
 
 {- | Kore symbol representing a @subsort@ attribute head.

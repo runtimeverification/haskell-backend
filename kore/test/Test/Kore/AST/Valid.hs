@@ -115,5 +115,5 @@ sortAgreementManySimplePatterns = do
 var :: MetaOrObject level => Text -> Variable level
 var x = Variable (noLocationId x) mempty (mkSort "S")
 
-var_ :: MetaOrObject level => Text -> Id level -> Variable level
+var_ :: MetaOrObject level => Text -> Id -> Variable level
 var_ x s = Variable (noLocationId x) mempty (mkSort s)

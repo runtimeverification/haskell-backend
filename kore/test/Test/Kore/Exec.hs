@@ -206,7 +206,7 @@ verifiedMyModule module_ = indexedModule
         , definitionModules = [eraseSentenceAnnotations <$> module_]
         }
 
-mySortName :: Id Object
+mySortName :: Id
 mySortName = Id "MySort" AstLocationTest
 
 mySort :: Sort Object

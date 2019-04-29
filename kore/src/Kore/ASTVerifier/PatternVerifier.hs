@@ -64,7 +64,7 @@ import qualified Kore.Verified as Verified
 
 newtype DeclaredVariables =
     DeclaredVariables
-        { getDeclaredVariables :: Map.Map (Id Object) (Variable Object) }
+        { getDeclaredVariables :: Map.Map Id (Variable Object) }
     deriving (Monoid, Semigroup)
 
 emptyDeclaredVariables :: DeclaredVariables
@@ -98,7 +98,7 @@ runPatternVerifier ctx PatternVerifier { getPatternVerifier } =
     runReaderT getPatternVerifier ctx
 
 lookupSortDeclaration
-    :: Id Object
+    :: Id
     -> PatternVerifier ParsedSentenceSort
 lookupSortDeclaration sortId = do
     Context { indexedModule } <- Reader.ask
@@ -107,7 +107,7 @@ lookupSortDeclaration sortId = do
 
 lookupAliasDeclaration
     :: MetaOrObject level
-    => Id level
+    => Id
     -> PatternVerifier ParsedSentenceAlias
 lookupAliasDeclaration aliasId = do
     Context { indexedModule } <- Reader.ask
@@ -116,14 +116,14 @@ lookupAliasDeclaration aliasId = do
 
 lookupSymbolDeclaration
     :: MetaOrObject level
-    => Id level
+    => Id
     -> PatternVerifier ParsedSentenceSymbol
 lookupSymbolDeclaration symbolId = do
     Context { indexedModule } <- Reader.ask
     (_, symbolDecl) <- resolveSymbol indexedModule symbolId
     return symbolDecl
 
-lookupDeclaredVariable :: Id Object -> PatternVerifier (Variable Object)
+lookupDeclaredVariable :: Id -> PatternVerifier (Variable Object)
 lookupDeclaredVariable varId = do
     variables <- Reader.asks (getDeclaredVariables . declaredVariables)
     maybe errorUnquantified return $ Map.lookup varId variables
@@ -754,7 +754,7 @@ addFreeVariable (getDeclaredVariables -> vars) var = do
 
 checkVariable
     :: Variable a
-    -> Map.Map (Id a) (Variable a)
+    -> Map.Map Id (Variable a)
     -> PatternVerifier VerifySuccess
 checkVariable var vars =
     maybe verifySuccess inconsistent $ Map.lookup (variableName var) vars

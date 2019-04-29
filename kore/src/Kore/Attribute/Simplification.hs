@@ -36,7 +36,7 @@ instance Default Simplification where
     def = Simplification False
 
 -- | Kore identifier representing the @simplification@ attribute symbol.
-simplificationId :: Id Object
+simplificationId :: Id
 simplificationId = "simplification"
 
 -- | Kore symbol representing the @simplification@ attribute.

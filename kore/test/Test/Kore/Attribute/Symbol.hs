@@ -33,7 +33,7 @@ testAttribute =
         Application
             { applicationSymbolOrAlias =
                 SymbolOrAlias
-                    { symbolOrAliasConstructor = "test" :: Id Object
+                    { symbolOrAliasConstructor = "test" :: Id
                     , symbolOrAliasParams = []
                     }
             , applicationChildren = []

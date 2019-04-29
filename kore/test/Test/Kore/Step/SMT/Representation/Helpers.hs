@@ -10,8 +10,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -56,7 +54,7 @@ declarationsAre expected actual =
 
 smtForSortIs
     :: HasCallStack
-    => Kore.Id Object
+    => Kore.Id
     -> String
     -> AST.Declarations sort symbol name
     -> TestTree
@@ -81,7 +79,7 @@ smtForSortIs
 
 smtForSymbolIs
     :: HasCallStack
-    => Kore.Id Object
+    => Kore.Id
     -> String
     -> AST.Declarations sort symbol name
     -> TestTree

@@ -57,7 +57,7 @@ data UnparameterizedId = UnparameterizedId
     deriving (Show)
 
 
-toUnparameterizedId :: Id level -> UnparameterizedId
+toUnparameterizedId :: Id -> UnparameterizedId
 toUnparameterizedId Id {getId = name, idLocation = location} =
     UnparameterizedId
         { unparameterizedIdName = Text.unpack name

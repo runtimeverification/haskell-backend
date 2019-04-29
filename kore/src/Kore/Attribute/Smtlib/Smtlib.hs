@@ -18,8 +18,6 @@ import Data.Default
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.MetaOrObject
-       ( Object )
 import Kore.Syntax.Id
        ( Id )
 import SMT.SimpleSMT
@@ -50,5 +48,5 @@ instance Default Smtlib where
 instance NFData Smtlib
 
 -- | Kore identifier representing the @smtlib@ attribute symbol.
-smtlibId :: Id Object
+smtlibId :: Id
 smtlibId = "smtlib"

@@ -131,19 +131,19 @@ liftParser
 liftParser = Monad.Except.liftEither . Kore.Error.castError
 
 -- | Fail due to a duplicate attribute.
-failDuplicate :: Id level -> Parser a
+failDuplicate :: Id -> Parser a
 failDuplicate ident =
     Kore.Error.koreFail ("duplicate attribute: " ++ getIdForError ident)
 
 -- | Fail due to conflicting attributes.
-failConflicting :: [Id level] -> Parser a
+failConflicting :: [Id] -> Parser a
 failConflicting idents =
     Kore.Error.koreFail
         ("conflicting attributes: "
             ++ List.intercalate ", " (getIdForError <$> idents))
 
 withApplication
-    :: Id Object
+    :: Id
     -> ([Sort Object] -> [AttributePattern] -> attrs -> Parser attrs)
     -> AttributePattern
     -> attrs

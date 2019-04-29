@@ -35,7 +35,7 @@ instance Default Label where
 instance NFData Label
 
 -- | Kore identifier representing the @label@ attribute symbol.
-labelId :: Id Object
+labelId :: Id
 labelId = "label"
 
 -- | Kore symbol representing the @label@ attribute.

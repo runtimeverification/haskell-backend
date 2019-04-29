@@ -49,7 +49,7 @@ instance ParseAttributes Concat where
         failDuplicate' = failDuplicate concatId
 
 -- | Kore identifier representing the @concat@ attribute symbol.
-concatId :: Id Object
+concatId :: Id
 concatId = "concat"
 
 -- | Kore symbol representing the @concat@ attribute.

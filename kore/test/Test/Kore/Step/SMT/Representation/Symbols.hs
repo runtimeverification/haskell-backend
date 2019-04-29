@@ -3,8 +3,6 @@ module Test.Kore.Step.SMT.Representation.Symbols where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -110,7 +108,7 @@ test_symbolParsing =
         ::  ( HasCallStack
             , EqualWithExplanation (AST.Symbol sort name)
             )
-        => (Kore.Id Object, AST.Symbol sort name)
+        => (Kore.Id, AST.Symbol sort name)
         -> AST.Declarations sort symbol name
         -> TestTree
     inDeclarations = testContainedIn

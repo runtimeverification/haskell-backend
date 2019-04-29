@@ -26,7 +26,7 @@ instance Default Idem where
     def = Idem False
 
 -- | Kore identifier representing the @idem@ attribute symbol.
-idemId :: Id Object
+idemId :: Id
 idemId = "idem"
 
 -- | Kore symbol representing the @idem@ attribute.

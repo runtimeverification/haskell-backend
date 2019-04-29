@@ -70,7 +70,7 @@ buildRepresentations indexedModule =
     `AST.mergePreferFirst` listToDeclarations constructorDeclarations
   where
     listToDeclarations
-        :: [(Id Object, AST.UnresolvedSymbol)]
+        :: [(Id, AST.UnresolvedSymbol)]
         -> AST.UnresolvedDeclarations
     listToDeclarations list =
         AST.Declarations
@@ -80,29 +80,29 @@ buildRepresentations indexedModule =
 
     extractDefinitionsFromSentences
         ::  (   (Attribute.Symbol, Verified.SentenceSymbol)
-            ->  Maybe (Id Object, AST.UnresolvedSymbol)
+            ->  Maybe (Id, AST.UnresolvedSymbol)
             )
-        -> [(Id Object, AST.UnresolvedSymbol)]
+        -> [(Id, AST.UnresolvedSymbol)]
     extractDefinitionsFromSentences definitionExtractor =
         mapMaybe
             definitionExtractor
             (Map.elems $ recursiveIndexedModuleSymbolSentences indexedModule)
 
-    builtinDeclarations :: [(Id Object, AST.UnresolvedSymbol)]
+    builtinDeclarations :: [(Id, AST.UnresolvedSymbol)]
     builtinDeclarations =
         extractDefinitionsFromSentences builtinDeclaration
 
-    smtlibDeclarations :: [(Id Object, AST.UnresolvedSymbol)]
+    smtlibDeclarations :: [(Id, AST.UnresolvedSymbol)]
     smtlibDeclarations =
         extractDefinitionsFromSentences smtlibDeclaration
 
-    constructorDeclarations :: [(Id Object, AST.UnresolvedSymbol)]
+    constructorDeclarations :: [(Id, AST.UnresolvedSymbol)]
     constructorDeclarations =
         extractDefinitionsFromSentences constructorDeclaration
 
 builtinDeclaration
     :: (Attribute.Symbol, Verified.SentenceSymbol)
-    -> Maybe (Id Object, AST.UnresolvedSymbol)
+    -> Maybe (Id, AST.UnresolvedSymbol)
 builtinDeclaration
     ( attributes
     , SentenceSymbol
@@ -131,7 +131,7 @@ builtinDeclaration
 
 smtlibDeclaration
     :: (Attribute.Symbol, Verified.SentenceSymbol)
-    -> Maybe (Id Object, AST.UnresolvedSymbol)
+    -> Maybe (Id, AST.UnresolvedSymbol)
 smtlibDeclaration
     ( attributes
     , SentenceSymbol
@@ -160,7 +160,7 @@ smtlibDeclaration
 
 constructorDeclaration
     :: (Attribute.Symbol, Verified.SentenceSymbol)
-    -> Maybe (Id Object, AST.UnresolvedSymbol)
+    -> Maybe (Id, AST.UnresolvedSymbol)
 constructorDeclaration
     ( attributes
     , SentenceSymbol
@@ -194,7 +194,7 @@ constructorDeclaration
 
 emptySortArgsToSmt
     :: SMT.SExpr
-    -> Map.Map (Id Object) AST.SmtSort
+    -> Map.Map Id AST.SmtSort
     -> [Sort Object]
     -> Maybe SMT.SExpr
 emptySortArgsToSmt representation _ [] = Just representation

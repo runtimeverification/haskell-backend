@@ -29,7 +29,7 @@ instance Default ProductionID where
     def = ProductionID Nothing
 
 -- | Kore identifier representing the @productionID@ attribute symbol.
-productionIDId :: Id Object
+productionIDId :: Id
 productionIDId = "productionID"
 
 -- | Kore symbol representing the @productionID@ attribute.

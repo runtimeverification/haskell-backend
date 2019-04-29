@@ -172,7 +172,7 @@ simpleSortSentence :: SortName -> Verified.Sentence
 simpleSortSentence (SortName name) =
     asSentence
         (SentenceSort
-            { sentenceSortName = testId name :: Id Object
+            { sentenceSortName = testId name :: Id
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }

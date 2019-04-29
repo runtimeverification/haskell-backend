@@ -41,20 +41,20 @@ test_unparse =
                 { getAttributes =
                     [ asParsedPattern (TopPattern Top
                         { topSort = SortVariableSort SortVariable
-                            { getSortVariable = testId "#Fm" :: Id Meta }
+                            { getSortVariable = testId "#Fm" }
                         })
                     , asParsedPattern (InPattern In
                         { inOperandSort = SortActualSort SortActual
-                            { sortActualName = testId "B" :: Id Object
+                            { sortActualName = testId "B"
                             , sortActualSorts = []
                             }
                         , inResultSort = SortActualSort SortActual
-                            { sortActualName = testId "G" :: Id Object
+                            { sortActualName = testId "G"
                             , sortActualSorts = []
                             }
                         , inContainedChild =
                             asParsedPattern $ VariablePattern Variable
-                                { variableName = testId "T" :: Id Object
+                                { variableName = testId "T"
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
@@ -133,7 +133,7 @@ test_unparse =
                     [ asParsedPattern
                         ( TopPattern Top
                             { topSort = SortActualSort SortActual
-                                { sortActualName = testId "#CharList" :: Id Meta
+                                { sortActualName = testId "#CharList"
                                 , sortActualSorts = []
                                 }
                             }

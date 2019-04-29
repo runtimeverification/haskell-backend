@@ -89,7 +89,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 Note that this is very similar to 'SymbolOrAlias'.
 -}
 data Symbol level = Symbol
-    { symbolConstructor :: !(Id level)
+    { symbolConstructor :: !Id
     , symbolParams      :: ![SortVariable level]
     }
     deriving (Show, Eq, Ord, Generic)
@@ -109,7 +109,7 @@ instance Unparse (Symbol level) where
 
 -- |Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
 -- corresponding to that argument.
-groundSymbol :: Id level -> Symbol level
+groundSymbol :: Id -> Symbol level
 groundSymbol ctor = Symbol
     { symbolConstructor = ctor
     , symbolParams = []
@@ -126,7 +126,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 Note that this is very similar to 'SymbolOrAlias'.
 -}
 data Alias level = Alias
-    { aliasConstructor :: !(Id level)
+    { aliasConstructor :: !Id
     , aliasParams      :: ![SortVariable level]
     }
     deriving (Show, Eq, Ord, Generic)
@@ -332,7 +332,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 data SentenceSort (level :: *) (patternType :: *) =
     SentenceSort
-        { sentenceSortName       :: !(Id level)
+        { sentenceSortName       :: !Id
         , sentenceSortParameters :: ![SortVariable level]
         , sentenceSortAttributes :: !Attributes
         }
@@ -690,7 +690,7 @@ instance Unparse sentence => Unparse (Definition sentence) where
 
 class SentenceSymbolOrAlias (sentence :: * -> * -> *) where
     getSentenceSymbolOrAliasConstructor
-        :: sentence level patternType -> Id level
+        :: sentence level patternType -> Id
     getSentenceSymbolOrAliasSortParams
         :: sentence level patternType -> [SortVariable level]
     getSentenceSymbolOrAliasArgumentSorts

@@ -34,7 +34,7 @@ instance Default Element where
 instance NFData Element
 
 -- | Kore identifier representing the @element@ attribute symbol.
-elementId :: Id Object
+elementId :: Id
 elementId = "element"
 
 -- | Kore symbol representing the @element@ attribute.

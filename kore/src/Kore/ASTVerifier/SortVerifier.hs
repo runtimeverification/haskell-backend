@@ -22,7 +22,7 @@ import Kore.IndexedModule.IndexedModule
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
 verifySort
     :: MonadError (Error VerifyError) m
-    => (Id Object -> m (SortDescription Object dom))
+    => (Id -> m (SortDescription Object dom))
     -- ^ Provides a sortMetaSorts description.
     -> Set.Set (SortVariable Object)
     -- ^ Sort variables visible here.
@@ -61,7 +61,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
 
 verifySortMatchesDeclaration
     :: MonadError (Error VerifyError) m
-    => (Id Object -> m (SortDescription Object dom))
+    => (Id -> m (SortDescription Object dom))
     -> Set.Set (SortVariable Object)
     -> SortActual Object
     -> SortDescription Object dom

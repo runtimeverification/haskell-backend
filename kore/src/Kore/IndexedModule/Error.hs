@@ -13,7 +13,7 @@ module Kore.IndexedModule.Error
 import Kore.AST.Pure
 
 -- | A message declaring that a Sort is undefined
-noSort :: MetaOrObject level => Id level -> String
+noSort :: MetaOrObject level => Id -> String
 noSort sortId =
     notDefined "Sort" $ getIdForError sortId
 
@@ -23,12 +23,12 @@ noHead patternHead =
     notDefined "Head" $ show patternHead
 
 -- | A message declaring that a Alias is undefined
-noAlias :: MetaOrObject level => Id level -> String
+noAlias :: MetaOrObject level => Id -> String
 noAlias identifier =
     notDefined "Alias" $ getIdForError identifier
 
 -- | A message declaring that a Symbol is undefined
-noSymbol :: MetaOrObject level => Id level -> String
+noSymbol :: MetaOrObject level => Id -> String
 noSymbol identifier =
     notDefined "Symbol" $ getIdForError identifier
 

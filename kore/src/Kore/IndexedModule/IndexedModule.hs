@@ -110,11 +110,11 @@ data IndexedModule param pat declAtts axiomAtts =
     IndexedModule
     { indexedModuleName          :: !ModuleName
     , indexedModuleAliasSentences
-        :: !(Map.Map (Id Object) (declAtts, SentenceAlias Object pat))
+        :: !(Map.Map Id (declAtts, SentenceAlias Object pat))
     , indexedModuleSymbolSentences
-        :: !(Map.Map (Id Object) (declAtts, SentenceSymbol Object pat))
+        :: !(Map.Map Id (declAtts, SentenceSymbol Object pat))
     , indexedModuleSortDescriptions
-        :: !(Map.Map (Id Object) (Attribute.Sort, SentenceSort Object pat))
+        :: !(Map.Map Id (Attribute.Sort, SentenceSort Object pat))
     , indexedModuleAxioms :: ![(axiomAtts, SentenceAxiom param pat)]
     , indexedModuleClaims :: ![(axiomAtts, SentenceAxiom param pat)]
     , indexedModuleAttributes :: !(declAtts, Attributes)
@@ -125,14 +125,14 @@ data IndexedModule param pat declAtts axiomAtts =
              )
             ]
     , indexedModuleHookedIdentifiers
-        :: !(Set.Set (Id Object))
+        :: !(Set.Set Id)
         -- ^ set of hooked identifiers
 
     -- TODO (thomas.tuegel): Having multiple identifiers hooked to the same
     -- builtin is not actually valid, but the index must admit invalid data
     -- because verification only happens after.
     , indexedModuleHooks
-        :: !(Map.Map Text [Id Object])
+        :: !(Map.Map Text [Id])
         -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
         -- identifiers
     }
@@ -141,14 +141,14 @@ data IndexedModule param pat declAtts axiomAtts =
 recursiveIndexedModuleSortDescriptions
     :: forall param pat declAtts axiomAtts
     .  IndexedModule param pat declAtts axiomAtts
-    -> Map.Map (Id Object) (Attribute.Sort, SentenceSort Object pat)
+    -> Map.Map Id (Attribute.Sort, SentenceSort Object pat)
 recursiveIndexedModuleSortDescriptions =
     recursiveIndexedModuleStuff indexedModuleSortDescriptions
 
 recursiveIndexedModuleSymbolSentences
     :: forall param pat axiomAtts
     .  IndexedModule param pat Attribute.Symbol axiomAtts
-    -> Map.Map (Id Object) (Attribute.Symbol, SentenceSymbol Object pat)
+    -> Map.Map Id (Attribute.Symbol, SentenceSymbol Object pat)
 recursiveIndexedModuleSymbolSentences =
     recursiveIndexedModuleStuff indexedModuleSymbolSentences
 
@@ -334,7 +334,7 @@ indexedModuleRawSentences im =
     | (_, attributes, m) <- indexedModuleImports im
     ]
   where
-    hookedIds :: Set.Set (Id Object)
+    hookedIds :: Set.Set Id
     hookedIds = indexedModuleHookedIdentifiers im
     hookSortIfNeeded (x, (_, sortDescription))
         | x `Set.member` hookedIds =
@@ -749,7 +749,7 @@ parseAttributes =
  -}
 hookedObjectSymbolSentences
     :: IndexedModule sorts pat declAtts axiomAtts
-    -> Map.Map (Id Object) (declAtts, SentenceSymbol Object pat)
+    -> Map.Map Id (declAtts, SentenceSymbol Object pat)
 hookedObjectSymbolSentences
     IndexedModule
         { indexedModuleSymbolSentences
@@ -855,5 +855,5 @@ implicitNames =
     $ Map.fromSet idLocation
     $ Set.insert predicateSortId implicitSortNames
 
-implicitSortNames :: Set (Id Meta)
+implicitSortNames :: Set Id
 implicitSortNames = Set.fromList [charMetaSortId, stringMetaSortId]

@@ -1008,10 +1008,10 @@ mkInhabitantPattern s =
     patternSort = s
     valid = Valid { patternSort, freeVariables }
 
-mkSort :: Id level -> Sort level
+mkSort :: Id -> Sort level
 mkSort name = SortActualSort $ SortActual name []
 
-mkSortVariable :: Id level -> Sort level
+mkSortVariable :: Id -> Sort level
 mkSortVariable name = SortVariableSort $ SortVariable name
 
 -- | Construct a variable with a given name and sort
@@ -1068,7 +1068,7 @@ mkSymbol
         , patternType ~ PurePattern level domain variable valid
         , sortParam ~ SortVariable level
         )
-    => Id level
+    => Id
     -> [sortParam]
     -> [Sort level]
     -> Sort level
@@ -1095,7 +1095,7 @@ mkSymbol_
         , patternType ~ PurePattern level domain variable valid
         , sortParam ~ SortVariable level
         )
-    => Id level
+    => Id
     -> [Sort level]
     -> Sort level
     -> SentenceSymbol level patternType
@@ -1108,7 +1108,7 @@ mkAlias
         , patternType ~ PurePattern level domain Variable valid
         , sortParam ~ SortVariable level
         )
-    => Id level
+    => Id
     -> [sortParam]
     -> Sort level
     -> [Variable level]
@@ -1149,7 +1149,7 @@ mkAlias_
         , patternType ~ PurePattern level domain Variable valid
         , sortParam ~ SortVariable level
         )
-    => Id level
+    => Id
     -> Sort level
     -> [Variable level]
     -> patternType

@@ -937,8 +937,8 @@ aliasVisibilityTests =
     aliasReferenceInAliasOrAliasSupportSentences
         :: [Verified.Sentence]
     aliasReferenceInAliasOrAliasSupportSentences =
-        let aliasConstructor :: Id Object
-            aliasConstructor = testId "alias2" :: Id Object
+        let aliasConstructor :: Id
+            aliasConstructor = testId "alias2" :: Id
             aliasParams = [SortVariable (testId "sv1")]
             sentenceAliasResultSort :: Sort Object
             sentenceAliasResultSort =
@@ -1305,7 +1305,7 @@ nameDuplicationTests =
             }
     aliasDeclarationModule modName (AliasName aliasName) =
         let sv1 = SortVariable (testId "sv1") :: SortVariable Object
-            aliasConstructor = testId aliasName :: Id Object
+            aliasConstructor = testId aliasName :: Id
         in Module
             { moduleName = modName
             , moduleSentences =

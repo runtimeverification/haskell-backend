@@ -47,10 +47,10 @@ import Test.Kore
 emptyDeclarations :: AST.Declarations sort symbol name
 emptyDeclarations = AST.Declarations {sorts = Map.empty, symbols = Map.empty}
 
-unresolvedSortMap :: Kore.Id Object -> (Kore.Id Object, AST.UnresolvedSort)
+unresolvedSortMap :: Kore.Id -> (Kore.Id, AST.UnresolvedSort)
 unresolvedSortMap identifier = (identifier, unresolvedSort identifier)
 
-unresolvedSort :: Kore.Id Object -> AST.UnresolvedSort
+unresolvedSort :: Kore.Id -> AST.UnresolvedSort
 unresolvedSort identifier =
     AST.Sort
         { smtFromSortArgs = const $ const $ Just
@@ -63,10 +63,10 @@ unresolvedSort identifier =
   where
     encodable = AST.encodable identifier
 
-unresolvedDataMap :: Kore.Id Object -> (Kore.Id Object, AST.UnresolvedSort)
+unresolvedDataMap :: Kore.Id -> (Kore.Id, AST.UnresolvedSort)
 unresolvedDataMap identifier = (identifier, unresolvedData identifier)
 
-unresolvedData :: Kore.Id Object -> AST.UnresolvedSort
+unresolvedData :: Kore.Id -> AST.UnresolvedSort
 unresolvedData identifier =
     AST.Sort
         { smtFromSortArgs = const $ const $ Just
@@ -80,7 +80,7 @@ unresolvedData identifier =
   where
     encodable = AST.encodable identifier
 
-unresolvedSortConstructor :: Kore.Id Object -> AST.UnresolvedConstructor
+unresolvedSortConstructor :: Kore.Id -> AST.UnresolvedConstructor
 unresolvedSortConstructor identifier =
     AST.Constructor
         { name = AST.SymbolReference identifier
@@ -96,7 +96,7 @@ unresolvedConstructorArg name sort =
         }
 
 unresolvedIndirectSortMap
-    :: Kore.Id Object -> AST.Encodable -> (Kore.Id Object, AST.UnresolvedSort)
+    :: Kore.Id -> AST.Encodable -> (Kore.Id, AST.UnresolvedSort)
 unresolvedIndirectSortMap identifier name =
     (identifier, unresolvedIndirectSort name)
 
@@ -109,14 +109,14 @@ unresolvedIndirectSort name =
         }
 
 unresolvedConstructorSymbolMap
-    :: Kore.Id Object
+    :: Kore.Id
     -> [Kore.Sort Object]
-    -> (Kore.Id Object, AST.UnresolvedSymbol)
+    -> (Kore.Id, AST.UnresolvedSymbol)
 unresolvedConstructorSymbolMap identifier sorts =
     (identifier, unresolvedConstructorSymbol identifier sorts)
 
 unresolvedConstructorSymbol
-    :: Kore.Id Object -> [Kore.Sort Object] -> AST.UnresolvedSymbol
+    :: Kore.Id -> [Kore.Sort Object] -> AST.UnresolvedSymbol
 unresolvedConstructorSymbol identifier sorts =
     AST.Symbol
         { smtFromSortArgs = const $ const $ Just
@@ -129,11 +129,11 @@ unresolvedConstructorSymbol identifier sorts =
     encodable = AST.encodable identifier
 
 unresolvedSmtlibSymbolMap
-    :: Kore.Id Object
+    :: Kore.Id
     -> Text
     -> [Kore.Sort Object]
     -> Kore.Sort Object
-    -> (Kore.Id Object, AST.UnresolvedSymbol)
+    -> (Kore.Id, AST.UnresolvedSymbol)
 unresolvedSmtlibSymbolMap identifier encodedName inputSorts resultSort =
     ( identifier, unresolvedSmtlibSymbol encodedName inputSorts resultSort )
 
@@ -155,10 +155,10 @@ unresolvedSmtlibSymbol encodedName inputSorts resultSort =
         }
 
 unresolvedSmthookSymbolMap
-    :: Kore.Id Object
+    :: Kore.Id
     -> Text
     -> [Kore.Sort Object]
-    -> (Kore.Id Object, AST.UnresolvedSymbol)
+    -> (Kore.Id, AST.UnresolvedSymbol)
 unresolvedSmthookSymbolMap identifier encodedName sorts =
     (identifier, unresolvedSmthookSymbol encodedName sorts)
 

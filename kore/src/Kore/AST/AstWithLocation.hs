@@ -35,7 +35,7 @@ instance AstWithLocation AstLocation where
     locationFromAst = id
     updateAstLocation _ loc = loc
 
-instance AstWithLocation (Id level) where
+instance AstWithLocation Id where
     locationFromAst = idLocation
     updateAstLocation id' loc = id' { idLocation = loc }
 

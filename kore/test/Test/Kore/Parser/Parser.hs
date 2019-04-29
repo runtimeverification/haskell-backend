@@ -357,7 +357,7 @@ applicationPatternParserTests =
             )
         , success "v:s1{s2}"
             ( asParsedPattern $ VariablePattern Variable
-                { variableName = testId "v" :: Id Object
+                { variableName = testId "v" :: Id
                 , variableSort =
                     SortActualSort SortActual
                         { sortActualName = testId "s1"
@@ -370,19 +370,19 @@ applicationPatternParserTests =
             ( asParsedPattern $ ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
-                        { symbolOrAliasConstructor = testId "c" :: Id Object
+                        { symbolOrAliasConstructor = testId "c" :: Id
                         , symbolOrAliasParams =
                             [ sortVariableSort "s1"
                             , sortVariableSort "s2" ]
                         }
                 , applicationChildren =
                     [ asParsedPattern $ VariablePattern Variable
-                        { variableName = testId "v1" :: Id Object
+                        { variableName = testId "v1" :: Id
                         , variableSort = sortVariableSort "s1"
                         , variableCounter = mempty
                         }
                     , asParsedPattern $ VariablePattern Variable
-                        { variableName = testId "v2" :: Id Object
+                        { variableName = testId "v2" :: Id
                         , variableSort = sortVariableSort "s2"
                         , variableCounter = mempty
                         }
@@ -393,7 +393,7 @@ applicationPatternParserTests =
             ( asParsedPattern $ ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
-                        { symbolOrAliasConstructor = testId "c" :: Id Object
+                        { symbolOrAliasConstructor = testId "c" :: Id
                         , symbolOrAliasParams = []
                         }
                 , applicationChildren = []
@@ -606,7 +606,7 @@ memPatternParserTests =
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild = asParsedPattern $
                         VariablePattern Variable
-                            { variableName = testId "v" :: Id Object
+                            { variableName = testId "v" :: Id
                             , variableSort = sortVariableSort "s3"
                             , variableCounter = mempty
                             }
@@ -745,14 +745,14 @@ variablePatternParserTests =
     parseTree korePatternParser
         [ success "v:s"
             ( asParsedPattern $ VariablePattern Variable
-                { variableName = testId "v" :: Id Object
+                { variableName = testId "v" :: Id
                 , variableSort = sortVariableSort "s"
                 , variableCounter = mempty
                 }
             )
         , success "v:s1{s2}"
             ( asParsedPattern $ VariablePattern Variable
-                { variableName = testId "v" :: Id Object
+                { variableName = testId "v" :: Id
                 , variableSort = SortActualSort SortActual
                     { sortActualName=testId "s1"
                     , sortActualSorts = [ sortVariableSort "s2" ]
@@ -779,12 +779,12 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern = Application
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "a" :: Id Object
+                                { symbolOrAliasConstructor = testId "a" :: Id
                                 , symbolOrAliasParams = [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
                             [ Variable
-                                { variableName = testId "X" :: Id Object
+                                { variableName = testId "X" :: Id
                                 , variableSort = sortVariableSort "s2"
                                 , variableCounter = mempty
                                 }
@@ -794,7 +794,7 @@ sentenceAliasParserTests =
                         asParsedPattern $ ApplicationPattern Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
-                                    { symbolOrAliasConstructor = testId "g" :: Id Object
+                                    { symbolOrAliasConstructor = testId "g" :: Id
                                     , symbolOrAliasParams = [ ]
                                     }
                             , applicationChildren = []
@@ -825,7 +825,7 @@ sentenceAliasParserTests =
                         Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
-                                    { symbolOrAliasConstructor = testId "a" :: Id Object
+                                    { symbolOrAliasConstructor = testId "a" :: Id
                                     , symbolOrAliasParams =
                                         [
                                             sortVariableSort "s1"
@@ -834,12 +834,12 @@ sentenceAliasParserTests =
                                     }
                             , applicationChildren =
                                 [ Variable
-                                    { variableName = testId "X" :: Id Object
+                                    { variableName = testId "X" :: Id
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
                                 , Variable
-                                    { variableName = testId "Y" :: Id Object
+                                    { variableName = testId "Y" :: Id
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
                                     }
@@ -849,17 +849,17 @@ sentenceAliasParserTests =
                         asParsedPattern $ ApplicationPattern Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
-                                    { symbolOrAliasConstructor = testId "b" :: Id Object
+                                    { symbolOrAliasConstructor = testId "b" :: Id
                                     , symbolOrAliasParams = [ sortVariableSort "s1", sortVariableSort "s2" ]
                                     }
                             , applicationChildren =
                                 [ asParsedPattern $ VariablePattern Variable
-                                    { variableName = testId "X" :: Id Object
+                                    { variableName = testId "X" :: Id
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
                                 , asParsedPattern $ VariablePattern Variable
-                                    { variableName = testId "Y" :: Id Object
+                                    { variableName = testId "Y" :: Id
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
                                     }
@@ -879,7 +879,7 @@ sentenceAliasParserTests =
             (SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
-                        { aliasConstructor = testId "#a" :: Id Meta
+                        { aliasConstructor = testId "#a" :: Id
                         , aliasParams = []
                         }
                     , sentenceAliasSorts = []
@@ -889,7 +889,7 @@ sentenceAliasParserTests =
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor =
-                                        testId "#a" :: Id Meta
+                                        testId "#a" :: Id
                                     , symbolOrAliasParams = [ ]
                                     }
                             , applicationChildren = []
@@ -900,7 +900,7 @@ sentenceAliasParserTests =
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor =
-                                            testId "#b" :: Id Meta
+                                            testId "#b" :: Id
                                         , symbolOrAliasParams = [ ]
                                         }
                                 , applicationChildren = []
@@ -911,7 +911,7 @@ sentenceAliasParserTests =
             )
         , success "alias f{s}() : s where f{s}() := \\dv{s}(\"f\") []"
             (   let
-                    aliasId :: Id Object
+                    aliasId :: Id
                     aliasId = testId "f"
                     sortVar = sortVariable "s"
                     resultSort = sortVariableSort "s"
@@ -920,7 +920,7 @@ sentenceAliasParserTests =
                             { symbolOrAliasConstructor = aliasId
                             , symbolOrAliasParams = [resultSort]
                             }
-                in asSentence SentenceAlias
+                in SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
                         , aliasParams = [sortVar]
@@ -948,7 +948,7 @@ sentenceAliasParserTests =
             "alias rewrites{s}(s, s) : s \
             \where rewrites{s}(a : s, b : s) := \\rewrites{s}(a : s, b : s) []"
             (   let
-                    aliasId :: Id Object
+                    aliasId :: Id
                     aliasId = testId "rewrites"
                     sortVar = sortVariable "s"
                     resultSort = sortVariableSort "s"
@@ -968,7 +968,7 @@ sentenceAliasParserTests =
                     varB = var "b"
                     argA = argument "a"
                     argB = argument "b"
-                in asSentence SentenceAlias
+                in SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
                         , aliasParams = [sortVar]
@@ -989,7 +989,7 @@ sentenceAliasParserTests =
             "alias next{s}(s) : s \
             \where next{s}(a : s) := \\next{s}(a : s) []"
             (   let
-                    aliasId :: Id Object
+                    aliasId :: Id
                     aliasId = testId "next"
                     sortVar = sortVariable "s"
                     resultSort = sortVariableSort "s"
@@ -1005,7 +1005,7 @@ sentenceAliasParserTests =
                             , variableCounter = mempty
                             }
                     arg = mkVar var
-                in asSentence SentenceAlias
+                in SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
                         , aliasParams = [sortVar]

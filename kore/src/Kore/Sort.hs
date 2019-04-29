@@ -54,7 +54,7 @@ The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 newtype SortVariable level = SortVariable
-    { getSortVariable  :: Id level }
+    { getSortVariable  :: Id }
     deriving (Show, Eq, Ord, Generic)
 
 instance Hashable (SortVariable level)
@@ -73,7 +73,7 @@ The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SortActual level = SortActual
-    { sortActualName  :: !(Id level)
+    { sortActualName  :: !Id
     , sortActualSorts :: ![Sort level]
     }
     deriving (Show, Eq, Ord, Generic)
@@ -179,7 +179,7 @@ metaSortTypeString StringSort            = "String"
 instance Show MetaSortType where
     show sortType = '#' : metaSortTypeString sortType
 
-charMetaSortId :: Id Meta
+charMetaSortId :: Id
 charMetaSortId = implicitId "#Char"
 
 charMetaSortActual :: SortActual Meta
@@ -188,7 +188,7 @@ charMetaSortActual = SortActual charMetaSortId []
 charMetaSort :: Sort Meta
 charMetaSort = SortActualSort charMetaSortActual
 
-stringMetaSortId :: Id Meta
+stringMetaSortId :: Id
 stringMetaSortId = implicitId "#String"
 
 stringMetaSortActual :: SortActual Meta
@@ -197,7 +197,7 @@ stringMetaSortActual = SortActual stringMetaSortId []
 stringMetaSort :: Sort Meta
 stringMetaSort = SortActualSort stringMetaSortActual
 
-predicateSortId :: Id level
+predicateSortId :: Id
 predicateSortId = implicitId "_PREDICATE"
 
 predicateSortActual :: SortActual level

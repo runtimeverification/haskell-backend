@@ -174,7 +174,7 @@ instance With (Module sentence) sentence where
 
 instance With
     (AST.Declarations sort symbol name)
-    (Kore.Id Object, AST.Sort sort symbol name)
+    (Kore.Id, AST.Sort sort symbol name)
   where
     with
         d@AST.Declarations {sorts}
@@ -182,7 +182,7 @@ instance With
       = d { AST.Declarations.sorts = Map.insert sortId sort sorts }
 
 instance With
-    (Kore.Id Object, AST.Sort sort symbol name)
+    (Kore.Id, AST.Sort sort symbol name)
     (AST.Constructor sort symbol name)
   where
     with (sortId, sort) constructor = (sortId, sort `with` constructor)
@@ -231,7 +231,7 @@ instance With
             }
 
 instance With
-    (Kore.Id Object, AST.UnresolvedSymbol)
+    (Kore.Id, AST.UnresolvedSymbol)
     (Kore.Sort Object)
   where
     with (symbolId, symbol) sort = (symbolId, symbol `with` sort)

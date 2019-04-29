@@ -39,7 +39,7 @@ instance Default Location where
     def = Location Nothing Nothing
 
 -- | Kore identifier representing the @location@ attribute symbol.
-locationId :: Id Object
+locationId :: Id
 locationId = "org'Stop'kframework'Stop'attributes'Stop'Location"
 
 instance ParseAttributes Location where
