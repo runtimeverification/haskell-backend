@@ -384,7 +384,7 @@ instance
             , writeFieldNewLine "existsChild" existsChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Floor level child) where
+instance PrettyPrint child => PrettyPrint (Floor Sort child) where
     prettyPrint _ p@(Floor _ _ _) =
         writeStructure
             "Floor"

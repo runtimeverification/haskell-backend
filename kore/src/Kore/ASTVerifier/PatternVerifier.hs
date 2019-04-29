@@ -455,7 +455,7 @@ verifyCeil
 verifyCeil = verifyPredicate ceilOperandSort ceilResultSort
 
 verifyFloor
-    ::  ( predicate ~ Floor Object
+    ::  ( predicate ~ Floor Sort
         , valid ~ Valid (Variable) Object
         )
     => predicate (PatternVerifier Verified.Pattern)

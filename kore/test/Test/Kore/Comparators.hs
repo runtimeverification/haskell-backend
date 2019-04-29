@@ -583,7 +583,7 @@ instance
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
-    => StructEqualWithExplanation (Floor Object child)
+    => StructEqualWithExplanation (Floor Sort child)
   where
     structFieldsWithNames
         expected@(Floor _ _ _)
@@ -603,7 +603,7 @@ instance (Show child, EqualWithExplanation child)
         ]
     structConstructorName _ = "Floor"
 instance (Show child, EqualWithExplanation child)
-    => EqualWithExplanation (Floor Object child)
+    => EqualWithExplanation (Floor Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

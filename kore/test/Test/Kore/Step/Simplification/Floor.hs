@@ -158,7 +158,7 @@ test_floorSimplification =
 makeFloor
     :: Ord variable
     => [Pattern Object variable]
-    -> Floor Object (OrPattern Object variable)
+    -> Floor Sort (OrPattern Object variable)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
@@ -167,7 +167,7 @@ makeFloor patterns =
         }
 
 evaluate
-    :: Floor Object (OrPattern Object Variable)
+    :: Floor Sort (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate floor' =
     case simplify floor' of

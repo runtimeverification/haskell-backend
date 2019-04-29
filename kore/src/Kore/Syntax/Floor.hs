@@ -10,9 +10,7 @@ module Kore.Syntax.Floor where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Functor.Classes
+import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
@@ -20,54 +18,32 @@ import           GHC.Generics
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
 'floorOperandSort' is the sort of the operand.
 
 'floorResultSort' is the sort of the result.
 
-This represents the '⌊floorPattern⌋' Matching Logic construct.
 -}
-data Floor level child = Floor
-    { floorOperandSort :: !Sort
-    , floorResultSort  :: !Sort
+data Floor sort child = Floor
+    { floorOperandSort :: !sort
+    , floorResultSort  :: !sort
     , floorChild       :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
 
-$newDefinitionGroup
+Deriving.deriveEq1 ''Floor
+Deriving.deriveOrd1 ''Floor
+Deriving.deriveShow1 ''Floor
 
-instance Eq1 (Floor level) where
-    liftEq = $(makeLiftEq ''Floor)
+instance (Hashable sort, Hashable child) => Hashable (Floor sort child)
 
-instance Ord1 (Floor level) where
-    liftCompare = $(makeLiftCompare ''Floor)
+instance (NFData sort, NFData child) => NFData (Floor sort child)
 
-instance Show1 (Floor level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Floor)
-
-instance Eq child => Eq (Floor level child) where
-    (==) = eq1
-
-instance Ord child => Ord (Floor level child) where
-    compare = compare1
-
-instance Show child => Show (Floor level child) where
-    showsPrec = showsPrec1
-
-instance Hashable child => Hashable (Floor level child)
-
-instance NFData child => NFData (Floor level child)
-
-instance Unparse child => Unparse (Floor level child) where
+instance Unparse child => Unparse (Floor Sort child) where
     unparse Floor { floorOperandSort, floorResultSort, floorChild } =
         "\\floor"
         <> parameters [floorOperandSort, floorResultSort]

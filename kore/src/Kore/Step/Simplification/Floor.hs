@@ -43,13 +43,9 @@ simplify
         , Show variable
         , Ord variable
         )
-    => Floor Object (OrPattern Object variable)
-    ->  ( OrPattern Object variable
-        , SimplificationProof Object
-        )
-simplify
-    Floor { floorChild = child }
-  =
+    => Floor Sort (OrPattern Object variable)
+    -> (OrPattern Object variable, SimplificationProof Object)
+simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
