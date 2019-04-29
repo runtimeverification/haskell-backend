@@ -273,7 +273,7 @@ andGen = binaryOperatorGen Common.And
 applicationGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Application Object child)
+    -> Gen (Application SymbolOrAlias child)
 applicationGen childGen _ =
     Application
         <$> Gen.small symbolOrAliasGen

@@ -136,7 +136,7 @@ evalKEq
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
-        (Application Object)
+        (Application SymbolOrAlias)
         (Valid variable Object)
         (TermLike variable)
     -> Simplifier
@@ -189,7 +189,7 @@ evalKIte
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
-        (Application Object)
+        (Application SymbolOrAlias)
         (Valid variable Object)
         (TermLike variable)
     -> Simplifier

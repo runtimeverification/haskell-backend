@@ -1017,7 +1017,8 @@ data Pattern level domain variable child where
     AndPattern
         :: !(And level child) -> Pattern level domain variable child
     ApplicationPattern
-        :: !(Application level child) -> Pattern level domain variable child
+        :: !(Application SymbolOrAlias child)
+        -> Pattern level domain variable child
     BottomPattern
         :: !(Bottom level child) -> Pattern level domain variable child
     CeilPattern

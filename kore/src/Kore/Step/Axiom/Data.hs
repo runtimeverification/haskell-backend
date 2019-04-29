@@ -54,7 +54,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Syntax.Application
-                 ( Application )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
 import           Kore.Unparser
@@ -231,7 +230,7 @@ applicationAxiomSimplifier
         -> TermLikeSimplifier Object
         -> BuiltinAndAxiomSimplifierMap Object
         -> CofreeF
-            (Application Object)
+            (Application SymbolOrAlias)
             (Valid variable Object)
             (TermLike variable)
         -> Simplifier

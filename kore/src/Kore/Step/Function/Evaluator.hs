@@ -80,7 +80,7 @@ evaluateApplication
     -> Predicate Object variable
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
-        (Application Object)
+        (Application SymbolOrAlias)
         (Valid variable Object)
         (TermLike variable)
     -- ^ The pattern to be evaluated
@@ -306,8 +306,8 @@ maybeEvaluatePattern
 evaluateSortInjection
     :: Ord variable
     => SmtMetadataTools StepperAttributes
-    -> Application Object (TermLike variable)
-    ->  ( Application Object (TermLike variable)
+    -> Application SymbolOrAlias (TermLike variable)
+    ->  ( Application SymbolOrAlias (TermLike variable)
         , SimplificationProof Object
         )
 evaluateSortInjection tools ap

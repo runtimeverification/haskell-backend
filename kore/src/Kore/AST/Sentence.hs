@@ -154,7 +154,7 @@ data SentenceAlias (level :: *) (patternType :: *) =
         { sentenceAliasAlias        :: !(Alias level)
         , sentenceAliasSorts        :: ![Sort]
         , sentenceAliasResultSort   :: !Sort
-        , sentenceAliasLeftPattern  :: !(Application level (Variable))
+        , sentenceAliasLeftPattern  :: !(Application SymbolOrAlias Variable)
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }

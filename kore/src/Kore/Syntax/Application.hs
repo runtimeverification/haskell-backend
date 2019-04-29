@@ -20,8 +20,7 @@ module Kore.Syntax.Application where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
+import qualified Data.Deriving as Deriving
 import           Data.Functor.Classes
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -30,8 +29,6 @@ import           GHC.Generics
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
 {- |'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @head@ syntactic category from the Semantics of K,
@@ -61,66 +58,49 @@ instance Unparse SymbolOrAlias where
             { symbolOrAliasConstructor
             , symbolOrAliasParams
             }
-      = Pretty.parens (Pretty.fillSep [ unparse2 symbolOrAliasConstructor
-                                      , parameters2 symbolOrAliasParams
-                                      ])
+      =
+        Pretty.parens $ Pretty.fillSep
+            [ unparse2 symbolOrAliasConstructor
+            , parameters2 symbolOrAliasParams
+            ]
 
 unparseSymbolOrAliasNoSortParams :: SymbolOrAlias -> Pretty.Doc ann
-unparseSymbolOrAliasNoSortParams
-    SymbolOrAlias
-        { symbolOrAliasConstructor
-        }
-  = unparse2 symbolOrAliasConstructor
+unparseSymbolOrAliasNoSortParams SymbolOrAlias { symbolOrAliasConstructor } =
+    unparse2 symbolOrAliasConstructor
 
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
-@object-pattern@ and @meta-pattern@ syntactic categories from
-the Semantics of K, Section 9.1.4 (Patterns).
+@pattern@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
+This represents the @σ(φ1, ..., φn)@ symbol patterns in Matching Logic.
 -}
-data Application level child = Application
-    { applicationSymbolOrAlias :: !SymbolOrAlias
+data Application head child = Application
+    { applicationSymbolOrAlias :: !head
     , applicationChildren      :: [child]
     }
     deriving (Functor, Foldable, Traversable, Generic)
 
-$newDefinitionGroup
+Deriving.deriveEq1 ''Application
+Deriving.deriveOrd1 ''Application
+Deriving.deriveShow1 ''Application
 
-instance Eq1 (Application level) where
-    liftEq = $(makeLiftEq ''Application)
-
-instance Ord1 (Application level) where
-    liftCompare = $(makeLiftCompare ''Application)
-
-instance Show1 (Application level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Application)
-
-instance Eq child => Eq (Application level child) where
+instance (Eq head, Eq child) => Eq (Application head child) where
     (==) = eq1
 
-instance Ord child => Ord (Application level child) where
+instance (Ord head, Ord child) => Ord (Application head child) where
     compare = compare1
 
-instance Show child => Show (Application level child) where
+instance (Show head, Show child) => Show (Application head child) where
     showsPrec = showsPrec1
 
-instance Hashable child => Hashable (Application level child)
+instance (Hashable head, Hashable child) => Hashable (Application head child)
 
-instance NFData child => NFData (Application level child)
+instance (NFData head, NFData child) => NFData (Application head child)
 
-instance Unparse child => Unparse (Application level child) where
-    unparse
-        Application { applicationSymbolOrAlias, applicationChildren }
-      =
-        unparse applicationSymbolOrAlias
-        <> arguments applicationChildren
+instance Unparse child => Unparse (Application SymbolOrAlias child) where
+    unparse Application { applicationSymbolOrAlias, applicationChildren } =
+        unparse applicationSymbolOrAlias <> arguments applicationChildren
 
-    unparse2
-        Application { applicationSymbolOrAlias, applicationChildren }
-      =
+    unparse2 Application { applicationSymbolOrAlias, applicationChildren } =
         case applicationChildren of
             [] ->
                 Pretty.parens (unparse2 applicationSymbolOrAlias)

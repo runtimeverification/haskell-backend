@@ -450,7 +450,7 @@ instance (Show child, EqualWithExplanation child)
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
-    => StructEqualWithExplanation (Application Object child)
+    => StructEqualWithExplanation (Application SymbolOrAlias child)
   where
     structFieldsWithNames
         expected@(Application _ _)
@@ -467,7 +467,7 @@ instance (Show child, EqualWithExplanation child)
     structConstructorName _ = "Application"
 
 instance (Show child, EqualWithExplanation child)
-    => EqualWithExplanation (Application Object child)
+    => EqualWithExplanation (Application SymbolOrAlias child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

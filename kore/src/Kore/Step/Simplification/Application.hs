@@ -48,7 +48,7 @@ type ExpandedApplication level variable =
         level
         variable
         (CofreeF
-            (Application level)
+            (Application SymbolOrAlias)
             (Valid variable level)
             (TermLike variable)
         )
@@ -77,7 +77,7 @@ simplify
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
-        (Application Object)
+        (Application SymbolOrAlias)
         (Valid variable Object)
         (OrPattern Object variable)
     -> Simplifier

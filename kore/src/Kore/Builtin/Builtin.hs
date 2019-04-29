@@ -807,7 +807,7 @@ functionEvaluator impl =
         -> TermLikeSimplifier Object
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
-            (Application Object)
+            (Application SymbolOrAlias)
             (Valid variable Object)
             (TermLike variable)
         -> Simplifier

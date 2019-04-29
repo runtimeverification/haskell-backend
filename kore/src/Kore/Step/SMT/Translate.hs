@@ -208,7 +208,7 @@ translatePredicate translateUninterpreted predicate =
             , Ord variable
             , p ~ TermLike variable
             )
-        => Application Object p
+        => Application SymbolOrAlias p
         -> Translator p SExpr
     translateApplication
         Application

@@ -292,7 +292,10 @@ instance PrettyPrint child => PrettyPrint (And level child) where
             , writeFieldNewLine "andSecond" andSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (Application level child) where
+instance
+    PrettyPrint child =>
+    PrettyPrint (Application SymbolOrAlias child)
+  where
     prettyPrint _ p@(Application _ _) =
         writeStructure
             "Application"

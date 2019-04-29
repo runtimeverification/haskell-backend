@@ -359,7 +359,7 @@ symbolOrAliasPatternRemainderParser childParser identifier =
 
 applicationParser
     :: Parser child
-    -> Parser (Application Object child)
+    -> Parser (Application SymbolOrAlias child)
 applicationParser childParser =
     Application
         <$> headParser

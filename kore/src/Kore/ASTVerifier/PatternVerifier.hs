@@ -198,9 +198,9 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 
  -}
 verifyAliasLeftPattern
-    :: Application Object (Variable)
+    :: Application SymbolOrAlias (Variable)
     -> PatternVerifier
-        (DeclaredVariables, Application Object (Variable))
+        (DeclaredVariables, Application SymbolOrAlias (Variable))
 verifyAliasLeftPattern leftPattern = do
     _ :< verified <- verifyApplication (expectVariable <$> leftPattern)
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
@@ -513,7 +513,7 @@ verifyPatternsWithSorts sorts operands = do
 
 verifyApplication
     ::  ( Comonad child
-        , base ~ Application Object
+        , base ~ Application SymbolOrAlias
         , valid ~ Valid (Variable)
         )
     => base (PatternVerifier (child (valid Object)))
