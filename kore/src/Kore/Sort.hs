@@ -1,9 +1,5 @@
 {- |
-Module      : Kore.Sort
-Description : Kore sorts and sort variables
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
@@ -46,13 +42,12 @@ import Kore.AST.MetaOrObject
 import Kore.Syntax.Id
 import Kore.Unparser
 
-{-|'SortVariable' corresponds to the @object-sort-variable@ and
-@meta-sort-variable@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
+{- | @SortVariable@ is a Kore sort variable.
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
+@SortVariable@ corresponds to the @sort-variable@ syntactic category from the
+Semantics of K, Section 9.1.2 (Sorts).
+
+ -}
 newtype SortVariable level = SortVariable
     { getSortVariable  :: Id }
     deriving (Show, Eq, Ord, Generic)
