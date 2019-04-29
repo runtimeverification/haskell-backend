@@ -3,8 +3,6 @@ module Test.Kore.Step.SMT.Representation.Symbols where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Kore.AST.Identifier as Kore
-                 ( Id )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -18,6 +16,8 @@ import qualified Kore.Step.SMT.AST as AST
                  ( Declarations, Encodable, SortReference, Symbol,
                  SymbolReference )
 import           Kore.Step.SMT.Representation.Symbols
+import qualified Kore.Syntax.Id as Kore
+                 ( Id )
 
 import           Test.Kore
                  ( testId )

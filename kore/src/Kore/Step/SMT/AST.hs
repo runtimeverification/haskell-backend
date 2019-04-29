@@ -43,14 +43,14 @@ import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
 
-import qualified Kore.AST.Identifier as Kore
-                 ( Id (Id, getId) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Sort as Kore
                  ( Sort )
 import           Kore.Step.SMT.Encoder
                  ( encodeName )
+import qualified Kore.Syntax.Id as Kore
+                 ( Id (Id, getId) )
 import qualified SMT.AST as AST
 
 {-| A representation of the Kore Sort type together with its related

@@ -28,7 +28,6 @@ import           Numeric.Natural
 
 import           Data.Sup
 import qualified Kore.Annotation.Null as Annotation
-import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
 import           Kore.AST.Sentence

@@ -17,8 +17,6 @@ import qualified Data.Map as Map
 import           Data.Text
                  ( Text )
 
-import qualified Kore.AST.Identifier as Kore
-                 ( Id )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Sort as Kore
@@ -33,6 +31,8 @@ import qualified Kore.Step.SMT.AST as AST
                  UnresolvedConstructorArgument, UnresolvedSort,
                  UnresolvedSymbol, encodable, encode )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
+import qualified Kore.Syntax.Id as Kore
+                 ( Id )
 import qualified SMT.AST as AST
                  ( Constructor (Constructor),
                  ConstructorArgument (ConstructorArgument),

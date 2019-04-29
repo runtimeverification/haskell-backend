@@ -17,8 +17,6 @@ import           Debug.Trace
 
 import           Kore.AST.Common
                  ( SymbolOrAlias (..), Variable )
-import           Kore.AST.Identifier
-                 ( Id (..) )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.AST.Valid
@@ -49,6 +47,8 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT, pickFinal, runStrategy )
+import           Kore.Syntax.Id
+                 ( Id (..) )
 import           Numeric.Natural
                  ( Natural )
 

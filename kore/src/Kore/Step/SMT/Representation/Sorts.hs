@@ -24,8 +24,6 @@ import           Kore.AST.Common as SymbolOrAlias
                  ( SymbolOrAlias (..) )
 import qualified Kore.AST.Common as Variable
                  ( Variable (..) )
-import           Kore.AST.Identifier
-                 ( Id )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -65,6 +63,8 @@ import qualified Kore.Sort as SortActual
 import qualified Kore.Step.SMT.AST as AST
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Id
+                 ( Id )
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified

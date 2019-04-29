@@ -73,7 +73,6 @@ import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import           Kore.AST.Common
-import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject (..) )
 import           Kore.AST.Sentence

@@ -1,5 +1,5 @@
 {- |
-Module      : Kore.AST.Identifier
+Module      : Kore.Syntax.Id
 Description : Kore identifiers and locations
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -8,7 +8,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-module Kore.AST.Identifier
+module Kore.Syntax.Id
     (
     -- * Identifiers
       Id (..)

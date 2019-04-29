@@ -93,7 +93,6 @@ import           Kore.AST.Common
 import qualified Kore.AST.Common as Common
                  ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Identifier
 import           Kore.AST.Sentence
                  ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
@@ -142,8 +141,7 @@ import           Kore.Step.Simplification.Data
                  SimplificationType, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import           Kore.Step.TermLike
-import qualified Kore.Step.TermLike as TermLike
+import           Kore.Step.TermLike as TermLike
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 

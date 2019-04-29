@@ -30,7 +30,7 @@ module Kore.Sort
     , predicateSortActual
     , predicateSort
     -- * Re-exports
-    , module Kore.AST.Identifier
+    , module Kore.Syntax.Id
     , module Kore.AST.MetaOrObject
     ) where
 
@@ -42,8 +42,8 @@ import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
+import Kore.Syntax.Id
 import Kore.Unparser
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and

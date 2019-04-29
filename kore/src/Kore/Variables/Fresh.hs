@@ -19,8 +19,8 @@ import qualified Data.Set as Set
 import Data.Sup
 import Kore.AST.Common
        ( Variable (..), illegalVariableCounter )
-import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
+import Kore.Syntax.Id
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}

@@ -61,8 +61,6 @@ import           System.Process
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SymbolOrAlias (..),
                  Variable )
-import qualified Kore.AST.Identifier as Identifier
-                 ( Id (..) )
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject, Object )
 import           Kore.Attribute.Axiom
@@ -93,6 +91,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
                  ( TermLike )
+import qualified Kore.Syntax.Id as Id
+                 ( Id (..) )
 import           Kore.Unparser
                  ( unparseToString )
 
@@ -750,7 +750,7 @@ unparseStrategy omitList =
     shouldBeExcluded =
        (`elem` omitList)
            . Text.unpack
-           . Identifier.getId
+           . Id.getId
            . symbolOrAliasConstructor
 
 putStrLn' :: MonadWriter String m => String -> m ()

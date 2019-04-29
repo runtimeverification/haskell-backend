@@ -28,7 +28,7 @@ module Kore.AST.Pure
     , Base, CofreeF (..)
     , module Control.Comonad
     , module Kore.AST.Common
-    , module Kore.AST.Identifier
+    , module Kore.Syntax.Id
     , module Kore.AST.MetaOrObject
     , module Kore.Sort
     ) where
@@ -67,9 +67,9 @@ import           Kore.AST.Common hiding
                  ( castVoidDomainValues, mapDomainValues, mapVariables,
                  traverseVariables )
 import qualified Kore.AST.Common as Head
-import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import           Kore.Sort
+import           Kore.Syntax.Id
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser

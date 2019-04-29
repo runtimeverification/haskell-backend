@@ -14,8 +14,6 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
 
-import           Kore.AST.Identifier
-                 ( Id )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -41,6 +39,8 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Sort
                  ( Sort )
 import qualified Kore.Step.SMT.AST as AST
+import           Kore.Syntax.Id
+                 ( Id )
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified

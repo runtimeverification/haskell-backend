@@ -18,10 +18,10 @@ import Data.Default
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Identifier
-       ( Id )
 import Kore.AST.MetaOrObject
        ( Object )
+import Kore.Syntax.Id
+       ( Id )
 import SMT.SimpleSMT
        ( SExpr )
 

@@ -7,8 +7,6 @@ import           Data.List
                  ( foldl' )
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.AST.Identifier as Kore
-                 ( Id )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -52,6 +50,8 @@ import qualified Kore.Step.SMT.AST as AST.Symbol
                  ( Symbol (..) )
 import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
+import qualified Kore.Syntax.Id as Kore
+                 ( Id )
 import qualified SMT.AST as AST
                  ( Constructor (Constructor), ConstructorArgument,
                  DataTypeDeclaration (DataTypeDeclaration) )

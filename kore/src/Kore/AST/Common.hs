@@ -46,7 +46,6 @@ import           GHC.Generics
 import           Numeric.Natural
 
 import Data.Sup
-import Kore.AST.Identifier
 import Kore.AST.MetaOrObject
 import Kore.Sort
 import Kore.Unparser
