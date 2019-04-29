@@ -30,6 +30,7 @@ module Kore.AST.Pure
     , module Kore.AST.Common
     , module Kore.Syntax.Application
     , module Kore.Syntax.Id
+    , module Kore.Syntax.SetVariable
     , module Kore.Syntax.Variable
     , module Kore.AST.MetaOrObject
     , module Kore.Sort
@@ -73,6 +74,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.Sort
 import           Kore.Syntax.Application
 import           Kore.Syntax.Id
+import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
 import           Kore.TopBottom
                  ( TopBottom (..) )

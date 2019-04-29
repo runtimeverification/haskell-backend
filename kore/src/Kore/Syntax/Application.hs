@@ -16,7 +16,10 @@ Please refer to Section 9 (The Kore Language) of the
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Application where
+module Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    , Application (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

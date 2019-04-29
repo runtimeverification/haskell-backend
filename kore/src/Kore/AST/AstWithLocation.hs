@@ -19,6 +19,7 @@ import Kore.AST.Sentence
 import Kore.Domain.Class
 import Kore.Sort
 import Kore.Syntax.Application
+import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have

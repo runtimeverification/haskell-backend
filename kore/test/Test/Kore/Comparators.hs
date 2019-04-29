@@ -25,8 +25,6 @@ import           Numeric.Natural
 import qualified Kore.AllPath as AllPath
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
-import qualified Kore.AST.Common as SetVariable
-                 ( SetVariable (..) )
 import           Kore.AST.Pure
 import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
@@ -76,6 +74,9 @@ import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Step.TermLike
 import           Kore.Syntax.CharLiteral
+import           Kore.Syntax.SetVariable
+                 ( SetVariable )
+import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Syntax.StringLiteral
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution

@@ -42,23 +42,11 @@ import Kore.AST.MetaOrObject
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.CharLiteral
+import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Unparser
 import Template.Tools
        ( newDefinitionGroup )
-
--- |Wrapper for set variables
-newtype SetVariable variable
-    = SetVariable { getVariable :: variable }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable variable => Hashable (SetVariable variable)
-
-instance NFData variable => NFData (SetVariable variable)
-
-instance Unparse variable => Unparse (SetVariable variable) where
-    unparse = unparse . getVariable
-    unparse2 = unparse2 . getVariable  -- TOFIX: print with a leading "#"
 
 {-|Enumeration of patterns starting with @\@
 -}
