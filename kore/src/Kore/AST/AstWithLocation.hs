@@ -20,6 +20,7 @@ import Kore.Domain.Class
 import Kore.Sort
 import Kore.Syntax.And
 import Kore.Syntax.Application
+import Kore.Syntax.Bottom
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 

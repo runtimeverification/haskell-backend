@@ -42,6 +42,7 @@ import Kore.AST.MetaOrObject
 import Kore.Sort
 import Kore.Syntax.And
 import Kore.Syntax.Application
+import Kore.Syntax.Bottom
 import Kore.Syntax.CharLiteral
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
@@ -114,47 +115,6 @@ patternString pt = case pt of
     OrPatternType          -> "or"
     RewritesPatternType    -> "rewrites"
     TopPatternType         -> "top"
-
-{-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-'bottomSort' is the sort of the result.
-
-This represents the ⌈BottomPattern⌉ Matching Logic construct.
--}
-newtype Bottom level child = Bottom { bottomSort :: Sort }
-    deriving (Functor, Foldable, Show, Traversable, Generic)
-
-$newDefinitionGroup
-
-instance Eq1 (Bottom level) where
-    liftEq = $(makeLiftEq ''Bottom)
-
-instance Ord1 (Bottom level) where
-    liftCompare = $(makeLiftCompare ''Bottom)
-
-instance Show1 (Bottom level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Bottom)
-
-instance Eq (Bottom level child) where
-    (==) = on (==) bottomSort
-
-instance Ord (Bottom level child) where
-    compare = on compare bottomSort
-
-instance Hashable (Bottom level child)
-
-instance NFData (Bottom level child)
-
-instance Unparse (Bottom level child) where
-    unparse Bottom { bottomSort } =
-        "\\bottom" <> parameters [bottomSort] <> noArguments
-    unparse2 Bottom { } =
-        "\\bottom"
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,

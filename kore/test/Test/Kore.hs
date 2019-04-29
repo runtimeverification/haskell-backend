@@ -62,6 +62,7 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.And
 import           Kore.Syntax.Application
+import           Kore.Syntax.Bottom
 import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
 
@@ -281,7 +282,7 @@ applicationGen childGen _ =
         <*> couple (Gen.small (childGen =<< sortGen))
 
 bottomGen :: Sort -> Gen (Bottom Object child)
-bottomGen = topBottomGen Common.Bottom
+bottomGen = topBottomGen Bottom
 
 ceilGen
     :: (Sort -> Gen child)

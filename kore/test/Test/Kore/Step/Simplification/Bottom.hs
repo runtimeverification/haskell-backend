@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Common
-                 ( Bottom (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.Step.OrPattern
                  ( OrPattern )
@@ -17,8 +15,8 @@ import qualified Kore.Step.Pattern as Pattern
                  ( bottom )
 import           Kore.Step.Simplification.Bottom
                  ( simplify )
+import           Kore.Syntax.Bottom
 import           Kore.Syntax.Variable
-                 ( Variable (..) )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
