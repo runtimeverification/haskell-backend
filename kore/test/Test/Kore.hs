@@ -381,7 +381,7 @@ rewritesGen
     -> Gen (Rewrites Object child)
 rewritesGen = binaryOperatorGen Common.Rewrites
 
-topGen :: Sort -> Gen (Top Object child)
+topGen :: Sort -> Gen (Top Sort child)
 topGen = topBottomGen Top
 
 patternGen

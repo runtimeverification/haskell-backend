@@ -902,7 +902,7 @@ data Pattern level domain variable child where
     CharLiteralPattern
         :: !CharLiteral -> Pattern level domain variable child
     TopPattern
-        :: !(Top level child) -> Pattern level domain variable child
+        :: !(Top Sort child) -> Pattern level domain variable child
     VariablePattern
         :: !variable -> Pattern level domain variable child
     InhabitantPattern

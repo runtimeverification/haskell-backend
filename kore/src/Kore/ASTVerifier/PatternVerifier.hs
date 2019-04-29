@@ -401,15 +401,15 @@ verifyImplies = verifyOperands impliesSort
 
 verifyBottom
     ::  ( logical ~ Bottom Sort
-        , valid ~ Valid (Variable) Object
+        , valid ~ Valid Variable Object
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
 verifyBottom = verifyOperands bottomSort
 
 verifyTop
-    ::  ( logical ~ Top Object
-        , valid ~ Valid (Variable) Object
+    ::  ( logical ~ Top Sort
+        , valid ~ Valid Variable Object
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)

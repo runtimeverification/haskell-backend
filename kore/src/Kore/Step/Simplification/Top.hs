@@ -12,6 +12,7 @@ module Kore.Step.Simplification.Top
     ) where
 
 import           Kore.AST.MetaOrObject
+import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
@@ -24,6 +25,6 @@ import           Kore.Syntax.Top
 -- TODO (virgil): Preserve pattern sorts under simplification.
 simplify
     :: Ord variable
-    => Top Object child
+    => Top Sort child
     -> (OrPattern Object variable, SimplificationProof Object)
 simplify _ = (OrPattern.top, SimplificationProof)

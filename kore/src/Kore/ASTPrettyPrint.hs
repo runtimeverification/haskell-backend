@@ -467,7 +467,7 @@ instance PrettyPrint child => PrettyPrint (Rewrites level child) where
             , writeFieldNewLine "rewritesSecond" rewritesSecond p
             ]
 
-instance  PrettyPrint (Top level child) where
+instance PrettyPrint (Top Sort child) where
     prettyPrint flags (Top p) =
         writeOneFieldStruct flags "Top" p
 

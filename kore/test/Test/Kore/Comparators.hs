@@ -766,7 +766,7 @@ instance EqualWithExplanation CharLiteral
     printWithExplanation = show
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Top Object child)
+    => EqualWithExplanation (Top Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
