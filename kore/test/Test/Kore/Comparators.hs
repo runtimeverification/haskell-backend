@@ -424,7 +424,7 @@ instance
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
-    => StructEqualWithExplanation (And Object child)
+    => StructEqualWithExplanation (And Sort child)
   where
     structFieldsWithNames
         expected@(And _ _ _)
@@ -445,7 +445,7 @@ instance (Show child, EqualWithExplanation child)
     structConstructorName _ = "And"
 
 instance (Show child, EqualWithExplanation child)
-    => EqualWithExplanation (And Object child)
+    => EqualWithExplanation (And Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

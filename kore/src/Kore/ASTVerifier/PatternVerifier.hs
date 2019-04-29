@@ -368,7 +368,7 @@ verifyOperands operandSort = \operator -> do
 {-# INLINE verifyOperands #-}
 
 verifyAnd
-    ::  ( logical ~ And Object
+    ::  ( logical ~ And Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)

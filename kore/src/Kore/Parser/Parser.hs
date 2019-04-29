@@ -227,9 +227,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 binaryOperatorRemainderParser
     :: Parser child
-    -> (Sort -> child -> child -> m Object child)
+    -> (Sort -> child -> child -> m child)
     -- ^ Element constructor.
-    -> Parser (m Object child)
+    -> Parser (m child)
 binaryOperatorRemainderParser childParser constructor = do
     sort <- inCurlyBracesRemainderParser sortParser
     (child1, child2) <- parenPairParser childParser childParser

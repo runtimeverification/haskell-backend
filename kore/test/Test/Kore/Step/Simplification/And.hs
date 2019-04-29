@@ -403,7 +403,7 @@ test_andSimplification =
 makeAnd
     :: [Pattern Object Variable]
     -> [Pattern Object Variable]
-    -> And Object (OrPattern Object Variable)
+    -> And Sort (OrPattern Object Variable)
 makeAnd first second =
     And
         { andSort = findSort (first ++ second)
@@ -416,7 +416,7 @@ findSort [] = testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
 evaluate
-    :: And Object (OrPattern Object Variable)
+    :: And Sort (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 evaluate patt =
     (<$>) fst

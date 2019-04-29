@@ -219,10 +219,10 @@ unaryOperatorGen constructor childGen patternSort =
     constructor patternSort <$> Gen.small (childGen patternSort)
 
 binaryOperatorGen
-    :: (Sort -> child -> child -> b Object child)
+    :: (Sort -> child -> child -> b child)
     -> (Sort -> Gen child)
     -> Sort
-    -> Gen (b Object child)
+    -> Gen (b child)
 binaryOperatorGen constructor childGen patternSort =
     constructor patternSort
         <$> Gen.small (childGen patternSort)
@@ -268,7 +268,7 @@ topBottomGen constructor = pure . constructor
 andGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (And Object child)
+    -> Gen (And Sort child)
 andGen = binaryOperatorGen And
 
 applicationGen

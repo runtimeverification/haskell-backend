@@ -95,7 +95,7 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> And Object (OrPattern Object variable)
+    -> And Sort (OrPattern Object variable)
     -> Simplifier
         ( OrPattern Object variable
         , SimplificationProof Object
@@ -127,7 +127,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (And Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (And Sort) (Valid Object) (OrPattern Object variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information

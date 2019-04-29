@@ -946,7 +946,7 @@ Section 9.1.4 (Patterns).
 -- as well as a ton of other places, probably.
 data Pattern level domain variable child where
     AndPattern
-        :: !(And level child) -> Pattern level domain variable child
+        :: !(And Sort child) -> Pattern level domain variable child
     ApplicationPattern
         :: !(Application SymbolOrAlias child)
         -> Pattern level domain variable child

@@ -283,7 +283,7 @@ instance PrettyPrint variable
         writeStructure "SetVariable"
             [writeFieldNewLine "getVariable" getVariable svar]
 
-instance PrettyPrint child => PrettyPrint (And level child) where
+instance PrettyPrint child => PrettyPrint (And Sort child) where
     prettyPrint _ p@(And _ _ _) =
         writeStructure
             "And"
