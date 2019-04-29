@@ -22,6 +22,7 @@ import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
+import Kore.Syntax.Floor
 import Kore.Syntax.Or
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Top

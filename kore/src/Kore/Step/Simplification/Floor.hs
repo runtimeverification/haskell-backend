@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Floor
     , makeEvaluateFloor
     ) where
 
-import           Kore.AST.Common
-                 ( Floor (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
@@ -25,6 +23,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Floor
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.

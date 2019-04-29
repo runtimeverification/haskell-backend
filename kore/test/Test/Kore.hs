@@ -65,6 +65,7 @@ import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
 import           Kore.Syntax.Ceil
 import           Kore.Syntax.CharLiteral
+import           Kore.Syntax.Floor
 import           Kore.Syntax.Or
 import           Kore.Syntax.StringLiteral
 import           Kore.Syntax.Top
@@ -326,11 +327,8 @@ existsGen
     -> Gen (Exists Object Variable child)
 existsGen = existsForallGen Common.Exists
 
-floorGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Floor Object child)
-floorGen = ceilFloorGen Common.Floor
+floorGen :: (Sort -> Gen child) -> Sort -> Gen (Floor Object child)
+floorGen = ceilFloorGen Floor
 
 forallGen
     :: (Sort -> Gen child)

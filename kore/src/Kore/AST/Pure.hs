@@ -32,6 +32,7 @@ module Kore.AST.Pure
     , module Kore.Syntax.Application
     , module Kore.Syntax.Bottom
     , module Kore.Syntax.Ceil
+    , module Kore.Syntax.Floor
     , module Kore.Syntax.Id
     , module Kore.Syntax.Or
     , module Kore.Syntax.SetVariable
@@ -81,6 +82,7 @@ import           Kore.Syntax.And
 import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
 import           Kore.Syntax.Ceil
+import           Kore.Syntax.Floor
 import           Kore.Syntax.Id
 import           Kore.Syntax.Or
 import           Kore.Syntax.SetVariable
