@@ -280,7 +280,7 @@ verifyObjectPattern pat =
 
 verifyPatternHead
     ::  ( base ~ Pattern Object Domain.Builtin Variable
-        , valid ~ Valid (Variable) Object
+        , valid ~ Valid Variable Object
         )
     => base (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
@@ -376,7 +376,7 @@ verifyAnd
 verifyAnd = verifyOperands andSort
 
 verifyOr
-    ::  ( logical ~ Or Object
+    ::  ( logical ~ Or Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)

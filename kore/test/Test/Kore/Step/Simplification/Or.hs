@@ -140,7 +140,7 @@ test_simplify =
     binaryOr
       :: OrPattern Object Variable
       -> OrPattern Object Variable
-      -> Or Object (OrPattern Object Variable)
+      -> Or Sort (OrPattern Object Variable)
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 

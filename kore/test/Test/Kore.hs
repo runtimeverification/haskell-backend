@@ -370,10 +370,7 @@ notGen
     -> Gen (Not Object child)
 notGen = unaryOperatorGen Common.Not
 
-orGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Or Object child)
+orGen :: (Sort -> Gen child) -> Sort -> Gen (Or Sort child)
 orGen = binaryOperatorGen Or
 
 rewritesGen

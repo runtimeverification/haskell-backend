@@ -48,7 +48,7 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Or Object (OrPattern Object variable)
+    => Or Sort (OrPattern Object variable)
     ->  ( OrPattern Object variable
         , SimplificationProof Object
         )
@@ -87,7 +87,7 @@ simplifyEvaluated
 One way to preserve the required sort annotations is to make `simplifyEvaluated`
 take an argument of type
 ``` haskell
-CofreeF (Or Object) (Valid Object) (OrPattern Object variable)
+CofreeF (Or Sort) (Valid Object) (OrPattern Object variable)
 ```
 instead of two `OrPattern` arguments. The type of `makeEvaluate` may
 be changed analogously. The `Valid` annotation will eventually cache

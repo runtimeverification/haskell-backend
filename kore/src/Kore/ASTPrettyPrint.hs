@@ -449,7 +449,7 @@ instance PrettyPrint child => PrettyPrint (Not level child) where
             , writeFieldNewLine "notChild" notChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Or level child) where
+instance PrettyPrint child => PrettyPrint (Or Sort child) where
     prettyPrint _ p@(Or _ _ _) =
         writeStructure
             "Or"

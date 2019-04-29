@@ -724,7 +724,7 @@ instance
 
 instance (Show child, Eq child, EqualWithExplanation child)
   =>
-    StructEqualWithExplanation (Or Object child)
+    StructEqualWithExplanation (Or Sort child)
   where
     structFieldsWithNames
         expected@(Or _ _ _)
@@ -745,7 +745,7 @@ instance (Show child, Eq child, EqualWithExplanation child)
     structConstructorName _ = "Or"
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Or Object child)
+    => EqualWithExplanation (Or Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
