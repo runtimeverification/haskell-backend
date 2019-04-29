@@ -17,8 +17,6 @@ module Kore.Builtin.Attributes
     , isConstructorModuloLike_
     ) where
 
-import Data.Proxy
-       ( Proxy (..) )
 import Data.Reflection
        ( Given, given )
 
@@ -37,25 +35,21 @@ import           Kore.IndexedModule.MetadataTools
 -- | Is the symbol a constructor modulo associativity, commutativity and
 -- neutral element?
 isConstructorModulo_
-    :: forall level .
-        (MetaOrObject level, Given (SmtMetadataTools StepperAttributes))
-    => SymbolOrAlias level
+    :: Given (SmtMetadataTools StepperAttributes)
+    => SymbolOrAlias Object
     -> Bool
 isConstructorModulo_ symbolOrAlias =
-    case isMetaOrObject (Proxy :: Proxy level) of
-        IsObject ->
-            any (apply given symbolOrAlias)
-                [ List.isSymbolConcat, List.isSymbolElement, List.isSymbolUnit
-                ,  Map.isSymbolConcat,  Map.isSymbolElement,  Map.isSymbolUnit
-                ,  Set.isSymbolConcat,  Set.isSymbolElement,  Set.isSymbolUnit
-                ]
+    any (apply given symbolOrAlias)
+        [ List.isSymbolConcat, List.isSymbolElement, List.isSymbolUnit
+        ,  Map.isSymbolConcat,  Map.isSymbolElement,  Map.isSymbolUnit
+        ,  Set.isSymbolConcat,  Set.isSymbolElement,  Set.isSymbolUnit
+        ]
   where
     apply tools pattHead f = f (StepperAttributes.hook <$> tools) pattHead
 
 isConstructorModuloLike_
-    :: forall level .
-        (MetaOrObject level, Given (SmtMetadataTools StepperAttributes))
-    => SymbolOrAlias level
+    :: Given (SmtMetadataTools StepperAttributes)
+    => SymbolOrAlias Object
     -> Bool
 isConstructorModuloLike_ appHead =
     isConstructorModulo_ appHead

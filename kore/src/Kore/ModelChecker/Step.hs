@@ -108,17 +108,16 @@ computeWeakNext = ComputeWeakNext
 type Transition = TransitionT (RewriteRule Object Variable) Simplifier
 
 transitionRule
-    :: forall level . (MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (CommonModalPattern level) (RewriteRule level Variable)
-    -> CommonProofState level
+    -> Prim (CommonModalPattern Object) (RewriteRule Object Variable)
+    -> CommonProofState Object
     -> Transition
-        (CommonProofState level)
+        (CommonProofState Object)
 transitionRule
     tools
     predicateSimplifier
@@ -134,17 +133,17 @@ transitionRule
         ComputeWeakNext rewrites -> transitionComputeWeakNext rewrites proofState
   where
     transitionCheckProofState
-        :: CommonProofState level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level )
+        :: CommonProofState Object
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonProofState Object )
     transitionCheckProofState Proven = empty
     transitionCheckProofState Unprovable = empty
     transitionCheckProofState ps = return ps
 
     transitionSimplify
-        :: CommonProofState level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level )
+        :: CommonProofState Object
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonProofState Object )
     transitionSimplify Proven = return Proven
     transitionSimplify Unprovable = return Unprovable
     transitionSimplify (GoalLHS config) =
@@ -170,10 +169,10 @@ transitionRule
                 else Foldable.asum (pure <$> map wrapper (Foldable.toList nonEmptyConfigs))
 
     transitionUnroll
-        :: CommonModalPattern level
-        -> CommonProofState level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level )
+        :: CommonModalPattern Object
+        -> CommonProofState Object
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonProofState Object )
     transitionUnroll _ Proven = empty
     transitionUnroll _ Unprovable = empty
     transitionUnroll goalrhs (GoalLHS config)
@@ -212,10 +211,10 @@ transitionRule
                  ]
 
     transitionComputeWeakNext
-        :: [RewriteRule level Variable]
-        -> CommonProofState level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level)
+        :: [RewriteRule Object Variable]
+        -> CommonProofState Object
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonProofState Object)
     transitionComputeWeakNext _ Proven = return Proven
     transitionComputeWeakNext _ Unprovable = return Unprovable
     transitionComputeWeakNext rules (GoalLHS config)
@@ -224,10 +223,10 @@ transitionRule
       = return (GoalLHS Pattern.bottom)
 
     transitionComputeWeakNextHelper
-        :: [RewriteRule level Variable]
+        :: [RewriteRule Object Variable]
         -> (Pattern Object Variable)
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level)
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonProofState Object)
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do

@@ -65,26 +65,25 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
-        (Application level)
-        (Valid variable level)
-        (OrPattern level variable)
+        (Application Object)
+        (Valid variable Object)
+        (OrPattern Object variable)
     -> Simplifier
-        ( OrPattern level variable
-        , SimplificationProof level
+        ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplify
     tools
@@ -120,24 +119,23 @@ simplify
       = app
 
 makeAndEvaluateApplications
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable level
-    -> SymbolOrAlias level
-    -> [Pattern level variable]
+    -> Valid variable Object
+    -> SymbolOrAlias Object
+    -> [Pattern Object variable]
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeAndEvaluateApplications
     tools
     substitutionSimplifier
@@ -160,24 +158,23 @@ makeAndEvaluateApplications
         HeadType.Alias -> error "Alias evaluation not implemented yet."
 
 makeAndEvaluateSymbolApplications
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable level
-    -> SymbolOrAlias level
-    -> [Pattern level variable]
+    -> Valid variable Object
+    -> SymbolOrAlias Object
+    -> [Pattern Object variable]
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeAndEvaluateSymbolApplications
     tools
     substitutionSimplifier
@@ -206,23 +203,22 @@ makeAndEvaluateSymbolApplications
     return (functionApplication, SimplificationProof)
 
 evaluateApplicationFunction
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedApplication level variable
+    -> ExpandedApplication Object variable
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 evaluateApplicationFunction
     tools
     substitutionSimplifier
@@ -240,24 +236,23 @@ evaluateApplicationFunction
         term
 
 makeExpandedApplication
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable level
-    -> SymbolOrAlias level
-    -> [Pattern level variable]
+    -> Valid variable Object
+    -> SymbolOrAlias Object
+    -> [Pattern Object variable]
     -> Simplifier
-        (ExpandedApplication level variable, SimplificationProof level)
+        (ExpandedApplication Object variable, SimplificationProof Object)
 makeExpandedApplication
     tools
     substitutionSimplifier

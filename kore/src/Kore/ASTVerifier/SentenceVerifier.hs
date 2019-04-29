@@ -260,8 +260,7 @@ verifySymbolSentence indexedModule sentence =
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
 verifyAliasSentence
-    :: (MetaOrObject level)
-    => Builtin.Verifiers
+    :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> ParsedSentenceAlias
     -> Either (Error VerifyError) Verified.SentenceAlias

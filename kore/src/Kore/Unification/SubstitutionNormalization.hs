@@ -137,8 +137,7 @@ variableToSubstitution varToPattern var =
         Nothing   -> error ("variable " ++ show var ++ " not found.")
 
 normalizeSortedSubstitution
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Monad m
         , FreshVariable variable
         , SortedVariable variable
@@ -146,7 +145,7 @@ normalizeSortedSubstitution
     => [(variable, TermLike variable)]
     -> [(variable, TermLike variable)]
     -> [(variable, TermLike variable)]
-    -> m (Predicate level variable)
+    -> m (Predicate Object variable)
 normalizeSortedSubstitution [] result _ =
     return Conditional
         { term = ()
@@ -178,9 +177,7 @@ normalizeSortedSubstitution
     pattern.
  -}
 getDependencies
-    ::  ( MetaOrObject level
-        , Ord variable
-        )
+    :: Ord variable
     => Set variable  -- ^ interesting variables
     -> variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
@@ -200,8 +197,7 @@ getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     pattern.
  -}
 getNonSimplifiableDependencies
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         )
     => SmtMetadataTools StepperAttributes
@@ -217,8 +213,7 @@ getNonSimplifiableDependencies
         _ -> Recursive.fold (nonSimplifiableAbove tools interesting) p
 
 nonSimplifiableAbove
-    :: forall variable level .
-        (MetaOrObject level, Ord variable, Show variable)
+    :: forall variable. (Ord variable, Show variable)
     => SmtMetadataTools StepperAttributes
     -> Set variable
     -> Base (TermLike variable) (Set variable)

@@ -51,7 +51,6 @@ test_astPrettyPrint =
     ]
 
 prettyPrintPattern
-    :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable ParsedPattern
+    :: Pattern Object Domain.Builtin Variable ParsedPattern
     -> String
 prettyPrintPattern = prettyPrintToString

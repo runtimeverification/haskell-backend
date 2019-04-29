@@ -23,7 +23,6 @@ import qualified Data.Set as Set
 
 import Kore.AST.Common
        ( Exists (..), Forall (..), Pattern (..) )
-import Kore.AST.MetaOrObject
 import Kore.AST.Pure
 import Kore.Variables.Fresh
 
@@ -41,7 +40,6 @@ may appear in the right-hand side of any substitution, but this is not checked.
 substitute
     ::  forall level domain variable attribute.
         ( FreshVariable variable
-        , MetaOrObject level
         , Ord variable
         , SortedVariable variable
         , Traversable domain

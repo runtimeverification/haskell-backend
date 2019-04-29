@@ -86,7 +86,6 @@ newtype BuiltinAndAxiomSimplifier level =
     BuiltinAndAxiomSimplifier
         (forall variable
         .   ( FreshVariable variable
-            , MetaOrObject level
             , Ord variable
             , SortedVariable variable
             , Show variable
@@ -187,8 +186,8 @@ hasRemainders NotApplicable = False
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiom level variable, SimplificationProof level)
-    ->           m (AttemptedAxiom level variable, SimplificationProof level)
+    => ExceptT e m (AttemptedAxiom Object variable, SimplificationProof Object)
+    ->           m (AttemptedAxiom Object variable, SimplificationProof Object)
 exceptNotApplicable =
     fmap (either (const notApplicable) id) . runExceptT
   where
@@ -196,16 +195,14 @@ exceptNotApplicable =
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator
-    :: Simplifier
-        (AttemptedAxiom level1 variable, SimplificationProof level2)
+    :: Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
 notApplicableAxiomEvaluator = pure (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
-    :: (MetaOrObject level, Ord variable)
+    :: Ord variable
     => TermLike variable
-    -> Simplifier
-        (AttemptedAxiom level variable, SimplificationProof level)
+    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
@@ -219,10 +216,8 @@ purePatternAxiomEvaluator p =
 'Application'.
 -}
 applicationAxiomSimplifier
-    :: forall level
-    .   ( forall variable
+    ::  ( forall variable
         .   ( FreshVariable variable
-            , MetaOrObject level
             , Ord variable
             , SortedVariable variable
             , Show variable
@@ -230,26 +225,25 @@ applicationAxiomSimplifier
             , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier level
-        -> TermLikeSimplifier level
-        -> BuiltinAndAxiomSimplifierMap level
+        -> PredicateSimplifier Object
+        -> TermLikeSimplifier Object
+        -> BuiltinAndAxiomSimplifierMap Object
         -> CofreeF
-            (Application level)
-            (Valid variable level)
+            (Application Object)
+            (Valid variable Object)
             (TermLike variable)
         -> Simplifier
-            ( AttemptedAxiom level variable
-            , SimplificationProof level
+            ( AttemptedAxiom Object variable
+            , SimplificationProof Object
             )
         )
-    -> BuiltinAndAxiomSimplifier level
+    -> BuiltinAndAxiomSimplifier Object
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
     helper
         ::  ( forall variable
             .   ( FreshVariable variable
-                , MetaOrObject level
                 , Ord variable
                 , SortedVariable variable
                 , Show variable
@@ -257,13 +251,13 @@ applicationAxiomSimplifier applicationSimplifier =
                 , Unparse variable
                 )
             => SmtMetadataTools StepperAttributes
-            -> PredicateSimplifier level
-            -> TermLikeSimplifier level
-            -> BuiltinAndAxiomSimplifierMap level
+            -> PredicateSimplifier Object
+            -> TermLikeSimplifier Object
+            -> BuiltinAndAxiomSimplifierMap Object
             -> TermLike variable
             -> Simplifier
-                ( AttemptedAxiom level variable
-                , SimplificationProof level
+                ( AttemptedAxiom Object variable
+                , SimplificationProof Object
                 )
         )
     helper

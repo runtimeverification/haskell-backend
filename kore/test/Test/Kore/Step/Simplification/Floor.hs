@@ -168,18 +168,14 @@ makeFloor patterns =
         }
 
 evaluate
-    :: MetaOrObject level
-    => Floor level (OrPattern Object Variable)
+    :: Floor Object (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate floor' =
     case simplify floor' of
         (result, _proof) -> result
 
 
-makeEvaluate
-    :: MetaOrObject level
-    => Pattern Object Variable
-    -> OrPattern Object Variable
+makeEvaluate :: Pattern Object Variable -> OrPattern Object Variable
 makeEvaluate child =
     case makeEvaluateFloor child of
         (result, _proof) -> result

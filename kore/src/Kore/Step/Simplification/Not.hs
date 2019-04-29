@@ -35,7 +35,6 @@ import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  gather )
-import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -86,7 +85,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Not level) (Valid level) (OrPattern level variable)
+> CofreeF (Not Object) (Valid Object) (OrPattern Object variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -131,14 +130,13 @@ child.
 See 'simplify' for details.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         )
-    => Pattern level variable
-    -> OrPattern level variable
+    => Pattern Object variable
+    -> OrPattern Object variable
 makeEvaluate Conditional { term, predicate, substitution } =
     OrPattern.fromPatterns
         [ Conditional
@@ -157,8 +155,7 @@ makeEvaluate Conditional { term, predicate, substitution } =
         ]
 
 makeTermNot
-    ::  ( MetaOrObject level
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable

@@ -30,7 +30,6 @@ import           Data.Functor.Const
 import           Data.Functor.Identity
                  ( Identity (..) )
 import           Data.Hashable
-import           Data.Proxy
 import           Data.String
                  ( fromString )
 import           Data.Text
@@ -1310,16 +1309,8 @@ instance
 {-|'dummySort' is used in error messages when we want to convert an
 'UnsortedPatternStub' to a pattern that can be displayed.
 -}
-dummySort :: MetaOrObject level => proxy level -> Sort
-dummySort _ = SortVariableSort (SortVariable (noLocationId "dummy"))
-
-{-|'getMetaOrObjectPatternType' is a helper function useful to determine
-whether a 'Pattern' is 'Object' or 'Meta'.
--}
-getMetaOrObjectPatternType
-    :: MetaOrObject level
-    => Pattern level domain variable child -> IsMetaOrObject level
-getMetaOrObjectPatternType _ = isMetaOrObject (Proxy :: Proxy level)
+dummySort :: Sort
+dummySort = SortVariableSort (SortVariable (noLocationId "dummy"))
 
 {- | Use the provided mapping to replace all variables in a 'Pattern' head.
 

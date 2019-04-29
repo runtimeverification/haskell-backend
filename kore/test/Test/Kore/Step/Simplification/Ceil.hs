@@ -475,7 +475,7 @@ test_ceilSimplification =
         let Just r = asConcreteStepPattern p in r
 
 appliedMockEvaluator
-    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier level
+    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier Object
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -486,25 +486,24 @@ appliedMockEvaluator result =
         }
 
 mockEvaluator
-    :: AttemptedAxiom level variable
+    :: AttemptedAxiom Object variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom level variable, SimplificationProof level)
+        (AttemptedAxiom Object variable, SimplificationProof Object)
 mockEvaluator evaluation _ _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 mapVariables
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , MetaOrObject level
         , Ord variable
         )
     => Pattern Object Variable
-    -> Pattern level variable
+    -> Pattern Object variable
 mapVariables =
     Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Sup.Element 1) }
@@ -521,10 +520,8 @@ makeCeil patterns =
         }
 
 evaluate
-    ::  ( MetaOrObject level
-        )
-    => SmtMetadataTools StepperAttributes
-    -> Ceil level (OrPattern Object Variable)
+    :: SmtMetadataTools StepperAttributes
+    -> Ceil Object (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 evaluate tools ceil =
     (<$>) fst
@@ -538,17 +535,15 @@ evaluate tools ceil =
         ceil
 
 makeEvaluate
-    ::  ( MetaOrObject level )
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> Pattern Object Variable
     -> IO (OrPattern Object Variable)
 makeEvaluate tools child =
     makeEvaluateWithAxioms tools Map.empty child
 
 makeEvaluateWithAxioms
-    ::  ( MetaOrObject level )
-    => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap level
+    :: SmtMetadataTools StepperAttributes
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> Pattern Object Variable
     -> IO (OrPattern Object Variable)

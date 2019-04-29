@@ -61,7 +61,6 @@ import           System.Process
 import           Kore.AST.Common
                  ( Application (..), Pattern (..), SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject, Object )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -105,12 +104,11 @@ type ReplM claim level a = RWST () String (ReplState claim level) Simplifier a
 
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
-    :: forall level claim
-    .  MetaOrObject level
-    => Claim claim
+    :: forall claim
+    .  Claim claim
     => (String -> IO ())
     -> ReplCommand
-    -> StateT (ReplState claim level) Simplifier Bool
+    -> StateT (ReplState claim Object) Simplifier Bool
 replInterpreter printFn replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> True
@@ -721,11 +719,9 @@ printRewriteRule rule = do
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy
-    :: forall level
-    .  MetaOrObject level
-    => [String]
+    :: [String]
     -- ^ omit list
-    -> CommonStrategyPattern level
+    -> CommonStrategyPattern Object
     -- ^ pattern
     -> String
 unparseStrategy omitList =

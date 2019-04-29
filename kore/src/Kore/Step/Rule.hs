@@ -463,9 +463,7 @@ refreshRulePattern avoid rule1 =
 {- | Extract the free variables of a 'RulePattern'.
  -}
 freeVariables
-    ::  ( MetaOrObject Object
-        , Ord variable
-        )
+    :: Ord variable
     => RulePattern Object variable
     -> Set variable
 freeVariables RulePattern { left, right, requires } =
@@ -501,8 +499,6 @@ contain none of the targeted variables.
  -}
 substitute
     ::  ( FreshVariable variable
-        , MetaOrObject Object
-        , Ord variable
         , SortedVariable variable
         )
     => Map variable (TermLike variable)

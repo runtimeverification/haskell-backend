@@ -430,7 +430,7 @@ flaggedObjectTestsForSort
     additionalSortActual
     namePrefix
   =
-    unfilteredTestExamplesForSort Object
+    unfilteredTestExamplesForSort
         sort
         additionalSortActual
         sortVariables
@@ -458,7 +458,7 @@ flaggedMetaTestsForSort
     additionalSortActual
     namePrefix
   =
-    unfilteredTestExamplesForSort Meta
+    unfilteredTestExamplesForSort
         sort
         additionalSortActual
         (testConfigurationAdditionalSortVariables testConfiguration)
@@ -501,9 +501,7 @@ newtype SortActualThatIsDeclared level =
     SortActualThatIsDeclared SortActual
 
 unfilteredTestExamplesForSort
-    :: forall level . MetaOrObject level
-    => level
-    -> TestedSort level
+    :: TestedSort level
     -> SortActualThatIsDeclared level
     -> [SortVariable]
     -> NamePrefix
@@ -511,7 +509,6 @@ unfilteredTestExamplesForSort
     -> (Verified.SentenceSymbol -> Verified.Sentence)
     -> [FlaggedTestData]
 unfilteredTestExamplesForSort
-    _x
     (TestedSort sort)
     (SortActualThatIsDeclared additionalSortActual)
     sortVariables

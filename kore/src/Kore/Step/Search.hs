@@ -122,23 +122,22 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall level variable .
-        ( MetaOrObject level
-        , SortedVariable variable
+    :: forall variable .
+        ( SortedVariable variable
         , FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level variable
-    -> Pattern level variable
-    -> MaybeT Simplifier (OrPredicate level variable)
+    -> Pattern Object variable
+    -> Pattern Object variable
+    -> MaybeT Simplifier (OrPredicate Object variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-
         hushT . Monad.Unify.getUnifier $
@@ -151,10 +150,10 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                 t2
     let
         mergeAndEvaluate
-            :: Predicate level variable
+            :: Predicate Object variable
             -> Simplifier
-                ( Predicate level variable
-                , UnificationProof level variable
+                ( Predicate Object variable
+                , UnificationProof Object variable
                 )
         mergeAndEvaluate predSubst = do
             (merged, _proof) <-

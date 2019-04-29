@@ -1016,7 +1016,7 @@ mkSortVariable name = SortVariableSort $ SortVariable name
 
 -- | Construct a variable with a given name and sort
 -- "x" `varS` s
-varS :: MetaOrObject level => Text -> Sort -> Variable
+varS :: Text -> Sort -> Variable
 varS x variableSort =
     Variable
         { variableName = noLocationId x
@@ -1028,7 +1028,7 @@ varS x variableSort =
 -- "mult" `symS` [s, s]
 -- Since the return sort is only found in MetadataTools, this is
 -- mostly useful for testing.
-symS :: MetaOrObject level => Text -> [Sort] -> SymbolOrAlias level
+symS :: Text -> [Sort] -> SymbolOrAlias level
 symS x s =
     SymbolOrAlias (noLocationId x) s
 

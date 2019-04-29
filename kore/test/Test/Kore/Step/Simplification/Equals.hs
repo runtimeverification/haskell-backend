@@ -863,7 +863,7 @@ assertTermEquals
 assertTermEquals = assertTermEqualsGeneric
 
 assertTermEqualsGeneric
-    :: (MetaOrObject level, HasCallStack)
+    :: HasCallStack
     => SmtMetadataTools StepperAttributes
     -> Predicate Object Variable
     -> TermLike Variable
@@ -883,7 +883,7 @@ assertTermEqualsMulti
 assertTermEqualsMulti = assertTermEqualsMultiGeneric
 
 assertTermEqualsMultiGeneric
-    :: (MetaOrObject level, HasCallStack)
+    :: HasCallStack
     => SmtMetadataTools StepperAttributes
     -> [Predicate Object Variable]
     -> TermLike Variable
@@ -908,10 +908,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
         (MultiOr.make expectPure)
         actualPure
   where
-    termToPattern
-        :: MetaOrObject level
-        => TermLike Variable
-        -> Pattern Object Variable
+    termToPattern :: TermLike Variable -> Pattern Object Variable
     termToPattern (Bottom_ _) =
         Conditional.bottom
     termToPattern term =
@@ -920,10 +917,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-    predSubstToPattern
-        :: MetaOrObject level
-        => Predicate Object Variable
-        -> Pattern Object Variable
+    predSubstToPattern :: Predicate Object Variable -> Pattern Object Variable
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
       =
@@ -1020,8 +1014,7 @@ evaluate
 evaluate = evaluateGeneric
 
 evaluateGeneric
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> Pattern Object Variable
     -> Pattern Object Variable
     -> IO (OrPattern Object Variable)
@@ -1038,11 +1031,10 @@ evaluateGeneric tools first second =
         second
 
 evaluateTermsGeneric
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (OrPredicate level Variable)
+    -> IO (OrPredicate Object Variable)
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

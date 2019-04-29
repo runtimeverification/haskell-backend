@@ -34,7 +34,6 @@ import           Numeric.Natural
                  ( Natural )
 
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject, Object )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -90,7 +89,7 @@ rewriteStep a =
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: (HasCallStack, MetaOrObject Object)
+    :: HasCallStack
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object

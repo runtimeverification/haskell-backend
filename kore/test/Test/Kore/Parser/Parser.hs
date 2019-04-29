@@ -69,7 +69,7 @@ test_koreParser =
 
 objectSortParserTests :: [TestTree]
 objectSortParserTests =
-    parseTree (sortParser Object)
+    parseTree sortParser
         [ success "var" $
             SortVariableSort ( SortVariable (testId "var") )
         , success "sort1{}" $
@@ -107,7 +107,7 @@ objectSortParserTests =
 
 metaSortConverterTests :: [TestTree]
 metaSortConverterTests =
-    parseTree (sortParser Meta)
+    parseTree sortParser
         [ success "#var"
             (SortVariableSort (SortVariable (testId "#var")))
         , success "#Char{}" charMetaSort
@@ -119,7 +119,7 @@ metaSortConverterTests =
 
 objectSortListParserTests :: [TestTree]
 objectSortListParserTests =
-    parseTree (inParenthesesListParser (sortParser Object))
+    parseTree (inParenthesesListParser sortParser)
         [ success "()" []
         , success "(var)"
             [ sortVariableSort "var" ]
@@ -140,7 +140,7 @@ objectSortListParserTests =
 
 metaSortListParserTests :: [TestTree]
 metaSortListParserTests =
-    parseTree (inCurlyBracesListParser (sortParser Meta))
+    parseTree (inCurlyBracesListParser sortParser)
         [ success "{}" []
         , success "{#var}"
             [SortVariableSort (SortVariable (testId "#var"))]
@@ -158,21 +158,21 @@ metaSortListParserTests =
 
 objectSortVariableParserTests :: [TestTree]
 objectSortVariableParserTests =
-    parseTree (sortVariableParser Object)
+    parseTree sortVariableParser
         [ success "var" (SortVariable (testId "var"))
         , FailureWithoutMessage ["", "#"]
         ]
 
 metaSortVariableParserTests :: [TestTree]
 metaSortVariableParserTests =
-    parseTree (sortVariableParser Meta)
+    parseTree sortVariableParser
         [ success "#var" (SortVariable (testId "#var"))
         , FailureWithoutMessage ["", "#"]
         ]
 
 objectInCurlyBracesSortVariableListParserTest :: [TestTree]
 objectInCurlyBracesSortVariableListParserTest =
-    parseTree (inCurlyBracesListParser (sortVariableParser Object))
+    parseTree (inCurlyBracesListParser sortVariableParser)
         [ success "{}" []
         , success "{var}"
             [ SortVariable (testId "var") ]
@@ -186,7 +186,7 @@ objectInCurlyBracesSortVariableListParserTest =
 
 metaInCurlyBracesSortVariableListParserTest :: [TestTree]
 metaInCurlyBracesSortVariableListParserTest =
-    parseTree (inCurlyBracesListParser (sortVariableParser Meta))
+    parseTree (inCurlyBracesListParser sortVariableParser)
         [ success "{}" []
         , success "{#var}"
             [ SortVariable (testId "#var") ]
@@ -200,7 +200,7 @@ metaInCurlyBracesSortVariableListParserTest =
 
 objectAliasParserTests :: [TestTree]
 objectAliasParserTests =
-    parseTree (aliasParser Object)
+    parseTree aliasParser
         [ success "c1{}"
             Alias
                 { aliasConstructor = testId "c1"
@@ -225,7 +225,7 @@ objectAliasParserTests =
 
 objectSymbolParserTests :: [TestTree]
 objectSymbolParserTests =
-    parseTree (symbolParser Object)
+    parseTree symbolParser
         [ success "c1{}"
             Symbol
                 { symbolConstructor = testId "c1"
@@ -250,7 +250,7 @@ objectSymbolParserTests =
 
 metaAliasParserTests :: [TestTree]
 metaAliasParserTests =
-    parseTree (aliasParser Meta)
+    parseTree aliasParser
         [ success "#c1{}"
             Alias
                 { aliasConstructor = testId "#c1"
@@ -277,7 +277,7 @@ metaAliasParserTests =
 
 metaSymbolParserTests :: [TestTree]
 metaSymbolParserTests =
-    parseTree (symbolParser Meta)
+    parseTree symbolParser
         [ success "#c1{}"
             Symbol
                 { symbolConstructor = testId "#c1"
@@ -304,7 +304,7 @@ metaSymbolParserTests =
 
 variableParserTests :: [TestTree]
 variableParserTests =
-    parseTree (variableParser Object)
+    parseTree variableParser
         [ success "v:s"
             Variable
                 { variableName = testId "v"

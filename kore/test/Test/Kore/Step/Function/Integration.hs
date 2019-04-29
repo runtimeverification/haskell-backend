@@ -600,7 +600,7 @@ axiom left right predicate =
     EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
 
 appliedMockEvaluator
-    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier level
+    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier Object
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -621,21 +621,20 @@ mapVariables =
         fromVariable v { variableCounter = Just (Element 1) }
 
 mockEvaluator
-    :: AttemptedAxiom level variable
+    :: AttemptedAxiom Object variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom level variable, SimplificationProof level)
+        (AttemptedAxiom Object variable, SimplificationProof Object)
 mockEvaluator evaluation _ _ _ _ _ =
     return (evaluation, SimplificationProof)
 
 evaluate
-    :: forall level . MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap level
+    :: SmtMetadataTools StepperAttributes
+    -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike Variable
     -> IO (Pattern Object Variable)
 evaluate metadataTools functionIdToEvaluator patt =
@@ -645,13 +644,11 @@ evaluate metadataTools functionIdToEvaluator patt =
     $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
-    substitutionSimplifier :: PredicateSimplifier level
+    substitutionSimplifier :: PredicateSimplifier Object
     substitutionSimplifier =
         Predicate.create
             metadataTools patternSimplifier functionIdToEvaluator
-    patternSimplifier
-        ::  ( MetaOrObject level )
-        => TermLikeSimplifier level
+    patternSimplifier :: TermLikeSimplifier Object
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes

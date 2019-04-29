@@ -75,24 +75,22 @@ A ceil(or) is equal to or(ceil). We also take into account that
 * ceil transforms terms into predicates
 -}
 simplify
-    ::  ( MetaOrObject level
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Ceil level (OrPattern level variable)
+    -> Ceil Object (OrPattern Object variable)
     -> Simplifier
-        ( OrPattern level variable
-        , SimplificationProof level
+        ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplify
     tools
@@ -112,7 +110,7 @@ for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Ceil level) (Valid level) (OrPattern level variable)
+> CofreeF (Ceil Object) (Valid Object) (OrPattern Object variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -120,23 +118,20 @@ besides the pattern sort, which will make it even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( MetaOrObject level
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
-        , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> OrPattern level variable
+    -> OrPattern Object variable
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated
     tools substitutionSimplifier simplifier axiomIdToEvaluator child
   = do
@@ -155,8 +150,7 @@ simplifyEvaluated
 for details.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , SortedVariable variable
         , Ord variable
         , Show variable
@@ -164,14 +158,14 @@ makeEvaluate
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level variable
+    -> Pattern Object variable
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeEvaluate tools substitutionSimplifier simplifier axiomIdToEvaluator child
   | Pattern.isTop    child = return (OrPattern.top, SimplificationProof)
   | Pattern.isBottom child = return (OrPattern.bottom, SimplificationProof)
@@ -184,23 +178,21 @@ makeEvaluate tools substitutionSimplifier simplifier axiomIdToEvaluator child
             child
 
 makeEvaluateNonBoolCeil
-    ::  ( MetaOrObject level
-        , FreshVariable variable
+    ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level variable
+    -> Pattern Object variable
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateNonBoolCeil
     tools
     substitutionSimplifier
@@ -238,23 +230,20 @@ makeEvaluateNonBoolCeil
 -- NOTE (hs-boot): Please update Ceil.hs-boot file when changing the
 -- signature.
 makeEvaluateTerm
-    ::  forall level variable .
-        ( MetaOrObject level
-        , FreshVariable variable
+    ::  forall variable .
+        ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
-    -> Simplifier
-        (OrPredicate level variable, SimplificationProof level)
+    -> Simplifier (OrPredicate Object variable, SimplificationProof Object)
 makeEvaluateTerm
     tools
     substitutionSimplifier
@@ -335,22 +324,22 @@ makeEvaluateTerm
 {-| Evaluates the ceil of a domain value.
 -}
 makeEvaluateBuiltin
-    :: forall level variable .
-        ( level ~ Object
+    :: forall variable .
+        ( Object ~ Object
         , FreshVariable variable
         , SortedVariable variable
         , Unparse variable
         , Show variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> Domain.Builtin (TermLike variable)
     -> Simplifier
-        (OrPredicate level variable, SimplificationProof level)
+        (OrPredicate Object variable, SimplificationProof Object)
 makeEvaluateBuiltin
     _tools
     _substitutionSimplifier
@@ -384,7 +373,7 @@ makeEvaluateBuiltin
         )
         values
     let
-        ceils :: [OrPredicate level variable]
+        ceils :: [OrPredicate Object variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicate
         tools
@@ -409,7 +398,7 @@ makeEvaluateBuiltin
         )
         (Foldable.toList l)
     let
-        ceils :: [OrPredicate level variable]
+        ceils :: [OrPredicate Object variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicate
         tools
@@ -444,10 +433,8 @@ makeEvaluateBuiltin
     return topPredicateWithProof
 
 topPredicateWithProof
-    ::  ( MetaOrObject level
-        , Ord variable
-        )
-    => (OrPredicate level variable, SimplificationProof level)
+    :: Ord variable
+    => (OrPredicate Object variable, SimplificationProof Object)
 topPredicateWithProof =
     ( MultiOr.make [Predicate.top]
     , SimplificationProof

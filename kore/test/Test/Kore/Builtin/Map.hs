@@ -62,11 +62,7 @@ genConcreteMap genElement =
 genMapPattern :: Gen (TermLike Variable)
 genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
 
-genMapSortedVariable
-    :: MetaOrObject level
-    => Sort
-    -> Gen a
-    -> Gen (Map (Variable) a)
+genMapSortedVariable :: Sort -> Gen a -> Gen (Map (Variable) a)
 genMapSortedVariable sort genElement =
     Gen.map
         (Range.linear 0 32)

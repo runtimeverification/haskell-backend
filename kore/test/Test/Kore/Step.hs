@@ -490,13 +490,12 @@ metaI
 metaI p = mkApp Mock.testSort iSymbol [p]
 
 runStep
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Pattern Object Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule level Variable]
-    -> IO [(Pattern Object Variable, StepProof level Variable)]
+    -> [RewriteRule Object Variable]
+    -> IO [(Pattern Object Variable, StepProof Object Variable)]
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig
@@ -514,13 +513,12 @@ runStep metadataTools configuration axioms =
     simplifier = Simplifier.create metadataTools Map.empty
 
 runSteps
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Pattern Object Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule level Variable]
-    -> IO (Pattern Object Variable, StepProof level Variable)
+    -> [RewriteRule Object Variable]
+    -> IO (Pattern Object Variable, StepProof Object Variable)
 runSteps metadataTools configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig

@@ -119,7 +119,7 @@ testVerifiedModule =
                 (Map.lookup testMainModuleName modulesMap)
         Left err -> error (printError err)
 
-metadataTools :: MetaOrObject level => SmtMetadataTools StepperAttributes
+metadataTools :: SmtMetadataTools StepperAttributes
 metadataTools = MetadataTools.build testVerifiedModule
 
 test_metadataTools :: [TestTree]

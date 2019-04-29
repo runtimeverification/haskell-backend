@@ -68,7 +68,6 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
-import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -79,21 +78,20 @@ import           Kore.Variables.Fresh
 'Pattern'.
 -}
 simplify
-    ::  ( MetaOrObject level
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Show variable
         , Ord variable
         , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier
-        ( Pattern level variable
-        , SimplificationProof level
+        ( Pattern Object variable
+        , SimplificationProof Object
         )
 simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
     (orPatt, proof) <-
@@ -104,21 +102,20 @@ simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
 'OrPattern'.
 -}
 simplifyToOr
-    ::  ( MetaOrObject level
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Show variable
         , Ord variable
         , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSimplifier level
+    -> PredicateSimplifier Object
     -> TermLike variable
     -> Simplifier
-        ( OrPattern level variable
-        , SimplificationProof level
+        ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
     simplifyInternal
@@ -132,22 +129,21 @@ simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
         (simplifyToOr tools axiomIdToEvaluator)
 
 simplifyInternal
-    ::  ( MetaOrObject level
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Show variable
         , Ord variable
         , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Recursive.Base (TermLike variable) (TermLike variable)
     -> Simplifier
-        ( OrPattern level variable
-        , SimplificationProof level
+        ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplifyInternal
     tools

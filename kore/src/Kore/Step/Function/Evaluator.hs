@@ -63,9 +63,8 @@ import           Kore.Variables.Fresh
 {-| Evaluates functions on an application pattern.
 -}
 evaluateApplication
-    ::  forall level variable.
-        ( MetaOrObject level
-        , Ord variable
+    ::  forall variable.
+        ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
@@ -74,20 +73,20 @@ evaluateApplication
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate level variable
+    -> Predicate Object variable
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
-        (Application level)
-        (Valid variable level)
+        (Application Object)
+        (Valid variable Object)
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 evaluateApplication
     tools
     substitutionSimplifier
@@ -143,9 +142,8 @@ evaluateApplication
 {-| Evaluates axioms on patterns.
 -}
 evaluatePattern
-    ::  forall level variable .
-        ( MetaOrObject level
-        , Ord variable
+    ::  forall variable .
+        ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
@@ -154,19 +152,19 @@ evaluatePattern
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate level variable
+    -> Predicate Object variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrPattern level variable
+    -> OrPattern Object variable
     -- ^ The default value
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 evaluatePattern
     tools
     substitutionSimplifier
@@ -193,9 +191,8 @@ evaluatePattern
 Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
-    ::  forall level variable .
-        ( MetaOrObject level
-        , Ord variable
+    ::  forall variable .
+        ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
@@ -204,20 +201,20 @@ maybeEvaluatePattern
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate level variable
+    -> Predicate Object variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrPattern level variable
+    -> OrPattern Object variable
     -- ^ The default value
     -> Maybe
         (Simplifier
-            (OrPattern level variable, SimplificationProof level)
+            (OrPattern Object variable, SimplificationProof Object)
         )
 maybeEvaluatePattern
     tools
@@ -275,10 +272,10 @@ maybeEvaluatePattern
                                 , SimplificationProof
                                 )
   where
-    identifier :: Maybe (AxiomIdentifier level)
+    identifier :: Maybe (AxiomIdentifier Object)
     identifier = AxiomIdentifier.extract patt
 
-    maybeEvaluator :: Maybe (BuiltinAndAxiomSimplifier level)
+    maybeEvaluator :: Maybe (BuiltinAndAxiomSimplifier Object)
     maybeEvaluator = do
         identifier' <- identifier
         Map.lookup identifier' axiomIdToEvaluator
@@ -294,8 +291,8 @@ maybeEvaluatePattern
             childrenPredicate
 
     simplifyIfNeeded
-        :: Pattern level variable
-        -> Simplifier (OrPattern level variable)
+        :: Pattern Object variable
+        -> Simplifier (OrPattern Object variable)
     simplifyIfNeeded toSimplify =
         if toSimplify == unchangedPatt
             then return (OrPattern.fromPattern unchangedPatt)
@@ -308,11 +305,11 @@ maybeEvaluatePattern
                     toSimplify
 
 evaluateSortInjection
-    :: (MetaOrObject level, Ord variable)
+    :: Ord variable
     => SmtMetadataTools StepperAttributes
-    -> Application level (TermLike variable)
-    ->  ( Application level (TermLike variable)
-        , SimplificationProof level
+    -> Application Object (TermLike variable)
+    ->  ( Application Object (TermLike variable)
+        , SimplificationProof Object
         )
 evaluateSortInjection tools ap
   | give tools isSortInjection_ apHead
@@ -349,8 +346,7 @@ evaluateSortInjection tools ap
 was evaluated.
 -}
 reevaluateFunctions
-    ::  ( MetaOrObject level
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -359,14 +355,14 @@ reevaluateFunctions
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern level variable
+    -> Pattern Object variable
     -- ^ Function evaluation result.
-    -> Simplifier (OrPattern level variable)
+    -> Simplifier (OrPattern Object variable)
 reevaluateFunctions
     tools
     substitutionSimplifier
@@ -407,24 +403,23 @@ reevaluateFunctions
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
 mergeWithConditionAndSubstitution
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate level variable
+    -> Predicate Object variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedAxiom level variable, SimplificationProof level)
+    -> (AttemptedAxiom Object variable, SimplificationProof Object)
     -- ^ AttemptedAxiom to which the condition should be added.
-    -> Simplifier (AttemptedAxiom level variable, SimplificationProof level)
+    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
 mergeWithConditionAndSubstitution
     _ _ _ _ _ (AttemptedAxiom.NotApplicable, _proof)
   =

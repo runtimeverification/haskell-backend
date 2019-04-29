@@ -34,8 +34,7 @@ child.
 Right now this does not do any actual simplification.
 -}
 simplify
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -50,8 +49,7 @@ simplify
     simplifyEvaluated child
 
 simplifyEvaluated
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable

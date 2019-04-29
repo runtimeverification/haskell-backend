@@ -34,8 +34,7 @@ test_topSimplification =
     ]
 
 evaluate
-    ::  ( MetaOrObject level)
-    => Top level (OrPattern Object Variable)
+    :: Top Object (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate top =
     case simplify top of

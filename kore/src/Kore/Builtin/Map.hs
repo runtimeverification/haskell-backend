@@ -543,24 +543,23 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
-    :: forall level variable unifierM unifier p expanded proof .
+    :: forall variable unifierM unifier p expanded proof .
         ( SortedVariable variable
-        , MetaOrObject level
         , FreshVariable variable
         , Show variable
         , Unparse variable
         , p ~ TermLike variable
-        , expanded ~ Pattern level variable
-        , proof ~ SimplificationProof level
+        , expanded ~ Pattern Object variable
+        , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> (p -> p -> unifier (expanded, proof))
     -> p
@@ -585,11 +584,11 @@ unifyEquals
     discardProofs = Map.map fst
 
     -- | Given a collection 't' of 'Conditional' values, propagate all the
-    -- predicates to the top level, returning a 'Conditional' collection.
+    -- predicates to the top Object, returning a 'Conditional' collection.
     propagatePredicates
-        :: (level ~ Object, Traversable t)
-        => t (Conditional level variable a)
-        -> Conditional level variable (t a)
+        :: Traversable t
+        => t (Conditional Object variable a)
+        -> Conditional Object variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
@@ -651,8 +650,7 @@ unifyEquals
 
     -- | Unify two concrete maps.
     unifyEqualsConcrete
-        :: level ~ Object
-        => Domain.InternalMap (TermLike variable)
+        :: Domain.InternalMap (TermLike variable)
         -> Domain.InternalMap (TermLike variable)
         -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2 = do
@@ -682,8 +680,7 @@ unifyEquals
 
     -- | Unify one concrete map with one framed concrete map.
     unifyEqualsFramed1
-        :: level ~ Object
-        => Domain.InternalMap (TermLike variable)  -- ^ concrete map
+        :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
         -> Domain.InternalMap (TermLike variable)  -- ^ framed map
         -> TermLike variable  -- ^ framing variable
         -> unifier (expanded, proof)
@@ -696,7 +693,7 @@ unifyEquals
         (frame, _) <- unifyEqualsChildren x (asBuiltinMap remainder1)
         let
             -- The concrete part of the unification result.
-            concrete :: Pattern level variable
+            concrete :: Pattern Object variable
             concrete =
                 asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
 
@@ -719,9 +716,8 @@ unifyEquals
         asBuiltinMap = asInternal tools builtinMapSort
 
     unifyEqualsElement
-        :: level ~ Object
-        => Domain.InternalMap (TermLike variable)  -- ^ concrete map
-        -> SymbolOrAlias level  -- ^ 'element' symbol
+        :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
+        -> SymbolOrAlias Object  -- ^ 'element' symbol
         -> TermLike variable  -- ^ key
         -> TermLike variable  -- ^ value
         -> unifier (expanded, proof)

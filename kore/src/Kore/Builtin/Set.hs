@@ -503,24 +503,23 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable unifier unifierM p expanded proof.
+    :: forall variable unifier unifierM p expanded proof.
         ( SortedVariable variable
         , Unparse variable
         , Show variable
-        , MetaOrObject level
         , FreshVariable variable
         , p ~ TermLike variable
-        , expanded ~ Pattern level variable
-        , proof ~ SimplificationProof level
+        , expanded ~ Pattern Object variable
+        , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> (p -> p -> unifier (expanded, proof))
     -> p
@@ -541,11 +540,11 @@ unifyEquals
     hookTools = StepperAttributes.hook <$> tools
 
     -- | Given a collection 't' of 'Conditional' values, propagate all the
-    -- predicates to the top level, returning a 'Conditional' collection.
+    -- predicates to the top Object, returning a 'Conditional' collection.
     propagatePredicates
-        :: (level ~ Object, Traversable t)
-        => t (Conditional level variable a)
-        -> Conditional level variable (t a)
+        :: Traversable t
+        => t (Conditional Object variable a)
+        -> Conditional Object variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
@@ -643,7 +642,7 @@ unifyEquals
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
-        :: level ~ Object
+        :: Object ~ Object
         => Domain.InternalSet
         -> Domain.InternalSet
         -> unifier (expanded, proof)
@@ -661,8 +660,7 @@ unifyEquals
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
-        :: (level ~ Object, k ~ TermLike Concrete)
-        => Domain.InternalSet  -- ^ concrete set
+        :: Domain.InternalSet  -- ^ concrete set
         -> Domain.InternalSet -- ^ framed concrete set
         -> TermLike variable  -- ^ framing variable
         -> unifier (expanded, proof)
@@ -686,9 +684,8 @@ unifyEquals
         Domain.InternalSet { builtinSetChild = set2 } = builtin2
 
     unifyEqualsElement
-        :: level ~ Object
-        => Domain.InternalSet  -- ^ concrete set
-        -> SymbolOrAlias level  -- ^ 'element' symbol
+        :: Domain.InternalSet  -- ^ concrete set
+        -> SymbolOrAlias Object  -- ^ 'element' symbol
         -> p  -- ^ key
         -> unifier (expanded, proof)
     unifyEqualsElement builtin1 element' key2 =

@@ -37,8 +37,7 @@ import           Kore.Variables.Fresh
 with the given pattern.
 -}
 mergeWithPredicate
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
@@ -48,16 +47,16 @@ mergeWithPredicate
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate level variable
+    -> Predicate Object variable
     -- ^ Condition and substitution to add.
-    -> Pattern level variable
+    -> Pattern Object variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (Pattern level variable, SimplificationProof level)
+    -> Simplifier (Pattern Object variable, SimplificationProof Object)
 mergeWithPredicate
     tools
     substitutionSimplifier
@@ -96,22 +95,21 @@ mergeWithPredicate
         evaluatedCondition
 
 mergeWithEvaluatedCondition
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern level variable
-    -> Predicate level variable
-    -> Simplifier (Pattern level variable, SimplificationProof level)
+    -> Pattern Object variable
+    -> Predicate Object variable
+    -> Simplifier (Pattern Object variable, SimplificationProof Object)
 mergeWithEvaluatedCondition
     tools
     substitutionSimplifier
@@ -152,17 +150,16 @@ to re-simplify them.
 -}
 mergeWithPredicateAssumesEvaluated
     ::  ( FreshVariable variable
-        , MetaOrObject level
         , Monad m
         , Ord variable
         , Show variable
         , SortedVariable variable
         , Unparse variable
         )
-    => PredicateMerger level variable m
-    -> Predicate level variable
-    -> Conditional level variable term
-    -> m (Conditional level variable term, SimplificationProof level)
+    => PredicateMerger Object variable m
+    -> Predicate Object variable
+    -> Conditional Object variable term
+    -> m (Conditional Object variable term, SimplificationProof Object)
 mergeWithPredicateAssumesEvaluated
     (PredicateMerger substitutionMerger)
     Conditional

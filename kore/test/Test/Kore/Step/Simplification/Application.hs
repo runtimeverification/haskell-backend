@@ -367,17 +367,16 @@ makeApplication patternSort symbol patterns =
             }
 
 evaluate
-    ::  ( MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
-        (Application level)
-        (Valid Variable level)
-        (OrPattern level Variable)
-    -> IO (OrPattern level Variable)
+        (Application Object)
+        (Valid Variable Object)
+        (OrPattern Object Variable)
+    -> IO (OrPattern Object Variable)
 evaluate
     tools
     simplifier

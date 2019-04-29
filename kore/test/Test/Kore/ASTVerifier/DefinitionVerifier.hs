@@ -662,9 +662,7 @@ variable (VariableName name) sort =
         , variableSort = sort
         }
 
-unifiedVariable
-    :: MetaOrObject level
-    => VariableName -> Sort -> Variable
+unifiedVariable :: VariableName -> Sort -> Variable
 unifiedVariable name sort =
     variable name sort
 
@@ -672,8 +670,7 @@ variablePattern :: VariableName -> Sort -> Pattern level domain Variable p
 variablePattern name sort =
     VariablePattern (variable name sort)
 
-unifiedVariablePattern
-    :: MetaOrObject level => VariableName -> Sort -> TermLike Variable
+unifiedVariablePattern :: VariableName -> Sort -> TermLike Variable
 unifiedVariablePattern name patternSort =
     asPurePattern (valid :< variablePattern name patternSort)
   where
@@ -681,8 +678,7 @@ unifiedVariablePattern name patternSort =
     valid = Valid { patternSort, freeVariables }
 
 simpleExistsPattern
-    :: MetaOrObject level
-    => Variable
+    :: Variable
     -> Sort
     -> Pattern level domain Variable (TermLike Variable)
 simpleExistsPattern quantifiedVariable resultSort =
@@ -693,7 +689,7 @@ simpleExistsPattern quantifiedVariable resultSort =
         }
 
 simpleExistsUnifiedPattern
-    :: MetaOrObject level => VariableName -> Sort -> TermLike Variable
+    :: VariableName -> Sort -> TermLike Variable
 simpleExistsUnifiedPattern name sort =
     asPurePattern $ valid :< simpleExistsPattern (variable name sort) sort
   where
@@ -704,13 +700,11 @@ simpleExistsObjectUnifiedPattern
 simpleExistsObjectUnifiedPattern = simpleExistsUnifiedPattern
 
 simpleExistsUnifiedPatternWithType
-    :: MetaOrObject level
-    => level -> VariableName -> Sort -> TermLike Variable
-simpleExistsUnifiedPatternWithType _ = simpleExistsUnifiedPattern
+    :: VariableName -> Sort -> TermLike Variable
+simpleExistsUnifiedPatternWithType = simpleExistsUnifiedPattern
 
 simpleExistsEqualsUnifiedPattern
-    :: MetaOrObject level
-    => VariableName
+    :: VariableName
     -> OperandSort level
     -> ResultSort level
     -> TermLike Variable
@@ -751,8 +745,7 @@ applicationPatternWithChildren (SymbolName name) unifiedPatterns =
         }
 
 applicationUnifiedPatternWithParams
-    :: MetaOrObject level
-    => Sort
+    :: Sort
     -> SymbolName
     -> [Sort]
     -> TermLike Variable

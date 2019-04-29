@@ -57,24 +57,23 @@ unificationProcedure
         , Ord variable
         , Show variable
         , Unparse variable
-        , MetaOrObject level
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -- ^left-hand-side of unification
     -> TermLike variable
     -> unifier
-        ( OrPredicate level variable
-        , UnificationProof level variable
+        ( OrPredicate Object variable
+        , UnificationProof Object variable
         )
 unificationProcedure
     tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2

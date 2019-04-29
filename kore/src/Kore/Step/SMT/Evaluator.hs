@@ -15,14 +15,11 @@ import           Control.Error
                  ( MaybeT, runMaybeT )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
-import           Data.Proxy
-                 ( Proxy (Proxy) )
 import           Data.Reflection
                  ( Given )
 import qualified Data.Text as Text
 
 import qualified Control.Monad.Counter as Counter
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -46,9 +43,8 @@ import qualified SMT
 The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate
-    :: forall level variable m.
+    :: forall variable m.
         ( Given (SmtMetadataTools StepperAttributes)
-        , MetaOrObject level
         , Ord variable
         , Show variable
         , Unparse variable
@@ -58,24 +54,22 @@ decidePredicate
     => Predicate variable
     -> m (Maybe Bool)
 decidePredicate korePredicate =
-    case isMetaOrObject (Proxy :: Proxy level) of
-        IsObject ->
-            SMT.inNewScope $ runMaybeT $ do
-                smtPredicate <-
-                    goTranslatePredicate korePredicate
-                -- smtPredicate' <-
-                --     goTranslatePredicate (makeNotPredicate korePredicate)
-                result <- SMT.inNewScope
-                    (SMT.assert smtPredicate >> SMT.check)
-                -- result' <- SMT.inNewScope
-                --     (SMT.assert smtPredicate' >> SMT.check)
-                -- case (result, result') of
-                --     (Unsat, _) -> return False
-                --     (_, Unsat) -> return True
-                --     _ -> empty
-                case result of
-                    Unsat -> return False
-                    _ -> Applicative.empty
+    SMT.inNewScope $ runMaybeT $ do
+        smtPredicate <-
+            goTranslatePredicate korePredicate
+        -- smtPredicate' <-
+        --     goTranslatePredicate (makeNotPredicate korePredicate)
+        result <- SMT.inNewScope
+            (SMT.assert smtPredicate >> SMT.check)
+        -- result' <- SMT.inNewScope
+        --     (SMT.assert smtPredicate' >> SMT.check)
+        -- case (result, result') of
+        --     (Unsat, _) -> return False
+        --     (_, Unsat) -> return True
+        --     _ -> empty
+        case result of
+            Unsat -> return False
+            _ -> Applicative.empty
 
 goTranslatePredicate
     :: forall variable.

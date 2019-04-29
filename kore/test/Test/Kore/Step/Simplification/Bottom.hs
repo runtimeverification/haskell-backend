@@ -38,9 +38,8 @@ test_bottomSimplification =
     ]
 
 evaluate
-    ::  ( MetaOrObject level)
-    => Bottom level (OrPattern level Variable)
-    -> OrPattern level Variable
+    :: Bottom Object (OrPattern Object Variable)
+    -> OrPattern Object Variable
 evaluate bottom =
     case simplify bottom of
         (result, _proof) -> result

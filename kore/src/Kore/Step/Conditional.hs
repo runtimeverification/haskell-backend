@@ -81,8 +81,7 @@ instance
     NFData (Conditional level variable child)
 
 instance
-    ( MetaOrObject level
-    , Ord variable
+    ( Ord variable
     , Unparse variable
     , SortedVariable variable
     , Semigroup term
@@ -93,8 +92,7 @@ instance
     {-# INLINE (<>) #-}
 
 instance
-    ( MetaOrObject level
-    , Ord variable
+    ( Ord variable
     , Unparse variable
     , SortedVariable variable
     , Monoid term
@@ -113,8 +111,7 @@ instance
     {-# INLINE mappend #-}
 
 instance
-    ( MetaOrObject level
-    , SortedVariable variable
+    ( SortedVariable variable
     , Ord variable
     , Unparse variable
     ) =>
@@ -146,8 +143,7 @@ instance TopBottom term
         isBottom term || isBottom predicate || isBottom substitution
 
 instance
-    ( MetaOrObject level
-    , SortedVariable variable
+    ( SortedVariable variable
     , Ord variable
     , Show variable
     , Unparse variable
@@ -291,8 +287,7 @@ See also: 'substitutionToPredicate'.
 
 -}
 toPredicate
-    :: ( MetaOrObject Object
-       , SortedVariable variable
+    :: ( SortedVariable variable
        , Ord variable
        , Show variable
        , Unparse variable

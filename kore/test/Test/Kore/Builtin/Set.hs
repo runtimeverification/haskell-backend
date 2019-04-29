@@ -217,10 +217,7 @@ test_size =
             (===) Pattern.top =<< evaluate predicate
         )
 
-setVariableGen
-    :: MetaOrObject level
-    => Sort
-    -> Gen (Set (Variable))
+setVariableGen :: Sort -> Gen (Set Variable)
 setVariableGen sort =
     Gen.set (Range.linear 0 32) (standaloneGen $ variableGen sort)
 

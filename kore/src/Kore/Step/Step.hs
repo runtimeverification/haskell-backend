@@ -105,7 +105,6 @@ newtype UnificationProcedure level =
             , Ord variable
             , Show variable
             , Unparse variable
-            , MetaOrObject level
             , FreshVariable variable
             , MonadUnify unifierM
             , unifier ~ unifierM variable
@@ -577,8 +576,7 @@ variables have been instantiated by the substitution.
 
  -}
 checkSubstitutionCoverage
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord     variable
         , Show    variable
         , Unparse variable

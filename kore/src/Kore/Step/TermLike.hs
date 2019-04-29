@@ -187,7 +187,6 @@ may appear in the right-hand side of any substitution, but this is not checked.
  -}
 substitute
     ::  ( FreshVariable variable
-        , MetaOrObject level
         , Ord variable
         , SortedVariable variable
         )
@@ -205,10 +204,7 @@ substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
 ensuring that no 'Variable' in the result is accidentally captured.
 
  -}
-externalizeFreshVariables
-    :: forall level. MetaOrObject level
-    => TermLike Variable
-    -> TermLike Variable
+externalizeFreshVariables :: TermLike Variable -> TermLike Variable
 externalizeFreshVariables termLike =
     Reader.runReader
         (Recursive.fold externalizeFreshVariablesWorker termLike)

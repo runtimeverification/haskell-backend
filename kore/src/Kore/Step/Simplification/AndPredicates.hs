@@ -41,21 +41,20 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 simplifyEvaluatedMultiPredicate
-    :: forall level variable .
-        ( MetaOrObject level
-        , SortedVariable variable
+    :: forall variable .
+        ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
-    -> MultiAnd (OrPredicate level variable)
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
+    -> MultiAnd (OrPredicate Object variable)
     -> Simplifier
-        (OrPredicate level variable, SimplificationProof level)
+        (OrPredicate Object variable, SimplificationProof Object)
 simplifyEvaluatedMultiPredicate
     tools
     substitutionSimplifier
@@ -64,7 +63,7 @@ simplifyEvaluatedMultiPredicate
     predicates
   = do
     let
-        crossProduct :: MultiOr [Predicate level variable]
+        crossProduct :: MultiOr [Predicate Object variable]
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
@@ -75,8 +74,8 @@ simplifyEvaluatedMultiPredicate
         )
   where
     andPredicates
-        :: [Predicate level variable]
-        -> Simplifier (Predicate level variable)
+        :: [Predicate Object variable]
+        -> Simplifier (Predicate Object variable)
     andPredicates predicates0 = do
         (result, _proof) <- mergePredicatesAndSubstitutions
             tools

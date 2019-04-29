@@ -109,7 +109,7 @@ instance Unparse (Symbol level) where
 
 -- |Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
 -- corresponding to that argument.
-groundSymbol :: Id -> Symbol level
+groundSymbol :: Id -> Symbol Object
 groundSymbol ctor = Symbol
     { symbolConstructor = ctor
     , symbolParams = []
@@ -568,7 +568,7 @@ instance
 Every sentence type has attributes, so this operation is total.
 
  -}
-sentenceAttributes :: Sentence level sortParam patternType -> Attributes
+sentenceAttributes :: Sentence Object sortParam patternType -> Attributes
 sentenceAttributes =
     \case
         SentenceAliasSentence
@@ -602,13 +602,13 @@ sentenceAttributes =
 eraseSentenceAnnotations
     :: Functor domain
     => Sentence
-        level
+        Object
         sortParam
-        (PurePattern level domain variable erased)
+        (PurePattern Object domain variable erased)
     -> Sentence
-        level
+        Object
         sortParam
-        (PurePattern level domain variable (Annotation.Null level))
+        (PurePattern Object domain variable (Annotation.Null Object))
 eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
 
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
@@ -690,21 +690,21 @@ instance Unparse sentence => Unparse (Definition sentence) where
 
 class SentenceSymbolOrAlias (sentence :: * -> * -> *) where
     getSentenceSymbolOrAliasConstructor
-        :: sentence level patternType -> Id
+        :: sentence Object patternType -> Id
     getSentenceSymbolOrAliasSortParams
-        :: sentence level patternType -> [SortVariable]
+        :: sentence Object patternType -> [SortVariable]
     getSentenceSymbolOrAliasArgumentSorts
-        :: sentence level patternType -> [Sort]
+        :: sentence Object patternType -> [Sort]
     getSentenceSymbolOrAliasResultSort
-        :: sentence level patternType -> Sort
+        :: sentence Object patternType -> Sort
     getSentenceSymbolOrAliasAttributes
-        :: sentence level patternType -> Attributes
+        :: sentence Object patternType -> Attributes
     getSentenceSymbolOrAliasSentenceName
-        :: sentence level patternType -> String
+        :: sentence Object patternType -> String
     getSentenceSymbolOrAliasHead
-        :: sentence level patternType
+        :: sentence Object patternType
         -> [Sort]
-        -> SymbolOrAlias level
+        -> SymbolOrAlias Object
     getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
         { symbolOrAliasConstructor =
             getSentenceSymbolOrAliasConstructor sentence
@@ -755,87 +755,74 @@ type PureSentence level domain =
     Sentence level SortVariable (ParsedPurePattern level domain)
 
 instance
-    ( MetaOrObject level
-    , sortParam ~ SortVariable
-    ) =>
+    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            level
+            Object
             sortParam
-            (PurePattern level domain variable annotation)
+            (PurePattern Object domain variable annotation)
         )
-        (SentenceAlias level (PurePattern level domain variable annotation))
+        (SentenceAlias Object (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceAliasSentence
 
 instance
-    ( MetaOrObject level
-    , sortParam ~ SortVariable
-    ) =>
+    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            level
+            Object
             sortParam
-            (PurePattern level domain variable annotation)
+            (PurePattern Object domain variable annotation)
         )
-        (SentenceSymbol level (PurePattern level domain variable annotation))
+        (SentenceSymbol Object (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceSymbolSentence
 
 instance
-    ( sortParam ~ SortVariable
-    , level ~ Meta
-    ) =>
+    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            level
+            Object
             sortParam
-            (PurePattern level domain variable annotation)
+            (PurePattern Object domain variable annotation)
         )
-        (SentenceImport (PurePattern level domain variable annotation))
+        (SentenceImport (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceImportSentence
 
 instance
-    ( level ~ Meta
-    , sortParam ~ SortVariable
-    ) =>
+    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            level
+            Object
             sortParam
-            (PurePattern level domain variable annotation)
+            (PurePattern Object domain variable annotation)
         )
-        (SentenceAxiom sortParam (PurePattern level domain variable annotation))
+        (SentenceAxiom sortParam (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceAxiomSentence
 
 instance
-    ( MetaOrObject level
-    , sortParam ~ SortVariable
-    ) =>
     AsSentence
         (Sentence
-            level
-            sortParam
-            (PurePattern level domain variable annotation)
+            Object
+            SortVariable
+            (PurePattern Object domain variable annotation)
         )
-        (SentenceSort level (PurePattern level domain variable annotation))
+        (SentenceSort Object (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceSortSentence
 
 
 instance
-    ( level ~ Object
-    , sortParam ~ SortVariable
-    ) =>
+    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            level
+            Object
             sortParam
-            (PurePattern level domain variable annotation)
+            (PurePattern Object domain variable annotation)
         )
-        (SentenceHook (PurePattern level domain variable annotation))
+        (SentenceHook (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceHookSentence
 
@@ -877,6 +864,6 @@ type ParsedDefinition = Definition ParsedSentence
 
 castDefinitionDomainValues
     :: Functor domain
-    => PureDefinition level (Const Void)
-    -> PureDefinition level domain
+    => PureDefinition Object (Const Void)
+    -> PureDefinition Object domain
 castDefinitionDomainValues = (fmap . fmap) Pure.castVoidDomainValues

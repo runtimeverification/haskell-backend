@@ -175,7 +175,7 @@ symbolInj =
         [sortParamSort "From"]
         (sortParamSort "To")
 
-isInjHead :: SymbolOrAlias level -> Bool
+isInjHead :: SymbolOrAlias Object -> Bool
 isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 
 mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
@@ -216,9 +216,8 @@ tools = MetadataTools
     }
 
 unificationProblem
-    :: MetaOrObject level
-    => UnificationTerm level
-    -> UnificationTerm level
+    :: UnificationTerm Object
+    -> UnificationTerm Object
     -> TermLike Variable
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     mkAnd term1 term2
@@ -248,8 +247,7 @@ unificationResult (UnificationResultTerm term) sub predicate =
         }
 
 newtype UnificationTerm level = UnificationTerm (TermLike Variable)
-newtype UnificationResultTerm level =
-    UnificationResultTerm (TermLike Variable)
+newtype UnificationResultTerm level = UnificationResultTerm (TermLike Variable)
 
 andSimplifySuccess
     :: HasCallStack

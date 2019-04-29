@@ -61,8 +61,7 @@ result. The result is re-simplified once.
 
 -}
 simplify
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -157,16 +156,15 @@ See also: 'simplify'
 -}
 simplifyPartial
     ::  ( FreshVariable variable
-        , MetaOrObject level
         , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier level
-    -> TermLikeSimplifier level
+    => PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> Syntax.Predicate variable
-    -> BranchT Simplifier (Predicate level variable)
+    -> BranchT Simplifier (Predicate Object variable)
 simplifyPartial
     substitutionSimplifier
     termSimplifier

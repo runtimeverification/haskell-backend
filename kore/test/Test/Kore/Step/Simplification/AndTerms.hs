@@ -28,7 +28,6 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -791,8 +790,7 @@ bDomainValue =
         }
 
 simplifyUnify
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
     -> IO (Pattern Object Variable, Maybe (Pattern Object Variable))
@@ -803,8 +801,7 @@ simplifyUnify tools first second =
 
 
 unify
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
     -> IO (Maybe (Pattern Object Variable))
@@ -829,8 +826,7 @@ unify tools first second =
             second
 
 simplify
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
     -> IO (Pattern Object Variable)

@@ -553,11 +553,10 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 evaluate
-    :: forall level . MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> BuiltinAndAxiomSimplifier Object
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom level)
+    -> IO (CommonAttemptedAxiom Object)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -565,13 +564,11 @@ evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where
-    substitutionSimplifier :: PredicateSimplifier level
+    substitutionSimplifier :: PredicateSimplifier Object
     substitutionSimplifier =
         Predicate.create
             metadataTools
             patternSimplifier
             Map.empty
-    patternSimplifier
-        ::  ( MetaOrObject level )
-        => TermLikeSimplifier level
+    patternSimplifier :: TermLikeSimplifier Object
     patternSimplifier = Simplifier.create metadataTools Map.empty

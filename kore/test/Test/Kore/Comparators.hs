@@ -1444,8 +1444,7 @@ instance EqualWithExplanation (AxiomIdentifier Object)
     printWithExplanation = show
 
 instance
-    ( MetaOrObject Object
-    , Ord  variable
+    ( Ord  variable
     , Show variable
     , EqualWithExplanation variable
     ) =>
@@ -1455,8 +1454,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( MetaOrObject Object
-    , Ord  variable
+    ( Ord  variable
     , Show variable
     , EqualWithExplanation variable
     ) =>
@@ -1711,17 +1709,11 @@ instance
 
 -- For: Alias
 
-instance
-    MetaOrObject Object
-    => EqualWithExplanation (Alias Object)
-  where
+instance EqualWithExplanation (Alias Object) where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance
-    MetaOrObject Object
-    => StructEqualWithExplanation (Alias Object)
-  where
+instance StructEqualWithExplanation (Alias Object) where
     structConstructorName _ = "Alias"
     structFieldsWithNames expect@(Alias _ _) actual@(Alias _ _) =
         map (\f -> f expect actual)
@@ -1731,17 +1723,11 @@ instance
 
 -- For: SortVariable
 
-instance
-    MetaOrObject Object
-    => EqualWithExplanation SortVariable
-  where
+instance EqualWithExplanation SortVariable where
     compareWithExplanation a@(SortVariable _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
-instance
-    MetaOrObject Object
-    => WrapperEqualWithExplanation SortVariable
-  where
+instance WrapperEqualWithExplanation SortVariable where
     wrapperField = Function.on (EqWrap "getSortVariable = ") getSortVariable
     wrapperConstructorName _ = "SortVariable"
 

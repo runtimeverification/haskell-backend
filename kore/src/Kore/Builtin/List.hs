@@ -399,22 +399,20 @@ isSymbolUnit = Builtin.isSymbol unitKey
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable unifier unifierM p expanded proof.
-        ( Ord variable
-        , Show variable
+    :: forall variable unifier unifierM p expanded proof.
+        ( Show variable
         , Unparse variable
         , SortedVariable variable
-        , MetaOrObject level
         , FreshVariable variable
         , p ~ TermLike variable
-        , expanded ~ Pattern level variable
-        , proof ~ SimplificationProof level
+        , expanded ~ Pattern Object variable
+        , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
+    -> PredicateSimplifier Object
     -> (p -> p -> unifier (expanded, proof))
     -> p
     -> p
@@ -433,8 +431,8 @@ unifyEquals
 
     propagatePredicates
         :: Traversable t
-        => t (Conditional level variable a)
-        -> Conditional level variable (t a)
+        => t (Conditional Object variable a)
+        -> Conditional Object variable (t a)
     propagatePredicates = sequenceA
 
     discardProofs :: Seq (expanded, proof) -> Seq expanded
@@ -480,8 +478,7 @@ unifyEquals
             _ -> empty
 
     unifyEqualsConcrete
-        :: (level ~ Object)
-        => Domain.InternalList p
+        :: Domain.InternalList p
         -> Domain.InternalList p
         -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2
@@ -501,8 +498,7 @@ unifyEquals
         Domain.InternalList { builtinListChild = list2 } = builtin2
 
     unifyEqualsFramedRight
-        :: (level ~ Object)
-        => Domain.InternalList p
+        :: Domain.InternalList p
         -> Domain.InternalList p
         -> p
         -> unifier (expanded, proof)
@@ -534,8 +530,7 @@ unifyEquals
         listSuffix1 = asInternal tools builtinListSort suffix1
 
     unifyEqualsFramedLeft
-        :: level ~ Object
-        => Domain.InternalList p
+        :: Domain.InternalList p
         -> p
         -> Domain.InternalList p
         -> unifier (expanded, proof)

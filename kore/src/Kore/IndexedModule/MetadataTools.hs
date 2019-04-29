@@ -65,13 +65,12 @@ type SmtMetadataTools attributes =
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall level declAtts axiomAtts smt.
-        MetaOrObject level
-    => VerifiedModule declAtts axiomAtts
+    ::  forall declAtts axiomAtts smt.
+        VerifiedModule declAtts axiomAtts
     ->  (  VerifiedModule declAtts axiomAtts
         -> smt
         )
-    -> MetadataTools level smt declAtts
+    -> MetadataTools Object smt declAtts
 extractMetadataTools m smtExtractor =
     MetadataTools
         { symAttributes = getHeadAttributes m
@@ -100,17 +99,14 @@ extractMetadataTools m smtExtractor =
         in sort
 
     getSubsorts :: Sort -> [Vertex]
-    getSubsorts = case isMetaOrObject @level [] of
-        IsObject ->
-            maybe [] (reachable sortGraph) . sortToVertex
+    getSubsorts = maybe [] (reachable sortGraph) . sortToVertex
 
     checkSubsort :: Sort -> Sort -> Bool
-    checkSubsort = case isMetaOrObject @level [] of
-        IsObject ->
-            let
-                realCheckSubsort subsort supersort
-                    | Just subId <- sortToVertex subsort
-                    , Just supId <- sortToVertex supersort =
-                          path sortGraph supId subId
-                realCheckSubsort _ _ = False
-            in realCheckSubsort
+    checkSubsort =
+        let
+            realCheckSubsort subsort supersort
+              | Just subId <- sortToVertex subsort
+              , Just supId <- sortToVertex supersort =
+                path sortGraph supId subId
+            realCheckSubsort _ _ = False
+        in realCheckSubsort

@@ -46,8 +46,8 @@ pattern from the given sort parameters.
 symbolOrAliasSorts
     :: (SentenceSymbolOrAlias ssoa, MonadError (Error e) m)
     => [Sort]
-    -> ssoa level pat
-    -> m (ApplicationSorts level)
+    -> ssoa Object pat
+    -> m (ApplicationSorts Object)
 symbolOrAliasSorts params sentence = do
     variableToSort <-
         pairVariablesToSorts
@@ -110,10 +110,10 @@ pairVariablesToSorts variables sorts
 It assumes that the pattern has the provided sort.
 -}
 quantifyFreeVariables
-    :: (Foldable domain, Functor domain, MetaOrObject level)
+    :: (Foldable domain, Functor domain)
     => Sort
-    -> PurePattern level domain Variable (Annotation.Null level)
-    -> PurePattern level domain Variable (Annotation.Null level)
+    -> PurePattern Object domain Variable (Annotation.Null Object)
+    -> PurePattern Object domain Variable (Annotation.Null Object)
 quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)

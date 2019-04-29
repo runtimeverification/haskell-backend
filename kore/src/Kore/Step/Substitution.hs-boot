@@ -28,7 +28,6 @@ import           Kore.Variables.Fresh
 mergePredicatesAndSubstitutionsExcept
     ::  ( Show variable
         , SortedVariable variable
-        , MetaOrObject level
         , Ord variable
         , Unparse variable
         , FreshVariable variable
@@ -36,12 +35,12 @@ mergePredicatesAndSubstitutionsExcept
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier
-        ( Predicate level variable
-        , UnificationProof level variable
+        ( Predicate Object variable
+        , UnificationProof Object variable
         )

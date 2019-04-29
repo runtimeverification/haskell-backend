@@ -32,7 +32,6 @@ import           Data.Profunctor
                  ( dimap )
 
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject (..), Object )
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -142,29 +141,28 @@ didn't manage to verify a claim within the its maximum number of steps.
 If the verification succeeds, it returns ().
 -}
 verify
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> TermLikeSimplifier Object
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSimplifier level
+    -> PredicateSimplifier Object
     -- ^ Simplifies predicates
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     ->  (  Pattern Object Variable
         -> [Strategy
             (Prim
                 (Pattern Object Variable)
-                (RewriteRule level Variable)
+                (RewriteRule Object Variable)
             )
            ]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
-    -> [(RewriteRule level Variable, Limit Natural)]
+    -> [(RewriteRule Object Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT
-        (OrPattern level Variable)
+        (OrPattern Object Variable)
         Simplifier
         ()
 verify
@@ -193,18 +191,16 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 defaultStrategy
-    :: forall level claim
-    .   ( MetaOrObject level
-        , Claim claim
-        )
+    :: forall claim
+    .  Claim claim
     => [claim]
     -- The claims that we want to prove
-    -> [Axiom level]
+    -> [Axiom Object]
     -> Pattern Object Variable
     -> [Strategy
         (Prim
             (Pattern Object Variable)
-            (RewriteRule level Variable)
+            (RewriteRule Object Variable)
         )
        ]
 defaultStrategy
@@ -220,31 +216,30 @@ defaultStrategy
             rewrites
         )
   where
-    rewrites :: [RewriteRule level Variable]
+    rewrites :: [RewriteRule Object Variable]
     rewrites = map unwrap axioms
       where
         unwrap (Axiom a) = a
-    coinductiveRewrites :: [RewriteRule level Variable]
+    coinductiveRewrites :: [RewriteRule Object Variable]
     coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
-    :: forall level . (MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier level
-    -> PredicateSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    :: SmtMetadataTools StepperAttributes
+    -> TermLikeSimplifier Object
+    -> PredicateSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     ->  (  Pattern Object Variable
         -> [Strategy
             (Prim
                 (Pattern Object Variable)
-                (RewriteRule level Variable)
+                (RewriteRule Object Variable)
             )
            ]
         )
-    -> (RewriteRule level Variable, Limit Natural)
+    -> (RewriteRule Object Variable, Limit Natural)
     -> ExceptT
-        (OrPattern level Variable)
+        (OrPattern Object Variable)
         Simplifier
         ()
 verifyClaim
@@ -266,7 +261,7 @@ verifyClaim
                     , substitution = mempty
                     }
                 )
-        startPattern :: CommonStrategyPattern level
+        startPattern :: CommonStrategyPattern Object
         startPattern =
             StrategyPattern.RewritePattern
                 Conditional
@@ -279,10 +274,10 @@ verifyClaim
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
-        :: Prim (Pattern Object Variable) (RewriteRule level Variable)
-        -> (CommonStrategyPattern level, StepProof level Variable)
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonStrategyPattern level, StepProof level Variable)
+        :: Prim (Pattern Object Variable) (RewriteRule Object Variable)
+        -> (CommonStrategyPattern Object, StepProof Object Variable)
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonStrategyPattern Object, StepProof Object Variable)
     transitionRule' =
         OnePath.transitionRule
             metadataTools
@@ -303,28 +298,26 @@ unprovenNodes executionGraph =
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
 verifyClaimStep
-    :: forall level claim
-    .   ( MetaOrObject level
-        , Claim claim
-        )
+    :: forall claim
+    .  Claim claim
     => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier level
-    -> PredicateSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> TermLikeSimplifier Object
+    -> PredicateSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -> claim
     -- ^ claim that is being proven
     -> [claim]
     -- ^ list of claims in the spec module
-    -> [Axiom level]
+    -> [Axiom Object]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph (CommonStrategyPattern level) (RewriteRule level Variable)
+    -> ExecutionGraph (CommonStrategyPattern Object) (RewriteRule Object Variable)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
     -> Simplifier
         (ExecutionGraph
-            (CommonStrategyPattern level)
-            (RewriteRule level Variable)
+            (CommonStrategyPattern Object)
+            (RewriteRule Object Variable)
         )
 verifyClaimStep
     tools
@@ -343,10 +336,10 @@ verifyClaimStep
         node
   where
     transitionRule'
-        :: Prim (Pattern Object Variable) (RewriteRule level Variable)
-        -> CommonStrategyPattern level
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonStrategyPattern level)
+        :: Prim (Pattern Object Variable) (RewriteRule Object Variable)
+        -> CommonStrategyPattern Object
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonStrategyPattern Object)
     transitionRule' =
         stripProof
             $ OnePath.transitionRule
@@ -357,7 +350,7 @@ verifyClaimStep
 
     strategy'
         :: Strategy
-            (Prim (Pattern Object Variable) (RewriteRule level Variable))
+            (Prim (Pattern Object Variable) (RewriteRule Object Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites
@@ -367,7 +360,7 @@ verifyClaimStep
                 (RewriteRule . coerce <$> claims)
                 rewrites
 
-    rewrites :: [RewriteRule level Variable]
+    rewrites :: [RewriteRule Object Variable]
     rewrites = coerce <$> axioms
 
     targetPattern :: Pattern Object Variable

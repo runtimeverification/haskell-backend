@@ -184,10 +184,9 @@ test_substitutionNormalization =
     f = groundHead "f" AstLocationTest
 
 runNormalizeSubstitution
-    :: MetaOrObject level
-    => [(Variable, TermLike Variable)]
+    :: [(Variable, TermLike Variable)]
     -> Either
-        (SubstitutionError level Variable)
+        (SubstitutionError Object Variable)
         [(Variable, TermLike Variable)]
 runNormalizeSubstitution substitution =
     fmap (Substitution.unwrap . Conditional.substitution)
@@ -214,7 +213,7 @@ runNormalizeSubstitutionObject substitution =
             Mock.headSortsMapping
             Mock.smtDeclarations
 
-mockMetadataTools :: MetaOrObject level => SmtMetadataTools StepperAttributes
+mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools = MetadataTools
     { symAttributes = const Mock.functionalAttributes
     , symbolOrAliasType = const HeadType.Symbol

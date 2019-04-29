@@ -18,7 +18,6 @@ import           Debug.Trace
 import           Kore.AST.Common
                  ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -64,25 +63,24 @@ data CheckResult
     deriving (Show)
 
 check
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> TermLikeSimplifier Object
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSimplifier level
+    -> PredicateSimplifier Object
     -- ^ Simplifies predicates
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonModalPattern level
+    ->  (  CommonModalPattern Object
         -> [Strategy
             (Prim
-                (CommonModalPattern level)
-                (RewriteRule level Variable)
+                (CommonModalPattern Object)
+                (RewriteRule Object Variable)
             )
            ]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
-    -> [(ImplicationRule level Variable, Limit Natural)]
+    -> [(ImplicationRule Object Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> Simplifier [CheckResult]
@@ -103,13 +101,12 @@ check
         )
 
 bmcStrategy
-    :: forall level . (MetaOrObject level)
-    => [Axiom level]
-    -> CommonModalPattern level
+    :: [Axiom Object]
+    -> CommonModalPattern Object
     -> [Strategy
         (Prim
-            (CommonModalPattern level)
-            (RewriteRule level Variable)
+            (CommonModalPattern Object)
+            (RewriteRule Object Variable)
         )
        ]
 bmcStrategy
@@ -117,27 +114,26 @@ bmcStrategy
     goal
   =  repeat (defaultOneStepStrategy goal rewrites)
   where
-    rewrites :: [RewriteRule level Variable]
+    rewrites :: [RewriteRule Object Variable]
     rewrites = map unwrap axioms
       where
         unwrap (Axiom a) = a
 
 checkClaim
-    :: forall level . (MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier level
-    -> PredicateSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    :: SmtMetadataTools StepperAttributes
+    -> TermLikeSimplifier Object
+    -> PredicateSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonModalPattern level
+    ->  (  CommonModalPattern Object
         -> [Strategy
             (Prim
-                (CommonModalPattern level)
-                (RewriteRule level Variable)
+                (CommonModalPattern Object)
+                (RewriteRule Object Variable)
             )
            ]
         )
-    -> (ImplicationRule level Variable, Limit Natural)
+    -> (ImplicationRule Object Variable, Limit Natural)
     -> Simplifier CheckResult
 checkClaim
     metadataTools
@@ -154,7 +150,7 @@ checkClaim
                 Limit.takeWithin
                     stepLimit
                     (strategyBuilder goalPattern)
-            startState :: CommonProofState level
+            startState :: CommonProofState Object
             startState =
                 ProofState.GoalLHS
                     Conditional
@@ -165,10 +161,10 @@ checkClaim
         trace (show finalResult) (return finalResult)
   where
     transitionRule'
-        :: Prim (CommonModalPattern level) (RewriteRule level Variable)
-        -> (CommonProofState level)
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonProofState level)
+        :: Prim (CommonModalPattern Object) (RewriteRule Object Variable)
+        -> (CommonProofState Object)
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonProofState Object)
     transitionRule' =
         ModelChecker.transitionRule
             metadataTools
@@ -177,7 +173,7 @@ checkClaim
             axiomIdToSimplifier
 
     checkFinalNodes
-        :: [CommonProofState level]
+        :: [CommonProofState Object]
         -> CheckResult
     checkFinalNodes nodes
       = Foldable.foldl' checkFinalNodesHelper Proved nodes

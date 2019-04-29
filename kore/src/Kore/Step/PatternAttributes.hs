@@ -101,7 +101,7 @@ isConstructorLikePattern tools =
     If it is, returns a proof certifying that.
 -}
 isConstructorModuloLikePattern
-    :: (MetaOrObject Object, Show variable)
+    :: Show variable
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> Either ConstructorLikeError [ConstructorLikeProof]
@@ -207,7 +207,7 @@ checkConstructorLikeHead tools base@(_ :< pattern') =
           | otherwise -> Left NonConstructorLikeHead
 
 checkConstructorModuloLikeHead
-    :: (MetaOrObject Object, Show a, Show variable)
+    :: (Show a, Show variable)
     => SmtMetadataTools StepperAttributes
     -> Recursive.Base (TermLike variable) a
     -> Either

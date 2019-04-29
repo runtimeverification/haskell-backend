@@ -350,12 +350,7 @@ test_predicate =
         ]
     ]
 
-makePredicateYieldsWrapPredicate
-    ::  ( Eq level
-        , Show level
-        , MetaOrObject level
-        )
-    => String -> TermLike Variable -> IO ()
+makePredicateYieldsWrapPredicate :: String -> TermLike Variable -> IO ()
 makePredicateYieldsWrapPredicate msg p =
     assertEqual msg
         (Right (wrapPredicate p))

@@ -163,32 +163,19 @@ test_parse :: TestTree
 test_parse =
     testGroup
         "Parse"
-        [ testProperty "Object testId" $
-            roundtrip (idGen IsObject) (idParser Object)
+        [ testProperty "Object testId" $ roundtrip idGen idParser
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen stringLiteralParser
         , testProperty "CharLiteral" $
             roundtrip charLiteralGen charLiteralParser
         , testProperty "Object Symbol" $
-            roundtrip symbolGen (symbolParser Object)
-        , testProperty "Meta Symbol" $
-            roundtrip symbolGen (symbolParser Meta)
+            roundtrip symbolGen symbolParser
         , testProperty "Object Alias" $
-            roundtrip aliasGen (aliasParser Object)
-        , testProperty "Meta Alias" $
-            roundtrip aliasGen (aliasParser Meta)
+            roundtrip aliasGen aliasParser
         , testProperty "Object SortVariable" $
-            roundtrip sortVariableGen (sortVariableParser Object)
-        , testProperty "Meta SortVariable" $
-            roundtrip sortVariableGen (sortVariableParser Meta)
+            roundtrip sortVariableGen sortVariableParser
         , testProperty "Object Sort" $
-            roundtrip (standaloneGen sortGen) (sortParser Object)
-        , testProperty "Meta Sort" $
-            roundtrip (standaloneGen sortGen) (sortParser Meta)
-        , testProperty "UnifiedVariable" $
-            roundtrip
-                (standaloneGen $ variableGen =<< sortGen)
-                (variableParser Object)
+            roundtrip (standaloneGen sortGen) sortParser
         , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $

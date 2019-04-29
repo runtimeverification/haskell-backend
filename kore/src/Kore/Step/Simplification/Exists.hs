@@ -70,23 +70,22 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
   ((exists x . pat and pred) and subst)
 -}
 simplify
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Exists level variable (OrPattern level variable)
+    -> Exists Object variable (OrPattern Object variable)
     -> Simplifier
-        ( OrPattern level variable
-        , SimplificationProof level
+        ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplify
     tools
@@ -108,7 +107,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Exists level) (Valid level) (OrPattern level variable)
+> CofreeF (Exists Object) (Valid Object) (OrPattern Object variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
@@ -117,23 +116,22 @@ more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable
-    -> OrPattern level variable
+    -> OrPattern Object variable
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -163,23 +161,22 @@ simplifyEvaluated
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable
-    -> Pattern level variable
+    -> Pattern Object variable
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeEvaluate
     tools
     substitutionSimplifier
@@ -227,23 +224,22 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundLeft
-    ::  ( MetaOrObject level
-        , Ord variable
+    ::  ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
-    -> Pattern level variable
-    -> BranchT Simplifier (Pattern level variable)
+    -> Pattern Object variable
+    -> BranchT Simplifier (Pattern Object variable)
 makeEvaluateBoundLeft
     tools
     substitutionSimplifier

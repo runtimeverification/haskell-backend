@@ -169,8 +169,7 @@ isFalse = isBottom
 doing some simplification.
 -}
 makeMultipleAndPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -186,8 +185,7 @@ makeMultipleAndPredicate =
 doing some simplification.
 -}
 makeMultipleOrPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -205,8 +203,7 @@ simplification.
 makeAndPredicate
     -- TODO(virgil): Group these constraints in a class
     -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Unparse variable
         )
@@ -226,8 +223,7 @@ makeAndPredicate p@(GenericPredicate first) (GenericPredicate second)
 some simplification.
 -}
 makeOrPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -248,8 +244,7 @@ makeOrPredicate p@(GenericPredicate first) (GenericPredicate second)
 implication, doing some simplification.
 -}
 makeImpliesPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -268,8 +263,7 @@ makeImpliesPredicate (GenericPredicate first) (GenericPredicate second) =
 some simplification.
 -}
 makeIffPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -288,8 +282,7 @@ makeIffPredicate (GenericPredicate first) (GenericPredicate second) =
 simplification.
 -}
 makeNotPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Eq variable
         , Show variable
         , Unparse variable
@@ -305,8 +298,7 @@ makeNotPredicate (GenericPredicate predicate) =
 predicate.
 -}
 makeEqualsPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -321,8 +313,7 @@ makeEqualsPredicate first second =
 predicate.
 -}
 makeInPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -337,8 +328,7 @@ makeInPredicate first second =
 predicate.
 -}
 makeCeilPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Show variable
         , Unparse variable
         )
@@ -351,8 +341,7 @@ makeCeilPredicate patt =
 predicate.
 -}
 makeFloorPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Show variable
         , Unparse variable
         )
@@ -364,8 +353,7 @@ makeFloorPredicate patt =
 {-| Existential quantification for the given variable in the given predicate.
 -}
 makeExistsPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -396,8 +384,7 @@ makeMultipleExists vars phi =
 {-| Universal quantification for the given variable in the given predicate.
 -}
 makeForallPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -412,16 +399,12 @@ makeForallPredicate v (GenericPredicate p) =
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
-makeTruePredicate
-    :: MetaOrObject Object
-    => Predicate variable
+makeTruePredicate :: Predicate variable
 makeTruePredicate = GenericPredicate mkTop_
 
 {-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
 -}
-makeFalsePredicate
-    :: MetaOrObject Object
-    => Predicate variable
+makeFalsePredicate :: Predicate variable
 makeFalsePredicate = GenericPredicate mkBottom_
 
 makePredicate
@@ -491,7 +474,7 @@ allVariables = pureAllVariables . unwrapPredicate
 {- | Extract the set of free variables from a @Predicate@.
 -}
 freeVariables
-    :: (MetaOrObject Object , Ord variable)
+    :: Ord variable
     => Predicate variable
     -> Set variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
@@ -511,8 +494,7 @@ returns a conjunction of variable/substitution equalities.
 
 -}
 substitutionToPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -525,8 +507,7 @@ substitutionToPredicate =
     . Substitution.unwrap
 
 singleSubstitutionToPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -543,8 +524,7 @@ returns a conjunction of variable-substitution equalities.
 
 -}
 fromSubstitution
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
+    ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
@@ -561,8 +541,6 @@ contain none of the targeted variables.
  -}
 substitute
     ::  ( FreshVariable variable
-        , MetaOrObject Object
-        , Ord variable
         , SortedVariable variable
         )
     => Map variable (TermLike variable)

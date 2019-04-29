@@ -220,26 +220,26 @@ allChildren = patternLens pure pure pure
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
-    :: (MetaOrObject level, Domain domain, Traversable domain)
+    :: (Domain domain, Traversable domain)
     => [Int]
-    ->  (  PurePattern level domain variable annotation
-        -> PurePattern level domain variable annotation
+    ->  (  PurePattern Object domain variable annotation
+        -> PurePattern Object domain variable annotation
         )
-    -> PurePattern level domain variable annotation
-    -> PurePattern level domain variable annotation
+    -> PurePattern Object domain variable annotation
+    -> PurePattern Object domain variable annotation
 localInPattern path f pat = pat & inPath path %~ f
 
 -- | Takes an `[Int]` representing a path, and returns a lens to that position.
 -- The ints represent subpatterns in the obvious way:
 -- [0,1] points to b in \ceil(a /\ b), etc.
 inPath
-    :: (MetaOrObject level, Applicative f, Domain domain, Traversable domain)
+    :: (Applicative f, Domain domain, Traversable domain)
     => [Int]
-    ->  (  PurePattern level domain variable annotation
-        -> f (PurePattern level domain variable annotation)
+    ->  (  PurePattern Object domain variable annotation
+        -> f (PurePattern Object domain variable annotation)
         )
-    ->  (  PurePattern level domain variable annotation
-        -> f (PurePattern level domain variable annotation)
+    ->  (  PurePattern Object domain variable annotation
+        -> f (PurePattern Object domain variable annotation)
         )
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns

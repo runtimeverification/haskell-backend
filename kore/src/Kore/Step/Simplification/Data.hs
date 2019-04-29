@@ -282,7 +282,6 @@ newtype TermLikeSimplifier level =
     TermLikeSimplifier
         ( forall variable
         .   ( FreshVariable variable
-            , MetaOrObject level
             , Ord variable
             , Show variable
             , Unparse variable
@@ -401,7 +400,6 @@ newtype PredicateSimplifier level =
         { getPredicateSimplifier
             ::  forall variable
             .   ( FreshVariable variable
-                , MetaOrObject level
                 , Ord variable
                 , Show variable
                 , Unparse variable

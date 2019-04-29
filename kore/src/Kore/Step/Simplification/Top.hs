@@ -24,7 +24,7 @@ import           Kore.Step.Simplification.Data
 -}
 -- TODO (virgil): Preserve pattern sorts under simplification.
 simplify
-    :: (MetaOrObject level, Ord variable)
-    => Top level child
-    -> (OrPattern level variable, SimplificationProof level)
+    :: Ord variable
+    => Top Object child
+    -> (OrPattern Object variable, SimplificationProof Object)
 simplify _ = (OrPattern.top, SimplificationProof)
