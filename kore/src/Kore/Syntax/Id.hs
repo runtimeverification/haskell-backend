@@ -12,7 +12,6 @@ module Kore.Syntax.Id
     , getIdForError
     , noLocationId
     , implicitId
-    , unparseIdLower
     -- * Locations
     , AstLocation (..)
     , FileLocation (..)
@@ -66,11 +65,6 @@ instance IsString Id where
 instance Unparse Id where
     unparse = Pretty.pretty . getId
     unparse2 = Pretty.pretty . getId
-
-{- | 'unparseIdLower' prints an identifier in lower case.
- -}
-unparseIdLower :: Id -> Pretty.Doc ann
-unparseIdLower Id { getId } = Pretty.pretty (Text.toLower getId)
 
 {- | Create an 'Id' without location.
 

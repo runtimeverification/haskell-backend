@@ -66,10 +66,10 @@ instance Unparse (Variable) where
         <> Pretty.colon
         <> unparse variableSort
     unparse2 Variable { variableName, variableCounter } =
-        unparseIdLower variableName
+        unparse2 variableName
         <> Pretty.pretty variableCounter
     unparse2BindingVariables Variable { variableName, variableCounter, variableSort } =
-        unparseIdLower variableName
+        unparse2 variableName
         <> Pretty.pretty variableCounter
         <> Pretty.colon
         <> unparse2 variableSort
