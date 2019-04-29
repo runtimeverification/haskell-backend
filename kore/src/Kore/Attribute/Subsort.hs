@@ -36,7 +36,7 @@ Kore syntax: @subsort{Sub,Super}@
 where @Sub@ is the subsort and @Super@ is the supersort.
 
  -}
-subsortSymbol :: Sort -> Sort -> SymbolOrAlias Object
+subsortSymbol :: Sort -> Sort -> SymbolOrAlias
 subsortSymbol subsort supersort =
     SymbolOrAlias
         { symbolOrAliasConstructor = subsortId

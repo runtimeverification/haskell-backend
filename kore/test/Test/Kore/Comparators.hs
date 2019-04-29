@@ -830,7 +830,7 @@ instance EqualWithExplanation Sort where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation (SymbolOrAlias Object)
+instance StructEqualWithExplanation SymbolOrAlias
     where
       structFieldsWithNames
           expected@(SymbolOrAlias _ _)
@@ -845,7 +845,7 @@ instance StructEqualWithExplanation (SymbolOrAlias Object)
               (symbolOrAliasParams actual)
           ]
       structConstructorName _ = "SymbolOrAlias"
-instance EqualWithExplanation (SymbolOrAlias Object)
+instance EqualWithExplanation SymbolOrAlias
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

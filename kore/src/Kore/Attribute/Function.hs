@@ -35,7 +35,7 @@ functionId :: Id
 functionId = "function"
 
 -- | Kore symbol representing the @function@ attribute.
-functionSymbol :: SymbolOrAlias Object
+functionSymbol :: SymbolOrAlias
 functionSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = functionId

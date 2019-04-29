@@ -30,7 +30,7 @@ assocId :: Id
 assocId = "assoc"
 
 -- | Kore symbol representing the @assoc@ attribute.
-assocSymbol :: SymbolOrAlias Object
+assocSymbol :: SymbolOrAlias
 assocSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = assocId

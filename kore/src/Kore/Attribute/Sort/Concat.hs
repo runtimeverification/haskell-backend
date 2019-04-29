@@ -20,7 +20,7 @@ import GHC.Generics
 import Kore.Attribute.Parser
 
 -- | @Concat@ represents the @concat@ attribute for sorts.
-newtype Concat = Concat { getConcat :: Maybe (SymbolOrAlias Object) }
+newtype Concat = Concat { getConcat :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Concat where
@@ -53,7 +53,7 @@ concatId :: Id
 concatId = "concat"
 
 -- | Kore symbol representing the @concat@ attribute.
-concatSymbol :: SymbolOrAlias Object
+concatSymbol :: SymbolOrAlias
 concatSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = concatId
@@ -61,6 +61,6 @@ concatSymbol =
         }
 
 -- | Kore pattern representing the @concat@ attribute.
-concatAttribute :: SymbolOrAlias Object -> AttributePattern
+concatAttribute :: SymbolOrAlias -> AttributePattern
 concatAttribute symbol =
     attributePattern concatSymbol [attributePattern_ symbol]

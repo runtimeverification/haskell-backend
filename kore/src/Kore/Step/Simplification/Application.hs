@@ -131,7 +131,7 @@ makeAndEvaluateApplications
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> [Pattern Object variable]
     -> Simplifier
         (OrPattern Object variable, SimplificationProof Object)
@@ -170,7 +170,7 @@ makeAndEvaluateSymbolApplications
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> [Pattern Object variable]
     -> Simplifier
         (OrPattern Object variable, SimplificationProof Object)
@@ -248,7 +248,7 @@ makeExpandedApplication
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> [Pattern Object variable]
     -> Simplifier
         (ExpandedApplication Object variable, SimplificationProof Object)

@@ -30,7 +30,7 @@ unitId :: Id
 unitId = "unit"
 
 -- | Kore symbol representing the @unit@ attribute.
-unitSymbol :: SymbolOrAlias Object
+unitSymbol :: SymbolOrAlias
 unitSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = unitId

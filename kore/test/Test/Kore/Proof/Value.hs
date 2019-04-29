@@ -87,7 +87,7 @@ unitSort =
         , sortActualSorts = []
         }
 
-unitSymbol :: SymbolOrAlias Object
+unitSymbol :: SymbolOrAlias
 unitSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "unit"
@@ -101,21 +101,21 @@ pairSort sort =
         , sortActualSorts = [sort]
         }
 
-pairSymbol :: Sort -> SymbolOrAlias Object
+pairSymbol :: Sort -> SymbolOrAlias
 pairSymbol sort =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "pair"
         , symbolOrAliasParams = [sort]
         }
 
-injSymbol :: Sort -> Sort -> SymbolOrAlias Object
+injSymbol :: Sort -> Sort -> SymbolOrAlias
 injSymbol sub sup =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "inj"
         , symbolOrAliasParams = [sub, sup]
         }
 
-funSymbol :: SymbolOrAlias Object
+funSymbol :: SymbolOrAlias
 funSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "fun"
@@ -128,7 +128,7 @@ subSort = (SortVariableSort . SortVariable) (testId "sub")
 supSort :: Sort
 supSort = (SortVariableSort . SortVariable) (testId "sup")
 
-symbolOrAliasAttrs :: [(SymbolOrAlias Object, StepperAttributes)]
+symbolOrAliasAttrs :: [(SymbolOrAlias, StepperAttributes)]
 symbolOrAliasAttrs =
     [ (unitSymbol, Mock.constructorAttributes)
     , (injSymbol subSort supSort, Mock.sortInjectionAttributes)
@@ -139,7 +139,7 @@ symbolOrAliasAttrs =
     , (funSymbol, Mock.functionAttributes)
     ]
 
-symbolOrAliasType :: [(SymbolOrAlias Object, HeadType)]
+symbolOrAliasType :: [(SymbolOrAlias, HeadType)]
 symbolOrAliasType =
     [ (unitSymbol, HeadType.Symbol)
     , (injSymbol subSort supSort, HeadType.Symbol)

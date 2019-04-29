@@ -30,7 +30,7 @@ concreteId :: Id
 concreteId = "concrete"
 
 -- | Kore symbol representing the @concrete@ attribute.
-concreteSymbol :: SymbolOrAlias Object
+concreteSymbol :: SymbolOrAlias
 concreteSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = concreteId

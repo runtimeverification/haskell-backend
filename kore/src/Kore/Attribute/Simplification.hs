@@ -40,7 +40,7 @@ simplificationId :: Id
 simplificationId = "simplification"
 
 -- | Kore symbol representing the @simplification@ attribute.
-simplificationSymbol :: SymbolOrAlias Object
+simplificationSymbol :: SymbolOrAlias
 simplificationSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = simplificationId

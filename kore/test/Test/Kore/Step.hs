@@ -391,7 +391,7 @@ actualUnificationError =
             }
         [axiomMetaSigmaId]
 
-mockSymbolAttributes :: SymbolOrAlias Meta -> StepperAttributes
+mockSymbolAttributes :: SymbolOrAlias -> StepperAttributes
 mockSymbolAttributes patternHead =
     defaultSymbolAttributes
         { constructor = Constructor { isConstructor }
@@ -416,7 +416,7 @@ mockMetadataTools = MetadataTools
     , smtData = undefined
     }
 
-sigmaSymbol :: SymbolOrAlias Meta
+sigmaSymbol :: SymbolOrAlias
 sigmaSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = testId "#sigma"
     , symbolOrAliasParams = []
@@ -443,7 +443,7 @@ axiomMetaSigmaId =
         }
 
 
-fSymbol :: SymbolOrAlias Meta
+fSymbol :: SymbolOrAlias
 fSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#f" AstLocationTest
     , symbolOrAliasParams = []
@@ -455,7 +455,7 @@ metaF
 metaF p = mkApp Mock.testSort fSymbol [p]
 
 
-gSymbol :: SymbolOrAlias Meta
+gSymbol :: SymbolOrAlias
 gSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#g" AstLocationTest
     , symbolOrAliasParams = []
@@ -467,7 +467,7 @@ metaG
 metaG p = mkApp Mock.testSort gSymbol [p]
 
 
-hSymbol :: SymbolOrAlias Meta
+hSymbol :: SymbolOrAlias
 hSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#h" AstLocationTest
     , symbolOrAliasParams = []
@@ -478,7 +478,7 @@ metaH
     -> TermLike Variable
 metaH p = mkApp Mock.testSort hSymbol [p]
 
-iSymbol :: SymbolOrAlias Meta
+iSymbol :: SymbolOrAlias
 iSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#i" AstLocationTest
     , symbolOrAliasParams = []

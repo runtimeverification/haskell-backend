@@ -27,7 +27,7 @@ parseOverload = parseAttributes
 superId :: Id
 superId = testId "super"
 
-superSymbol :: SymbolOrAlias Object
+superSymbol :: SymbolOrAlias
 superSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = superId
@@ -37,7 +37,7 @@ superSymbol =
 subId :: Id
 subId = testId "sub"
 
-subSymbol :: SymbolOrAlias Object
+subSymbol :: SymbolOrAlias
 subSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = subId

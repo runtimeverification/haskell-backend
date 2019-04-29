@@ -230,7 +230,7 @@ getTwoArguments =
 
 {- | Accept a symbol or alias applied to no arguments.
  -}
-getSymbolOrAlias :: AttributePattern -> Parser (SymbolOrAlias Object)
+getSymbolOrAlias :: AttributePattern -> Parser SymbolOrAlias
 getSymbolOrAlias kore =
     case Recursive.project kore of
         _ :< ApplicationPattern app

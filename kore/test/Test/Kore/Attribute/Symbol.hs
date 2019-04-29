@@ -43,7 +43,7 @@ badHookAttribute :: AttributePattern
 badHookAttribute =
     (asAttributePattern . ApplicationPattern)
         Application
-            { applicationSymbolOrAlias = hookSymbol :: SymbolOrAlias Object
+            { applicationSymbolOrAlias = hookSymbol :: SymbolOrAlias
             , applicationChildren = []
             }
 

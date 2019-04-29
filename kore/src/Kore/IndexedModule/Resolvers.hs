@@ -77,7 +77,7 @@ sortSentencesMap = indexedModuleSortDescriptions
 getHeadApplicationSorts
     :: IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ Module representing an indexed definition
-    -> SymbolOrAlias Object     -- ^the head we want to find sorts for
+    -> SymbolOrAlias     -- ^the head we want to find sorts for
     -> ApplicationSorts Object
 getHeadApplicationSorts m patternHead =
     applyToHeadSentence sentenceSorts m patternHead
@@ -93,7 +93,7 @@ getHeadApplicationSorts m patternHead =
 getHeadAttributes
     :: IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ module representing an indexed definition
-    -> SymbolOrAlias Object     -- ^the head we want to find sorts for
+    -> SymbolOrAlias     -- ^the head we want to find sorts for
     -> declAtts
 getHeadAttributes m patternHead =
     applyToAttributes id m patternHead
@@ -108,7 +108,7 @@ getHeadType
     :: HasCallStack
     => IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ Module representing an indexed definition
-    -> SymbolOrAlias Object     -- ^the head we want to find sorts for
+    -> SymbolOrAlias     -- ^the head we want to find sorts for
     -> HeadType
 getHeadType m patternHead =
     case symbol <> alias of
@@ -250,7 +250,7 @@ resolveHook indexedModule builtinName builtinSort =
 involvesSort
     :: IndexedModule sortParam patternType declAtts axiomAtts
     -> Sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 involvesSort indexedModule builtinSort sym =
     elem builtinSort $
@@ -314,7 +314,7 @@ applyToHeadSentence
        -> ssoa Object pat
        -> result)
     -> IndexedModule param pat declAtts axiomAtts
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> result
 applyToHeadSentence f =
      applyToResolution (\ params (_, sentence) -> f params sentence)
@@ -326,7 +326,7 @@ applyToAttributes
     :: (declAtts -> result)
     -> IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ module representing an indexed definition
-    -> SymbolOrAlias Object     -- ^the head we want to find sorts for
+    -> SymbolOrAlias     -- ^the head we want to find sorts for
     -> result
 applyToAttributes f =
     applyToResolution (\ _ (attrs, _) -> f attrs)
@@ -339,7 +339,7 @@ applyToResolution
         -> (declAtts, ssoa Object pat)
         -> result)
     -> IndexedModule param pat declAtts axiomAtts
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> result
 applyToResolution f m patternHead =
     case symbolResult <> aliasResult of

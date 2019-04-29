@@ -459,7 +459,7 @@ keysKey = "MAP.keys"
 lookupSymbolUpdate
     :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolUpdate = Builtin.lookupSymbol updateKey
 
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
@@ -467,7 +467,7 @@ lookupSymbolUpdate = Builtin.lookupSymbol updateKey
 lookupSymbolLookup
     :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
@@ -475,7 +475,7 @@ lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 lookupSymbolInKeys
     :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
 
 {- | Find the symbol hooked to @MAP.keys@ in an indexed module.
@@ -483,14 +483,14 @@ lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
 lookupSymbolKeys
     :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolKeys = Builtin.lookupSymbol keysKey
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
@@ -498,7 +498,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
  -}
 isSymbolElement
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
@@ -506,7 +506,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
@@ -717,7 +717,7 @@ unifyEquals
 
     unifyEqualsElement
         :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
-        -> SymbolOrAlias Object  -- ^ 'element' symbol
+        -> SymbolOrAlias  -- ^ 'element' symbol
         -> TermLike variable  -- ^ key
         -> TermLike variable  -- ^ value
         -> unifier (expanded, proof)

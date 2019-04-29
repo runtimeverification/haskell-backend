@@ -445,7 +445,7 @@ variableOrTermPatternParser childParser isSetVar = do
 ⟨meta-head-constructor⟩ ::= ⟨meta-identifier⟩
 @
 -}
-headParser :: Parser (SymbolOrAlias Object)
+headParser :: Parser SymbolOrAlias
 headParser =
     SymbolOrAlias
         <$> idParser

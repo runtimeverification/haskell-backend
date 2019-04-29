@@ -15,8 +15,6 @@ import qualified Data.Map as Map
 import           Data.Reflection
                  ( Given, given )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Attribute.Symbol as Attribute
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -37,7 +35,7 @@ the given SmtMetadataTools.
 -}
 translateSymbol
     :: Given (SmtMetadataTools Attribute.StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Maybe SMT.SExpr
 translateSymbol
     SymbolOrAlias { symbolOrAliasConstructor, symbolOrAliasParams }

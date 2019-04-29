@@ -75,9 +75,9 @@ The children are already unparsed.
 
  -}
 unparseCollection
-    :: SymbolOrAlias Object  -- ^ unit symbol
-    -> SymbolOrAlias Object  -- ^ element symbol
-    -> SymbolOrAlias Object  -- ^ concat symbol
+    :: SymbolOrAlias  -- ^ unit symbol
+    -> SymbolOrAlias  -- ^ element symbol
+    -> SymbolOrAlias  -- ^ concat symbol
     -> [Pretty.Doc ann]      -- ^ children
     -> Pretty.Doc ann
 unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
@@ -94,9 +94,9 @@ unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
 data InternalMap child =
     InternalMap
         { builtinMapSort :: !Sort
-        , builtinMapUnit :: !(SymbolOrAlias Object)
-        , builtinMapElement :: !(SymbolOrAlias Object)
-        , builtinMapConcat :: !(SymbolOrAlias Object)
+        , builtinMapUnit :: !SymbolOrAlias
+        , builtinMapElement :: !SymbolOrAlias
+        , builtinMapConcat :: !SymbolOrAlias
         , builtinMapChild :: !(Map Key child)
         }
     deriving (Foldable, Functor, Generic, Traversable)
@@ -154,9 +154,9 @@ instance Unparse child => Unparse (InternalMap child) where
 data InternalList child =
     InternalList
         { builtinListSort :: !Sort
-        , builtinListUnit :: !(SymbolOrAlias Object)
-        , builtinListElement :: !(SymbolOrAlias Object)
-        , builtinListConcat :: !(SymbolOrAlias Object)
+        , builtinListUnit :: !SymbolOrAlias
+        , builtinListElement :: !SymbolOrAlias
+        , builtinListConcat :: !SymbolOrAlias
         , builtinListChild :: !(Seq child)
         }
     deriving (Foldable, Functor, Generic, Traversable)
@@ -210,9 +210,9 @@ instance Unparse child => Unparse (InternalList child) where
 data InternalSet =
     InternalSet
         { builtinSetSort :: !Sort
-        , builtinSetUnit :: !(SymbolOrAlias Object)
-        , builtinSetElement :: !(SymbolOrAlias Object)
-        , builtinSetConcat :: !(SymbolOrAlias Object)
+        , builtinSetUnit :: !SymbolOrAlias
+        , builtinSetElement :: !SymbolOrAlias
+        , builtinSetConcat :: !SymbolOrAlias
         , builtinSetChild :: !(Set Key)
         }
     deriving Generic

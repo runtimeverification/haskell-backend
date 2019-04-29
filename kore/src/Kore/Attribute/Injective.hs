@@ -36,7 +36,7 @@ injectiveId :: Id
 injectiveId = "injective"
 
 -- | Kore symbol representing the @injective@ attribute.
-injectiveSymbol :: SymbolOrAlias Object
+injectiveSymbol :: SymbolOrAlias
 injectiveSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = injectiveId

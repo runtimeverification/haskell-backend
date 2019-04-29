@@ -238,7 +238,7 @@ instance PrettyPrint CharLiteral where
             <> squotes (pretty (escapeCharT c))
             )
 
-instance  PrettyPrint (SymbolOrAlias level) where
+instance  PrettyPrint SymbolOrAlias where
     prettyPrint _ s@(SymbolOrAlias _ _) =
         writeStructure "SymbolOrAlias"
             [ writeFieldOneLine

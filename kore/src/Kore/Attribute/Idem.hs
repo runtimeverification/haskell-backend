@@ -30,7 +30,7 @@ idemId :: Id
 idemId = "idem"
 
 -- | Kore symbol representing the @idem@ attribute.
-idemSymbol :: SymbolOrAlias Object
+idemSymbol :: SymbolOrAlias
 idemSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = idemId

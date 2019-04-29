@@ -458,7 +458,7 @@ sizeKey = "SET.size"
 lookupSymbolIn
     :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolIn = Builtin.lookupSymbol inKey
 
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
@@ -466,14 +466,14 @@ lookupSymbolIn = Builtin.lookupSymbol inKey
 lookupSymbolDifference
     :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
 {- | Check if the given symbol is hooked to @SET.concat@.
  -}
 isSymbolConcat
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
@@ -481,7 +481,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
  -}
 isSymbolElement
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
@@ -489,7 +489,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolUnit = Builtin.isSymbol "SET.unit"
 
@@ -604,7 +604,7 @@ unifyEquals
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
             :: Domain.InternalSet          -- ^ concrete set
-            -> SymbolOrAlias Object        -- ^ 'element' symbol
+            -> SymbolOrAlias        -- ^ 'element' symbol
             -> p                           -- ^ key
             -> TermLike variable -- ^ framing variable
             -> unifier (expanded, proof)
@@ -685,7 +685,7 @@ unifyEquals
 
     unifyEqualsElement
         :: Domain.InternalSet  -- ^ concrete set
-        -> SymbolOrAlias Object  -- ^ 'element' symbol
+        -> SymbolOrAlias  -- ^ 'element' symbol
         -> p  -- ^ key
         -> unifier (expanded, proof)
     unifyEqualsElement builtin1 element' key2 =

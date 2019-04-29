@@ -139,14 +139,6 @@ charGen =
         , Gen.enum '\xE000' '\x10FFFF'
         ]
 
-symbolOrAliasRawGen
-    :: (Id -> [Sort] -> s Object)
-    -> Gen (s Object)
-symbolOrAliasRawGen constructor =
-    constructor
-        <$> Gen.small idGen
-        <*> couple (Gen.small sortGen)
-
 symbolOrAliasDeclarationRawGen
     :: MonadGen m
     => (Id -> [SortVariable] -> s Object)
@@ -156,8 +148,11 @@ symbolOrAliasDeclarationRawGen constructor =
         <$> Gen.small idGen
         <*> couple (Gen.small sortVariableGen)
 
-symbolOrAliasGen :: Gen (SymbolOrAlias Object)
-symbolOrAliasGen = symbolOrAliasRawGen SymbolOrAlias
+symbolOrAliasGen :: Gen SymbolOrAlias
+symbolOrAliasGen =
+    SymbolOrAlias
+        <$> Gen.small idGen
+        <*> couple (Gen.small sortGen)
 
 symbolGen :: MonadGen m => m (Symbol Object)
 symbolGen = symbolOrAliasDeclarationRawGen Symbol

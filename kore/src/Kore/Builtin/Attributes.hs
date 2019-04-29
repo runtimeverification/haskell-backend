@@ -20,7 +20,6 @@ module Kore.Builtin.Attributes
 import Data.Reflection
        ( Given, given )
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
 import qualified Kore.Attribute.Symbol as StepperAttributes
@@ -36,7 +35,7 @@ import           Kore.Syntax.Application
 -- neutral element?
 isConstructorModulo_
     :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isConstructorModulo_ symbolOrAlias =
     any (apply given symbolOrAlias)
@@ -49,7 +48,7 @@ isConstructorModulo_ symbolOrAlias =
 
 isConstructorModuloLike_
     :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isConstructorModuloLike_ appHead =
     isConstructorModulo_ appHead

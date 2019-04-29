@@ -1147,7 +1147,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
 
 data SortInjectionMatch level variable =
     SortInjectionMatch
-        { injectionHead :: !(SymbolOrAlias level)
+        { injectionHead :: !SymbolOrAlias
         , sort :: !Sort
         , firstChild :: !(TermLike variable)
         , secondChild :: !(TermLike variable)

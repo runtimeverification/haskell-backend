@@ -39,9 +39,9 @@ import           Kore.Syntax.Application
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
 data MetadataTools level smt attributes = MetadataTools
-    { symAttributes :: SymbolOrAlias level -> attributes
+    { symAttributes :: SymbolOrAlias -> attributes
     -- ^ get the attributes of a symbol or alias
-    , symbolOrAliasType :: SymbolOrAlias level -> HeadType
+    , symbolOrAliasType :: SymbolOrAlias -> HeadType
     -- ^ whether a symbol or alias is a symbol
     , sortAttributes :: Sort -> Attribute.Sort
     -- ^ get the attributes of a sort
@@ -50,7 +50,7 @@ data MetadataTools level smt attributes = MetadataTools
        including when @a@ equals @b@. -}
     , subsorts :: Sort -> Set Sort
     -- ^ get the subsorts for a sort
-    , applicationSorts :: SymbolOrAlias level -> ApplicationSorts level
+    , applicationSorts :: SymbolOrAlias -> ApplicationSorts level
     -- ^ Sorts for a specific symbol application.
     , smtData :: smt
     -- ^ The SMT data for the given module.

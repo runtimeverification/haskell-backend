@@ -33,7 +33,7 @@ productionIDId :: Id
 productionIDId = "productionID"
 
 -- | Kore symbol representing the @productionID@ attribute.
-productionIDSymbol :: SymbolOrAlias Object
+productionIDSymbol :: SymbolOrAlias
 productionIDSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = productionIDId

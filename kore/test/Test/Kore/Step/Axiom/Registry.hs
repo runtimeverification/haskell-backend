@@ -80,12 +80,12 @@ sortVar1S = SortVariableSort sortVar1
 sortS :: Sort
 sortS = SortActualSort (SortActual (testId "S") [])
 
-fHead, gHead, sHead, tHead :: SymbolOrAlias level
+fHead, gHead, sHead, tHead :: SymbolOrAlias
 fHead = groundHead "f" AstLocationTest
 gHead = groundHead "g" AstLocationTest
 sHead = groundHead "s" AstLocationTest
 tHead = groundHead "t" AstLocationTest
-injHead :: Sort -> Sort -> SymbolOrAlias level
+injHead :: Sort -> Sort -> SymbolOrAlias
 injHead s1 s2 = SymbolOrAlias
     { symbolOrAliasConstructor = testId "inj"
     , symbolOrAliasParams = [s1, s2]

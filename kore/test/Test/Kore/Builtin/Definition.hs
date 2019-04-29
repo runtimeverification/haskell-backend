@@ -28,7 +28,7 @@ import Test.Kore
 -- * Builtin symbols
 
 -- | Make an unparameterized builtin symbol with the given name.
-builtinSymbol :: Text -> SymbolOrAlias Object
+builtinSymbol :: Text -> SymbolOrAlias
 builtinSymbol name =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId name
@@ -37,129 +37,129 @@ builtinSymbol name =
 
 -- ** Bool
 
-orBoolSymbol :: SymbolOrAlias Object
+orBoolSymbol :: SymbolOrAlias
 orBoolSymbol = builtinSymbol "orBool"
 
-orElseBoolSymbol :: SymbolOrAlias Object
+orElseBoolSymbol :: SymbolOrAlias
 orElseBoolSymbol = builtinSymbol "orElseBool"
 
-andBoolSymbol :: SymbolOrAlias Object
+andBoolSymbol :: SymbolOrAlias
 andBoolSymbol = builtinSymbol "andBool"
 
-andThenBoolSymbol :: SymbolOrAlias Object
+andThenBoolSymbol :: SymbolOrAlias
 andThenBoolSymbol = builtinSymbol "andThenBool"
 
-xorBoolSymbol :: SymbolOrAlias Object
+xorBoolSymbol :: SymbolOrAlias
 xorBoolSymbol = builtinSymbol "xorBool"
 
-neBoolSymbol :: SymbolOrAlias Object
+neBoolSymbol :: SymbolOrAlias
 neBoolSymbol = builtinSymbol "neBool"
 
-eqBoolSymbol :: SymbolOrAlias Object
+eqBoolSymbol :: SymbolOrAlias
 eqBoolSymbol = builtinSymbol "eqBool"
 
-notBoolSymbol :: SymbolOrAlias Object
+notBoolSymbol :: SymbolOrAlias
 notBoolSymbol = builtinSymbol "notBool"
 
-impliesBoolSymbol :: SymbolOrAlias Object
+impliesBoolSymbol :: SymbolOrAlias
 impliesBoolSymbol = builtinSymbol "impliesBool"
 
 -- ** Int
 
-gtIntSymbol :: SymbolOrAlias Object
+gtIntSymbol :: SymbolOrAlias
 gtIntSymbol = builtinSymbol "gtInt"
 
-geIntSymbol :: SymbolOrAlias Object
+geIntSymbol :: SymbolOrAlias
 geIntSymbol = builtinSymbol "geInt"
 
-eqIntSymbol :: SymbolOrAlias Object
+eqIntSymbol :: SymbolOrAlias
 eqIntSymbol = builtinSymbol "eqInt"
 
-leIntSymbol :: SymbolOrAlias Object
+leIntSymbol :: SymbolOrAlias
 leIntSymbol = builtinSymbol "leInt"
 
-ltIntSymbol :: SymbolOrAlias Object
+ltIntSymbol :: SymbolOrAlias
 ltIntSymbol = builtinSymbol "ltInt"
 
-neIntSymbol :: SymbolOrAlias Object
+neIntSymbol :: SymbolOrAlias
 neIntSymbol = builtinSymbol "neInt"
 
-minIntSymbol :: SymbolOrAlias Object
+minIntSymbol :: SymbolOrAlias
 minIntSymbol = builtinSymbol "minInt"
 
-maxIntSymbol :: SymbolOrAlias Object
+maxIntSymbol :: SymbolOrAlias
 maxIntSymbol = builtinSymbol "maxInt"
 
-addIntSymbol :: SymbolOrAlias Object
+addIntSymbol :: SymbolOrAlias
 addIntSymbol = builtinSymbol "addInt"
 
-subIntSymbol :: SymbolOrAlias Object
+subIntSymbol :: SymbolOrAlias
 subIntSymbol = builtinSymbol "subInt"
 
-mulIntSymbol :: SymbolOrAlias Object
+mulIntSymbol :: SymbolOrAlias
 mulIntSymbol = builtinSymbol "mulInt"
 
-absIntSymbol :: SymbolOrAlias Object
+absIntSymbol :: SymbolOrAlias
 absIntSymbol = builtinSymbol "absInt"
 
-tdivIntSymbol :: SymbolOrAlias Object
+tdivIntSymbol :: SymbolOrAlias
 tdivIntSymbol = builtinSymbol "tdivInt"
 
-tmodIntSymbol :: SymbolOrAlias Object
+tmodIntSymbol :: SymbolOrAlias
 tmodIntSymbol = builtinSymbol "tmodInt"
 
-andIntSymbol :: SymbolOrAlias Object
+andIntSymbol :: SymbolOrAlias
 andIntSymbol = builtinSymbol "andInt"
 
-orIntSymbol :: SymbolOrAlias Object
+orIntSymbol :: SymbolOrAlias
 orIntSymbol = builtinSymbol "orInt"
 
-xorIntSymbol :: SymbolOrAlias Object
+xorIntSymbol :: SymbolOrAlias
 xorIntSymbol = builtinSymbol "xorInt"
 
-notIntSymbol :: SymbolOrAlias Object
+notIntSymbol :: SymbolOrAlias
 notIntSymbol = builtinSymbol "notInt"
 
-shlIntSymbol :: SymbolOrAlias Object
+shlIntSymbol :: SymbolOrAlias
 shlIntSymbol = builtinSymbol "shlInt"
 
-shrIntSymbol :: SymbolOrAlias Object
+shrIntSymbol :: SymbolOrAlias
 shrIntSymbol = builtinSymbol "shrInt"
 
-powIntSymbol :: SymbolOrAlias Object
+powIntSymbol :: SymbolOrAlias
 powIntSymbol = builtinSymbol "powInt"
 
-powmodIntSymbol :: SymbolOrAlias Object
+powmodIntSymbol :: SymbolOrAlias
 powmodIntSymbol = builtinSymbol "powmodInt"
 
-log2IntSymbol :: SymbolOrAlias Object
+log2IntSymbol :: SymbolOrAlias
 log2IntSymbol = builtinSymbol "log2Int"
 
-emodIntSymbol :: SymbolOrAlias Object
+emodIntSymbol :: SymbolOrAlias
 emodIntSymbol = builtinSymbol "emodInt"
 
 -- an unhooked, uninterpreted function f : Int -> Int
-dummyIntSymbol :: SymbolOrAlias Object
+dummyIntSymbol :: SymbolOrAlias
 dummyIntSymbol = builtinSymbol "f"
 
 -- ** KEQUAL
 
-keqBoolSymbol :: SymbolOrAlias Object
+keqBoolSymbol :: SymbolOrAlias
 keqBoolSymbol = builtinSymbol "keqBool"
 
-kneqBoolSymbol :: SymbolOrAlias Object
+kneqBoolSymbol :: SymbolOrAlias
 kneqBoolSymbol = builtinSymbol "kneqBool"
 
-kiteKSymbol :: SymbolOrAlias Object
+kiteKSymbol :: SymbolOrAlias
 kiteKSymbol = builtinSymbol "kiteK"
 
-kseqSymbol :: SymbolOrAlias Object
+kseqSymbol :: SymbolOrAlias
 kseqSymbol = builtinSymbol "kseq"
 
-dotkSymbol :: SymbolOrAlias Object
+dotkSymbol :: SymbolOrAlias
 dotkSymbol = builtinSymbol "dotk"
 
-injSymbol :: Sort -> Sort -> SymbolOrAlias Object
+injSymbol :: Sort -> Sort -> SymbolOrAlias
 injSymbol lSort rSort =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "inj"
@@ -168,48 +168,48 @@ injSymbol lSort rSort =
 
 -- ** List
 
-unitListSymbol :: SymbolOrAlias Object
+unitListSymbol :: SymbolOrAlias
 unitListSymbol = builtinSymbol "unitList"
 
-unitList2Symbol :: SymbolOrAlias Object
+unitList2Symbol :: SymbolOrAlias
 unitList2Symbol = builtinSymbol "unitList2"
 
-elementListSymbol :: SymbolOrAlias Object
+elementListSymbol :: SymbolOrAlias
 elementListSymbol = builtinSymbol "elementList"
 
-elementList2Symbol :: SymbolOrAlias Object
+elementList2Symbol :: SymbolOrAlias
 elementList2Symbol = builtinSymbol "elementList2"
 
-concatListSymbol :: SymbolOrAlias Object
+concatListSymbol :: SymbolOrAlias
 concatListSymbol = builtinSymbol "concatList"
 
-concatList2Symbol :: SymbolOrAlias Object
+concatList2Symbol :: SymbolOrAlias
 concatList2Symbol = builtinSymbol "concatList2"
 
-getListSymbol :: SymbolOrAlias Object
+getListSymbol :: SymbolOrAlias
 getListSymbol = builtinSymbol "getList"
 
 -- ** Map
 
-unitMapSymbol :: SymbolOrAlias Object
+unitMapSymbol :: SymbolOrAlias
 unitMapSymbol = builtinSymbol "unitMap"
 
-updateMapSymbol :: SymbolOrAlias Object
+updateMapSymbol :: SymbolOrAlias
 updateMapSymbol = builtinSymbol "updateMap"
 
-lookupMapSymbol :: SymbolOrAlias Object
+lookupMapSymbol :: SymbolOrAlias
 lookupMapSymbol = builtinSymbol "lookupMap"
 
-elementMapSymbol :: SymbolOrAlias Object
+elementMapSymbol :: SymbolOrAlias
 elementMapSymbol = builtinSymbol "elementMap"
 
-concatMapSymbol :: SymbolOrAlias Object
+concatMapSymbol :: SymbolOrAlias
 concatMapSymbol = builtinSymbol "concatMap"
 
-inKeysMapSymbol :: SymbolOrAlias Object
+inKeysMapSymbol :: SymbolOrAlias
 inKeysMapSymbol = builtinSymbol "inKeysMap"
 
-keysMapSymbol :: SymbolOrAlias Object
+keysMapSymbol :: SymbolOrAlias
 keysMapSymbol = builtinSymbol "keysMap"
 
 unitMap :: TermLike Variable
@@ -259,7 +259,7 @@ keysMap map' =
 
 -- ** Pair
 
-pairSymbol :: Sort -> Sort -> SymbolOrAlias Object
+pairSymbol :: Sort -> Sort -> SymbolOrAlias
 pairSymbol lSort rSort =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "pair"
@@ -268,60 +268,60 @@ pairSymbol lSort rSort =
 
 -- ** Set
 
-unitSetSymbol :: SymbolOrAlias Object
+unitSetSymbol :: SymbolOrAlias
 unitSetSymbol = builtinSymbol "unitSet"
 
-elementSetSymbol :: SymbolOrAlias Object
+elementSetSymbol :: SymbolOrAlias
 elementSetSymbol = builtinSymbol "elementSet"
 
-concatSetSymbol :: SymbolOrAlias Object
+concatSetSymbol :: SymbolOrAlias
 concatSetSymbol = builtinSymbol "concatSet"
 
-inSetSymbol :: SymbolOrAlias Object
+inSetSymbol :: SymbolOrAlias
 inSetSymbol = builtinSymbol "inSet"
 
-differenceSetSymbol :: SymbolOrAlias Object
+differenceSetSymbol :: SymbolOrAlias
 differenceSetSymbol = builtinSymbol "differenceSet"
 
-toListSetSymbol :: SymbolOrAlias Object
+toListSetSymbol :: SymbolOrAlias
 toListSetSymbol = builtinSymbol "toListSet"
 
-sizeSetSymbol :: SymbolOrAlias Object
+sizeSetSymbol :: SymbolOrAlias
 sizeSetSymbol = builtinSymbol "sizeSet"
 
 -- ** String
 
-ltStringSymbol :: SymbolOrAlias Object
+ltStringSymbol :: SymbolOrAlias
 ltStringSymbol = builtinSymbol "ltString"
 
-concatStringSymbol :: SymbolOrAlias Object
+concatStringSymbol :: SymbolOrAlias
 concatStringSymbol = builtinSymbol "concatString"
 
-substrStringSymbol :: SymbolOrAlias Object
+substrStringSymbol :: SymbolOrAlias
 substrStringSymbol = builtinSymbol "substrString"
 
-lengthStringSymbol :: SymbolOrAlias Object
+lengthStringSymbol :: SymbolOrAlias
 lengthStringSymbol = builtinSymbol "lengthString"
 
-chrStringSymbol :: SymbolOrAlias Object
+chrStringSymbol :: SymbolOrAlias
 chrStringSymbol = builtinSymbol "chrString"
 
-ordStringSymbol :: SymbolOrAlias Object
+ordStringSymbol :: SymbolOrAlias
 ordStringSymbol = builtinSymbol "ordString"
 
-findStringSymbol :: SymbolOrAlias Object
+findStringSymbol :: SymbolOrAlias
 findStringSymbol = builtinSymbol "findString"
 
-string2BaseStringSymbol :: SymbolOrAlias Object
+string2BaseStringSymbol :: SymbolOrAlias
 string2BaseStringSymbol = builtinSymbol "string2baseString"
 
-string2IntStringSymbol :: SymbolOrAlias Object
+string2IntStringSymbol :: SymbolOrAlias
 string2IntStringSymbol = builtinSymbol "string2intString"
 
-ecdsaRecoverSymbol :: SymbolOrAlias Object
+ecdsaRecoverSymbol :: SymbolOrAlias
 ecdsaRecoverSymbol = builtinSymbol "ECDSARecover"
 
-keccakSymbol :: SymbolOrAlias Object
+keccakSymbol :: SymbolOrAlias
 keccakSymbol = builtinSymbol "KECCAK"
 
 -- -------------------------------------------------------------
@@ -597,7 +597,7 @@ stringSortDecl =
 
 -- | Declare a symbol hooked to the given builtin name.
 symbolDecl
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ symbol
     -> Sort
     -- ^ result sort
@@ -630,7 +630,7 @@ symbolDecl
 
 -- | Declare a symbol hooked to the given builtin name.
 hookedSymbolDecl
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ symbol
     -> Sort
     -- ^ result sort
@@ -663,7 +663,7 @@ hookedSymbolDecl
 
 -- | Declare a symbol with no hook.
 unhookedSymbolDecl
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ symbol
     -> Sort
     -- ^ result sort

@@ -39,7 +39,7 @@ labelId :: Id
 labelId = "label"
 
 -- | Kore symbol representing the @label@ attribute.
-labelSymbol :: SymbolOrAlias Object
+labelSymbol :: SymbolOrAlias
 labelSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = labelId

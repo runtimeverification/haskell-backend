@@ -36,7 +36,7 @@ functionalId :: Id
 functionalId = "functional"
 
 -- | Kore symbol representing the @functional@ attribute.
-functionalSymbol :: SymbolOrAlias Object
+functionalSymbol :: SymbolOrAlias
 functionalSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = functionalId

@@ -148,7 +148,7 @@ deriving instance Ord variable => Ord (ImplicationRule level variable)
 deriving instance Show variable => Show (ImplicationRule level variable)
 
 qualifiedAxiomOpToConstructor
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -> Maybe
         (RulePattern Object variable -> QualifiedAxiomPattern Object variable)
 qualifiedAxiomOpToConstructor patternHead = case headName of

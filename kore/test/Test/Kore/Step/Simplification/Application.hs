@@ -344,7 +344,7 @@ simplificationEvaluator = firstFullEvaluation
 makeApplication
     :: (Ord variable, Show variable, HasCallStack)
     => Sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> [[Pattern Object variable]]
     -> CofreeF
         (Application Object)

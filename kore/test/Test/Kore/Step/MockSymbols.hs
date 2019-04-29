@@ -185,334 +185,334 @@ unitSetId = testId "unitSet"
 sigmaId :: Id
 sigmaId = testId "sigma"
 
-aSymbol :: SymbolOrAlias Object
+aSymbol :: SymbolOrAlias
 aSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = aId
     , symbolOrAliasParams      = []
     }
-aSort0Symbol :: SymbolOrAlias Object
+aSort0Symbol :: SymbolOrAlias
 aSort0Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = aSort0Id
     , symbolOrAliasParams      = []
     }
-aSort1Symbol :: SymbolOrAlias Object
+aSort1Symbol :: SymbolOrAlias
 aSort1Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = aSort1Id
     , symbolOrAliasParams      = []
     }
-aSubsortSymbol :: SymbolOrAlias Object
+aSubsortSymbol :: SymbolOrAlias
 aSubsortSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = aSubsortId
     , symbolOrAliasParams      = []
     }
-aSubSubsortSymbol :: SymbolOrAlias Object
+aSubSubsortSymbol :: SymbolOrAlias
 aSubSubsortSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = aSubSubsortId
     , symbolOrAliasParams      = []
     }
-aOtherSortSymbol :: SymbolOrAlias Object
+aOtherSortSymbol :: SymbolOrAlias
 aOtherSortSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = aOtherSortId
     , symbolOrAliasParams      = []
     }
-bSymbol :: SymbolOrAlias Object
+bSymbol :: SymbolOrAlias
 bSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = bId
     , symbolOrAliasParams      = []
     }
-bSort0Symbol :: SymbolOrAlias Object
+bSort0Symbol :: SymbolOrAlias
 bSort0Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = bSort0Id
     , symbolOrAliasParams      = []
     }
-cSymbol :: SymbolOrAlias Object
+cSymbol :: SymbolOrAlias
 cSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = cId
     , symbolOrAliasParams      = []
     }
-dSymbol :: SymbolOrAlias Object
+dSymbol :: SymbolOrAlias
 dSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = dId
     , symbolOrAliasParams      = []
     }
-eSymbol :: SymbolOrAlias Object
+eSymbol :: SymbolOrAlias
 eSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = eId
     , symbolOrAliasParams      = []
     }
-fSymbol :: SymbolOrAlias Object
+fSymbol :: SymbolOrAlias
 fSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = fId
     , symbolOrAliasParams      = []
     }
-gSymbol :: SymbolOrAlias Object
+gSymbol :: SymbolOrAlias
 gSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = gId
     , symbolOrAliasParams      = []
     }
-hSymbol :: SymbolOrAlias Object
+hSymbol :: SymbolOrAlias
 hSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = hId
     , symbolOrAliasParams      = []
     }
-cfSymbol :: SymbolOrAlias Object
+cfSymbol :: SymbolOrAlias
 cfSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = cfId
     , symbolOrAliasParams      = []
     }
-cfSort0Symbol :: SymbolOrAlias Object
+cfSort0Symbol :: SymbolOrAlias
 cfSort0Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = cfSort0Id
     , symbolOrAliasParams      = []
     }
-cfSort1Symbol :: SymbolOrAlias Object
+cfSort1Symbol :: SymbolOrAlias
 cfSort1Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = cfSort1Id
     , symbolOrAliasParams      = []
     }
-cgSymbol :: SymbolOrAlias Object
+cgSymbol :: SymbolOrAlias
 cgSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = cgId
     , symbolOrAliasParams      = []
     }
-cgSort0Symbol :: SymbolOrAlias Object
+cgSort0Symbol :: SymbolOrAlias
 cgSort0Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = cgSort0Id
     , symbolOrAliasParams      = []
     }
-chSymbol :: SymbolOrAlias Object
+chSymbol :: SymbolOrAlias
 chSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = chId
     , symbolOrAliasParams      = []
     }
-plain00Symbol :: SymbolOrAlias Object
+plain00Symbol :: SymbolOrAlias
 plain00Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain00Id
     , symbolOrAliasParams      = []
     }
-plain00Sort0Symbol :: SymbolOrAlias Object
+plain00Sort0Symbol :: SymbolOrAlias
 plain00Sort0Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain00Sort0Id
     , symbolOrAliasParams      = []
     }
-plain00SubsortSymbol :: SymbolOrAlias Object
+plain00SubsortSymbol :: SymbolOrAlias
 plain00SubsortSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain00SubsortId
     , symbolOrAliasParams      = []
     }
-plain00SubSubsortSymbol :: SymbolOrAlias Object
+plain00SubSubsortSymbol :: SymbolOrAlias
 plain00SubSubsortSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain00SubSubsortId
     , symbolOrAliasParams      = []
     }
-plain10Symbol :: SymbolOrAlias Object
+plain10Symbol :: SymbolOrAlias
 plain10Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain10Id
     , symbolOrAliasParams      = []
     }
-plain11Symbol :: SymbolOrAlias Object
+plain11Symbol :: SymbolOrAlias
 plain11Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain11Id
     , symbolOrAliasParams      = []
     }
-plain20Symbol :: SymbolOrAlias Object
+plain20Symbol :: SymbolOrAlias
 plain20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = plain20Id
     , symbolOrAliasParams      = []
     }
-constr10Symbol :: SymbolOrAlias Object
+constr10Symbol :: SymbolOrAlias
 constr10Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = constr10Id
     , symbolOrAliasParams      = []
     }
-constr11Symbol :: SymbolOrAlias Object
+constr11Symbol :: SymbolOrAlias
 constr11Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = constr11Id
     , symbolOrAliasParams      = []
     }
-constr20Symbol :: SymbolOrAlias Object
+constr20Symbol :: SymbolOrAlias
 constr20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = constr20Id
     , symbolOrAliasParams      = []
     }
-function20MapTestSymbol :: SymbolOrAlias Object
+function20MapTestSymbol :: SymbolOrAlias
 function20MapTestSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = function20MapTestId
     , symbolOrAliasParams      = []
     }
-functional00Symbol :: SymbolOrAlias Object
+functional00Symbol :: SymbolOrAlias
 functional00Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functional00Id
     , symbolOrAliasParams      = []
     }
-functional01Symbol :: SymbolOrAlias Object
+functional01Symbol :: SymbolOrAlias
 functional01Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functional01Id
     , symbolOrAliasParams      = []
     }
-functional10Symbol :: SymbolOrAlias Object
+functional10Symbol :: SymbolOrAlias
 functional10Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functional10Id
     , symbolOrAliasParams      = []
     }
-functional11Symbol :: SymbolOrAlias Object
+functional11Symbol :: SymbolOrAlias
 functional11Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functional11Id
     , symbolOrAliasParams      = []
     }
-functional20Symbol :: SymbolOrAlias Object
+functional20Symbol :: SymbolOrAlias
 functional20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functional20Id
     , symbolOrAliasParams      = []
     }
-functional00SubSubSortSymbol :: SymbolOrAlias Object
+functional00SubSubSortSymbol :: SymbolOrAlias
 functional00SubSubSortSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = functional00SubSubSortId
     , symbolOrAliasParams      = []
     }
-functionalConstr10Symbol :: SymbolOrAlias Object
+functionalConstr10Symbol :: SymbolOrAlias
 functionalConstr10Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalConstr10Id
     , symbolOrAliasParams      = []
     }
-functionalConstr11Symbol :: SymbolOrAlias Object
+functionalConstr11Symbol :: SymbolOrAlias
 functionalConstr11Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalConstr11Id
     , symbolOrAliasParams      = []
     }
-functionalConstr12Symbol :: SymbolOrAlias Object
+functionalConstr12Symbol :: SymbolOrAlias
 functionalConstr12Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalConstr12Id
     , symbolOrAliasParams      = []
     }
-functionalConstr20Symbol :: SymbolOrAlias Object
+functionalConstr20Symbol :: SymbolOrAlias
 functionalConstr20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalConstr20Id
     , symbolOrAliasParams      = []
     }
-functionalConstr30Symbol :: SymbolOrAlias Object
+functionalConstr30Symbol :: SymbolOrAlias
 functionalConstr30Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalConstr30Id
     , symbolOrAliasParams      = []
     }
-functionalTopConstr20Symbol :: SymbolOrAlias Object
+functionalTopConstr20Symbol :: SymbolOrAlias
 functionalTopConstr20Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalTopConstr20Id
     , symbolOrAliasParams      = []
     }
-functionalTopConstr21Symbol :: SymbolOrAlias Object
+functionalTopConstr21Symbol :: SymbolOrAlias
 functionalTopConstr21Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = functionalTopConstr21Id
     , symbolOrAliasParams      = []
     }
-injective10Symbol :: SymbolOrAlias Object
+injective10Symbol :: SymbolOrAlias
 injective10Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = injective10Id
     , symbolOrAliasParams      = []
     }
-injective11Symbol :: SymbolOrAlias Object
+injective11Symbol :: SymbolOrAlias
 injective11Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = injective11Id
     , symbolOrAliasParams      = []
     }
-sortInjection10Symbol :: SymbolOrAlias Object
+sortInjection10Symbol :: SymbolOrAlias
 sortInjection10Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [testSort0, testSort]
     }
-sortInjection11Symbol :: SymbolOrAlias Object
+sortInjection11Symbol :: SymbolOrAlias
 sortInjection11Symbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [testSort1, testSort]
     }
-sortInjection0ToTopSymbol :: SymbolOrAlias Object
+sortInjection0ToTopSymbol :: SymbolOrAlias
 sortInjection0ToTopSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [testSort0, topSort]
     }
-sortInjectionSubToTopSymbol :: SymbolOrAlias Object
+sortInjectionSubToTopSymbol :: SymbolOrAlias
 sortInjectionSubToTopSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [subSort, topSort]
     }
-sortInjectionSubSubToTopSymbol :: SymbolOrAlias Object
+sortInjectionSubSubToTopSymbol :: SymbolOrAlias
 sortInjectionSubSubToTopSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [subSubsort, topSort]
     }
-sortInjectionSubSubToSubSymbol :: SymbolOrAlias Object
+sortInjectionSubSubToSubSymbol :: SymbolOrAlias
 sortInjectionSubSubToSubSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [subSubsort, subSort]
     }
-sortInjectionOtherToTopSymbol :: SymbolOrAlias Object
+sortInjectionOtherToTopSymbol :: SymbolOrAlias
 sortInjectionOtherToTopSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sortInjectionId
     , symbolOrAliasParams      = [otherSort, topSort]
     }
-unitMapSymbol :: SymbolOrAlias level
+unitMapSymbol :: SymbolOrAlias
 unitMapSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = unitMapId
     , symbolOrAliasParams      = []
     }
-elementMapSymbol :: SymbolOrAlias level
+elementMapSymbol :: SymbolOrAlias
 elementMapSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = elementMapId
     , symbolOrAliasParams      = []
     }
-concatMapSymbol :: SymbolOrAlias level
+concatMapSymbol :: SymbolOrAlias
 concatMapSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = concatMapId
     , symbolOrAliasParams      = []
     }
-lessIntSymbol :: SymbolOrAlias level
+lessIntSymbol :: SymbolOrAlias
 lessIntSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = lessIntId
     , symbolOrAliasParams      = []
     }
-greaterEqIntSymbol :: SymbolOrAlias level
+greaterEqIntSymbol :: SymbolOrAlias
 greaterEqIntSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = greaterEqIntId
     , symbolOrAliasParams      = []
     }
 
-concatListSymbol :: SymbolOrAlias level
+concatListSymbol :: SymbolOrAlias
 concatListSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = concatListId
     , symbolOrAliasParams = []
     }
 
-elementListSymbol :: SymbolOrAlias level
+elementListSymbol :: SymbolOrAlias
 elementListSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = elementListId
     , symbolOrAliasParams = []
     }
 
-unitListSymbol :: SymbolOrAlias level
+unitListSymbol :: SymbolOrAlias
 unitListSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = unitListId
     , symbolOrAliasParams = []
     }
 
-concatSetSymbol :: SymbolOrAlias level
+concatSetSymbol :: SymbolOrAlias
 concatSetSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = concatSetId
     , symbolOrAliasParams = []
     }
 
-elementSetSymbol :: SymbolOrAlias level
+elementSetSymbol :: SymbolOrAlias
 elementSetSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = elementSetId
     , symbolOrAliasParams = []
     }
 
-unitSetSymbol :: SymbolOrAlias level
+unitSetSymbol :: SymbolOrAlias
 unitSetSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = unitSetId
     , symbolOrAliasParams = []
     }
 
-sigmaSymbol :: SymbolOrAlias Object
+sigmaSymbol :: SymbolOrAlias
 sigmaSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sigmaId
     , symbolOrAliasParams      = []
@@ -835,7 +835,7 @@ sigma
     -> TermLike variable
 sigma child1 child2 = mkApp testSort sigmaSymbol [child1, child2]
 
-attributesMapping :: [(SymbolOrAlias Object, StepperAttributes)]
+attributesMapping :: [(SymbolOrAlias, StepperAttributes)]
 attributesMapping =
     [   ( aSymbol
         , Mock.constructorFunctionalAttributes
@@ -1040,7 +1040,7 @@ attributesMapping =
         )
     ]
 
-headTypeMapping :: [(SymbolOrAlias Object, HeadType)]
+headTypeMapping :: [(SymbolOrAlias, HeadType)]
 headTypeMapping =
     [   ( aSymbol
         , HeadType.Symbol
@@ -1294,7 +1294,7 @@ sortAttributesMapping =
         )
     ]
 
-headSortsMapping :: [(SymbolOrAlias Object, ApplicationSorts Object)]
+headSortsMapping :: [(SymbolOrAlias, ApplicationSorts Object)]
 headSortsMapping =
     [   ( aSymbol
         , ApplicationSorts

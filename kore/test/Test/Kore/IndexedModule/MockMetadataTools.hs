@@ -38,11 +38,11 @@ import           Kore.Syntax.Application
                  ( SymbolOrAlias (..) )
 
 makeMetadataTools
-    :: [(SymbolOrAlias Object, StepperAttributes)]
-    -> [(SymbolOrAlias Object, HeadType)]
+    :: [(SymbolOrAlias, StepperAttributes)]
+    -> [(SymbolOrAlias, HeadType)]
     -> [(Sort, Attribute.Sort)]
     -> [(Sort, Sort)]
-    -> [(SymbolOrAlias Object, ApplicationSorts Object)]
+    -> [(SymbolOrAlias, ApplicationSorts Object)]
     -> SMT.AST.SmtDeclarations
     -> SmtMetadataTools StepperAttributes
 makeMetadataTools attr headTypes sortTypes isSubsortOf sorts declarations =
@@ -61,14 +61,14 @@ makeMetadataTools attr headTypes sortTypes isSubsortOf sorts declarations =
         }
 
 attributesFunction
-    :: [(SymbolOrAlias Object, StepperAttributes)]
-    -> SymbolOrAlias Object
+    :: [(SymbolOrAlias, StepperAttributes)]
+    -> SymbolOrAlias
     -> StepperAttributes
 attributesFunction = caseBasedFunction
 
 headTypeFunction
-    :: [(SymbolOrAlias Object, HeadType)]
-    -> SymbolOrAlias Object
+    :: [(SymbolOrAlias, HeadType)]
+    -> SymbolOrAlias
     -> HeadType
 headTypeFunction = caseBasedFunction
 

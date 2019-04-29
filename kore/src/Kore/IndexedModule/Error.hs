@@ -18,7 +18,7 @@ noSort sortId =
     notDefined "Sort" $ getIdForError sortId
 
 -- | A message declaring that a Head is undefined
-noHead :: SymbolOrAlias Object -> String
+noHead :: SymbolOrAlias -> String
 noHead patternHead =
     notDefined "Head" $ show patternHead
 

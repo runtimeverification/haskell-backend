@@ -841,7 +841,7 @@ lookupSymbol
     -> Sort
     -- ^ the hooked sort
     -> VerifiedModule declAtts axiomAtts
-    -> Either (Error e) (SymbolOrAlias Object)
+    -> Either (Error e) SymbolOrAlias
 lookupSymbol builtinName builtinSort indexedModule
   = do
     symbolOrAliasConstructor <-
@@ -860,7 +860,7 @@ during verification.
 lookupSymbolUnit
     :: Sort
     -> Attribute.Sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
 lookupSymbolUnit theSort attrs =
     case getUnit of
         Just symbol -> symbol
@@ -880,7 +880,7 @@ checked during verification.
 lookupSymbolElement
     :: Sort
     -> Attribute.Sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
 lookupSymbolElement theSort attrs =
     case getElement of
         Just symbol -> symbol
@@ -900,7 +900,7 @@ checked during verification.
 lookupSymbolConcat
     :: Sort
     -> Attribute.Sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
 lookupSymbolConcat theSort attrs =
     case getConcat of
         Just symbol -> symbol
@@ -916,7 +916,7 @@ lookupSymbolConcat theSort attrs =
 isSymbol
     :: Text  -- ^ Builtin symbol
     -> SmtMetadataTools Hook
-    -> SymbolOrAlias Object  -- ^ Kore symbol
+    -> SymbolOrAlias  -- ^ Kore symbol
     -> Bool
 isSymbol builtinName MetadataTools { symAttributes } sym =
     case getHook (symAttributes sym) of

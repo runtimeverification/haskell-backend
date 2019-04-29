@@ -63,7 +63,7 @@ strictAttribute =
     (asParsedPattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias =
-                groundHead "strict" AstLocationTest :: SymbolOrAlias Object
+                groundHead "strict" AstLocationTest :: SymbolOrAlias
             , applicationChildren = []
             }
 

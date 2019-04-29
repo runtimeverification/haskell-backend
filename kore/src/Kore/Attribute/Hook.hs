@@ -68,7 +68,7 @@ hookId = "hook"
 Kore syntax: @hook{}@
 
  -}
-hookSymbol :: SymbolOrAlias Object
+hookSymbol :: SymbolOrAlias
 hookSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = hookId

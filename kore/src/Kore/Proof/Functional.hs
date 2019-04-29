@@ -41,7 +41,7 @@ data FunctionalProof level variable
     | FunctionalDomainValue (Domain.Builtin ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
-    | FunctionalHead (SymbolOrAlias Object)
+    | FunctionalHead SymbolOrAlias
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     | FunctionalStringLiteral StringLiteral
@@ -66,7 +66,7 @@ instance Hashable variable => Hashable (FunctionalProof level variable)
 data FunctionProof level variable
     = FunctionProofFunctional (FunctionalProof Object variable)
     -- ^ A functional component is also function-like.
-    | FunctionHead (SymbolOrAlias Object)
+    | FunctionHead SymbolOrAlias
     -- ^Head of a partial function.
 
 deriving instance Eq variable => Eq (FunctionProof level variable)
@@ -82,7 +82,7 @@ deriving instance Show variable => Show (FunctionProof level variable)
 data TotalProof level variable
     = TotalProofFunctional (FunctionalProof Object variable)
     -- ^A functional component is also total.
-    | TotalHead (SymbolOrAlias Object)
+    | TotalHead SymbolOrAlias
     -- ^Head of a total symbol.
 
 deriving instance Eq variable => Eq (TotalProof level variable)

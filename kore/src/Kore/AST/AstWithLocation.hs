@@ -71,7 +71,7 @@ instance AstWithLocation (Alias level) where
     updateAstLocation al loc =
         al { aliasConstructor = updateAstLocation (aliasConstructor al) loc }
 
-instance AstWithLocation (SymbolOrAlias level) where
+instance AstWithLocation SymbolOrAlias where
     locationFromAst = locationFromAst . symbolOrAliasConstructor
     updateAstLocation sal loc =
         sal

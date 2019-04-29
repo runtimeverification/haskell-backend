@@ -303,7 +303,7 @@ mkApp
         )
     => Sort
     -- ^ Result sort
-    -> SymbolOrAlias level
+    -> SymbolOrAlias
     -- ^ Application symbol or alias
     -> [pattern']
     -- ^ Application arguments
@@ -1030,7 +1030,7 @@ varS x variableSort =
 -- "mult" `symS` [s, s]
 -- Since the return sort is only found in MetadataTools, this is
 -- mostly useful for testing.
-symS :: Text -> [Sort] -> SymbolOrAlias level
+symS :: Text -> [Sort] -> SymbolOrAlias
 symS x s =
     SymbolOrAlias (noLocationId x) s
 
@@ -1167,7 +1167,7 @@ pattern And_
 
 pattern App_
     :: Functor dom
-    => SymbolOrAlias level
+    => SymbolOrAlias
     -> [PurePattern level dom var annotation]
     -> PurePattern level dom var annotation
 

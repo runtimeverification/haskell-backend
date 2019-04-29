@@ -458,7 +458,7 @@ castVoidDomainValues = mapDomainValues (\case {})
 
 -- |Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.
-groundHead :: Text -> AstLocation -> SymbolOrAlias level
+groundHead :: Text -> AstLocation -> SymbolOrAlias
 groundHead ctor location = SymbolOrAlias
     { symbolOrAliasConstructor = Id
         { getId = ctor
@@ -469,7 +469,7 @@ groundHead ctor location = SymbolOrAlias
 
 -- |Given a head and a list of children, produces an 'ApplicationPattern'
 --  applying the given head to the children
-apply :: SymbolOrAlias level -> [child] -> Pattern level domain variable child
+apply :: SymbolOrAlias -> [child] -> Pattern level domain variable child
 apply patternHead patterns = ApplicationPattern Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
@@ -478,5 +478,5 @@ apply patternHead patterns = ApplicationPattern Application
 -- |Applies the given head to the empty list of children to obtain a
 -- constant 'ApplicationPattern'
 constant
-    :: SymbolOrAlias level -> Pattern level domain variable child
+    :: SymbolOrAlias -> Pattern level domain variable child
 constant patternHead = apply patternHead []

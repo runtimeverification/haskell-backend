@@ -62,7 +62,7 @@ asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Bool -> Bool -> Bool)
     -- ^ operator
@@ -80,7 +80,7 @@ testBinary symb impl =
 
 -- | Test a unary operator hooked to the given symbol
 testUnary
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Bool -> Bool)
     -- ^ operator

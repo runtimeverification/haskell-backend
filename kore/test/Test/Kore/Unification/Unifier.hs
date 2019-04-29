@@ -175,10 +175,10 @@ symbolInj =
         [sortParamSort "From"]
         (sortParamSort "To")
 
-isInjHead :: SymbolOrAlias Object -> Bool
+isInjHead :: SymbolOrAlias -> Bool
 isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 
-mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
+mockStepperAttributes :: SymbolOrAlias -> StepperAttributes
 mockStepperAttributes patternHead =
     defaultSymbolAttributes
         { constructor = Constructor { isConstructor }

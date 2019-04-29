@@ -1128,8 +1128,8 @@ genericPatternInPatterns
     -> OperandSort Object
     -> Helpers.ResultSort Object
     -> VariableOfDeclaredSort Object
-    -> SymbolOrAlias Object
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
+    -> SymbolOrAlias
     -> PatternRestrict
     -> [TestPattern Object]
 genericPatternInPatterns

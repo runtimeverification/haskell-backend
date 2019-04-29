@@ -362,14 +362,14 @@ asPattern resultSort =
 lookupSymbolGet
     :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolGet = Builtin.lookupSymbol getKey
 
 {- | Check if the given symbol is hooked to @LIST.concat@.
 -}
 isSymbolConcat
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
@@ -377,7 +377,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
 -}
 isSymbolElement
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
@@ -385,7 +385,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 

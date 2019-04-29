@@ -18,8 +18,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
                  ( SentenceAxiom (SentenceAxiom), SentenceSort (SentenceSort) )
 import qualified Kore.AST.Sentence as SentenceSort
@@ -369,7 +367,7 @@ parseSMTConstructor patt =
         _ -> Nothing
 
     buildConstructor
-        :: SymbolOrAlias Object
+        :: SymbolOrAlias
         -> [Variable]
         -> Maybe AST.UnresolvedConstructor
     buildConstructor

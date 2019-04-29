@@ -46,7 +46,7 @@ data UnificationProof level variable
     -- if ϕ and ϕ' are functional patterns, then
     -- |= (ϕ ∧ ϕ') = (ϕ ∧ (ϕ = ϕ'))
     | AndDistributionAndConstraintLifting
-        (SymbolOrAlias Object)
+        SymbolOrAlias
         [UnificationProof Object variable]
     -- ^Used to specify both the application of the constructor axiom
     -- c(x1, .., xn) /\ c(y1, ..., yn) -> c(x1 /\ y1, ..., xn /\ yn)

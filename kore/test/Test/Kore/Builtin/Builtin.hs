@@ -95,7 +95,7 @@ testSymbolWithSolver
     -- ^ test name
     -> Sort
     -- ^ symbol result sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -- ^ symbol being tested
     -> [p]
     -- ^ arguments for symbol

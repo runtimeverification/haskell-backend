@@ -32,8 +32,6 @@ import GHC.Stack
 import Numeric.Natural
        ( Natural )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Pure
                  ( eraseAnnotations )
 import           Kore.AST.Sentence
@@ -237,7 +235,7 @@ makeSort name =
         , sortActualSorts = []
         }
 
-makeHead :: Text -> SymbolOrAlias Object
+makeHead :: Text -> SymbolOrAlias
 makeHead name =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId name

@@ -55,8 +55,6 @@ import qualified Control.Lens as Lens hiding
 import           Data.Reflection
                  ( Given, given )
 
-import Kore.AST.MetaOrObject
-       ( Object )
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
@@ -74,7 +72,7 @@ import Kore.Syntax.Application
 -- | Is a symbol total (non-@\\bottom@)?
 isTotal_
     :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isTotal_ =
     isTotal
@@ -97,7 +95,7 @@ See also: 'functionAttribute', 'isFunctional'
  -}
 isFunction_
     :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isFunction_ =
     isFunction
@@ -127,7 +125,7 @@ See also: 'isFunctional', 'functionalAttribute', 'sortInjectionAttribute'
  -}
 isFunctional_
     :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isFunctional_ =
     isFunctional
@@ -150,7 +148,7 @@ isFunctional = do
 -- | Is the symbol a constructor?
 isConstructor_
     :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isConstructor_ =
     isConstructor . constructor
@@ -166,7 +164,7 @@ See also: 'isInjective', 'injectiveAttribute', 'constructorAttribute',
  -}
 isInjective_
     :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isInjective_ =
     isInjective
@@ -194,7 +192,7 @@ See also: 'isSortInjection'
  -}
 isSortInjection_
     :: (Given (SmtMetadataTools StepperAttributes))
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isSortInjection_ =
     isSortInjection . sortInjection
@@ -216,7 +214,7 @@ isSortInjection_ =
 -- are not .Map.
 isNonSimplifiable_
     :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> Bool
 isNonSimplifiable_ =
     isNonSimplifiable

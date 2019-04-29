@@ -35,7 +35,7 @@ constructorId :: Id
 constructorId = "constructor"
 
 -- | Kore symbol representing the @constructor@ attribute.
-constructorSymbol :: SymbolOrAlias Object
+constructorSymbol :: SymbolOrAlias
 constructorSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = constructorId

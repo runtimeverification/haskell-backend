@@ -59,7 +59,7 @@ instance Pretty UnificationError where
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason level
-    = HeadClash (SymbolOrAlias level)
+    = HeadClash SymbolOrAlias
     | DomainValueClash String
     | SortInjectionClash Sort Sort
     deriving (Eq, Show)

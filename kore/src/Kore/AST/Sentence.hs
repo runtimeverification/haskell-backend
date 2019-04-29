@@ -704,7 +704,7 @@ class SentenceSymbolOrAlias (sentence :: * -> * -> *) where
     getSentenceSymbolOrAliasHead
         :: sentence Object patternType
         -> [Sort]
-        -> SymbolOrAlias Object
+        -> SymbolOrAlias
     getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
         { symbolOrAliasConstructor =
             getSentenceSymbolOrAliasConstructor sentence

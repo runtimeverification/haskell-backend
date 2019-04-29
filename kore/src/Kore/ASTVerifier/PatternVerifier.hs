@@ -647,7 +647,7 @@ verifyVariableDeclaration Variable { variableSort } = do
         variableSort
 
 verifySymbolOrAlias
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -> PatternVerifier (ApplicationSorts Object)
 verifySymbolOrAlias symbolOrAlias = do
     trySymbol <- catchError (Right <$> lookupSymbol) (return . Left)
@@ -671,7 +671,7 @@ verifySymbolOrAlias symbolOrAlias = do
 
 applicationSortsFromSymbolOrAliasSentence
     :: SentenceSymbolOrAlias sa
-    => SymbolOrAlias Object
+    => SymbolOrAlias
     -> sa Object pat
     -> PatternVerifier (ApplicationSorts Object)
 applicationSortsFromSymbolOrAliasSentence symbolOrAlias sentence = do

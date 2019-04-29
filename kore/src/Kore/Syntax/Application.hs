@@ -33,24 +33,21 @@ import Kore.Unparser
 import Template.Tools
        ( newDefinitionGroup )
 
-{-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
-@object-head@ and @meta-head@ syntactic categories from the Semantics of K,
+{- |'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
+@head@ syntactic category from the Semantics of K,
 Section 9.1.3 (Heads).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-data SymbolOrAlias level = SymbolOrAlias
+ -}
+data SymbolOrAlias = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
     , symbolOrAliasParams      :: ![Sort]
     }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (SymbolOrAlias level)
+instance Hashable SymbolOrAlias
 
-instance NFData (SymbolOrAlias level)
+instance NFData SymbolOrAlias
 
-instance Unparse (SymbolOrAlias level) where
+instance Unparse SymbolOrAlias where
     unparse
         SymbolOrAlias
             { symbolOrAliasConstructor
@@ -68,7 +65,7 @@ instance Unparse (SymbolOrAlias level) where
                                       , parameters2 symbolOrAliasParams
                                       ])
 
-unparseSymbolOrAliasNoSortParams :: SymbolOrAlias level -> Pretty.Doc ann
+unparseSymbolOrAliasNoSortParams :: SymbolOrAlias -> Pretty.Doc ann
 unparseSymbolOrAliasNoSortParams
     SymbolOrAlias
         { symbolOrAliasConstructor
@@ -85,7 +82,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
 -}
 data Application level child = Application
-    { applicationSymbolOrAlias :: !(SymbolOrAlias level)
+    { applicationSymbolOrAlias :: !SymbolOrAlias
     , applicationChildren      :: [child]
     }
     deriving (Functor, Foldable, Traversable, Generic)

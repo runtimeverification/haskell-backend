@@ -35,7 +35,7 @@ commId :: Id
 commId = "comm"
 
 -- | Kore symbol representing the @comm@ attribute.
-commSymbol :: SymbolOrAlias Object
+commSymbol :: SymbolOrAlias
 commSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = commId

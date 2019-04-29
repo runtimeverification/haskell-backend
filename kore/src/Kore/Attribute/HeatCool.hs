@@ -38,7 +38,7 @@ heatId :: Id
 heatId = "heat"
 
 -- | Kore symbol representing the @heat@ attribute.
-heatSymbol :: SymbolOrAlias Object
+heatSymbol :: SymbolOrAlias
 heatSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = heatId
@@ -54,7 +54,7 @@ coolId :: Id
 coolId = "cool"
 
 -- | Kore symbol representing the @cool@ attribute.
-coolSymbol :: SymbolOrAlias Object
+coolSymbol :: SymbolOrAlias
 coolSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = coolId

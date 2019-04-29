@@ -34,7 +34,7 @@ trustedId :: Id
 trustedId = "trusted"
 
 -- | Kore symbol representing the @trusted@ attribute.
-trustedSymbol :: SymbolOrAlias Object
+trustedSymbol :: SymbolOrAlias
 trustedSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = trustedId
