@@ -22,6 +22,7 @@ import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.SetVariable
+import Kore.Syntax.Top
 import Kore.Syntax.Variable
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have

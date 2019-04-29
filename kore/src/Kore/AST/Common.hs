@@ -22,8 +22,6 @@ import           Control.DeepSeq
                  ( NFData (..) )
 import           Data.Deriving
                  ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Function
-                 ( on )
 import           Data.Functor.Classes
 import           Data.Functor.Const
                  ( Const )
@@ -46,6 +44,7 @@ import Kore.Syntax.Bottom
 import Kore.Syntax.CharLiteral
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
+import Kore.Syntax.Top
 import Kore.Unparser
 import Template.Tools
        ( newDefinitionGroup )
@@ -855,47 +854,6 @@ instance Unparse child => Unparse (Rewrites level child) where
             , unparse2 rewritesFirst
             , unparse2 rewritesSecond
             ])
-
-{-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
-@meta-pattern@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
-
-The 'level type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-'topSort' is the sort of the result.
-
-This represents the ⌈TopPattern⌉ Matching Logic construct.
--}
-newtype Top level child = Top { topSort :: Sort}
-    deriving (Functor, Foldable, Show, Traversable, Generic)
-
-$newDefinitionGroup
-
-instance Eq1 (Top level) where
-    liftEq = $(makeLiftEq ''Top)
-
-instance Ord1 (Top level) where
-    liftCompare = $(makeLiftCompare ''Top)
-
-instance Show1 (Top level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Top)
-
-instance Eq (Top level child) where
-    (==) = on (==) topSort
-
-instance Ord (Top level child) where
-    compare = on compare topSort
-
-instance Hashable (Top level child)
-
-instance NFData (Top level child)
-
-instance Unparse (Top level child) where
-    unparse Top { topSort } =
-        "\\top" <> parameters [topSort] <> noArguments
-
-    unparse2 Top { } = "\\top"
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,

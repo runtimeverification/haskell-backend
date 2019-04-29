@@ -65,6 +65,7 @@ import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
 import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
+import           Kore.Syntax.Top
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -381,7 +382,7 @@ rewritesGen
 rewritesGen = binaryOperatorGen Common.Rewrites
 
 topGen :: Sort -> Gen (Top Object child)
-topGen = topBottomGen Common.Top
+topGen = topBottomGen Top
 
 patternGen
     :: (Sort -> Gen child)

@@ -11,14 +11,13 @@ module Kore.Step.Simplification.Top
     ( simplify
     ) where
 
-import           Kore.AST.Common
-                 ( Top (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Top
 
 {-| simplifies a Top pattern, which means returning an always-true or.
 -}
