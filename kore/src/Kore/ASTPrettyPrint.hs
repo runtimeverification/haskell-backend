@@ -38,6 +38,7 @@ import           Kore.Proof.Functional
 import           Kore.Step.Conditional
 import qualified Kore.Step.Pattern as Step
                  ( Pattern )
+import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
 import           Kore.Unification.Substitution
                  ( Substitution )

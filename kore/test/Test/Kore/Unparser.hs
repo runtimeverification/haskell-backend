@@ -17,6 +17,7 @@ import Kore.AST.Sentence
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
+import Kore.Syntax.CharLiteral
 import Kore.Syntax.StringLiteral
 import Kore.Unparser
 

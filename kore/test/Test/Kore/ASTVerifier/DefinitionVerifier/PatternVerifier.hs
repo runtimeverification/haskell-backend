@@ -23,6 +23,7 @@ import           Kore.IndexedModule.Error
                  ( noSort )
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
 import qualified Kore.Verified as Verified
 

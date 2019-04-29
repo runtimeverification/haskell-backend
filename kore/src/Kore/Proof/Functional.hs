@@ -20,10 +20,11 @@ import GHC.Generics
        ( Generic )
 
 import           Kore.AST.Common
-                 ( CharLiteral, SymbolOrAlias )
+                 ( SymbolOrAlias )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is

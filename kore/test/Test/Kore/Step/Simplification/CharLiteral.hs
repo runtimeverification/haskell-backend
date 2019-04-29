@@ -18,6 +18,7 @@ import           Kore.Step.Pattern
                  ( Conditional (..) )
 import           Kore.Step.Simplification.CharLiteral
                  ( simplify )
+import           Kore.Syntax.CharLiteral
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

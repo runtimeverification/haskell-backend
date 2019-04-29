@@ -43,9 +43,9 @@ import           Kore.AST.Common
 import qualified Kore.AST.Common as Base
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
-                 ( And, Application, Bottom, Ceil, CharLiteral, CofreeF (..),
-                 Concrete, DomainValue, Equals, Exists, Floor, Forall, Id (..),
-                 Iff, Implies, In, Next, Not, Or, PurePattern, Rewrites, Sort,
+                 ( And, Application, Bottom, Ceil, CofreeF (..), Concrete,
+                 DomainValue, Equals, Exists, Floor, Forall, Id (..), Iff,
+                 Implies, In, Next, Not, Or, PurePattern, Rewrites, Sort,
                  SortActual, SortVariable, SortedVariable (..),
                  SymbolOrAlias (..), Top, Variable (..) )
 import qualified Kore.Domain.Builtin as Domain

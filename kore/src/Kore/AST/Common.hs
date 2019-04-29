@@ -40,24 +40,11 @@ import           GHC.Generics
 
 import Kore.AST.MetaOrObject
 import Kore.Sort
+import Kore.Syntax.CharLiteral
 import Kore.Syntax.StringLiteral
 import Kore.Unparser
 import Template.Tools
        ( newDefinitionGroup )
-
-{-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
-Section 9.1.1 (Lexicon).
--}
-newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable CharLiteral
-
-instance NFData CharLiteral
-
-instance Unparse CharLiteral where
-    unparse = Pretty.squotes . fromString . escapeChar . getCharLiteral
-    unparse2 = unparse
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
