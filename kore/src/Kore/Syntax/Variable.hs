@@ -7,7 +7,6 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 
 {-# LANGUAGE EmptyDataDeriving #-}
-{-# LANGUAGE TemplateHaskell   #-}
 
 module Kore.Syntax.Variable
     ( Variable (..)

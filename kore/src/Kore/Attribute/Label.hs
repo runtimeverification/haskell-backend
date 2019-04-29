@@ -60,7 +60,7 @@ instance ParseAttributes Label where
           | otherwise = do
             Parser.getZeroParams params
             arg1 <- Parser.getOneArgument args
-            str <- Parser.getStringLiteral arg1
-            return Label { unLabel = Just (Common.getStringLiteral str) }
+            StringLiteral str <- Parser.getStringLiteral arg1
+            return Label { unLabel = Just str }
         withApplication' = Parser.withApplication labelId
         failDuplicate' = Parser.failDuplicate labelId

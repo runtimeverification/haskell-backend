@@ -6,6 +6,7 @@ import Test.Tasty
 import Kore.AST.Common
 import Kore.AST.Sentence
 import Kore.Parser.Lexeme
+import Kore.Syntax.StringLiteral
 
 import Test.Kore
 import Test.Kore.Parser

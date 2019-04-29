@@ -78,6 +78,7 @@ import qualified Kore.Parser.CharDict as CharDict
 import           Kore.Parser.CharSet as CharSet
 import           Kore.Parser.ParserUtils as ParserUtils
 import           Kore.Sort
+import           Kore.Syntax.StringLiteral
 
 sourcePosToFileLocation :: SourcePos -> FileLocation
 sourcePosToFileLocation

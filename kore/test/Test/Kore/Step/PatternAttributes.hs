@@ -20,6 +20,7 @@ import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..) )
 import           Kore.Step.TermLike
+import           Kore.Syntax.StringLiteral
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock

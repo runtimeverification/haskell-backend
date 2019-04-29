@@ -22,7 +22,6 @@ import           Text.Megaparsec
                  ( Parsec, noneOf, parseMaybe )
 import           Text.Megaparsec.Char
 
-import           Kore.AST.Common
 import           Kore.Attribute.Parser as AttributeParser
 import qualified Kore.Error
 

@@ -32,8 +32,6 @@ import           Data.Functor.Identity
 import           Data.Hashable
 import           Data.String
                  ( fromString )
-import           Data.Text
-                 ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Void
                  ( Void )
@@ -42,23 +40,10 @@ import           GHC.Generics
 
 import Kore.AST.MetaOrObject
 import Kore.Sort
+import Kore.Syntax.StringLiteral
 import Kore.Unparser
 import Template.Tools
        ( newDefinitionGroup )
-
-{-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
-Section 9.1.1 (Lexicon).
--}
-newtype StringLiteral = StringLiteral { getStringLiteral :: Text }
-    deriving (Show, Eq, Ord, Generic)
-
-instance Hashable StringLiteral
-
-instance NFData StringLiteral
-
-instance Unparse StringLiteral where
-    unparse = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral
-    unparse2 = unparse
 
 {-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).

@@ -60,6 +60,7 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
+import           Kore.Syntax.StringLiteral
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -122,7 +123,7 @@ objectIdGen =
 
 stringLiteralGen :: MonadGen m => m StringLiteral
 stringLiteralGen =
-    Common.StringLiteral <$> Gen.text (Range.linear 0 256) charGen
+    StringLiteral <$> Gen.text (Range.linear 0 256) charGen
 
 charLiteralGen :: MonadGen m => m CharLiteral
 charLiteralGen = Common.CharLiteral <$> charGen
@@ -323,7 +324,7 @@ genExternal domainValueSort =
         domainValueSort
         . Kore.AST.Pure.eraseAnnotations
         . mkStringLiteral
-        . Common.getStringLiteral
+        . getStringLiteral
         <$> stringLiteralGen
 
 existsGen
@@ -424,7 +425,7 @@ termLikeChildGen patternSort =
         case () of
             ()
               | patternSort == stringMetaSort ->
-                mkStringLiteral . Common.getStringLiteral <$> stringLiteralGen
+                mkStringLiteral . getStringLiteral <$> stringLiteralGen
               | patternSort == charMetaSort ->
                 mkCharLiteral . Common.getCharLiteral <$> charLiteralGen
               | otherwise ->

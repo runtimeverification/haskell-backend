@@ -44,6 +44,7 @@ module Kore.Attribute.Parser
     , attributePattern
     , attributePattern_
     , Default (..)
+    , StringLiteral (StringLiteral)
     , Generic
     , NFData
     , module Kore.Sort
@@ -69,12 +70,10 @@ import           Data.Text
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common hiding
-                 ( getStringLiteral )
+import           Kore.AST.Common
 import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.MetaOrObject
-import           Kore.AST.Pure hiding
-                 ( getStringLiteral )
+import           Kore.AST.Pure
 import           Kore.Attribute.Attributes
 import qualified Kore.Attribute.Smtlib.Smthook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
@@ -82,6 +81,8 @@ import           Kore.Error
                  ( Error, castError )
 import qualified Kore.Error
 import           Kore.Sort
+import           Kore.Syntax.StringLiteral
+                 ( StringLiteral (StringLiteral) )
 import           SMT.SimpleSMT
                  ( SExpr, readSExprs )
 

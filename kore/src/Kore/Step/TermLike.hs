@@ -46,7 +46,7 @@ import           Kore.AST.Pure
                  ( And, Application, Bottom, Ceil, CharLiteral, CofreeF (..),
                  Concrete, DomainValue, Equals, Exists, Floor, Forall, Id (..),
                  Iff, Implies, In, Next, Not, Or, PurePattern, Rewrites, Sort,
-                 SortActual, SortVariable, SortedVariable (..), StringLiteral,
+                 SortActual, SortVariable, SortedVariable (..),
                  SymbolOrAlias (..), Top, Variable (..) )
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Substitute as Substitute
