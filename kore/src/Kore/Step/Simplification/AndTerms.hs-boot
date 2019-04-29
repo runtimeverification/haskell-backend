@@ -1,7 +1,5 @@
 module Kore.Step.Simplification.AndTerms where
 
-import Kore.Syntax.Variable
-       ( SortedVariable )
 import Kore.AST.MetaOrObject
 import Kore.Attribute.Symbol
        ( StepperAttributes )
@@ -16,6 +14,8 @@ import Kore.Step.Simplification.Data
        TermLikeSimplifier )
 import Kore.Step.TermLike
        ( TermLike )
+import Kore.Syntax.Variable
+       ( SortedVariable )
 import Kore.Unification.Unify
        ( MonadUnify )
 import Kore.Unparser

@@ -1,7 +1,5 @@
 module Kore.Step.Substitution where
 
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -15,6 +13,8 @@ import           Kore.Step.Pattern
                  ( Predicate )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.Unification.Data
                  ( UnificationProof )
 import           Kore.Unification.Substitution
