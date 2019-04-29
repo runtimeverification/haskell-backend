@@ -37,17 +37,66 @@ import           GHC.Generics
 
 import Kore.Unparser
 
-{-| 'FileLocation' represents a position in a source file.
--}
-data FileLocation = FileLocation
-    { fileName :: FilePath
-    , line     :: Int
-    , column   :: Int
-    }
-    deriving (Eq, Show, Generic)
+{-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
+syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
 
-instance Hashable FileLocation
-instance NFData FileLocation
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'MetaOrObject level'.
+
+We may chage the Id's representation in the future so one should treat it as
+an opaque entity as much as possible.
+
+Note that Id comparison ignores the AstLocation.
+-}
+data Id level = Id
+    { getId      :: !Text
+    , idLocation :: !AstLocation
+    }
+    deriving (Show, Generic)
+
+instance Ord (Id level) where
+    compare first@(Id _ _) second@(Id _ _) =
+        compare (getId first) (getId second)
+
+{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
+instance Eq (Id level) where
+    first == second = compare first second == EQ
+
+instance Hashable (Id level)
+
+instance NFData (Id level)
+
+instance IsString (Id level) where
+    fromString = noLocationId . fromString
+
+instance Unparse (Id level) where
+    unparse = Pretty.pretty . getId
+    unparse2 = Pretty.pretty . getId
+
+{- | 'unparseIdLower' prints an identifier in lower case.
+ -}
+unparseIdLower :: Id leve -> Pretty.Doc ann
+unparseIdLower Id { getId } = Pretty.pretty (Text.toLower getId)
+
+
+{- | Create an 'Id' without location.
+
+Before doing this, you should consider using an existing case or adding a new
+constructor to 'AstLocation'.
+
+ -}
+noLocationId :: Text -> Id level
+noLocationId value = Id
+    { getId = value
+    , idLocation = AstLocationNone
+    }
+
+-- | Create an implicit 'Id'.
+implicitId :: Text -> Id level
+implicitId name = Id name AstLocationImplicit
+
+getIdForError :: Id level -> String
+getIdForError = Text.unpack . getId
 
 {-| 'AstLocation' represents the origin of an AST node.
 
@@ -89,62 +138,14 @@ prettyPrintAstLocation
     = name ++ " " ++ show line' ++ ":" ++ show column'
 prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
-{-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
-syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-We may chage the Id's representation in the future so one should treat it as
-an opaque entity as much as possible.
-
-Note that Id comparison ignores the AstLocation.
+{-| 'FileLocation' represents a position in a source file.
 -}
-data Id level = Id
-    { getId      :: !Text
-    , idLocation :: !AstLocation
+data FileLocation = FileLocation
+    { fileName :: FilePath
+    , line     :: Int
+    , column   :: Int
     }
-    deriving (Show, Generic)
+    deriving (Eq, Show, Generic)
 
-instance Ord (Id level) where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
-
-{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
-instance Eq (Id level) where
-    first == second = compare first second == EQ
-
-instance Hashable (Id level)
-
-instance NFData (Id level)
-
-instance IsString (Id level) where
-    fromString = noLocationId . fromString
-
-instance Unparse (Id level) where
-    unparse = Pretty.pretty . getId
-    unparse2 = Pretty.pretty . getId
-
-{-| 'unparseIdLower' prints an identifier in lower case.
-    'unparseIdUpper' prints an identifier in upper case.
--}
-unparseIdLower :: Id leve -> Pretty.Doc ann
-unparseIdLower Id { getId } = Pretty.pretty (Text.toLower getId)
-
-
-{-| 'noLocationId' creates an Id without a source location. While there are some
-narrow cases where this makes sense, you should really consider other options
-(including adding a new entry to the `AstLocation` data definition).
--}
-noLocationId :: Text -> Id level
-noLocationId value = Id
-    { getId = value
-    , idLocation = AstLocationNone
-    }
-
--- | Create an implicit 'Id'.
-implicitId :: Text -> Id level
-implicitId name = Id name AstLocationImplicit
-
-getIdForError :: Id level -> String
-getIdForError = Text.unpack . getId
+instance Hashable FileLocation
+instance NFData FileLocation
