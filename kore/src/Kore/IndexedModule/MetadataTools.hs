@@ -23,7 +23,6 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTHelpers
                  ( ApplicationSorts )
@@ -34,6 +33,8 @@ import           Kore.IndexedModule.Resolvers
 import           Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT.AST
                  ( SmtDeclarations )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (..) )
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.

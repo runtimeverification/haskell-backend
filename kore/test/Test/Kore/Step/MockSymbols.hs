@@ -28,8 +28,6 @@ import           Data.Text
                  ( Text )
 
 import           Data.Sup
-import           Kore.AST.Common
-                 ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( asConcretePurePattern )
@@ -57,6 +55,8 @@ import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (..) )
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified SMT.AST as SMT

@@ -18,10 +18,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (SymbolOrAlias) )
-import           Kore.AST.Common as SymbolOrAlias
-                 ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Sentence
@@ -61,6 +57,10 @@ import qualified Kore.Sort as SortActual
 import qualified Kore.Step.SMT.AST as AST
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (SymbolOrAlias) )
+import           Kore.Syntax.Application as SymbolOrAlias
+                 ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id
                  ( Id )
 import           Kore.Syntax.Variable

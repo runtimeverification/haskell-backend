@@ -22,8 +22,6 @@ import           Data.Reflection
                  ( give )
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
-                 ( Application (..) )
 import qualified Kore.AST.Common as Common
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -56,6 +54,7 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier, simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
+import           Kore.Syntax.Application
 import           Kore.Syntax.Id
 import           Kore.Unparser
 import           Kore.Variables.Fresh

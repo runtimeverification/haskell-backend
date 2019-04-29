@@ -20,7 +20,7 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 
 import           Kore.AST.Common
-                 ( Application (..), Ceil (..) )
+                 ( Ceil (..) )
 import qualified Kore.AST.Common as Common
 import           Kore.AST.Valid
                  ( pattern Top_, mkCeil_, mkTop_ )
@@ -61,6 +61,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
                  TermLikeSimplifier )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Application
 import           Kore.TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh

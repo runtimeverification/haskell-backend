@@ -24,8 +24,8 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import Kore.AST.Common
 import Kore.Sort
+import Kore.Syntax.Application
 import Kore.Unparser
 
 -- | Hack sum-type to wrap unification and substitution errors

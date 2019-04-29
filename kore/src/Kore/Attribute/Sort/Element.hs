@@ -13,7 +13,6 @@ import Data.Default
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.Attribute.Parser
 

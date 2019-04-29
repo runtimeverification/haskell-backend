@@ -15,8 +15,6 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Debug.Trace
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -46,6 +44,8 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT, pickFinal, runStrategy )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id
                  ( Id (..) )
 import           Kore.Syntax.Variable

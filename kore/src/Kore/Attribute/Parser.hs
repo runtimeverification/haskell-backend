@@ -47,9 +47,10 @@ module Kore.Attribute.Parser
     , StringLiteral (StringLiteral)
     , Generic
     , NFData
-    , module Kore.Sort
     , module Kore.AST.Common
     , module Kore.AST.MetaOrObject
+    , module Kore.Sort
+    , module Kore.Syntax.Application
     ) where
 
 import           Control.DeepSeq
@@ -81,6 +82,7 @@ import           Kore.Error
                  ( Error, castError )
 import qualified Kore.Error
 import           Kore.Sort
+import           Kore.Syntax.Application
 import           Kore.Syntax.StringLiteral
                  ( StringLiteral (StringLiteral) )
 import           SMT.SimpleSMT

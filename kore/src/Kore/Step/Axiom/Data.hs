@@ -31,7 +31,7 @@ import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Common
-                 ( Application, Pattern (..) )
+                 ( Pattern (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( fromPurePattern )
@@ -53,6 +53,8 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Application
+                 ( Application )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
 import           Kore.Unparser

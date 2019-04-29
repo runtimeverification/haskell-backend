@@ -55,8 +55,6 @@ import qualified Control.Lens as Lens hiding
 import           Data.Reflection
                  ( Given, given )
 
-import Kore.AST.Common
-       ( SymbolOrAlias )
 import Kore.AST.MetaOrObject
        ( Object )
 import Kore.Attribute.Constructor
@@ -70,6 +68,8 @@ import Kore.Attribute.SortInjection
 import Kore.Attribute.Symbol.Symbol
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..), SmtMetadataTools )
+import Kore.Syntax.Application
+       ( SymbolOrAlias )
 
 -- | Is a symbol total (non-@\\bottom@)?
 isTotal_

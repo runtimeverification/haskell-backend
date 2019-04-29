@@ -32,10 +32,6 @@ import GHC.Stack
 import Numeric.Natural
        ( Natural )
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (SymbolOrAlias) )
-import           Kore.AST.Common as SymbolOrAlias
-                 ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Pure
@@ -59,6 +55,10 @@ import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (SymbolOrAlias) )
+import           Kore.Syntax.Application as SymbolOrAlias
+                 ( SymbolOrAlias (..) )
 import           Kore.Syntax.Variable
                  ( Variable (Variable) )
 import qualified Kore.Syntax.Variable as Variable

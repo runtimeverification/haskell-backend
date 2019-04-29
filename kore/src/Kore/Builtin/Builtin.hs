@@ -89,7 +89,7 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Common
-                 ( Application (..), DomainValue (..) )
+                 ( DomainValue (..) )
 import qualified Kore.AST.Common as Common
                  ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
@@ -142,6 +142,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.TermLike as TermLike
+import           Kore.Syntax.Application
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 

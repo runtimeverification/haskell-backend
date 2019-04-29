@@ -60,6 +60,7 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
+import           Kore.Syntax.Application
 import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
 
@@ -279,7 +280,7 @@ applicationGen
     -> Sort
     -> Gen (Application Object child)
 applicationGen childGen _ =
-    Common.Application
+    Application
         <$> Gen.small symbolOrAliasGen
         <*> couple (Gen.small (childGen =<< sortGen))
 
@@ -657,7 +658,7 @@ sentenceAliasGen patGen =
             variables <- traverse variableGen sentenceAliasSorts
             let Alias { aliasConstructor } = sentenceAliasAlias
                 sentenceAliasLeftPattern =
-                    Common.Application
+                    Application
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
                                 { symbolOrAliasConstructor = aliasConstructor

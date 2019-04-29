@@ -15,8 +15,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.ASTHelpers
@@ -36,6 +34,8 @@ import           Kore.Sort
                  ( Sort )
 import qualified Kore.Step.SMT.AST as SMT.AST
                  ( SmtDeclarations )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (..) )
 
 makeMetadataTools
     :: [(SymbolOrAlias Object, StepperAttributes)]

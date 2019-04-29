@@ -20,8 +20,6 @@ module Kore.Builtin.Attributes
 import Data.Reflection
        ( Given, given )
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
@@ -31,6 +29,8 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias )
 
 -- | Is the symbol a constructor modulo associativity, commutativity and
 -- neutral element?

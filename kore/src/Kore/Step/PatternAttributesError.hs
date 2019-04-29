@@ -15,7 +15,7 @@ module Kore.Step.PatternAttributesError
     , TotalError (..)
     ) where
 
-import Kore.AST.Common
+import Kore.Syntax.Application
        ( SymbolOrAlias )
 
 {-| An error explaining why a pattern is not composed of function heads and

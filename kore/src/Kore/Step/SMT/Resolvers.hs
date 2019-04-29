@@ -15,10 +15,6 @@ import qualified Data.Map as Map
 import           Data.Reflection
                  ( Given, given )
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (SymbolOrAlias) )
-import           Kore.AST.Common as SymbolOrAlias
-                 ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -30,6 +26,10 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Step.SMT.AST as AST
                  ( Declarations (Declarations), Symbol (Symbol) )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (SymbolOrAlias) )
+import           Kore.Syntax.Application as SymbolOrAlias
+                 ( SymbolOrAlias (..) )
 import qualified SMT
 
 {-| Creates the SMT representation of a symbol assuming the smt declarations in

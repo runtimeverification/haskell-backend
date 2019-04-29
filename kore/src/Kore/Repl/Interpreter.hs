@@ -59,7 +59,7 @@ import           System.Process
                  std_out )
 
 import           Kore.AST.Common
-                 ( Application (..), Pattern (..), SymbolOrAlias (..) )
+                 ( Pattern (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
@@ -89,6 +89,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )
 import           Kore.Syntax.Variable

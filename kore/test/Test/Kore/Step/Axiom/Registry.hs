@@ -11,8 +11,6 @@ import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
 
-import           Kore.AST.Common
-                 ( Application (..) )
 import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
                  ( groundHead )
@@ -49,6 +47,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Application
 import qualified Kore.Verified as Verified
 import qualified SMT
 

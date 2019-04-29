@@ -24,12 +24,12 @@ module Kore.Step.Axiom.Identifier
     , extract
     ) where
 
-import Kore.AST.Common
-       ( SymbolOrAlias (..) )
 import Kore.AST.Pure
        ( PurePattern )
 import Kore.AST.Valid
        ( pattern App_, pattern Ceil_ )
+import Kore.Syntax.Application
+       ( SymbolOrAlias (..) )
 import Kore.Syntax.Id
        ( Id (..) )
 

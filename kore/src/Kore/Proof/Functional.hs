@@ -19,11 +19,11 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias )
 import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
 
