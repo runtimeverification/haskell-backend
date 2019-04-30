@@ -337,11 +337,8 @@ notGen = unaryOperatorGen Not
 orGen :: (Sort -> Gen child) -> Sort -> Gen (Or Sort child)
 orGen = binaryOperatorGen Or
 
-rewritesGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Rewrites Object child)
-rewritesGen = binaryOperatorGen Common.Rewrites
+rewritesGen :: (Sort -> Gen child) -> Sort -> Gen (Rewrites Object child)
+rewritesGen = binaryOperatorGen Rewrites
 
 topGen :: Sort -> Gen (Top Sort child)
 topGen = topBottomGen Top

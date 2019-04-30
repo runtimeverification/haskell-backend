@@ -11,8 +11,6 @@ module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
 
-import           Kore.AST.Common
-                 ( Rewrites (..) )
 import           Kore.AST.Valid
 import           Kore.Step.OrPattern
                  ( OrPattern )
@@ -20,6 +18,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Rewrites
 import           Kore.Unparser
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.

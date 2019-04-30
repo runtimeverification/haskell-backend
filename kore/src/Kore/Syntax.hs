@@ -22,6 +22,7 @@ module Kore.Syntax
     , module Kore.Syntax.Next
     , module Kore.Syntax.Not
     , module Kore.Syntax.Or
+    , module Kore.Syntax.Rewrites
     , module Kore.Syntax.SetVariable
     , module Kore.Syntax.StringLiteral
     , module Kore.Syntax.Top
@@ -45,6 +46,7 @@ import Kore.Syntax.In
 import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Or
+import Kore.Syntax.Rewrites
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
