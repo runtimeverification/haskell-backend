@@ -648,7 +648,7 @@ instance
     , Show child
     , EqualWithExplanation child
     )
-    => StructEqualWithExplanation (Iff Object child)
+    => StructEqualWithExplanation (Iff Sort child)
   where
     structFieldsWithNames
         expected@(Iff _ _ _)
@@ -671,7 +671,7 @@ instance
     ( EqualWithExplanation child
     , Eq child
     , Show child
-    ) => EqualWithExplanation (Iff Object child)
+    ) => EqualWithExplanation (Iff Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

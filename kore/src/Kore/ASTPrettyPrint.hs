@@ -403,7 +403,7 @@ instance
             , writeFieldNewLine "forallChild" forallChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Iff level child) where
+instance PrettyPrint child => PrettyPrint (Iff Sort child) where
     prettyPrint _ p@(Iff _ _ _) =
         writeStructure
             "Iff"

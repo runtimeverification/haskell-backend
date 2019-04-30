@@ -382,7 +382,7 @@ verifyOr
 verifyOr = verifyOperands orSort
 
 verifyIff
-    ::  ( logical ~ Iff Object
+    ::  ( logical ~ Iff Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)

@@ -10,9 +10,7 @@ module Kore.Syntax.Iff where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Functor.Classes
+import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
@@ -20,51 +18,30 @@ import           GHC.Generics
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
 'iffSort' is both the sort of the operands and the sort of the result.
 
 -}
-data Iff level child = Iff
-    { iffSort   :: !Sort
+data Iff sort child = Iff
+    { iffSort   :: !sort
     , iffFirst  :: child
     , iffSecond :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
 
-$newDefinitionGroup
+Deriving.deriveEq1 ''Iff
+Deriving.deriveOrd1 ''Iff
+Deriving.deriveShow1 ''Iff
 
-instance Eq1 (Iff level) where
-    liftEq = $(makeLiftEq ''Iff)
+instance (Hashable sort, Hashable child) => Hashable (Iff sort child)
 
-instance Ord1 (Iff level) where
-    liftCompare = $(makeLiftCompare ''Iff)
+instance (NFData sort, NFData child) => NFData (Iff sort child)
 
-instance Show1 (Iff level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Iff)
-
-instance Eq child => Eq (Iff level child) where
-    (==) = eq1
-
-instance Ord child => Ord (Iff level child) where
-    compare = compare1
-
-instance Show child => Show (Iff level child) where
-    showsPrec = showsPrec1
-
-instance Hashable child => Hashable (Iff level child)
-
-instance NFData child => NFData (Iff level child)
-
-instance Unparse child => Unparse (Iff level child) where
+instance Unparse child => Unparse (Iff Sort child) where
     unparse Iff { iffSort, iffFirst, iffSecond } =
         "\\iff"
         <> parameters [iffSort]

@@ -189,7 +189,7 @@ makeIff
     :: (Ord variable)
     => [Pattern Object variable]
     -> [Pattern Object variable]
-    -> Iff Object (OrPattern Object variable)
+    -> Iff Sort (OrPattern Object variable)
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
@@ -198,7 +198,7 @@ makeIff first second =
         }
 
 simplify
-    :: Iff Object (OrPattern Object Variable)
+    :: Iff Sort (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 simplify iff0 =
     (<$>) fst

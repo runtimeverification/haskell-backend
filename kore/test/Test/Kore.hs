@@ -322,7 +322,7 @@ forallGen
     -> Gen (Forall Sort Variable child)
 forallGen = existsForallGen Forall
 
-iffGen :: (Sort -> Gen child) -> Sort -> Gen (Iff Object child)
+iffGen :: (Sort -> Gen child) -> Sort -> Gen (Iff Sort child)
 iffGen = binaryOperatorGen Iff
 
 impliesGen
