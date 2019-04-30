@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Not where
+module Kore.Syntax.Not
+    ( Not (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Iff where
+module Kore.Syntax.Iff
+    ( Iff (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

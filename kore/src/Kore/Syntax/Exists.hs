@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Exists where
+module Kore.Syntax.Exists
+    ( Exists (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

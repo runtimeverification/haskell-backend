@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Next where
+module Kore.Syntax.Next
+    ( Next (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

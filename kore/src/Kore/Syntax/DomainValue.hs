@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.DomainValue where
+module Kore.Syntax.DomainValue
+    ( DomainValue (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

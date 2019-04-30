@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Implies where
+module Kore.Syntax.Implies
+    ( Implies (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

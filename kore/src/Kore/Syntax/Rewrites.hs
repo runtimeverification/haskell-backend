@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Rewrites where
+module Kore.Syntax.Rewrites
+    ( Rewrites (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

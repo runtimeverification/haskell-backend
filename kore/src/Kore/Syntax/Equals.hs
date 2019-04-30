@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Equals where
+module Kore.Syntax.Equals
+    ( Equals (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

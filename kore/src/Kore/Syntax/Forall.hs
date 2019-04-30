@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Forall where
+module Kore.Syntax.Forall
+    ( Forall (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

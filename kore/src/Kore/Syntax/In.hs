@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.In where
+module Kore.Syntax.In
+    ( In (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
