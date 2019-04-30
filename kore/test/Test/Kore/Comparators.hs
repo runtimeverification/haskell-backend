@@ -683,7 +683,7 @@ instance (EqualWithExplanation child, Eq child, Show child)
     printWithExplanation = show
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (In Object child)
+    => EqualWithExplanation (In Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

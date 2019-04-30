@@ -10,9 +10,7 @@ module Kore.Syntax.In where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Functor.Classes
+import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
@@ -20,54 +18,33 @@ import           GHC.Generics
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
 {-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'inOperandSort' is the sort of the operands.
 
 'inResultSort' is the sort of the result.
 
 -}
-data In level child = In
-    { inOperandSort     :: !Sort
-    , inResultSort      :: !Sort
+data In sort child = In
+    { inOperandSort     :: !sort
+    , inResultSort      :: !sort
     , inContainedChild  :: child
     , inContainingChild :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
 
-$newDefinitionGroup
+Deriving.deriveEq1 ''In
+Deriving.deriveOrd1 ''In
+Deriving.deriveShow1 ''In
 
-instance Eq1 (In level) where
-    liftEq = $(makeLiftEq ''In)
+instance (Hashable sort, Hashable child) => Hashable (In sort child)
 
-instance Ord1 (In level) where
-    liftCompare = $(makeLiftCompare ''In)
+instance (NFData sort, NFData child) => NFData (In sort child)
 
-instance Show1 (In level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''In)
-
-instance Eq child => Eq (In level child) where
-    (==) = eq1
-
-instance Ord child => Ord (In level child) where
-    compare = compare1
-
-instance Show child => Show (In level child) where
-    showsPrec = showsPrec1
-
-instance Hashable child => Hashable (In level child)
-
-instance NFData child => NFData (In level child)
-
-instance Unparse child => Unparse (In level child) where
+instance Unparse child => Unparse (In Sort child) where
     unparse
         In
             { inOperandSort

@@ -421,7 +421,7 @@ instance PrettyPrint child => PrettyPrint (Implies Sort child) where
             , writeFieldNewLine "impliesSecond" impliesSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (In level child) where
+instance PrettyPrint child => PrettyPrint (In Sort child) where
     prettyPrint _ p@(In _ _ _ _) =
         writeStructure
             "In"

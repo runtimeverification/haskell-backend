@@ -469,7 +469,7 @@ verifyEquals
 verifyEquals = verifyPredicate equalsOperandSort equalsResultSort
 
 verifyIn
-    ::  ( predicate ~ In Object
+    ::  ( predicate ~ In Sort
         , valid ~ Valid (Variable) Object
         )
     => predicate (PatternVerifier Verified.Pattern)

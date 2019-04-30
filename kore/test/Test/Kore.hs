@@ -325,7 +325,7 @@ iffGen = binaryOperatorGen Iff
 impliesGen :: (Sort -> Gen child) -> Sort -> Gen (Implies Sort child)
 impliesGen = binaryOperatorGen Implies
 
-inGen :: (Sort -> Gen child) -> Sort -> Gen (In Object child)
+inGen :: (Sort -> Gen child) -> Sort -> Gen (In Sort child)
 inGen = equalsInGen In
 
 nextGen

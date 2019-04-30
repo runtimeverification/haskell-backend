@@ -230,7 +230,7 @@ data Pattern level domain variable child where
     ImpliesPattern
         :: !(Implies Sort child) -> Pattern level domain variable child
     InPattern
-        :: !(In level child) -> Pattern level domain variable child
+        :: !(In Sort child) -> Pattern level domain variable child
     NextPattern
         :: !(Next level child) -> Pattern level domain variable child
     NotPattern

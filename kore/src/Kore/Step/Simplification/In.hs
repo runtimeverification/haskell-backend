@@ -62,7 +62,7 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> In Object (OrPattern Object variable)
+    -> In Sort (OrPattern Object variable)
     -> Simplifier
         ( OrPattern Object variable
         , SimplificationProof Object
@@ -85,7 +85,7 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedIn' take an argument of type
 
-> CofreeF (In Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (In Sort) (Valid Object) (OrPattern Object variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluateIn' may
 be changed analogously. The 'Valid' annotation will eventually cache information
