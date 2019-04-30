@@ -31,9 +31,8 @@ import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Common
-                 ( Application, Pattern (..), SortedVariable, Variable (..) )
+                 ( Pattern (..) )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject, Object, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.AST.Pure
                  ( fromPurePattern )
 import           Kore.AST.Valid
@@ -54,6 +53,9 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Application
+import           Kore.Syntax.Variable
+                 ( SortedVariable, Variable (..) )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -85,14 +87,11 @@ newtype BuiltinAndAxiomSimplifier level =
     BuiltinAndAxiomSimplifier
         (forall variable
         .   ( FreshVariable variable
-            , MetaOrObject level
-            , Ord (variable level)
-            , OrdMetaOrObject variable
+            , Ord variable
             , SortedVariable variable
-            , Show (variable level)
-            , Show (variable Object)
-            , Unparse (variable level)
-            , ShowMetaOrObject variable
+            , Show variable
+            , Show variable
+            , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier level
@@ -122,13 +121,13 @@ data AttemptedAxiomResults level variable =
         }
     deriving Generic
 
-deriving instance Eq (variable Object) => Eq (AttemptedAxiomResults level variable)
-deriving instance Show (variable Object) => Show (AttemptedAxiomResults level variable)
+deriving instance Eq variable => Eq (AttemptedAxiomResults level variable)
+deriving instance Show variable => Show (AttemptedAxiomResults level variable)
 
-instance (NFData (variable Object))
+instance (NFData variable)
     => NFData (AttemptedAxiomResults level variable)
 
-instance Ord (variable Object)
+instance Ord variable
     => Semigroup (AttemptedAxiomResults level variable)
   where
     (<>)
@@ -148,7 +147,7 @@ instance Ord (variable Object)
             }
 
 instance
-    Ord (variable Object) => Monoid (AttemptedAxiomResults Object variable)
+    Ord variable => Monoid (AttemptedAxiomResults Object variable)
   where
     mempty =
         AttemptedAxiomResults
@@ -164,10 +163,10 @@ data AttemptedAxiom level variable
     | Applied !(AttemptedAxiomResults level variable)
     deriving Generic
 
-deriving instance Eq (variable Object) => Eq (AttemptedAxiom level variable)
-deriving instance Show (variable Object) => Show (AttemptedAxiom level variable)
+deriving instance Eq variable => Eq (AttemptedAxiom level variable)
+deriving instance Show variable => Show (AttemptedAxiom level variable)
 
-instance (NFData (variable Object))
+instance (NFData variable)
     => NFData (AttemptedAxiom level variable)
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
@@ -188,8 +187,8 @@ hasRemainders NotApplicable = False
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiom level variable, SimplificationProof level)
-    ->           m (AttemptedAxiom level variable, SimplificationProof level)
+    => ExceptT e m (AttemptedAxiom Object variable, SimplificationProof Object)
+    ->           m (AttemptedAxiom Object variable, SimplificationProof Object)
 exceptNotApplicable =
     fmap (either (const notApplicable) id) . runExceptT
   where
@@ -197,16 +196,14 @@ exceptNotApplicable =
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator
-    :: Simplifier
-        (AttemptedAxiom level1 variable, SimplificationProof level2)
+    :: Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
 notApplicableAxiomEvaluator = pure (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
-    :: (MetaOrObject level, Ord (variable level))
+    :: Ord variable
     => TermLike variable
-    -> Simplifier
-        (AttemptedAxiom level variable, SimplificationProof level)
+    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
@@ -220,55 +217,48 @@ purePatternAxiomEvaluator p =
 'Application'.
 -}
 applicationAxiomSimplifier
-    :: forall level
-    .   ( forall variable
+    ::  ( forall variable
         .   ( FreshVariable variable
-            , MetaOrObject level
-            , Ord (variable level)
-            , OrdMetaOrObject variable
+            , Ord variable
             , SortedVariable variable
-            , Show (variable level)
-            , Show (variable Object)
-            , Unparse (variable level)
-            , ShowMetaOrObject variable
+            , Show variable
+            , Show variable
+            , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier level
-        -> TermLikeSimplifier level
-        -> BuiltinAndAxiomSimplifierMap level
+        -> PredicateSimplifier Object
+        -> TermLikeSimplifier Object
+        -> BuiltinAndAxiomSimplifierMap Object
         -> CofreeF
-            (Application level)
-            (Valid (variable level) level)
+            (Application SymbolOrAlias)
+            (Valid variable Object)
             (TermLike variable)
         -> Simplifier
-            ( AttemptedAxiom level variable
-            , SimplificationProof level
+            ( AttemptedAxiom Object variable
+            , SimplificationProof Object
             )
         )
-    -> BuiltinAndAxiomSimplifier level
+    -> BuiltinAndAxiomSimplifier Object
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
     helper
         ::  ( forall variable
             .   ( FreshVariable variable
-                , MetaOrObject level
-                , Ord (variable level)
-                , OrdMetaOrObject variable
+                , Ord variable
                 , SortedVariable variable
-                , Show (variable level)
-                , Show (variable Object)
-                , Unparse (variable level)
-                , ShowMetaOrObject variable
+                , Show variable
+                , Show variable
+                , Unparse variable
                 )
             => SmtMetadataTools StepperAttributes
-            -> PredicateSimplifier level
-            -> TermLikeSimplifier level
-            -> BuiltinAndAxiomSimplifierMap level
+            -> PredicateSimplifier Object
+            -> TermLikeSimplifier Object
+            -> BuiltinAndAxiomSimplifierMap Object
             -> TermLike variable
             -> Simplifier
-                ( AttemptedAxiom level variable
-                , SimplificationProof level
+                ( AttemptedAxiom Object variable
+                , SimplificationProof Object
                 )
         )
     helper

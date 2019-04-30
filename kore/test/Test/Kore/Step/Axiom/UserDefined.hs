@@ -249,12 +249,11 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 evaluateWithAxiom
-    :: forall level . MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> EqualityRule level Variable
-    -> TermLikeSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> EqualityRule Object Variable
+    -> TermLikeSimplifier Object
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom level)
+    -> IO (CommonAttemptedAxiom Object)
 evaluateWithAxiom
     metadataTools
     axiom
@@ -265,7 +264,7 @@ evaluateWithAxiom
     return (normalizeResult results)
   where
     normalizeResult
-        :: CommonAttemptedAxiom level -> CommonAttemptedAxiom level
+        :: CommonAttemptedAxiom Object -> CommonAttemptedAxiom Object
     normalizeResult =
         \case
             AttemptedAxiom.Applied AttemptedAxiomResults
@@ -282,7 +281,7 @@ evaluateWithAxiom
             , predicate = predicate
             , substitution = Substitution.modify sort substitution
             }
-    evaluated :: IO (CommonAttemptedAxiom level)
+    evaluated :: IO (CommonAttemptedAxiom Object)
     evaluated =
         (<$>) fst
         $ SMT.runSMT SMT.defaultConfig

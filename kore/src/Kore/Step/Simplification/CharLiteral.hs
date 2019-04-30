@@ -19,12 +19,13 @@ import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.CharLiteral
 
 {-| 'simplify' simplifies a 'CharLiteral' pattern, which means returning
 an or containing a term made of that literal.
 -}
 simplify
-    :: Ord (variable Meta)
+    :: Ord variable
     => CharLiteral
     -> (OrPattern Meta variable, SimplificationProof Meta)
 simplify (CharLiteral char) =

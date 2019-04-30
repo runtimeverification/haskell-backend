@@ -192,11 +192,11 @@ variablesTests =
            . variables $ wrap singletonSubst
     ]
 
-emptyRawSubst :: [(Variable Object, TermLike Variable)]
+emptyRawSubst :: [(Variable, TermLike Variable)]
 emptyRawSubst = mempty
 
 emptySubst :: Substitution Variable
 emptySubst = mempty
 
-singletonSubst :: [(Variable Object, TermLike Variable)]
+singletonSubst :: [(Variable, TermLike Variable)]
 singletonSubst = [(Mock.x, Mock.a)]

@@ -25,11 +25,11 @@ instance Default SmtLemma where
 instance NFData SmtLemma
 
 -- | Kore identifier representing the @smt-lemma@ attribute symbol.
-smtLemmaId :: Id Object
+smtLemmaId :: Id
 smtLemmaId = "smt-lemma"
 
 -- | Kore symbol representing the @smt-lemma@ attribute.
-smtLemmaSymbol :: SymbolOrAlias Object
+smtLemmaSymbol :: SymbolOrAlias
 smtLemmaSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = smtLemmaId

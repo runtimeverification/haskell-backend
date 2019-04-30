@@ -16,7 +16,7 @@ import Kore.Attribute.Parser as Parser
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload =
     Overload
-        { getOverload :: Maybe (SymbolOrAlias Object, SymbolOrAlias Object) }
+        { getOverload :: Maybe (SymbolOrAlias, SymbolOrAlias) }
     deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Overload where
@@ -32,11 +32,11 @@ instance Default Overload where
 instance NFData Overload
 
 -- | Kore identifier representing the @overload@ attribute symbol.
-overloadId :: Id Object
+overloadId :: Id
 overloadId = "overload"
 
 -- | Kore symbol representing the @overload@ attribute.
-overloadSymbol :: SymbolOrAlias Object
+overloadSymbol :: SymbolOrAlias
 overloadSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = overloadId
@@ -45,8 +45,8 @@ overloadSymbol =
 
 -- | Kore pattern representing the @overload@ attribute.
 overloadAttribute
-    :: SymbolOrAlias Object
-    -> SymbolOrAlias Object
+    :: SymbolOrAlias
+    -> SymbolOrAlias
     -> AttributePattern
 overloadAttribute symbol1 symbol2 =
     attributePattern overloadSymbol

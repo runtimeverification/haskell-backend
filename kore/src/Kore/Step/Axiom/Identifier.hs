@@ -24,14 +24,14 @@ module Kore.Step.Axiom.Identifier
     , extract
     ) where
 
-import Kore.AST.Common
-       ( SymbolOrAlias (..) )
-import Kore.AST.Identifier
-       ( Id (..) )
 import Kore.AST.Pure
        ( PurePattern )
 import Kore.AST.Valid
        ( pattern App_, pattern Ceil_ )
+import Kore.Syntax.Application
+       ( SymbolOrAlias (..) )
+import Kore.Syntax.Id
+       ( Id (..) )
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.
@@ -40,7 +40,7 @@ The expectation is that an axiom can be applied to a term only if the
 identifier of its left-hand-side is the same as the term's identifier.
 -}
 data AxiomIdentifier level
-    = Application !(Id level)
+    = Application !Id
     -- ^ Identifier for an application pattern whose symbol has the given id
     -- as name and which has no parameters.
     | Ceil !(AxiomIdentifier level)

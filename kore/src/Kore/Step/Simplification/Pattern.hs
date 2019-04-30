@@ -9,8 +9,6 @@ module Kore.Step.Simplification.Pattern
     ) where
 
 import           Data.Reflection
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -32,31 +30,30 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier, simplifyTerm )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern level variable
+    -> Pattern Object variable
     -> Simplifier
-        ( OrPattern level variable
-        , SimplificationProof level
+        ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplify
     tools
@@ -87,26 +84,23 @@ simplify
 {-| Simplifies the predicate inside an 'Pattern'.
 -}
 simplifyPredicate
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern level variable
+    -> Pattern Object variable
     -- ^ The condition to be evaluated.
-    -> Simplifier (Pattern level variable, SimplificationProof level)
+    -> Simplifier (Pattern Object variable, SimplificationProof Object)
 simplifyPredicate
     tools
     substitutionSimplifier

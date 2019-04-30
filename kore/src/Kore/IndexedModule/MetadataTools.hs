@@ -23,7 +23,6 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.ASTHelpers
                  ( ApplicationSorts )
@@ -34,22 +33,24 @@ import           Kore.IndexedModule.Resolvers
 import           Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT.AST
                  ( SmtDeclarations )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (..) )
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
 data MetadataTools level smt attributes = MetadataTools
-    { symAttributes :: SymbolOrAlias level -> attributes
+    { symAttributes :: SymbolOrAlias -> attributes
     -- ^ get the attributes of a symbol or alias
-    , symbolOrAliasType :: SymbolOrAlias level -> HeadType
+    , symbolOrAliasType :: SymbolOrAlias -> HeadType
     -- ^ whether a symbol or alias is a symbol
-    , sortAttributes :: Sort level -> Attribute.Sort
+    , sortAttributes :: Sort -> Attribute.Sort
     -- ^ get the attributes of a sort
-    , isSubsortOf :: Sort level -> Sort level -> Bool
+    , isSubsortOf :: Sort -> Sort -> Bool
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
        including when @a@ equals @b@. -}
-    , subsorts :: Sort level -> Set (Sort level)
+    , subsorts :: Sort -> Set Sort
     -- ^ get the subsorts for a sort
-    , applicationSorts :: SymbolOrAlias level -> ApplicationSorts level
+    , applicationSorts :: SymbolOrAlias -> ApplicationSorts level
     -- ^ Sorts for a specific symbol application.
     , smtData :: smt
     -- ^ The SMT data for the given module.
@@ -65,13 +66,12 @@ type SmtMetadataTools attributes =
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall level declAtts axiomAtts smt.
-        MetaOrObject level
-    => VerifiedModule declAtts axiomAtts
+    ::  forall declAtts axiomAtts smt.
+        VerifiedModule declAtts axiomAtts
     ->  (  VerifiedModule declAtts axiomAtts
         -> smt
         )
-    -> MetadataTools level smt declAtts
+    -> MetadataTools Object smt declAtts
 extractMetadataTools m smtExtractor =
     MetadataTools
         { symAttributes = getHeadAttributes m
@@ -83,7 +83,7 @@ extractMetadataTools m smtExtractor =
         , smtData = smtExtractor m
         }
   where
-    subsortTable :: Map (Sort Object) [Sort Object]
+    subsortTable :: Map Sort [Sort]
     subsortTable = Map.unionsWith (++)
         [ Map.insert subsort [] $ Map.singleton supersort [subsort]
         | Subsort subsort supersort <- indexedModuleSubsorts m]
@@ -94,23 +94,20 @@ extractMetadataTools m smtExtractor =
         graphFromEdges [ ((),supersort,subsorts)
                         | (supersort,subsorts)
                             <- Map.toList subsortTable]
-    getSortFromId :: Vertex -> Sort Object
+    getSortFromId :: Vertex -> Sort
     getSortFromId sortId =
         let (_, sort, _) = vertexToSort sortId
         in sort
 
-    getSubsorts :: Sort level -> [Vertex]
-    getSubsorts = case isMetaOrObject @level [] of
-        IsObject ->
-            maybe [] (reachable sortGraph) . sortToVertex
+    getSubsorts :: Sort -> [Vertex]
+    getSubsorts = maybe [] (reachable sortGraph) . sortToVertex
 
-    checkSubsort :: Sort level -> Sort level -> Bool
-    checkSubsort = case isMetaOrObject @level [] of
-        IsObject ->
-            let
-                realCheckSubsort subsort supersort
-                    | Just subId <- sortToVertex subsort
-                    , Just supId <- sortToVertex supersort =
-                          path sortGraph supId subId
-                realCheckSubsort _ _ = False
-            in realCheckSubsort
+    checkSubsort :: Sort -> Sort -> Bool
+    checkSubsort =
+        let
+            realCheckSubsort subsort supersort
+              | Just subId <- sortToVertex subsort
+              , Just supId <- sortToVertex supersort =
+                path sortGraph supId subId
+            realCheckSubsort _ _ = False
+        in realCheckSubsort

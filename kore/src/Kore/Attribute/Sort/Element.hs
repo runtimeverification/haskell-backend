@@ -13,13 +13,10 @@ import Data.Default
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Common
-import Kore.AST.Identifier
-import Kore.AST.MetaOrObject
 import Kore.Attribute.Parser
 
 -- | @Element@ represents the @element@ attribute for sorts.
-newtype Element = Element { getElement :: Maybe (SymbolOrAlias Object) }
+newtype Element = Element { getElement :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Element where
@@ -35,11 +32,11 @@ instance Default Element where
 instance NFData Element
 
 -- | Kore identifier representing the @element@ attribute symbol.
-elementId :: Id Object
+elementId :: Id
 elementId = "element"
 
 -- | Kore symbol representing the @element@ attribute.
-elementSymbol :: SymbolOrAlias Object
+elementSymbol :: SymbolOrAlias
 elementSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = elementId
@@ -47,7 +44,7 @@ elementSymbol =
         }
 
 -- | Kore pattern representing the @element@ attribute.
-elementAttribute :: SymbolOrAlias Object -> AttributePattern
+elementAttribute :: SymbolOrAlias -> AttributePattern
 elementAttribute symbol =
     attributePattern elementSymbol [attributePattern_ symbol]
 

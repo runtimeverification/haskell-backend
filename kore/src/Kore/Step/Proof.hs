@@ -24,8 +24,6 @@ import qualified Data.Sequence as Seq
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.MetaOrObject
-       ( Object )
 import Kore.Step.Simplification.Data
        ( SimplificationProof )
 import Kore.Unification.Data
@@ -33,14 +31,14 @@ import Kore.Unification.Data
 
 {- | 'StepProof' is the proof for an execution step or steps.
  -}
-newtype StepProof (level :: *) (variable :: * -> *) =
+newtype StepProof level variable =
     StepProof { getStepProof :: Seq (StepProofAtom level variable) }
     deriving Generic
 
-deriving instance Eq (variable Object) => Eq (StepProof level variable)
-deriving instance Show (variable Object) => Show (StepProof level variable)
+deriving instance Eq variable => Eq (StepProof level variable)
+deriving instance Show variable => Show (StepProof level variable)
 
-instance Hashable (variable Object) => Hashable (StepProof level variable) where
+instance Hashable variable => Hashable (StepProof level variable) where
     hashWithSalt s = Foldable.foldl' hashWithSalt s . getStepProof
 
 instance Semigroup (StepProof level variable) where
@@ -62,7 +60,7 @@ simplificationProof = stepProof . StepProofSimplification
   variable renaming, and simplification.
 
  -}
-data StepProofAtom (level :: *) (variable :: * -> *)
+data StepProofAtom level variable
     = StepProofUnification !(UnificationProof level variable)
     -- ^ Proof for a unification that happened during the step.
     | StepProofVariableRenamings [VariableRenaming level variable]
@@ -71,10 +69,10 @@ data StepProofAtom (level :: *) (variable :: * -> *)
     -- ^ Proof for the simplification part of a step.
     deriving Generic
 
-deriving instance Eq (variable Object) => Eq (StepProofAtom level variable)
-deriving instance Show (variable Object) => Show (StepProofAtom level variable)
+deriving instance Eq variable => Eq (StepProofAtom level variable)
+deriving instance Show variable => Show (StepProofAtom level variable)
 
-instance Hashable (variable Object) => Hashable (StepProofAtom level variable)
+instance Hashable variable => Hashable (StepProofAtom level variable)
 
 {-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
 stepProofSumName :: StepProofAtom variable level -> String
@@ -85,12 +83,12 @@ stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 {-| 'VariableRenaming' represents a renaming of a variable.
 -}
 data VariableRenaming level variable = VariableRenaming
-    { variableRenamingOriginal :: variable Object
-    , variableRenamingRenamed  :: variable Object
+    { variableRenamingOriginal :: variable
+    , variableRenamingRenamed  :: variable
     }
     deriving Generic
 
-deriving instance Eq (variable Object) => Eq (VariableRenaming level variable)
-deriving instance Show (variable Object) => Show (VariableRenaming level variable)
+deriving instance Eq variable => Eq (VariableRenaming level variable)
+deriving instance Show variable => Show (VariableRenaming level variable)
 
-instance Hashable (variable Object) => Hashable (VariableRenaming level variable)
+instance Hashable variable => Hashable (VariableRenaming level variable)

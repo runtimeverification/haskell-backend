@@ -43,14 +43,12 @@ import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
 
-import qualified Kore.AST.Identifier as Kore
-                 ( Id (Id, getId) )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Sort as Kore
                  ( Sort )
 import           Kore.Step.SMT.Encoder
                  ( encodeName )
+import qualified Kore.Syntax.Id as Kore
+                 ( Id (Id, getId) )
 import qualified SMT.AST as AST
 
 {-| A representation of the Kore Sort type together with its related
@@ -61,13 +59,10 @@ The SmtSort type below instantiates Sort with the types used by the SMT.
 data Sort sort symbol name =
     Sort
         { smtFromSortArgs
-            :: !(  Map (Kore.Id Object) SmtSort
-                -> [Kore.Sort Object]
-                -> Maybe AST.SExpr
-                )
+            :: !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
         -- ^ Produces the SMT representation of a sort. Given a map with
         -- Smt representations for sorts and a list of sort arguments, returns
-        -- an s-expression that can be used, say, when declaring symbols of
+        -- an S-expression that can be used, say, when declaring symbols of
         -- that sort.
         , declaration :: !(KoreSortDeclaration sort symbol name)
         -- ^ Information needed for declaring the sort, also listing all
@@ -92,8 +87,8 @@ The SmtSymbol type below instantiates Symbol with the types used by the SMT.
 data Symbol sort name =
     Symbol
         { smtFromSortArgs
-            :: !(  Map (Kore.Id Object) SmtSort
-                -> [Kore.Sort Object]
+            :: !(  Map (Kore.Id) SmtSort
+                -> [Kore.Sort]
                 -> Maybe AST.SExpr
                 )
         -- ^ Produces the SMT representation of a symbol. Given a map with
@@ -157,20 +152,20 @@ the various declarations can be resolved.
 -}
 data Declarations sort symbol name =
     Declarations
-        { sorts :: Map (Kore.Id Object) (Sort sort symbol name)
-        , symbols :: Map (Kore.Id Object) (Symbol sort name)
+        { sorts :: Map (Kore.Id) (Sort sort symbol name)
+        , symbols :: Map (Kore.Id) (Symbol sort name)
         }
     deriving Show
 
 {-| Marks a dependency on a given sort.
 -}
-newtype SortReference = SortReference { getSortReference :: Kore.Sort Object }
+newtype SortReference = SortReference { getSortReference :: Kore.Sort }
     deriving (Eq, Ord, Show)
 
 {-| Marks a dependency on a given symbol.
 -}
 newtype SymbolReference =
-    SymbolReference { getSymbolReference :: Kore.Id Object }
+    SymbolReference { getSymbolReference :: Kore.Id }
     deriving (Eq, Ord, Show)
 
 {-| Data that should be encoded before being used with the SMT.
@@ -216,7 +211,7 @@ type UnresolvedSortDeclaration =
 type UnresolvedSymbol =
     Symbol SortReference Encodable
 
-encodable :: Kore.Id Object -> Encodable
+encodable :: Kore.Id -> Encodable
 encodable Kore.Id {getId} = Encodable getId
 
 encode :: Encodable -> Text

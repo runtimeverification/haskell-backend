@@ -47,12 +47,12 @@ class (forall variable. Monad (unifier variable)) => MonadUnify unifier where
     liftSimplifier :: Simplifier a -> unifier variable a
 
     mapVariable
-        :: (variable Object -> variable' Object)
+        :: (variable -> variable')
         -> unifier variable a
         -> unifier variable' a
 
     explainBottom
-        :: Unparse (variable Object)
+        :: Unparse variable
         => Doc ()
         -> TermLike variable
         -> TermLike variable

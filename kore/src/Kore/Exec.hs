@@ -32,7 +32,6 @@ import           System.Exit
 
 import           Data.Limit
                  ( Limit (..) )
-import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
                  ( Object (..) )
 import           Kore.AST.Valid
@@ -96,6 +95,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
+import           Kore.Syntax.Id
 import qualified Kore.Unification.Substitution as Substitution
 
 -- | Configuration used in symbolic execution.

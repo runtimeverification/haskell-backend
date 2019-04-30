@@ -120,7 +120,7 @@ type TermLike' variable = TermLike variable
 type CommonTermLike' = TermLike Variable
 type Pattern' variable = Pattern Object variable
 type CommonPattern' = Pattern Object Variable
-type Sort' = Sort Object
+type Sort' = Sort
 type StepProof' variable = StepProof Object variable
 
 -- Test types
@@ -202,7 +202,7 @@ rewritesTo left right =
     like `rewriteStep`.
 -}
 
-v1, a1, b1, x1 :: Sort Meta -> Variable Meta
+v1, a1, b1, x1 :: Sort -> Variable
 v1 = Variable (testId "#v1") mempty
 a1 = Variable (testId "#a1") mempty
 b1 = Variable (testId "#b1") mempty
@@ -391,7 +391,7 @@ actualUnificationError =
             }
         [axiomMetaSigmaId]
 
-mockSymbolAttributes :: SymbolOrAlias Meta -> StepperAttributes
+mockSymbolAttributes :: SymbolOrAlias -> StepperAttributes
 mockSymbolAttributes patternHead =
     defaultSymbolAttributes
         { constructor = Constructor { isConstructor }
@@ -416,7 +416,7 @@ mockMetadataTools = MetadataTools
     , smtData = undefined
     }
 
-sigmaSymbol :: SymbolOrAlias Meta
+sigmaSymbol :: SymbolOrAlias
 sigmaSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = testId "#sigma"
     , symbolOrAliasParams = []
@@ -443,7 +443,7 @@ axiomMetaSigmaId =
         }
 
 
-fSymbol :: SymbolOrAlias Meta
+fSymbol :: SymbolOrAlias
 fSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#f" AstLocationTest
     , symbolOrAliasParams = []
@@ -455,7 +455,7 @@ metaF
 metaF p = mkApp Mock.testSort fSymbol [p]
 
 
-gSymbol :: SymbolOrAlias Meta
+gSymbol :: SymbolOrAlias
 gSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#g" AstLocationTest
     , symbolOrAliasParams = []
@@ -467,7 +467,7 @@ metaG
 metaG p = mkApp Mock.testSort gSymbol [p]
 
 
-hSymbol :: SymbolOrAlias Meta
+hSymbol :: SymbolOrAlias
 hSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#h" AstLocationTest
     , symbolOrAliasParams = []
@@ -478,7 +478,7 @@ metaH
     -> TermLike Variable
 metaH p = mkApp Mock.testSort hSymbol [p]
 
-iSymbol :: SymbolOrAlias Meta
+iSymbol :: SymbolOrAlias
 iSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#i" AstLocationTest
     , symbolOrAliasParams = []
@@ -490,13 +490,12 @@ metaI
 metaI p = mkApp Mock.testSort iSymbol [p]
 
 runStep
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Pattern Object Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule level Variable]
-    -> IO [(Pattern Object Variable, StepProof level Variable)]
+    -> [RewriteRule Object Variable]
+    -> IO [(Pattern Object Variable, StepProof Object Variable)]
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig
@@ -514,13 +513,12 @@ runStep metadataTools configuration axioms =
     simplifier = Simplifier.create metadataTools Map.empty
 
 runSteps
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Pattern Object Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule level Variable]
-    -> IO (Pattern Object Variable, StepProof level Variable)
+    -> [RewriteRule Object Variable]
+    -> IO (Pattern Object Variable, StepProof Object Variable)
 runSteps metadataTools configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig

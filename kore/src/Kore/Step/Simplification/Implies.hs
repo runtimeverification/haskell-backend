@@ -51,8 +51,8 @@ and it has a special case for children with top terms.
 simplify
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier Object
@@ -99,8 +99,8 @@ besides the pattern sort, which will make it even more useful to carry around.
 simplifyEvaluated
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier Object
@@ -146,8 +146,8 @@ simplifyEvaluated
 simplifyEvaluateHalfImplies
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier Object
@@ -184,9 +184,9 @@ simplifyEvaluateHalfImplies
 
 makeEvaluateImplies
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> Pattern Object variable
@@ -206,9 +206,9 @@ makeEvaluateImplies
 
 makeEvaluateImpliesNonBool
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> Pattern Object variable

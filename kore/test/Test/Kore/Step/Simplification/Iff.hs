@@ -187,7 +187,7 @@ termNotA :: Pattern Object Variable
 termNotA = mkNot <$> termA
 
 makeIff
-    :: (Ord (variable Object))
+    :: (Ord variable)
     => [Pattern Object variable]
     -> [Pattern Object variable]
     -> Iff Object (OrPattern Object variable)

@@ -350,12 +350,7 @@ test_predicate =
         ]
     ]
 
-makePredicateYieldsWrapPredicate
-    ::  ( Eq level
-        , Show level
-        , MetaOrObject level
-        )
-    => String -> TermLike Variable -> IO ()
+makePredicateYieldsWrapPredicate :: String -> TermLike Variable -> IO ()
 makePredicateYieldsWrapPredicate msg p =
     assertEqual msg
         (Right (wrapPredicate p))
@@ -406,7 +401,7 @@ makeAnd
     -> Predicate Variable
 makeAnd p1 p2 = makeAndPredicate p1 p2
 
-a, b, c, d :: Sort level -> Variable level
+a, b, c, d :: Sort -> Variable
 a = Variable (testId "#a") mempty
 b = Variable (testId "#b") mempty
 c = Variable (testId "#c") mempty

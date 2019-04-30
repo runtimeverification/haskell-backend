@@ -39,14 +39,14 @@ data UnificationProof level variable
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
         [FunctionalProof Object variable]
-        (variable Object)
+        variable
         (TermLike variable)
     -- ^Used to specify the application of Proposition 5.24 (3)
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- if ϕ and ϕ' are functional patterns, then
     -- |= (ϕ ∧ ϕ') = (ϕ ∧ (ϕ = ϕ'))
     | AndDistributionAndConstraintLifting
-        (SymbolOrAlias Object)
+        SymbolOrAlias
         [UnificationProof Object variable]
     -- ^Used to specify both the application of the constructor axiom
     -- c(x1, .., xn) /\ c(y1, ..., yn) -> c(x1 /\ y1, ..., xn /\ yn)
@@ -55,7 +55,7 @@ data UnificationProof level variable
     -- if ϕ is a predicate, then:
     -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
     | SubstitutionMerge
-        (variable Object)
+        variable
         (TermLike variable)
         (TermLike variable)
     -- ^Specifies the merging of (x = t1) /\ (x = t2) into x = (t1 /\ t2)
@@ -71,11 +71,11 @@ data UnificationProof level variable
     -- (x = (t1 /\ t2))
   deriving Generic
 
-deriving instance Eq (variable Object) => Eq (UnificationProof level variable)
-deriving instance Ord (variable Object) => Ord (UnificationProof level variable)
-deriving instance Show (variable Object) => Show (UnificationProof level variable)
+deriving instance Eq variable => Eq (UnificationProof level variable)
+deriving instance Ord variable => Ord (UnificationProof level variable)
+deriving instance Show variable => Show (UnificationProof level variable)
 
-instance Hashable (variable Object) => Hashable (UnificationProof level variable)
+instance Hashable variable => Hashable (UnificationProof level variable)
 
 instance Semigroup (UnificationProof level variable) where
     (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]
@@ -85,8 +85,8 @@ instance Monoid (UnificationProof level variable) where
     mconcat = CombinedUnificationProof
 
 mapVariables
-    :: Ord (variable2 Object)
-    => (variable1 Object -> variable2 Object)
+    :: Ord variable2
+    => (variable1 -> variable2)
     -> UnificationProof Object variable1
     -> UnificationProof Object variable2
 mapVariables mapping = mapVariablesWorker

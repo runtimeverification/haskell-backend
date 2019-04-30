@@ -31,7 +31,7 @@ asAttributePattern = asPurePattern . (mempty :<)
 
 -- | An 'AttributePattern' of the attribute symbol applied to its arguments.
 attributePattern
-    :: SymbolOrAlias Object  -- ^ symbol
+    :: SymbolOrAlias  -- ^ symbol
     -> [AttributePattern]  -- ^ arguments
     -> AttributePattern
 attributePattern applicationSymbolOrAlias applicationChildren =
@@ -40,7 +40,7 @@ attributePattern applicationSymbolOrAlias applicationChildren =
 
 -- | An 'AttributePattern' of the attribute symbol applied to no arguments.
 attributePattern_
-    :: SymbolOrAlias Object  -- ^ symbol
+    :: SymbolOrAlias  -- ^ symbol
     -> AttributePattern
 attributePattern_ applicationSymbolOrAlias =
     attributePattern applicationSymbolOrAlias []

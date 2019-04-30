@@ -52,30 +52,27 @@ import           Kore.Variables.Fresh
 evaluating the pattern, it tries to re-apply all axioms on the result.
 -}
 equalityRuleEvaluator
-    ::  forall level variable.
+    ::  forall variable.
         ( FreshVariable variable
         , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => EqualityRule level Variable
+    => EqualityRule Object Variable
     -- ^ Axiom defining the current function.
     -> SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
-        (AttemptedAxiom level variable, SimplificationProof level)
+        (AttemptedAxiom Object variable, SimplificationProof Object)
 equalityRuleEvaluator
     (EqualityRule rule)
     tools

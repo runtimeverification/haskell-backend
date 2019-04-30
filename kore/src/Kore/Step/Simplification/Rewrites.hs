@@ -30,9 +30,9 @@ TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Rewrites Object (OrPattern Object variable)
     ->  ( OrPattern Object variable
@@ -51,7 +51,7 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedRewrites' take an argument of type
 
-> CofreeF (Or Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Or Sort) (Valid Object) (OrPattern Object variable)
 
 instead of two 'OrPattern' arguments. The type of
 'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
@@ -61,9 +61,9 @@ more useful to carry around.
 -}
 simplifyEvaluatedRewrites
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => OrPattern Object variable
     -> OrPattern Object variable
@@ -75,9 +75,9 @@ simplifyEvaluatedRewrites first second =
 
 makeEvaluateRewrites
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> Pattern Object variable

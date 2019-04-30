@@ -24,8 +24,8 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import Kore.AST.Common
 import Kore.Sort
+import Kore.Syntax.Application
 import Kore.Unparser
 
 -- | Hack sum-type to wrap unification and substitution errors
@@ -35,7 +35,7 @@ data UnificationOrSubstitutionError level variable
     deriving (Eq, Show)
 
 instance
-    Unparse (variable level) =>
+    Unparse variable =>
     Pretty (UnificationOrSubstitutionError level variable)
   where
     pretty (UnificationError  err) = Pretty.pretty err
@@ -59,21 +59,21 @@ instance Pretty UnificationError where
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason level
-    = HeadClash (SymbolOrAlias level)
+    = HeadClash SymbolOrAlias
     | DomainValueClash String
-    | SortInjectionClash (Sort level) (Sort level)
+    | SortInjectionClash Sort Sort
     deriving (Eq, Show)
 
 {-| 'SubstitutionError' specifies the various error cases related to
 substitutions.
 -}
 newtype SubstitutionError level variable
-    = NonCtorCircularVariableDependency [variable level]
+    = NonCtorCircularVariableDependency [variable]
     -- ^the circularity path may pass through non-constructors: maybe solvable.
     deriving (Eq, Show)
 
 instance
-    Unparse (variable level) =>
+    Unparse variable =>
     Pretty (SubstitutionError level variable)
   where
     pretty (NonCtorCircularVariableDependency vars) =
@@ -86,9 +86,9 @@ instance
 'SubstitutionError' as a set.
 -}
 substitutionErrorVariables
-    :: Ord (variable level)
+    :: Ord variable
     => SubstitutionError level variable
-    -> Set.Set (variable level)
+    -> Set.Set variable
 substitutionErrorVariables (NonCtorCircularVariableDependency variables) =
     Set.fromList variables
 
@@ -96,7 +96,7 @@ substitutionErrorVariables (NonCtorCircularVariableDependency variables) =
 'SubstitutionError' using the provided mapping.
 -}
 mapSubstitutionErrorVariables
-    :: (variableFrom level -> variableTo level)
+    :: (variableFrom -> variableTo)
     -> SubstitutionError level variableFrom
     -> SubstitutionError level variableTo
 mapSubstitutionErrorVariables mapper
@@ -117,7 +117,7 @@ unificationToUnifyOrSubError = UnificationError
 
 -- | Map variable type of an 'UnificationOrSubstitutionError'.
 mapUnificationOrSubstitutionErrorVariables
-    :: (variableFrom level -> variableTo level)
+    :: (variableFrom -> variableTo)
     -> UnificationOrSubstitutionError level variableFrom
     -> UnificationOrSubstitutionError level variableTo
 mapUnificationOrSubstitutionErrorVariables f =

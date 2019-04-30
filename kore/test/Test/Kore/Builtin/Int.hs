@@ -44,7 +44,7 @@ genConcreteIntegerPattern = asInternal <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
 testUnary
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Integer -> Integer)
     -- ^ operator
@@ -65,7 +65,7 @@ testUnary symb impl =
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Integer -> Integer -> Integer)
     -- ^ operator
@@ -87,7 +87,7 @@ testBinary symb impl =
 
 -- | Test a comparison operator hooked to the given symbol
 testComparison
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ symbol
     -> (Integer -> Integer -> Bool)
     -- ^ implementation
@@ -109,7 +109,7 @@ testComparison symb impl =
 
 -- | Test a partial unary operator hooked to the given symbol.
 testPartialUnary
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Integer -> Maybe Integer)
     -- ^ operator
@@ -130,7 +130,7 @@ testPartialUnary symb impl =
 
 -- | Test a partial binary operator hooked to the given symbol.
 testPartialBinary
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Integer -> Integer -> Maybe Integer)
     -- ^ operator
@@ -153,7 +153,7 @@ testPartialBinary symb impl =
 -- | Test a partial binary operator hooked to the given symbol, passing zero as
 -- the second argument.
 testPartialBinaryZero
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Integer -> Integer -> Maybe Integer)
     -- ^ operator
@@ -174,7 +174,7 @@ testPartialBinaryZero symb impl =
 
 -- | Test a partial ternary operator hooked to the given symbol.
 testPartialTernary
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Integer -> Integer -> Integer -> Maybe Integer)
     -- ^ operator
@@ -338,7 +338,7 @@ intLiteral :: Integer -> TermLike Variable
 intLiteral = asInternal
 
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
-asInternal :: Ord (variable Object) => Integer -> TermLike variable
+asInternal :: Ord variable => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
 -- | Specialize 'Int.asConcretePattern' to the builtin sort 'intSort'.
@@ -355,7 +355,7 @@ asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> [TermLike Variable]
     -> Pattern Object Variable
     -> TestTree

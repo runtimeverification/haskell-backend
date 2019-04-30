@@ -30,11 +30,11 @@ instance Default Trusted where
     def = Trusted False
 
 -- | Kore identifier representing the @trusted@ attribute symbol.
-trustedId :: Id Object
+trustedId :: Id
 trustedId = "trusted"
 
 -- | Kore symbol representing the @trusted@ attribute.
-trustedSymbol :: SymbolOrAlias Object
+trustedSymbol :: SymbolOrAlias
 trustedSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = trustedId

@@ -24,9 +24,8 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Step.TermLike
 
 recursivelyCheckHeadProperty
-    :: forall level variable .
-       (MetaOrObject level)
-    => (StepperAttributes -> Bool)
+    :: forall variable
+    .  (StepperAttributes -> Bool)
     -> SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> Bool
@@ -50,9 +49,8 @@ recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
             _ -> False
 
 isFunctionalPattern, isFunctionPattern, isTotalPattern
-    :: forall level variable .
-       (MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
+    :: forall variable
+    .  SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> Bool
 --TODO(traiansf): we assume below that the pattern does not contain

@@ -44,9 +44,9 @@ by any applied rule.
 
  -}
 remainder
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , SortedVariable variable
         )
     => MultiOr (Predicate Object (Target variable))
@@ -59,9 +59,9 @@ remainder results =
 
 -- | Existentially-quantify target (axiom) variables in the 'Predicate'.
 existentiallyQuantifyTarget
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , SortedVariable variable
         )
     => Syntax.Predicate (Target variable)
@@ -82,9 +82,9 @@ existentiallyQuantifyTarget predicate =
 
  -}
 mkNotMultiOr
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , SortedVariable variable
         )
     => MultiOr  (Syntax.Predicate variable)
@@ -95,9 +95,9 @@ mkNotMultiOr =
     . Foldable.toList
 
 mkMultiAndPredicate
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , SortedVariable variable
         )
     => MultiAnd (Syntax.Predicate variable)
@@ -108,9 +108,9 @@ mkMultiAndPredicate =
 {- | Represent the unification solution as a conjunction of predicates.
  -}
 unificationConditions
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , SortedVariable variable
         )
     => Predicate Object (Target variable)
@@ -122,9 +122,9 @@ unificationConditions Conditional { predicate, substitution } =
     substitution' = Substitution.filter Target.isNonTarget substitution
 
 substitutionConditions
-    ::  ( Ord     (variable Object)
-        , Show    (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord     variable
+        , Show    variable
+        , Unparse variable
         , SortedVariable variable
         )
     => Substitution variable

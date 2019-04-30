@@ -43,8 +43,6 @@ import           GHC.Stack
 import           Prelude hiding
                  ( null )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
@@ -56,7 +54,7 @@ import           Kore.TopBottom
 Individual substitutions are a pair of type
 
 @
-(variable level, TermLike variable)
+(variable, TermLike variable)
 @
 
 A collection of substitutions @[xᵢ=φᵢ]@ is /normalized/ if, for all @xⱼ=φⱼ@ in
@@ -69,18 +67,18 @@ data Substitution variable
     -- normalized and denormalized parts of the substitution together. That
     -- would enable us to keep more substitutions normalized in the Semigroup
     -- instance below.
-    = Substitution ![(variable Object, TermLike variable)]
-    | NormalizedSubstitution !(Map (variable Object) (TermLike variable))
+    = Substitution ![(variable, TermLike variable)]
+    | NormalizedSubstitution !(Map variable (TermLike variable))
     deriving Generic
 
-deriving instance Eq (variable Object) => Eq (Substitution variable)
-deriving instance Ord (variable Object) => Ord (Substitution variable)
-deriving instance Show (variable Object) => Show (Substitution variable)
+deriving instance Eq variable => Eq (Substitution variable)
+deriving instance Ord variable => Ord (Substitution variable)
+deriving instance Show variable => Show (Substitution variable)
 
-instance NFData (variable Object) => NFData (Substitution variable)
+instance NFData variable => NFData (Substitution variable)
 
 instance
-    Hashable (variable Object) =>
+    Hashable variable =>
     Hashable (Substitution variable)
   where
     hashWithSalt salt (Substitution denorm) =
@@ -93,20 +91,20 @@ instance TopBottom (Substitution variable)
     isTop = null
     isBottom _ = False
 
-instance Ord (variable Object) => Semigroup (Substitution variable) where
+instance Ord variable => Semigroup (Substitution variable) where
     a <> b
       | null a, null b = mempty
       | null a         = b
       | null b         = a
       | otherwise      = Substitution (unwrap a <> unwrap b)
 
-instance Ord (variable Object) => Monoid (Substitution variable) where
+instance Ord variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
     :: Substitution variable
-    -> [(variable Object, TermLike variable)]
+    -> [(variable, TermLike variable)]
 unwrap (Substitution xs) = xs
 unwrap (NormalizedSubstitution xs)  = Map.toList xs
 
@@ -119,23 +117,23 @@ See also: 'fromMap'
 
  -}
 toMap
-    :: (HasCallStack, Ord (variable Object))
+    :: (HasCallStack, Ord variable)
     => Substitution variable
-    -> Map (variable Object) (TermLike variable)
+    -> Map variable (TermLike variable)
 toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
 toMap (NormalizedSubstitution norm) = norm
 
 fromMap
-    :: Ord (variable Object)
-    => Map (variable Object) (TermLike variable)
+    :: Ord variable
+    => Map variable (TermLike variable)
     -> Substitution variable
 fromMap = wrap . Map.toList
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
 wrap
-    :: [(variable Object, TermLike variable)]
+    :: [(variable, TermLike variable)]
     -> Substitution variable
 wrap [] = NormalizedSubstitution Map.empty
 wrap xs = Substitution xs
@@ -143,17 +141,15 @@ wrap xs = Substitution xs
 -- | Wrap the list of substitutions to a normalized substitution. Do not use
 -- this unless you are sure you need it.
 unsafeWrap
-    :: Ord (variable Object)
-    => [(variable Object, TermLike variable)]
+    :: Ord variable
+    => [(variable, TermLike variable)]
     -> Substitution variable
 unsafeWrap = NormalizedSubstitution . Map.fromList
 
 -- | Maps a function over the inner representation of the 'Substitution'. The
 -- normalization status is reset to un-normalized.
 modify
-    ::  (  [(variable1 Object, TermLike variable1)]
-        -> [(variable2 Object, TermLike variable2)]
-        )
+    :: ([(variable1, TermLike variable1)] -> [(variable2, TermLike variable2)])
     -> Substitution variable1
     -> Substitution variable2
 modify f = wrap . f . unwrap
@@ -161,17 +157,18 @@ modify f = wrap . f . unwrap
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
 mapVariables
-    :: forall variableFrom variableTo. Ord (variableTo Object)
-    => (variableFrom Object -> variableTo Object)
+    :: forall variableFrom variableTo
+    .  Ord variableTo
+    => (variableFrom -> variableTo)
     -> Substitution variableFrom
     -> Substitution variableTo
 mapVariables variableMapper =
     modify (map (mapVariable variableMapper))
   where
     mapVariable
-        :: (variableFrom Object -> variableTo Object)
-        -> (variableFrom Object, TermLike variableFrom)
-        -> (variableTo Object, TermLike variableTo)
+        :: (variableFrom -> variableTo)
+        -> (variableFrom, TermLike variableFrom)
+        -> (variableTo, TermLike variableTo)
     mapVariable
         mapper
         (variable, patt)
@@ -189,12 +186,12 @@ null (Substitution denorm)         = List.null denorm
 null (NormalizedSubstitution norm) = Map.null norm
 
 -- | Returns the list of variables in the 'Substitution'.
-variables :: Substitution variable -> [(variable Object)]
+variables :: Substitution variable -> [variable]
 variables = fmap fst . unwrap
 
 -- | Filter the variables of the 'Substitution'.
 filter
-    :: (variable Object -> Bool)
+    :: (variable -> Bool)
     -> Substitution variable
     -> Substitution variable
 filter filtering =
@@ -206,7 +203,7 @@ The normalization state is preserved.
 
  -}
 partition
-    :: (variable Object -> TermLike variable -> Bool)
+    :: (variable -> TermLike variable -> Bool)
     -> Substitution variable
     -> (Substitution variable, Substitution variable)
 partition criterion (Substitution substitution) =
@@ -223,9 +220,9 @@ the free variables are @variable@ and all the free variables of @term@.
 
  -}
 freeVariables
-    :: Ord (variable Object)
+    :: Ord variable
     => Substitution variable
-    -> Set (variable Object)
+    -> Set variable
 freeVariables = Foldable.foldl' freeVariablesWorker Set.empty . unwrap
   where
     freeVariablesWorker freeVars (x, t) =

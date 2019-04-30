@@ -10,10 +10,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import qualified Kore.AST.Identifier as Kore
-                 ( Id )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -23,6 +19,8 @@ import           Kore.IndexedModule.IndexedModule
 import qualified Kore.Step.SMT.AST as AST
                  ( Declarations (Declarations), Sort (Sort), Symbol (Symbol) )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
+import qualified Kore.Syntax.Id as Kore
+                 ( Id )
 import qualified SMT.AST as AST
                  ( showSExpr )
 
@@ -56,7 +54,7 @@ declarationsAre expected actual =
 
 smtForSortIs
     :: HasCallStack
-    => Kore.Id Object
+    => Kore.Id
     -> String
     -> AST.Declarations sort symbol name
     -> TestTree
@@ -81,7 +79,7 @@ smtForSortIs
 
 smtForSymbolIs
     :: HasCallStack
-    => Kore.Id Object
+    => Kore.Id
     -> String
     -> AST.Declarations sort symbol name
     -> TestTree

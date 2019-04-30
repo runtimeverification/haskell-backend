@@ -19,11 +19,13 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
-import           Kore.AST.Common
-                 ( CharLiteral, StringLiteral, SymbolOrAlias )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias )
+import           Kore.Syntax.CharLiteral
+import           Kore.Syntax.StringLiteral
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
@@ -32,14 +34,14 @@ import qualified Kore.Domain.Builtin as Domain
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data FunctionalProof level variable
-    = FunctionalVariable (variable Object)
+    = FunctionalVariable variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
     | FunctionalDomainValue (Domain.Builtin ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
-    | FunctionalHead (SymbolOrAlias Object)
+    | FunctionalHead SymbolOrAlias
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     | FunctionalStringLiteral StringLiteral
@@ -48,11 +50,11 @@ data FunctionalProof level variable
     -- ^A char literal is a functional constructor without arguments.
   deriving Generic
 
-deriving instance Eq (variable Object) => Eq (FunctionalProof level variable)
-deriving instance Ord (variable Object) => Ord (FunctionalProof level variable)
-deriving instance Show (variable Object) => Show (FunctionalProof level variable)
+deriving instance Eq variable => Eq (FunctionalProof level variable)
+deriving instance Ord variable => Ord (FunctionalProof level variable)
+deriving instance Show variable => Show (FunctionalProof level variable)
 
-instance Hashable (variable Object) => Hashable (FunctionalProof level variable)
+instance Hashable variable => Hashable (FunctionalProof level variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
@@ -64,12 +66,12 @@ instance Hashable (variable Object) => Hashable (FunctionalProof level variable)
 data FunctionProof level variable
     = FunctionProofFunctional (FunctionalProof Object variable)
     -- ^ A functional component is also function-like.
-    | FunctionHead (SymbolOrAlias Object)
+    | FunctionHead SymbolOrAlias
     -- ^Head of a partial function.
 
-deriving instance Eq (variable Object) => Eq (FunctionProof level variable)
-deriving instance Ord (variable Object) => Ord (FunctionProof level variable)
-deriving instance Show (variable Object) => Show (FunctionProof level variable)
+deriving instance Eq variable => Eq (FunctionProof level variable)
+deriving instance Ord variable => Ord (FunctionProof level variable)
+deriving instance Show variable => Show (FunctionProof level variable)
 
 -- |'TotalProof' is used for providing arguments that a pattern is
 -- total/not bottom.  Currently we only support arguments stating that a
@@ -80,12 +82,12 @@ deriving instance Show (variable Object) => Show (FunctionProof level variable)
 data TotalProof level variable
     = TotalProofFunctional (FunctionalProof Object variable)
     -- ^A functional component is also total.
-    | TotalHead (SymbolOrAlias Object)
+    | TotalHead SymbolOrAlias
     -- ^Head of a total symbol.
 
-deriving instance Eq (variable Object) => Eq (TotalProof level variable)
-deriving instance Ord (variable Object) => Ord (TotalProof level variable)
-deriving instance Show (variable Object) => Show (TotalProof level variable)
+deriving instance Eq variable => Eq (TotalProof level variable)
+deriving instance Ord variable => Ord (TotalProof level variable)
+deriving instance Show variable => Show (TotalProof level variable)
 
 -- |Used for providing arguments that a pattern is made of constructor-like
 -- elements.
@@ -93,7 +95,7 @@ data ConstructorLikeProof = ConstructorLikeProof
   deriving (Eq, Show)
 
 mapVariables
-    :: (variable1 Object -> variable2 Object)
+    :: (variable1 -> variable2)
     -> FunctionalProof Object variable1
     -> FunctionalProof Object variable2
 mapVariables mapping =

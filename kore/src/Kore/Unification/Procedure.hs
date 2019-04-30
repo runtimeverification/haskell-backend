@@ -11,8 +11,6 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -38,6 +36,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.Unification.Data
                  ( UnificationProof (..) )
 import           Kore.Unification.Unify
@@ -54,29 +54,26 @@ import           Kore.Variables.Fresh
 -- If failing, it gives a 'UnificationError' reason for the failure.
 unificationProcedure
     ::  ( SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , MetaOrObject level
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -- ^left-hand-side of unification
     -> TermLike variable
     -> unifier
-        ( OrPredicate level variable
-        , UnificationProof level variable
+        ( OrPredicate Object variable
+        , UnificationProof Object variable
         )
 unificationProcedure
     tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2

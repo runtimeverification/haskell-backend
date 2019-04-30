@@ -32,11 +32,11 @@ instance Default Injective where
 instance NFData Injective
 
 -- | Kore identifier representing the @injective@ attribute symbol.
-injectiveId :: Id Object
+injectiveId :: Id
 injectiveId = "injective"
 
 -- | Kore symbol representing the @injective@ attribute.
-injectiveSymbol :: SymbolOrAlias Object
+injectiveSymbol :: SymbolOrAlias
 injectiveSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = injectiveId

@@ -23,10 +23,7 @@ import           Data.Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Common
-                 ( SortedVariable (..), Variable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject, Object, OrdMetaOrObject, ShowMetaOrObject )
 import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.AST.Valid
@@ -63,6 +60,7 @@ import           Kore.Step.Step
 import qualified Kore.Step.Step as Step
 import           Kore.Step.TermLike
                  ( TermLike, asConcreteStepPattern )
+import           Kore.Syntax.Variable
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
@@ -86,8 +84,8 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [EqualityRule level Variable]
-    -> BuiltinAndAxiomSimplifier level
+    :: [EqualityRule Object Variable]
+    -> BuiltinAndAxiomSimplifier Object
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (evaluateWithDefinitionAxioms rules)
@@ -102,32 +100,27 @@ See also: 'definitionEvaluation'
 
 -}
 totalDefinitionEvaluation
-    :: forall level
-    .  [EqualityRule level Variable]
-    -> BuiltinAndAxiomSimplifier level
+    :: [EqualityRule Object Variable]
+    -> BuiltinAndAxiomSimplifier Object
 totalDefinitionEvaluation rules =
     BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
   where
     totalDefinitionEvaluationWorker
         ::  forall variable
         .   ( FreshVariable variable
-            , MetaOrObject level
-            , Ord (variable level)
-            , OrdMetaOrObject variable
+            , Ord variable
             , SortedVariable variable
-            , Show (variable level)
-            , Show (variable Object)
-            , Unparse (variable level)
-            , ShowMetaOrObject variable
+            , Show variable
+            , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier level
-        -> TermLikeSimplifier level
-        -> BuiltinAndAxiomSimplifierMap level
+        -> PredicateSimplifier Object
+        -> TermLikeSimplifier Object
+        -> BuiltinAndAxiomSimplifierMap Object
         -> TermLike variable
         -> Simplifier
-            ( AttemptedAxiom level variable
-            , SimplificationProof level
+            ( AttemptedAxiom Object variable
+            , SimplificationProof Object
             )
     totalDefinitionEvaluationWorker
         tools
@@ -156,8 +149,8 @@ If that result contains more than one pattern, or it contains a reminder,
 the evaluation fails with 'error' (may change in the future).
 -}
 firstFullEvaluation
-    :: [BuiltinAndAxiomSimplifier level]
-    -> BuiltinAndAxiomSimplifier level
+    :: [BuiltinAndAxiomSimplifier Object]
+    -> BuiltinAndAxiomSimplifier Object
 firstFullEvaluation simplifiers =
     BuiltinAndAxiomSimplifier
         (applyFirstSimplifierThatWorks simplifiers OnlyOneResult)
@@ -166,9 +159,9 @@ firstFullEvaluation simplifiers =
 returns Applicable, otherwise returns the result of the second.
 -}
 simplifierWithFallback
-    :: BuiltinAndAxiomSimplifier level
-    -> BuiltinAndAxiomSimplifier level
-    -> BuiltinAndAxiomSimplifier level
+    :: BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier Object
 simplifierWithFallback first second =
     BuiltinAndAxiomSimplifier
         (applyFirstSimplifierThatWorks [first, second] WithMultipleResults)
@@ -177,33 +170,28 @@ simplifierWithFallback first second =
 on concrete patterns.
 -}
 builtinEvaluation
-    :: BuiltinAndAxiomSimplifier level
-    -> BuiltinAndAxiomSimplifier level
+    :: BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier Object
 builtinEvaluation evaluator =
     BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
 
 
 evaluateBuiltin
-    :: forall variable level
+    :: forall variable
     .   ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
+        , Ord variable
         , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Object)
-        , Unparse (variable level)
-        , ShowMetaOrObject variable
+        , Show variable
+        , Unparse variable
         )
-    => BuiltinAndAxiomSimplifier level
+    => BuiltinAndAxiomSimplifier Object
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier
-        (AttemptedAxiom level variable, SimplificationProof level)
+    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
     tools
@@ -242,27 +230,23 @@ evaluateBuiltin
         Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
 
 applyFirstSimplifierThatWorks
-    :: forall variable level
+    :: forall variable
     .   ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
+        , Ord variable
         , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Object)
-        , Unparse (variable level)
-        , ShowMetaOrObject variable
+        , Show variable
+        , Unparse variable
         )
-    => [BuiltinAndAxiomSimplifier level]
+    => [BuiltinAndAxiomSimplifier Object]
     -> AcceptsMultipleResults
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom level variable, SimplificationProof level)
+        (AttemptedAxiom Object variable, SimplificationProof Object)
 applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
     return
         ( AttemptedAxiom.NotApplicable
@@ -335,26 +319,22 @@ applyFirstSimplifierThatWorks
                 patt
 
 evaluateWithDefinitionAxioms
-    :: forall variable level
+    :: forall variable
     .   ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
+        , Ord variable
         , SortedVariable variable
-        , Show (variable level)
-        , Show (variable Object)
-        , Unparse (variable level)
-        , ShowMetaOrObject variable
+        , Show variable
+        , Unparse variable
         )
-    => [EqualityRule level Variable]
+    => [EqualityRule Object Variable]
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
-    -> BuiltinAndAxiomSimplifierMap level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom level variable, SimplificationProof level)
+        (AttemptedAxiom Object variable, SimplificationProof Object)
 evaluateWithDefinitionAxioms
     definitionRules
     tools
@@ -367,7 +347,7 @@ evaluateWithDefinitionAxioms
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
-        expanded :: Pattern level variable
+        expanded :: Pattern Object variable
         expanded = Pattern.fromTermLike patt
 
     let unwrapEqualityRule =

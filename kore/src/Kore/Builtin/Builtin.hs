@@ -89,11 +89,10 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec as Parsec
 
 import           Kore.AST.Common
-                 ( Application (..), DomainValue (..) )
+                 ( DomainValue (..) )
 import qualified Kore.AST.Common as Common
                  ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Identifier
 import           Kore.AST.Sentence
                  ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
@@ -142,8 +141,8 @@ import           Kore.Step.Simplification.Data
                  SimplificationType, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import           Kore.Step.TermLike
-import qualified Kore.Step.TermLike as TermLike
+import           Kore.Step.TermLike as TermLike
+import           Kore.Syntax.Application
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
@@ -164,9 +163,9 @@ type SortDeclVerifier =
     ->  Either (Error VerifyError) ()
 
 type SortVerifier =
-        (Id Object -> Either (Error VerifyError) HookedSortDescription)
+        (Id -> Either (Error VerifyError) HookedSortDescription)
     -- ^ Find a sort declaration
-    -> Sort Object
+    -> Sort
     -- ^ Sort to verify
     -> Either (Error VerifyError) ()
 
@@ -174,7 +173,7 @@ type SortVerifier =
 type SortDeclVerifiers = HashMap Text SortDeclVerifier
 
 type SymbolVerifier =
-        (Id Object -> Either (Error VerifyError) HookedSortDescription)
+        (Id -> Either (Error VerifyError) HookedSortDescription)
     -- ^ Find a sort declaration
     -> ParsedSentenceSymbol
     -- ^ Symbol declaration to verify
@@ -271,7 +270,7 @@ verifySortDecl _ SentenceSort { sentenceSortParameters } _ =
 
 {- | Throw a 'VerifyError' if there are any sort parameters.
  -}
-getZeroParams :: [SortVariable level] -> Either (Error VerifyError) ()
+getZeroParams :: [SortVariable] -> Either (Error VerifyError) ()
 getZeroParams =
     \case
         [] -> return ()
@@ -287,7 +286,7 @@ Fail if the attribute is missing.
 getUnitId
     :: Attribute.Sort
     -- ^ Sort attributes
-    -> Either (Error VerifyError) (Id Object)
+    -> Either (Error VerifyError) Id
 getUnitId Attribute.Sort { unit = Attribute.Sort.Unit sortUnit } =
     case sortUnit of
         Just SymbolOrAlias { symbolOrAliasConstructor } ->
@@ -302,7 +301,7 @@ Fail if the attribute is missing.
 getElementId
     :: Attribute.Sort
     -- ^ Sort attributes
-    -> Either (Error VerifyError) (Id Object)
+    -> Either (Error VerifyError) Id
 getElementId Attribute.Sort { element = Attribute.Sort.Element sortElement } =
     case sortElement of
         Just SymbolOrAlias { symbolOrAliasConstructor } ->
@@ -317,7 +316,7 @@ Fail if the attribute is missing.
 getConcatId
     :: Attribute.Sort
     -- ^ Sort attributes
-    -> Either (Error VerifyError) (Id Object)
+    -> Either (Error VerifyError) Id
 getConcatId Attribute.Sort { concat = Attribute.Sort.Concat sortConcat } =
     case sortConcat of
         Just SymbolOrAlias { symbolOrAliasConstructor } ->
@@ -331,7 +330,7 @@ Fail if the symbol is not defined or the attribute is missing.
  -}
 assertSymbolHook
     :: KoreIndexedModule declAttrs axiomAttrs
-    -> Id Object
+    -> Id
     -- ^ Symbol identifier
     -> Text
     -- ^ Expected hook
@@ -364,9 +363,9 @@ Fail if the symbol is not defined.
  -}
 assertSymbolResultSort
     :: KoreIndexedModule declAttrs axiomAttrs
-    -> Id Object
+    -> Id
     -- ^ Symbol identifier
-    -> Sort Object
+    -> Sort
     -- ^ Expected result sort
     -> Either (Error VerifyError) ()
 assertSymbolResultSort indexedModule symbolId expectedSort = do
@@ -387,9 +386,9 @@ assertSymbolResultSort indexedModule symbolId expectedSort = do
 
  -}
 verifySort
-    :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
+    :: (Id -> Either (Error VerifyError) HookedSortDescription)
     -> Text
-    -> Sort Object
+    -> Sort
     -> Either (Error VerifyError) ()
 verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
     do
@@ -410,8 +409,8 @@ acceptAnySort = const $ const $ return ()
 
 {- | Find the hooked sort for a domain value sort. -}
 lookupHookSort
-    :: (Id Object -> Either (Error VerifyError) HookedSortDescription)
-    -> Sort Object
+    :: (Id -> Either (Error VerifyError) HookedSortDescription)
+    -> Sort
     -> Either (Error VerifyError) (Maybe Text)
 lookupHookSort findSort (SortActualSort SortActual { sortActualName }) = do
     SentenceSort { sentenceSortAttributes } <- findSort sortActualName
@@ -475,7 +474,7 @@ verifySymbolArguments
 -}
 verifyDomainValue
     :: DomainValueVerifiers child
-    -> (Id Object -> Either (Error VerifyError) HookedSortDescription)
+    -> (Id -> Either (Error VerifyError) HookedSortDescription)
     -> Domain.Builtin child
     -> Either (Error VerifyError) (Domain.Builtin child)
 verifyDomainValue
@@ -620,7 +619,7 @@ parseString parser lit =
   See also: 'Pattern'
  -}
 appliedFunction
-    :: (Monad m, Ord (variable level), level ~ Object)
+    :: (Monad m, Ord variable, level ~ Object)
     => Pattern level variable
     -> m (AttemptedAxiom level variable)
 appliedFunction epat =
@@ -647,8 +646,8 @@ unaryOperator
         )
     -- ^ Parse operand
     ->  (   forall variable.
-            Ord (variable Object)
-        => Sort Object -> b -> Pattern Object variable
+            Ord variable
+        => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -667,10 +666,10 @@ unaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
-        :: (Ord (variable level), level ~ Object)
+        :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
-        -> Sort level
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     unaryOperator0 _ _ resultSort children =
@@ -700,8 +699,8 @@ binaryOperator
         -> a
         )
     -- ^ Extract domain value
-    ->  (  forall variable . Ord (variable Object)
-        => Sort Object -> b -> Pattern Object variable
+    ->  (  forall variable . Ord variable
+        => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -720,10 +719,10 @@ binaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
-        :: (Ord (variable level), level ~ Object)
+        :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
-        -> Sort level
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     binaryOperator0 _ _ resultSort children =
@@ -753,8 +752,8 @@ ternaryOperator
         -> a
         )
     -- ^ Extract domain value
-    ->  (  forall variable. Ord (variable Object)
-        => Sort Object -> b -> Pattern Object variable
+    ->  (  forall variable. Ord variable
+        => Sort -> b -> Pattern Object variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -773,10 +772,10 @@ ternaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
-        :: (Ord (variable level), level ~ Object)
+        :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier level
-        -> Sort level
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
     ternaryOperator0 _ _ resultSort children =
@@ -790,10 +789,10 @@ ternaryOperator
 
 type FunctionImplementation
     = forall variable
-        .  Ord (variable Object)
+        .  Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
-        -> Sort Object
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
 
@@ -802,14 +801,14 @@ functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: (Ord (variable Object), Show (variable Object))
+        :: (Ord variable, Show variable)
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier level
         -> TermLikeSimplifier Object
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
-            (Application Object)
-            (Valid (variable Object) Object)
+            (Application SymbolOrAlias)
+            (Valid variable Object)
             (TermLike variable)
         -> Simplifier
             ( AttemptedAxiom Object variable
@@ -839,10 +838,10 @@ runParser ctx result =
 lookupSymbol
     :: Text
     -- ^ builtin name
-    -> Sort Object
+    -> Sort
     -- ^ the hooked sort
     -> VerifiedModule declAtts axiomAtts
-    -> Either (Error e) (SymbolOrAlias Object)
+    -> Either (Error e) SymbolOrAlias
 lookupSymbol builtinName builtinSort indexedModule
   = do
     symbolOrAliasConstructor <-
@@ -859,9 +858,9 @@ during verification.
 
  -}
 lookupSymbolUnit
-    :: Sort Object
+    :: Sort
     -> Attribute.Sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
 lookupSymbolUnit theSort attrs =
     case getUnit of
         Just symbol -> symbol
@@ -879,9 +878,9 @@ checked during verification.
 
  -}
 lookupSymbolElement
-    :: Sort Object
+    :: Sort
     -> Attribute.Sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
 lookupSymbolElement theSort attrs =
     case getElement of
         Just symbol -> symbol
@@ -899,9 +898,9 @@ checked during verification.
 
  -}
 lookupSymbolConcat
-    :: Sort Object
+    :: Sort
     -> Attribute.Sort
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
 lookupSymbolConcat theSort attrs =
     case getConcat of
         Just symbol -> symbol
@@ -917,7 +916,7 @@ lookupSymbolConcat theSort attrs =
 isSymbol
     :: Text  -- ^ Builtin symbol
     -> SmtMetadataTools Hook
-    -> SymbolOrAlias Object  -- ^ Kore symbol
+    -> SymbolOrAlias  -- ^ Kore symbol
     -> Bool
 isSymbol builtinName MetadataTools { symAttributes } sym =
     case getHook (symAttributes sym) of
@@ -954,10 +953,10 @@ getAttemptedAxiom attempt =
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
     ::  ( Monad m
-        , Ord (variable level)
+        , Ord variable
         , SortedVariable variable
-        , Show (variable level)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , level ~ Object
         , expanded ~ Pattern level variable
         , patt ~ TermLike variable

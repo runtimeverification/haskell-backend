@@ -39,9 +39,9 @@ evaluate
     ::  forall variable .
         ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , Given (SmtMetadataTools StepperAttributes)
         )
     => PredicateSimplifier Object
@@ -77,9 +77,9 @@ evaluate
 
 asPredicate
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> (Predicate Object variable, SimplificationProof Object)

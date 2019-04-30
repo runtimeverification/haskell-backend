@@ -7,10 +7,6 @@ import           Data.List
                  ( foldl' )
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.AST.Identifier as Kore
-                 ( Id )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
                  ( Attributes (Attributes), Definition (Definition),
                  Module (Module),
@@ -52,6 +48,8 @@ import qualified Kore.Step.SMT.AST as AST.Symbol
                  ( Symbol (..) )
 import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
+import qualified Kore.Syntax.Id as Kore
+                 ( Id )
 import qualified SMT.AST as AST
                  ( Constructor (Constructor), ConstructorArgument,
                  DataTypeDeclaration (DataTypeDeclaration) )
@@ -174,7 +172,7 @@ instance With (Module sentence) sentence where
 
 instance With
     (AST.Declarations sort symbol name)
-    (Kore.Id Object, AST.Sort sort symbol name)
+    (Kore.Id, AST.Sort sort symbol name)
   where
     with
         d@AST.Declarations {sorts}
@@ -182,7 +180,7 @@ instance With
       = d { AST.Declarations.sorts = Map.insert sortId sort sorts }
 
 instance With
-    (Kore.Id Object, AST.Sort sort symbol name)
+    (Kore.Id, AST.Sort sort symbol name)
     (AST.Constructor sort symbol name)
   where
     with (sortId, sort) constructor = (sortId, sort `with` constructor)
@@ -230,28 +228,22 @@ instance With
             { AST.Constructor.arguments = arguments `with` argument
             }
 
-instance With
-    (Kore.Id Object, AST.UnresolvedSymbol)
-    (Kore.Sort Object)
-  where
+instance With (Kore.Id, AST.UnresolvedSymbol) Kore.Sort where
     with (symbolId, symbol) sort = (symbolId, symbol `with` sort)
 
-instance With AST.UnresolvedSymbol (Kore.Sort Object)
-  where
+instance With AST.UnresolvedSymbol Kore.Sort where
     with
         s@AST.Symbol {declaration}
         sort
       = s { AST.Symbol.declaration = declaration `with` sort }
 
-instance With AST.UnresolvedKoreSymbolDeclaration (Kore.Sort Object)
-  where
+instance With AST.UnresolvedKoreSymbolDeclaration Kore.Sort where
     with (AST.SymbolDeclaredDirectly _) _ =
         error "Cannot add sorts to SymbolDeclaredDirectly."
     with (AST.SymbolDeclaredIndirectly declaration) sort =
         AST.SymbolDeclaredIndirectly (declaration `with` sort)
 
-instance With AST.UnresolvedIndirectSymbolDeclaration (Kore.Sort Object)
-  where
+instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
     with
         s@AST.IndirectSymbolDeclaration {sorts}
         sort

@@ -3,8 +3,6 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.AST.Common
-                 ( SortedVariable (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate, wrapPredicate )
@@ -21,13 +19,13 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
                  ( Object, TermLike )
 import qualified Kore.Step.TermLike as TermLike
-import           Kore.Unparser
-                 ( Unparse )
+import           Kore.Syntax.Variable
+                 ( SortedVariable (..) )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
 mockSimplifier
-    ::  ( Ord (variable Object)
+    ::  ( Ord variable
         , SortedVariable variable
         )
     =>  [   ( TermLike variable
@@ -48,7 +46,7 @@ mockSimplifier values =
         )
 
 mockPredicateSimplifier
-    ::  ( Ord (variable Object)
+    ::  ( Ord variable
         , SortedVariable variable
         )
     =>  [   ( TermLike variable
@@ -70,10 +68,7 @@ mockPredicateSimplifier values =
 
 mockSimplifierHelper
     ::  ( FreshVariable variable0
-        , Ord (variable Object)
-        , Ord (variable0 Object)
-        , Show (variable0 Object)
-        , Unparse (variable0 Object)
+        , Ord variable
         , SortedVariable variable
         , SortedVariable variable0
         )
@@ -113,7 +108,7 @@ mockSimplifierHelper
                 unevaluatedPatt
 
 convertPatternVariables
-    ::  ( Ord (variable0 Object)
+    ::  ( Ord variable0
         , SortedVariable variable
         , SortedVariable variable0
         )
@@ -122,7 +117,7 @@ convertPatternVariables
 convertPatternVariables = TermLike.mapVariables (fromVariable . toVariable)
 
 convertExpandedVariables
-    ::  ( Ord (variable0 Object)
+    ::  ( Ord variable0
         , SortedVariable variable
         , SortedVariable variable0
         )

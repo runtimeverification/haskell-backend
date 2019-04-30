@@ -39,30 +39,30 @@ import           Kore.Annotation.Valid
                  ( Valid )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
-                 ( Exists (..), Forall (..), Pattern (..),
-                 SortedVariable (..) )
+                 ( Exists (..), Forall (..), Pattern (..) )
 import qualified Kore.AST.Common as Base
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
-                 ( And, Application, Bottom, Ceil, CharLiteral, CofreeF (..),
-                 Concrete, DomainValue, Equals, Exists, Floor, Forall, Id (..),
-                 Iff, Implies, In, Next, Not, Or, PurePattern, Rewrites, Sort,
-                 SortActual, SortVariable, SortedVariable, StringLiteral,
+                 ( And, Application, Bottom, Ceil, CofreeF (..), Concrete,
+                 DomainValue, Equals, Exists, Floor, Forall, Id (..), Iff,
+                 Implies, In, Next, Not, Or, PurePattern, Rewrites, Sort,
+                 SortActual, SortVariable, SortedVariable (..),
                  SymbolOrAlias (..), Top, Variable (..) )
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Substitute as Substitute
+import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 type TermLike variable =
-    PurePattern Object Domain.Builtin variable (Valid (variable Object) Object)
+    PurePattern Object Domain.Builtin variable (Valid variable Object)
 
-freeVariables :: TermLike variable -> Set (variable Object)
+freeVariables :: TermLike variable -> Set variable
 freeVariables termLike = Valid.freeVariables (extract termLike)
 
 hasFreeVariable
-    :: Ord (variable Object)
-    => variable Object
+    :: Ord variable
+    => variable
     -> TermLike variable
     -> Bool
 hasFreeVariable variable = Set.member variable . freeVariables
@@ -73,10 +73,10 @@ Otherwise, the argument is returned.
 
  -}
 withoutFreeVariable
-    ::  ( Ord (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord variable
+        , Unparse variable
         )
-    => variable Object  -- ^ variable
+    => variable  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
     -> a
@@ -105,8 +105,8 @@ See also: 'traverseVariables'
 
  -}
 mapVariables
-    :: Ord (variable2 Object)
-    => (variable1 Object -> variable2 Object)
+    :: Ord variable2
+    => (variable1 -> variable2)
     -> TermLike variable1
     -> TermLike variable2
 mapVariables mapping =
@@ -130,8 +130,8 @@ See also: 'mapVariables'
  -}
 traverseVariables
     ::  forall m variable1 variable2.
-        (Monad m, Ord (variable2 Object))
-    => (variable1 Object -> m (variable2 Object))
+        (Monad m, Ord variable2)
+    => (variable1 -> m variable2)
     -> TermLike variable1
     -> m (TermLike variable2)
 traverseVariables traversing =
@@ -171,7 +171,7 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcreteStepPattern
-    :: Ord (variable Object)
+    :: Ord variable
     => TermLike Concrete
     -> TermLike variable
 fromConcreteStepPattern = mapVariables (\case {})
@@ -187,11 +187,10 @@ may appear in the right-hand side of any substitution, but this is not checked.
  -}
 substitute
     ::  ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
+        , Ord variable
         , SortedVariable variable
         )
-    => Map (variable level) (TermLike variable)
+    => Map variable (TermLike variable)
     -> TermLike variable
     -> TermLike variable
 substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
@@ -205,10 +204,7 @@ substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
 ensuring that no 'Variable' in the result is accidentally captured.
 
  -}
-externalizeFreshVariables
-    :: forall level. MetaOrObject level
-    => TermLike Variable
-    -> TermLike Variable
+externalizeFreshVariables :: TermLike Variable -> TermLike Variable
 externalizeFreshVariables termLike =
     Reader.runReader
         (Recursive.fold externalizeFreshVariablesWorker termLike)
@@ -218,7 +214,7 @@ externalizeFreshVariables termLike =
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition Base.isOriginalVariable (freeVariables termLike)
+        Set.partition Variable.isOriginalVariable (freeVariables termLike)
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
@@ -254,7 +250,7 @@ externalizeFreshVariables termLike =
     safeVariable avoiding variable =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture
-        $ Base.externalizeFreshVariable
+        $ Variable.externalizeFreshVariable
         <$> iterate nextVariable variable
       where
         wouldCapture var = Set.member var avoiding
@@ -268,11 +264,11 @@ externalizeFreshVariables termLike =
         ::  Base
                 (TermLike Variable)
                 (Reader
-                    (Map (Variable level) (Variable level))
+                    (Map Variable Variable)
                     (TermLike Variable)
                 )
         ->  (Reader
-                (Map (Variable level) (Variable level))
+                (Map Variable Variable)
                 (TermLike Variable)
             )
     externalizeFreshVariablesWorker (valid :< patt) = do

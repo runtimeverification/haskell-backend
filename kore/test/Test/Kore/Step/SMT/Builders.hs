@@ -126,7 +126,7 @@ smthook value = Attribute (Smthook.smthookAttribute value)
 hook :: Text -> Attribute
 hook value = Attribute (Hook.hookAttribute value)
 
-koreSort :: Text -> Sort Object
+koreSort :: Text -> Sort
 koreSort name =
     SortActualSort SortActual
         { sortActualName  = testId name

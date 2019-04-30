@@ -234,8 +234,8 @@ test_forallSimplification =
         }
 
 makeForall
-    :: Ord (variable Object)
-    => variable Object
+    :: Ord variable
+    => variable
     -> [Pattern Object variable]
     -> Forall Object variable (OrPattern Object variable)
 makeForall variable patterns =
@@ -245,23 +245,17 @@ makeForall variable patterns =
         , forallChild       = OrPattern.fromPatterns patterns
         }
 
-testSort :: Sort Object
-testSort =
-    SortActualSort SortActual
-        { sortActualName  = Id "testSort" AstLocationTest
-        , sortActualSorts = []
-        }
+testSort :: Sort
+testSort = Mock.testSort
 
 evaluate
-    :: MetaOrObject level
-    => Forall level Variable (OrPattern Object Variable)
+    :: Forall Object Variable (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate forall =
     fst $ Forall.simplify forall
 
 makeEvaluate
-    :: MetaOrObject level
-    => Variable level
+    :: Variable
     -> Pattern Object Variable
     -> Pattern Object Variable
 makeEvaluate variable child =

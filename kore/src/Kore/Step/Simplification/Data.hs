@@ -47,8 +47,6 @@ import           GHC.Stack
 
 import           Control.Monad.Catch
                  ( Exception, MonadCatch, MonadThrow, catch, throwM )
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
@@ -60,6 +58,8 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
@@ -282,12 +282,9 @@ newtype TermLikeSimplifier level =
     TermLikeSimplifier
         ( forall variable
         .   ( FreshVariable variable
-            , MetaOrObject level
-            , Ord (variable level)
-            , OrdMetaOrObject variable
-            , Show (variable level)
-            , ShowMetaOrObject variable
-            , Unparse (variable level)
+            , Ord variable
+            , Show variable
+            , Unparse variable
             , SortedVariable variable
             )
         => PredicateSimplifier level
@@ -304,9 +301,9 @@ The pattern is considered as an isolated term without extra initial conditions.
 simplifyTerm
     :: forall variable
     .   ( FreshVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => TermLikeSimplifier Object
@@ -334,9 +331,9 @@ simplifyTerm
 simplifyConditionalTerm
     :: forall variable
     .   ( FreshVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => TermLikeSimplifier Object
@@ -355,9 +352,9 @@ simplification, but only attaches it unmodified to the final result.
 termLikeSimplifier
     ::  ( forall variable
         .   ( FreshVariable variable
-            , Ord (variable Object)
-            , Show (variable Object)
-            , Unparse (variable Object)
+            , Ord variable
+            , Show variable
+            , Unparse variable
             , SortedVariable variable
             )
         => PredicateSimplifier Object
@@ -374,9 +371,9 @@ termLikeSimplifier simplifier =
     termLikeSimplifierWorker
         :: forall variable
         .   ( FreshVariable variable
-            , Ord (variable Object)
-            , Show (variable Object)
-            , Unparse (variable Object)
+            , Ord variable
+            , Show variable
+            , Unparse variable
             , SortedVariable variable
             )
         => PredicateSimplifier Object
@@ -403,12 +400,9 @@ newtype PredicateSimplifier level =
         { getPredicateSimplifier
             ::  forall variable
             .   ( FreshVariable variable
-                , MetaOrObject level
-                , Ord (variable level)
-                , OrdMetaOrObject variable
-                , Show (variable level)
-                , ShowMetaOrObject variable
-                , Unparse (variable level)
+                , Ord variable
+                , Show variable
+                , Unparse variable
                 , SortedVariable variable
                 )
             => Predicate level variable

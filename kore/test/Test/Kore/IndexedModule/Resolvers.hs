@@ -31,7 +31,7 @@ import qualified Kore.Verified as Verified
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
 
-objectS1 :: Sort Object
+objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol Object (TermLike Variable)
@@ -63,7 +63,7 @@ strictAttribute =
     (asParsedPattern . ApplicationPattern)
         Application
             { applicationSymbolOrAlias =
-                groundHead "strict" AstLocationTest :: SymbolOrAlias Object
+                groundHead "strict" AstLocationTest :: SymbolOrAlias
             , applicationChildren = []
             }
 
@@ -154,7 +154,7 @@ test_resolvers =
                 , sentenceSortAttributes = Attributes [strictAttribute]
                 })
             )
-            (resolveSort testIndexedModule (testId "s1" :: Id Object))
+            (resolveSort testIndexedModule (testId "s1" :: Id))
         )
     , testCase "meta sort"
         (assertEqual ""
@@ -175,7 +175,7 @@ test_resolvers =
                 , sentenceSymbolResultSort = objectS1
                 }
             ))
-            (resolveSymbol testIndexedModule (testId "a" :: Id Object))
+            (resolveSymbol testIndexedModule (testId "a" :: Id))
         )
     , testCase "meta symbol"
         (assertEqual ""
@@ -186,7 +186,7 @@ test_resolvers =
                 , sentenceSymbolResultSort = stringMetaSort
                 }
             ))
-            (resolveSymbol testIndexedModule (testId "#a" :: Id Meta))
+            (resolveSymbol testIndexedModule (testId "#a" :: Id))
         )
     , testCase "object alias"
         (assertEqual ""
@@ -225,7 +225,7 @@ test_resolvers =
                     }
                 )
             )
-            (resolveAlias testIndexedModule (testId "b" :: Id Object))
+            (resolveAlias testIndexedModule (testId "b" :: Id))
         )
     , testCase "meta alias"
         (assertEqual ""
@@ -261,7 +261,7 @@ test_resolvers =
                 , sentenceAliasResultSort = stringMetaSort
                 }
             ))
-            (resolveAlias testIndexedModule (testId "#b" :: Id Meta))
+            (resolveAlias testIndexedModule (testId "#b" :: Id))
         )
     , testCase "symbol getHeadApplicationSorts"
         (assertEqual ""
@@ -287,7 +287,7 @@ test_resolvers =
         )
     ]
   where
-    charMetaId :: Id Meta
+    charMetaId :: Id
     charMetaId = charMetaSortId
 
 
@@ -302,7 +302,7 @@ test_resolver_undefined_messages =
         produces_ resolver formatter =
             checkLeftOf_ (run resolver) (checkWith formatter)
         run resolver =
-            resolver testIndexedModule (testId "#anyOldId" :: Id Object)
+            resolver testIndexedModule (testId "#anyOldId" :: Id)
         checkWith formatter =
             assertError_ ["(<test data>)"] $ formatter "#anyOldId"
 

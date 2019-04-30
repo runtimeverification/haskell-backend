@@ -31,11 +31,11 @@ instance Default SortInjection where
 instance NFData SortInjection
 
 -- | Kore identifier representing the @sortInjection@ attribute symbol.
-sortInjectionId :: Id Object
+sortInjectionId :: Id
 sortInjectionId = "sortInjection"
 
 -- | Kore symbol representing the @sortInjection@ attribute.
-sortInjectionSymbol :: SymbolOrAlias Object
+sortInjectionSymbol :: SymbolOrAlias
 sortInjectionSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = sortInjectionId

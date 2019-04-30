@@ -88,14 +88,14 @@ extractEqualityAxioms =
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
-        :: Map (AxiomIdentifier level) [EqualityRule level Variable]
-        -> (AxiomIdentifier level, EqualityRule level Variable)
-        -> Map (AxiomIdentifier level) [EqualityRule level Variable]
+        :: Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+        -> (AxiomIdentifier Object, EqualityRule Object Variable)
+        -> Map (AxiomIdentifier Object) [EqualityRule Object Variable]
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    :: SentenceAxiom (SortVariable Object) (TermLike Variable)
+    :: SentenceAxiom SortVariable (TermLike Variable)
     -> Maybe (AxiomIdentifier Object, EqualityRule Object Variable)
 axiomToIdAxiomPatternPair axiom =
     case Rule.fromSentenceAxiom axiom of
@@ -113,15 +113,14 @@ axiomToIdAxiomPatternPair axiom =
 -- |Converts a registry of 'RulePattern's to one of
 -- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
-    :: forall level
-    .  Map.Map (AxiomIdentifier level) [EqualityRule level Variable]
-    -> Map.Map (AxiomIdentifier level) (BuiltinAndAxiomSimplifier level)
+    :: Map.Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+    -> Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier Object)
 axiomPatternsToEvaluators =
     Map.fromAscList . mapMaybe equalitiesToEvaluators . Map.toAscList
   where
     equalitiesToEvaluators
-        :: (AxiomIdentifier level, [EqualityRule level Variable])
-        -> Maybe (AxiomIdentifier level, BuiltinAndAxiomSimplifier level)
+        :: (AxiomIdentifier Object, [EqualityRule Object Variable])
+        -> Maybe (AxiomIdentifier Object, BuiltinAndAxiomSimplifier Object)
     equalitiesToEvaluators
         (symbolId, filter (not . ignoreEqualityRule) -> equalities)
       =
@@ -132,7 +131,7 @@ axiomPatternsToEvaluators =
             (Just sEvaluator, Just dEvaluator) ->
                 Just (symbolId, simplifierWithFallback sEvaluator dEvaluator)
       where
-        simplifications, evaluations :: [EqualityRule level Variable]
+        simplifications, evaluations :: [EqualityRule Object Variable]
         (simplifications, evaluations) =
             partition isSimplificationRule equalities
           where
@@ -141,12 +140,12 @@ axiomPatternsToEvaluators =
               where
                 Simplification { isSimplification } =
                     Attribute.simplification attributes
-        simplification :: [BuiltinAndAxiomSimplifier level]
+        simplification :: [BuiltinAndAxiomSimplifier Object]
         simplification = mkSimplifier <$> simplifications
           where
             mkSimplifier
-                :: EqualityRule level Variable
-                -> BuiltinAndAxiomSimplifier level
+                :: EqualityRule Object Variable
+                -> BuiltinAndAxiomSimplifier Object
             mkSimplifier simpl =
                 BuiltinAndAxiomSimplifier $ equalityRuleEvaluator simpl
         simplificationEvaluator =
@@ -165,7 +164,7 @@ used as an evaluator, such as if it is an associativity or commutativity
 axiom; this is determined by checking the 'AxiomPatternAttributes'.
 
  -}
-ignoreEqualityRule :: EqualityRule level Variable -> Bool
+ignoreEqualityRule :: EqualityRule Object Variable -> Bool
 ignoreEqualityRule (EqualityRule RulePattern { attributes })
     | isAssoc = True
     | isComm = True

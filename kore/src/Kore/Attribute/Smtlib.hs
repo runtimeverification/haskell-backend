@@ -26,7 +26,7 @@ import           Kore.Attribute.Smtlib.Smtlib
 import qualified Kore.Builtin.Error as Builtin.Error
 
 -- | Kore symbol representing the @smtlib@ attribute.
-smtlibSymbol :: SymbolOrAlias Object
+smtlibSymbol :: SymbolOrAlias
 smtlibSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = smtlibId

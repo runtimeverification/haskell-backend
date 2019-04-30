@@ -17,6 +17,8 @@ import Kore.AST.Sentence
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
+import Kore.Syntax.CharLiteral
+import Kore.Syntax.StringLiteral
 import Kore.Unparser
 
 import Test.Kore
@@ -41,20 +43,20 @@ test_unparse =
                 { getAttributes =
                     [ asParsedPattern (TopPattern Top
                         { topSort = SortVariableSort SortVariable
-                            { getSortVariable = testId "#Fm" :: Id Meta }
+                            { getSortVariable = testId "#Fm" }
                         })
                     , asParsedPattern (InPattern In
                         { inOperandSort = SortActualSort SortActual
-                            { sortActualName = testId "B" :: Id Object
+                            { sortActualName = testId "B"
                             , sortActualSorts = []
                             }
                         , inResultSort = SortActualSort SortActual
-                            { sortActualName = testId "G" :: Id Object
+                            { sortActualName = testId "G"
                             , sortActualSorts = []
                             }
                         , inContainedChild =
                             asParsedPattern $ VariablePattern Variable
-                                { variableName = testId "T" :: Id Object
+                                { variableName = testId "T"
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
@@ -133,7 +135,7 @@ test_unparse =
                     [ asParsedPattern
                         ( TopPattern Top
                             { topSort = SortActualSort SortActual
-                                { sortActualName = testId "#CharList" :: Id Meta
+                                { sortActualName = testId "#CharList"
                                 , sortActualSorts = []
                                 }
                             }
@@ -163,32 +165,19 @@ test_parse :: TestTree
 test_parse =
     testGroup
         "Parse"
-        [ testProperty "Object testId" $
-            roundtrip (idGen IsObject) (idParser Object)
+        [ testProperty "Object testId" $ roundtrip idGen idParser
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen stringLiteralParser
         , testProperty "CharLiteral" $
             roundtrip charLiteralGen charLiteralParser
         , testProperty "Object Symbol" $
-            roundtrip symbolGen (symbolParser Object)
-        , testProperty "Meta Symbol" $
-            roundtrip symbolGen (symbolParser Meta)
+            roundtrip symbolGen symbolParser
         , testProperty "Object Alias" $
-            roundtrip aliasGen (aliasParser Object)
-        , testProperty "Meta Alias" $
-            roundtrip aliasGen (aliasParser Meta)
+            roundtrip aliasGen aliasParser
         , testProperty "Object SortVariable" $
-            roundtrip sortVariableGen (sortVariableParser Object)
-        , testProperty "Meta SortVariable" $
-            roundtrip sortVariableGen (sortVariableParser Meta)
+            roundtrip sortVariableGen sortVariableParser
         , testProperty "Object Sort" $
-            roundtrip (standaloneGen sortGen) (sortParser Object)
-        , testProperty "Meta Sort" $
-            roundtrip (standaloneGen sortGen) (sortParser Meta)
-        , testProperty "UnifiedVariable" $
-            roundtrip
-                (standaloneGen $ variableGen =<< sortGen)
-                (variableParser Object)
+            roundtrip (standaloneGen sortGen) sortParser
         , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $

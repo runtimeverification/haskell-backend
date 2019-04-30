@@ -80,55 +80,55 @@ zeroPattern =
             , builtinIntValue = 0
             }
 
-unitSort :: Sort Object
+unitSort :: Sort
 unitSort =
     SortActualSort SortActual
         { sortActualName = testId "Unit"
         , sortActualSorts = []
         }
 
-unitSymbol :: SymbolOrAlias Object
+unitSymbol :: SymbolOrAlias
 unitSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "unit"
         , symbolOrAliasParams = []
         }
 
-pairSort :: Sort Object -> Sort Object
+pairSort :: Sort -> Sort
 pairSort sort =
     SortActualSort SortActual
         { sortActualName = testId "Pair"
         , sortActualSorts = [sort]
         }
 
-pairSymbol :: Sort Object -> SymbolOrAlias Object
+pairSymbol :: Sort -> SymbolOrAlias
 pairSymbol sort =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "pair"
         , symbolOrAliasParams = [sort]
         }
 
-injSymbol :: Sort Object -> Sort Object -> SymbolOrAlias Object
+injSymbol :: Sort -> Sort -> SymbolOrAlias
 injSymbol sub sup =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "inj"
         , symbolOrAliasParams = [sub, sup]
         }
 
-funSymbol :: SymbolOrAlias Object
+funSymbol :: SymbolOrAlias
 funSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId "fun"
         , symbolOrAliasParams = []
         }
 
-subSort :: Sort level
+subSort :: Sort
 subSort = (SortVariableSort . SortVariable) (testId "sub")
 
-supSort :: Sort level
+supSort :: Sort
 supSort = (SortVariableSort . SortVariable) (testId "sup")
 
-symbolOrAliasAttrs :: [(SymbolOrAlias Object, StepperAttributes)]
+symbolOrAliasAttrs :: [(SymbolOrAlias, StepperAttributes)]
 symbolOrAliasAttrs =
     [ (unitSymbol, Mock.constructorAttributes)
     , (injSymbol subSort supSort, Mock.sortInjectionAttributes)
@@ -139,7 +139,7 @@ symbolOrAliasAttrs =
     , (funSymbol, Mock.functionAttributes)
     ]
 
-symbolOrAliasType :: [(SymbolOrAlias Object, HeadType)]
+symbolOrAliasType :: [(SymbolOrAlias, HeadType)]
 symbolOrAliasType =
     [ (unitSymbol, HeadType.Symbol)
     , (injSymbol subSort supSort, HeadType.Symbol)

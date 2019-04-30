@@ -57,7 +57,7 @@ data UnparameterizedId = UnparameterizedId
     deriving (Show)
 
 
-toUnparameterizedId :: Id level -> UnparameterizedId
+toUnparameterizedId :: Id -> UnparameterizedId
 toUnparameterizedId Id {getId = name, idLocation = location} =
     UnparameterizedId
         { unparameterizedIdName = Text.unpack name
@@ -260,8 +260,7 @@ verifySymbolSentence indexedModule sentence =
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
 verifyAliasSentence
-    :: (MetaOrObject level)
-    => Builtin.Verifiers
+    :: Builtin.Verifiers
     -> KoreIndexedModule declAtts axiomAtts
     -> ParsedSentenceAlias
     -> Either (Error VerifyError) Verified.SentenceAlias
@@ -329,8 +328,8 @@ verifySortSentence sentenceSort = do
     traverse verifyNoPatterns sentenceSort
 
 buildDeclaredSortVariables
-    :: [SortVariable Object]
-    -> Either (Error VerifyError) (Set.Set (SortVariable Object))
+    :: [SortVariable]
+    -> Either (Error VerifyError) (Set.Set SortVariable)
 buildDeclaredSortVariables [] = Right Set.empty
 buildDeclaredSortVariables (unifiedVariable : list) = do
     variables <- buildDeclaredSortVariables list

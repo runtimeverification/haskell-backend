@@ -369,26 +369,23 @@ test_onePathVerification =
             Mock.smtDeclarations
 
 simpleAxiom
-    :: MetaOrObject level
-    => TermLike Variable
+    :: TermLike Variable
     -> TermLike Variable
-    -> OnePath.Axiom level
+    -> OnePath.Axiom Object
 simpleAxiom left right =
     OnePath.Axiom $ simpleRewrite left right
 
 simpleClaim
-    :: MetaOrObject level
-    => TermLike Variable
+    :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule level Variable
+    -> OnePathRule Object Variable
 simpleClaim left right =
     OnePathRule . getRewriteRule $ simpleRewrite left right
 
 simpleTrustedClaim
-    :: MetaOrObject level
-    => TermLike Variable
+    :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule level Variable
+    -> OnePathRule Object Variable
 simpleTrustedClaim left right =
     OnePathRule
     $ RulePattern
@@ -401,10 +398,9 @@ simpleTrustedClaim left right =
             }
 
 simpleRewrite
-    :: MetaOrObject level
-    => TermLike Variable
+    :: TermLike Variable
     -> TermLike Variable
-    -> RewriteRule level Variable
+    -> RewriteRule Object Variable
 simpleRewrite left right =
     RewriteRule RulePattern
         { left = left
@@ -415,15 +411,13 @@ simpleRewrite left right =
         }
 
 runVerification
-    ::  ( MetaOrObject level
-        , OnePath.Claim claim
-        )
+    :: OnePath.Claim claim
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
-    -> [OnePath.Axiom level]
+    -> [OnePath.Axiom Object]
     -> [claim]
-    -> IO (Either (OrPattern level Variable) ())
+    -> IO (Either (OrPattern Object Variable) ())
 runVerification
     metadataTools
     stepLimit

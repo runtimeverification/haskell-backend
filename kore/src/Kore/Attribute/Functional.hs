@@ -32,11 +32,11 @@ instance Default Functional where
 instance NFData Functional
 
 -- | Kore identifier representing the @functional@ attribute symbol.
-functionalId :: Id Object
+functionalId :: Id
 functionalId = "functional"
 
 -- | Kore symbol representing the @functional@ attribute.
-functionalSymbol :: SymbolOrAlias Object
+functionalSymbol :: SymbolOrAlias
 functionalSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = functionalId

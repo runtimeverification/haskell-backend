@@ -206,10 +206,10 @@ verifiedMyModule module_ = indexedModule
         , definitionModules = [eraseSentenceAnnotations <$> module_]
         }
 
-mySortName :: Id Object
+mySortName :: Id
 mySortName = Id "MySort" AstLocationTest
 
-mySort :: Sort Object
+mySort :: Sort
 mySort = SortActualSort SortActual
     { sortActualName = mySortName
     , sortActualSorts = []
@@ -272,7 +272,7 @@ rewriteAxiom lhsName rhsName =
         (applyToNoArgs mySort rhsName)
         Nothing
 
-applyToNoArgs :: Sort Object -> Text -> TermLike Variable
+applyToNoArgs :: Sort -> Text -> TermLike Variable
 applyToNoArgs sort name =
     mkApp
         sort

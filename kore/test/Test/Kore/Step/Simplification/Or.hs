@@ -11,8 +11,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Common
-                 ( Or (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
@@ -28,6 +26,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Or
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -141,7 +140,7 @@ test_simplify =
     binaryOr
       :: OrPattern Object Variable
       -> OrPattern Object Variable
-      -> Or Object (OrPattern Object Variable)
+      -> Or Sort (OrPattern Object Variable)
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
@@ -180,7 +179,7 @@ tM = mkVar Mock.y
 t_ :: TestTerm
 t_ = mkBottom Mock.testSort
 
-testVar :: Text -> Variable Object
+testVar :: Text -> Variable
 testVar ident = Variable (testId ident) mempty Mock.testSort
 
 type TestPredicate = Syntax.Predicate Variable

@@ -8,6 +8,7 @@ import Test.Tasty.HUnit
 import           Kore.AST.Pure
 import           Kore.ASTPrettyPrint
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax.CharLiteral
 
 import Test.Kore
 
@@ -20,13 +21,12 @@ test_astPrettyPrint =
         )
     , testCase "Object unified variable"
         (assertEqual ""
-            (  "Variable\n"
-            ++ "    { variableName = (Id \"v\" AstLocationNone) :: Id Object\n"
-            ++ "    , variableCounter = Nothing\n"
-            ++ "    , variableSort =\n"
-            ++ "        SortVariableSort (SortVariable ((Id \"sv\" AstLocationNone) :: Id Object))\n"
-            ++ "    }"
-            )
+            "Variable\n\
+            \    { variableName = Id \"v\" AstLocationNone\n\
+            \    , variableCounter = Nothing\n\
+            \    , variableSort =\n\
+            \        SortVariableSort (SortVariable (Id \"sv\" AstLocationNone))\n\
+            \    }"
             (prettyPrintToString
                 (Variable
                     { variableName = testId "v"
@@ -39,20 +39,19 @@ test_astPrettyPrint =
         )
     , testCase "Maybe - Just"
         (assertEqual ""
-            "Just ((Id \"v\" AstLocationNone) :: Id Object)"
+            "Just (Id \"v\" AstLocationNone)"
             (prettyPrintToString
-                (Just (testId "v" :: Id Object))
+                (Just (testId "v" :: Id))
             )
         )
     , testCase "Maybe - Nothing"
         (assertEqual ""
             "Nothing"
-            (prettyPrintToString (Nothing :: Maybe (Id Object)))
+            (prettyPrintToString (Nothing :: Maybe Id))
         )
     ]
 
 prettyPrintPattern
-    :: MetaOrObject level
-    => Pattern level Domain.Builtin Variable ParsedPattern
+    :: Pattern Object Domain.Builtin Variable ParsedPattern
     -> String
 prettyPrintPattern = prettyPrintToString

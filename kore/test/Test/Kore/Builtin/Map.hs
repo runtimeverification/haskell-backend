@@ -62,11 +62,7 @@ genConcreteMap genElement =
 genMapPattern :: Gen (TermLike Variable)
 genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
 
-genMapSortedVariable
-    :: MetaOrObject level
-    => Sort level
-    -> Gen a
-    -> Gen (Map (Variable level) a)
+genMapSortedVariable :: Sort -> Gen a -> Gen (Map (Variable) a)
 genMapSortedVariable sort genElement =
     Gen.map
         (Range.linear 0 32)
@@ -509,7 +505,7 @@ asInternal = Map.asInternal testMetadataTools mapSort
 
 -- * Constructors
 
-mkIntVar :: Id Object -> TermLike Variable
+mkIntVar :: Id -> TermLike Variable
 mkIntVar variableName =
     mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
 

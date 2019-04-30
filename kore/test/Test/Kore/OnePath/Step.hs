@@ -20,8 +20,6 @@ import           Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Common
-                 ( Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -48,6 +46,8 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
+                 ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -395,10 +395,9 @@ test_onePathStrategy =
             Mock.smtDeclarations
 
 simpleRewrite
-    :: MetaOrObject level
-    => TermLike Variable
+    :: TermLike Variable
     -> TermLike Variable
-    -> RewriteRule level Variable
+    -> RewriteRule Object Variable
 simpleRewrite left right =
     RewriteRule RulePattern
         { left = left
@@ -409,11 +408,10 @@ simpleRewrite left right =
         }
 
 rewriteWithPredicate
-    :: MetaOrObject level
-    => TermLike Variable
+    :: TermLike Variable
     -> TermLike Variable
     -> Syntax.Predicate Variable
-    -> RewriteRule level Variable
+    -> RewriteRule Object Variable
 rewriteWithPredicate left right predicate =
     RewriteRule RulePattern
         { left = left
@@ -424,8 +422,7 @@ rewriteWithPredicate left right predicate =
         }
 
 runSteps
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     ->  (  ExecutionGraph (CommonStrategyPattern Object)
         -> Maybe (ExecutionGraph b)
@@ -436,7 +433,7 @@ runSteps
     -> [Strategy
         (Prim
             (Pattern Object Variable)
-            (RewriteRule level Variable)
+            (RewriteRule Object Variable)
         )
        ]
     -> IO a
@@ -458,16 +455,15 @@ runSteps metadataTools graphFilter picker configuration strategy =
     simplifier = Simplifier.create metadataTools Map.empty
 
 runOnePathSteps
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
     -> Pattern Object Variable
     -- ^left-hand-side of unification
     -> TermLike Variable
-    -> [RewriteRule level Variable]
-    -> [RewriteRule level Variable]
-    -> IO [CommonStrategyPattern level]
+    -> [RewriteRule Object Variable]
+    -> [RewriteRule Object Variable]
+    -> IO [CommonStrategyPattern Object]
 runOnePathSteps
     metadataTools
     stepLimit

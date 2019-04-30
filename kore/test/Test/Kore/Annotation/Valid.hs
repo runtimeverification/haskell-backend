@@ -5,9 +5,6 @@ import Hedgehog
 import Control.Comonad
 
 import           Kore.Annotation.Valid
-                 ( Valid (..) )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Variables.Free as Variables.Free
 
 import Test.Kore
@@ -16,6 +13,6 @@ import Test.Kore
 -- variables as 'Variables.Free.freePureVariables'.
 hprop_freeVariables :: Property
 hprop_freeVariables = property $ do
-    termLike <- forAll (termLikeGen @Object)
+    termLike <- forAll termLikeGen
     let Valid { freeVariables } = extract termLike
     freeVariables === Variables.Free.freePureVariables termLike

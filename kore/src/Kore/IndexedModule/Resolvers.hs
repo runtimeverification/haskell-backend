@@ -31,8 +31,6 @@ import           Data.Functor
                  ( ($>) )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import           Data.Proxy
-                 ( Proxy (..) )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -59,42 +57,33 @@ import           Kore.IndexedModule.IndexedModule
                  indexedModulesInScope )
 
 symbolSentencesMap
-    :: MetaOrObject level
-    => a level
-    -> IndexedModule sortParam patternType declAtts axiomAtts
-    -> Map.Map
-        (Id level)
-        (declAtts, SentenceSymbol level patternType)
-symbolSentencesMap _ m = indexedModuleSymbolSentences m
+    :: IndexedModule sortParam patternType declAtts axiomAtts
+    -> Map.Map Id (declAtts, SentenceSymbol Object patternType)
+symbolSentencesMap = indexedModuleSymbolSentences
 
 aliasSentencesMap
-    :: MetaOrObject level
-    => a level
-    -> IndexedModule sortParam patternType declAtts axiomAtts
-    -> Map.Map (Id level) (declAtts, SentenceAlias level patternType)
-aliasSentencesMap _ m = indexedModuleAliasSentences m
+    :: IndexedModule sortParam patternType declAtts axiomAtts
+    -> Map.Map Id (declAtts, SentenceAlias Object patternType)
+aliasSentencesMap = indexedModuleAliasSentences
 
 sortSentencesMap
-    :: MetaOrObject level
-    => a level
-    -> IndexedModule sortParam patternType declAtts axiomAtts
-    -> Map.Map (Id level) (Attribute.Sort, SentenceSort level patternType)
-sortSentencesMap _ m = indexedModuleSortDescriptions m
+    :: IndexedModule sortParam patternType declAtts axiomAtts
+    -> Map.Map Id (Attribute.Sort, SentenceSort Object patternType)
+sortSentencesMap = indexedModuleSortDescriptions
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
 -- 'SentenceAlias', and instantiates sort parameters with the arguments
 -- specified by the head to obtain the corresponding 'ApplicationSorts'.
 getHeadApplicationSorts
-    :: MetaOrObject level
-    => IndexedModule sortParam patternType declAtts axiomAtts
+    :: IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ Module representing an indexed definition
-    -> SymbolOrAlias level     -- ^the head we want to find sorts for
-    -> ApplicationSorts level
+    -> SymbolOrAlias     -- ^the head we want to find sorts for
+    -> ApplicationSorts Object
 getHeadApplicationSorts m patternHead =
     applyToHeadSentence sentenceSorts m patternHead
   where
     sentenceSorts :: SentenceSymbolOrAlias ssoa
-                  => [Sort level] -> ssoa level pat -> ApplicationSorts level
+                  => [Sort] -> ssoa Object pat -> ApplicationSorts Object
     sentenceSorts sortParameters sentence =
         assertRight $ symbolOrAliasSorts sortParameters sentence
 
@@ -102,10 +91,9 @@ getHeadApplicationSorts m patternHead =
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
 -- 'SentenceAlias', and returns its attributes.
 getHeadAttributes
-    :: MetaOrObject level
-    => IndexedModule sortParam patternType declAtts axiomAtts
+    :: IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ module representing an indexed definition
-    -> SymbolOrAlias level     -- ^the head we want to find sorts for
+    -> SymbolOrAlias     -- ^the head we want to find sorts for
     -> declAtts
 getHeadAttributes m patternHead =
     applyToAttributes id m patternHead
@@ -117,10 +105,10 @@ data HeadType
 
 -- |Given a KoreIndexedModule and a head, retrieves the head type.
 getHeadType
-    :: (HasCallStack, MetaOrObject level)
+    :: HasCallStack
     => IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ Module representing an indexed definition
-    -> SymbolOrAlias level     -- ^the head we want to find sorts for
+    -> SymbolOrAlias     -- ^the head we want to find sorts for
     -> HeadType
 getHeadType m patternHead =
     case symbol <> alias of
@@ -133,9 +121,9 @@ getHeadType m patternHead =
 
 
 getSortAttributes
-    :: (HasCallStack, MetaOrObject level)
+    :: HasCallStack
     => IndexedModule sortParam patternType declAtts axiomAtts
-    -> Sort level
+    -> Sort
     -> Attribute.Sort
 getSortAttributes m (SortActualSort (SortActual sortId _)) =
   case resolveSort m sortId of
@@ -149,11 +137,11 @@ imported modules.
 -}
 resolveThing
     ::  (  IndexedModule sortParam patternType declAtts axiomAtts
-        -> Map.Map (Id level) result
+        -> Map.Map Id result
         )
     -- ^ extracts the map into which to look up the id
     -> IndexedModule sortParam patternType declAtts axiomAtts
-    -> Id level
+    -> Id
     -> Maybe result
 resolveThing
     mapExtractor
@@ -168,10 +156,10 @@ resolveThing
 resolveThingInternal
     :: (Maybe result, Set.Set ModuleName)
     ->  (  IndexedModule sortParam patternType declAtts axiomAtts
-        -> Map.Map (Id level) result
+        -> Map.Map Id result
         )
     -> IndexedModule sortParam patternType declAtts axiomAtts
-    -> Id level
+    -> Id
     -> (Maybe result, Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
@@ -203,12 +191,12 @@ resolveThingInternal
 also searching in the imported modules.
 -}
 resolveSymbol
-    :: (MetaOrObject level, MonadError (Error e) m)
+    :: MonadError (Error e) m
     => IndexedModule sortParam patternType declAtts axiomAtts
-    -> Id level
-    -> m (declAtts, SentenceSymbol level patternType)
+    -> Id
+    -> m (declAtts, SentenceSymbol Object patternType)
 resolveSymbol m headId =
-    case resolveThing (symbolSentencesMap (Proxy :: Proxy level)) m headId of
+    case resolveThing symbolSentencesMap m headId of
         Nothing ->
             koreFailWithLocations [headId] (noSymbol headId)
         Just result ->
@@ -218,12 +206,12 @@ resolveSymbol m headId =
 also searching in the imported modules.
 -}
 resolveAlias
-    :: (MetaOrObject level, MonadError (Error e) m)
+    :: MonadError (Error e) m
     => IndexedModule param pat declAtts axiomAtts
-    -> Id level
-    -> m (declAtts, SentenceAlias level pat)
+    -> Id
+    -> m (declAtts, SentenceAlias Object pat)
 resolveAlias m headId =
-    case resolveThing (aliasSentencesMap (Proxy :: Proxy level)) m headId of
+    case resolveThing aliasSentencesMap m headId of
         Nothing ->
             koreFailWithLocations [headId] (noAlias headId)
         Just result ->
@@ -235,12 +223,12 @@ resolveAlias m headId =
 also searching in the imported modules.
 -}
 resolveSort
-    :: (MetaOrObject level, MonadError (Error e) m)
+    :: MonadError (Error e) m
     => IndexedModule sortParam patternType declAtts axiomAtts
-    -> Id level
-    -> m (Attribute.Sort, SentenceSort level patternType)
+    -> Id
+    -> m (Attribute.Sort, SentenceSort Object patternType)
 resolveSort m sortId =
-    case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
+    case resolveThing sortSentencesMap m sortId of
         Nothing ->
             koreFailWithLocations [sortId] $ noSort sortId
         Just sortDescription ->
@@ -249,8 +237,8 @@ resolveSort m sortId =
 resolveHook
     :: IndexedModule sortParam patternType declAtts axiomAtts
     -> Text
-    -> Sort Object
-    -> Either (Error e) (Id Object)
+    -> Sort
+    -> Either (Error e) Id
 resolveHook indexedModule builtinName builtinSort =
     resolveHookHandler builtinName
     $ Set.filter relevant
@@ -261,8 +249,8 @@ resolveHook indexedModule builtinName builtinSort =
 
 involvesSort
     :: IndexedModule sortParam patternType declAtts axiomAtts
-    -> Sort Object
-    -> SymbolOrAlias Object
+    -> Sort
+    -> SymbolOrAlias
     -> Bool
 involvesSort indexedModule builtinSort sym =
     elem builtinSort $
@@ -271,8 +259,8 @@ involvesSort indexedModule builtinSort sym =
 
 resolveHookHandler
     :: Text
-    -> Set (Id Object)
-    -> Either (Error e) (Id Object)
+    -> Set Id
+    -> Either (Error e) Id
 resolveHookHandler builtinName results =
     case Set.toList results of
         [hookId] -> return hookId
@@ -292,7 +280,7 @@ resolveHookHandler builtinName results =
 resolveHooks
     :: IndexedModule sortParam patternType declAtts axiomAtts
     -> Text
-    -> Set (Id Object)
+    -> Set Id
 resolveHooks indexedModule builtinName =
     foldMap resolveHooks1 allHooks
   where
@@ -306,12 +294,11 @@ resolveHooks indexedModule builtinName =
 
  -}
 findIndexedSort
-    :: MetaOrObject level
-    => IndexedModule sortParam patternType declAtts axiomAtts
+    :: IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ indexed module
-    -> Id level
+    -> Id
     -- ^ sort identifier
-    -> Either (Error e) (SentenceSort level patternType)
+    -> Either (Error e) (SentenceSort Object patternType)
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)
 
@@ -322,13 +309,12 @@ findIndexedSort indexedModule sort =
 -- the fully type annotation is required even there, and that makes
 -- for too much clutter.
 applyToHeadSentence
-    :: (MetaOrObject level)
-    => (forall ssoa .  SentenceSymbolOrAlias ssoa
-       => [Sort level]
-       -> ssoa level pat
+    :: (forall ssoa .  SentenceSymbolOrAlias ssoa
+       => [Sort]
+       -> ssoa Object pat
        -> result)
     -> IndexedModule param pat declAtts axiomAtts
-    -> SymbolOrAlias level
+    -> SymbolOrAlias
     -> result
 applyToHeadSentence f =
      applyToResolution (\ params (_, sentence) -> f params sentence)
@@ -337,24 +323,23 @@ applyToHeadSentence f =
 -- the fully type annotation is required even there, and that makes
 -- for too much clutter.
 applyToAttributes
-    :: MetaOrObject level
-    => (declAtts -> result)
+    :: (declAtts -> result)
     -> IndexedModule sortParam patternType declAtts axiomAtts
     -- ^ module representing an indexed definition
-    -> SymbolOrAlias level     -- ^the head we want to find sorts for
+    -> SymbolOrAlias     -- ^the head we want to find sorts for
     -> result
 applyToAttributes f =
     applyToResolution (\ _ (attrs, _) -> f attrs)
 
 
 applyToResolution
-    :: (HasCallStack, MetaOrObject level)
+    :: HasCallStack
     => (forall ssoa .  SentenceSymbolOrAlias ssoa
-        => [Sort level]
-        -> (declAtts, ssoa level pat)
+        => [Sort]
+        -> (declAtts, ssoa Object pat)
         -> result)
     -> IndexedModule param pat declAtts axiomAtts
-    -> SymbolOrAlias level
+    -> SymbolOrAlias
     -> result
 applyToResolution f m patternHead =
     case symbolResult <> aliasResult of

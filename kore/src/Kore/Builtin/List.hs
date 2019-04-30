@@ -176,9 +176,9 @@ expectBuiltinList ctx =
             empty
 
 returnList
-    :: (Monad m, Ord (variable Object))
+    :: (Monad m, Ord variable)
     => SmtMetadataTools StepperAttributes
-    -> Sort Object
+    -> Sort
     -> Builtin variable
     -> m (AttemptedAxiom Object variable)
 returnList tools builtinListSort builtinListChild =
@@ -200,10 +200,10 @@ evalGet =
     Builtin.functionEvaluator evalGet0
   where
     evalGet0
-        :: Ord (variable Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
-        -> Sort Object
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
     evalGet0 _ _ _ = \arguments ->
@@ -248,10 +248,10 @@ evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0
-        :: Ord (variable Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier Object
-        -> Sort Object
+        -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
     evalConcat0 tools _ resultSort = \arguments ->
@@ -299,7 +299,7 @@ builtinFunctions =
 
  -}
 asTermLike
-    :: Ord (variable Object)
+    :: Ord variable
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
@@ -319,9 +319,9 @@ asTermLike builtin =
 {- | Render a 'Seq' as an expanded internal list pattern.
  -}
 asInternal
-    :: Ord (variable Object)
+    :: Ord variable
     => SmtMetadataTools attrs
-    -> Sort Object
+    -> Sort
     -> Builtin variable
     -> TermLike variable
 asInternal tools builtinListSort builtinListChild =
@@ -345,10 +345,10 @@ See also: 'asPattern'
 
  -}
 asPattern
-    ::  ( Ord (variable Object)
+    ::  ( Ord variable
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => Sort Object
+    => Sort
     -> Builtin variable
     -> Pattern Object variable
 asPattern resultSort =
@@ -360,16 +360,16 @@ asPattern resultSort =
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
 lookupSymbolGet
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolGet = Builtin.lookupSymbol getKey
 
 {- | Check if the given symbol is hooked to @LIST.concat@.
 -}
 isSymbolConcat
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
@@ -377,7 +377,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
 -}
 isSymbolElement
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
@@ -385,7 +385,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
@@ -399,24 +399,20 @@ isSymbolUnit = Builtin.isSymbol unitKey
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable unifier unifierM p expanded proof.
-        ( OrdMetaOrObject variable
-        , ShowMetaOrObject variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+    :: forall variable unifier unifierM p expanded proof.
+        ( Show variable
+        , Unparse variable
         , SortedVariable variable
-        , MetaOrObject level
         , FreshVariable variable
         , p ~ TermLike variable
-        , expanded ~ Pattern level variable
-        , proof ~ SimplificationProof level
+        , expanded ~ Pattern Object variable
+        , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
+    -> PredicateSimplifier Object
     -> (p -> p -> unifier (expanded, proof))
     -> p
     -> p
@@ -435,8 +431,8 @@ unifyEquals
 
     propagatePredicates
         :: Traversable t
-        => t (Conditional level variable a)
-        -> Conditional level variable (t a)
+        => t (Conditional Object variable a)
+        -> Conditional Object variable (t a)
     propagatePredicates = sequenceA
 
     discardProofs :: Seq (expanded, proof) -> Seq expanded
@@ -482,8 +478,7 @@ unifyEquals
             _ -> empty
 
     unifyEqualsConcrete
-        :: (level ~ Object)
-        => Domain.InternalList p
+        :: Domain.InternalList p
         -> Domain.InternalList p
         -> unifier (expanded, proof)
     unifyEqualsConcrete builtin1 builtin2
@@ -503,8 +498,7 @@ unifyEquals
         Domain.InternalList { builtinListChild = list2 } = builtin2
 
     unifyEqualsFramedRight
-        :: (level ~ Object)
-        => Domain.InternalList p
+        :: Domain.InternalList p
         -> Domain.InternalList p
         -> p
         -> unifier (expanded, proof)
@@ -536,8 +530,7 @@ unifyEquals
         listSuffix1 = asInternal tools builtinListSort suffix1
 
     unifyEqualsFramedLeft
-        :: level ~ Object
-        => Domain.InternalList p
+        :: Domain.InternalList p
         -> p
         -> Domain.InternalList p
         -> unifier (expanded, proof)

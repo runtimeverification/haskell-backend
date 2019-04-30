@@ -5,8 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Common
-                 ( Variable )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Valid
@@ -16,6 +14,8 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
+                 ( Variable )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock

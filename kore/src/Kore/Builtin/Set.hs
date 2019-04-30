@@ -204,9 +204,9 @@ expectBuiltinSet ctx tools _set =
                 empty
 
 returnSet
-    :: (Monad m, Ord (variable Object))
+    :: (Monad m, Ord variable)
     => SmtMetadataTools attrs
-    -> Sort Object
+    -> Sort
     -> Builtin
     -> m (AttemptedAxiom Object variable)
 returnSet tools resultSort set =
@@ -374,9 +374,9 @@ pattern.
 
  -}
 asInternal
-    :: Ord (variable Object)
+    :: Ord variable
     => SmtMetadataTools attrs
-    -> Sort Object
+    -> Sort
     -> Builtin
     -> TermLike variable
 asInternal tools builtinSetSort builtinSetChild =
@@ -397,7 +397,7 @@ asInternal tools builtinSetSort builtinSetChild =
 {- | Render an 'Domain.InternalSet' as a 'TermLike' domain value.
  -}
 asTermLike
-    :: Ord (variable Object)
+    :: Ord variable
     => Domain.InternalSet
     -> TermLike variable
 asTermLike builtin =
@@ -420,10 +420,10 @@ asTermLike builtin =
 
  -}
 asPattern
-    ::  ( Ord (variable Object)
+    ::  ( Ord variable
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => Sort Object
+    => Sort
     -> Builtin
     -> Pattern Object variable
 asPattern resultSort =
@@ -456,24 +456,24 @@ sizeKey = "SET.size"
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
 lookupSymbolIn
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolIn = Builtin.lookupSymbol inKey
 
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
  -}
 lookupSymbolDifference
-    :: Sort Object
+    :: Sort
     -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) (SymbolOrAlias Object)
+    -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
 {- | Check if the given symbol is hooked to @SET.concat@.
  -}
 isSymbolConcat
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
@@ -481,7 +481,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
  -}
 isSymbolElement
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
@@ -489,7 +489,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> Bool
 isSymbolUnit = Builtin.isSymbol "SET.unit"
 
@@ -503,24 +503,23 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
     reject the definition.
  -}
 unifyEquals
-    :: forall level variable unifier unifierM p expanded proof.
-        ( OrdMetaOrObject variable, ShowMetaOrObject variable
-        , SortedVariable variable
-        , Unparse (variable level)
-        , MetaOrObject level
+    :: forall variable unifier unifierM p expanded proof.
+        ( SortedVariable variable
+        , Unparse variable
+        , Show variable
         , FreshVariable variable
         , p ~ TermLike variable
-        , expanded ~ Pattern level variable
-        , proof ~ SimplificationProof level
+        , expanded ~ Pattern Object variable
+        , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> (p -> p -> unifier (expanded, proof))
     -> p
@@ -541,11 +540,11 @@ unifyEquals
     hookTools = StepperAttributes.hook <$> tools
 
     -- | Given a collection 't' of 'Conditional' values, propagate all the
-    -- predicates to the top level, returning a 'Conditional' collection.
+    -- predicates to the top Object, returning a 'Conditional' collection.
     propagatePredicates
-        :: (level ~ Object, Traversable t)
-        => t (Conditional level variable a)
-        -> Conditional level variable (t a)
+        :: Traversable t
+        => t (Conditional Object variable a)
+        -> Conditional Object variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
@@ -605,7 +604,7 @@ unifyEquals
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
             :: Domain.InternalSet          -- ^ concrete set
-            -> SymbolOrAlias Object        -- ^ 'element' symbol
+            -> SymbolOrAlias        -- ^ 'element' symbol
             -> p                           -- ^ key
             -> TermLike variable -- ^ framing variable
             -> unifier (expanded, proof)
@@ -643,7 +642,7 @@ unifyEquals
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
-        :: level ~ Object
+        :: Object ~ Object
         => Domain.InternalSet
         -> Domain.InternalSet
         -> unifier (expanded, proof)
@@ -661,8 +660,7 @@ unifyEquals
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
-        :: (level ~ Object, k ~ TermLike Concrete)
-        => Domain.InternalSet  -- ^ concrete set
+        :: Domain.InternalSet  -- ^ concrete set
         -> Domain.InternalSet -- ^ framed concrete set
         -> TermLike variable  -- ^ framing variable
         -> unifier (expanded, proof)
@@ -686,9 +684,8 @@ unifyEquals
         Domain.InternalSet { builtinSetChild = set2 } = builtin2
 
     unifyEqualsElement
-        :: level ~ Object
-        => Domain.InternalSet  -- ^ concrete set
-        -> SymbolOrAlias level  -- ^ 'element' symbol
+        :: Domain.InternalSet  -- ^ concrete set
+        -> SymbolOrAlias  -- ^ 'element' symbol
         -> p  -- ^ key
         -> unifier (expanded, proof)
     unifyEqualsElement builtin1 element' key2 =
@@ -722,10 +719,10 @@ unifyEquals
 -- we choose to throw an error here.
 errorIfIncompletelyUnified
     ::  ( Monad m
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
         , SortedVariable variable
-        , Unparse (variable Object)
+        , Unparse variable
         , HasCallStack
         )
     => TermLike variable

@@ -22,8 +22,6 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Common
-                 ( SortedVariable (..) )
 import qualified Kore.AST.Pure as AST
 import           Kore.AST.Sentence
 import           Kore.AST.Valid hiding
@@ -65,7 +63,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
 applyInj
-    :: Sort Object
+    :: Sort
     -> TermLike Variable
     -> TermLike Variable
 applyInj sortTo pat =
@@ -73,7 +71,7 @@ applyInj sortTo pat =
   where
     sortFrom = getSort pat
 
-s1, s2, s3, s4 :: Sort Object
+s1, s2, s3, s4 :: Sort
 s1 = simpleSort (SortName "s1")
 s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
@@ -160,10 +158,10 @@ x = mkVar Variable { variableName = testId "x", variableCounter = mempty, variab
 xs2 :: TermLike Variable
 xs2 = mkVar Variable { variableName = testId "xs2", variableCounter = mempty, variableSort = s2 }
 
-sortParam :: Text -> SortVariable level
+sortParam :: Text -> SortVariable
 sortParam name = SortVariable (testId name)
 
-sortParamSort :: Text -> Sort level
+sortParamSort :: Text -> Sort
 sortParamSort = SortVariableSort . sortParam
 
 injName :: Text
@@ -177,10 +175,10 @@ symbolInj =
         [sortParamSort "From"]
         (sortParamSort "To")
 
-isInjHead :: SymbolOrAlias level -> Bool
+isInjHead :: SymbolOrAlias -> Bool
 isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
 
-mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
+mockStepperAttributes :: SymbolOrAlias -> StepperAttributes
 mockStepperAttributes patternHead =
     defaultSymbolAttributes
         { constructor = Constructor { isConstructor }
@@ -218,9 +216,8 @@ tools = MetadataTools
     }
 
 unificationProblem
-    :: MetaOrObject level
-    => UnificationTerm level
-    -> UnificationTerm level
+    :: UnificationTerm Object
+    -> UnificationTerm Object
     -> TermLike Variable
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     mkAnd term1 term2
@@ -229,7 +226,7 @@ type Substitution = [(Text, TermLike Variable)]
 
 unificationSubstitution
     :: Substitution
-    -> [ (Variable Object, TermLike Variable) ]
+    -> [ (Variable, TermLike Variable) ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
@@ -250,8 +247,7 @@ unificationResult (UnificationResultTerm term) sub predicate =
         }
 
 newtype UnificationTerm level = UnificationTerm (TermLike Variable)
-newtype UnificationResultTerm level =
-    UnificationResultTerm (TermLike Variable)
+newtype UnificationResultTerm level = UnificationResultTerm (TermLike Variable)
 
 andSimplifySuccess
     :: HasCallStack
@@ -365,7 +361,7 @@ unificationProcedureSuccess
         let
             normalize
                 :: Predicate Object Variable
-                ->  ( [ (Variable Object, TermLike Variable) ]
+                ->  ( [ (Variable, TermLike Variable) ]
                     , Syntax.Predicate Variable
                     )
             normalize Conditional { substitution, predicate } =
@@ -613,10 +609,10 @@ test_unsupportedConstructs =
             (UnificationTerm (applySymbol_ f [mkImplies aA (mkNext a1A)]))
             UnsupportedPatterns
 
-newtype V level = V Integer
+newtype V = V Integer
     deriving (Show, Eq, Ord)
 
-newtype W level = W String
+newtype W = W String
     deriving (Show, Eq, Ord)
 
 instance SortedVariable V where
@@ -629,18 +625,15 @@ instance SortedVariable W where
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
 
-instance EqualWithExplanation (V level)
-  where
+instance EqualWithExplanation V where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (W level)
-  where
+instance EqualWithExplanation W where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-
-showVar :: V level -> W level
+showVar :: V -> W
 showVar (V i) = W (show i)
 
 var' :: Integer -> TermLike V
@@ -649,7 +642,7 @@ var' i = mkVar (V i)
 war' :: String -> TermLike W
 war' s = mkVar (W s)
 
-sortVar :: Sort level
+sortVar :: Sort
 sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
 
 injUnificationTests :: [TestTree]

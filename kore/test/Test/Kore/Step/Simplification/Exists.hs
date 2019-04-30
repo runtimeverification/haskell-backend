@@ -262,8 +262,8 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 makeExists
-    :: Ord (variable Object)
-    => variable Object
+    :: Ord variable
+    => variable
     -> [Pattern Object variable]
     -> Exists Object variable (OrPattern Object variable)
 makeExists variable patterns =
@@ -273,17 +273,12 @@ makeExists variable patterns =
         , existsChild = OrPattern.fromPatterns patterns
         }
 
-testSort :: Sort Object
-testSort =
-    SortActualSort SortActual
-        { sortActualName  = Id "testSort" AstLocationTest
-        , sortActualSorts = []
-        }
+testSort :: Sort
+testSort = Mock.testSort
 
 simplify
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> Exists level Variable (OrPattern Object Variable)
+    :: SmtMetadataTools StepperAttributes
+    -> Exists Object Variable (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 simplify tools exists =
     (<$>) fst
@@ -297,9 +292,8 @@ simplify tools exists =
         exists
 
 makeEvaluate
-    :: MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> Variable level
+    :: SmtMetadataTools StepperAttributes
+    -> Variable
     -> Pattern Object Variable
     -> IO (OrPattern Object Variable)
 makeEvaluate tools variable child =

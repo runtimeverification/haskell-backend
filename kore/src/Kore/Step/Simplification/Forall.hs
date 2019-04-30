@@ -46,9 +46,9 @@ the pattern except for the top/bottom cases.
 -}
 simplify
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Forall Object variable (OrPattern Object variable)
     ->  ( OrPattern Object variable
@@ -66,7 +66,7 @@ take an argument of type
 
 > CofreeF (Forall Object) (Valid Object) (OrPattern Object variable)
 
-instead of a 'variable Object' and an 'OrPattern' argument. The type of
+instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
@@ -74,11 +74,11 @@ more useful to carry around.
 -}
 simplifyEvaluated
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => variable Object
+    => variable
     -> OrPattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated variable simplified
@@ -99,11 +99,11 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluate
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => variable Object
+    => variable
     -> Pattern Object variable
     -> (Pattern Object variable, SimplificationProof Object)
 makeEvaluate variable patt

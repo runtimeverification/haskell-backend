@@ -113,8 +113,7 @@ mockMetadataTools =
     Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
 evaluate
-    :: (MetaOrObject Object)
-    => SmtMetadataTools attrs
+    :: SmtMetadataTools attrs
     -> Domain.Builtin (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate tools domainValue =

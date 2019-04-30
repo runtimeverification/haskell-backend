@@ -6,6 +6,8 @@ module Kore.Variables.Fresh
     ( FreshVariable (..)
     , refreshVariables
     , nextVariable
+    -- * Re-exports
+    , module Kore.Syntax.Variable
     ) where
 
 import qualified Data.Foldable as Foldable
@@ -17,14 +19,12 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import Data.Sup
-import Kore.AST.Common
-       ( Variable (..), illegalVariableCounter )
-import Kore.AST.Identifier
-import Kore.AST.MetaOrObject
+import Kore.Syntax.Id
+import Kore.Syntax.Variable
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
-class Ord (variable Object) => FreshVariable variable where
+class Ord variable => FreshVariable variable where
     {- | Refresh a variable, renaming it avoid the given set.
 
     If the given variable occurs in the set, @refreshVariable@ must return
@@ -34,9 +34,9 @@ class Ord (variable Object) => FreshVariable variable where
 
      -}
     refreshVariable
-        :: Set (variable Object)  -- ^ variables to avoid
-        -> variable Object        -- ^ variable to rename
-        -> Maybe (variable Object)
+        :: Set variable  -- ^ variables to avoid
+        -> variable        -- ^ variable to rename
+        -> Maybe variable
 
 instance FreshVariable Variable where
     refreshVariable avoiding variable = do
@@ -68,9 +68,9 @@ with 'Kore.AST.Valid.mkVar':
  -}
 refreshVariables
     :: FreshVariable variable
-    => Set (variable Object)  -- ^ variables to avoid
-    -> Set (variable Object)  -- ^ variables to rename
-    -> Map (variable Object) (variable Object)
+    => Set variable  -- ^ variables to avoid
+    -> Set variable  -- ^ variables to rename
+    -> Map variable variable
 refreshVariables avoid0 =
     snd <$> Foldable.foldl' refreshVariablesWorker (avoid0, Map.empty)
   where
@@ -91,7 +91,7 @@ refreshVariables avoid0 =
 
 {- | Increase the 'variableCounter' of a 'Variable'
  -}
-nextVariable :: Variable level -> Variable level
+nextVariable :: Variable -> Variable
 nextVariable variable@Variable { variableName, variableCounter } =
     variable
         { variableName = variableName'

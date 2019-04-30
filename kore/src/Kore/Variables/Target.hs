@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.Common
+import Kore.Syntax.Variable
        ( SortedVariable (..) )
 import Kore.Unparser
        ( Unparse (..) )
@@ -33,28 +33,28 @@ unification procedure prefers to generate substitutions for 'Target' variables
 instead of 'NonTarget' variables.
 
  -}
-data Target variable level
-    = Target !(variable level)
-    | NonTarget !(variable level)
+data Target variable
+    = Target !variable
+    | NonTarget !variable
     deriving (Eq, Generic, Show)
 
-instance Ord (variable level) => Ord (Target variable level) where
+instance Ord variable => Ord (Target variable) where
     compare (Target var1) (Target var2) = compare var1 var2
     compare (Target _) (NonTarget _) = LT
     compare (NonTarget var1) (NonTarget var2) = compare var1 var2
     compare (NonTarget _) (Target _) = GT
 
-instance Hashable (variable level) => Hashable (Target variable level)
+instance Hashable variable => Hashable (Target variable)
 
-unwrapVariable :: Target variable level -> variable level
+unwrapVariable :: Target variable -> variable
 unwrapVariable (Target variable) = variable
 unwrapVariable (NonTarget variable) = variable
 
-isTarget :: Target variable level -> Bool
+isTarget :: Target variable -> Bool
 isTarget (Target _) = True
 isTarget (NonTarget _) = False
 
-isNonTarget :: Target variable level -> Bool
+isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
 
 instance
@@ -78,11 +78,10 @@ instance FreshVariable variable => FreshVariable (Target variable) where
                 NonTarget <$> refreshVariable avoiding variable
 
 instance
-    Unparse (variable level) =>
-    Unparse (Target variable level)
+    Unparse variable =>
+    Unparse (Target variable)
   where
     unparse (Target var) = unparse var
     unparse (NonTarget var) = unparse var
     unparse2 (Target var) = unparse2 var
     unparse2 (NonTarget var) = unparse2 var
-

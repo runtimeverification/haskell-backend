@@ -309,9 +309,7 @@ simplificationEvaluator = firstFullEvaluation
 makeEvaluator
     ::  (forall variable
         .   ( FreshVariable variable
-            , OrdMetaOrObject variable
             , SortedVariable variable
-            , ShowMetaOrObject variable
             )
         => [(TermLike variable, TermLike variable)]
         )
@@ -322,9 +320,7 @@ makeEvaluator mapping =
 
 simpleEvaluator
     ::  ( FreshVariable variable
-        , OrdMetaOrObject variable
         , SortedVariable variable
-        , ShowMetaOrObject variable
         )
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
