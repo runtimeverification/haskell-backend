@@ -235,10 +235,10 @@ ceilFloorGen constructor childGen resultSort = do
     constructor resultSort operandSort <$> Gen.small (childGen operandSort)
 
 equalsInGen
-    :: (Sort -> Sort -> child -> child -> c Object child)
+    :: (Sort -> Sort -> child -> child -> c child)
     -> (Sort -> Gen child)
     -> Sort
-    -> Gen (c Object child)
+    -> Gen (c child)
 equalsInGen constructor childGen resultSort = do
     operandSort <- Gen.small sortGen
     constructor resultSort operandSort
@@ -277,7 +277,7 @@ bottomGen = topBottomGen Bottom
 ceilGen :: (Sort -> Gen child) -> Sort -> Gen (Ceil Sort child)
 ceilGen = ceilFloorGen Ceil
 
-equalsGen :: (Sort -> Gen child) -> Sort -> Gen (Equals Object child)
+equalsGen :: (Sort -> Gen child) -> Sort -> Gen (Equals Sort child)
 equalsGen = equalsInGen Equals
 
 genBuiltinExternal :: Sort -> Gen (Domain.Builtin child)

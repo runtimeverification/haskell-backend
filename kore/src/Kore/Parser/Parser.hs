@@ -299,9 +299,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 equalsInRemainderParser
     :: Parser child
-    -> (Sort -> Sort -> child -> child -> m Object child)
+    -> (Sort -> Sort -> child -> child -> m child)
     -- ^ Element constructor.
-    -> Parser (m Object child)
+    -> Parser (m child)
 equalsInRemainderParser childParser constructor = do
     (sort1, sort2) <- curlyPairRemainderParser sortParser
     (child1, child2) <- parenPairParser childParser childParser

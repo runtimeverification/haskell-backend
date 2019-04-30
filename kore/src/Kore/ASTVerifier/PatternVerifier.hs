@@ -461,7 +461,7 @@ verifyFloor
 verifyFloor = verifyPredicate floorOperandSort floorResultSort
 
 verifyEquals
-    ::  ( predicate ~ Equals Object
+    ::  ( predicate ~ Equals Sort
         , valid ~ Valid (Variable) Object
         )
     => predicate (PatternVerifier Verified.Pattern)

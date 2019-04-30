@@ -992,7 +992,7 @@ testSort2 =
 
 evaluateOr
     :: SmtMetadataTools StepperAttributes
-    -> Equals Object (OrPattern Object Variable)
+    -> Equals Sort (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 evaluateOr tools equals =
     (<$>) fst

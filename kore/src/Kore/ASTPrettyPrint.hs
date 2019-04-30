@@ -359,7 +359,7 @@ instance
             , writeFieldNewLine "domainValueChild" domainValueChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Equals level child) where
+instance PrettyPrint child => PrettyPrint (Equals Sort child) where
     prettyPrint _ p@(Equals _ _ _ _) =
         writeStructure
             "Equals"
