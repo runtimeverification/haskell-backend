@@ -322,8 +322,8 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 merge
-    :: [(Variable Object, TermLike Variable)]
-    -> [(Variable Object, TermLike Variable)]
+    :: [(Variable, TermLike Variable)]
+    -> [(Variable, TermLike Variable)]
     -> IO
         (Either
             ( UnificationOrSubstitutionError Object Variable )

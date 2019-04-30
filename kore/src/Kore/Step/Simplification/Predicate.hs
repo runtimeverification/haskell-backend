@@ -18,8 +18,6 @@ import           Data.List
                  ( group )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -35,6 +33,8 @@ import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -61,13 +61,10 @@ result. The result is re-simplified once.
 
 -}
 simplify
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
@@ -130,8 +127,8 @@ simplify
 
 assertDistinctVariables
     :: forall variable m
-    .   ( Show (variable Object)
-        , Eq (variable Object)
+    .   ( Show variable
+        , Eq variable
         , Monad m
         )
     => Substitution variable
@@ -141,12 +138,12 @@ assertDistinctVariables subst =
         [] -> return ()
         (var : _) -> error ("Duplicated variable: " ++ show var)
   where
-    moreThanOne :: [variable Object] -> Bool
+    moreThanOne :: [variable] -> Bool
     moreThanOne [] = False
     moreThanOne [_] = False
     moreThanOne _ = True
 
-    variables :: [variable Object]
+    variables :: [variable]
     variables = Substitution.variables subst
 
 {- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.
@@ -159,18 +156,15 @@ See also: 'simplify'
 -}
 simplifyPartial
     ::  ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier level
-    -> TermLikeSimplifier level
+    => PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -> Syntax.Predicate variable
-    -> BranchT Simplifier (Predicate level variable)
+    -> BranchT Simplifier (Predicate Object variable)
 simplifyPartial
     substitutionSimplifier
     termSimplifier

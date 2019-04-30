@@ -10,8 +10,6 @@ module Kore.ModelChecker.Simplification
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Common
-                 ( Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -31,6 +29,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
+import           Kore.Syntax.Variable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -84,7 +83,7 @@ checkImplicationIsTop
 
 stripForallQuantifiers
     :: TermLike Variable
-    -> (Set.Set (Variable Object), TermLike Variable)
+    -> (Set.Set (Variable), TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

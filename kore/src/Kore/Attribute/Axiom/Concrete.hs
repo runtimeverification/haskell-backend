@@ -13,8 +13,7 @@ module Kore.Attribute.Axiom.Concrete
 
 import qualified Control.Monad as Monad
 
-import Kore.Attribute.Parser as Parser hiding
-       ( Concrete )
+import Kore.Attribute.Parser as Parser
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
@@ -27,11 +26,11 @@ instance Default Concrete where
     def = Concrete False
 
 -- | Kore identifier representing the @concrete@ attribute symbol.
-concreteId :: Id Object
+concreteId :: Id
 concreteId = "concrete"
 
 -- | Kore symbol representing the @concrete@ attribute.
-concreteSymbol :: SymbolOrAlias Object
+concreteSymbol :: SymbolOrAlias
 concreteSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = concreteId

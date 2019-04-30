@@ -18,6 +18,7 @@ import           Kore.Step.Pattern
                  ( Conditional (..) )
 import           Kore.Step.Simplification.StringLiteral
                  ( simplify )
+import           Kore.Syntax.StringLiteral
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -40,10 +41,7 @@ test_stringLiteralSimplification =
         )
     ]
 
-evaluate
-    ::  ( MetaOrObject Meta)
-    => StringLiteral
-    -> OrPattern Object Variable
+evaluate :: StringLiteral -> OrPattern Object Variable
 evaluate stringLiteral =
     case simplify stringLiteral of
         (result, _proof) -> result

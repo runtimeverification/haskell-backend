@@ -139,10 +139,10 @@ the resulting pattern into a particular sort.
 
  -}
 fromPredicate
-    :: ( Unparse (variable Object)
+    :: ( Unparse variable
        , HasCallStack
        )
-    => Sort Object  -- ^ Sort of resulting pattern
+    => Sort  -- ^ Sort of resulting pattern
     -> Predicate variable
     -> TermLike variable
 fromPredicate sort (GenericPredicate p) = forceSort sort p
@@ -169,11 +169,10 @@ isFalse = isBottom
 doing some simplification.
 -}
 makeMultipleAndPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => [Predicate variable]
     -> Predicate variable
@@ -186,11 +185,10 @@ makeMultipleAndPredicate =
 doing some simplification.
 -}
 makeMultipleOrPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => [Predicate variable]
     -> Predicate variable
@@ -205,10 +203,9 @@ simplification.
 makeAndPredicate
     -- TODO(virgil): Group these constraints in a class
     -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Unparse variable
         )
     => Predicate variable
     -> Predicate variable
@@ -226,11 +223,10 @@ makeAndPredicate p@(GenericPredicate first) (GenericPredicate second)
 some simplification.
 -}
 makeOrPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Predicate variable
     -> Predicate variable
@@ -248,11 +244,10 @@ makeOrPredicate p@(GenericPredicate first) (GenericPredicate second)
 implication, doing some simplification.
 -}
 makeImpliesPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Predicate variable
     -> Predicate variable
@@ -268,11 +263,10 @@ makeImpliesPredicate (GenericPredicate first) (GenericPredicate second) =
 some simplification.
 -}
 makeIffPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Predicate variable
     -> Predicate variable
@@ -288,11 +282,10 @@ makeIffPredicate (GenericPredicate first) (GenericPredicate second) =
 simplification.
 -}
 makeNotPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Eq (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Eq variable
+        , Show variable
+        , Unparse variable
         )
     => Predicate variable
     -> Predicate variable
@@ -305,11 +298,10 @@ makeNotPredicate (GenericPredicate predicate) =
 predicate.
 -}
 makeEqualsPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => TermLike variable
     -> TermLike variable
@@ -321,11 +313,10 @@ makeEqualsPredicate first second =
 predicate.
 -}
 makeInPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => TermLike variable
     -> TermLike variable
@@ -337,10 +328,9 @@ makeInPredicate first second =
 predicate.
 -}
 makeCeilPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Show variable
+        , Unparse variable
         )
     => TermLike variable
     -> Predicate variable
@@ -351,10 +341,9 @@ makeCeilPredicate patt =
 predicate.
 -}
 makeFloorPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Show variable
+        , Unparse variable
         )
     => TermLike variable
     -> Predicate variable
@@ -364,13 +353,12 @@ makeFloorPredicate patt =
 {-| Existential quantification for the given variable in the given predicate.
 -}
 makeExistsPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => variable Object
+    => variable
     -> Predicate variable
     -> Predicate variable
 makeExistsPredicate _ p@PredicateFalse = p
@@ -383,11 +371,11 @@ makeExistsPredicate v (GenericPredicate p) =
 makeMultipleExists
     ::  ( Foldable f
         , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => f (variable Object)
+    => f variable
     -> Predicate variable
     -> Predicate variable
 makeMultipleExists vars phi =
@@ -396,13 +384,12 @@ makeMultipleExists vars phi =
 {-| Universal quantification for the given variable in the given predicate.
 -}
 makeForallPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => variable Object
+    => variable
     -> Predicate variable
     -> Predicate variable
 makeForallPredicate _ p@PredicateFalse = p
@@ -412,24 +399,20 @@ makeForallPredicate v (GenericPredicate p) =
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
-makeTruePredicate
-    :: MetaOrObject Object
-    => Predicate variable
+makeTruePredicate :: Predicate variable
 makeTruePredicate = GenericPredicate mkTop_
 
 {-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
 -}
-makeFalsePredicate
-    :: MetaOrObject Object
-    => Predicate variable
+makeFalsePredicate :: Predicate variable
 makeFalsePredicate = GenericPredicate mkBottom_
 
 makePredicate
     :: forall variable e.
         ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => TermLike variable
     -> Either (Error e) (Predicate variable)
@@ -477,32 +460,28 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
 
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
-mapVariables
-    :: Ord (to Object)
-    => (from Object -> to Object)
-    -> Predicate from
-    -> Predicate to
+mapVariables :: Ord to => (from -> to) -> Predicate from -> Predicate to
 mapVariables f = fmap (TermLike.mapVariables f)
 
 {- | Extract the set of all (free and bound) variables from a @Predicate@.
 -}
 allVariables
-    :: Ord (variable Object)
+    :: Ord variable
     => Predicate variable
-    -> Set (variable Object)
+    -> Set variable
 allVariables = pureAllVariables . unwrapPredicate
 
 {- | Extract the set of free variables from a @Predicate@.
 -}
 freeVariables
-    :: (MetaOrObject Object , Ord (variable Object))
+    :: Ord variable
     => Predicate variable
-    -> Set (variable Object)
+    -> Set variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
 hasFreeVariable
-    :: Ord (variable Object)
-    => variable Object
+    :: Ord variable
+    => variable
     -> Predicate variable
     -> Bool
 hasFreeVariable variable =
@@ -515,11 +494,10 @@ returns a conjunction of variable/substitution equalities.
 
 -}
 substitutionToPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Substitution variable
     -> Predicate variable
@@ -529,13 +507,12 @@ substitutionToPredicate =
     . Substitution.unwrap
 
 singleSubstitutionToPredicate
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => (variable Object, TermLike variable)
+    => (variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (mkVar var) patt
@@ -547,11 +524,10 @@ returns a conjunction of variable-substitution equalities.
 
 -}
 fromSubstitution
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Substitution variable
     -> Predicate variable
@@ -565,11 +541,9 @@ contain none of the targeted variables.
  -}
 substitute
     ::  ( FreshVariable variable
-        , MetaOrObject Object
-        , Ord (variable Object)
         , SortedVariable variable
         )
-    => Map (variable Object) (TermLike variable)
+    => Map variable (TermLike variable)
     -> Predicate variable
     -> Predicate variable
 substitute subst (GenericPredicate termLike) =

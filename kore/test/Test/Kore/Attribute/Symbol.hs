@@ -33,7 +33,7 @@ testAttribute =
         Application
             { applicationSymbolOrAlias =
                 SymbolOrAlias
-                    { symbolOrAliasConstructor = "test" :: Id Object
+                    { symbolOrAliasConstructor = "test" :: Id
                     , symbolOrAliasParams = []
                     }
             , applicationChildren = []
@@ -43,7 +43,7 @@ badHookAttribute :: AttributePattern
 badHookAttribute =
     (asAttributePattern . ApplicationPattern)
         Application
-            { applicationSymbolOrAlias = hookSymbol :: SymbolOrAlias Object
+            { applicationSymbolOrAlias = hookSymbol :: SymbolOrAlias
             , applicationChildren = []
             }
 

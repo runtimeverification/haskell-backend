@@ -124,10 +124,9 @@ builtinFunctions =
 
 evalKEq
     ::  ( FreshVariable variable
-        , OrdMetaOrObject variable
         , SortedVariable variable
-        , ShowMetaOrObject variable
-        , Unparse (variable Object)
+        , Unparse variable
+        , Show variable
         )
     => Bool
     -> MetadataTools.SmtMetadataTools StepperAttributes
@@ -137,8 +136,8 @@ evalKEq
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
-        (Application Object)
-        (Valid (variable Object) Object)
+        (Application SymbolOrAlias)
+        (Valid variable Object)
         (TermLike variable)
     -> Simplifier
         ( AttemptedAxiom Object variable
@@ -182,9 +181,7 @@ evalKEq true _ _ _ _ (valid :< app) =
 evalKIte
     ::  forall variable
     .   ( FreshVariable variable
-        , OrdMetaOrObject variable
         , SortedVariable variable
-        , ShowMetaOrObject variable
         )
     => MetadataTools.SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
@@ -192,8 +189,8 @@ evalKIte
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
-        (Application Object)
-        (Valid (variable Object) Object)
+        (Application SymbolOrAlias)
+        (Valid variable Object)
         (TermLike variable)
     -> Simplifier
         ( AttemptedAxiom Object variable

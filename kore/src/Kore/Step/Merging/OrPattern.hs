@@ -10,8 +10,6 @@ module Kore.Step.Merging.OrPattern
 
 import Data.Reflection
 
-import           Kore.AST.Common
-                 ( SortedVariable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -33,6 +31,8 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( PredicateMerger )
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.TopBottom
                  ( TopBottom )
 import           Kore.Unparser
@@ -42,29 +42,26 @@ import           Kore.Variables.Fresh
 to the given OrPattern.
 -}
 mergeWithPredicate
-    ::  ( MetaOrObject level
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate level variable
+    -> Predicate Object variable
     -- ^ Predicate to add.
-    -> OrPattern level variable
+    -> OrPattern Object variable
     -- ^ Pattern to which the condition should be added.
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 mergeWithPredicate
     tools
     substitutionSimplifier
@@ -92,24 +89,20 @@ to re-simplify them.
 -}
 mergeWithPredicateAssumesEvaluated
     ::  ( FreshVariable variable
-        , MetaOrObject level
         , Monad m
         , Ord term
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
+        , Show variable
         , SortedVariable variable
         , TopBottom term
-        , Unparse (variable level)
+        , Unparse variable
         )
-    => PredicateMerger level variable m
-    -> Predicate level variable
+    => PredicateMerger Object variable m
+    -> Predicate Object variable
     -- ^ Predicate to add.
-    -> MultiOr (Conditional level variable term)
+    -> MultiOr (Conditional Object variable term)
     -- ^ Pattern to which the condition should be added.
     -> m
-        (MultiOr (Conditional level variable term), SimplificationProof level)
+        (MultiOr (Conditional Object variable term), SimplificationProof Object)
 mergeWithPredicateAssumesEvaluated
     substitutionMerger
     toMerge

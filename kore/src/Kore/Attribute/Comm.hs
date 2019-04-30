@@ -31,11 +31,11 @@ instance Default Comm where
     def = Comm False
 
 -- | Kore identifier representing the @comm@ attribute symbol.
-commId :: Id Object
+commId :: Id
 commId = "comm"
 
 -- | Kore symbol representing the @comm@ attribute.
-commSymbol :: SymbolOrAlias Object
+commSymbol :: SymbolOrAlias
 commSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = commId

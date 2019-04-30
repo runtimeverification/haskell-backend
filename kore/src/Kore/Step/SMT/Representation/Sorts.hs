@@ -18,16 +18,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (SymbolOrAlias), Variable (Variable) )
-import           Kore.AST.Common as SymbolOrAlias
-                 ( SymbolOrAlias (..) )
-import qualified Kore.AST.Common as Variable
-                 ( Variable (..) )
-import           Kore.AST.Identifier
-                 ( Id )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
                  ( SentenceAxiom (SentenceAxiom), SentenceSort (SentenceSort) )
 import qualified Kore.AST.Sentence as SentenceSort
@@ -65,6 +55,15 @@ import qualified Kore.Sort as SortActual
 import qualified Kore.Step.SMT.AST as AST
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (SymbolOrAlias) )
+import           Kore.Syntax.Application as SymbolOrAlias
+                 ( SymbolOrAlias (..) )
+import           Kore.Syntax.Id
+                 ( Id )
+import           Kore.Syntax.Variable
+                 ( Variable (Variable) )
+import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified
@@ -85,8 +84,8 @@ import qualified SMT as SMT.Constructor
 
 
 translateSort
-    :: Map.Map (Id Object) AST.SmtSort
-    -> Sort Object
+    :: Map.Map Id AST.SmtSort
+    -> Sort
     -> Maybe SMT.SExpr
 translateSort
     sorts
@@ -114,7 +113,7 @@ buildRepresentations indexedModule =
         listToDeclarations simpleSortDeclarations
   where
     listToDeclarations
-        :: [(Id Object, AST.UnresolvedSort)] -> AST.UnresolvedDeclarations
+        :: [(Id, AST.UnresolvedSort)] -> AST.UnresolvedDeclarations
     listToDeclarations list =
         AST.Declarations
             { sorts = Map.fromList list
@@ -127,14 +126,14 @@ buildRepresentations indexedModule =
         `AST.mergePreferFirst`
             listToDeclarations smtlibSortDeclarations
 
-    builtinAndSmtLibSorts :: Set.Set (Id Object)
+    builtinAndSmtLibSorts :: Set.Set Id
     builtinAndSmtLibSorts = Map.keysSet sorts
       where
         AST.Declarations {sorts} = builtinAndSmtLibDeclarations
 
     parseNoJunkAxioms
-        :: Set.Set (Id Object)
-        -> [(Id Object, AST.UnresolvedSort)]
+        :: Set.Set Id
+        -> [(Id, AST.UnresolvedSort)]
     parseNoJunkAxioms blacklist =
         filter
             (not . (`Set.member` blacklist) . fst)
@@ -143,15 +142,15 @@ buildRepresentations indexedModule =
                 (recursiveIndexedModuleAxioms indexedModule)
             )
 
-    builtinSortDeclarations :: [(Id Object, AST.UnresolvedSort)]
+    builtinSortDeclarations :: [(Id, AST.UnresolvedSort)]
     builtinSortDeclarations =
         extractDefinitionsFromSentences builtinSortDeclaration
 
-    smtlibSortDeclarations :: [(Id Object, AST.UnresolvedSort)]
+    smtlibSortDeclarations :: [(Id, AST.UnresolvedSort)]
     smtlibSortDeclarations =
         extractDefinitionsFromSentences smtlibSortDeclaration
 
-    simpleSortDeclarations :: [(Id Object, AST.UnresolvedSort)]
+    simpleSortDeclarations :: [(Id, AST.UnresolvedSort)]
     simpleSortDeclarations =
         extractDefinitionsFromSentences simpleSortDeclaration
 
@@ -159,9 +158,9 @@ buildRepresentations indexedModule =
         ::  (   ( Attribute.Sort
                 , Verified.SentenceSort
                 )
-            -> Maybe (Id Object, AST.UnresolvedSort)
+            -> Maybe (Id, AST.UnresolvedSort)
             )
-        -> [(Id Object, AST.UnresolvedSort)]
+        -> [(Id, AST.UnresolvedSort)]
     extractDefinitionsFromSentences definitionExtractor =
         mapMaybe
             definitionExtractor
@@ -171,7 +170,7 @@ builtinSortDeclaration
     ::  ( Attribute.Sort
         , Verified.SentenceSort
         )
-    -> Maybe (Id Object, AST.UnresolvedSort)
+    -> Maybe (Id, AST.UnresolvedSort)
 builtinSortDeclaration
     (attributes, SentenceSort { sentenceSortName })
   = do
@@ -196,7 +195,7 @@ smtlibSortDeclaration
     ::  ( Attribute.Sort
         , Verified.SentenceSort
         )
-    -> Maybe (Id Object, AST.UnresolvedSort)
+    -> Maybe (Id, AST.UnresolvedSort)
 smtlibSortDeclaration
     (attributes, SentenceSort { sentenceSortName })
   = do
@@ -215,8 +214,8 @@ smtlibSortDeclaration
   where
     applyToArgs
         :: SMT.SExpr
-        -> Map.Map (Id Object) AST.SmtSort
-        -> [Sort Object]
+        -> Map.Map Id AST.SmtSort
+        -> [Sort]
         -> Maybe SMT.SExpr
     applyToArgs sExpr definitions children = do
         children' <- mapM (translateSort definitions) children
@@ -227,7 +226,7 @@ simpleSortDeclaration
     ::  ( Attribute.Sort
         , Verified.SentenceSort
         )
-    -> Maybe (Id Object, AST.UnresolvedSort)
+    -> Maybe (Id, AST.UnresolvedSort)
 simpleSortDeclaration
     ( _attribute
     , SentenceSort
@@ -253,8 +252,8 @@ simpleSortDeclaration _ = Nothing
 
 emptySortArgsToSmt
     :: SMT.SExpr
-    -> Map.Map (Id Object) AST.SmtSort
-    -> [Sort Object]
+    -> Map.Map Id AST.SmtSort
+    -> [Sort]
     -> Maybe SMT.SExpr
 emptySortArgsToSmt representation _ [] = Just representation
 emptySortArgsToSmt representation _ args = (error . unlines)
@@ -267,7 +266,7 @@ parseNoJunkAxiom
     ::  ( Attribute.Axiom
         , Verified.SentenceAxiom
         )
-    -> Maybe (Id Object, AST.UnresolvedSort)
+    -> Maybe (Id, AST.UnresolvedSort)
 parseNoJunkAxiom (attributes, SentenceAxiom {sentenceAxiomPattern})
   | Axiom.Constructor.isConstructor (Attribute.Axiom.constructor attributes)
   = parseNoJunkPattern sentenceAxiomPattern
@@ -275,7 +274,7 @@ parseNoJunkAxiom (attributes, SentenceAxiom {sentenceAxiomPattern})
 
 parseNoJunkPattern
     :: TermLike Variable
-    -> Maybe (Id Object , AST.UnresolvedSort)
+    -> Maybe (Id , AST.UnresolvedSort)
 parseNoJunkPattern patt = do  -- Maybe
     (name, sortBuilder, constructors) <- parseNoJunkPatternHelper patt
     -- We currently have invalid axioms like
@@ -291,7 +290,7 @@ parseNoJunkPattern patt = do  -- Maybe
 parseNoJunkPatternHelper
     :: TermLike Variable
     ->  Maybe
-        ( Id Object
+        ( Id
         , [AST.UnresolvedConstructor] -> AST.UnresolvedSort
         , [AST.UnresolvedConstructor]
         )
@@ -336,7 +335,7 @@ parseSMTConstructor patt =
 
     parseExists
         :: TermLike Variable
-        -> (Set.Set (Variable Object), TermLike Variable)
+        -> (Set.Set (Variable), TermLike Variable)
     parseExists (Exists_ _ variable child) =
         (Set.insert variable childVars, unquantifiedPatt)
       where
@@ -344,9 +343,9 @@ parseSMTConstructor patt =
     parseExists unquantifiedPatt = (Set.empty, unquantifiedPatt)
 
     checkOnlyQuantifiedVariablesOnce
-        :: Set.Set (Variable Object)
+        :: Set.Set (Variable)
         -> [TermLike Variable]
-        -> Maybe [Variable Object]
+        -> Maybe [Variable]
     checkOnlyQuantifiedVariablesOnce
         allowedVars
         []
@@ -368,8 +367,8 @@ parseSMTConstructor patt =
         _ -> Nothing
 
     buildConstructor
-        :: SymbolOrAlias Object
-        -> [Variable Object]
+        :: SymbolOrAlias
+        -> [Variable]
         -> Maybe AST.UnresolvedConstructor
     buildConstructor
         SymbolOrAlias { symbolOrAliasConstructor, symbolOrAliasParams = [] }
@@ -389,7 +388,7 @@ parseSMTConstructor patt =
     parseVariableSort
         :: AST.Encodable
         -> Integer
-        -> Variable Object
+        -> Variable
         -> Maybe AST.UnresolvedConstructorArgument
     parseVariableSort
         constructorName

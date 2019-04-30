@@ -32,14 +32,6 @@ import GHC.Stack
 import Numeric.Natural
        ( Natural )
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (SymbolOrAlias), Variable (Variable) )
-import           Kore.AST.Common as Variable
-                 ( Variable (..) )
-import           Kore.AST.Common as SymbolOrAlias
-                 ( SymbolOrAlias (..) )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Pure
                  ( eraseAnnotations )
 import           Kore.AST.Sentence
@@ -61,6 +53,13 @@ import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (SymbolOrAlias) )
+import           Kore.Syntax.Application as SymbolOrAlias
+                 ( SymbolOrAlias (..) )
+import           Kore.Syntax.Variable
+                 ( Variable (Variable) )
+import qualified Kore.Syntax.Variable as Variable
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -218,10 +217,10 @@ constructorAxiom sortName constructors =
             )
             argumentVariables
         where
-        argumentVariables :: [Variable Object]
+        argumentVariables :: [Variable]
         argumentVariables = zipWith makeVariable [1..] argumentSorts
 
-makeVariable :: Natural -> Text -> Variable Object
+makeVariable :: Natural -> Text -> Variable
 makeVariable varIndex sortName =
     Variable
         { variableName = testId "var"
@@ -229,14 +228,14 @@ makeVariable varIndex sortName =
         , variableSort = makeSort sortName
         }
 
-makeSort :: Text -> Sort Object
+makeSort :: Text -> Sort
 makeSort name =
     SortActualSort SortActual
         { sortActualName  = testId name
         , sortActualSorts = []
         }
 
-makeHead :: Text -> SymbolOrAlias Object
+makeHead :: Text -> SymbolOrAlias
 makeHead name =
     SymbolOrAlias
         { symbolOrAliasConstructor = testId name

@@ -20,7 +20,7 @@ import GHC.Generics
 import Kore.Attribute.Parser
 
 -- | @Unit@ represents the @unit@ attribute for sorts.
-newtype Unit = Unit { getUnit :: Maybe (SymbolOrAlias Object) }
+newtype Unit = Unit { getUnit :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Unit where
@@ -49,11 +49,11 @@ instance ParseAttributes Unit where
         failDuplicate' = failDuplicate unitId
 
 -- | Kore identifier representing the @unit@ attribute symbol.
-unitId :: Id Object
+unitId :: Id
 unitId = "unit"
 
 -- | Kore symbol representing the @unit@ attribute.
-unitSymbol :: SymbolOrAlias Object
+unitSymbol :: SymbolOrAlias
 unitSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = unitId
@@ -61,5 +61,5 @@ unitSymbol =
         }
 
 -- | Kore pattern representing the @unit@ attribute.
-unitAttribute :: SymbolOrAlias Object -> AttributePattern
+unitAttribute :: SymbolOrAlias -> AttributePattern
 unitAttribute symbol = attributePattern unitSymbol [attributePattern_ symbol]

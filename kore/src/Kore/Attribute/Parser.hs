@@ -44,11 +44,13 @@ module Kore.Attribute.Parser
     , attributePattern
     , attributePattern_
     , Default (..)
+    , StringLiteral (StringLiteral)
     , Generic
     , NFData
-    , module Kore.Sort
     , module Kore.AST.Common
     , module Kore.AST.MetaOrObject
+    , module Kore.Sort
+    , module Kore.Syntax.Application
     ) where
 
 import           Control.DeepSeq
@@ -69,12 +71,10 @@ import           Data.Text
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common hiding
-                 ( getStringLiteral )
+import           Kore.AST.Common
 import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.MetaOrObject
-import           Kore.AST.Pure hiding
-                 ( getStringLiteral )
+import           Kore.AST.Pure
 import           Kore.Attribute.Attributes
 import qualified Kore.Attribute.Smtlib.Smthook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
@@ -82,6 +82,9 @@ import           Kore.Error
                  ( Error, castError )
 import qualified Kore.Error
 import           Kore.Sort
+import           Kore.Syntax.Application
+import           Kore.Syntax.StringLiteral
+                 ( StringLiteral (StringLiteral) )
 import           SMT.SimpleSMT
                  ( SExpr, readSExprs )
 
@@ -131,20 +134,20 @@ liftParser
 liftParser = Monad.Except.liftEither . Kore.Error.castError
 
 -- | Fail due to a duplicate attribute.
-failDuplicate :: Id level -> Parser a
+failDuplicate :: Id -> Parser a
 failDuplicate ident =
     Kore.Error.koreFail ("duplicate attribute: " ++ getIdForError ident)
 
 -- | Fail due to conflicting attributes.
-failConflicting :: [Id level] -> Parser a
+failConflicting :: [Id] -> Parser a
 failConflicting idents =
     Kore.Error.koreFail
         ("conflicting attributes: "
             ++ List.intercalate ", " (getIdForError <$> idents))
 
 withApplication
-    :: Id Object
-    -> ([Sort Object] -> [AttributePattern] -> attrs -> Parser attrs)
+    :: Id
+    -> ([Sort] -> [AttributePattern] -> attrs -> Parser attrs)
     -> AttributePattern
     -> attrs
     -> Parser attrs
@@ -163,7 +166,7 @@ withApplication ident go kore =
             SymbolOrAlias { symbolOrAliasParams } = symbol
         _ -> return
 
-getZeroParams :: [Sort Object] -> Parser ()
+getZeroParams :: [Sort] -> Parser ()
 getZeroParams =
     \case
         [] -> return ()
@@ -173,7 +176,7 @@ getZeroParams =
           where
             arity = length params
 
-getTwoParams :: [Sort Object] -> Parser (Sort Object, Sort Object)
+getTwoParams :: [Sort] -> Parser (Sort, Sort)
 getTwoParams =
     \case
         [param1, param2] -> return (param1, param2)
@@ -227,7 +230,7 @@ getTwoArguments =
 
 {- | Accept a symbol or alias applied to no arguments.
  -}
-getSymbolOrAlias :: AttributePattern -> Parser (SymbolOrAlias Object)
+getSymbolOrAlias :: AttributePattern -> Parser SymbolOrAlias
 getSymbolOrAlias kore =
     case Recursive.project kore of
         _ :< ApplicationPattern app

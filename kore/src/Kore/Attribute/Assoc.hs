@@ -26,11 +26,11 @@ instance Default Assoc where
     def = Assoc False
 
 -- | Kore identifier representing the @assoc@ attribute symbol.
-assocId :: Id Object
+assocId :: Id
 assocId = "assoc"
 
 -- | Kore symbol representing the @assoc@ attribute.
-assocSymbol :: SymbolOrAlias Object
+assocSymbol :: SymbolOrAlias
 assocSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = assocId

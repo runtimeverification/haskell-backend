@@ -18,10 +18,8 @@ import Data.Default
 import GHC.Generics
        ( Generic )
 
-import Kore.AST.Identifier
+import Kore.Syntax.Id
        ( Id )
-import Kore.AST.MetaOrObject
-       ( Object )
 import SMT.SimpleSMT
        ( SExpr )
 
@@ -45,5 +43,5 @@ instance Default Smthook where
 instance NFData Smthook
 
 -- | Kore identifier representing the @smthook@ attribute symbol.
-smthookId :: Id Object
+smthookId :: Id
 smthookId = "smt-hook"

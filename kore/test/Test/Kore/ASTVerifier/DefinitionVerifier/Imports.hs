@@ -315,7 +315,7 @@ sortVisibilityTests =
     sort = SortActualSort SortActual
         { sortActualName = testId "sort1"
         , sortActualSorts = []
-        } :: Sort Object
+        } :: Sort
     sortDeclaration = asSentence
         (SentenceSort
             { sentenceSortName = testId "sort1"
@@ -326,7 +326,7 @@ sortVisibilityTests =
     anotherSort = SortActualSort SortActual
         { sortActualName = testId "sort3"
         , sortActualSorts = []
-        } :: Sort Object
+        } :: Sort
     anotherSortDeclaration = asSentence
         (SentenceSort
             { sentenceSortName = testId "sort3"
@@ -340,7 +340,7 @@ sortVisibilityTests =
         SortActualSort SortActual
             { sortActualName = testId "sort2"
             , sortActualSorts = [ sort ]
-            } :: Sort Object
+            } :: Sort
     sortReferenceInSortSentence =
         SentenceAxiomSentence
             SentenceAxiom
@@ -819,7 +819,7 @@ aliasVisibilityTests =
     aliasDeclaration =
         let aliasConstructor = testId "alias1"
             aliasParams = [SortVariable (testId "sv1")]
-            sentenceAliasResultSort :: Sort Object
+            sentenceAliasResultSort :: Sort
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
         in SentenceAliasSentence
@@ -854,7 +854,7 @@ aliasVisibilityTests =
         let aliasConstructor = testId "#alias1"
             aliasParams = [SortVariable (testId "#sv1")]
             symbolOrAliasParams = SortVariableSort <$> aliasParams
-            sentenceAliasResultSort :: Sort Meta
+            sentenceAliasResultSort :: Sort
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "#sv1"))
         in SentenceAliasSentence
@@ -937,10 +937,10 @@ aliasVisibilityTests =
     aliasReferenceInAliasOrAliasSupportSentences
         :: [Verified.Sentence]
     aliasReferenceInAliasOrAliasSupportSentences =
-        let aliasConstructor :: Id Object
-            aliasConstructor = testId "alias2" :: Id Object
+        let aliasConstructor :: Id
+            aliasConstructor = testId "alias2" :: Id
             aliasParams = [SortVariable (testId "sv1")]
-            sentenceAliasResultSort :: Sort Object
+            sentenceAliasResultSort :: Sort
             sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
         in SentenceAliasSentence
@@ -975,7 +975,7 @@ aliasVisibilityTests =
         : defaultAliasSupportSentences
 
 
-defaultSort :: Sort Object
+defaultSort :: Sort
 defaultSort = SortActualSort SortActual
     { sortActualName = testId "sort1"
     , sortActualSorts = []
@@ -1304,34 +1304,33 @@ nameDuplicationTests =
             , moduleAttributes = Attributes []
             }
     aliasDeclarationModule modName (AliasName aliasName) =
-        let sv1 = SortVariable (testId "sv1") :: SortVariable Object
-            aliasConstructor = testId aliasName :: Id Object
+        let sv1 = SortVariable (testId "sv1") :: SortVariable
+            aliasConstructor = testId aliasName :: Id
         in Module
             { moduleName = modName
             , moduleSentences =
-                [ asSentence
-                    SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor
-                            , aliasParams = [sv1]
-                            }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort = SortVariableSort sv1
-                        , sentenceAliasLeftPattern =
-                            Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor =
-                                            aliasConstructor
-                                        , symbolOrAliasParams =
-                                            [SortVariableSort sv1]
-                                        }
-                                , applicationChildren = []
-                                }
-                        , sentenceAliasRightPattern =
-                            mkTop (SortVariableSort sv1)
-                        , sentenceAliasAttributes = Attributes []
+                [ SentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias = Alias
+                        { aliasConstructor
+                        , aliasParams = [sv1]
                         }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasResultSort = SortVariableSort sv1
+                    , sentenceAliasLeftPattern =
+                        Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor =
+                                        aliasConstructor
+                                    , symbolOrAliasParams =
+                                        [SortVariableSort sv1]
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        mkTop (SortVariableSort sv1)
+                    , sentenceAliasAttributes = Attributes []
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

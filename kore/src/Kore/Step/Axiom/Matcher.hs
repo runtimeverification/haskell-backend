@@ -24,8 +24,6 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (symbolOrAliasConstructor) )
 import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -94,29 +92,23 @@ Left, but inside a constructor we may be able to keep it as bottom.
 -}
 matchAsUnification
     ::  ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Object)
-        , Ord (variable Meta)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( OrPredicate level variable
-        , UnificationProof level variable
+        ( OrPredicate Object variable
+        , UnificationProof Object variable
         )
 matchAsUnification
     tools
@@ -143,29 +135,23 @@ matchAsUnification
 
 unificationWithAppMatchOnTop
     ::  ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Object)
-        , Ord (variable Meta)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( OrPredicate level variable
-        , UnificationProof level variable
+        ( OrPredicate Object variable
+        , UnificationProof Object variable
         )
 unificationWithAppMatchOnTop
     tools
@@ -229,30 +215,24 @@ unificationWithAppMatchOnTop
 
 match
     ::  ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Object)
-        , Ord (variable Meta)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map (variable level) (variable level)
+    -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
     -- TODO: Use Result here.
     -> MaybeT unifier
-        (OrPredicate level variable)
+        (OrPredicate Object variable)
 match
     tools
     substitutionSimplifier
@@ -280,31 +260,25 @@ match
         second
 
 matchEqualHeadPatterns
-    ::  forall level variable unifier unifierM .
-        ( Show (variable level)
+    ::  forall variable unifier unifierM .
+        ( Show variable
         , SortedVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Unparse (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable Meta)
-        , Show (variable Object)
+        , Unparse variable
+        , Show variable
         , FreshVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map (variable level) (variable level)
+    -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT unifier
-        (OrPredicate level variable)
+    -> MaybeT unifier (OrPredicate Object variable)
 matchEqualHeadPatterns
     tools
     substitutionSimplifier
@@ -544,35 +518,29 @@ matchEqualHeadPatterns
             else nothing
     justTop
         :: MaybeT unifier
-            (OrPredicate level variable)
+            (OrPredicate Object variable)
     justTop = just
         (MultiOr.make [Predicate.top])
 
 matchJoin
-    :: forall level variable unifier unifierM .
+    :: forall variable unifier unifierM .
         ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map (variable level) (variable level)
+    -> Map.Map variable variable
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier
-        (OrPredicate level variable)
+        (OrPredicate Object variable)
 matchJoin
     tools
     substitutionSimplifier
@@ -593,12 +561,12 @@ matchJoin
             )
             patterns
     let
-        crossProduct :: MultiOr [Predicate level variable]
+        crossProduct :: MultiOr [Predicate Object variable]
         crossProduct = MultiOr.fullCrossProduct matched
         merge
-            :: [Predicate level variable]
+            :: [Predicate Object variable]
             -> unifier
-                (Predicate level variable)
+                (Predicate Object variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
                 tools
@@ -611,30 +579,24 @@ matchJoin
     MultiOr.filterOr <$> traverse (lift . merge) crossProduct
 
 unifyJoin
-    :: forall level variable unifier unifierM .
+    :: forall variable unifier unifierM .
         ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , Ord (variable Meta)
-        , Ord (variable Object)
-        , Show (variable level)
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Unparse (variable level)
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
     -> unifier
-        ( OrPredicate level variable
-        , UnificationProof level variable
+        ( OrPredicate Object variable
+        , UnificationProof Object variable
         )
 unifyJoin
     tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
@@ -650,14 +612,14 @@ unifyJoin
             )
             patterns
     let
-        matched :: [OrPredicate level variable]
+        matched :: [OrPredicate Object variable]
         (matched, _proof) = unzip matchedWithProofs
-        crossProduct :: MultiOr [Predicate level variable]
+        crossProduct :: MultiOr [Predicate Object variable]
         crossProduct = MultiOr.fullCrossProduct matched
         merge
-            :: [Predicate level variable]
+            :: [Predicate Object variable]
             -> unifier
-                (Predicate level variable)
+                (Predicate Object variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
                 tools
@@ -687,27 +649,24 @@ unifyJoin
 -- into (p-replacing-lhs-by-rhs[subst] and predicate) or (p and not predicate)
 matchVariableFunction
     ::  ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
-        , OrdMetaOrObject variable
-        , Show (variable level)
-        , ShowMetaOrObject variable
+        , Ord variable
+        , Show variable
         , SortedVariable variable
-        , Unparse (variable level)
+        , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map (variable level) (variable level)
+    -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (OrPredicate level variable)
+        (OrPredicate Object variable)
 matchVariableFunction
     tools
     substitutionSimplifier
@@ -744,35 +703,27 @@ matchVariableFunction
 matchVariableFunction _ _ _ _ _ _ _ = nothing
 
 checkVariableEscapeOr
-    ::  ( MetaOrObject level
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Ord (variable Object)
-        , Ord (variable Meta)
+    ::  ( Show variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => [variable level]
-    -> OrPredicate level variable
-    -> OrPredicate level variable
+    => [variable]
+    -> OrPredicate Object variable
+    -> OrPredicate Object variable
 checkVariableEscapeOr vars = fmap (checkVariableEscape vars)
 
 checkVariableEscape
-    ::  ( MetaOrObject level
-        , Show (variable Object)
-        , Show (variable Meta)
-        , Ord (variable Object)
-        , Ord (variable Meta)
+    ::  ( Show variable
         , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => [variable level]
-    -> Predicate level variable
-    -> Predicate level variable
+    => [variable]
+    -> Predicate Object variable
+    -> Predicate Object variable
 checkVariableEscape vars predSubst
   | any (`Set.member` freeVars) vars = error
         "quantified variables in substitution or predicate escaping context"

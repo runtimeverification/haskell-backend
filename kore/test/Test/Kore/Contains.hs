@@ -9,13 +9,11 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 
-import qualified Kore.AST.Identifier as Kore
-                 ( Id )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Step.SMT.AST as AST
                  ( Declarations (Declarations), Sort, Symbol )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
+import qualified Kore.Syntax.Id as Kore
+                 ( Id )
 
 import Test.Tasty.HUnit.Extensions
 
@@ -50,7 +48,7 @@ instance
     (EqualWithExplanation (AST.Sort sort symbol name))
     => AssertContains
         (AST.Declarations sort symbol name)
-        (Kore.Id Object, AST.Sort sort symbol name)
+        (Kore.Id, AST.Sort sort symbol name)
   where
     assertContains AST.Declarations {sorts} =
         assertContains sorts
@@ -59,7 +57,7 @@ instance
     (EqualWithExplanation (AST.Symbol sort name))
     => AssertContains
         (AST.Declarations sort symbol name)
-        (Kore.Id Object, AST.Symbol sort name)
+        (Kore.Id, AST.Symbol sort name)
   where
     assertContains AST.Declarations {symbols} =
         assertContains symbols

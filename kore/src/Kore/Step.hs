@@ -33,10 +33,7 @@ import           GHC.Stack
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.AST.Common
-                 ( Variable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject, Object )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -59,6 +56,7 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
+import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -91,7 +89,7 @@ rewriteStep a =
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: (HasCallStack, MetaOrObject Object)
+    :: HasCallStack
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object

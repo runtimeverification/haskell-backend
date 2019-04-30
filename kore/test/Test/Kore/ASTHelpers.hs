@@ -104,7 +104,7 @@ test_symbolOrAliasSorts =
     complexSortActualSort = sortActual "sa" [simpleSortActual]
 
 applicationSorts
-    :: [Sort level] -> Sort level -> Either b (ApplicationSorts level)
+    :: [Sort] -> Sort -> Either b (ApplicationSorts level)
 applicationSorts operandSorts resultSort =
     Right ApplicationSorts
         { applicationSortsOperands = operandSorts
@@ -112,9 +112,9 @@ applicationSorts operandSorts resultSort =
         }
 
 symbolSentence
-    :: [SortVariable Object]
-    -> [Sort Object]
-    -> Sort Object
+    :: [SortVariable]
+    -> [Sort]
+    -> Sort
     -> ParsedSentenceSymbol
 symbolSentence sortParameters operandSorts resultSort =
     SentenceSymbol

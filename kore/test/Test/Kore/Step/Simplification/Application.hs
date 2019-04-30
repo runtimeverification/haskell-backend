@@ -13,8 +13,6 @@ import qualified Data.Set as Set
 
 import           Data.Sup
 import qualified Kore.Annotation.Valid as Valid
-import           Kore.AST.Common
-                 ( SortedVariable (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -224,18 +222,18 @@ test_applicationSimplification =
                     zvar
                         :: forall variable
                         .   ( FreshVariable variable
-                            , Ord (variable Object)
+                            , Ord variable
                             , SortedVariable variable
                             )
-                        => variable Object
+                        => variable
                     zvar = fromVariable z'
                     result
                         :: forall variable
                         .   ( FreshVariable variable
-                            , Ord (variable Object)
-                            , Show (variable Object)
+                            , Ord variable
+                            , Show variable
                             , SortedVariable variable
-                            , Unparse (variable Object)
+                            , Unparse variable
                             )
                         => AttemptedAxiom Object variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
@@ -286,11 +284,11 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB :: Ord (variable Object) => TermLike variable
+    fOfA, fOfB :: Ord variable => TermLike variable
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
 
-    gOfA, gOfB :: Ord (variable Object) => TermLike variable
+    gOfA, gOfB :: Ord variable => TermLike variable
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
 
@@ -315,7 +313,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: Ord (variable Object) => Pattern Object variable
+    gOfAExpanded :: Ord variable => Pattern Object variable
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
@@ -344,13 +342,13 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: (Ord (variable Object), Show (variable Object), HasCallStack)
-    => Sort Object
-    -> SymbolOrAlias Object
+    :: (Ord variable, Show variable, HasCallStack)
+    => Sort
+    -> SymbolOrAlias
     -> [[Pattern Object variable]]
     -> CofreeF
-        (Application Object)
-        (Valid (variable Object) Object)
+        (Application SymbolOrAlias)
+        (Valid variable Object)
         (OrPattern Object variable)
 makeApplication patternSort symbol patterns =
     (:<)
@@ -369,17 +367,16 @@ makeApplication patternSort symbol patterns =
             }
 
 evaluate
-    ::  ( MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
-        (Application level)
-        (Valid (Variable level) level)
-        (OrPattern level Variable)
-    -> IO (OrPattern level Variable)
+        (Application SymbolOrAlias)
+        (Valid Variable Object)
+        (OrPattern Object Variable)
+    -> IO (OrPattern Object Variable)
 evaluate
     tools
     simplifier

@@ -3,10 +3,10 @@ module Test.Kore.Parser.Lexeme (test_koreLexeme) where
 import Test.Tasty
        ( TestTree, testGroup )
 
-import Kore.AST.Common
-import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Parser.Lexeme
+import Kore.Syntax.CharLiteral
+import Kore.Syntax.StringLiteral
 
 import Test.Kore
 import Test.Kore.Parser
@@ -46,7 +46,7 @@ commaParserTests =
 
 curlyPairParserTests :: [TestTree]
 curlyPairParserTests =
-    parseTree (curlyPairParser (idParser Object) moduleNameParser)
+    parseTree (curlyPairParser idParser moduleNameParser)
         [ success "{a,B}" (testId "a", ModuleName "B")
         , success "{ a , B } " (testId "a", ModuleName "B")
         , success "{/**/a/**/,/**/B/**/}/**/" (testId "a", ModuleName "B")
@@ -58,7 +58,7 @@ curlyPairParserTests =
 
 idParserTests :: [TestTree]
 idParserTests =
-    parseTree (idParser Object)
+    parseTree idParser
         [ success "A" (testId "A")
         , success "a" (testId "a")
         , success "abc" (testId "abc")
@@ -96,7 +96,7 @@ idParserTests =
 
 metaIdParserTests :: [TestTree]
 metaIdParserTests =
-    parseTree (idParser Meta)
+    parseTree idParser
         [ success "#a" (testId "#a")
         , success "#`a" (testId "#`a")
         , success "#abc" (testId "#abc")
@@ -127,7 +127,7 @@ metaIdParserTests =
 
 inCurlyBracesParserTests :: [TestTree]
 inCurlyBracesParserTests =
-    parseTree (inCurlyBracesParser (idParser Object))
+    parseTree (inCurlyBracesParser idParser)
         [ success "{a}" (testId "a")
         , success "{ a } " (testId "a")
         , success "{/**/a/**/}/**/" (testId "a")
@@ -137,7 +137,7 @@ inCurlyBracesParserTests =
 
 inParenthesesParserTests :: [TestTree]
 inParenthesesParserTests =
-    parseTree (inParenthesesParser (idParser Object))
+    parseTree (inParenthesesParser idParser)
         [ success "(a)" (testId "a")
         , success "( a ) " (testId "a")
         , success "(/**/a/**/)/**/" (testId "a")
@@ -147,7 +147,7 @@ inParenthesesParserTests =
 
 inSquareBracketsParserTests :: [TestTree]
 inSquareBracketsParserTests =
-    parseTree (inSquareBracketsParser (idParser Object))
+    parseTree (inSquareBracketsParser idParser)
         [ success "[a]" (testId "a")
         , success "[ a ] " (testId "a")
         , success "[/**/a/**/]/**/" (testId "a")
@@ -159,10 +159,12 @@ keywordBasedParsersTests :: [TestTree]
 keywordBasedParsersTests =
     parseTree
         (keywordBasedParsers
-            [ ("abc", inCurlyBracesParser (idParser Object))
-            , ("de", inParenthesesParser (idParser Object))
-            , ("dd", idParser Object)
-            , ("df", inSquareBracketsParser (idParser Object))])
+            [ ("abc", inCurlyBracesParser idParser)
+            , ("de", inParenthesesParser idParser)
+            , ("dd", idParser)
+            , ("df", inSquareBracketsParser idParser)
+            ]
+        )
         [ success "abc{a}" (testId "a")
         , success "de(a)" (testId "a")
         , success "df[a]" (testId "a")
@@ -217,7 +219,7 @@ moduleNameParserTests =
 
 parenPairParserTests :: [TestTree]
 parenPairParserTests =
-    parseTree (parenPairParser (idParser Object) moduleNameParser)
+    parseTree (parenPairParser idParser moduleNameParser)
         [ success "(a,B)" (testId "a", ModuleName "B")
         , success "( a , B ) " (testId "a", ModuleName "B")
         , success "(/**/a/**/,/**/B/**/)/**/" (testId "a", ModuleName "B")

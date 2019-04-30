@@ -53,9 +53,9 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 simplify
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
@@ -97,9 +97,9 @@ simplifyEvaluatedIn
     :: forall variable .
         ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
@@ -166,9 +166,9 @@ simplifyEvaluatedIn
 makeEvaluateIn
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
@@ -194,9 +194,9 @@ makeEvaluateIn
 
 makeEvaluateNonBoolIn
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> Pattern Object variable

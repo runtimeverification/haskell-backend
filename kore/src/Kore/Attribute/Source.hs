@@ -22,7 +22,6 @@ import           Text.Megaparsec
                  ( Parsec, noneOf, parseMaybe )
 import           Text.Megaparsec.Char
 
-import           Kore.AST.Common
 import           Kore.Attribute.Parser as AttributeParser
 import qualified Kore.Error
 
@@ -36,7 +35,7 @@ instance Default Source where
     def = Source Nothing
 
 -- | Kore identifier representing the @location@ attribute symbol.
-sourceId :: Id Object
+sourceId :: Id
 sourceId = "org'Stop'kframework'Stop'attributes'Stop'Source"
 
 instance ParseAttributes Source where
@@ -44,7 +43,7 @@ instance ParseAttributes Source where
       where
 
         parseApplication
-            :: [Sort Object]
+            :: [Sort]
             -> [AttributePattern]
             -> Source
             -> AttributeParser.Parser Source

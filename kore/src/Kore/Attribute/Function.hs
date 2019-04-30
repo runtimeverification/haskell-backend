@@ -31,11 +31,11 @@ instance Default Function where
 instance NFData Function
 
 -- | Kore identifier representing the @function@ attribute symbol.
-functionId :: Id Object
+functionId :: Id
 functionId = "function"
 
 -- | Kore symbol representing the @function@ attribute.
-functionSymbol :: SymbolOrAlias Object
+functionSymbol :: SymbolOrAlias
 functionSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = functionId

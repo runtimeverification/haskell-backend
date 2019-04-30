@@ -22,8 +22,7 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import Kore.AST.Common
-       ( Exists (..), Forall (..), Pattern (..), SortedVariable )
-import Kore.AST.MetaOrObject
+       ( Exists (..), Forall (..), Pattern (..) )
 import Kore.AST.Pure
 import Kore.Variables.Fresh
 
@@ -41,14 +40,13 @@ may appear in the right-hand side of any substitution, but this is not checked.
 substitute
     ::  forall level domain variable attribute.
         ( FreshVariable variable
-        , MetaOrObject level
-        , Ord (variable level)
+        , Ord variable
         , SortedVariable variable
         , Traversable domain
         )
-    => Lens.Lens' attribute (Set (variable level))
+    => Lens.Lens' attribute (Set variable)
     -- ^ Lens into free variables of the pattern
-    -> Map (variable level) (PurePattern level domain variable attribute)
+    -> Map variable (PurePattern level domain variable attribute)
     -- ^ Substitution
     -> PurePattern level domain variable attribute
     -- ^ Original pattern
@@ -57,15 +55,15 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
   where
     extractFreeVariables
         :: PurePattern level domain variable attribute
-        -> Set (variable level)
+        -> Set variable
     extractFreeVariables = Lens.view lensFreeVariables . extract
 
     -- | Insert a variable renaming into the substitution.
     renaming
-        :: variable level  -- ^ Original variable
-        -> variable level  -- ^ Renamed variable
-        -> Map (variable level) (Either (variable level) a)  -- ^ Substitution
-        -> Map (variable level) (Either (variable level) a)
+        :: variable  -- ^ Original variable
+        -> variable  -- ^ Renamed variable
+        -> Map variable (Either variable a)  -- ^ Substitution
+        -> Map variable (Either variable a)
     renaming variable variable' = Map.insert variable (Left variable')
 
     substituteWorker subst termLike

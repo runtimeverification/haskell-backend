@@ -11,19 +11,19 @@ module Kore.Step.Simplification.Bottom
     ( simplify
     ) where
 
-import           Kore.AST.Common
-                 ( Bottom (..) )
 import           Kore.AST.MetaOrObject
+import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Bottom
 
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
 simplify
-    :: Ord (variable Object)
-    => Bottom Object child
+    :: Ord variable
+    => Bottom Sort child
     -> (OrPattern Object variable, SimplificationProof Object)
 simplify Bottom {} = (OrPattern.bottom, SimplificationProof)

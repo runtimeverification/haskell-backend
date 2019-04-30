@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Floor
     , makeEvaluateFloor
     ) where
 
-import           Kore.AST.Common
-                 ( Floor (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
@@ -25,6 +23,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Floor
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.
@@ -40,17 +39,13 @@ floor(a and b) = floor(a) and floor(b).
 -}
 simplify
     ::  ( SortedVariable variable
-        , Unparse (variable Object)
-        , Show (variable Object)
-        , Ord (variable Object)
+        , Unparse variable
+        , Show variable
+        , Ord variable
         )
-    => Floor Object (OrPattern Object variable)
-    ->  ( OrPattern Object variable
-        , SimplificationProof Object
-        )
-simplify
-    Floor { floorChild = child }
-  =
+    => Floor Sort (OrPattern Object variable)
+    -> (OrPattern Object variable, SimplificationProof Object)
+simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
@@ -68,9 +63,9 @@ carry around.
 -}
 simplifyEvaluatedFloor
     ::  ( SortedVariable variable
-        , Show (variable Object)
-        , Ord (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Ord variable
+        , Unparse variable
         )
     => OrPattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)
@@ -87,9 +82,9 @@ See 'simplify' for details.
 -}
 makeEvaluateFloor
     ::  ( SortedVariable variable
-        , Show (variable Object)
-        , Ord (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Ord variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)
@@ -103,9 +98,9 @@ makeEvaluateFloor child
 
 makeEvaluateNonBoolFloor
     ::  ( SortedVariable variable
-        , Show (variable Object)
-        , Ord (variable Object)
-        , Unparse (variable Object)
+        , Show variable
+        , Ord variable
+        , Unparse variable
         )
     => Pattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)

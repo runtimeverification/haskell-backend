@@ -32,8 +32,6 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
 
-import           Kore.AST.Common
-                 ( SortedVariable, Variable (..) )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -65,6 +63,7 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -228,18 +227,17 @@ which is actually, exactly the form we want, since we are working with a
 and n destinations.
  -}
 transitionRule
-    :: forall level . (MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (Pattern Object Variable) (RewriteRule level Variable)
-    -> (CommonStrategyPattern  level, StepProof level Variable)
+    -> Prim (Pattern Object Variable) (RewriteRule Object Variable)
+    -> (CommonStrategyPattern  Object, StepProof Object Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule level Variable) Simplifier
-        (CommonStrategyPattern level, StepProof level Variable)
+    -> TransitionT (RewriteRule Object Variable) Simplifier
+        (CommonStrategyPattern Object, StepProof Object Variable)
 transitionRule
     tools
     substitutionSimplifier
@@ -286,10 +284,10 @@ transitionRule
                     )
 
     transitionApplyWithRemainders
-        :: [RewriteRule level Variable]
-        -> (CommonStrategyPattern level, StepProof level Variable)
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonStrategyPattern level, StepProof level Variable)
+        :: [RewriteRule Object Variable]
+        -> (CommonStrategyPattern Object, StepProof Object Variable)
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonStrategyPattern Object, StepProof Object Variable)
     transitionApplyWithRemainders _ c@(Bottom, _) = return c
     transitionApplyWithRemainders _ c@(Stuck _, _) = return c
     transitionApplyWithRemainders
@@ -298,10 +296,10 @@ transitionRule
       = transitionMultiApplyWithRemainders rules (config, proof)
 
     transitionMultiApplyWithRemainders
-        :: [RewriteRule level Variable]
-        -> (Pattern Object Variable, StepProof level Variable)
+        :: [RewriteRule Object Variable]
+        -> (Pattern Object Variable, StepProof Object Variable)
         -> Transition
-            (CommonStrategyPattern level, StepProof level Variable)
+            (CommonStrategyPattern Object, StepProof Object Variable)
     transitionMultiApplyWithRemainders _ (config, _)
         | Pattern.isBottom config = empty
     transitionMultiApplyWithRemainders rules (config, proof) = do
@@ -328,7 +326,7 @@ transitionRule
                 ]
             Right results -> do
                 let
-                    withProof :: forall x. x -> (x, StepProof level Variable)
+                    withProof :: forall x. x -> (x, StepProof Object Variable)
                     withProof x = (x, proof)
                     mapRules =
                         Result.mapRules
@@ -343,11 +341,11 @@ transitionRule
 
     transitionRemoveDestination
         :: Pattern Object Variable
-        ->  ( CommonStrategyPattern level
-            , StepProof level Variable
+        ->  ( CommonStrategyPattern Object
+            , StepProof Object Variable
             )
-        -> TransitionT (RewriteRule level Variable) Simplifier
-            (CommonStrategyPattern level, StepProof level Variable)
+        -> TransitionT (RewriteRule Object Variable) Simplifier
+            (CommonStrategyPattern Object, StepProof Object Variable)
     transitionRemoveDestination _ (Bottom, _) = empty
     transitionRemoveDestination _ (Stuck _, _) = empty
     transitionRemoveDestination destination (RewritePattern patt, proof1) = do
@@ -379,9 +377,9 @@ transitionRule
 {- | The predicate to remove the destination from the present configuration.
  -}
 removalPredicate
-    ::  ( Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
         , SortedVariable variable
         )
     => Pattern Object variable

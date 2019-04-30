@@ -15,8 +15,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Common
-                 ( SymbolOrAlias (..) )
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.ASTHelpers
@@ -36,13 +34,15 @@ import           Kore.Sort
                  ( Sort )
 import qualified Kore.Step.SMT.AST as SMT.AST
                  ( SmtDeclarations )
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (..) )
 
 makeMetadataTools
-    :: [(SymbolOrAlias Object, StepperAttributes)]
-    -> [(SymbolOrAlias Object, HeadType)]
-    -> [(Sort Object, Attribute.Sort)]
-    -> [(Sort Object, Sort Object)]
-    -> [(SymbolOrAlias Object, ApplicationSorts Object)]
+    :: [(SymbolOrAlias, StepperAttributes)]
+    -> [(SymbolOrAlias, HeadType)]
+    -> [(Sort, Attribute.Sort)]
+    -> [(Sort, Sort)]
+    -> [(SymbolOrAlias, ApplicationSorts Object)]
     -> SMT.AST.SmtDeclarations
     -> SmtMetadataTools StepperAttributes
 makeMetadataTools attr headTypes sortTypes isSubsortOf sorts declarations =
@@ -61,14 +61,14 @@ makeMetadataTools attr headTypes sortTypes isSubsortOf sorts declarations =
         }
 
 attributesFunction
-    :: [(SymbolOrAlias Object, StepperAttributes)]
-    -> SymbolOrAlias Object
+    :: [(SymbolOrAlias, StepperAttributes)]
+    -> SymbolOrAlias
     -> StepperAttributes
 attributesFunction = caseBasedFunction
 
 headTypeFunction
-    :: [(SymbolOrAlias Object, HeadType)]
-    -> SymbolOrAlias Object
+    :: [(SymbolOrAlias, HeadType)]
+    -> SymbolOrAlias
     -> HeadType
 headTypeFunction = caseBasedFunction
 

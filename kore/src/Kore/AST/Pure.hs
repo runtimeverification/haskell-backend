@@ -28,7 +28,16 @@ module Kore.AST.Pure
     , Base, CofreeF (..)
     , module Control.Comonad
     , module Kore.AST.Common
-    , module Kore.AST.Identifier
+    , module Kore.Syntax.And
+    , module Kore.Syntax.Application
+    , module Kore.Syntax.Bottom
+    , module Kore.Syntax.Ceil
+    , module Kore.Syntax.Floor
+    , module Kore.Syntax.Id
+    , module Kore.Syntax.Or
+    , module Kore.Syntax.SetVariable
+    , module Kore.Syntax.Top
+    , module Kore.Syntax.Variable
     , module Kore.AST.MetaOrObject
     , module Kore.Sort
     ) where
@@ -67,9 +76,18 @@ import           Kore.AST.Common hiding
                  ( castVoidDomainValues, mapDomainValues, mapVariables,
                  traverseVariables )
 import qualified Kore.AST.Common as Head
-import           Kore.AST.Identifier
 import           Kore.AST.MetaOrObject
 import           Kore.Sort
+import           Kore.Syntax.And
+import           Kore.Syntax.Application
+import           Kore.Syntax.Bottom
+import           Kore.Syntax.Ceil
+import           Kore.Syntax.Floor
+import           Kore.Syntax.Id
+import           Kore.Syntax.Or
+import           Kore.Syntax.SetVariable
+import           Kore.Syntax.Top
+import           Kore.Syntax.Variable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -88,7 +106,7 @@ tree. @PurePattern@ is a 'Traversable' 'Comonad' over the type of annotations.
 newtype PurePattern
     (level :: *)
     (domain :: * -> *)
-    (variable :: * -> *)
+    (variable :: *)
     (annotation :: *)
   =
     PurePattern
@@ -97,7 +115,7 @@ newtype PurePattern
 
 instance
     ( Eq level
-    , Eq (variable level)
+    , Eq variable
     , Eq1 domain, Functor domain
     ) =>
     Eq (PurePattern level domain variable annotation)
@@ -113,7 +131,7 @@ instance
 
 instance
     ( Ord level
-    , Ord (variable level)
+    , Ord variable
     , Ord1 domain, Functor domain
     ) =>
     Ord (PurePattern level domain variable annotation)
@@ -129,7 +147,7 @@ instance
 
 deriving instance
     ( Show annotation
-    , Show (variable level)
+    , Show variable
     , Show1 domain
     , child ~ Cofree (Pattern level domain variable) annotation
     ) =>
@@ -137,7 +155,7 @@ deriving instance
 
 instance
     ( Functor domain
-    , Hashable (variable level)
+    , Hashable variable
     , Hashable (domain child)
     , child ~ PurePattern level domain variable annotation
     ) =>
@@ -149,7 +167,7 @@ instance
 instance
     ( Functor domain
     , NFData annotation
-    , NFData (variable level)
+    , NFData variable
     , NFData (domain child)
     , child ~ PurePattern level domain variable annotation
     ) =>
@@ -160,7 +178,7 @@ instance
 
 instance
     ( Functor domain
-    , Unparse (variable level)
+    , Unparse variable
     , Unparse (domain self)
     , self ~ PurePattern level domain variable annotation
     ) =>
@@ -327,7 +345,7 @@ type CommonPurePattern level domain =
 
 -- | A concrete pure pattern (containing no variables) at level @level@.
 type ConcretePurePattern level domain =
-    PurePattern level domain Concrete (Valid (Concrete level) level)
+    PurePattern level domain Concrete (Valid Concrete level)
 
 -- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
 type ParsedPurePattern level domain =
@@ -335,7 +353,7 @@ type ParsedPurePattern level domain =
 
 -- | A pure pattern which has been parsed and verified.
 type VerifiedPurePattern level domain =
-    PurePattern level domain Variable (Valid (Variable level) level)
+    PurePattern level domain Variable (Valid Variable level)
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 
@@ -350,7 +368,7 @@ See also: 'mapVariables'
 traverseVariables
     ::  forall m level variable1 variable2 domain annotation.
         (Monad m, Traversable domain)
-    => (variable1 level -> m (variable2 level))
+    => (variable1 -> m variable2)
     -> PurePattern level domain variable1 annotation
     -> m (PurePattern level domain variable2 annotation)
 traverseVariables traversing =
@@ -377,7 +395,7 @@ See also: 'traverseVariables'
  -}
 mapVariables
     :: Functor domain
-    => (variable1 level -> variable2 level)
+    => (variable1 -> variable2)
     -> PurePattern level domain variable1 annotation
     -> PurePattern level domain variable2 annotation
 mapVariables mapping =
@@ -454,7 +472,7 @@ castVoidDomainValues = mapDomainValues (\case {})
 
 -- |Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.
-groundHead :: Text -> AstLocation -> SymbolOrAlias level
+groundHead :: Text -> AstLocation -> SymbolOrAlias
 groundHead ctor location = SymbolOrAlias
     { symbolOrAliasConstructor = Id
         { getId = ctor
@@ -465,7 +483,7 @@ groundHead ctor location = SymbolOrAlias
 
 -- |Given a head and a list of children, produces an 'ApplicationPattern'
 --  applying the given head to the children
-apply :: SymbolOrAlias level -> [child] -> Pattern level domain variable child
+apply :: SymbolOrAlias -> [child] -> Pattern level domain variable child
 apply patternHead patterns = ApplicationPattern Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
@@ -474,5 +492,5 @@ apply patternHead patterns = ApplicationPattern Application
 -- |Applies the given head to the empty list of children to obtain a
 -- constant 'ApplicationPattern'
 constant
-    :: SymbolOrAlias level -> Pattern level domain variable child
+    :: SymbolOrAlias -> Pattern level domain variable child
 constant patternHead = apply patternHead []

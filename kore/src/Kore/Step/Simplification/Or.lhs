@@ -21,7 +21,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import qualified Data.Function as Function
 
-import           Kore.AST.Common (Or(..))
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.Conditional as Conditional
@@ -32,6 +31,8 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Or
+                 ( Or(..) )
 import           Kore.Unparser
 \end{code}
 
@@ -43,11 +44,11 @@ children by merging the two children.
 -}
 simplify
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
-    => Or Object (OrPattern Object variable)
+    => Or Sort (OrPattern Object variable)
     ->  ( OrPattern Object variable
         , SimplificationProof Object
         )
@@ -71,9 +72,9 @@ See 'simplify' for detailed documentation.
 -}
 simplifyEvaluated
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => OrPattern Object variable
     -> OrPattern Object variable
@@ -86,7 +87,7 @@ simplifyEvaluated
 One way to preserve the required sort annotations is to make `simplifyEvaluated`
 take an argument of type
 ``` haskell
-CofreeF (Or Object) (Valid Object) (OrPattern Object variable)
+CofreeF (Or Sort) (Valid Object) (OrPattern Object variable)
 ```
 instead of two `OrPattern` arguments. The type of `makeEvaluate` may
 be changed analogously. The `Valid` annotation will eventually cache
@@ -125,9 +126,9 @@ This simplification case is only applied if the configurations have the same
  -}
 disjoinPredicates
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -- ^ Configuration
@@ -234,9 +235,9 @@ configuration. Nevertheless, this simplification is required by
  -}
 topAnnihilates
     ::  ( SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Pattern Object variable
     -- ^ Configuration

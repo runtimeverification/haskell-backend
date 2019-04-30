@@ -35,8 +35,8 @@ import           Kore.Variables.Free
 
 
 data ApplicationSorts level = ApplicationSorts
-    { applicationSortsOperands :: ![Sort level]
-    , applicationSortsResult   :: !(Sort level)
+    { applicationSortsOperands :: ![Sort]
+    , applicationSortsResult   :: !Sort
     }
     deriving (Eq, Ord, Show)
 
@@ -45,9 +45,9 @@ pattern from the given sort parameters.
 -}
 symbolOrAliasSorts
     :: (SentenceSymbolOrAlias ssoa, MonadError (Error e) m)
-    => [Sort level]
-    -> ssoa level pat
-    -> m (ApplicationSorts level)
+    => [Sort]
+    -> ssoa Object pat
+    -> m (ApplicationSorts Object)
 symbolOrAliasSorts params sentence = do
     variableToSort <-
         pairVariablesToSorts
@@ -72,9 +72,9 @@ symbolOrAliasSorts params sentence = do
 
 substituteSortVariables
     :: MonadError (Error e) m
-    => Map.Map (SortVariable level) (Sort level)
-    -> Sort level
-    -> m (Sort level)
+    => Map.Map SortVariable Sort
+    -> Sort
+    -> m Sort
 substituteSortVariables variableToSort (SortVariableSort variable) =
     case Map.lookup variable variableToSort of
         Just sort -> return sort
@@ -93,9 +93,9 @@ substituteSortVariables
 
 pairVariablesToSorts
     :: MonadError (Error e) m
-    => [SortVariable level]
-    -> [Sort level]
-    -> m [(SortVariable level, Sort level)]
+    => [SortVariable]
+    -> [Sort]
+    -> m [(SortVariable, Sort)]
 pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
         koreFail "Application uses more sorts than the declaration."
@@ -110,10 +110,10 @@ pairVariablesToSorts variables sorts
 It assumes that the pattern has the provided sort.
 -}
 quantifyFreeVariables
-    :: (Foldable domain, Functor domain, MetaOrObject level)
-    => Sort level
-    -> PurePattern level domain Variable (Annotation.Null level)
-    -> PurePattern level domain Variable (Annotation.Null level)
+    :: (Foldable domain, Functor domain)
+    => Sort
+    -> PurePattern Object domain Variable (Annotation.Null Object)
+    -> PurePattern Object domain Variable (Annotation.Null Object)
 quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)
@@ -122,9 +122,9 @@ quantifyFreeVariables s p =
 
 wrapAndQuantify
     :: Functor domain
-    => Sort level
+    => Sort
     -> CommonPurePattern level domain
-    -> Variable level
+    -> Variable
     -> CommonPurePattern level domain
 wrapAndQuantify s p var =
     asPurePattern
@@ -136,15 +136,15 @@ wrapAndQuantify s p var =
         )
 
 checkUnique
-    :: Set.Set (Variable level) -> Set.Set (Variable level)
+    :: Set.Set (Variable) -> Set.Set (Variable)
 checkUnique variables =
     case checkUniqueEither (Set.toList variables) Map.empty of
         Right _  -> variables
         Left err -> error err
 
 checkUniqueEither
-    :: [Variable level]
-    -> Map.Map Text (Variable level)
+    :: [Variable]
+    -> Map.Map Text (Variable)
     -> Either String ()
 checkUniqueEither [] _ = Right ()
 checkUniqueEither (var:vars) indexed =

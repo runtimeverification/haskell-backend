@@ -34,11 +34,10 @@ child.
 Right now this does not do any actual simplification.
 -}
 simplify
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => Next Object (OrPattern Object variable)
     ->  ( OrPattern Object variable
@@ -50,11 +49,10 @@ simplify
     simplifyEvaluated child
 
 simplifyEvaluated
-    ::  ( MetaOrObject Object
-        , SortedVariable variable
-        , Ord (variable Object)
-        , Show (variable Object)
-        , Unparse (variable Object)
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         )
     => OrPattern Object variable
     -> (OrPattern Object variable, SimplificationProof Object)

@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Common
-                 ( Floor (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
@@ -23,6 +21,7 @@ import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Floor
 import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore
@@ -157,9 +156,9 @@ test_floorSimplification =
         }
 
 makeFloor
-    :: Ord (variable Object)
+    :: Ord variable
     => [Pattern Object variable]
-    -> Floor Object (OrPattern Object variable)
+    -> Floor Sort (OrPattern Object variable)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
@@ -168,18 +167,14 @@ makeFloor patterns =
         }
 
 evaluate
-    :: MetaOrObject level
-    => Floor level (OrPattern Object Variable)
+    :: Floor Sort (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate floor' =
     case simplify floor' of
         (result, _proof) -> result
 
 
-makeEvaluate
-    :: MetaOrObject level
-    => Pattern Object Variable
-    -> OrPattern Object Variable
+makeEvaluate :: Pattern Object Variable -> OrPattern Object Variable
 makeEvaluate child =
     case makeEvaluateFloor child of
         (result, _proof) -> result

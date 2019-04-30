@@ -37,9 +37,7 @@ import           System.IO
 import           Text.Megaparsec
                  ( parseMaybe )
 
-import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -66,7 +64,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
-                 ( TermLike )
+                 ( TermLike, Variable )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unparser
@@ -76,19 +74,18 @@ import           Kore.Unparser
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall level claim
-    .  MetaOrObject level
-    => Unparse (Variable level)
+    :: forall claim
+    .  Unparse (Variable)
     => Claim claim
     => SmtMetadataTools StepperAttributes
     -- ^ tools required for the proof
-    -> TermLikeSimplifier level
+    -> TermLikeSimplifier Object
     -- ^ pattern simplifier
-    -> PredicateSimplifier level
+    -> PredicateSimplifier Object
     -- ^ predicate simplifier
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ builtin simplifier
-    -> [Axiom level]
+    -> [Axiom Object]
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
@@ -99,14 +96,14 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     evalStateT (whileM repl0) state
 
   where
-    repl0 :: StateT (ReplState claim level) Simplifier Bool
+    repl0 :: StateT (ReplState claim Object) Simplifier Bool
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
         replInterpreter putStrLn command
 
-    state :: ReplState claim level
+    state :: ReplState claim Object
     state =
         ReplState
             { axioms   = addIndexesToAxioms axioms'
@@ -124,8 +121,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             }
 
     addIndexesToAxioms
-        :: [Axiom level]
-        -> [Axiom level]
+        :: [Axiom Object]
+        -> [Axiom Object]
     addIndexesToAxioms axs =
         fmap (Axiom . addIndex) (zip (fmap unAxiom axs) [0..])
 
@@ -139,19 +136,19 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             (zip (fmap (Rule.RewriteRule . coerce) cls) [len..])
 
     addIndex
-        :: (Rule.RewriteRule level Variable, Int)
-        -> Rule.RewriteRule level Variable
+        :: (Rule.RewriteRule Object Variable, Int)
+        -> Rule.RewriteRule Object Variable
     addIndex (rw, n) =
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
         :: Attribute.Axiom
-        -> Rule.RewriteRule level Variable
-        -> Rule.RewriteRule level Variable
+        -> Rule.RewriteRule Object Variable
+        -> Rule.RewriteRule Object Variable
     modifyAttribute att (Rule.RewriteRule rp) =
         Rule.RewriteRule $ rp { Rule.attributes = att }
 
-    getAttribute :: Rule.RewriteRule level Variable -> Attribute.Axiom
+    getAttribute :: Rule.RewriteRule Object Variable -> Attribute.Axiom
     getAttribute = Rule.attributes . Rule.getRewriteRule
 
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
@@ -170,7 +167,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     stepper0
         :: claim
         -> [claim]
-        -> [Axiom level]
+        -> [Axiom Object]
         -> ExecutionGraph
         -> Graph.Node
         -> Simplifier ExecutionGraph
@@ -214,7 +211,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => MonadState (ReplState claim level) m => m String
+    prompt :: MonadIO m => MonadState (ReplState claim Object) m => m String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do

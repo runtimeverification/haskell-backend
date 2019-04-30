@@ -67,7 +67,7 @@ import Kore.Unparser
 
 -- * Helpers
 
-type Key = PurePattern Object Builtin Concrete (Valid (Concrete Object) Object)
+type Key = PurePattern Object Builtin Concrete (Valid Concrete Object)
 
 {- | Unparse a builtin collection type, given its symbols and children.
 
@@ -75,9 +75,9 @@ The children are already unparsed.
 
  -}
 unparseCollection
-    :: SymbolOrAlias Object  -- ^ unit symbol
-    -> SymbolOrAlias Object  -- ^ element symbol
-    -> SymbolOrAlias Object  -- ^ concat symbol
+    :: SymbolOrAlias  -- ^ unit symbol
+    -> SymbolOrAlias  -- ^ element symbol
+    -> SymbolOrAlias  -- ^ concat symbol
     -> [Pretty.Doc ann]      -- ^ children
     -> Pretty.Doc ann
 unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
@@ -93,10 +93,10 @@ unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
  -}
 data InternalMap child =
     InternalMap
-        { builtinMapSort :: !(Sort Object)
-        , builtinMapUnit :: !(SymbolOrAlias Object)
-        , builtinMapElement :: !(SymbolOrAlias Object)
-        , builtinMapConcat :: !(SymbolOrAlias Object)
+        { builtinMapSort :: !Sort
+        , builtinMapUnit :: !SymbolOrAlias
+        , builtinMapElement :: !SymbolOrAlias
+        , builtinMapConcat :: !SymbolOrAlias
         , builtinMapChild :: !(Map Key child)
         }
     deriving (Foldable, Functor, Generic, Traversable)
@@ -153,10 +153,10 @@ instance Unparse child => Unparse (InternalMap child) where
  -}
 data InternalList child =
     InternalList
-        { builtinListSort :: !(Sort Object)
-        , builtinListUnit :: !(SymbolOrAlias Object)
-        , builtinListElement :: !(SymbolOrAlias Object)
-        , builtinListConcat :: !(SymbolOrAlias Object)
+        { builtinListSort :: !Sort
+        , builtinListUnit :: !SymbolOrAlias
+        , builtinListElement :: !SymbolOrAlias
+        , builtinListConcat :: !SymbolOrAlias
         , builtinListChild :: !(Seq child)
         }
     deriving (Foldable, Functor, Generic, Traversable)
@@ -209,10 +209,10 @@ instance Unparse child => Unparse (InternalList child) where
  -}
 data InternalSet =
     InternalSet
-        { builtinSetSort :: !(Sort Object)
-        , builtinSetUnit :: !(SymbolOrAlias Object)
-        , builtinSetElement :: !(SymbolOrAlias Object)
-        , builtinSetConcat :: !(SymbolOrAlias Object)
+        { builtinSetSort :: !Sort
+        , builtinSetUnit :: !SymbolOrAlias
+        , builtinSetElement :: !SymbolOrAlias
+        , builtinSetConcat :: !SymbolOrAlias
         , builtinSetChild :: !(Set Key)
         }
     deriving Generic
@@ -256,7 +256,7 @@ instance Unparse InternalSet where
  -}
 data InternalInt =
     InternalInt
-        { builtinIntSort :: !(Sort Object)
+        { builtinIntSort :: !Sort
         , builtinIntValue :: !Integer
         }
     deriving (Eq, Generic, Ord, Show)
@@ -282,7 +282,7 @@ instance Unparse InternalInt where
  -}
 data InternalBool =
     InternalBool
-        { builtinBoolSort :: !(Sort Object)
+        { builtinBoolSort :: !Sort
         , builtinBoolValue :: !Bool
         }
     deriving (Eq, Generic, Ord, Show)

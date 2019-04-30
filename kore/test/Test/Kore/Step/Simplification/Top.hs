@@ -24,18 +24,13 @@ test_topSimplification :: [TestTree]
 test_topSimplification =
     [ testCase "Top evaluates to top"
         (assertEqualWithExplanation ""
-            (OrPattern.fromPatterns
-                [ Pattern.top ]
-            )
-            (evaluate
-                Top {topSort = testSort}
-            )
+            (OrPattern.fromPattern Pattern.top)
+            (evaluate Top { topSort = testSort })
         )
     ]
 
 evaluate
-    ::  ( MetaOrObject level)
-    => Top level (OrPattern Object Variable)
+    :: Top Sort (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate top =
     case simplify top of

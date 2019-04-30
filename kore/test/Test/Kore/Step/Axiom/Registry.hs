@@ -11,8 +11,6 @@ import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
 
-import           Kore.AST.Common
-                 ( Application (..) )
 import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
                  ( groundHead )
@@ -49,6 +47,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Application
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -66,27 +65,27 @@ updateAttributes attrs = updateAttrs
             (ss { sentenceSymbolAttributes = attrs })
     updateAttrs _ = error "unsupported non-symbol sentence"
 
-sortVar :: SortVariable Object
+sortVar :: SortVariable
 sortVar = SortVariable (testId "R")
 
-sortVar1 :: SortVariable Object
+sortVar1 :: SortVariable
 sortVar1 = SortVariable (testId "R1")
 
-sortVarS :: Sort Object
+sortVarS :: Sort
 sortVarS = SortVariableSort sortVar
 
-sortVar1S :: Sort Object
+sortVar1S :: Sort
 sortVar1S = SortVariableSort sortVar1
 
-sortS :: Sort level
+sortS :: Sort
 sortS = SortActualSort (SortActual (testId "S") [])
 
-fHead, gHead, sHead, tHead :: SymbolOrAlias level
+fHead, gHead, sHead, tHead :: SymbolOrAlias
 fHead = groundHead "f" AstLocationTest
 gHead = groundHead "g" AstLocationTest
 sHead = groundHead "s" AstLocationTest
 tHead = groundHead "t" AstLocationTest
-injHead :: Sort level -> Sort level -> SymbolOrAlias level
+injHead :: Sort -> Sort -> SymbolOrAlias
 injHead s1 s2 = SymbolOrAlias
     { symbolOrAliasConstructor = testId "inj"
     , symbolOrAliasParams = [s1, s2]

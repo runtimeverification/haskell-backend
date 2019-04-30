@@ -23,10 +23,10 @@ import Kore.Domain.Class
 patternLens
     ::  forall f domain variable1 variable2 annotation
     .   (Applicative f, Domain domain, Traversable domain)
-    => (Sort Object -> f (Sort Object))  -- ^ Operand sorts
-    -> (Sort Object -> f (Sort Object))
+    => (Sort -> f Sort)  -- ^ Operand sorts
+    -> (Sort -> f Sort)
     -- ^ Result sorts, and operand sorts when the two are equal
-    -> (variable1 Object -> f (variable2 Object))  -- ^ Variables
+    -> (variable1 -> f variable2)  -- ^ Variables
     ->  (  PurePattern Object domain variable1 annotation
         -> f (PurePattern Object domain variable2 annotation)
         )
@@ -206,7 +206,7 @@ patternLens
 -- | The sort returned by a top-level constructor.
 resultSort
     :: (Domain domain, Traversable domain)
-    => Traversal' (PurePattern Object domain variable annotation) (Sort Object)
+    => Traversal' (PurePattern Object domain variable annotation) Sort
 resultSort = \f -> patternLens pure f pure pure
 
 -- | All sub-expressions which are 'Pattern's.
@@ -220,26 +220,26 @@ allChildren = patternLens pure pure pure
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
-    :: (MetaOrObject level, Domain domain, Traversable domain)
+    :: (Domain domain, Traversable domain)
     => [Int]
-    ->  (  PurePattern level domain variable annotation
-        -> PurePattern level domain variable annotation
+    ->  (  PurePattern Object domain variable annotation
+        -> PurePattern Object domain variable annotation
         )
-    -> PurePattern level domain variable annotation
-    -> PurePattern level domain variable annotation
+    -> PurePattern Object domain variable annotation
+    -> PurePattern Object domain variable annotation
 localInPattern path f pat = pat & inPath path %~ f
 
 -- | Takes an `[Int]` representing a path, and returns a lens to that position.
 -- The ints represent subpatterns in the obvious way:
 -- [0,1] points to b in \ceil(a /\ b), etc.
 inPath
-    :: (MetaOrObject level, Applicative f, Domain domain, Traversable domain)
+    :: (Applicative f, Domain domain, Traversable domain)
     => [Int]
-    ->  (  PurePattern level domain variable annotation
-        -> f (PurePattern level domain variable annotation)
+    ->  (  PurePattern Object domain variable annotation
+        -> f (PurePattern Object domain variable annotation)
         )
-    ->  (  PurePattern level domain variable annotation
-        -> f (PurePattern level domain variable annotation)
+    ->  (  PurePattern Object domain variable annotation
+        -> f (PurePattern Object domain variable annotation)
         )
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns

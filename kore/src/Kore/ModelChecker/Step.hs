@@ -33,8 +33,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Debug.Trace
 import           GHC.Generics
 
-import           Kore.AST.Common
-                 ( Variable )
 import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -61,6 +59,8 @@ import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
+                 ( Variable )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -81,8 +81,8 @@ data ModalPattern level variable = ModalPattern
     , term  :: !(TermLike variable)
     }
 
-deriving instance Eq (variable Object) => Eq (ModalPattern level variable)
-deriving instance Show (variable Object) => Show (ModalPattern level variable)
+deriving instance Eq variable => Eq (ModalPattern level variable)
+deriving instance Show variable => Show (ModalPattern level variable)
 
 type CommonModalPattern level = ModalPattern level Variable
 
@@ -116,16 +116,15 @@ computeWeakNext = ComputeWeakNext
 type Transition = TransitionT (RewriteRule Object Variable) (StateT (Maybe ()) Simplifier)
 
 transitionRule
-    :: forall level . (MetaOrObject level)
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (CommonModalPattern level) (RewriteRule level Variable)
-    -> CommonProofState level
-    -> Transition (CommonProofState level)
+    -> Prim (CommonModalPattern Object) (RewriteRule Object Variable)
+    -> CommonProofState Object
+    -> Transition (CommonProofState Object)
 transitionRule
     tools
     predicateSimplifier
@@ -143,15 +142,15 @@ transitionRule
         ComputeWeakNext rewrites -> transitionComputeWeakNext rewrites proofState
   where
     transitionCheckProofState
-        :: CommonProofState level
-        -> Transition (CommonProofState level)
+        :: CommonProofState Object
+        -> Transition (CommonProofState Object )
     transitionCheckProofState Proven = empty
     transitionCheckProofState Unprovable = empty
     transitionCheckProofState ps = return ps
 
     transitionSimplify
-        :: CommonProofState level
-        -> Transition (CommonProofState level)
+        :: CommonProofState Object
+        -> Transition (CommonProofState Object )
     transitionSimplify Proven = return Proven
     transitionSimplify Unprovable = return Unprovable
     transitionSimplify (GoalLHS config) =
@@ -177,9 +176,9 @@ transitionRule
                 else Foldable.asum (pure <$> map wrapper (Foldable.toList nonEmptyConfigs))
 
     transitionUnroll
-        :: CommonModalPattern level
-        -> CommonProofState level
-        -> Transition (CommonProofState level)
+        :: CommonModalPattern Object
+        -> CommonProofState Object
+        -> Transition (CommonProofState Object )
     transitionUnroll _ Proven = empty
     transitionUnroll _ Unprovable = empty
     transitionUnroll goalrhs (GoalLHS config)
@@ -219,9 +218,9 @@ transitionRule
                  ]
 
     transitionComputeWeakNext
-        :: [RewriteRule level Variable]
-        -> CommonProofState level
-        -> Transition (CommonProofState level)
+        :: [RewriteRule Object Variable]
+        -> CommonProofState Object
+        -> Transition (CommonProofState Object)
     transitionComputeWeakNext _ Proven = return Proven
     transitionComputeWeakNext _ Unprovable = return Unprovable
     transitionComputeWeakNext rules (GoalLHS config)
@@ -230,9 +229,9 @@ transitionRule
       = return (GoalLHS Pattern.bottom)
 
     transitionComputeWeakNextHelper
-        :: [RewriteRule level Variable]
+        :: [RewriteRule Object Variable]
         -> (Pattern Object Variable)
-        -> Transition (CommonProofState level)
+        -> Transition (CommonProofState Object)
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do

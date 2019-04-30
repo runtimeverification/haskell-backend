@@ -9,7 +9,6 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
-import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -47,6 +46,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.Variable
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -553,11 +553,10 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 evaluate
-    :: forall level . MetaOrObject level
-    => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifier level
+    :: SmtMetadataTools StepperAttributes
+    -> BuiltinAndAxiomSimplifier Object
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom level)
+    -> IO (CommonAttemptedAxiom Object)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -565,13 +564,11 @@ evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where
-    substitutionSimplifier :: PredicateSimplifier level
+    substitutionSimplifier :: PredicateSimplifier Object
     substitutionSimplifier =
         Predicate.create
             metadataTools
             patternSimplifier
             Map.empty
-    patternSimplifier
-        ::  ( MetaOrObject level )
-        => TermLikeSimplifier level
+    patternSimplifier :: TermLikeSimplifier Object
     patternSimplifier = Simplifier.create metadataTools Map.empty

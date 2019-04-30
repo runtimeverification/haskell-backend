@@ -31,9 +31,9 @@ import           Kore.Unparser
 an or containing a term made of that value.
 -}
 simplify
-    :: ( Ord (variable Object)
-       , Show (variable Object)
-       , Unparse (variable Object)
+    :: ( Ord variable
+       , Show variable
+       , Unparse variable
        , SortedVariable variable
        )
     => SmtMetadataTools attrs
@@ -49,9 +49,9 @@ simplify _ builtin =
     )
 
 simplifyBuiltin
-    :: ( Ord (variable Object)
-       , Show (variable Object)
-       , Unparse (variable Object)
+    :: ( Ord variable
+       , Show variable
+       , Unparse variable
        , SortedVariable variable
        )
     => Domain.Builtin (OrPattern Object variable)

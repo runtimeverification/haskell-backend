@@ -1,9 +1,5 @@
 {- |
-Module      : Kore.Sort
-Description : Kore sorts and sort variables
 Copyright   : (c) Runtime Verification, 2018
-License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
@@ -30,8 +26,7 @@ module Kore.Sort
     , predicateSortActual
     , predicateSort
     -- * Re-exports
-    , module Kore.AST.Identifier
-    , module Kore.AST.MetaOrObject
+    , module Kore.Syntax.Id
     ) where
 
 import           Control.DeepSeq
@@ -42,26 +37,24 @@ import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.Identifier
-import Kore.AST.MetaOrObject
+import Kore.Syntax.Id
 import Kore.Unparser
 
-{-|'SortVariable' corresponds to the @object-sort-variable@ and
-@meta-sort-variable@ syntactic categories from the Semantics of K,
-Section 9.1.2 (Sorts).
+{- | @SortVariable@ is a Kore sort variable.
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-newtype SortVariable level = SortVariable
-    { getSortVariable  :: Id level }
+@SortVariable@ corresponds to the @sort-variable@ syntactic category from the
+Semantics of K, Section 9.1.2 (Sorts).
+
+ -}
+newtype SortVariable = SortVariable
+    { getSortVariable  :: Id }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (SortVariable level)
+instance Hashable SortVariable
 
-instance NFData (SortVariable level)
+instance NFData SortVariable
 
-instance Unparse (SortVariable level) where
+instance Unparse SortVariable where
     unparse = unparse . getSortVariable
     unparse2 SortVariable { getSortVariable } = unparse2 getSortVariable
 
@@ -72,17 +65,17 @@ Section 9.1.2 (Sorts).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SortActual level = SortActual
-    { sortActualName  :: !(Id level)
-    , sortActualSorts :: ![Sort level]
+data SortActual = SortActual
+    { sortActualName  :: !Id
+    , sortActualSorts :: ![Sort]
     }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (SortActual level)
+instance Hashable SortActual
 
-instance NFData (SortActual level)
+instance NFData SortActual
 
-instance Unparse (SortActual level) where
+instance Unparse SortActual where
     unparse SortActual { sortActualName, sortActualSorts } =
         unparse sortActualName <> parameters sortActualSorts
     unparse2 SortActual { sortActualName, sortActualSorts } =
@@ -101,16 +94,16 @@ Section 9.1.2 (Sorts).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data Sort level
-    = SortVariableSort !(SortVariable level)
-    | SortActualSort !(SortActual level)
+data Sort
+    = SortVariableSort !SortVariable
+    | SortActualSort !SortActual
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (Sort level)
+instance Hashable Sort
 
-instance NFData (Sort level)
+instance NFData Sort
 
-instance Unparse (Sort level) where
+instance Unparse Sort where
     unparse =
         \case
             SortVariableSort sortVariable -> unparse sortVariable
@@ -125,10 +118,10 @@ Sort variables that are not in the substitution are not changed.
 
  -}
 substituteSortVariables
-    :: Map.Map (SortVariable level) (Sort level)
+    :: Map.Map SortVariable Sort
     -- ^ Sort substitution
-    -> Sort level
-    -> Sort level
+    -> Sort
+    -> Sort
 substituteSortVariables substitution sort =
     case sort of
         SortVariableSort var ->
@@ -179,28 +172,28 @@ metaSortTypeString StringSort            = "String"
 instance Show MetaSortType where
     show sortType = '#' : metaSortTypeString sortType
 
-charMetaSortId :: Id Meta
+charMetaSortId :: Id
 charMetaSortId = implicitId "#Char"
 
-charMetaSortActual :: SortActual Meta
+charMetaSortActual :: SortActual
 charMetaSortActual = SortActual charMetaSortId []
 
-charMetaSort :: Sort Meta
+charMetaSort :: Sort
 charMetaSort = SortActualSort charMetaSortActual
 
-stringMetaSortId :: Id Meta
+stringMetaSortId :: Id
 stringMetaSortId = implicitId "#String"
 
-stringMetaSortActual :: SortActual Meta
+stringMetaSortActual :: SortActual
 stringMetaSortActual = SortActual stringMetaSortId []
 
-stringMetaSort :: Sort Meta
+stringMetaSort :: Sort
 stringMetaSort = SortActualSort stringMetaSortActual
 
-predicateSortId :: Id level
+predicateSortId :: Id
 predicateSortId = implicitId "_PREDICATE"
 
-predicateSortActual :: SortActual level
+predicateSortActual :: SortActual
 predicateSortActual = SortActual predicateSortId []
 
 {- | Placeholder sort for constructing new predicates.
@@ -208,12 +201,12 @@ predicateSortActual = SortActual predicateSortId []
 The final predicate sort is unknown until the predicate is attached to a
 pattern.
  -}
-predicateSort :: Sort level
+predicateSort :: Sort
 {- TODO PREDICATE (thomas.tuegel):
 
 Add a constructor
 
-> data Sort level = ... | FlexibleSort
+> data Sort = ... | FlexibleSort
 
 to use internally as a placeholder where the predicate sort is not yet
 known. Using the sort _PREDICATE{} is a kludge; the backend will melt down if

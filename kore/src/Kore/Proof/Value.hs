@@ -42,6 +42,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.TermLike
                  ( Concrete, TermLike )
+import           Kore.Syntax.Application
 
 {- | Proof (by construction) that a pattern is a normalized value.
 
@@ -49,8 +50,8 @@ import           Kore.Step.TermLike
     value), a sort injection, or a domain value.
  -}
 data ValueF level child where
-    Constructor :: !(Pattern.Application level child) -> ValueF level child
-    SortInjection :: !(Pattern.Application level child) -> ValueF level child
+    Constructor :: !(Application SymbolOrAlias child) -> ValueF level child
+    SortInjection :: !(Application SymbolOrAlias child) -> ValueF level child
     DomainValue :: !(Domain.Builtin child) -> ValueF Object child
 
 deriving instance Eq child => Eq (ValueF level child)
@@ -73,11 +74,11 @@ instance Show1 (ValueF level) where
     liftShowsPrec = $(Deriving.makeLiftShowsPrec ''ValueF)
 
 newtype Value (level :: *) =
-    Value { getValue :: Cofree (ValueF level) (Valid (Concrete level) level) }
+    Value { getValue :: Cofree (ValueF level) (Valid Concrete level) }
     deriving (Eq, Generic, Ord, Show)
 
 type instance Base (Value level) =
-    CofreeF (ValueF level) (Valid (Concrete level) level)
+    CofreeF (ValueF level) (Valid Concrete level)
 
 instance Recursive (Value level) where
     project (Value embedded) =

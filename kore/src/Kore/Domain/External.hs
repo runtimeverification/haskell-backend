@@ -37,7 +37,7 @@ import Kore.Unparser
 
 data External child =
     External
-        { domainValueSort :: Sort Object
+        { domainValueSort :: Sort
         , domainValueChild :: CommonPurePattern Meta (Const Void)
         }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)

@@ -883,27 +883,24 @@ mockMetaMetadataTools =
     Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
 matchDefinition
-    :: forall level . ( MetaOrObject level )
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate level Variable))
+    -> IO (Maybe (OrPredicate Object Variable))
 matchDefinition = match
 
 matchSimplification
-    :: forall level . ( MetaOrObject level )
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate level Variable))
+    -> IO (Maybe (OrPredicate Object Variable))
 matchSimplification = match
 
 unificationWithMatch
-    :: forall level . ( MetaOrObject level )
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate level Variable))
+    -> IO (Maybe (OrPredicate Object Variable))
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
@@ -920,11 +917,10 @@ unificationWithMatch tools first second = do
         Right (result, _proof) -> return (Just result)
 
 match
-    :: forall level . ( MetaOrObject level )
-    => SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate level Variable))
+    -> IO (Maybe (OrPredicate Object Variable))
 match tools first second =
     matchAsEither >>= return . \case
         Left _err -> Nothing
@@ -933,9 +929,9 @@ match tools first second =
     matchAsEither
         :: IO
             (Either
-                (UnificationOrSubstitutionError level Variable)
-                ( OrPredicate level Variable
-                , UnificationProof level Variable
+                (UnificationOrSubstitutionError Object Variable)
+                ( OrPredicate Object Variable
+                , UnificationProof Object Variable
                 )
             )
     matchAsEither =
@@ -944,10 +940,10 @@ match tools first second =
             $ runExceptT matchResult
     matchResult
         :: ExceptT
-            (UnificationOrSubstitutionError level Variable)
+            (UnificationOrSubstitutionError Object Variable)
             Simplifier
-            ( OrPredicate level Variable
-            , UnificationProof level Variable
+            ( OrPredicate Object Variable
+            , UnificationProof Object Variable
             )
     matchResult =
         Monad.Unify.getUnifier $ matchAsUnification

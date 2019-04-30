@@ -18,6 +18,15 @@ import Kore.AST.Common
 import Kore.AST.Sentence
 import Kore.Domain.Class
 import Kore.Sort
+import Kore.Syntax.And
+import Kore.Syntax.Application
+import Kore.Syntax.Bottom
+import Kore.Syntax.Ceil
+import Kore.Syntax.Floor
+import Kore.Syntax.Or
+import Kore.Syntax.SetVariable
+import Kore.Syntax.Top
+import Kore.Syntax.Variable
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.
@@ -35,21 +44,21 @@ instance AstWithLocation AstLocation where
     locationFromAst = id
     updateAstLocation _ loc = loc
 
-instance AstWithLocation (Id level) where
+instance AstWithLocation Id where
     locationFromAst = idLocation
     updateAstLocation id' loc = id' { idLocation = loc }
 
-instance AstWithLocation (SortVariable level) where
+instance AstWithLocation SortVariable where
     locationFromAst = locationFromAst . getSortVariable
     updateAstLocation (SortVariable v) loc =
         SortVariable (updateAstLocation v loc)
 
-instance AstWithLocation (SortActual level) where
+instance AstWithLocation SortActual where
     locationFromAst = locationFromAst . sortActualName
     updateAstLocation sa loc =
         sa { sortActualName = updateAstLocation (sortActualName sa) loc }
 
-instance AstWithLocation (Sort level) where
+instance AstWithLocation Sort where
     locationFromAst (SortVariableSort sortVariable) =
         locationFromAst sortVariable
     locationFromAst (SortActualSort sortActual) =
@@ -59,7 +68,7 @@ instance AstWithLocation (Sort level) where
     updateAstLocation (SortActualSort sortActual) loc =
         SortActualSort (updateAstLocation sortActual loc)
 
-instance AstWithLocation (Variable level) where
+instance AstWithLocation Variable where
     locationFromAst = locationFromAst . variableName
     updateAstLocation var loc =
         var {variableName = updateAstLocation (variableName var) loc}
@@ -69,7 +78,7 @@ instance AstWithLocation (Alias level) where
     updateAstLocation al loc =
         al { aliasConstructor = updateAstLocation (aliasConstructor al) loc }
 
-instance AstWithLocation (SymbolOrAlias level) where
+instance AstWithLocation SymbolOrAlias where
     locationFromAst = locationFromAst . symbolOrAliasConstructor
     updateAstLocation sal loc =
         sal
@@ -83,7 +92,7 @@ instance AstWithLocation (Symbol level) where
         s { symbolConstructor = updateAstLocation (symbolConstructor s) loc }
 
 instance
-    (Domain domain, AstWithLocation (variable level)) =>
+    (Domain domain, AstWithLocation variable) =>
     AstWithLocation (Pattern level domain variable child)
   where
     locationFromAst =

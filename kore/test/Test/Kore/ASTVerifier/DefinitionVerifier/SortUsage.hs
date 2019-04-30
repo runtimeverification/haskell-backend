@@ -36,7 +36,7 @@ data AdditionalTestConfiguration
 data TestConfiguration = TestConfiguration
     { testConfigurationDescription :: !String
     , testConfigurationAdditionalSentences :: ![Verified.Sentence]
-    , testConfigurationAdditionalSortVariables :: ![SortVariable Object]
+    , testConfigurationAdditionalSortVariables :: ![SortVariable]
     , testConfigurationCaseBasedConfiguration
         :: ![([TestFlag], AdditionalTestConfiguration)]
     }
@@ -102,8 +102,7 @@ test_sortUsage =
         (SuccessConfiguration TestConfiguration
             { testConfigurationDescription = "The variable is declared"
             , testConfigurationAdditionalSentences = []
-            , testConfigurationAdditionalSortVariables =
-                [ sortVariable @Object "s" ]
+            , testConfigurationAdditionalSortVariables = [sortVariable "s"]
             , testConfigurationCaseBasedConfiguration =
                 [
                     ( [CannotSeeSortDeclarations, CannotSeeSortVariables]
@@ -129,7 +128,7 @@ test_sortUsage =
             , testConfigurationAdditionalSentences =
                 [ simpleSortSentence additionalSortName ]
             , testConfigurationAdditionalSortVariables =
-                [ sortVariable @Object "s" ]
+                [ sortVariable "s" ]
             , testConfigurationCaseBasedConfiguration =
                 [
                     ( [CannotSeeSortDeclarations, CannotSeeSortVariables]
@@ -167,7 +166,7 @@ test_sortUsage =
             { testConfigurationDescription = "The sort is declared"
             , testConfigurationAdditionalSentences = []
             , testConfigurationAdditionalSortVariables =
-                [ sortVariable @Meta "#s" ]
+                [ sortVariable "#s" ]
             , testConfigurationCaseBasedConfiguration =
                 [([CannotSeeSortVariables], SkipTest)]
             }
@@ -431,7 +430,7 @@ flaggedObjectTestsForSort
     additionalSortActual
     namePrefix
   =
-    unfilteredTestExamplesForSort Object
+    unfilteredTestExamplesForSort
         sort
         additionalSortActual
         sortVariables
@@ -459,7 +458,7 @@ flaggedMetaTestsForSort
     additionalSortActual
     namePrefix
   =
-    unfilteredTestExamplesForSort Meta
+    unfilteredTestExamplesForSort
         sort
         additionalSortActual
         (testConfigurationAdditionalSortVariables testConfiguration)
@@ -497,22 +496,19 @@ applyOneTestConfiguration testConfiguration flaggedTestData =
             (`elem` flaggedTestDataFlags flaggedTestData)
             (fst configurationWithFlags)
 
-newtype TestedSort level = TestedSort (Sort level)
+newtype TestedSort level = TestedSort Sort
 newtype SortActualThatIsDeclared level =
-    SortActualThatIsDeclared (SortActual level)
+    SortActualThatIsDeclared SortActual
 
 unfilteredTestExamplesForSort
-    :: forall level . MetaOrObject level
-    => level
-    -> TestedSort level
+    :: TestedSort level
     -> SortActualThatIsDeclared level
-    -> [SortVariable level]
+    -> [SortVariable]
     -> NamePrefix
     -> (Verified.SentenceAlias -> Verified.Sentence)
     -> (Verified.SentenceSymbol -> Verified.Sentence)
     -> [FlaggedTestData]
 unfilteredTestExamplesForSort
-    _x
     (TestedSort sort)
     (SortActualThatIsDeclared additionalSortActual)
     sortVariables
@@ -680,7 +676,7 @@ unfilteredTestExamplesForSort
                         (symbolSentenceWithSortParameters
                             (SymbolName rawAliasName)
                             additionalSortName
-                            [sortVariable @level sortVariableName1]
+                            [sortVariable sortVariableName1]
                         )
                     : additionalSentences
                     )
@@ -701,7 +697,7 @@ unfilteredTestExamplesForSort
 unfilteredTestExamplesForObjectSort
     :: TestedSort Object
     -> SortActualThatIsDeclared Object
-    -> [SortVariable Object]
+    -> [SortVariable]
     -> NamePrefix
     -> [FlaggedTestData]
 unfilteredTestExamplesForObjectSort
@@ -742,10 +738,10 @@ unfilteredTestExamplesForObjectSort
                     : symbolSentenceWithResultSort
                         (SymbolName "a")
                         resultSort
-                        [sortVariable @Object sortVariableName1]
+                        [sortVariable sortVariableName1]
                     : sortSentenceWithSortParameters
                         differentAdditionalSortName
-                        [sortVariable @Object sortVariableName2]
+                        [sortVariable sortVariableName2]
                     : additionalSentences
                     )
             }

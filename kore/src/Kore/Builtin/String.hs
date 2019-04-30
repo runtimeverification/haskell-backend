@@ -197,8 +197,8 @@ expectBuiltinString ctx =
 
  -}
 asTermLike
-    :: Ord (variable Object)
-    => Sort Object  -- ^ resulting sort
+    :: Ord variable
+    => Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> TermLike variable
 asTermLike resultSort result =
@@ -213,7 +213,7 @@ asTermLike resultSort result =
 
  -}
 asConcretePattern
-    :: Sort Object  -- ^ resulting sort
+    :: Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> TermLike Concrete
 asConcretePattern domainValueSort builtinStringChild =
@@ -225,16 +225,16 @@ asConcretePattern domainValueSort builtinStringChild =
             }
 
 asPattern
-    :: Ord (variable Object)
-    => Sort Object  -- ^ resulting sort
+    :: Ord variable
+    => Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> Pattern Object variable
 asPattern resultSort =
     Pattern.fromTermLike . asTermLike resultSort
 
 asPartialPattern
-    :: Ord (variable Object)
-    => Sort Object  -- ^ resulting sort
+    :: Ord variable
+    => Sort  -- ^ resulting sort
     -> Maybe Text  -- ^ builtin value to render
     -> Pattern Object variable
 asPartialPattern resultSort =

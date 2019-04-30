@@ -64,7 +64,6 @@ import qualified Kore.Step.Simplification.Not as Not
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -145,25 +144,22 @@ Normalization of the compared terms is not implemented yet, so
 Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Equals level (OrPattern level variable)
+    -> Equals Object (OrPattern Object variable)
     -> Simplifier
-        ( OrPattern level variable
-        , SimplificationProof level
+        ( OrPattern Object variable
+        , SimplificationProof Object
         )
 simplify
     tools
@@ -188,7 +184,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Equals level) (Valid level) (OrPattern level variable)
+> CofreeF (Equals Object) (Valid Object) (OrPattern Object variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -196,25 +192,22 @@ besides the pattern sort, which will make it even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> OrPattern level variable
-    -> OrPattern level variable
+    -> OrPattern Object variable
+    -> OrPattern Object variable
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -268,26 +261,23 @@ simplifyEvaluated
     isFunctionConditional Conditional {term} = isFunctionPattern tools term
 
 makeEvaluateFunctionalOr
-    :: forall variable level .
-        ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    :: forall variable .
+        ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level variable
-    -> [Pattern level variable]
+    -> Pattern Object variable
+    -> [Pattern Object variable]
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateFunctionalOr
     tools
     substitutionSimplifier
@@ -360,14 +350,14 @@ makeEvaluateFunctionalOr
         , SimplificationProof
         )
   where
-    dropProof :: (a, SimplificationProof level) -> a
+    dropProof :: (a, SimplificationProof Object) -> a
     dropProof = fst
-    dropProofFold :: (a -> b -> (a, SimplificationProof level)) -> a -> b -> a
+    dropProofFold :: (a -> b -> (a, SimplificationProof Object)) -> a -> b -> a
     dropProofFold f x y = dropProof (f x y)
-    dropProofM :: Simplifier (a, SimplificationProof level) -> Simplifier a
+    dropProofM :: Simplifier (a, SimplificationProof Object) -> Simplifier a
     dropProofM = fmap dropProof
     dropProofFoldM
-        :: (a -> b -> Simplifier (a, SimplificationProof level))
+        :: (a -> b -> Simplifier (a, SimplificationProof Object))
         -> a
         -> b
         -> Simplifier a
@@ -399,25 +389,22 @@ makeEvaluateFunctionalOr
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern level variable
-    -> Pattern level variable
+    -> Pattern Object variable
+    -> Pattern Object variable
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeEvaluate
     _
     _
@@ -535,25 +522,22 @@ makeEvaluate
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> TermLike variable
     -> Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateTermsAssumesNoBottom
     tools
     substitutionSimplifier
@@ -587,26 +571,23 @@ makeEvaluateTermsAssumesNoBottom
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe
-    :: forall level variable .
-        ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    :: forall variable .
+        ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier
-        (OrPattern level variable, SimplificationProof level)
+        (OrPattern Object variable, SimplificationProof Object)
 makeEvaluateTermsAssumesNoBottomMaybe
     tools
     substitutionSimplifier
@@ -639,25 +620,22 @@ because it returns an 'or').
 See 'simplify' for detailed documentation.
 -}
 makeEvaluateTermsToPredicate
-    ::  ( MetaOrObject level
-        , SortedVariable variable
-        , Ord (variable level)
-        , Show (variable level)
-        , Unparse (variable level)
-        , OrdMetaOrObject variable
-        , ShowMetaOrObject variable
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
-    -> TermLikeSimplifier level
+    -> PredicateSimplifier Object
+    -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> TermLike variable
     -> Simplifier
-        (OrPredicate level variable, SimplificationProof level)
+        (OrPredicate Object variable, SimplificationProof Object)
 makeEvaluateTermsToPredicate
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =

@@ -66,8 +66,8 @@ the predicate from being sent to SMT.
  -}
 translatePredicate
     :: forall p variable .
-        ( Ord (variable Object)
-        , Unparse (variable Object)
+        ( Ord variable
+        , Unparse variable
         , Given (SmtMetadataTools StepperAttributes)
         , p ~ TermLike variable
         )
@@ -161,7 +161,7 @@ translatePredicate translateUninterpreted predicate =
     -- | Translate a functional pattern in the builtin Int sort for SMT.
     translateInt
         ::  ( Given (SmtMetadataTools StepperAttributes)
-            , Ord (variable Object)
+            , Ord variable
             , p ~ TermLike variable
             )
         => p
@@ -181,7 +181,7 @@ translatePredicate translateUninterpreted predicate =
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
     translateBool
         ::  ( Given (SmtMetadataTools StepperAttributes)
-            , Ord (variable Object)
+            , Ord variable
             , p ~ TermLike variable
             )
         => p
@@ -205,10 +205,10 @@ translatePredicate translateUninterpreted predicate =
 
     translateApplication
         ::  ( Given (SmtMetadataTools StepperAttributes)
-            , Ord (variable Object)
+            , Ord variable
             , p ~ TermLike variable
             )
-        => Application Object p
+        => Application SymbolOrAlias p
         -> Translator p SExpr
     translateApplication
         Application
@@ -230,7 +230,7 @@ translatePredicate translateUninterpreted predicate =
         ::  ( Given (SmtMetadataTools StepperAttributes)
             , p ~ TermLike variable
             )
-        => Sort Object
+        => Sort
         -> p
         -> Translator p SExpr
     translatePattern sort pat =

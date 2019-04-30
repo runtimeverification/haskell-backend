@@ -10,10 +10,10 @@ import Test.Kore
        ( sortActual )
 import Test.Kore.Attribute.Parser
 
-sub :: Sort Object
+sub :: Sort
 sub = sortActual "sub" []
 
-super :: Sort Object
+super :: Sort
 super = sortActual "super" []
 
 parseSubsorts :: Attributes -> Parser Subsorts

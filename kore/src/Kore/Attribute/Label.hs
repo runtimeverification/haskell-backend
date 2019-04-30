@@ -35,11 +35,11 @@ instance Default Label where
 instance NFData Label
 
 -- | Kore identifier representing the @label@ attribute symbol.
-labelId :: Id Object
+labelId :: Id
 labelId = "label"
 
 -- | Kore symbol representing the @label@ attribute.
-labelSymbol :: SymbolOrAlias Object
+labelSymbol :: SymbolOrAlias
 labelSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = labelId
@@ -60,7 +60,7 @@ instance ParseAttributes Label where
           | otherwise = do
             Parser.getZeroParams params
             arg1 <- Parser.getOneArgument args
-            str <- Parser.getStringLiteral arg1
-            return Label { unLabel = Just (Common.getStringLiteral str) }
+            StringLiteral str <- Parser.getStringLiteral arg1
+            return Label { unLabel = Just str }
         withApplication' = Parser.withApplication labelId
         failDuplicate' = Parser.failDuplicate labelId

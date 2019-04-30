@@ -30,7 +30,7 @@ testComparison
     :: TestName
     -> (Text -> Text -> Bool)
     -- ^ implementation
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -- ^ symbol
     -> TestTree
 testComparison name impl symb =
@@ -336,7 +336,7 @@ asPartialPattern = String.asPartialPattern stringSort
 testString
     :: HasCallStack
     => String
-    -> SymbolOrAlias Object
+    -> SymbolOrAlias
     -> [TermLike Variable]
     -> Pattern Object Variable
     -> TestTree

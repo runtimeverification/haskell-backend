@@ -5,8 +5,7 @@ import Test.Tasty.HUnit
 
 import Kore.Attribute.Axiom.Concrete
 
-import Test.Kore.Attribute.Parser hiding
-       ( Concrete )
+import Test.Kore.Attribute.Parser
 
 parseConcrete :: Attributes -> Parser Concrete
 parseConcrete = parseAttributes

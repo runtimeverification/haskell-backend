@@ -28,9 +28,9 @@ import Kore.AST.Pure
 
 -- | The free variables of a pure pattern.
 freePureVariables
-    :: (Foldable domain, Functor domain, Ord (variable level))
+    :: (Foldable domain, Functor domain, Ord variable)
     => PurePattern level domain variable annotation
-    -> Set (variable level)
+    -> Set variable
 freePureVariables root =
     let (free, ()) =
             Monad.RWS.execRWS
@@ -62,11 +62,11 @@ freePureVariables root =
             p -> mapM_ freePureVariables1 p
 
 pureMergeVariables
-    :: (Foldable domain, Ord (variable level))
+    :: (Foldable domain, Ord variable)
     => Base
         (PurePattern level domain variable annotation)
-        (Set.Set (variable level))
-    -> Set.Set (variable level)
+        (Set.Set variable)
+    -> Set.Set variable
 pureMergeVariables base =
     case Cofree.tailF base of
         VariablePattern v -> Set.singleton v
@@ -80,9 +80,9 @@ pureMergeVariables base =
 set, regardless of whether they are quantified or not.
 -}
 pureAllVariables
-    :: (Foldable domain, Functor domain, Ord (variable level))
+    :: (Foldable domain, Functor domain, Ord variable)
     => PurePattern level domain variable annotation
-    -> Set.Set (variable level)
+    -> Set.Set variable
 pureAllVariables = Recursive.fold pureMergeVariables
 
 {- | @synthetic@ is an algebra for the free variables of a pattern.
@@ -93,10 +93,10 @@ free variables as a synthetic attribute.
  -}
 synthetic
     ::  ( Foldable domain
-        , Ord (variable level)
+        , Ord variable
         )
-    => CofreeF (Pattern level domain variable) a (Set.Set (variable level))
-    -> Set.Set (variable level)
+    => CofreeF (Pattern level domain variable) a (Set.Set variable)
+    -> Set.Set variable
 synthetic (_ :< patternHead) =
     case patternHead of
         ExistsPattern Exists { existsVariable, existsChild } ->

@@ -25,11 +25,10 @@ import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplifyToOr )
 
 create
-    ::  ( MetaOrObject level )
-    => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap level
+    :: SmtMetadataTools StepperAttributes
+    -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLikeSimplifier level
+    -> TermLikeSimplifier Object
 create
     tools
     axiomIdToEvaluator

@@ -31,7 +31,7 @@ test_keq = testBinary keqBoolSymbol (==)
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary
-    :: SymbolOrAlias Object
+    :: SymbolOrAlias
     -- ^ hooked symbol
     -> (Bool -> Bool -> Bool)
     -- ^ operator

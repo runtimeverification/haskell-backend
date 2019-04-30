@@ -2,13 +2,13 @@ module Test.Kore.Step.Remainder where
 
 import Test.Tasty
 
-import           Kore.AST.Common
-                 ( Variable )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
+import           Kore.Syntax.Variable
+                 ( Variable )
 import           Kore.Variables.Target
                  ( Target (..) )
 

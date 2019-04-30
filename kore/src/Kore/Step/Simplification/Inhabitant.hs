@@ -22,10 +22,10 @@ import           Kore.Step.Simplification.Data
 an or containing a term made of that literal.
 -}
 simplify
-    :: (MetaOrObject level, Ord (variable level), SortedVariable variable)
-    => Sort level
-    -> ( OrPattern level variable
-       , SimplificationProof level
+    :: (Ord variable, SortedVariable variable)
+    => Sort
+    -> ( OrPattern Object variable
+       , SimplificationProof Object
        )
 simplify s =
     ( MultiOr.singleton Conditional

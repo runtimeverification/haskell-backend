@@ -15,12 +15,11 @@ import Data.Text
        ( Text )
 
 import Kore.AST.Common
-import Kore.AST.MetaOrObject
 import Kore.Attribute.Parser
 import Kore.Attribute.Smtlib.Smthook
 
 -- | Kore symbol representing the @smthook@ attribute.
-smthookSymbol :: SymbolOrAlias Object
+smthookSymbol :: SymbolOrAlias
 smthookSymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = smthookId

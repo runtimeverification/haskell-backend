@@ -1,14 +1,11 @@
 {- |
-Module      : Kore.AST.Identifier
-Description : Kore identifiers and locations
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-module Kore.AST.Identifier
+module Kore.Syntax.Id
     (
     -- * Identifiers
       Id (..)
@@ -36,17 +33,56 @@ import           GHC.Generics
 
 import Kore.Unparser
 
-{-| 'FileLocation' represents a position in a source file.
--}
-data FileLocation = FileLocation
-    { fileName :: FilePath
-    , line     :: Int
-    , column   :: Int
-    }
-    deriving (Eq, Show, Generic)
+{- | @Id@ is a Kore identifier.
 
-instance Hashable FileLocation
-instance NFData FileLocation
+@Id@ corresponds to the @identifier@ syntactic category from the Semantics of K,
+Section 9.1.1 (Lexicon).
+
+ -}
+data Id = Id
+    { getId      :: !Text
+    , idLocation :: !AstLocation
+    }
+    deriving (Show, Generic)
+
+-- | 'Ord' ignores the 'AstLocation'
+instance Ord Id where
+    compare first@(Id _ _) second@(Id _ _) =
+        compare (getId first) (getId second)
+
+{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
+-- | 'Eq' ignores the 'AstLocation'
+instance Eq Id where
+    first == second = compare first second == EQ
+
+instance Hashable Id
+
+instance NFData Id
+
+instance IsString Id where
+    fromString = noLocationId . fromString
+
+instance Unparse Id where
+    unparse = Pretty.pretty . getId
+    unparse2 = Pretty.pretty . getId
+
+{- | Create an 'Id' without location.
+
+Before doing this, you should consider using an existing case or adding a new
+constructor to 'AstLocation'.
+
+ -}
+noLocationId :: Text -> Id
+noLocationId name = Id name AstLocationNone
+
+-- | Create an implicit 'Id'.
+implicitId :: Text -> Id
+implicitId name = Id name AstLocationImplicit
+
+{- | Get the identifier name for an error message 'String'.
+ -}
+getIdForError :: Id -> String
+getIdForError = Text.unpack . getId
 
 {-| 'AstLocation' represents the origin of an AST node.
 
@@ -88,55 +124,14 @@ prettyPrintAstLocation
     = name ++ " " ++ show line' ++ ":" ++ show column'
 prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
-{-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
-syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
-We may chage the Id's representation in the future so one should treat it as
-an opaque entity as much as possible.
-
-Note that Id comparison ignores the AstLocation.
+{-| 'FileLocation' represents a position in a source file.
 -}
-data Id level = Id
-    { getId      :: !Text
-    , idLocation :: !AstLocation
+data FileLocation = FileLocation
+    { fileName :: FilePath
+    , line     :: Int
+    , column   :: Int
     }
-    deriving (Show, Generic)
+    deriving (Eq, Show, Generic)
 
-instance Ord (Id level) where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
-
-{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
-instance Eq (Id level) where
-    first == second = compare first second == EQ
-
-instance Hashable (Id level)
-
-instance NFData (Id level)
-
-instance IsString (Id level) where
-    fromString = noLocationId . fromString
-
-instance Unparse (Id level) where
-    unparse = Pretty.pretty . getId
-    unparse2 = Pretty.pretty . getId
-
-{-| 'noLocationId' creates an Id without a source location. While there are some
-narrow cases where this makes sense, you should really consider other options
-(including adding a new entry to the `AstLocation` data definition).
--}
-noLocationId :: Text -> Id level
-noLocationId value = Id
-    { getId = value
-    , idLocation = AstLocationNone
-    }
-
--- | Create an implicit 'Id'.
-implicitId :: Text -> Id level
-implicitId name = Id name AstLocationImplicit
-
-getIdForError :: Id level -> String
-getIdForError = Text.unpack . getId
+instance Hashable FileLocation
+instance NFData FileLocation
