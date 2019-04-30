@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Floor where
+module Kore.Syntax.Floor
+    ( Floor (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

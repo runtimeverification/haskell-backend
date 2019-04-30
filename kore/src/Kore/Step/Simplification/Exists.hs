@@ -17,8 +17,6 @@ import qualified Data.Map.Strict as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Common
-                 ( Exists (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -41,6 +39,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Step.TermLike as Pattern
+import           Kore.Syntax.Exists
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -82,7 +81,7 @@ simplify
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Exists Object variable (OrPattern Object variable)
+    -> Exists Sort variable (OrPattern Object variable)
     -> Simplifier
         ( OrPattern Object variable
         , SimplificationProof Object
@@ -107,7 +106,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Exists Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Exists Sort) (Valid Object) (OrPattern Object variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will

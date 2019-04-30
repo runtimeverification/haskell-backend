@@ -203,9 +203,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 unaryOperatorRemainderParser
     :: Parser child
-    -> (Sort -> child -> m Object child)
+    -> (Sort -> child -> result)
     -- ^ Element constructor.
-    -> Parser (m Object child)
+    -> Parser result
 unaryOperatorRemainderParser childParser constructor =
     constructor
     <$> inCurlyBracesRemainderParser sortParser
@@ -251,9 +251,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 existsForallRemainderParser
     :: Parser child
-    -> (Sort -> Variable -> child -> m Object Variable child)
+    -> (Sort -> Variable -> child -> m child)
     -- ^ Element constructor.
-    -> Parser (m Object Variable child)
+    -> Parser (m child)
 existsForallRemainderParser childParser constructor = do
     sort <- inCurlyBracesRemainderParser sortParser
     (variable, qChild) <- parenPairParser variableParser childParser
@@ -299,9 +299,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 equalsInRemainderParser
     :: Parser child
-    -> (Sort -> Sort -> child -> child -> m Object child)
+    -> (Sort -> Sort -> child -> child -> m child)
     -- ^ Element constructor.
-    -> Parser (m Object child)
+    -> Parser (m child)
 equalsInRemainderParser childParser constructor = do
     (sort1, sort2) <- curlyPairRemainderParser sortParser
     (child1, child2) <- parenPairParser childParser childParser

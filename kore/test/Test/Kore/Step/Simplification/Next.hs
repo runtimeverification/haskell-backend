@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Common
-                 ( Next (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
@@ -18,6 +16,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Next
                  ( simplify )
+import           Kore.Syntax.Next
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -84,7 +83,7 @@ findSort [] = Mock.testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
 evaluate
-    :: Next Object (OrPattern Object Variable)
+    :: Next Sort (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate next =
     case simplify next of
@@ -92,7 +91,7 @@ evaluate next =
 
 makeNext
     :: [Pattern Object Variable]
-    -> Next Object (OrPattern Object Variable)
+    -> Next Sort (OrPattern Object Variable)
 makeNext child =
     Next
         { nextSort = findSort child

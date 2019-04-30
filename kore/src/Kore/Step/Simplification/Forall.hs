@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
-import           Kore.AST.Common
-                 ( Forall (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
@@ -25,6 +23,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fmapWithPairs )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Forall
 import           Kore.Unparser
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
@@ -50,7 +49,7 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Forall Object variable (OrPattern Object variable)
+    => Forall Sort variable (OrPattern Object variable)
     ->  ( OrPattern Object variable
         , SimplificationProof Object
         )
@@ -64,7 +63,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Forall Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Forall Sort) (Valid Object) (OrPattern Object variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will

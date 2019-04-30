@@ -73,11 +73,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Step.TermLike
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.SetVariable
-                 ( SetVariable )
 import qualified Kore.Syntax.SetVariable as SetVariable
-import           Kore.Syntax.StringLiteral
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -506,14 +502,14 @@ instance (EqualWithExplanation child, Show child)
     printWithExplanation = show
 
 instance
-    (Eq child, Show child, Eq1 domain, Show1 domain) =>
-    EqualWithExplanation (DomainValue Object domain child)
+    (Eq child, Show child) =>
+    EqualWithExplanation (DomainValue Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
-    => StructEqualWithExplanation (Equals Object child)
+    => StructEqualWithExplanation (Equals Sort child)
   where
     structFieldsWithNames
         expected@(Equals _ _ _ _)
@@ -538,7 +534,7 @@ instance (Show child, EqualWithExplanation child)
     structConstructorName _ = "Equals"
 
 instance (Show child, EqualWithExplanation child)
-    => EqualWithExplanation (Equals Object child)
+    => EqualWithExplanation (Equals Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -551,7 +547,7 @@ instance
     , EqualWithExplanation child
     , EqualWithExplanation variable
     )
-    => StructEqualWithExplanation (Exists Object variable child)
+    => StructEqualWithExplanation (Exists Sort variable child)
   where
     structFieldsWithNames
         expected@(Exists _ _ _)
@@ -577,7 +573,7 @@ instance
     , EqualWithExplanation variable
     , Eq variable
     , Show variable
-    ) => EqualWithExplanation (Exists Object variable child)
+    ) => EqualWithExplanation (Exists Sort variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -616,7 +612,7 @@ instance
     , EqualWithExplanation child
     , EqualWithExplanation variable
     )
-    => StructEqualWithExplanation (Forall Object variable child)
+    => StructEqualWithExplanation (Forall Sort variable child)
   where
     structFieldsWithNames
         expected@(Forall _ _ _)
@@ -642,7 +638,7 @@ instance
     , EqualWithExplanation variable
     , Eq variable
     , Show variable
-    ) => EqualWithExplanation (Forall Object variable child)
+    ) => EqualWithExplanation (Forall Sort variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -652,7 +648,7 @@ instance
     , Show child
     , EqualWithExplanation child
     )
-    => StructEqualWithExplanation (Iff Object child)
+    => StructEqualWithExplanation (Iff Sort child)
   where
     structFieldsWithNames
         expected@(Iff _ _ _)
@@ -675,32 +671,34 @@ instance
     ( EqualWithExplanation child
     , Eq child
     , Show child
-    ) => EqualWithExplanation (Iff Object child)
+    ) => EqualWithExplanation (Iff Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Implies Object child)
+    => EqualWithExplanation (Implies Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (In Object child)
+    => EqualWithExplanation (In Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Next Object child)
+    => EqualWithExplanation (Next Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance (Show child, Eq child, EqualWithExplanation child)
   =>
-    StructEqualWithExplanation (Not Object child)
+    StructEqualWithExplanation (Not Sort child)
   where
     structFieldsWithNames
         expected@(Not _ _)
@@ -717,7 +715,7 @@ instance (Show child, Eq child, EqualWithExplanation child)
     structConstructorName _ = "Not"
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Not Object child)
+    => EqualWithExplanation (Not Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -752,7 +750,7 @@ instance
 
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Rewrites Object child)
+    => EqualWithExplanation (Rewrites Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

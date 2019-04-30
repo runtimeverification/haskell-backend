@@ -8,8 +8,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Common
-                 ( Exists (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -29,6 +27,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Syntax.Exists
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -265,7 +264,7 @@ makeExists
     :: Ord variable
     => variable
     -> [Pattern Object variable]
-    -> Exists Object variable (OrPattern Object variable)
+    -> Exists Sort variable (OrPattern Object variable)
 makeExists variable patterns =
     Exists
         { existsSort = testSort
@@ -278,7 +277,7 @@ testSort = Mock.testSort
 
 simplify
     :: SmtMetadataTools StepperAttributes
-    -> Exists Object Variable (OrPattern Object Variable)
+    -> Exists Sort Variable (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 simplify tools exists =
     (<$>) fst

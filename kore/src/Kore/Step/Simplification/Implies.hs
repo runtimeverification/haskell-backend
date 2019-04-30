@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Implies
     , simplifyEvaluated
     ) where
 
-import           Kore.AST.Common
-                 ( Implies (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
@@ -31,6 +29,7 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
+import           Kore.Syntax.Implies
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -58,7 +57,7 @@ simplify
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Implies Object (OrPattern Object variable)
+    -> Implies Sort (OrPattern Object variable)
     -> Simplifier
         (OrPattern Object variable , SimplificationProof Object)
 simplify
@@ -89,7 +88,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Implies Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Implies Sort) (Valid Object) (OrPattern Object variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
