@@ -348,10 +348,7 @@ instance PrettyPrint child => PrettyPrint (Domain.External child) where
             , writeFieldNewLine "domainValueChild" Domain.domainValueChild p
             ]
 
-instance
-    ( PrettyPrint child
-    , PrettyPrint (domain child)
-    ) => PrettyPrint (DomainValue Sort domain child) where
+instance PrettyPrint child => PrettyPrint (DomainValue Sort child) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"

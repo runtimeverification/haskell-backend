@@ -70,7 +70,7 @@ instance Domain External where
             External { domainValueSort } = external
         getExternal
             :: forall child
-            .  DomainValue Sort External child
+            .  DomainValue Sort (External child)
             -> External child
         getExternal DomainValue { domainValueSort, domainValueChild } =
             domainValueChild { domainValueSort } :: External child

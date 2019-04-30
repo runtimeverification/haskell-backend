@@ -502,8 +502,8 @@ instance (EqualWithExplanation child, Show child)
     printWithExplanation = show
 
 instance
-    (Eq child, Show child, Eq1 domain, Show1 domain) =>
-    EqualWithExplanation (DomainValue Sort domain child)
+    (Eq child, Show child) =>
+    EqualWithExplanation (DomainValue Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

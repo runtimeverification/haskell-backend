@@ -24,8 +24,8 @@ class Functor domain => Domain domain where
         .   Lens.Lens
                 (domain child1)
                 (domain child2)
-                (DomainValue Sort domain child1)
-                (DomainValue Sort domain child2)
+                (DomainValue Sort (domain child1))
+                (DomainValue Sort (domain child2))
 
 instance Domain (Const Void) where
     lensDomainValue _ = \case {}

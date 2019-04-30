@@ -557,7 +557,7 @@ makeNonEncodedDomainValueVerifier _builtinName verifyNoEncode domainValue =
 parseEncodeDomainValue
     :: Parser a
     -> (a -> Domain.Builtin child)
-    -> DomainValue Sort Domain.Builtin child
+    -> DomainValue Sort (Domain.Builtin child)
     -> Either (Error VerifyError) (Domain.Builtin child)
 parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
     Kore.Error.withContext "While parsing domain value"
