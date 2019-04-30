@@ -592,26 +592,7 @@ checkSubstitutionCoverage
     -- ^ Configuration after applying rule
     -> BranchT unifier (Pattern Object variable)
 checkSubstitutionCoverage tools initial unified final
-  | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
-  | isSymbolic =
-    -- The substitution does not cover all the variables on the left-hand side
-    -- of the rule, but this was not unexpected because the initial
-    -- configuration was symbolic. This case is not yet supported, but it is not
-    -- a fatal error.
-    Monad.Trans.lift
-    $ Monad.Unify.throwUnificationError
-    $ UnsupportedSymbolic $ Pretty.vsep
-        [ "While applying axiom:"
-        , Pretty.indent 4 (Pretty.pretty axiom)
-        , "from the initial configuration:"
-        , Pretty.indent 4 (unparse initial)
-        , "Expected unification:"
-        , Pretty.indent 4 (unparse unification)
-        , "to cover all the variables:"
-        , (Pretty.indent 4 . Pretty.sep)
-            (unparse <$> Set.toAscList leftAxiomVariables)
-        , "in the left-hand side of the axiom."
-        ]
+  | isCoveringSubstitution || isSymbolic = return (unwrapConfiguration final)
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
@@ -643,23 +624,6 @@ checkSubstitutionCoverage tools initial unified final
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
     isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
-    isAcceptable = all isValidSymbolic (Map.toList subst)
-    -- A constructor-like pattern consists of constructor applications and
-    -- variables only.
-    isConstructorLikePattern p
-      | Valid.App_ symbolOrAlias children <- p =
-        isConstructor symbolOrAlias && all isConstructorLikePattern children
-      | Valid.Var_ _ <- p = True
-      | otherwise = False
-    isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
-    isSortInjectionPattern p
-      | Valid.App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
-      | otherwise = False
-    isSortInjection = Reflection.give tools Attribute.Symbol.isSortInjection_
-    isValidSymbolic (x, t) =
-        Target.isTarget x
-        || isConstructorLikePattern t
-        || isSortInjectionPattern t
 
 {- | Apply the given rules to the initial configuration in parallel.
 

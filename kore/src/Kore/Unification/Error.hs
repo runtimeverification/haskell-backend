@@ -43,19 +43,11 @@ instance
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
-data UnificationError
-    = UnsupportedPatterns
-    | UnsupportedSymbolic (Pretty.Doc ())
-    deriving Show
-
-instance Eq UnificationError where
-    (==) UnsupportedPatterns UnsupportedPatterns = True
-    (==) (UnsupportedSymbolic a) (UnsupportedSymbolic b) = show a == show b
-    (==) _ _ = False
+data UnificationError = UnsupportedPatterns
+    deriving (Eq, Show)
 
 instance Pretty UnificationError where
     pretty UnsupportedPatterns = "Unsupported patterns"
-    pretty (UnsupportedSymbolic err) = Pretty.unAnnotate err
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason level
