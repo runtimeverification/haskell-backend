@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
-import           Kore.AST.Common
-                 ( Iff (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
@@ -32,6 +30,7 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
+import           Kore.Syntax.Iff
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
