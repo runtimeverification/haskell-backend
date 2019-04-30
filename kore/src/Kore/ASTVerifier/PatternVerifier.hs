@@ -477,7 +477,7 @@ verifyIn
 verifyIn = verifyPredicate inOperandSort inResultSort
 
 verifyNext
-    ::  ( operator ~ Next Object
+    ::  ( operator ~ Next Sort
         , valid ~ Valid (Variable) Object
         )
     => operator (PatternVerifier Verified.Pattern)

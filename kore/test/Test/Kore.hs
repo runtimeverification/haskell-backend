@@ -208,10 +208,10 @@ variableGen patternSort = do
 
 unaryOperatorGen
     :: MonadGen m
-    => (Sort -> child -> b Object child)
+    => (Sort -> child -> result)
     -> (Sort -> m child)
     -> Sort
-    -> m (b Object child)
+    -> m result
 unaryOperatorGen constructor childGen patternSort =
     constructor patternSort <$> Gen.small (childGen patternSort)
 
@@ -328,7 +328,7 @@ impliesGen = binaryOperatorGen Implies
 inGen :: (Sort -> Gen child) -> Sort -> Gen (In Sort child)
 inGen = equalsInGen In
 
-nextGen :: (Sort -> Gen child) -> Sort -> Gen (Next Object child)
+nextGen :: (Sort -> Gen child) -> Sort -> Gen (Next Sort child)
 nextGen = unaryOperatorGen Next
 
 notGen :: (Sort -> Gen child) -> Sort -> Gen (Not Object child)

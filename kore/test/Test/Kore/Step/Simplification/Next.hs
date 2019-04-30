@@ -83,7 +83,7 @@ findSort [] = Mock.testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
 evaluate
-    :: Next Object (OrPattern Object Variable)
+    :: Next Sort (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate next =
     case simplify next of
@@ -91,7 +91,7 @@ evaluate next =
 
 makeNext
     :: [Pattern Object Variable]
-    -> Next Object (OrPattern Object Variable)
+    -> Next Sort (OrPattern Object Variable)
 makeNext child =
     Next
         { nextSort = findSort child

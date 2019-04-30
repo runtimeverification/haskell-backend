@@ -681,15 +681,17 @@ instance (EqualWithExplanation child, Eq child, Show child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (In Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Next Object child)
+    => EqualWithExplanation (Next Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

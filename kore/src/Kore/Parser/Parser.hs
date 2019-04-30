@@ -203,9 +203,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 unaryOperatorRemainderParser
     :: Parser child
-    -> (Sort -> child -> m Object child)
+    -> (Sort -> child -> result)
     -- ^ Element constructor.
-    -> Parser (m Object child)
+    -> Parser result
 unaryOperatorRemainderParser childParser constructor =
     constructor
     <$> inCurlyBracesRemainderParser sortParser

@@ -10,9 +10,7 @@ module Kore.Syntax.Next where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Functor.Classes
+import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
@@ -20,8 +18,6 @@ import           GHC.Generics
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -29,37 +25,21 @@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 'nextSort' is both the sort of the operand and the sort of the result.
 
 -}
-data Next level child = Next
-    { nextSort  :: !Sort
+data Next sort child = Next
+    { nextSort  :: !sort
     , nextChild :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
 
-$newDefinitionGroup
+Deriving.deriveEq1 ''Next
+Deriving.deriveOrd1 ''Next
+Deriving.deriveShow1 ''Next
 
-instance Eq1 (Next level) where
-    liftEq = $(makeLiftEq ''Next)
+instance (Hashable sort, Hashable child) => Hashable (Next sort child)
 
-instance Ord1 (Next level) where
-    liftCompare = $(makeLiftCompare ''Next)
+instance (NFData sort, NFData child) => NFData (Next sort child)
 
-instance Show1 (Next level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Next)
-
-instance Eq child => Eq (Next level child) where
-    (==) = eq1
-
-instance Ord child => Ord (Next level child) where
-    compare = compare1
-
-instance Show child => Show (Next level child) where
-    showsPrec = showsPrec1
-
-instance Hashable child => Hashable (Next level child)
-
-instance NFData child => NFData (Next level child)
-
-instance Unparse child => Unparse (Next level child) where
+instance Unparse child => Unparse (Next Sort child) where
     unparse Next { nextSort, nextChild } =
         "\\next"
         <> parameters [nextSort]

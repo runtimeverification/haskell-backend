@@ -431,7 +431,7 @@ instance PrettyPrint child => PrettyPrint (In Sort child) where
             , writeFieldNewLine "inContainingChild" inContainingChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Next level child) where
+instance PrettyPrint child => PrettyPrint (Next Sort child) where
     prettyPrint _ p@(Next _ _) =
         writeStructure
             "Next"
