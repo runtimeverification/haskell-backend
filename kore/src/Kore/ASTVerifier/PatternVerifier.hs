@@ -58,8 +58,6 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Parser
                  ( ParsedPattern )
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.StringLiteral
 import           Kore.Unparser
 import qualified Kore.Variables.Free as Variables
 import qualified Kore.Verified as Verified
@@ -384,7 +382,7 @@ verifyOr
 verifyOr = verifyOperands orSort
 
 verifyIff
-    ::  ( logical ~ Iff Object
+    ::  ( logical ~ Iff Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)
@@ -392,7 +390,7 @@ verifyIff
 verifyIff = verifyOperands iffSort
 
 verifyImplies
-    ::  ( logical ~ Implies Object
+    ::  ( logical ~ Implies Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)
@@ -416,7 +414,7 @@ verifyTop
 verifyTop = verifyOperands topSort
 
 verifyNot
-    ::  ( logical ~ Not Object
+    ::  ( logical ~ Not Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)
@@ -424,7 +422,7 @@ verifyNot
 verifyNot = verifyOperands notSort
 
 verifyRewrites
-    ::  ( logical ~ Rewrites Object
+    ::  ( logical ~ Rewrites Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)
@@ -463,7 +461,7 @@ verifyFloor
 verifyFloor = verifyPredicate floorOperandSort floorResultSort
 
 verifyEquals
-    ::  ( predicate ~ Equals Object
+    ::  ( predicate ~ Equals Sort
         , valid ~ Valid (Variable) Object
         )
     => predicate (PatternVerifier Verified.Pattern)
@@ -471,7 +469,7 @@ verifyEquals
 verifyEquals = verifyPredicate equalsOperandSort equalsResultSort
 
 verifyIn
-    ::  ( predicate ~ In Object
+    ::  ( predicate ~ In Sort
         , valid ~ Valid (Variable) Object
         )
     => predicate (PatternVerifier Verified.Pattern)
@@ -479,7 +477,7 @@ verifyIn
 verifyIn = verifyPredicate inOperandSort inResultSort
 
 verifyNext
-    ::  ( operator ~ Next Object
+    ::  ( operator ~ Next Sort
         , valid ~ Valid (Variable) Object
         )
     => operator (PatternVerifier Verified.Pattern)
@@ -561,7 +559,7 @@ verifyBinder binderSort binderVariable = \binder -> do
 {-# INLINE verifyBinder #-}
 
 verifyExists
-    ::  ( binder ~ Exists Object Variable
+    ::  ( binder ~ Exists Sort Variable
         , valid ~ Valid (Variable) Object
         )
     => binder (PatternVerifier Verified.Pattern)
@@ -569,7 +567,7 @@ verifyExists
 verifyExists = verifyBinder existsSort existsVariable
 
 verifyForall
-    ::  ( binder ~ Forall Object Variable
+    ::  ( binder ~ Forall Sort Variable
         , valid ~ Valid (Variable) Object
         )
     => binder (PatternVerifier Verified.Pattern)

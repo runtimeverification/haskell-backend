@@ -60,15 +60,7 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
-import           Kore.Syntax.And
-import           Kore.Syntax.Application
-import           Kore.Syntax.Bottom
-import           Kore.Syntax.Ceil
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.Floor
-import           Kore.Syntax.Or
-import           Kore.Syntax.StringLiteral
-import           Kore.Syntax.Top
+import           Kore.Syntax
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -216,10 +208,10 @@ variableGen patternSort = do
 
 unaryOperatorGen
     :: MonadGen m
-    => (Sort -> child -> b Object child)
+    => (Sort -> child -> result)
     -> (Sort -> m child)
     -> Sort
-    -> m (b Object child)
+    -> m result
 unaryOperatorGen constructor childGen patternSort =
     constructor patternSort <$> Gen.small (childGen patternSort)
 
@@ -243,10 +235,10 @@ ceilFloorGen constructor childGen resultSort = do
     constructor resultSort operandSort <$> Gen.small (childGen operandSort)
 
 equalsInGen
-    :: (Sort -> Sort -> child -> child -> c Object child)
+    :: (Sort -> Sort -> child -> child -> c child)
     -> (Sort -> Gen child)
     -> Sort
-    -> Gen (c Object child)
+    -> Gen (c child)
 equalsInGen constructor childGen resultSort = do
     operandSort <- Gen.small sortGen
     constructor resultSort operandSort
@@ -254,10 +246,10 @@ equalsInGen constructor childGen resultSort = do
         <*> Gen.small (childGen operandSort)
 
 existsForallGen
-    :: (Sort -> Variable -> child -> q Object Variable child)
+    :: (Sort -> Variable -> child -> q child)
     -> (Sort -> Gen child)
     -> Sort
-    -> Gen (q Object Variable child)
+    -> Gen (q child)
 existsForallGen constructor childGen patternSort = do
     varSort <- Gen.small sortGen
     var <- Gen.small (variableGen varSort)
@@ -285,11 +277,8 @@ bottomGen = topBottomGen Bottom
 ceilGen :: (Sort -> Gen child) -> Sort -> Gen (Ceil Sort child)
 ceilGen = ceilFloorGen Ceil
 
-equalsGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Equals Object child)
-equalsGen = equalsInGen Common.Equals
+equalsGen :: (Sort -> Gen child) -> Sort -> Gen (Equals Sort child)
+equalsGen = equalsInGen Equals
 
 genBuiltinExternal :: Sort -> Gen (Domain.Builtin child)
 genBuiltinExternal domainValueSort =
@@ -321,59 +310,35 @@ genExternal domainValueSort =
         . getStringLiteral
         <$> stringLiteralGen
 
-existsGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Exists Object Variable child)
-existsGen = existsForallGen Common.Exists
+existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort Variable child)
+existsGen = existsForallGen Exists
 
 floorGen :: (Sort -> Gen child) -> Sort -> Gen (Floor Sort child)
 floorGen = ceilFloorGen Floor
 
-forallGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Forall Object Variable child)
-forallGen = existsForallGen Common.Forall
+forallGen :: (Sort -> Gen child) -> Sort -> Gen (Forall Sort Variable child)
+forallGen = existsForallGen Forall
 
-iffGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Iff Object child)
-iffGen = binaryOperatorGen Common.Iff
+iffGen :: (Sort -> Gen child) -> Sort -> Gen (Iff Sort child)
+iffGen = binaryOperatorGen Iff
 
-impliesGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Implies Object child)
-impliesGen = binaryOperatorGen Common.Implies
+impliesGen :: (Sort -> Gen child) -> Sort -> Gen (Implies Sort child)
+impliesGen = binaryOperatorGen Implies
 
-inGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (In Object child)
-inGen = equalsInGen Common.In
+inGen :: (Sort -> Gen child) -> Sort -> Gen (In Sort child)
+inGen = equalsInGen In
 
-nextGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Next Object child)
-nextGen = unaryOperatorGen Common.Next
+nextGen :: (Sort -> Gen child) -> Sort -> Gen (Next Sort child)
+nextGen = unaryOperatorGen Next
 
-notGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Not Object child)
-notGen = unaryOperatorGen Common.Not
+notGen :: (Sort -> Gen child) -> Sort -> Gen (Not Sort child)
+notGen = unaryOperatorGen Not
 
 orGen :: (Sort -> Gen child) -> Sort -> Gen (Or Sort child)
 orGen = binaryOperatorGen Or
 
-rewritesGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Rewrites Object child)
-rewritesGen = binaryOperatorGen Common.Rewrites
+rewritesGen :: (Sort -> Gen child) -> Sort -> Gen (Rewrites Sort child)
+rewritesGen = binaryOperatorGen Rewrites
 
 topGen :: Sort -> Gen (Top Sort child)
 topGen = topBottomGen Top

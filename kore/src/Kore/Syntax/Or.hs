@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Or where
+module Kore.Syntax.Or
+    ( Or (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

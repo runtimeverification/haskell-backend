@@ -9,8 +9,6 @@ import Test.Tasty.HUnit
 import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Common
-                 ( Iff (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
@@ -27,6 +25,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Syntax.Iff
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -190,7 +189,7 @@ makeIff
     :: (Ord variable)
     => [Pattern Object variable]
     -> [Pattern Object variable]
-    -> Iff Object (OrPattern Object variable)
+    -> Iff Sort (OrPattern Object variable)
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
@@ -199,7 +198,7 @@ makeIff first second =
         }
 
 simplify
-    :: Iff Object (OrPattern Object Variable)
+    :: Iff Sort (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 simplify iff0 =
     (<$>) fst

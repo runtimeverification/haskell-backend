@@ -88,8 +88,6 @@ import           Text.Megaparsec
                  ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
-import           Kore.AST.Common
-                 ( DomainValue (..) )
 import qualified Kore.AST.Common as Common
                  ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
@@ -143,6 +141,7 @@ import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Application
+import           Kore.Syntax.DomainValue
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
@@ -558,7 +557,7 @@ makeNonEncodedDomainValueVerifier _builtinName verifyNoEncode domainValue =
 parseEncodeDomainValue
     :: Parser a
     -> (a -> Domain.Builtin child)
-    -> DomainValue Object Domain.Builtin child
+    -> DomainValue Sort (Domain.Builtin child)
     -> Either (Error VerifyError) (Domain.Builtin child)
 parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
     Kore.Error.withContext "While parsing domain value"

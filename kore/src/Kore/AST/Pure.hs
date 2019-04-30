@@ -28,18 +28,8 @@ module Kore.AST.Pure
     , Base, CofreeF (..)
     , module Control.Comonad
     , module Kore.AST.Common
-    , module Kore.Syntax.And
-    , module Kore.Syntax.Application
-    , module Kore.Syntax.Bottom
-    , module Kore.Syntax.Ceil
-    , module Kore.Syntax.Floor
-    , module Kore.Syntax.Id
-    , module Kore.Syntax.Or
-    , module Kore.Syntax.SetVariable
-    , module Kore.Syntax.Top
-    , module Kore.Syntax.Variable
     , module Kore.AST.MetaOrObject
-    , module Kore.Sort
+    , module Kore.Syntax
     ) where
 
 import           Control.Comonad
@@ -77,17 +67,7 @@ import           Kore.AST.Common hiding
                  traverseVariables )
 import qualified Kore.AST.Common as Head
 import           Kore.AST.MetaOrObject
-import           Kore.Sort
-import           Kore.Syntax.And
-import           Kore.Syntax.Application
-import           Kore.Syntax.Bottom
-import           Kore.Syntax.Ceil
-import           Kore.Syntax.Floor
-import           Kore.Syntax.Id
-import           Kore.Syntax.Or
-import           Kore.Syntax.SetVariable
-import           Kore.Syntax.Top
-import           Kore.Syntax.Variable
+import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser

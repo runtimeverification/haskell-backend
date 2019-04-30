@@ -10,8 +10,6 @@ import Test.Tasty.HUnit
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import           Kore.AST.Common
-                 ( Equals (..) )
 import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
@@ -44,6 +42,7 @@ import           Kore.Step.Simplification.Equals
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Equals
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
@@ -993,7 +992,7 @@ testSort2 =
 
 evaluateOr
     :: SmtMetadataTools StepperAttributes
-    -> Equals Object (OrPattern Object Variable)
+    -> Equals Sort (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 evaluateOr tools equals =
     (<$>) fst

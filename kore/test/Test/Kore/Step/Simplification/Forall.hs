@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Common
-                 ( Forall (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
@@ -19,6 +17,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.Forall as Forall
                  ( makeEvaluate, simplify )
+import           Kore.Syntax.Forall
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
@@ -237,7 +236,7 @@ makeForall
     :: Ord variable
     => variable
     -> [Pattern Object variable]
-    -> Forall Object variable (OrPattern Object variable)
+    -> Forall Sort variable (OrPattern Object variable)
 makeForall variable patterns =
     Forall
         { forallSort = testSort
@@ -249,7 +248,7 @@ testSort :: Sort
 testSort = Mock.testSort
 
 evaluate
-    :: Forall Object Variable (OrPattern Object Variable)
+    :: Forall Sort Variable (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate forall =
     fst $ Forall.simplify forall

@@ -38,8 +38,6 @@ import           Kore.Proof.Functional
 import           Kore.Step.Conditional
 import qualified Kore.Step.Pattern as Step
                  ( Pattern )
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.StringLiteral
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -350,10 +348,7 @@ instance PrettyPrint child => PrettyPrint (Domain.External child) where
             , writeFieldNewLine "domainValueChild" Domain.domainValueChild p
             ]
 
-instance
-    ( PrettyPrint child
-    , PrettyPrint (domain child)
-    ) => PrettyPrint (DomainValue level domain child) where
+instance PrettyPrint child => PrettyPrint (DomainValue Sort child) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"
@@ -361,7 +356,7 @@ instance
             , writeFieldNewLine "domainValueChild" domainValueChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Equals level child) where
+instance PrettyPrint child => PrettyPrint (Equals Sort child) where
     prettyPrint _ p@(Equals _ _ _ _) =
         writeStructure
             "Equals"
@@ -374,7 +369,7 @@ instance PrettyPrint child => PrettyPrint (Equals level child) where
 instance
     ( PrettyPrint child
     , PrettyPrint variable
-    ) => PrettyPrint (Exists level variable child)
+    ) => PrettyPrint (Exists Sort variable child)
   where
     prettyPrint _ p@(Exists _ _ _) =
         writeStructure
@@ -396,7 +391,7 @@ instance PrettyPrint child => PrettyPrint (Floor Sort child) where
 instance
     ( PrettyPrint child
     , PrettyPrint variable
-    ) => PrettyPrint (Forall level variable child) where
+    ) => PrettyPrint (Forall Sort variable child) where
     prettyPrint _ p@(Forall _ _ _) =
         writeStructure
             "Forall"
@@ -405,7 +400,7 @@ instance
             , writeFieldNewLine "forallChild" forallChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Iff level child) where
+instance PrettyPrint child => PrettyPrint (Iff Sort child) where
     prettyPrint _ p@(Iff _ _ _) =
         writeStructure
             "Iff"
@@ -414,7 +409,7 @@ instance PrettyPrint child => PrettyPrint (Iff level child) where
             , writeFieldNewLine "iffSecond" iffSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (Implies level child) where
+instance PrettyPrint child => PrettyPrint (Implies Sort child) where
     prettyPrint _ p@(Implies _ _ _) =
         writeStructure
             "Implies"
@@ -423,7 +418,7 @@ instance PrettyPrint child => PrettyPrint (Implies level child) where
             , writeFieldNewLine "impliesSecond" impliesSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (In level child) where
+instance PrettyPrint child => PrettyPrint (In Sort child) where
     prettyPrint _ p@(In _ _ _ _) =
         writeStructure
             "In"
@@ -433,7 +428,7 @@ instance PrettyPrint child => PrettyPrint (In level child) where
             , writeFieldNewLine "inContainingChild" inContainingChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Next level child) where
+instance PrettyPrint child => PrettyPrint (Next Sort child) where
     prettyPrint _ p@(Next _ _) =
         writeStructure
             "Next"
@@ -441,7 +436,7 @@ instance PrettyPrint child => PrettyPrint (Next level child) where
             , writeFieldNewLine "nextChild" nextChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Not level child) where
+instance PrettyPrint child => PrettyPrint (Not Sort child) where
     prettyPrint _ p@(Not _ _) =
         writeStructure
             "Not"
@@ -458,7 +453,7 @@ instance PrettyPrint child => PrettyPrint (Or Sort child) where
             , writeFieldNewLine "orSecond" orSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (Rewrites level child) where
+instance PrettyPrint child => PrettyPrint (Rewrites Sort child) where
     prettyPrint _ p@(Rewrites _ _ _) =
         writeStructure
             "Rewrites"

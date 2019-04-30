@@ -39,7 +39,7 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Next Object (OrPattern Object variable)
+    => Next Sort (OrPattern Object variable)
     ->  ( OrPattern Object variable
         , SimplificationProof Object
         )

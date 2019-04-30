@@ -4,7 +4,9 @@ License     : NCSA
 
 -}
 
-module Kore.Syntax.CharLiteral where
+module Kore.Syntax.CharLiteral
+    ( CharLiteral (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
