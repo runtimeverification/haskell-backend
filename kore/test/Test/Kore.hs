@@ -319,7 +319,7 @@ floorGen = ceilFloorGen Floor
 forallGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Forall Object Variable child)
+    -> Gen (Forall Sort Variable child)
 forallGen = existsForallGen Forall
 
 iffGen

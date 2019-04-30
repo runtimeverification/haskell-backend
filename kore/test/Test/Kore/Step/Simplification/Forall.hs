@@ -236,7 +236,7 @@ makeForall
     :: Ord variable
     => variable
     -> [Pattern Object variable]
-    -> Forall Object variable (OrPattern Object variable)
+    -> Forall Sort variable (OrPattern Object variable)
 makeForall variable patterns =
     Forall
         { forallSort = testSort
@@ -248,7 +248,7 @@ testSort :: Sort
 testSort = Mock.testSort
 
 evaluate
-    :: Forall Object Variable (OrPattern Object Variable)
+    :: Forall Sort Variable (OrPattern Object Variable)
     -> OrPattern Object Variable
 evaluate forall =
     fst $ Forall.simplify forall

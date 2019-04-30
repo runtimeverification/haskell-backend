@@ -10,9 +10,7 @@ module Kore.Syntax.Forall where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Functor.Classes
+import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
@@ -20,55 +18,36 @@ import           GHC.Generics
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
-
 'forallSort' is both the sort of the operands and the sort of the result.
 
 -}
-data Forall level variable child = Forall
-    { forallSort     :: !Sort
+data Forall sort variable child = Forall
+    { forallSort     :: !sort
     , forallVariable :: !variable
     , forallChild    :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
 
-$newDefinitionGroup
-
-instance Eq variable => Eq1 (Forall lvl variable) where
-    liftEq = $(makeLiftEq ''Forall)
-
-instance Ord variable => Ord1 (Forall lvl variable) where
-    liftCompare = $(makeLiftCompare ''Forall)
-
-instance Show variable => Show1 (Forall lvl variable) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Forall)
-
-instance (Eq child, Eq variable) => Eq (Forall lvl variable child) where
-    (==) = eq1
-
-instance (Ord child, Ord variable) => Ord (Forall lvl variable child) where
-    compare = compare1
-
-instance (Show child, Show variable) => Show (Forall lvl variable child) where
-    showsPrec = showsPrec1
-
-instance (Hashable child, Hashable variable) => Hashable (Forall lvl variable child)
-
-instance (NFData child, NFData variable) => NFData (Forall lvl variable child)
+Deriving.deriveEq1 ''Forall
+Deriving.deriveOrd1 ''Forall
+Deriving.deriveShow1 ''Forall
 
 instance
-    ( Unparse child
-    , Unparse variable
-    ) =>
-    Unparse (Forall level variable child)
+    (Hashable sort, Hashable variable, Hashable child) =>
+    Hashable (Forall sort variable child)
+
+instance
+    (NFData sort, NFData variable, NFData child) =>
+    NFData (Forall sort variable child)
+
+instance
+    (Unparse child, Unparse variable) =>
+    Unparse (Forall Sort variable child)
   where
     unparse Forall { forallSort, forallVariable, forallChild } =
         "\\forall"

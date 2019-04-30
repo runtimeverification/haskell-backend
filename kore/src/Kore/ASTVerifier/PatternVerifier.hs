@@ -567,7 +567,7 @@ verifyExists
 verifyExists = verifyBinder existsSort existsVariable
 
 verifyForall
-    ::  ( binder ~ Forall Object Variable
+    ::  ( binder ~ Forall Sort Variable
         , valid ~ Valid (Variable) Object
         )
     => binder (PatternVerifier Verified.Pattern)

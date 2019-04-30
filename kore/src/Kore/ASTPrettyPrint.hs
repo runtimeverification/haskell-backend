@@ -394,7 +394,7 @@ instance PrettyPrint child => PrettyPrint (Floor Sort child) where
 instance
     ( PrettyPrint child
     , PrettyPrint variable
-    ) => PrettyPrint (Forall level variable child) where
+    ) => PrettyPrint (Forall Sort variable child) where
     prettyPrint _ p@(Forall _ _ _) =
         writeStructure
             "Forall"

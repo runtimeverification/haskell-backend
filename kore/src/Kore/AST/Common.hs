@@ -406,7 +406,7 @@ data Pattern level domain variable child where
     FloorPattern
         :: !(Floor Sort child) -> Pattern level domain variable child
     ForallPattern
-        :: !(Forall level variable child) -> Pattern level domain variable child
+        :: !(Forall Sort variable child) -> Pattern level domain variable child
     IffPattern
         :: !(Iff level child) -> Pattern level domain variable child
     ImpliesPattern
