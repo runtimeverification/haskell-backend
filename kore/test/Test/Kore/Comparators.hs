@@ -698,7 +698,7 @@ instance
 
 instance (Show child, Eq child, EqualWithExplanation child)
   =>
-    StructEqualWithExplanation (Not Object child)
+    StructEqualWithExplanation (Not Sort child)
   where
     structFieldsWithNames
         expected@(Not _ _)
@@ -715,7 +715,7 @@ instance (Show child, Eq child, EqualWithExplanation child)
     structConstructorName _ = "Not"
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Not Object child)
+    => EqualWithExplanation (Not Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

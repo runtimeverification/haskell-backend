@@ -58,7 +58,7 @@ simplify
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Not Object (OrPattern Object variable)
+    -> Not Sort (OrPattern Object variable)
     -> Simplifier (OrPattern Object variable)
 simplify
     tools
@@ -84,7 +84,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Not Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Not Sort) (Valid Object) (OrPattern Object variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information

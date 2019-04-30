@@ -414,7 +414,7 @@ verifyTop
 verifyTop = verifyOperands topSort
 
 verifyNot
-    ::  ( logical ~ Not Object
+    ::  ( logical ~ Not Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)

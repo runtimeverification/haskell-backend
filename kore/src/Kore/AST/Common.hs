@@ -134,7 +134,7 @@ data Pattern level domain variable child where
     NextPattern
         :: !(Next Sort child) -> Pattern level domain variable child
     NotPattern
-        :: !(Not level child) -> Pattern level domain variable child
+        :: !(Not Sort child) -> Pattern level domain variable child
     OrPattern
         :: !(Or Sort child) -> Pattern level domain variable child
     RewritesPattern

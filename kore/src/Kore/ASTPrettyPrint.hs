@@ -439,7 +439,7 @@ instance PrettyPrint child => PrettyPrint (Next Sort child) where
             , writeFieldNewLine "nextChild" nextChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Not level child) where
+instance PrettyPrint child => PrettyPrint (Not Sort child) where
     prettyPrint _ p@(Not _ _) =
         writeStructure
             "Not"

@@ -331,7 +331,7 @@ inGen = equalsInGen In
 nextGen :: (Sort -> Gen child) -> Sort -> Gen (Next Sort child)
 nextGen = unaryOperatorGen Next
 
-notGen :: (Sort -> Gen child) -> Sort -> Gen (Not Object child)
+notGen :: (Sort -> Gen child) -> Sort -> Gen (Not Sort child)
 notGen = unaryOperatorGen Not
 
 orGen :: (Sort -> Gen child) -> Sort -> Gen (Or Sort child)
