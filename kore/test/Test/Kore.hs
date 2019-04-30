@@ -328,16 +328,10 @@ impliesGen = binaryOperatorGen Implies
 inGen :: (Sort -> Gen child) -> Sort -> Gen (In Sort child)
 inGen = equalsInGen In
 
-nextGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Next Object child)
-nextGen = unaryOperatorGen Common.Next
+nextGen :: (Sort -> Gen child) -> Sort -> Gen (Next Object child)
+nextGen = unaryOperatorGen Next
 
-notGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Not Object child)
+notGen :: (Sort -> Gen child) -> Sort -> Gen (Not Object child)
 notGen = unaryOperatorGen Common.Not
 
 orGen :: (Sort -> Gen child) -> Sort -> Gen (Or Sort child)
