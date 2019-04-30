@@ -20,6 +20,7 @@ module Kore.Syntax
     , module Kore.Syntax.Implies
     , module Kore.Syntax.In
     , module Kore.Syntax.Next
+    , module Kore.Syntax.Not
     , module Kore.Syntax.Or
     , module Kore.Syntax.SetVariable
     , module Kore.Syntax.StringLiteral
@@ -42,6 +43,7 @@ import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
 import Kore.Syntax.Next
+import Kore.Syntax.Not
 import Kore.Syntax.Or
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral

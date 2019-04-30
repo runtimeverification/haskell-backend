@@ -15,8 +15,6 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.AST.Common
-                 ( Not (..) )
 import           Kore.AST.Valid hiding
                  ( mkAnd )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -35,6 +33,7 @@ import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  gather )
+import           Kore.Syntax.Not
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
