@@ -677,7 +677,7 @@ instance
     printWithExplanation = show
 
 instance (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Implies Object child)
+    => EqualWithExplanation (Implies Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

@@ -390,7 +390,7 @@ verifyIff
 verifyIff = verifyOperands iffSort
 
 verifyImplies
-    ::  ( logical ~ Implies Object
+    ::  ( logical ~ Implies Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)

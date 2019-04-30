@@ -325,7 +325,7 @@ forallGen = existsForallGen Forall
 iffGen :: (Sort -> Gen child) -> Sort -> Gen (Iff Sort child)
 iffGen = binaryOperatorGen Iff
 
-impliesGen :: (Sort -> Gen child) -> Sort -> Gen (Implies Object child)
+impliesGen :: (Sort -> Gen child) -> Sort -> Gen (Implies Sort child)
 impliesGen = binaryOperatorGen Implies
 
 inGen
