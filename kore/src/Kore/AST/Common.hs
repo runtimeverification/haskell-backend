@@ -36,139 +36,10 @@ import           Data.Void
 import           GHC.Generics
                  ( Generic )
 
-import Kore.AST.MetaOrObject
-import Kore.Sort
-import Kore.Syntax.And
-import Kore.Syntax.Application
-import Kore.Syntax.Bottom
-import Kore.Syntax.Ceil
-import Kore.Syntax.CharLiteral
-import Kore.Syntax.Floor
-import Kore.Syntax.Or
-import Kore.Syntax.SetVariable
-import Kore.Syntax.StringLiteral
-import Kore.Syntax.Top
+import Kore.Syntax
 import Kore.Unparser
 import Template.Tools
        ( newDefinitionGroup )
-
-{-|Enumeration of patterns starting with @\@
--}
-data MLPatternType
-    = AndPatternType
-    | BottomPatternType
-    | CeilPatternType
-    | DomainValuePatternType
-    | EqualsPatternType
-    | ExistsPatternType
-    | FloorPatternType
-    | ForallPatternType
-    | IffPatternType
-    | ImpliesPatternType
-    | InPatternType
-    | NextPatternType
-    | NotPatternType
-    | OrPatternType
-    | RewritesPatternType
-    | TopPatternType
-    deriving (Show, Generic)
-
-instance Hashable MLPatternType
-
-instance Unparse MLPatternType where
-    unparse = ("\\" <>) . fromString . patternString
-    unparse2 = ("\\" <>) . fromString . patternString
-
-allPatternTypes :: [MLPatternType]
-allPatternTypes =
-    [ AndPatternType
-    , BottomPatternType
-    , CeilPatternType
-    , DomainValuePatternType
-    , EqualsPatternType
-    , ExistsPatternType
-    , FloorPatternType
-    , ForallPatternType
-    , IffPatternType
-    , ImpliesPatternType
-    , InPatternType
-    , NextPatternType
-    , NotPatternType
-    , OrPatternType
-    , RewritesPatternType
-    , TopPatternType
-    ]
-
-patternString :: MLPatternType -> String
-patternString pt = case pt of
-    AndPatternType         -> "and"
-    BottomPatternType      -> "bottom"
-    CeilPatternType        -> "ceil"
-    DomainValuePatternType -> "dv"
-    EqualsPatternType      -> "equals"
-    ExistsPatternType      -> "exists"
-    FloorPatternType       -> "floor"
-    ForallPatternType      -> "forall"
-    IffPatternType         -> "iff"
-    ImpliesPatternType     -> "implies"
-    InPatternType          -> "in"
-    NextPatternType        -> "next"
-    NotPatternType         -> "not"
-    OrPatternType          -> "or"
-    RewritesPatternType    -> "rewrites"
-    TopPatternType         -> "top"
-
-{-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
-syntactic category, which are not yet in the Semantics of K document,
-but they should appear in Section 9.1.4 (Patterns) at some point.
-
-Although there is no 'Meta' version of 'DomainValue's, for uniformity,
-the 'level' type parameter is used to distiguish between the hypothetical
-meta- and object- versions of symbol declarations. It should verify
-'MetaOrObject level'.
-
-'domainValueSort' is the sort of the result.
-
-This represents the encoding of an object constant, e.g. we may use
-\dv{Int{}}{"123"} instead of a representation based on constructors,
-e.g. succesor(succesor(...succesor(0)...))
--}
-data DomainValue level domain child = DomainValue
-    { domainValueSort  :: !Sort
-    , domainValueChild :: !(domain child)
-    }
-    deriving (Foldable, Functor, Generic, Traversable)
-
-$newDefinitionGroup
-
-instance Eq1 domain => Eq1 (DomainValue level domain) where
-    liftEq = $(makeLiftEq ''DomainValue)
-
-instance Ord1 domain => Ord1 (DomainValue level domain) where
-    liftCompare = $(makeLiftCompare ''DomainValue)
-
-instance Show1 domain => Show1 (DomainValue level domain) where
-    liftShowsPrec = $(makeLiftShowsPrec ''DomainValue)
-
-instance (Eq1 domain, Eq child) => Eq (DomainValue level domain child) where
-    (==) = eq1
-
-instance (Ord1 domain, Ord child) => Ord (DomainValue level domain child) where
-    compare = compare1
-
-instance (Show1 dom, Show child) => Show (DomainValue lvl dom child) where
-    showsPrec = showsPrec1
-
-instance Hashable (domain child) => Hashable (DomainValue level domain child)
-
-instance NFData (domain child) => NFData (DomainValue level domain child)
-
-instance
-    (Unparse (domain child), level ~ Object) =>
-    Unparse (DomainValue level domain child)
-  where
-    unparse DomainValue { domainValueChild } = unparse domainValueChild
-    unparse2 = unparse
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -977,3 +848,69 @@ castVoidDomainValues
     :: Pattern level (Const Void) variable child
     -> Pattern level domain       variable child
 castVoidDomainValues = mapDomainValues (\case {})
+
+{-|Enumeration of patterns starting with @\@
+-}
+data MLPatternType
+    = AndPatternType
+    | BottomPatternType
+    | CeilPatternType
+    | DomainValuePatternType
+    | EqualsPatternType
+    | ExistsPatternType
+    | FloorPatternType
+    | ForallPatternType
+    | IffPatternType
+    | ImpliesPatternType
+    | InPatternType
+    | NextPatternType
+    | NotPatternType
+    | OrPatternType
+    | RewritesPatternType
+    | TopPatternType
+    deriving (Show, Generic)
+
+instance Hashable MLPatternType
+
+instance Unparse MLPatternType where
+    unparse = ("\\" <>) . fromString . patternString
+    unparse2 = ("\\" <>) . fromString . patternString
+
+allPatternTypes :: [MLPatternType]
+allPatternTypes =
+    [ AndPatternType
+    , BottomPatternType
+    , CeilPatternType
+    , DomainValuePatternType
+    , EqualsPatternType
+    , ExistsPatternType
+    , FloorPatternType
+    , ForallPatternType
+    , IffPatternType
+    , ImpliesPatternType
+    , InPatternType
+    , NextPatternType
+    , NotPatternType
+    , OrPatternType
+    , RewritesPatternType
+    , TopPatternType
+    ]
+
+patternString :: MLPatternType -> String
+patternString pt = case pt of
+    AndPatternType         -> "and"
+    BottomPatternType      -> "bottom"
+    CeilPatternType        -> "ceil"
+    DomainValuePatternType -> "dv"
+    EqualsPatternType      -> "equals"
+    ExistsPatternType      -> "exists"
+    FloorPatternType       -> "floor"
+    ForallPatternType      -> "forall"
+    IffPatternType         -> "iff"
+    ImpliesPatternType     -> "implies"
+    InPatternType          -> "in"
+    NextPatternType        -> "next"
+    NotPatternType         -> "not"
+    OrPatternType          -> "or"
+    RewritesPatternType    -> "rewrites"
+    TopPatternType         -> "top"

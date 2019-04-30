@@ -375,7 +375,7 @@ instance Domain Builtin where
                 BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
         getBuiltin
             :: forall child
-            .  DomainValue Object Builtin child
+            .  DomainValue Sort Builtin child
             -> Builtin child
         getBuiltin DomainValue { domainValueSort, domainValueChild } =
             case domainValueChild of

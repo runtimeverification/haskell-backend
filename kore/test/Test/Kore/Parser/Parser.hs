@@ -11,7 +11,6 @@ import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Parser.Parser
-import           Kore.Syntax.StringLiteral
 
 import Test.Kore hiding
        ( sortVariable, sortVariableSort )

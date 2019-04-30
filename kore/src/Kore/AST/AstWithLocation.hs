@@ -17,16 +17,7 @@ import qualified Control.Lens as Lens
 import Kore.AST.Common
 import Kore.AST.Sentence
 import Kore.Domain.Class
-import Kore.Sort
-import Kore.Syntax.And
-import Kore.Syntax.Application
-import Kore.Syntax.Bottom
-import Kore.Syntax.Ceil
-import Kore.Syntax.Floor
-import Kore.Syntax.Or
-import Kore.Syntax.SetVariable
-import Kore.Syntax.Top
-import Kore.Syntax.Variable
+import Kore.Syntax
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.

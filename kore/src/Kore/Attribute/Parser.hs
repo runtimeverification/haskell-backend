@@ -74,7 +74,8 @@ import           GHC.Generics
 import           Kore.AST.Common
 import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.MetaOrObject
-import           Kore.AST.Pure
+import           Kore.AST.Pure hiding
+                 ( getStringLiteral )
 import           Kore.Attribute.Attributes
 import qualified Kore.Attribute.Smtlib.Smthook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute

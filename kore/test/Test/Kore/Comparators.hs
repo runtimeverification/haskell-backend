@@ -73,11 +73,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Step.TermLike
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.SetVariable
-                 ( SetVariable )
 import qualified Kore.Syntax.SetVariable as SetVariable
-import           Kore.Syntax.StringLiteral
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -507,7 +503,7 @@ instance (EqualWithExplanation child, Show child)
 
 instance
     (Eq child, Show child, Eq1 domain, Show1 domain) =>
-    EqualWithExplanation (DomainValue Object domain child)
+    EqualWithExplanation (DomainValue Sort domain child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

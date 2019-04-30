@@ -38,8 +38,6 @@ import           Kore.Proof.Functional
 import           Kore.Step.Conditional
 import qualified Kore.Step.Pattern as Step
                  ( Pattern )
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.StringLiteral
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -353,7 +351,7 @@ instance PrettyPrint child => PrettyPrint (Domain.External child) where
 instance
     ( PrettyPrint child
     , PrettyPrint (domain child)
-    ) => PrettyPrint (DomainValue level domain child) where
+    ) => PrettyPrint (DomainValue Sort domain child) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"

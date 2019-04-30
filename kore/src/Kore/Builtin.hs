@@ -69,7 +69,7 @@ import           Kore.Step.TermLike
 
 {- | The default type of builtin domain values.
  -}
-type Builtin = DomainValue Object Domain.Builtin (TermLike Variable)
+type Builtin = DomainValue Sort Domain.Builtin (TermLike Variable)
 
 {- | Verifiers for Kore builtin sorts.
 

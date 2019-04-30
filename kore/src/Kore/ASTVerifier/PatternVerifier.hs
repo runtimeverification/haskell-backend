@@ -58,8 +58,6 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Parser
                  ( ParsedPattern )
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.StringLiteral
 import           Kore.Unparser
 import qualified Kore.Variables.Free as Variables
 import qualified Kore.Verified as Verified

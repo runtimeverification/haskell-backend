@@ -14,9 +14,8 @@ import           Data.Functor.Const
 import           Data.Void
                  ( Void )
 
-import Kore.AST.Common
-       ( DomainValue )
-import Kore.AST.MetaOrObject
+import Kore.Sort
+import Kore.Syntax.DomainValue
 
 class Functor domain => Domain domain where
     -- | View a 'Domain' as a 'DomainValue'.
@@ -25,8 +24,8 @@ class Functor domain => Domain domain where
         .   Lens.Lens
                 (domain child1)
                 (domain child2)
-                (DomainValue Object domain child1)
-                (DomainValue Object domain child2)
+                (DomainValue Sort domain child1)
+                (DomainValue Sort domain child2)
 
 instance Domain (Const Void) where
     lensDomainValue _ = \case {}
