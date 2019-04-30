@@ -15,6 +15,7 @@ module Kore.Syntax
     , module Kore.Syntax.Equals
     , module Kore.Syntax.Exists
     , module Kore.Syntax.Floor
+    , module Kore.Syntax.Forall
     , module Kore.Syntax.Or
     , module Kore.Syntax.SetVariable
     , module Kore.Syntax.StringLiteral
@@ -32,6 +33,7 @@ import Kore.Syntax.DomainValue
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
 import Kore.Syntax.Floor
+import Kore.Syntax.Forall
 import Kore.Syntax.Or
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral

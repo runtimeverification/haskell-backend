@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
-import           Kore.AST.Common
-                 ( Forall (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
@@ -25,6 +23,7 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fmapWithPairs )
 import           Kore.Step.Simplification.Data
                  ( SimplificationProof (..) )
+import           Kore.Syntax.Forall
 import           Kore.Unparser
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note

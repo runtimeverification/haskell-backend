@@ -39,7 +39,7 @@ import           Kore.Annotation.Valid
                  ( Valid )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
-                 ( Forall (..), Pattern (..) )
+                 ( Pattern (..) )
 import qualified Kore.AST.Common as Base
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
@@ -51,6 +51,7 @@ import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Substitute as Substitute
 import           Kore.Syntax.Exists
+import           Kore.Syntax.Forall
 import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh

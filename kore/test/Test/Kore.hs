@@ -320,7 +320,7 @@ forallGen
     :: (Sort -> Gen child)
     -> Sort
     -> Gen (Forall Object Variable child)
-forallGen = existsForallGen Common.Forall
+forallGen = existsForallGen Forall
 
 iffGen
     :: (Sort -> Gen child)
