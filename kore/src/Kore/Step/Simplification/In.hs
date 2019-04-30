@@ -11,8 +11,6 @@ module Kore.Step.Simplification.In
     (simplify
     ) where
 
-import           Kore.AST.Common
-                 ( In (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -35,6 +33,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationProof (..), Simplifier,
                  TermLikeSimplifier )
+import           Kore.Syntax.In
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

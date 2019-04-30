@@ -316,10 +316,7 @@ existsGen = existsForallGen Exists
 floorGen :: (Sort -> Gen child) -> Sort -> Gen (Floor Sort child)
 floorGen = ceilFloorGen Floor
 
-forallGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Forall Sort Variable child)
+forallGen :: (Sort -> Gen child) -> Sort -> Gen (Forall Sort Variable child)
 forallGen = existsForallGen Forall
 
 iffGen :: (Sort -> Gen child) -> Sort -> Gen (Iff Sort child)
@@ -328,11 +325,8 @@ iffGen = binaryOperatorGen Iff
 impliesGen :: (Sort -> Gen child) -> Sort -> Gen (Implies Sort child)
 impliesGen = binaryOperatorGen Implies
 
-inGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (In Object child)
-inGen = equalsInGen Common.In
+inGen :: (Sort -> Gen child) -> Sort -> Gen (In Object child)
+inGen = equalsInGen In
 
 nextGen
     :: (Sort -> Gen child)
