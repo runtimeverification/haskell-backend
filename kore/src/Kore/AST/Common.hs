@@ -462,7 +462,7 @@ data Pattern level domain variable child where
     EqualsPattern
         :: !(Equals Sort child) -> Pattern level domain variable child
     ExistsPattern
-        :: !(Exists level variable child) -> Pattern level domain variable child
+        :: !(Exists Sort variable child) -> Pattern level domain variable child
     FloorPattern
         :: !(Floor Sort child) -> Pattern level domain variable child
     ForallPattern

@@ -559,7 +559,7 @@ verifyBinder binderSort binderVariable = \binder -> do
 {-# INLINE verifyBinder #-}
 
 verifyExists
-    ::  ( binder ~ Exists Object Variable
+    ::  ( binder ~ Exists Sort Variable
         , valid ~ Valid (Variable) Object
         )
     => binder (PatternVerifier Verified.Pattern)

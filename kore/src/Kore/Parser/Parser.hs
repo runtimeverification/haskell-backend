@@ -251,9 +251,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 existsForallRemainderParser
     :: Parser child
-    -> (Sort -> Variable -> child -> m Object Variable child)
+    -> (Sort -> Variable -> child -> m child)
     -- ^ Element constructor.
-    -> Parser (m Object Variable child)
+    -> Parser (m child)
 existsForallRemainderParser childParser constructor = do
     sort <- inCurlyBracesRemainderParser sortParser
     (variable, qChild) <- parenPairParser variableParser childParser

@@ -372,7 +372,7 @@ instance PrettyPrint child => PrettyPrint (Equals Sort child) where
 instance
     ( PrettyPrint child
     , PrettyPrint variable
-    ) => PrettyPrint (Exists level variable child)
+    ) => PrettyPrint (Exists Sort variable child)
   where
     prettyPrint _ p@(Exists _ _ _) =
         writeStructure

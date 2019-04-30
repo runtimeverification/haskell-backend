@@ -264,7 +264,7 @@ makeExists
     :: Ord variable
     => variable
     -> [Pattern Object variable]
-    -> Exists Object variable (OrPattern Object variable)
+    -> Exists Sort variable (OrPattern Object variable)
 makeExists variable patterns =
     Exists
         { existsSort = testSort
@@ -277,7 +277,7 @@ testSort = Mock.testSort
 
 simplify
     :: SmtMetadataTools StepperAttributes
-    -> Exists Object Variable (OrPattern Object Variable)
+    -> Exists Sort Variable (OrPattern Object Variable)
     -> IO (OrPattern Object Variable)
 simplify tools exists =
     (<$>) fst

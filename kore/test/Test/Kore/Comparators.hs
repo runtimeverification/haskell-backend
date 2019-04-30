@@ -547,7 +547,7 @@ instance
     , EqualWithExplanation child
     , EqualWithExplanation variable
     )
-    => StructEqualWithExplanation (Exists Object variable child)
+    => StructEqualWithExplanation (Exists Sort variable child)
   where
     structFieldsWithNames
         expected@(Exists _ _ _)
@@ -573,7 +573,7 @@ instance
     , EqualWithExplanation variable
     , Eq variable
     , Show variable
-    ) => EqualWithExplanation (Exists Object variable child)
+    ) => EqualWithExplanation (Exists Sort variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

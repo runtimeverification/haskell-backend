@@ -81,7 +81,7 @@ simplify
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Exists Object variable (OrPattern Object variable)
+    -> Exists Sort variable (OrPattern Object variable)
     -> Simplifier
         ( OrPattern Object variable
         , SimplificationProof Object
@@ -106,7 +106,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Exists Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Exists Sort) (Valid Object) (OrPattern Object variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will

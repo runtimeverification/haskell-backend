@@ -246,10 +246,10 @@ equalsInGen constructor childGen resultSort = do
         <*> Gen.small (childGen operandSort)
 
 existsForallGen
-    :: (Sort -> Variable -> child -> q Object Variable child)
+    :: (Sort -> Variable -> child -> q child)
     -> (Sort -> Gen child)
     -> Sort
-    -> Gen (q Object Variable child)
+    -> Gen (q child)
 existsForallGen constructor childGen patternSort = do
     varSort <- Gen.small sortGen
     var <- Gen.small (variableGen varSort)
@@ -310,10 +310,7 @@ genExternal domainValueSort =
         . getStringLiteral
         <$> stringLiteralGen
 
-existsGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Exists Object Variable child)
+existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort Variable child)
 existsGen = existsForallGen Exists
 
 floorGen :: (Sort -> Gen child) -> Sort -> Gen (Floor Sort child)
