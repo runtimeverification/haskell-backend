@@ -81,7 +81,7 @@ data Pattern level domain variable child where
     OrPattern
         :: !(Or Sort child) -> Pattern level domain variable child
     RewritesPattern
-        :: !(Rewrites level child) -> Pattern level domain variable child
+        :: !(Rewrites Sort child) -> Pattern level domain variable child
     StringLiteralPattern
         :: !StringLiteral -> Pattern level domain variable child
     CharLiteralPattern

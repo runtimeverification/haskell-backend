@@ -456,7 +456,7 @@ instance PrettyPrint child => PrettyPrint (Or Sort child) where
             , writeFieldNewLine "orSecond" orSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (Rewrites level child) where
+instance PrettyPrint child => PrettyPrint (Rewrites Sort child) where
     prettyPrint _ p@(Rewrites _ _ _) =
         writeStructure
             "Rewrites"

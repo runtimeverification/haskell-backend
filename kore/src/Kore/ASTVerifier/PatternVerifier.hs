@@ -422,7 +422,7 @@ verifyNot
 verifyNot = verifyOperands notSort
 
 verifyRewrites
-    ::  ( logical ~ Rewrites Object
+    ::  ( logical ~ Rewrites Sort
         , valid ~ Valid (Variable) Object
         )
     => logical (PatternVerifier Verified.Pattern)

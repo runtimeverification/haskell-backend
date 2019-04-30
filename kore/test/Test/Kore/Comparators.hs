@@ -750,7 +750,7 @@ instance
 
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Rewrites Object child)
+    => EqualWithExplanation (Rewrites Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

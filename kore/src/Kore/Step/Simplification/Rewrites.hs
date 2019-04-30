@@ -33,7 +33,7 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Rewrites Object (OrPattern Object variable)
+    => Rewrites Sort (OrPattern Object variable)
     ->  ( OrPattern Object variable
         , SimplificationProof Object
         )

@@ -10,9 +10,7 @@ module Kore.Syntax.Rewrites where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( makeLiftCompare, makeLiftEq, makeLiftShowsPrec )
-import           Data.Functor.Classes
+import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
@@ -20,52 +18,30 @@ import           GHC.Generics
 
 import Kore.Sort
 import Kore.Unparser
-import Template.Tools
-       ( newDefinitionGroup )
 
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
-
-Although there is no 'Meta' version of @\rewrites@, there is a 'level' type
-parameter which will always be 'Object'. The object-only restriction is
-done at the Pattern level.
 
 'rewritesSort' is both the sort of the operands and the sort of the result.
 
 -}
 
-data Rewrites level child = Rewrites
-    { rewritesSort   :: !Sort
+data Rewrites sort child = Rewrites
+    { rewritesSort   :: !sort
     , rewritesFirst  :: child
     , rewritesSecond :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
 
-$newDefinitionGroup
+Deriving.deriveEq1 ''Rewrites
+Deriving.deriveOrd1 ''Rewrites
+Deriving.deriveShow1 ''Rewrites
 
-instance Eq1 (Rewrites level) where
-    liftEq = $(makeLiftEq ''Rewrites)
+instance (Hashable sort, Hashable child) => Hashable (Rewrites sort child)
 
-instance Ord1 (Rewrites level) where
-    liftCompare = $(makeLiftCompare ''Rewrites)
+instance (NFData sort, NFData child) => NFData (Rewrites sort child)
 
-instance Show1 (Rewrites level) where
-    liftShowsPrec = $(makeLiftShowsPrec ''Rewrites)
-
-instance Eq child => Eq (Rewrites level child) where
-    (==) = eq1
-
-instance Ord child => Ord (Rewrites level child) where
-    compare = compare1
-
-instance Show child => Show (Rewrites level child) where
-    showsPrec = showsPrec1
-
-instance Hashable child => Hashable (Rewrites level child)
-
-instance NFData child => NFData (Rewrites level child)
-
-instance Unparse child => Unparse (Rewrites level child) where
+instance Unparse child => Unparse (Rewrites Sort child) where
     unparse Rewrites { rewritesSort, rewritesFirst, rewritesSecond } =
         "\\rewrites"
         <> parameters [rewritesSort]
