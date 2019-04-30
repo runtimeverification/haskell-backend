@@ -314,7 +314,7 @@ existsGen
     :: (Sort -> Gen child)
     -> Sort
     -> Gen (Exists Object Variable child)
-existsGen = existsForallGen Common.Exists
+existsGen = existsForallGen Exists
 
 floorGen :: (Sort -> Gen child) -> Sort -> Gen (Floor Sort child)
 floorGen = ceilFloorGen Floor
