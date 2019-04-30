@@ -12,6 +12,7 @@ module Kore.Syntax
     , module Kore.Syntax.Ceil
     , module Kore.Syntax.CharLiteral
     , module Kore.Syntax.DomainValue
+    , module Kore.Syntax.Equals
     , module Kore.Syntax.Floor
     , module Kore.Syntax.Or
     , module Kore.Syntax.SetVariable
@@ -27,6 +28,7 @@ import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.CharLiteral
 import Kore.Syntax.DomainValue
+import Kore.Syntax.Equals
 import Kore.Syntax.Floor
 import Kore.Syntax.Or
 import Kore.Syntax.SetVariable

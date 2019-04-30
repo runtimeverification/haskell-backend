@@ -60,15 +60,7 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
-import           Kore.Syntax.And
-import           Kore.Syntax.Application
-import           Kore.Syntax.Bottom
-import           Kore.Syntax.Ceil
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.Floor
-import           Kore.Syntax.Or
-import           Kore.Syntax.StringLiteral
-import           Kore.Syntax.Top
+import           Kore.Syntax
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -285,11 +277,8 @@ bottomGen = topBottomGen Bottom
 ceilGen :: (Sort -> Gen child) -> Sort -> Gen (Ceil Sort child)
 ceilGen = ceilFloorGen Ceil
 
-equalsGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Equals Object child)
-equalsGen = equalsInGen Common.Equals
+equalsGen :: (Sort -> Gen child) -> Sort -> Gen (Equals Object child)
+equalsGen = equalsInGen Equals
 
 genBuiltinExternal :: Sort -> Gen (Domain.Builtin child)
 genBuiltinExternal domainValueSort =
