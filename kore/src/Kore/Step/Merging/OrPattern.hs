@@ -99,10 +99,10 @@ mergeWithPredicateAssumesEvaluated
     => PredicateMerger Object variable m
     -> Predicate Object variable
     -- ^ Predicate to add.
-    -> MultiOr (Conditional Object variable term)
+    -> MultiOr (Conditional variable term)
     -- ^ Pattern to which the condition should be added.
     -> m
-        (MultiOr (Conditional Object variable term), SimplificationProof Object)
+        (MultiOr (Conditional variable term), SimplificationProof Object)
 mergeWithPredicateAssumesEvaluated
     substitutionMerger
     toMerge

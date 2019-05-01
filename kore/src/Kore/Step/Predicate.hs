@@ -34,11 +34,11 @@ import qualified Kore.Step.Conditional as Conditional
 import           Kore.Unparser
 
 -- | A predicate and substitution without an accompanying term.
-type Predicate level variable = Conditional level variable ()
+type Predicate level variable = Conditional variable ()
 
 -- | Erase the @Conditional@ 'term' to yield a 'Predicate'.
 eraseConditionalTerm
-    :: Conditional Object variable child
+    :: Conditional variable child
     -> Predicate Object variable
 eraseConditionalTerm = Conditional.withoutTerm
 

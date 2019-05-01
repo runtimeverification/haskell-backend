@@ -543,8 +543,8 @@ unifyEquals
     -- predicates to the top Object, returning a 'Conditional' collection.
     propagatePredicates
         :: Traversable t
-        => t (Conditional Object variable a)
-        -> Conditional Object variable (t a)
+        => t (Conditional variable a)
+        -> Conditional variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.

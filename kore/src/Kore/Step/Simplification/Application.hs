@@ -45,7 +45,6 @@ import           Kore.Variables.Fresh
 
 type ExpandedApplication level variable =
     Conditional
-        level
         variable
         (CofreeF
             (Application SymbolOrAlias)

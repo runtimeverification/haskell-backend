@@ -343,8 +343,8 @@ merge s1 s2 =
         $ Substitution.wrap <$> [s1, s2]
 
 normalize
-    :: Conditional Object Variable term
-    -> IO [Conditional Object Variable term]
+    :: Conditional Variable term
+    -> IO [Conditional Variable term]
 normalize predicated =
     runSMT
     $ evalSimplifier emptyLogger
@@ -357,8 +357,8 @@ normalize predicated =
         predicated
 
 normalizeExcept
-    :: Conditional Object Variable ()
-    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr (Conditional Object Variable ())))
+    :: Conditional Variable ()
+    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr (Conditional Variable ())))
 normalizeExcept predicated =
     runSMT
     $ evalSimplifier emptyLogger

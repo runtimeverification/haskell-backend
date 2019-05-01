@@ -56,7 +56,7 @@ simplifyBuiltin
        )
     => Domain.Builtin (OrPattern variable)
     -> MultiOr
-        (Conditional Object variable (Domain.Builtin (TermLike variable)))
+        (Conditional variable (Domain.Builtin (TermLike variable)))
 simplifyBuiltin =
     \case
         Domain.BuiltinExternal _ext -> do

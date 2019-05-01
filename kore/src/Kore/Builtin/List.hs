@@ -431,8 +431,8 @@ unifyEquals
 
     propagatePredicates
         :: Traversable t
-        => t (Conditional Object variable a)
-        -> Conditional Object variable (t a)
+        => t (Conditional variable a)
+        -> Conditional variable (t a)
     propagatePredicates = sequenceA
 
     discardProofs :: Seq (expanded, proof) -> Seq expanded

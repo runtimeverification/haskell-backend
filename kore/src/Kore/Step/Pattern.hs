@@ -58,7 +58,7 @@ The form of @Pattern@ is intended to be a convenient representation of a
 program configuration for Kore execution.
 
  -}
-type Pattern variable = Conditional Object variable (TermLike variable)
+type Pattern variable = Conditional variable (TermLike variable)
 
 fromPredicate :: Predicate Object variable -> Pattern variable
 fromPredicate = (<$) mkTop_

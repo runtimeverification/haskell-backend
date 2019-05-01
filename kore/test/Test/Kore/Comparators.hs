@@ -1187,7 +1187,7 @@ instance
     , EqualWithExplanation child
     , EqualWithExplanation (TermLike variable)
     )
-    => StructEqualWithExplanation (Conditional Object variable child)
+    => StructEqualWithExplanation (Conditional variable child)
   where
     structFieldsWithNames
         expected@(Conditional _ _ _) actual@(Conditional _ _ _)
@@ -1208,13 +1208,12 @@ instance
     structConstructorName _ = "Conditional"
 
 instance
-    ( Show Object, Show variable, Show child
-    , Eq Object, Eq variable
+    ( Show variable, Show child , Eq variable
     , EqualWithExplanation variable
     , EqualWithExplanation child
     , EqualWithExplanation (TermLike variable)
     )
-    => EqualWithExplanation (Conditional Object variable child)
+    => EqualWithExplanation (Conditional variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

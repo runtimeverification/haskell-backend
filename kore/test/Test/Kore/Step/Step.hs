@@ -174,7 +174,7 @@ unifyRule
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [Conditional Object Variable (RulePattern Variable)]
+            [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
     evalUnifier

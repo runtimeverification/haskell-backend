@@ -158,8 +158,8 @@ mergeWithPredicateAssumesEvaluated
         )
     => PredicateMerger Object variable m
     -> Predicate Object variable
-    -> Conditional Object variable term
-    -> m (Conditional Object variable term, SimplificationProof Object)
+    -> Conditional variable term
+    -> m (Conditional variable term, SimplificationProof Object)
 mergeWithPredicateAssumesEvaluated
     (PredicateMerger substitutionMerger)
     Conditional

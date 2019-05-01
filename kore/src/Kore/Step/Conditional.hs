@@ -41,7 +41,7 @@ import           Kore.Unparser
 
 {- | @Conditional@ represents a value conditioned on a predicate.
 
-@Conditional level variable child@ represents a @child@ conditioned on a
+@Conditional variable child@ represents a @child@ conditioned on a
 @predicate@ and @substitution@ (which is a specialized form of predicate).
 
 The 'Applicative' instance conjoins the predicates and substitutions so that the
@@ -52,7 +52,7 @@ There is intentionally no 'Monad' instance; such an instance would have
 quadratic complexity.
 
  -}
-data Conditional level variable child =
+data Conditional variable child =
     Conditional
         { term :: child
         , predicate :: !(Predicate variable)
@@ -62,23 +62,23 @@ data Conditional level variable child =
 
 deriving instance
     (Eq child, Eq variable) =>
-    Eq (Conditional level variable child)
+    Eq (Conditional variable child)
 
 deriving instance
     (Ord child, Ord variable) =>
-    Ord (Conditional level variable child)
+    Ord (Conditional variable child)
 
 deriving instance
     (Show child, Show variable) =>
-    Show (Conditional level variable child)
+    Show (Conditional variable child)
 
 instance
     (Hashable child, Hashable variable) =>
-    Hashable (Conditional level variable child)
+    Hashable (Conditional variable child)
 
 instance
     (NFData child, NFData variable) =>
-    NFData (Conditional level variable child)
+    NFData (Conditional variable child)
 
 instance
     ( Ord variable
@@ -86,7 +86,7 @@ instance
     , SortedVariable variable
     , Semigroup term
     ) =>
-    Semigroup (Conditional level variable term)
+    Semigroup (Conditional variable term)
   where
     (<>) predicated1 predicated2 = (<>) <$> predicated1 <*> predicated2
     {-# INLINE (<>) #-}
@@ -97,7 +97,7 @@ instance
     , SortedVariable variable
     , Monoid term
     ) =>
-    Monoid (Conditional level variable term)
+    Monoid (Conditional variable term)
   where
     mempty =
         Conditional
@@ -115,7 +115,7 @@ instance
     , Ord variable
     , Unparse variable
     ) =>
-    Applicative (Conditional level variable)
+    Applicative (Conditional variable)
   where
     pure term =
         Conditional
@@ -135,7 +135,7 @@ instance
         Conditional a predicate2 substitution2 = predicated2
 
 instance TopBottom term
-    => TopBottom (Conditional level variable term)
+    => TopBottom (Conditional variable term)
   where
     isTop Conditional {term, predicate, substitution} =
         isTop term && isTop predicate && isTop substitution
@@ -149,7 +149,7 @@ instance
     , Unparse variable
     , Unparse child
     ) =>
-    Unparse (Conditional level variable child)
+    Unparse (Conditional variable child)
   where
     unparse Conditional { term, predicate, substitution } =
         unparseAnd
@@ -192,16 +192,16 @@ instance
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}
-withoutTerm :: Conditional Object variable term -> Conditional Object variable ()
+withoutTerm :: Conditional variable term -> Conditional variable ()
 withoutTerm predicated = predicated { term = () }
 
 {- | Attach the condition to the given 'term'.
  -}
 withCondition
     :: term
-    -> Conditional Object variable ()
+    -> Conditional variable ()
     -- ^ Condition
-    -> Conditional Object variable term
+    -> Conditional variable term
 withCondition term predicated = predicated { term }
 
 {- | Combine the conditions of both arguments, taking the 'term' of the first.
@@ -212,9 +212,9 @@ andCondition
         , Unparse variable
         , SortedVariable variable
         )
-    => Conditional Object variable term
-    -> Conditional Object variable ()
-    -> Conditional Object variable term
+    => Conditional variable term
+    -> Conditional variable ()
+    -> Conditional variable term
 andCondition = (<*)
 
 {- | Construct a 'Conditional' holding the given 'Predicate'.
@@ -225,7 +225,7 @@ The result has an empty 'Substitution'.
 fromPredicate
     :: Ord variable
     => Predicate variable
-    -> Conditional Object variable ()
+    -> Conditional variable ()
 fromPredicate predicate =
     Conditional { term = (), predicate, substitution = mempty }
 
@@ -237,7 +237,7 @@ The result has a true 'Predicate'.
 fromSubstitution
     :: Ord variable
     => Substitution variable
-    -> Conditional Object variable ()
+    -> Conditional variable ()
 fromSubstitution substitution =
     Conditional
         { term = ()
@@ -253,9 +253,9 @@ andPredicate
         , Unparse variable
         , SortedVariable variable
         )
-    => Conditional Object variable term
+    => Conditional variable term
     -> Predicate variable
-    -> Conditional Object variable term
+    -> Conditional variable term
 andPredicate config predicate = config `andCondition` fromPredicate predicate
 
 {- | Extract the set of free variables from a 'Conditional' term.
@@ -266,7 +266,7 @@ freeVariables
     :: Ord variable
     => (term -> Set variable)
     -- ^ Extract the free variables of @term@.
-    -> Conditional Object variable term
+    -> Conditional variable term
     -> Set variable
 freeVariables getFreeVariables Conditional { term, predicate, substitution } =
     getFreeVariables term
@@ -278,7 +278,7 @@ freeVariables getFreeVariables Conditional { term, predicate, substitution } =
 @toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
 a 'PredicateSubstition' into only a 'Predicate'; i.e. when @term ~ ()@,
 
-> Conditional Object variable term ~ Predicate Object variable
+> Conditional variable term ~ Predicate Object variable
 
 @toPredicate@ is also used to extract the 'Predicate' and 'Substitution' while
 discarding the 'term'.
@@ -292,7 +292,7 @@ toPredicate
        , Show variable
        , Unparse variable
        )
-    => Conditional Object variable term
+    => Conditional variable term
     -> Predicate variable
 toPredicate Conditional { predicate, substitution } =
     Predicate.makeAndPredicate
@@ -306,8 +306,8 @@ mapVariables
     :: Ord variableTo
     => ((variableFrom -> variableTo) -> termFrom -> termTo)
     -> (variableFrom -> variableTo)
-    -> Conditional Object variableFrom termFrom
-    -> Conditional Object variableTo   termTo
+    -> Conditional variableFrom termFrom
+    -> Conditional variableTo   termTo
 mapVariables
     mapTermVariables
     mapVariable

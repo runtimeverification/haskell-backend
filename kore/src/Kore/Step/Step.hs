@@ -128,7 +128,7 @@ solution and the renamed rule is wrapped with the combined condition.
 
  -}
 type UnifiedRule variable =
-    Conditional Object variable (RulePattern variable)
+    Conditional variable (RulePattern variable)
 
 withoutUnification :: UnifiedRule variable -> RulePattern variable
 withoutUnification = Conditional.term
@@ -226,7 +226,7 @@ unifyRule
     unifyPatterns
         :: TermLike variable
         -> TermLike variable
-        -> BranchT unifier (Conditional Object variable ())
+        -> BranchT unifier (Conditional variable ())
     unifyPatterns pat1 pat2 = do
         (unifiers, _) <-
             Monad.Trans.lift

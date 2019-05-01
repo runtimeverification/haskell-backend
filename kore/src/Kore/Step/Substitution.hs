@@ -79,8 +79,8 @@ normalize
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Conditional Object variable term
-    -> BranchT Simplifier (Conditional Object variable term)
+    -> Conditional variable term
+    -> BranchT Simplifier (Conditional variable term)
 normalize
     tools
     substitutionSimplifier
