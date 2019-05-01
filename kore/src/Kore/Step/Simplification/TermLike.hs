@@ -137,7 +137,7 @@ simplifyInternal
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Recursive.Base (TermLike variable) (TermLike variable)

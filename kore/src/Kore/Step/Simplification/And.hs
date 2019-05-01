@@ -91,7 +91,7 @@ simplify
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
@@ -143,7 +143,7 @@ simplifyEvaluated
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
@@ -194,7 +194,7 @@ makeEvaluate
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
@@ -225,7 +225,7 @@ makeEvaluateNonBool
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
@@ -288,7 +288,7 @@ makeTermAnd
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators

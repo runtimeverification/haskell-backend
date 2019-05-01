@@ -83,7 +83,7 @@ simplify
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -125,7 +125,7 @@ simplifyEvaluated
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -159,7 +159,7 @@ makeEvaluate
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -186,7 +186,7 @@ makeEvaluateNonBoolCeil
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -238,7 +238,7 @@ makeEvaluateTerm
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -333,7 +333,7 @@ makeEvaluateBuiltin
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions

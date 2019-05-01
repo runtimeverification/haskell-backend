@@ -32,7 +32,7 @@ mockSimplifier
             , ([Pattern variable], SimplificationProof Object)
             )
         ]
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
 mockSimplifier values =
     termLikeSimplifier
         ( mockSimplifierHelper
@@ -53,7 +53,7 @@ mockPredicateSimplifier
             , ([Pattern variable], SimplificationProof Object)
             )
         ]
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
 mockPredicateSimplifier values =
     termLikeSimplifier
         (mockSimplifierHelper

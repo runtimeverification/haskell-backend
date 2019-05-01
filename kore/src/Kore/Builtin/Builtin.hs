@@ -667,7 +667,7 @@ unaryOperator
     unaryOperator0
         :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier level
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -720,7 +720,7 @@ binaryOperator
     binaryOperator0
         :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier level
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -773,7 +773,7 @@ ternaryOperator
     ternaryOperator0
         :: (Ord variable, level ~ Object)
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier level
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom level variable)
@@ -790,7 +790,7 @@ type FunctionImplementation
     = forall variable
         .  Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier Object
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
@@ -803,7 +803,7 @@ functionEvaluator impl =
         :: (Ord variable, Show variable)
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
-        -> TermLikeSimplifier Object
+        -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF
             (Application SymbolOrAlias)

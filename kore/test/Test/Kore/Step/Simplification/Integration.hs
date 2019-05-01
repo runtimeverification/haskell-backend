@@ -423,7 +423,7 @@ evaluateWithAxioms tools axioms patt =
             axiomIdToSimplifier
             patt
   where
-    simplifier :: TermLikeSimplifier Object
+    simplifier :: TermLikeSimplifier
     simplifier = Simplifier.create tools axiomIdToSimplifier
     axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap Object
     axiomIdToSimplifier =

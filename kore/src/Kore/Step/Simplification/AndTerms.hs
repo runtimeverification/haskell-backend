@@ -115,7 +115,7 @@ termEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
@@ -151,7 +151,7 @@ termEqualsAnd
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
@@ -236,7 +236,7 @@ maybeTermEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> PredicateMerger Object variable unifier
     -> TermSimplifier Object variable unifier
@@ -272,7 +272,7 @@ termUnification
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
@@ -328,7 +328,7 @@ termAnd
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
@@ -383,7 +383,7 @@ maybeTermAnd
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> PredicateMerger Object variable unifier
     -> TermSimplifier Object variable unifier
@@ -606,7 +606,7 @@ type TermTransformation level variable unifier =
        SimplificationType
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier level
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
@@ -617,7 +617,7 @@ type TermTransformation level variable unifier =
 type TermTransformationOld level variable unifier =
        SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier level
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
@@ -639,7 +639,7 @@ maybeTransformTerm
     => [TermTransformationOld Object variable unifier]
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> PredicateMerger Object variable unifier
     -> TermSimplifier Object variable unifier
@@ -780,7 +780,7 @@ bottomTermEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -844,7 +844,7 @@ termBottomEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -874,7 +874,7 @@ variableFunctionAndEquals
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -984,7 +984,7 @@ functionVariableAndEquals
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions

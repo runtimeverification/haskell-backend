@@ -202,7 +202,7 @@ evalGet =
     evalGet0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier Object
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)
@@ -250,7 +250,7 @@ evalConcat =
     evalConcat0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier Object
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom Object variable)

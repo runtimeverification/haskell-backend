@@ -45,7 +45,7 @@ evaluate
         , Given (SmtMetadataTools StepperAttributes)
         )
     => PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
     -> Syntax.Predicate variable
     -- ^ The condition to be evaluated.

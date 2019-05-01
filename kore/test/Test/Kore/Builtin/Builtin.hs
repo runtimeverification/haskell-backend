@@ -181,7 +181,7 @@ testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 evaluators :: BuiltinAndAxiomSimplifierMap Object
 evaluators = Builtin.koreEvaluators verifiedModule
 
-stepSimplifier :: TermLikeSimplifier Object
+stepSimplifier :: TermLikeSimplifier
 stepSimplifier =
     termLikeSimplifier
         (\_ p ->

@@ -278,7 +278,7 @@ evalSimplifier logger (Simplifier simpl) =
 
 {-| Wraps a function that evaluates Kore functions on TermLikes.
 -}
-newtype TermLikeSimplifier level =
+newtype TermLikeSimplifier =
     TermLikeSimplifier
         ( forall variable
         .   ( FreshVariable variable
@@ -306,7 +306,7 @@ simplifyTerm
         , Unparse variable
         , SortedVariable variable
         )
-    => TermLikeSimplifier Object
+    => TermLikeSimplifier
     -> PredicateSimplifier
     -> TermLike variable
     -> Simplifier
@@ -336,7 +336,7 @@ simplifyConditionalTerm
         , Unparse variable
         , SortedVariable variable
         )
-    => TermLikeSimplifier Object
+    => TermLikeSimplifier
     -> PredicateSimplifier
     -> TermLike variable
     -> Predicate variable
@@ -364,7 +364,7 @@ termLikeSimplifier
             , SimplificationProof Object
             )
         )
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
 termLikeSimplifier simplifier =
     TermLikeSimplifier termLikeSimplifierWorker
   where

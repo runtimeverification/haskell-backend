@@ -79,7 +79,7 @@ runRepl
     => Claim claim
     => SmtMetadataTools StepperAttributes
     -- ^ tools required for the proof
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ pattern simplifier
     -> PredicateSimplifier
     -- ^ predicate simplifier

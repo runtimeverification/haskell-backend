@@ -28,7 +28,7 @@ create
     :: SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
 create
     tools
     axiomIdToEvaluator

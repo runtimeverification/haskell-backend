@@ -95,7 +95,7 @@ newtype BuiltinAndAxiomSimplifier level =
             )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
-        -> TermLikeSimplifier level
+        -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap level
         -> TermLike variable
         -> Simplifier
@@ -227,7 +227,7 @@ applicationAxiomSimplifier
             )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
-        -> TermLikeSimplifier Object
+        -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap Object
         -> CofreeF
             (Application SymbolOrAlias)
@@ -253,7 +253,7 @@ applicationAxiomSimplifier applicationSimplifier =
                 )
             => SmtMetadataTools StepperAttributes
             -> PredicateSimplifier
-            -> TermLikeSimplifier Object
+            -> TermLikeSimplifier
             -> BuiltinAndAxiomSimplifierMap Object
             -> TermLike variable
             -> Simplifier

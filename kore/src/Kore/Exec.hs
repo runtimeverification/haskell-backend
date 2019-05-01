@@ -117,7 +117,7 @@ type ExecutionGraph =
 data Initialized =
     Initialized
         { rewriteRules :: ![Rewrite]
-        , simplifier :: !(TermLikeSimplifier Object)
+        , simplifier :: !(TermLikeSimplifier)
         , substitutionSimplifier :: !(PredicateSimplifier)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         }
@@ -126,7 +126,7 @@ data Initialized =
 data Execution =
     Execution
         { metadataTools :: !(SmtMetadataTools StepperAttributes)
-        , simplifier :: !(TermLikeSimplifier Object)
+        , simplifier :: !(TermLikeSimplifier)
         , substitutionSimplifier :: !(PredicateSimplifier)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         , executionGraph :: !ExecutionGraph
@@ -422,7 +422,7 @@ initialize verifiedModule tools =
                     )
                     -- user-defined functions
                     functionEvaluators
-            simplifier :: TermLikeSimplifier Object
+            simplifier :: TermLikeSimplifier
             simplifier = Simplifier.create tools axiomIdToSimplifier
             substitutionSimplifier
                 :: PredicateSimplifier
@@ -517,7 +517,7 @@ simplifyPattern tools =
         Map.empty
     . Pattern.fromTermLike
   where
-    emptySimplifier :: TermLikeSimplifier Object
+    emptySimplifier :: TermLikeSimplifier
     emptySimplifier = Simplifier.create tools Map.empty
     emptySubstitutionSimplifier =
         Predicate.create tools emptySimplifier Map.empty

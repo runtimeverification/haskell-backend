@@ -56,7 +56,7 @@ simplify
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> Not Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
@@ -100,7 +100,7 @@ simplifyEvaluated
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> OrPattern variable
     -> Simplifier (OrPattern variable)

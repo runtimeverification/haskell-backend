@@ -624,7 +624,7 @@ mockEvaluator
     :: AttemptedAxiom Object variable
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> Simplifier
@@ -648,7 +648,7 @@ evaluate metadataTools functionIdToEvaluator patt =
     substitutionSimplifier =
         Predicate.create
             metadataTools patternSimplifier functionIdToEvaluator
-    patternSimplifier :: TermLikeSimplifier Object
+    patternSimplifier :: TermLikeSimplifier
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes

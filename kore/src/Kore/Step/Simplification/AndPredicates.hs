@@ -50,7 +50,7 @@ simplifyEvaluatedMultiPredicate
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> MultiAnd (OrPredicate variable)
     -> Simplifier

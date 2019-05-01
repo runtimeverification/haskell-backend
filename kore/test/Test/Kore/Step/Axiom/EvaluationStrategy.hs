@@ -570,5 +570,5 @@ evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
             metadataTools
             patternSimplifier
             Map.empty
-    patternSimplifier :: TermLikeSimplifier Object
+    patternSimplifier :: TermLikeSimplifier
     patternSimplifier = Simplifier.create metadataTools Map.empty

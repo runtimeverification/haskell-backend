@@ -48,7 +48,7 @@ mergeWithPredicate
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
@@ -103,7 +103,7 @@ mergeWithEvaluatedCondition
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
