@@ -110,7 +110,7 @@ type BuiltinAndAxiomSimplifierMap =
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}
-data AttemptedAxiomResults level variable =
+data AttemptedAxiomResults variable =
     AttemptedAxiomResults
         { results :: !(OrPattern variable)
         -- ^ The result of applying the axiom
@@ -119,15 +119,12 @@ data AttemptedAxiomResults level variable =
         }
     deriving Generic
 
-deriving instance Eq variable => Eq (AttemptedAxiomResults level variable)
-deriving instance Show variable => Show (AttemptedAxiomResults level variable)
+deriving instance Eq variable => Eq (AttemptedAxiomResults variable)
+deriving instance Show variable => Show (AttemptedAxiomResults variable)
 
-instance (NFData variable)
-    => NFData (AttemptedAxiomResults level variable)
+instance (NFData variable) => NFData (AttemptedAxiomResults variable)
 
-instance Ord variable
-    => Semigroup (AttemptedAxiomResults level variable)
-  where
+instance Ord variable => Semigroup (AttemptedAxiomResults variable) where
     (<>)
         AttemptedAxiomResults
             { results = firstResults
@@ -144,9 +141,7 @@ instance Ord variable
                     MultiOr.merge firstRemainders secondRemainders
             }
 
-instance
-    Ord variable => Monoid (AttemptedAxiomResults Object variable)
-  where
+instance Ord variable => Monoid (AttemptedAxiomResults variable) where
     mempty =
         AttemptedAxiomResults
             { results = OrPattern.bottom
@@ -158,7 +153,7 @@ a case for axioms that can't be applied.
 -}
 data AttemptedAxiom variable
     = NotApplicable
-    | Applied !(AttemptedAxiomResults Object variable)
+    | Applied !(AttemptedAxiomResults variable)
     deriving Generic
 
 deriving instance Eq variable => Eq (AttemptedAxiom variable)

@@ -1238,7 +1238,7 @@ instance
     , Eq Object, Eq variable
     , EqualWithExplanation variable
     )
-    => StructEqualWithExplanation (AttemptedAxiomResults Object variable)
+    => StructEqualWithExplanation (AttemptedAxiomResults variable)
   where
     structFieldsWithNames
         expected@(AttemptedAxiomResults _ _)
@@ -1260,7 +1260,7 @@ instance
     , Eq Object, Eq variable
     , EqualWithExplanation variable
     )
-    => EqualWithExplanation (AttemptedAxiomResults Object variable)
+    => EqualWithExplanation (AttemptedAxiomResults variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
