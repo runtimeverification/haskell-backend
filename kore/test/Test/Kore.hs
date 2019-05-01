@@ -596,7 +596,7 @@ predicateChildGen childGen patternSort' =
 
 sentenceAliasGen
     :: (Sort -> Gen patternType)
-    -> Gen (SentenceAlias Object patternType)
+    -> Gen (SentenceAlias patternType)
 sentenceAliasGen patGen =
     Gen.small sentenceAliasGenWorker
   where
@@ -631,7 +631,7 @@ sentenceAliasGen patGen =
                 , sentenceAliasAttributes
                 }
 
-sentenceSymbolGen :: Gen (SentenceSymbol Object patternType)
+sentenceSymbolGen :: Gen (SentenceSymbol patternType)
 sentenceSymbolGen = do
     sentenceSymbolSymbol <- symbolGen
     let Symbol { symbolParams } = sentenceSymbolSymbol

@@ -44,9 +44,9 @@ data ApplicationSorts level = ApplicationSorts
 pattern from the given sort parameters.
 -}
 symbolOrAliasSorts
-    :: (SentenceSymbolOrAlias ssoa, MonadError (Error e) m)
+    :: (SentenceSymbolOrAlias sentence, MonadError (Error e) m)
     => [Sort]
-    -> ssoa Object pat
+    -> sentence pat
     -> m (ApplicationSorts Object)
 symbolOrAliasSorts params sentence = do
     variableToSort <-

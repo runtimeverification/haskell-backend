@@ -161,7 +161,7 @@ symbolDeclaration name sortName argumentSortNames =
             , sentenceSymbolResultSort = koreSort sortName
             , sentenceSymbolAttributes = Attributes []
             }
-        :: SentenceSymbol Object ParsedPattern
+        :: SentenceSymbol ParsedPattern
         )
 
 makeSymbol :: Text -> Symbol

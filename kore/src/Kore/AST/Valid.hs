@@ -350,7 +350,7 @@ applyAlias
         , valid ~ Valid variable level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => SentenceAlias level pattern'
+    => SentenceAlias pattern'
     -- ^ 'Alias' declaration
     -> [Sort]
     -- ^ 'Alias' sort parameters
@@ -405,7 +405,7 @@ applyAlias_
         , valid ~ Valid variable level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => SentenceAlias level pattern'
+    => SentenceAlias pattern'
     -> [pattern']
     -> pattern'
 applyAlias_ sentence = applyAlias sentence []
@@ -424,7 +424,7 @@ applySymbol
         , valid ~ Valid variable level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => SentenceSymbol level pattern''
+    => SentenceSymbol pattern''
     -- ^ 'Symbol' declaration
     -> [Sort]
     -- ^ 'Symbol' sort parameters
@@ -479,7 +479,7 @@ applySymbol_
         , valid ~ Valid variable level
         , pattern' ~ PurePattern level domain variable valid
         )
-    => SentenceSymbol level pattern''
+    => SentenceSymbol pattern''
     -> [pattern']
     -> pattern'
 applySymbol_ sentence = applySymbol sentence []
@@ -1072,7 +1072,7 @@ mkSymbol
     -> [sortParam]
     -> [Sort]
     -> Sort
-    -> SentenceSymbol level patternType
+    -> SentenceSymbol patternType
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
@@ -1098,7 +1098,7 @@ mkSymbol_
     => Id
     -> [Sort]
     -> Sort
-    -> SentenceSymbol level patternType
+    -> SentenceSymbol patternType
 mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 
 {- | Construct an alias declaration with the given parameters and sorts.
@@ -1113,7 +1113,7 @@ mkAlias
     -> Sort
     -> [Variable]
     -> patternType
-    -> SentenceAlias level patternType
+    -> SentenceAlias patternType
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
     SentenceAlias
         { sentenceAliasAlias =
@@ -1153,7 +1153,7 @@ mkAlias_
     -> Sort
     -> [Variable]
     -> patternType
-    -> SentenceAlias level patternType
+    -> SentenceAlias patternType
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
 
 pattern And_

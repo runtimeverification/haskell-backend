@@ -561,7 +561,7 @@ instance PrettyPrint Attributes
 
 instance
     PrettyPrint patternType
-    => PrettyPrint (SentenceAlias level patternType)
+    => PrettyPrint (SentenceAlias patternType)
   where
     prettyPrint _ sa@(SentenceAlias _ _ _ _ _ _) =
         writeStructure
@@ -586,7 +586,7 @@ instance
 
 instance
     PrettyPrint patternType
-    => PrettyPrint (SentenceSymbol level patternType)
+    => PrettyPrint (SentenceSymbol patternType)
   where
     prettyPrint _ sa@(SentenceSymbol _ _ _ _) =
         writeStructure

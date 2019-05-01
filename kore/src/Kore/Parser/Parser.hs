@@ -902,7 +902,7 @@ BNF fragment example:
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-aliasSentenceRemainderParser :: Parser (SentenceAlias Object ParsedPattern)
+aliasSentenceRemainderParser :: Parser (SentenceAlias ParsedPattern)
 aliasSentenceRemainderParser = do
     aliasSymbol <- aliasParser
     sorts <- inParenthesesListParser sortParser

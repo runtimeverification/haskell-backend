@@ -107,14 +107,14 @@ instance With (Sentence level sort patt) Attribute where
 instance With (Sentence level sort patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceAlias level patt) Attribute where
+instance With (SentenceAlias patt) Attribute where
     s@SentenceAlias {sentenceAliasAttributes} `with` attribute =
         s
             { SentenceAlias.sentenceAliasAttributes =
                 sentenceAliasAttributes `with` attribute
             }
 
-instance With (SentenceAlias level patt) [Attribute] where
+instance With (SentenceAlias patt) [Attribute] where
     with = foldl' with
 
 instance With (SentenceAxiom sort patt) Attribute where
@@ -137,14 +137,14 @@ instance With (SentenceImport patt) Attribute where
 instance With (SentenceImport patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceSymbol level patt) Attribute where
+instance With (SentenceSymbol patt) Attribute where
     s@SentenceSymbol {sentenceSymbolAttributes} `with` attribute =
         s
             { SentenceSymbol.sentenceSymbolAttributes =
                 sentenceSymbolAttributes `with` attribute
             }
 
-instance With (SentenceSymbol level patt) [Attribute] where
+instance With (SentenceSymbol patt) [Attribute] where
     with = foldl' with
 
 instance With (SentenceSort level patt) Attribute where

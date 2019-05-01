@@ -79,136 +79,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Syntax.Sentence
 import           Kore.Unparser
 
-{-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
-@meta-alias-declaration@ syntactic categories from the Semantics of K,
-Section 9.1.6 (Declaration and Definitions).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should implement 'MetaOrObject level'.
--}
-data SentenceAlias (level :: *) (patternType :: *) =
-    SentenceAlias
-        { sentenceAliasAlias        :: !Alias
-        , sentenceAliasSorts        :: ![Sort]
-        , sentenceAliasResultSort   :: !Sort
-        , sentenceAliasLeftPattern  :: !(Application SymbolOrAlias Variable)
-        , sentenceAliasRightPattern :: !patternType
-        , sentenceAliasAttributes   :: !Attributes
-        }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
-
-instance Hashable patternType => Hashable (SentenceAlias level patternType)
-
-instance NFData patternType => NFData (SentenceAlias level patternType)
-
-instance Unparse patternType => Unparse (SentenceAlias level patternType) where
-    unparse
-        SentenceAlias
-            { sentenceAliasAlias
-            , sentenceAliasSorts
-            , sentenceAliasResultSort
-            , sentenceAliasLeftPattern
-            , sentenceAliasRightPattern
-            , sentenceAliasAttributes
-            }
-      =
-        Pretty.fillSep
-            [ "alias"
-            , unparse sentenceAliasAlias <> arguments sentenceAliasSorts
-            , ":"
-            , unparse sentenceAliasResultSort
-            , "where"
-            , unparse sentenceAliasLeftPattern
-            , ":="
-            , unparse sentenceAliasRightPattern
-            , unparse sentenceAliasAttributes
-            ]
-
-    unparse2
-        SentenceAlias
-            { sentenceAliasAlias
-            , sentenceAliasSorts
-            , sentenceAliasResultSort
-            , sentenceAliasLeftPattern
-            , sentenceAliasRightPattern
-            , sentenceAliasAttributes
-            }
-      =
-        Pretty.fillSep
-            [ "alias"
-            , unparse2 sentenceAliasAlias <> arguments2 sentenceAliasSorts
-            , ":"
-            , unparse2 sentenceAliasResultSort
-            , "where"
-            , unparse2 sentenceAliasLeftPattern
-            , ":="
-            , unparse2 sentenceAliasRightPattern
-            , unparse2 sentenceAliasAttributes
-            ]
-
-{-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
-@meta-symbol-declaration@ syntactic categories from the Semantics of K,
-Section 9.1.6 (Declaration and Definitions).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-data SentenceSymbol (level :: *) (patternType :: *) =
-    SentenceSymbol
-        { sentenceSymbolSymbol     :: !Symbol
-        , sentenceSymbolSorts      :: ![Sort]
-        , sentenceSymbolResultSort :: !Sort
-        , sentenceSymbolAttributes :: !Attributes
-        }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
-
-instance Hashable (SentenceSymbol level patternType)
-
-instance NFData (SentenceSymbol level patternType)
-
-instance Unparse (SentenceSymbol level patternType) where
-    unparse
-        SentenceSymbol
-            { sentenceSymbolSymbol
-            , sentenceSymbolSorts
-            , sentenceSymbolResultSort
-            , sentenceSymbolAttributes
-            }
-      =
-        Pretty.fillSep
-            [ "symbol"
-            , unparse sentenceSymbolSymbol <> arguments sentenceSymbolSorts
-            , ":"
-            , unparse sentenceSymbolResultSort
-            , unparse sentenceSymbolAttributes
-            ]
-
-    unparse2
-        SentenceSymbol
-            { sentenceSymbolSymbol
-            , sentenceSymbolSorts
-            , sentenceSymbolResultSort
-            }
-      = Pretty.vsep
-            [ Pretty.fillSep [ "symbol", unparse2 sentenceSymbolSymbol ]
-            , Pretty.fillSep [ "axiom \\forall s Sorts"
-                             , Pretty.parens (Pretty.fillSep
-                                   [ "\\subset"
-                                   , Pretty.parens (Pretty.fillSep
-                                       [ unparse2 sentenceSymbolSymbol
-                                       , unparse2Inhabitant sentenceSymbolSorts
-                                       ])
-                                   , unparse2 sentenceSymbolResultSort
-                                   ])
-                             ]
-            ]
-          where unparse2Inhabitant ss =
-                  case ss of
-                      [] -> ""
-                      (s : rest) ->
-                        (Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s]))
-                        <> (unparse2Inhabitant rest)
-
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -393,7 +263,7 @@ data SentenceHook (patternType :: *) where
     SentenceHookedSort
         :: !(SentenceSort Object patternType) -> SentenceHook patternType
     SentenceHookedSymbol
-        :: !(SentenceSymbol Object patternType) -> SentenceHook patternType
+        :: !(SentenceSymbol patternType) -> SentenceHook patternType
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 instance Hashable (SentenceHook patternType)
@@ -423,10 +293,10 @@ at the meta level, we qualify them with 'Object'.
 -}
 data Sentence (level :: *) (sortParam :: *) (patternType :: *) where
     SentenceAliasSentence
-        :: !(SentenceAlias level patternType)
+        :: !(SentenceAlias patternType)
         -> Sentence level sortParam patternType
     SentenceSymbolSentence
-        :: !(SentenceSymbol level patternType)
+        :: !(SentenceSymbol patternType)
         -> Sentence level sortParam patternType
     SentenceImportSentence
         :: !(SentenceImport patternType)
@@ -625,21 +495,21 @@ instance Unparse sentence => Unparse (Definition sentence) where
         Pretty.vsep
             (unparse2 definitionAttributes : map unparse2 definitionModules)
 
-class SentenceSymbolOrAlias (sentence :: * -> * -> *) where
+class SentenceSymbolOrAlias (sentence :: * -> *) where
     getSentenceSymbolOrAliasConstructor
-        :: sentence Object patternType -> Id
+        :: sentence patternType -> Id
     getSentenceSymbolOrAliasSortParams
-        :: sentence Object patternType -> [SortVariable]
+        :: sentence patternType -> [SortVariable]
     getSentenceSymbolOrAliasArgumentSorts
-        :: sentence Object patternType -> [Sort]
+        :: sentence patternType -> [Sort]
     getSentenceSymbolOrAliasResultSort
-        :: sentence Object patternType -> Sort
+        :: sentence patternType -> Sort
     getSentenceSymbolOrAliasAttributes
-        :: sentence Object patternType -> Attributes
+        :: sentence patternType -> Attributes
     getSentenceSymbolOrAliasSentenceName
-        :: sentence Object patternType -> String
+        :: sentence patternType -> String
     getSentenceSymbolOrAliasHead
-        :: sentence Object patternType
+        :: sentence patternType
         -> [Sort]
         -> SymbolOrAlias
     getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
@@ -673,12 +543,11 @@ type PureSentenceAxiom level domain =
     SentenceAxiom SortVariable (ParsedPurePattern level domain)
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
-type PureSentenceAlias level domain =
-    SentenceAlias level (ParsedPurePattern level domain)
+type PureSentenceAlias domain = SentenceAlias (ParsedPurePattern Object domain)
 
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
-type PureSentenceSymbol level domain =
-    SentenceSymbol level (ParsedPurePattern level domain)
+type PureSentenceSymbol domain =
+    SentenceSymbol (ParsedPurePattern Object domain)
 
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
 type PureSentenceImport level domain =
@@ -699,7 +568,7 @@ instance
             sortParam
             (PurePattern Object domain variable annotation)
         )
-        (SentenceAlias Object (PurePattern Object domain variable annotation))
+        (SentenceAlias (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceAliasSentence
 
@@ -711,7 +580,7 @@ instance
             sortParam
             (PurePattern Object domain variable annotation)
         )
-        (SentenceSymbol Object (PurePattern Object domain variable annotation))
+        (SentenceSymbol (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceSymbolSentence
 
@@ -773,10 +642,10 @@ type ParsedSentenceSort =
     SentenceSort Object (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedSentenceSymbol =
-    SentenceSymbol Object (ParsedPurePattern Object Domain.Builtin)
+    SentenceSymbol (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedSentenceAlias =
-    SentenceAlias Object (ParsedPurePattern Object Domain.Builtin)
+    SentenceAlias (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedSentenceImport =
     SentenceImport (ParsedPurePattern Object Domain.Builtin)

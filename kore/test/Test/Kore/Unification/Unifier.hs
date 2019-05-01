@@ -77,24 +77,24 @@ s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
 s4 = simpleSort (SortName "s4")
 
-a1, a2, a3, a4, a5 :: SentenceSymbol Object (TermLike Variable)
+a1, a2, a3, a4, a5 :: SentenceSymbol (TermLike Variable)
 a1 = mkSymbol_ (testId "a1") [] s1
 a2 = mkSymbol_ (testId "a2") [] s1
 a3 = mkSymbol_ (testId "a3") [] s1
 a4 = mkSymbol_ (testId "a4") [] s1
 a5 = mkSymbol_ (testId "a5") [] s1
 
-a, b, f :: SentenceSymbol Object (TermLike Variable)
+a, b, f :: SentenceSymbol (TermLike Variable)
 a = mkSymbol_ (testId "a") [] s1
 b = mkSymbol_ (testId "b") [] s2
 f = mkSymbol_ (testId "f") [s1] s2
 
-ef, eg, eh :: SentenceSymbol Object (TermLike Variable)
+ef, eg, eh :: SentenceSymbol (TermLike Variable)
 ef = mkSymbol_ (testId "ef") [s1, s1, s1] s1
 eg = mkSymbol_ (testId "eg") [s1] s1
 eh = mkSymbol_ (testId "eh") [s1] s1
 
-nonLinF, nonLinG, nonLinAS :: SentenceSymbol Object (TermLike Variable)
+nonLinF, nonLinG, nonLinAS :: SentenceSymbol (TermLike Variable)
 nonLinF  = mkSymbol_ (testId "nonLinF") [s1, s1] s1
 nonLinG  = mkSymbol_ (testId "nonLinG") [s1] s1
 nonLinAS = mkSymbol_ (testId "nonLinA") [] s1
@@ -104,7 +104,7 @@ nonLinA = applySymbol_ nonLinAS []
 nonLinX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
 nonLinY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
 
-expBin :: SentenceSymbol Object (TermLike Variable)
+expBin :: SentenceSymbol (TermLike Variable)
 expBin = mkSymbol_ (testId "times") [s1, s1] s1
 
 expA, expX, expY :: TermLike Variable
@@ -167,7 +167,7 @@ sortParamSort = SortVariableSort . sortParam
 injName :: Text
 injName = "inj"
 
-symbolInj :: SentenceSymbol Object (TermLike Variable)
+symbolInj :: SentenceSymbol (TermLike Variable)
 symbolInj =
     mkSymbol
         (testId injName)

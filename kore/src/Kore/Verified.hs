@@ -25,7 +25,7 @@ type Pattern =
 
 type Sentence = AST.Sentence Object SortVariable Pattern
 
-type SentenceAlias = AST.SentenceAlias Object Pattern
+type SentenceAlias = AST.SentenceAlias Pattern
 
 type SentenceAxiom = AST.SentenceAxiom SortVariable Pattern
 
@@ -35,4 +35,4 @@ type SentenceImport = AST.SentenceImport Pattern
 
 type SentenceSort = AST.SentenceSort Object Pattern
 
-type SentenceSymbol = AST.SentenceSymbol Object Pattern
+type SentenceSymbol = AST.SentenceSymbol Pattern

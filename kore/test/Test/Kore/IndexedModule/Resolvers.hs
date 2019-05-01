@@ -34,16 +34,16 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol Object (TermLike Variable)
+objectA :: SentenceSymbol (TermLike Variable)
 objectA = mkSymbol_ (testId "a") [] objectS1
 
-objectB :: SentenceAlias Object (TermLike Variable)
+objectB :: SentenceAlias (TermLike Variable)
 objectB = mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
 
-metaA :: SentenceSymbol Meta (TermLike Variable)
+metaA :: SentenceSymbol (TermLike Variable)
 metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
-metaB :: SentenceAlias Meta (TermLike Variable)
+metaB :: SentenceAlias (TermLike Variable)
 metaB = mkAlias_ (testId "#b") stringMetaSort [] $ mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName

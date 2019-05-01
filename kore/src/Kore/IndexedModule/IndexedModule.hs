@@ -110,9 +110,9 @@ data IndexedModule param pat declAtts axiomAtts =
     IndexedModule
     { indexedModuleName          :: !ModuleName
     , indexedModuleAliasSentences
-        :: !(Map.Map Id (declAtts, SentenceAlias Object pat))
+        :: !(Map.Map Id (declAtts, SentenceAlias pat))
     , indexedModuleSymbolSentences
-        :: !(Map.Map Id (declAtts, SentenceSymbol Object pat))
+        :: !(Map.Map Id (declAtts, SentenceSymbol pat))
     , indexedModuleSortDescriptions
         :: !(Map.Map Id (Attribute.Sort, SentenceSort Object pat))
     , indexedModuleAxioms :: ![(axiomAtts, SentenceAxiom param pat)]
@@ -148,7 +148,7 @@ recursiveIndexedModuleSortDescriptions =
 recursiveIndexedModuleSymbolSentences
     :: forall param pat axiomAtts
     .  IndexedModule param pat Attribute.Symbol axiomAtts
-    -> Map.Map Id (Attribute.Symbol, SentenceSymbol Object pat)
+    -> Map.Map Id (Attribute.Symbol, SentenceSymbol pat)
 recursiveIndexedModuleSymbolSentences =
     recursiveIndexedModuleStuff indexedModuleSymbolSentences
 
@@ -749,7 +749,7 @@ parseAttributes =
  -}
 hookedObjectSymbolSentences
     :: IndexedModule sorts pat declAtts axiomAtts
-    -> Map.Map Id (declAtts, SentenceSymbol Object pat)
+    -> Map.Map Id (declAtts, SentenceSymbol pat)
 hookedObjectSymbolSentences
     IndexedModule
         { indexedModuleSymbolSentences

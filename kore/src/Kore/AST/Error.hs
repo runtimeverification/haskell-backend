@@ -83,7 +83,7 @@ withLocationAndContext location message =
  -}
 withSentenceSymbolContext
     :: MonadError (Error e) m
-    => SentenceSymbol level patternType
+    => SentenceSymbol patternType
     -> m a
     -> m a
 withSentenceSymbolContext
@@ -95,7 +95,7 @@ withSentenceSymbolContext
 {- | Identify and locate the given alias declaration in the error context.
  -}
 withSentenceAliasContext
-    :: SentenceAlias level patternType
+    :: SentenceAlias patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceAliasContext

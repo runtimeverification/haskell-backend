@@ -269,7 +269,7 @@ sortParam name = SortVariable (testId name)
 sortParamSort :: Text -> Sort
 sortParamSort = SortVariableSort . sortParam
 
-symbolTCell, symbolKCell :: SentenceSymbol Object (TermLike Variable)
+symbolTCell, symbolKCell :: SentenceSymbol (TermLike Variable)
 symbolTCell = mkSymbol_ (testId "T") [sortKCell, sortStateCell] sortTCell
 -- symbol T{}(KCell{}, StateCell{}) : TCell{} []
 applyTCell
@@ -285,7 +285,7 @@ applyKCell
     -> TermLike Variable
 applyKCell child = applySymbol_ symbolKCell [child]
 
-symbolKSeq, symbolInj :: SentenceSymbol Object (TermLike Variable)
+symbolKSeq, symbolInj :: SentenceSymbol (TermLike Variable)
 symbolKSeq = mkSymbol_ (testId "kseq") [sortKItem, sortK] sortK
 
 symbolInj =
@@ -316,7 +316,7 @@ symbolSentenceInj
 symbolSentenceInj = asSentence symbolInj
 -- symbol inj{From,To}(From) : To []
 
-symbolLeqAExp :: SentenceSymbol Object (TermLike Variable)
+symbolLeqAExp :: SentenceSymbol (TermLike Variable)
 symbolLeqAExp = mkSymbol_ (testId "leqAExp") [sortAExp, sortAExp] sortBExp
 
 applyLeqAExp
@@ -326,7 +326,7 @@ applyLeqAExp
 applyLeqAExp child1 child2 =
     applySymbol_ symbolLeqAExp [child1, child2]
 
-symbolLeqAInt :: SentenceSymbol Object (TermLike Variable)
+symbolLeqAInt :: SentenceSymbol (TermLike Variable)
 symbolLeqAInt = mkSymbol_ (testId "leqAInt") [sortAInt, sortAInt] sortABool
 
 applyLeqAInt

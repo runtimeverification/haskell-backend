@@ -58,12 +58,12 @@ import           Kore.IndexedModule.IndexedModule
 
 symbolSentencesMap
     :: IndexedModule sortParam patternType declAtts axiomAtts
-    -> Map.Map Id (declAtts, SentenceSymbol Object patternType)
+    -> Map.Map Id (declAtts, SentenceSymbol patternType)
 symbolSentencesMap = indexedModuleSymbolSentences
 
 aliasSentencesMap
     :: IndexedModule sortParam patternType declAtts axiomAtts
-    -> Map.Map Id (declAtts, SentenceAlias Object patternType)
+    -> Map.Map Id (declAtts, SentenceAlias patternType)
 aliasSentencesMap = indexedModuleAliasSentences
 
 sortSentencesMap
@@ -82,8 +82,9 @@ getHeadApplicationSorts
 getHeadApplicationSorts m patternHead =
     applyToHeadSentence sentenceSorts m patternHead
   where
-    sentenceSorts :: SentenceSymbolOrAlias ssoa
-                  => [Sort] -> ssoa Object pat -> ApplicationSorts Object
+    sentenceSorts
+        :: SentenceSymbolOrAlias sentence
+        => [Sort] -> sentence pat -> ApplicationSorts Object
     sentenceSorts sortParameters sentence =
         assertRight $ symbolOrAliasSorts sortParameters sentence
 
@@ -194,7 +195,7 @@ resolveSymbol
     :: MonadError (Error e) m
     => IndexedModule sortParam patternType declAtts axiomAtts
     -> Id
-    -> m (declAtts, SentenceSymbol Object patternType)
+    -> m (declAtts, SentenceSymbol patternType)
 resolveSymbol m headId =
     case resolveThing symbolSentencesMap m headId of
         Nothing ->
@@ -209,7 +210,7 @@ resolveAlias
     :: MonadError (Error e) m
     => IndexedModule param pat declAtts axiomAtts
     -> Id
-    -> m (declAtts, SentenceAlias Object pat)
+    -> m (declAtts, SentenceAlias pat)
 resolveAlias m headId =
     case resolveThing aliasSentencesMap m headId of
         Nothing ->
@@ -309,9 +310,9 @@ findIndexedSort indexedModule sort =
 -- the fully type annotation is required even there, and that makes
 -- for too much clutter.
 applyToHeadSentence
-    :: (forall ssoa .  SentenceSymbolOrAlias ssoa
+    :: (forall sentence.  SentenceSymbolOrAlias sentence
        => [Sort]
-       -> ssoa Object pat
+       -> sentence pat
        -> result)
     -> IndexedModule param pat declAtts axiomAtts
     -> SymbolOrAlias
@@ -334,9 +335,9 @@ applyToAttributes f =
 
 applyToResolution
     :: HasCallStack
-    => (forall ssoa .  SentenceSymbolOrAlias ssoa
+    => (forall sentence.  SentenceSymbolOrAlias sentence
         => [Sort]
-        -> (declAtts, ssoa Object pat)
+        -> (declAtts, sentence pat)
         -> result)
     -> IndexedModule param pat declAtts axiomAtts
     -> SymbolOrAlias

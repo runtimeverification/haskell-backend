@@ -38,12 +38,12 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol Object (TermLike Variable)
+objectA :: SentenceSymbol (TermLike Variable)
 objectA =
     (mkSymbol_ (testId "b") [] objectS1)
         { sentenceSymbolAttributes = Attributes [ constructorAttribute ] }
 
-metaA :: SentenceSymbol Meta (TermLike Variable)
+metaA :: SentenceSymbol (TermLike Variable)
 metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
 testObjectModuleName :: ModuleName

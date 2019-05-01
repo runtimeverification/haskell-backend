@@ -668,9 +668,9 @@ verifySymbolOrAlias symbolOrAlias = do
     applicationId = symbolOrAliasConstructor symbolOrAlias
 
 applicationSortsFromSymbolOrAliasSentence
-    :: SentenceSymbolOrAlias sa
+    :: SentenceSymbolOrAlias sentence
     => SymbolOrAlias
-    -> sa Object pat
+    -> sentence pat
     -> PatternVerifier (ApplicationSorts Object)
 applicationSortsFromSymbolOrAliasSentence symbolOrAlias sentence = do
     Context { declaredSortVariables } <- Reader.ask
