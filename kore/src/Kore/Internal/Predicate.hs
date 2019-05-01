@@ -12,6 +12,7 @@ module Kore.Internal.Predicate
     , bottomPredicate
     , fromPattern
     , Conditional.fromPredicate
+    , Conditional.fromSingleSubstitution
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
