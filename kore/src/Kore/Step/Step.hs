@@ -38,17 +38,14 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
-import qualified Data.Reflection as Reflection
 import           Data.Semigroup
                  ( Semigroup (..) )
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Logger as Log
@@ -83,8 +80,6 @@ import           Kore.Step.TermLike as TermLike
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Data
                  ( UnificationProof )
-import           Kore.Unification.Error
-                 ( UnificationError (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -486,7 +481,6 @@ applyRule
         let
             checkSubstitutionCoverage' =
                 checkSubstitutionCoverage
-                    metadataTools
                     initial'
                     unifiedRule
         result <- traverse checkSubstitutionCoverage' final
@@ -583,15 +577,14 @@ checkSubstitutionCoverage
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
-    => SmtMetadataTools StepperAttributes
-    -> Pattern Object (Target variable)
+    => Pattern Object (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
     -> Pattern Object (Target variable)
     -- ^ Configuration after applying rule
     -> BranchT unifier (Pattern Object variable)
-checkSubstitutionCoverage tools initial unified final
+checkSubstitutionCoverage initial unified final
   | isCoveringSubstitution || isSymbolic = return (unwrapConfiguration final)
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
@@ -613,7 +606,6 @@ checkSubstitutionCoverage tools initial unified final
         ]
   where
     Conditional { term = axiom } = unified
-    unification = Conditional.toPredicate (Conditional.withoutTerm unified)
     leftAxiomVariables =
         TermLike.freeVariables leftAxiom
       where
