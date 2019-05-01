@@ -1,5 +1,8 @@
 module Kore.Step.Substitution where
 
+import GHC.Stack
+       ( HasCallStack )
+
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -29,6 +32,7 @@ mergePredicatesAndSubstitutionsExcept
         , Unparse variable
         , FreshVariable variable
         , MonadUnify unifierM
+        , HasCallStack
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes

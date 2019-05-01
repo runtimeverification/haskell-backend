@@ -190,6 +190,7 @@ mergePredicatesAndSubstitutions
        , SortedVariable variable
        , Ord variable
        , FreshVariable variable
+       , HasCallStack
        )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -236,6 +237,7 @@ mergePredicatesAndSubstitutionsExcept
         , Unparse variable
         , FreshVariable variable
         , MonadUnify unifierM
+        , HasCallStack
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
