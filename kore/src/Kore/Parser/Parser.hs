@@ -947,7 +947,7 @@ Always starts with @{@.
 -}
 axiomSentenceRemainderParser
     ::  (  SentenceAxiom SortVariable ParsedPattern
-        -> Sentence Meta SortVariable ParsedPattern
+        -> Sentence SortVariable ParsedPattern
         )
     -> Parser ParsedSentence
 axiomSentenceRemainderParser ctor =
@@ -965,7 +965,7 @@ Always starts with @{@.
 -}
 claimSentenceRemainderParser
     ::  (  SentenceClaim SortVariable ParsedPattern
-        -> Sentence Meta SortVariable ParsedPattern
+        -> Sentence SortVariable ParsedPattern
         )
     -> Parser ParsedSentence
 claimSentenceRemainderParser ctor =

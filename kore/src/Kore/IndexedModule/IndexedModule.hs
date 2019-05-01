@@ -311,7 +311,7 @@ toVerifiedDefinition idx =
         indexedModuleName verifiedModule /= "kore"
 
 indexedModuleRawSentences
-    :: IndexedModule param pat atts atts' -> [Sentence Object param pat]
+    :: IndexedModule param pat atts atts' -> [Sentence param pat]
 indexedModuleRawSentences im =
     map (SentenceAliasSentence . getIndexedSentence)
         (Map.elems (indexedModuleAliasSentences im))
@@ -405,7 +405,7 @@ the module is already in the 'IndexedModule' map.
 indexModuleIfNeeded
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence Object sortParam patternType
+        , sentence ~ Sentence sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
@@ -433,7 +433,7 @@ indexModuleIfNeeded
 internalIndexModuleIfNeeded
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence Object sortParam patternType
+        , sentence ~ Sentence sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
@@ -488,7 +488,7 @@ internalIndexModuleIfNeeded
 indexModuleKoreSentence
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence Object sortParam patternType
+        , sentence ~ Sentence sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
@@ -502,14 +502,14 @@ indexModuleKoreSentence = indexModuleSentence
 indexModuleSentence
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence Object sortParam patternType
+        , sentence ~ Sentence sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
     -> Set.Set ModuleName
     -> Map.Map ModuleName (Module sentence)
     -> (Map.Map ModuleName indexed, indexed)
-    -> Sentence Object sortParam patternType
+    -> Sentence sortParam patternType
     -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
 indexModuleSentence
     implicitModule
@@ -694,7 +694,7 @@ indexModuleSentence
 indexImportedModule
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence Object sortParam patternType
+        , sentence ~ Sentence sortParam patternType
         , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
         )
     => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)

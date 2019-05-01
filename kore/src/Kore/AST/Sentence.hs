@@ -67,150 +67,12 @@ import           Data.Void
 import           GHC.Generics
                  ( Generic )
 
-import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure as Pure
 import           Kore.Attribute.Attributes
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Syntax.Sentence
 import           Kore.Unparser
 
-
-{-|The 'Sentence' type corresponds to the @declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
-The @symbol-declaration@ and @alias-declaration@ categories were also merged
-into 'Sentence', using the @level@ parameter to distinguish the 'Meta' and
-'Object' variants.
-Since axioms and imports exist at both meta and kore levels, we use 'Meta'
-to qualify them. In contrast, since sort declarations are not available
-at the meta level, we qualify them with 'Object'.
--}
-data Sentence (level :: *) (sortParam :: *) (patternType :: *) where
-    SentenceAliasSentence
-        :: !(SentenceAlias patternType)
-        -> Sentence level sortParam patternType
-    SentenceSymbolSentence
-        :: !(SentenceSymbol patternType)
-        -> Sentence level sortParam patternType
-    SentenceImportSentence
-        :: !(SentenceImport patternType)
-        -> Sentence Meta sortParam patternType
-    SentenceAxiomSentence
-        :: !(SentenceAxiom sortParam patternType)
-        -> Sentence Meta sortParam patternType
-    SentenceClaimSentence
-        :: !(SentenceClaim sortParam patternType)
-        -> Sentence Meta sortParam patternType
-    SentenceSortSentence
-        :: !(SentenceSort patternType)
-        -> Sentence level sortParam patternType
-    SentenceHookSentence
-        :: !(SentenceHook patternType)
-        -> Sentence Object sortParam patternType
-
-deriving instance
-    (Eq sortParam, Eq patternType) =>
-    Eq (Sentence level sortParam patternType)
-
-deriving instance Foldable (Sentence level sortParam)
-
-deriving instance Functor (Sentence level sortParam)
-
-deriving instance
-    (Ord sortParam, Ord patternType) =>
-    Ord (Sentence level sortParam patternType)
-
-deriving instance
-    (Show sortParam, Show patternType) =>
-    Show (Sentence level sortParam patternType)
-
-deriving instance Traversable (Sentence level sortParam)
-
-instance
-    (NFData sortParam, NFData patternType) =>
-    NFData (Sentence level sortParam patternType)
-  where
-    rnf =
-        \case
-            SentenceAliasSentence p -> rnf p
-            SentenceSymbolSentence p -> rnf p
-            SentenceImportSentence p -> rnf p
-            SentenceAxiomSentence p -> rnf p
-            SentenceClaimSentence p -> rnf p
-            SentenceSortSentence p -> rnf p
-            SentenceHookSentence p -> rnf p
-
-instance
-    (Unparse sortParam, Unparse patternType) =>
-    Unparse (Sentence level sortParam patternType)
-  where
-     unparse =
-        \case
-            SentenceAliasSentence s -> unparse s
-            SentenceSymbolSentence s -> unparse s
-            SentenceImportSentence s -> unparse s
-            SentenceAxiomSentence s -> unparse s
-            SentenceClaimSentence s -> unparse s
-            SentenceSortSentence s -> unparse s
-            SentenceHookSentence s -> unparse s
-
-     unparse2 =
-        \case
-            SentenceAliasSentence s -> unparse2 s
-            SentenceSymbolSentence s -> unparse2 s
-            SentenceImportSentence s -> unparse2 s
-            SentenceAxiomSentence s -> unparse2 s
-            SentenceClaimSentence s -> unparse2 s
-            SentenceSortSentence s -> unparse2 s
-            SentenceHookSentence s -> unparse2 s
-
-{- | The attributes associated with a sentence.
-
-Every sentence type has attributes, so this operation is total.
-
- -}
-sentenceAttributes :: Sentence Object sortParam patternType -> Attributes
-sentenceAttributes =
-    \case
-        SentenceAliasSentence
-            SentenceAlias { sentenceAliasAttributes } ->
-                sentenceAliasAttributes
-        SentenceSymbolSentence
-            SentenceSymbol { sentenceSymbolAttributes } ->
-                sentenceSymbolAttributes
-        SentenceImportSentence
-            SentenceImport { sentenceImportAttributes } ->
-                sentenceImportAttributes
-        SentenceAxiomSentence
-            SentenceAxiom { sentenceAxiomAttributes } ->
-                sentenceAxiomAttributes
-        SentenceClaimSentence
-            (SentenceClaim (SentenceAxiom { sentenceAxiomAttributes })) ->
-                sentenceAxiomAttributes
-        SentenceSortSentence
-            SentenceSort { sentenceSortAttributes } ->
-                sentenceSortAttributes
-        SentenceHookSentence sentence ->
-            case sentence of
-                SentenceHookedSort
-                    SentenceSort { sentenceSortAttributes } ->
-                        sentenceSortAttributes
-                SentenceHookedSymbol
-                    SentenceSymbol { sentenceSymbolAttributes } ->
-                        sentenceSymbolAttributes
-
--- | Erase the pattern annotations within a 'Sentence'.
-eraseSentenceAnnotations
-    :: Functor domain
-    => Sentence
-        Object
-        sortParam
-        (PurePattern Object domain variable erased)
-    -> Sentence
-        Object
-        sortParam
-        (PurePattern Object domain variable (Annotation.Null Object))
-eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
 
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.
@@ -351,14 +213,13 @@ type PureSentenceImport level domain =
 type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
-type PureSentence level domain =
-    Sentence level SortVariable (ParsedPurePattern level domain)
+type PureSentence domain =
+    Sentence SortVariable (ParsedPurePattern Object domain)
 
 instance
     sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            Object
             sortParam
             (PurePattern Object domain variable annotation)
         )
@@ -370,7 +231,6 @@ instance
     sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            Object
             sortParam
             (PurePattern Object domain variable annotation)
         )
@@ -382,7 +242,6 @@ instance
     sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            Object
             sortParam
             (PurePattern Object domain variable annotation)
         )
@@ -394,7 +253,6 @@ instance
     sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            Object
             sortParam
             (PurePattern Object domain variable annotation)
         )
@@ -405,7 +263,6 @@ instance
 instance
     AsSentence
         (Sentence
-            Object
             SortVariable
             (PurePattern Object domain variable annotation)
         )
@@ -418,7 +275,6 @@ instance
     sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            Object
             sortParam
             (PurePattern Object domain variable annotation)
         )
@@ -427,10 +283,10 @@ instance
     asSentence = SentenceHookSentence
 
 -- |'PureModule' is the pure (fixed-@level@) version of 'Module'
-type PureModule level domain = Module (PureSentence level domain)
+type PureModule level domain = Module (PureSentence domain)
 
 -- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
-type PureDefinition level domain = Definition (PureSentence level domain)
+type PureDefinition level domain = Definition (PureSentence domain)
 
 type ParsedSentenceSort =
     SentenceSort (ParsedPurePattern Object Domain.Builtin)
@@ -454,7 +310,6 @@ type ParsedSentenceHook =
 
 type ParsedSentence =
     Sentence
-        Object
         SortVariable
         (ParsedPurePattern Object Domain.Builtin)
 

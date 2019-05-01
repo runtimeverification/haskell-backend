@@ -87,7 +87,7 @@ instance With (Definition sentence) Attribute where
 instance With (Definition sentence) [Attribute] where
     with = foldl' with
 
-instance With (Sentence level sort patt) Attribute where
+instance With (Sentence sort patt) Attribute where
     (SentenceAliasSentence s) `with` attribute =
         SentenceAliasSentence (s `with` attribute)
     (SentenceSymbolSentence s) `with` attribute =
@@ -105,7 +105,7 @@ instance With (Sentence level sort patt) Attribute where
     (SentenceHookSentence (SentenceHookedSymbol s)) `with` attribute =
         SentenceHookSentence (SentenceHookedSymbol (s `with` attribute))
 
-instance With (Sentence level sort patt) [Attribute] where
+instance With (Sentence sort patt) [Attribute] where
     with = foldl' with
 
 instance With (SentenceAlias patt) Attribute where

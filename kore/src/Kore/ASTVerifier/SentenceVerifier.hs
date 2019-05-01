@@ -39,7 +39,7 @@ import qualified Kore.Verified as Verified
 unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
-    :: [Sentence Object param pat]
+    :: [Sentence param pat]
     -> Map.Map Text AstLocation
     -- ^ Names that are already defined.
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
@@ -78,7 +78,7 @@ verifyUniqueId existing (UnparameterizedId name location) =
   where
     name' = Text.pack name
 
-definedNamesForSentence :: Sentence Object param pat -> [UnparameterizedId]
+definedNamesForSentence :: Sentence param pat -> [UnparameterizedId]
 definedNamesForSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForSentence (SentenceSymbolSentence sentenceSymbol) =

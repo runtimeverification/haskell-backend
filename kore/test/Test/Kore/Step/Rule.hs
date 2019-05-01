@@ -312,7 +312,7 @@ applyInj sortTo child =
     Valid { patternSort = sortFrom } = extract child
 
 symbolSentenceInj
-    :: Sentence Object SortVariable (TermLike Variable)
+    :: Sentence SortVariable (TermLike Variable)
 symbolSentenceInj = asSentence symbolInj
 -- symbol inj{From,To}(From) : To []
 

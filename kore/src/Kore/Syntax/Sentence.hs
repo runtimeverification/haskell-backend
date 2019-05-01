@@ -17,6 +17,9 @@ module Kore.Syntax.Sentence
     , SentenceAxiom (..)
     , SentenceClaim (..)
     , SentenceHook (..)
+    , Sentence (..)
+    , sentenceAttributes
+    , eraseSentenceAnnotations
     ) where
 
 import           Control.DeepSeq
@@ -32,11 +35,17 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import Kore.Attribute.Attributes
-import Kore.Sort
-import Kore.Syntax.Application
-import Kore.Syntax.Variable
-import Kore.Unparser
+import qualified Kore.Annotation.Null as Annotation
+                 ( Null (..) )
+import           Kore.AST.MetaOrObject
+                 ( Object )
+import           Kore.AST.Pure
+                 ( PurePattern )
+import           Kore.Attribute.Attributes
+import           Kore.Sort
+import           Kore.Syntax.Application
+import           Kore.Syntax.Variable
+import           Kore.Unparser
 
 {- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
 @symbol-declaration@ syntactic category from the Semantics of K, Section 9.1.6
@@ -441,3 +450,132 @@ instance Unparse (SentenceHook patternType) where
         \case
             SentenceHookedSort a -> "hooked-" <> unparse2 a
             SentenceHookedSymbol a -> "hooked-" <> unparse2 a
+
+{- | @Sentence@ is the @declaration@ syntactic category from the Semantics of K,
+Section 9.1.6 (Declaration and Definitions).
+
+-}
+data Sentence (sortParam :: *) (patternType :: *) where
+    SentenceAliasSentence
+        :: !(SentenceAlias patternType)
+        -> Sentence sortParam patternType
+    SentenceSymbolSentence
+        :: !(SentenceSymbol patternType)
+        -> Sentence sortParam patternType
+    SentenceImportSentence
+        :: !(SentenceImport patternType)
+        -> Sentence sortParam patternType
+    SentenceAxiomSentence
+        :: !(SentenceAxiom sortParam patternType)
+        -> Sentence sortParam patternType
+    SentenceClaimSentence
+        :: !(SentenceClaim sortParam patternType)
+        -> Sentence sortParam patternType
+    SentenceSortSentence
+        :: !(SentenceSort patternType)
+        -> Sentence sortParam patternType
+    SentenceHookSentence
+        :: !(SentenceHook patternType)
+        -> Sentence sortParam patternType
+
+deriving instance
+    (Eq sortParam, Eq patternType) =>
+    Eq (Sentence sortParam patternType)
+
+deriving instance Foldable (Sentence sortParam)
+
+deriving instance Functor (Sentence sortParam)
+
+deriving instance
+    (Ord sortParam, Ord patternType) =>
+    Ord (Sentence sortParam patternType)
+
+deriving instance
+    (Show sortParam, Show patternType) =>
+    Show (Sentence sortParam patternType)
+
+deriving instance Traversable (Sentence sortParam)
+
+instance
+    (NFData sortParam, NFData patternType) =>
+    NFData (Sentence sortParam patternType)
+  where
+    rnf =
+        \case
+            SentenceAliasSentence p -> rnf p
+            SentenceSymbolSentence p -> rnf p
+            SentenceImportSentence p -> rnf p
+            SentenceAxiomSentence p -> rnf p
+            SentenceClaimSentence p -> rnf p
+            SentenceSortSentence p -> rnf p
+            SentenceHookSentence p -> rnf p
+
+instance
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (Sentence sortParam patternType)
+  where
+     unparse =
+        \case
+            SentenceAliasSentence s -> unparse s
+            SentenceSymbolSentence s -> unparse s
+            SentenceImportSentence s -> unparse s
+            SentenceAxiomSentence s -> unparse s
+            SentenceClaimSentence s -> unparse s
+            SentenceSortSentence s -> unparse s
+            SentenceHookSentence s -> unparse s
+
+     unparse2 =
+        \case
+            SentenceAliasSentence s -> unparse2 s
+            SentenceSymbolSentence s -> unparse2 s
+            SentenceImportSentence s -> unparse2 s
+            SentenceAxiomSentence s -> unparse2 s
+            SentenceClaimSentence s -> unparse2 s
+            SentenceSortSentence s -> unparse2 s
+            SentenceHookSentence s -> unparse2 s
+
+{- | The attributes associated with a sentence.
+
+Every sentence type has attributes, so this operation is total.
+
+ -}
+sentenceAttributes :: Sentence sortParam patternType -> Attributes
+sentenceAttributes =
+    \case
+        SentenceAliasSentence
+            SentenceAlias { sentenceAliasAttributes } ->
+                sentenceAliasAttributes
+        SentenceSymbolSentence
+            SentenceSymbol { sentenceSymbolAttributes } ->
+                sentenceSymbolAttributes
+        SentenceImportSentence
+            SentenceImport { sentenceImportAttributes } ->
+                sentenceImportAttributes
+        SentenceAxiomSentence
+            SentenceAxiom { sentenceAxiomAttributes } ->
+                sentenceAxiomAttributes
+        SentenceClaimSentence
+            (SentenceClaim (SentenceAxiom { sentenceAxiomAttributes })) ->
+                sentenceAxiomAttributes
+        SentenceSortSentence
+            SentenceSort { sentenceSortAttributes } ->
+                sentenceSortAttributes
+        SentenceHookSentence sentence ->
+            case sentence of
+                SentenceHookedSort
+                    SentenceSort { sentenceSortAttributes } ->
+                        sentenceSortAttributes
+                SentenceHookedSymbol
+                    SentenceSymbol { sentenceSymbolAttributes } ->
+                        sentenceSymbolAttributes
+
+-- | Erase the pattern annotations within a 'Sentence'.
+eraseSentenceAnnotations
+    :: Functor domain
+    => Sentence
+        sortParam
+        (PurePattern Object domain variable erased)
+    -> Sentence
+        sortParam
+        (PurePattern Object domain variable (Annotation.Null Object))
+eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence

@@ -33,7 +33,7 @@ verifyUniqueNames
     :: (Unparse param, Unparse pat)
     => Map.Map Text AstLocation
     -- ^ Names that are already defined.
-    -> Module (Sentence Object param pat)
+    -> Module (Sentence param pat)
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
