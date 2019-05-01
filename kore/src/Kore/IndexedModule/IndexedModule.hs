@@ -311,7 +311,7 @@ toVerifiedDefinition idx =
         indexedModuleName verifiedModule /= "kore"
 
 indexedModuleRawSentences
-    :: IndexedModule param pat atts atts' -> [Sentence param pat]
+    :: IndexedModule SortVariable pat atts atts' -> [Sentence pat]
 indexedModuleRawSentences im =
     map (SentenceAliasSentence . getIndexedSentence)
         (Map.elems (indexedModuleAliasSentences im))
@@ -405,10 +405,10 @@ the module is already in the 'IndexedModule' map.
 indexModuleIfNeeded
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence sortParam patternType
-        , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
+        , sentence ~ Sentence patternType
+        , indexed ~ IndexedModule SortVariable patternType declAttrs axiomAttrs
         )
-    => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
+    => Maybe (ImplicitIndexedModule SortVariable patternType declAttrs axiomAttrs)
     -- ^ Module containing the implicit Kore definitions
     -> Map.Map ModuleName (Module sentence)
     -- ^ Map containing all defined modules, used for resolving imports.
@@ -433,10 +433,10 @@ indexModuleIfNeeded
 internalIndexModuleIfNeeded
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence sortParam patternType
-        , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
+        , sentence ~ Sentence patternType
+        , indexed ~ IndexedModule SortVariable patternType declAttrs axiomAttrs
         )
-    => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
+    => Maybe (ImplicitIndexedModule SortVariable patternType declAttrs axiomAttrs)
     -> Set.Set ModuleName
     -> Map.Map ModuleName (Module sentence)
     -> Map.Map ModuleName indexed
@@ -488,10 +488,10 @@ internalIndexModuleIfNeeded
 indexModuleKoreSentence
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence sortParam patternType
-        , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
+        , sentence ~ Sentence patternType
+        , indexed ~ IndexedModule SortVariable patternType declAttrs axiomAttrs
         )
-    => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
+    => Maybe (ImplicitIndexedModule SortVariable patternType declAttrs axiomAttrs)
     -> Set.Set ModuleName
     -> Map.Map ModuleName (Module sentence)
     -> (Map.Map ModuleName indexed, indexed)
@@ -502,14 +502,14 @@ indexModuleKoreSentence = indexModuleSentence
 indexModuleSentence
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence sortParam patternType
-        , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
+        , sentence ~ Sentence patternType
+        , indexed ~ IndexedModule SortVariable patternType declAttrs axiomAttrs
         )
-    => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
+    => Maybe (ImplicitIndexedModule SortVariable patternType declAttrs axiomAttrs)
     -> Set.Set ModuleName
     -> Map.Map ModuleName (Module sentence)
     -> (Map.Map ModuleName indexed, indexed)
-    -> Sentence sortParam patternType
+    -> Sentence patternType
     -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
 indexModuleSentence
     implicitModule
@@ -694,10 +694,10 @@ indexModuleSentence
 indexImportedModule
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
-        , sentence ~ Sentence sortParam patternType
-        , indexed ~ IndexedModule sortParam patternType declAttrs axiomAttrs
+        , sentence ~ Sentence patternType
+        , indexed ~ IndexedModule SortVariable patternType declAttrs axiomAttrs
         )
-    => Maybe (ImplicitIndexedModule sortParam patternType declAttrs axiomAttrs)
+    => Maybe (ImplicitIndexedModule SortVariable patternType declAttrs axiomAttrs)
     -> Set.Set ModuleName
     -> Map.Map ModuleName (Module sentence)
     -> Map.Map ModuleName indexed

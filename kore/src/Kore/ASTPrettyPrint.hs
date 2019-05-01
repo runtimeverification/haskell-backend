@@ -656,11 +656,7 @@ instance PrettyPrint patternType => PrettyPrint (SentenceHook patternType) where
     prettyPrint flags (SentenceHookedSort s)         =
         writeOneFieldStruct flags "SentenceHookedSort" s
 
-instance
-    ( PrettyPrint sortParam
-    , PrettyPrint patternType
-    ) => PrettyPrint (Sentence sortParam patternType)
-  where
+instance PrettyPrint patternType => PrettyPrint (Sentence patternType) where
     prettyPrint flags (SentenceAliasSentence s)    =
         writeOneFieldStruct flags "SentenceAliasSentence" s
     prettyPrint flags (SentenceSymbolSentence s)   =

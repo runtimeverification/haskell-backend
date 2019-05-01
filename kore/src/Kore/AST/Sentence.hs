@@ -101,10 +101,8 @@ class AsSentence sentenceType s | s -> sentenceType where
     asSentence :: s -> sentenceType
 
 instance
-    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            sortParam
             (PurePattern Object domain variable annotation)
         )
         (SentenceAlias (PurePattern Object domain variable annotation))
@@ -112,10 +110,8 @@ instance
     asSentence = SentenceAliasSentence
 
 instance
-    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            sortParam
             (PurePattern Object domain variable annotation)
         )
         (SentenceSymbol (PurePattern Object domain variable annotation))
@@ -123,10 +119,8 @@ instance
     asSentence = SentenceSymbolSentence
 
 instance
-    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            sortParam
             (PurePattern Object domain variable annotation)
         )
         (SentenceImport (PurePattern Object domain variable annotation))
@@ -134,20 +128,17 @@ instance
     asSentence = SentenceImportSentence
 
 instance
-    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            sortParam
             (PurePattern Object domain variable annotation)
         )
-        (SentenceAxiom sortParam (PurePattern Object domain variable annotation))
+        (SentenceAxiom SortVariable (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceAxiomSentence
 
 instance
     AsSentence
         (Sentence
-            SortVariable
             (PurePattern Object domain variable annotation)
         )
         (SentenceSort (PurePattern Object domain variable annotation))
@@ -156,10 +147,8 @@ instance
 
 
 instance
-    sortParam ~ SortVariable =>
     AsSentence
         (Sentence
-            sortParam
             (PurePattern Object domain variable annotation)
         )
         (SentenceHook (PurePattern Object domain variable annotation))
@@ -186,10 +175,7 @@ type ParsedSentenceAxiom =
 type ParsedSentenceHook =
     SentenceHook (ParsedPurePattern Object Domain.Builtin)
 
-type ParsedSentence =
-    Sentence
-        SortVariable
-        (ParsedPurePattern Object Domain.Builtin)
+type ParsedSentence = Sentence (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedModule = Module ParsedSentence
 

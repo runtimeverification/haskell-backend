@@ -161,7 +161,7 @@ withSentenceImportContext _ = \go -> go
 {- | Identify and  locate the given sentence in the error context.
  -}
 withSentenceContext
-    :: Sentence sortParam patternType
+    :: Sentence patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceContext =

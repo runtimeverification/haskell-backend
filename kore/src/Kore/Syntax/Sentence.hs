@@ -441,65 +441,33 @@ instance Unparse (SentenceHook patternType) where
 Section 9.1.6 (Declaration and Definitions).
 
 -}
-data Sentence (sortParam :: *) (patternType :: *) where
+data Sentence (patternType :: *) where
     SentenceAliasSentence
         :: !(SentenceAlias patternType)
-        -> Sentence sortParam patternType
+        -> Sentence patternType
     SentenceSymbolSentence
         :: !(SentenceSymbol patternType)
-        -> Sentence sortParam patternType
+        -> Sentence patternType
     SentenceImportSentence
         :: !(SentenceImport patternType)
-        -> Sentence sortParam patternType
+        -> Sentence patternType
     SentenceAxiomSentence
-        :: !(SentenceAxiom sortParam patternType)
-        -> Sentence sortParam patternType
+        :: !(SentenceAxiom SortVariable patternType)
+        -> Sentence patternType
     SentenceClaimSentence
-        :: !(SentenceClaim sortParam patternType)
-        -> Sentence sortParam patternType
+        :: !(SentenceClaim SortVariable patternType)
+        -> Sentence patternType
     SentenceSortSentence
         :: !(SentenceSort patternType)
-        -> Sentence sortParam patternType
+        -> Sentence patternType
     SentenceHookSentence
         :: !(SentenceHook patternType)
-        -> Sentence sortParam patternType
+        -> Sentence patternType
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
-deriving instance
-    (Eq sortParam, Eq patternType) =>
-    Eq (Sentence sortParam patternType)
+instance NFData patternType => NFData (Sentence patternType)
 
-deriving instance Foldable (Sentence sortParam)
-
-deriving instance Functor (Sentence sortParam)
-
-deriving instance
-    (Ord sortParam, Ord patternType) =>
-    Ord (Sentence sortParam patternType)
-
-deriving instance
-    (Show sortParam, Show patternType) =>
-    Show (Sentence sortParam patternType)
-
-deriving instance Traversable (Sentence sortParam)
-
-instance
-    (NFData sortParam, NFData patternType) =>
-    NFData (Sentence sortParam patternType)
-  where
-    rnf =
-        \case
-            SentenceAliasSentence p -> rnf p
-            SentenceSymbolSentence p -> rnf p
-            SentenceImportSentence p -> rnf p
-            SentenceAxiomSentence p -> rnf p
-            SentenceClaimSentence p -> rnf p
-            SentenceSortSentence p -> rnf p
-            SentenceHookSentence p -> rnf p
-
-instance
-    (Unparse sortParam, Unparse patternType) =>
-    Unparse (Sentence sortParam patternType)
-  where
+instance Unparse patternType => Unparse (Sentence patternType) where
      unparse =
         \case
             SentenceAliasSentence s -> unparse s
@@ -525,7 +493,7 @@ instance
 Every sentence type has attributes, so this operation is total.
 
  -}
-sentenceAttributes :: Sentence sortParam patternType -> Attributes
+sentenceAttributes :: Sentence patternType -> Attributes
 sentenceAttributes =
     \case
         SentenceAliasSentence
@@ -559,10 +527,8 @@ sentenceAttributes =
 eraseSentenceAnnotations
     :: Functor domain
     => Sentence
-        sortParam
         (PurePattern Object domain variable erased)
     -> Sentence
-        sortParam
         (PurePattern Object domain variable (Annotation.Null Object))
 eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
 
@@ -585,8 +551,7 @@ type PureSentenceImport level domain =
 type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
-type PureSentence domain =
-    Sentence SortVariable (ParsedPurePattern Object domain)
+type PureSentence domain = Sentence (ParsedPurePattern Object domain)
 
 -- |'PureModule' is the pure (fixed-@level@) version of 'Module'
 type PureModule level domain = Module (PureSentence domain)

@@ -25,7 +25,7 @@ import qualified Kore.Syntax.Sentence as Syntax
 type Pattern =
     PurePattern Object Domain.Builtin Variable (Valid (Variable) Object)
 
-type Sentence = AST.Sentence SortVariable Pattern
+type Sentence = AST.Sentence Pattern
 
 type SentenceAlias = AST.SentenceAlias Pattern
 
