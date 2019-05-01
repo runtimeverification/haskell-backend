@@ -520,7 +520,7 @@ tryAxiomClaim eac = do
         | otherwise = ct
 
     showUnificationFailure
-        :: Either (Axiom level) claim
+        :: Either (Axiom) claim
         -> Graph.Node
         -> ReplM claim level ()
     showUnificationFailure axiomOrClaim' node = do
@@ -548,7 +548,7 @@ tryAxiomClaim eac = do
             Nothing -> putStrLn' "No unification error found."
             Just doc -> putStrLn' $ show doc
     extractLeftPattern
-        :: Either (Axiom level) claim
+        :: Either (Axiom) claim
         -> TermLike Variable
     extractLeftPattern =
             left . getRewriteRule . either unAxiom coerce

@@ -230,7 +230,7 @@ type InnerGraph =
 
 -- | State for the rep.
 data ReplState claim level = ReplState
-    { axioms   :: [Axiom level]
+    { axioms   :: [Axiom]
     -- ^ List of available axioms
     , claims   :: [claim]
     -- ^ List of claims to be proven
@@ -249,7 +249,7 @@ data ReplState claim level = ReplState
         :: Claim claim
         => claim
         -> [claim]
-        -> [Axiom level]
+        -> [Axiom]
         -> ExecutionGraph
         -> Graph.Node
         -> Simplifier ExecutionGraph
@@ -338,7 +338,7 @@ getAxiomByIndex
     :: MonadState (ReplState claim level) m
     => Int
     -- ^ index in the axioms list
-    -> m (Maybe (Axiom level))
+    -> m (Maybe (Axiom))
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
@@ -346,7 +346,7 @@ getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 getAxiomOrClaimByIndex
     :: MonadState (ReplState claim level) m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either (Axiom level) claim))
+    -> m (Maybe (Either (Axiom) claim))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse
@@ -472,7 +472,7 @@ runStepper'
     => Monad.Trans.MonadTrans m
     => Claim claim
     => [claim]
-    -> [Axiom level]
+    -> [Axiom]
     -> Graph.Node
     -> m Simplifier (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do

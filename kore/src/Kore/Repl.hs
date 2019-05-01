@@ -85,7 +85,7 @@ runRepl
     -- ^ predicate simplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ builtin simplifier
-    -> [Axiom Object]
+    -> [Axiom]
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
@@ -121,8 +121,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             }
 
     addIndexesToAxioms
-        :: [Axiom Object]
-        -> [Axiom Object]
+        :: [Axiom]
+        -> [Axiom]
     addIndexesToAxioms axs =
         fmap (Axiom . addIndex) (zip (fmap unAxiom axs) [0..])
 
@@ -167,7 +167,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     stepper0
         :: claim
         -> [claim]
-        -> [Axiom Object]
+        -> [Axiom]
         -> ExecutionGraph
         -> Graph.Node
         -> Simplifier ExecutionGraph

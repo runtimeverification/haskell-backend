@@ -371,7 +371,7 @@ test_onePathVerification =
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePath.Axiom Object
+    -> OnePath.Axiom
 simpleAxiom left right =
     OnePath.Axiom $ simpleRewrite left right
 
@@ -415,7 +415,7 @@ runVerification
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
-    -> [OnePath.Axiom Object]
+    -> [OnePath.Axiom]
     -> [claim]
     -> IO (Either (OrPattern Variable) ())
 runVerification

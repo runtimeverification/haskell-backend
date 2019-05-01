@@ -127,7 +127,7 @@ isTrusted =
 
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
-newtype Axiom level = Axiom
+newtype Axiom = Axiom
     { unAxiom :: RewriteRule Variable
     }
 
@@ -195,7 +195,7 @@ defaultStrategy
     .  Claim claim
     => [claim]
     -- The claims that we want to prove
-    -> [Axiom Object]
+    -> [Axiom]
     -> Pattern Variable
     -> [Strategy
         (Prim
@@ -308,7 +308,7 @@ verifyClaimStep
     -- ^ claim that is being proven
     -> [claim]
     -- ^ list of claims in the spec module
-    -> [Axiom Object]
+    -> [Axiom]
     -- ^ list of axioms in the main module
     -> ExecutionGraph (CommonStrategyPattern) (RewriteRule Variable)
     -- ^ current execution graph

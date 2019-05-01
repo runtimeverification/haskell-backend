@@ -102,7 +102,7 @@ check
         )
 
 bmcStrategy
-    :: [Axiom Object]
+    :: [Axiom]
     -> CommonModalPattern
     -> [Strategy
         (Prim
