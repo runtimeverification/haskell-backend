@@ -222,7 +222,7 @@ extractRewriteAxioms
     :: VerifiedModule declAtts axiomAtts
     -> [RewriteRule Object Variable]
 extractRewriteAxioms idxMod =
-    mapMaybe (extractRewriteAxiomFrom. getIndexedSentence)
+    mapMaybe (extractRewriteAxiomFrom . getIndexedSentence)
         (indexedModuleAxioms idxMod)
 
 extractRewriteAxiomFrom
