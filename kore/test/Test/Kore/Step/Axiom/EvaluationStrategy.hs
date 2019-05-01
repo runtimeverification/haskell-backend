@@ -506,7 +506,7 @@ test_builtinEvaluation =
         )
     ]
 
-failingEvaluator :: BuiltinAndAxiomSimplifier Object
+failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
     BuiltinAndAxiomSimplifier
         (const $ const $ const $ const $ const $
@@ -516,7 +516,7 @@ failingEvaluator =
 axiomEvaluator
     :: TermLike Variable
     -> TermLike Variable
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
         (equalityRuleEvaluator (axiom left right makeTruePredicate))
@@ -524,7 +524,7 @@ axiomEvaluator left right =
 axiomEvaluatorWithRemainder
     :: TermLike Variable
     -> TermLike Variable
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 axiomEvaluatorWithRemainder left right =
     definitionEvaluation [axiom left right makeTruePredicate]
 
@@ -554,7 +554,7 @@ mockMetadataTools =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
     -> TermLike Variable
     -> IO (CommonAttemptedAxiom Object)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =

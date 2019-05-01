@@ -114,13 +114,13 @@ axiomToIdAxiomPatternPair axiom =
 -- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
     :: Map.Map (AxiomIdentifier Object) [EqualityRule Variable]
-    -> Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier Object)
+    -> Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier)
 axiomPatternsToEvaluators =
     Map.fromAscList . mapMaybe equalitiesToEvaluators . Map.toAscList
   where
     equalitiesToEvaluators
         :: (AxiomIdentifier Object, [EqualityRule Variable])
-        -> Maybe (AxiomIdentifier Object, BuiltinAndAxiomSimplifier Object)
+        -> Maybe (AxiomIdentifier Object, BuiltinAndAxiomSimplifier)
     equalitiesToEvaluators
         (symbolId, filter (not . ignoreEqualityRule) -> equalities)
       =
@@ -140,12 +140,12 @@ axiomPatternsToEvaluators =
               where
                 Simplification { isSimplification } =
                     Attribute.simplification attributes
-        simplification :: [BuiltinAndAxiomSimplifier Object]
+        simplification :: [BuiltinAndAxiomSimplifier]
         simplification = mkSimplifier <$> simplifications
           where
             mkSimplifier
                 :: EqualityRule Variable
-                -> BuiltinAndAxiomSimplifier Object
+                -> BuiltinAndAxiomSimplifier
             mkSimplifier simpl =
                 BuiltinAndAxiomSimplifier $ equalityRuleEvaluator simpl
         simplificationEvaluator =

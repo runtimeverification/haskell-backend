@@ -147,7 +147,7 @@ import qualified Kore.Verified as Verified
 
 type Parser = Parsec Void Text
 
-type Function = BuiltinAndAxiomSimplifier Object
+type Function = BuiltinAndAxiomSimplifier
 
 type HookedSortDescription = SortDescription Object Domain.Builtin
 

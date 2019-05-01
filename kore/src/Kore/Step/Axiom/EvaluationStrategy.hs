@@ -85,7 +85,7 @@ that define it.
 -}
 definitionEvaluation
     :: [EqualityRule Variable]
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (evaluateWithDefinitionAxioms rules)
@@ -101,7 +101,7 @@ See also: 'definitionEvaluation'
 -}
 totalDefinitionEvaluation
     :: [EqualityRule Variable]
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 totalDefinitionEvaluation rules =
     BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
   where
@@ -149,8 +149,8 @@ If that result contains more than one pattern, or it contains a reminder,
 the evaluation fails with 'error' (may change in the future).
 -}
 firstFullEvaluation
-    :: [BuiltinAndAxiomSimplifier Object]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [BuiltinAndAxiomSimplifier]
+    -> BuiltinAndAxiomSimplifier
 firstFullEvaluation simplifiers =
     BuiltinAndAxiomSimplifier
         (applyFirstSimplifierThatWorks simplifiers OnlyOneResult)
@@ -159,9 +159,9 @@ firstFullEvaluation simplifiers =
 returns Applicable, otherwise returns the result of the second.
 -}
 simplifierWithFallback
-    :: BuiltinAndAxiomSimplifier Object
-    -> BuiltinAndAxiomSimplifier Object
-    -> BuiltinAndAxiomSimplifier Object
+    :: BuiltinAndAxiomSimplifier
+    -> BuiltinAndAxiomSimplifier
+    -> BuiltinAndAxiomSimplifier
 simplifierWithFallback first second =
     BuiltinAndAxiomSimplifier
         (applyFirstSimplifierThatWorks [first, second] WithMultipleResults)
@@ -170,8 +170,8 @@ simplifierWithFallback first second =
 on concrete patterns.
 -}
 builtinEvaluation
-    :: BuiltinAndAxiomSimplifier Object
-    -> BuiltinAndAxiomSimplifier Object
+    :: BuiltinAndAxiomSimplifier
+    -> BuiltinAndAxiomSimplifier
 builtinEvaluation evaluator =
     BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
 
@@ -184,7 +184,7 @@ evaluateBuiltin
         , Show variable
         , Unparse variable
         )
-    => BuiltinAndAxiomSimplifier Object
+    => BuiltinAndAxiomSimplifier
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -237,7 +237,7 @@ applyFirstSimplifierThatWorks
         , Show variable
         , Unparse variable
         )
-    => [BuiltinAndAxiomSimplifier Object]
+    => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier

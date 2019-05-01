@@ -586,7 +586,7 @@ test_functionIntegration =
 axiomEvaluator
     :: TermLike Variable
     -> TermLike Variable
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
         (equalityRuleEvaluator (axiom left right makeTruePredicate))
@@ -600,7 +600,7 @@ axiom left right predicate =
     EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
 
 appliedMockEvaluator
-    :: Pattern Variable -> BuiltinAndAxiomSimplifier Object
+    :: Pattern Variable -> BuiltinAndAxiomSimplifier
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator

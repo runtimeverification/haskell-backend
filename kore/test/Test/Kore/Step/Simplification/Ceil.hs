@@ -474,7 +474,7 @@ test_ceilSimplification =
         let Just r = asConcreteStepPattern p in r
 
 appliedMockEvaluator
-    :: Pattern Variable -> BuiltinAndAxiomSimplifier Object
+    :: Pattern Variable -> BuiltinAndAxiomSimplifier
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator

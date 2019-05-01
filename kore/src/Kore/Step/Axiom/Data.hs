@@ -83,13 +83,11 @@ It returns the result of simplifying the pattern with builtins and
 axioms, together with a proof certifying that it was simplified correctly
 (which is only a placeholder right now).
 -}
-newtype BuiltinAndAxiomSimplifier level =
+newtype BuiltinAndAxiomSimplifier =
     BuiltinAndAxiomSimplifier
         (forall variable
         .   ( FreshVariable variable
-            , Ord variable
             , SortedVariable variable
-            , Show variable
             , Show variable
             , Unparse variable
             )
@@ -99,8 +97,8 @@ newtype BuiltinAndAxiomSimplifier level =
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Simplifier
-            ( AttemptedAxiom level variable
-            , SimplificationProof level
+            ( AttemptedAxiom Object variable
+            , SimplificationProof Object
             )
         )
 
@@ -108,7 +106,7 @@ newtype BuiltinAndAxiomSimplifier level =
 their corresponding evaluators.
 -}
 type BuiltinAndAxiomSimplifierMap =
-    Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier Object)
+    Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier)
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}
@@ -238,7 +236,7 @@ applicationAxiomSimplifier
             , SimplificationProof Object
             )
         )
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where

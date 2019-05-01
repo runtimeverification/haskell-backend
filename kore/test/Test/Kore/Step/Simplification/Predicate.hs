@@ -302,8 +302,8 @@ runSimplifier patternSimplifierMap predicate =
             patternSimplifierMap
 
 simplificationEvaluator
-    :: [BuiltinAndAxiomSimplifier Object]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [BuiltinAndAxiomSimplifier]
+    -> BuiltinAndAxiomSimplifier
 simplificationEvaluator = firstFullEvaluation
 
 makeEvaluator
@@ -313,7 +313,7 @@ makeEvaluator
             )
         => [(TermLike variable, TermLike variable)]
         )
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 makeEvaluator mapping =
     BuiltinAndAxiomSimplifier
         $ const $ const $ const $ const $ simpleEvaluator mapping

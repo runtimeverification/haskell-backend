@@ -337,8 +337,8 @@ test_applicationSimplification =
     noSimplification = []
 
 simplificationEvaluator
-    :: [BuiltinAndAxiomSimplifier Object]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [BuiltinAndAxiomSimplifier]
+    -> BuiltinAndAxiomSimplifier
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication

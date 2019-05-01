@@ -274,7 +274,7 @@ maybeEvaluatePattern
     identifier :: Maybe (AxiomIdentifier Object)
     identifier = AxiomIdentifier.extract patt
 
-    maybeEvaluator :: Maybe (BuiltinAndAxiomSimplifier Object)
+    maybeEvaluator :: Maybe (BuiltinAndAxiomSimplifier)
     maybeEvaluator = do
         identifier' <- identifier
         Map.lookup identifier' axiomIdToEvaluator
