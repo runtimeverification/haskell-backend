@@ -75,33 +75,6 @@ import           Kore.Syntax.Sentence
 import           Kore.Unparser
 
 
-{-|@SentenceHook@ corresponds to @hook-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
-represent hooked sorts and hooked symbols.
--}
-data SentenceHook (patternType :: *) where
-    SentenceHookedSort
-        :: !(SentenceSort patternType) -> SentenceHook patternType
-    SentenceHookedSymbol
-        :: !(SentenceSymbol patternType) -> SentenceHook patternType
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
-
-instance Hashable (SentenceHook patternType)
-
-instance NFData (SentenceHook patternType)
-
-instance Unparse (SentenceHook patternType) where
-    unparse =
-        \case
-            SentenceHookedSort a -> "hooked-" <> unparse a
-            SentenceHookedSymbol a -> "hooked-" <> unparse a
-
-    unparse2 =
-        \case
-            SentenceHookedSort a -> "hooked-" <> unparse2 a
-            SentenceHookedSymbol a -> "hooked-" <> unparse2 a
-
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 

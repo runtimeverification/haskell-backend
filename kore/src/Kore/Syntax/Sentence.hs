@@ -16,6 +16,7 @@ module Kore.Syntax.Sentence
     , SentenceSort (..)
     , SentenceAxiom (..)
     , SentenceClaim (..)
+    , SentenceHook (..)
     ) where
 
 import           Control.DeepSeq
@@ -414,3 +415,31 @@ instance
   where
     unparse = unparseAxiom "claim" . getSentenceClaim
     unparse2 = unparseAxiom2 "claim" . getSentenceClaim
+
+{- | @SentenceHook@ corresponds to @hook-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+
+See also: 'SentenceSort', 'SentenceSymbol'
+
+ -}
+data SentenceHook (patternType :: *) where
+    SentenceHookedSort
+        :: !(SentenceSort patternType) -> SentenceHook patternType
+    SentenceHookedSymbol
+        :: !(SentenceSymbol patternType) -> SentenceHook patternType
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+
+instance Hashable (SentenceHook patternType)
+
+instance NFData (SentenceHook patternType)
+
+instance Unparse (SentenceHook patternType) where
+    unparse =
+        \case
+            SentenceHookedSort a -> "hooked-" <> unparse a
+            SentenceHookedSymbol a -> "hooked-" <> unparse a
+
+    unparse2 =
+        \case
+            SentenceHookedSort a -> "hooked-" <> unparse2 a
+            SentenceHookedSymbol a -> "hooked-" <> unparse2 a
