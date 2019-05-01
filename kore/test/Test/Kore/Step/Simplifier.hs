@@ -29,7 +29,7 @@ mockSimplifier
         , SortedVariable variable
         )
     =>  [   ( TermLike variable
-            , ([Pattern Object variable], SimplificationProof Object)
+            , ([Pattern variable], SimplificationProof Object)
             )
         ]
     -> TermLikeSimplifier Object
@@ -50,7 +50,7 @@ mockPredicateSimplifier
         , SortedVariable variable
         )
     =>  [   ( TermLike variable
-            , ([Pattern Object variable], SimplificationProof Object)
+            , ([Pattern variable], SimplificationProof Object)
             )
         ]
     -> TermLikeSimplifier Object
@@ -72,15 +72,15 @@ mockSimplifierHelper
         , SortedVariable variable
         , SortedVariable variable0
         )
-    =>  (TermLike variable -> Pattern Object variable)
+    =>  (TermLike variable -> Pattern variable)
     ->  [   ( TermLike variable
-            , ([Pattern Object variable], SimplificationProof Object)
+            , ([Pattern variable], SimplificationProof Object)
             )
         ]
     -> PredicateSimplifier Object
     -> TermLike variable0
     -> Simplifier
-        (OrPattern Object variable0, SimplificationProof Object)
+        (OrPattern variable0, SimplificationProof Object)
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
         ( OrPattern.fromPatterns
@@ -121,7 +121,7 @@ convertExpandedVariables
         , SortedVariable variable
         , SortedVariable variable0
         )
-    => Pattern Object variable
-    -> Pattern Object variable0
+    => Pattern variable
+    -> Pattern variable0
 convertExpandedVariables =
     Pattern.mapVariables (fromVariable . toVariable)

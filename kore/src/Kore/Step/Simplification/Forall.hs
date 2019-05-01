@@ -49,8 +49,8 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Forall Sort variable (OrPattern Object variable)
-    ->  ( OrPattern Object variable
+    => Forall Sort variable (OrPattern variable)
+    ->  ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -63,7 +63,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Forall Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Forall Sort) (Valid Object) (OrPattern variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
@@ -78,8 +78,8 @@ simplifyEvaluated
         , Unparse variable
         )
     => variable
-    -> OrPattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    -> OrPattern variable
+    -> (OrPattern variable, SimplificationProof Object)
 simplifyEvaluated variable simplified
   | OrPattern.isTrue simplified = (simplified, SimplificationProof)
   | OrPattern.isFalse simplified = (simplified, SimplificationProof)
@@ -103,8 +103,8 @@ makeEvaluate
         , Unparse variable
         )
     => variable
-    -> Pattern Object variable
-    -> (Pattern Object variable, SimplificationProof Object)
+    -> Pattern variable
+    -> (Pattern variable, SimplificationProof Object)
 makeEvaluate variable patt
   | Pattern.isTop patt =
     (Pattern.top, SimplificationProof)

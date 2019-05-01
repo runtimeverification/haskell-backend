@@ -426,7 +426,7 @@ asPattern
         )
     => Sort
     -> Builtin variable
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
@@ -549,7 +549,7 @@ unifyEquals
         , Show variable
         , Unparse variable
         , p ~ TermLike variable
-        , expanded ~ Pattern Object variable
+        , expanded ~ Pattern variable
         , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
@@ -693,7 +693,7 @@ unifyEquals
         (frame, _) <- unifyEqualsChildren x (asBuiltinMap remainder1)
         let
             -- The concrete part of the unification result.
-            concrete :: Pattern Object variable
+            concrete :: Pattern variable
             concrete =
                 asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
 

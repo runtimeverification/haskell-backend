@@ -600,7 +600,7 @@ axiom left right predicate =
     EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
 
 appliedMockEvaluator
-    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier Object
+    :: Pattern Variable -> BuiltinAndAxiomSimplifier Object
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -614,8 +614,8 @@ mapVariables
     ::  ( FreshVariable variable
         , SortedVariable variable
         )
-    => Pattern Object Variable
-    -> Pattern Object variable
+    => Pattern Variable
+    -> Pattern variable
 mapVariables =
     Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Element 1) }
@@ -636,7 +636,7 @@ evaluate
     :: SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike Variable
-    -> IO (Pattern Object Variable)
+    -> IO (Pattern Variable)
 evaluate metadataTools functionIdToEvaluator patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

@@ -171,8 +171,8 @@ strategyPattern
         Stuck patt -> stuckTransformer patt
         Bottom -> bottomValue
 
--- | A 'StrategyPattern' instantiated to 'Pattern Object Variable' for convenience.
-type CommonStrategyPattern level = StrategyPattern (Pattern Object Variable)
+-- | A 'StrategyPattern' instantiated to 'Pattern Variable' for convenience.
+type CommonStrategyPattern = StrategyPattern (Pattern Variable)
 
 instance Hashable patt => Hashable (StrategyPattern patt)
 
@@ -233,11 +233,11 @@ transitionRule
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (Pattern Object Variable) (RewriteRule Object Variable)
-    -> (CommonStrategyPattern  Object, StepProof Object Variable)
+    -> Prim (Pattern Variable) (RewriteRule Object Variable)
+    -> (CommonStrategyPattern, StepProof Object Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Object Variable) Simplifier
-        (CommonStrategyPattern Object, StepProof Object Variable)
+        (CommonStrategyPattern, StepProof Object Variable)
 transitionRule
     tools
     substitutionSimplifier
@@ -285,9 +285,9 @@ transitionRule
 
     transitionApplyWithRemainders
         :: [RewriteRule Object Variable]
-        -> (CommonStrategyPattern Object, StepProof Object Variable)
+        -> (CommonStrategyPattern, StepProof Object Variable)
         -> TransitionT (RewriteRule Object Variable) Simplifier
-            (CommonStrategyPattern Object, StepProof Object Variable)
+            (CommonStrategyPattern, StepProof Object Variable)
     transitionApplyWithRemainders _ c@(Bottom, _) = return c
     transitionApplyWithRemainders _ c@(Stuck _, _) = return c
     transitionApplyWithRemainders
@@ -297,9 +297,9 @@ transitionRule
 
     transitionMultiApplyWithRemainders
         :: [RewriteRule Object Variable]
-        -> (Pattern Object Variable, StepProof Object Variable)
+        -> (Pattern Variable, StepProof Object Variable)
         -> Transition
-            (CommonStrategyPattern Object, StepProof Object Variable)
+            (CommonStrategyPattern, StepProof Object Variable)
     transitionMultiApplyWithRemainders _ (config, _)
         | Pattern.isBottom config = empty
     transitionMultiApplyWithRemainders rules (config, proof) = do
@@ -340,12 +340,12 @@ transitionRule
                 Result.transitionResults (mapConfigs $ mapRules results)
 
     transitionRemoveDestination
-        :: Pattern Object Variable
-        ->  ( CommonStrategyPattern Object
+        :: Pattern Variable
+        ->  ( CommonStrategyPattern
             , StepProof Object Variable
             )
         -> TransitionT (RewriteRule Object Variable) Simplifier
-            (CommonStrategyPattern Object, StepProof Object Variable)
+            (CommonStrategyPattern, StepProof Object Variable)
     transitionRemoveDestination _ (Bottom, _) = empty
     transitionRemoveDestination _ (Stuck _, _) = empty
     transitionRemoveDestination destination (RewritePattern patt, proof1) = do
@@ -382,9 +382,9 @@ removalPredicate
         , Unparse variable
         , SortedVariable variable
         )
-    => Pattern Object variable
+    => Pattern variable
     -- ^ Destination
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Current configuration
     -> Predicate variable
 removalPredicate destination config =

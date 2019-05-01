@@ -62,9 +62,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> In Sort (OrPattern Object variable)
+    -> In Sort (OrPattern variable)
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -85,7 +85,7 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedIn' take an argument of type
 
-> CofreeF (In Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (In Sort) (Valid Object) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluateIn' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -106,10 +106,10 @@ simplifyEvaluatedIn
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> OrPattern Object variable
-    -> OrPattern Object variable
+    -> OrPattern variable
+    -> OrPattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 simplifyEvaluatedIn
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | OrPattern.isFalse first =
@@ -129,7 +129,7 @@ simplifyEvaluatedIn
         crossProduct
             :: MultiOr
                 (Simplifier
-                    ( OrPattern Object variable
+                    ( OrPattern variable
                     , SimplificationProof Object
                     )
                 )
@@ -142,14 +142,14 @@ simplifyEvaluatedIn
                 second
     orOfOrProof <- sequence crossProduct
     let
-        orOfOr :: MultiOr (OrPattern Object variable)
+        orOfOr :: MultiOr (OrPattern variable)
         orOfOr = fmap dropProof orOfOrProof
     -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
     return (MultiOr.flatten orOfOr, SimplificationProof)
   where
     dropProof
-        :: (OrPattern Object variable, SimplificationProof Object)
-        -> OrPattern Object variable
+        :: (OrPattern variable, SimplificationProof Object)
+        -> OrPattern variable
     dropProof = fst
 
     {-
@@ -175,10 +175,10 @@ makeEvaluateIn
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object variable
-    -> Pattern Object variable
+    -> Pattern variable
+    -> Pattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeEvaluateIn
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | Pattern.isTop first =
@@ -197,9 +197,9 @@ makeEvaluateNonBoolIn
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => Pattern variable
+    -> Pattern variable
+    -> (OrPattern variable, SimplificationProof Object)
 makeEvaluateNonBoolIn patt1 patt2 =
     ( OrPattern.fromPatterns
         [ Conditional

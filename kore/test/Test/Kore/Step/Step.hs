@@ -169,12 +169,12 @@ test_applyInitialConditions =
     ]
 
 unifyRule
-    :: Pattern Object Variable
-    -> RulePattern Object Variable
+    :: Pattern Variable
+    -> RulePattern Variable
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [Conditional Object Variable (RulePattern Object Variable)]
+            [Conditional Object Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
     evalUnifier
@@ -252,14 +252,14 @@ test_unifyRule =
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
 applyRewriteRule_
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ Configuration
     -> RewriteRule Object Variable
     -- ^ Rewrite rule
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [OrPattern Object Variable]
+            [OrPattern Variable]
         )
 applyRewriteRule_ initial rule = do
     result <- applyRewriteRules initial [rule]
@@ -682,7 +682,7 @@ test_applyRewriteRule_ =
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRules
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
@@ -719,7 +719,7 @@ applyRewriteRules initial rules =
 
 checkResults
     :: HasCallStack
-    => MultiOr (Pattern Object Variable)
+    => MultiOr (Pattern Variable)
     -> Step.Results Variable
     -> Assertion
 checkResults expect actual =
@@ -729,7 +729,7 @@ checkResults expect actual =
 
 checkRemainders
     :: HasCallStack
-    => MultiOr (Pattern Object Variable)
+    => MultiOr (Pattern Variable)
     -> Step.Results Variable
     -> Assertion
 checkRemainders expect actual =
@@ -1057,7 +1057,7 @@ axiomsCase = [axiomCaseA, axiomCaseB]
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 sequenceRewriteRules
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ Configuration
     -> [RewriteRule Object Variable]
     -- ^ Rewrite rule
@@ -1180,7 +1180,7 @@ axiomFunctionalSigma =
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 sequenceMatchingRules
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ Configuration
     -> [EqualityRule Object Variable]
     -- ^ Rewrite rule

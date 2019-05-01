@@ -425,7 +425,7 @@ asPattern
         )
     => Sort
     -> Builtin
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
@@ -509,7 +509,7 @@ unifyEquals
         , Show variable
         , FreshVariable variable
         , p ~ TermLike variable
-        , expanded ~ Pattern Object variable
+        , expanded ~ Pattern variable
         , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
@@ -727,7 +727,7 @@ errorIfIncompletelyUnified
         )
     => TermLike variable
     -> TermLike variable
-    -> Pattern Object variable
+    -> Pattern variable
     -> m ()
 errorIfIncompletelyUnified expected patt unifiedPattern =
     Monad.when (term unifiedPattern /= expected)

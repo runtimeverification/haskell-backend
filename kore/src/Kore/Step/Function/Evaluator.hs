@@ -85,7 +85,7 @@ evaluateApplication
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 evaluateApplication
     tools
     substitutionSimplifier
@@ -160,10 +160,10 @@ evaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrPattern Object variable
+    -> OrPattern variable
     -- ^ The default value
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 evaluatePattern
     tools
     substitutionSimplifier
@@ -209,11 +209,11 @@ maybeEvaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrPattern Object variable
+    -> OrPattern variable
     -- ^ The default value
     -> Maybe
         (Simplifier
-            (OrPattern Object variable, SimplificationProof Object)
+            (OrPattern variable, SimplificationProof Object)
         )
 maybeEvaluatePattern
     tools
@@ -290,8 +290,8 @@ maybeEvaluatePattern
             childrenPredicate
 
     simplifyIfNeeded
-        :: Pattern Object variable
-        -> Simplifier (OrPattern Object variable)
+        :: Pattern variable
+        -> Simplifier (OrPattern variable)
     simplifyIfNeeded toSimplify =
         if toSimplify == unchangedPatt
             then return (OrPattern.fromPattern unchangedPatt)
@@ -359,9 +359,9 @@ reevaluateFunctions
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Function evaluation result.
-    -> Simplifier (OrPattern Object variable)
+    -> Simplifier (OrPattern variable)
 reevaluateFunctions
     tools
     substitutionSimplifier

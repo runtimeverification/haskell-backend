@@ -40,7 +40,7 @@ test_stringLiteralSimplification =
         )
     ]
 
-evaluate :: StringLiteral -> OrPattern Object Variable
+evaluate :: StringLiteral -> OrPattern Variable
 evaluate stringLiteral =
     case simplify stringLiteral of
         (result, _proof) -> result

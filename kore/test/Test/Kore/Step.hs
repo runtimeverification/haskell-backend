@@ -118,8 +118,8 @@ compareTo (Expect expected) (actual, _ignoredProof) =
 type RewriteRule' variable = RewriteRule Object variable
 type TermLike' variable = TermLike variable
 type CommonTermLike' = TermLike Variable
-type Pattern' variable = Pattern Object variable
-type CommonPattern' = Pattern Object Variable
+type Pattern' variable = Pattern variable
+type CommonPattern' = Pattern Variable
 type Sort' = Sort
 type StepProof' variable = StepProof Object variable
 
@@ -231,7 +231,7 @@ rewriteImplies =
         , attributes = def
         }
 
-expectTwoAxioms :: [(Pattern Meta Variable, StepProof Meta Variable)]
+expectTwoAxioms :: [(Pattern Variable, StepProof Meta Variable)]
 expectTwoAxioms =
     [   ( pure (mkVar $ v1 Mock.testSort), mempty )
     ,   ( Conditional
@@ -246,7 +246,7 @@ expectTwoAxioms =
         )
     ]
 
-actualTwoAxioms :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualTwoAxioms :: IO [(Pattern Variable, StepProof Meta Variable)]
 actualTwoAxioms =
     runStep
         mockMetadataTools
@@ -259,7 +259,7 @@ actualTwoAxioms =
         , rewriteImplies
         ]
 
-initialFailSimple :: Pattern Meta Variable
+initialFailSimple :: Pattern Variable
 initialFailSimple =
     Conditional
         { term =
@@ -270,10 +270,10 @@ initialFailSimple =
         , substitution = mempty
         }
 
-expectFailSimple :: [(Pattern Object Variable, StepProof Meta Variable)]
+expectFailSimple :: [(Pattern Variable, StepProof Meta Variable)]
 expectFailSimple = [ (initialFailSimple, mempty) ]
 
-actualFailSimple :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualFailSimple :: IO [(Pattern Variable, StepProof Meta Variable)]
 actualFailSimple =
     runStep
         mockMetadataTools
@@ -291,7 +291,7 @@ actualFailSimple =
             }
         ]
 
-initialFailCycle :: Pattern Meta Variable
+initialFailCycle :: Pattern Variable
 initialFailCycle =
     Conditional
         { term =
@@ -302,10 +302,10 @@ initialFailCycle =
         , substitution = mempty
         }
 
-expectFailCycle :: [(Pattern Object Variable, StepProof Meta Variable)]
+expectFailCycle :: [(Pattern Variable, StepProof Meta Variable)]
 expectFailCycle = [ (initialFailCycle, mempty) ]
 
-actualFailCycle :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualFailCycle :: IO [(Pattern Variable, StepProof Meta Variable)]
 actualFailCycle =
     runStep
         mockMetadataTools
@@ -323,7 +323,7 @@ actualFailCycle =
             }
         ]
 
-initialIdentity :: Pattern Meta Variable
+initialIdentity :: Pattern Variable
 initialIdentity =
     Conditional
         { term = mkVar (v1 Mock.testSort)
@@ -331,10 +331,10 @@ initialIdentity =
         , substitution = mempty
         }
 
-expectIdentity :: [(Pattern Object Variable, StepProof Meta Variable)]
+expectIdentity :: [(Pattern Variable, StepProof Meta Variable)]
 expectIdentity = [ (initialIdentity, mempty) ]
 
-actualIdentity :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualIdentity :: IO [(Pattern Variable, StepProof Meta Variable)]
 actualIdentity =
     runStep
         mockMetadataTools
@@ -377,7 +377,7 @@ test_unificationError =
             Right _ -> assertFailure "Expected unification error"
 
 actualUnificationError
-    :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+    :: IO [(Pattern Variable, StepProof Meta Variable)]
 actualUnificationError =
     runStep
         mockMetadataTools
@@ -492,10 +492,10 @@ metaI p = mkApp Mock.testSort iSymbol [p]
 runStep
     :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
     -> [RewriteRule Object Variable]
-    -> IO [(Pattern Object Variable, StepProof Object Variable)]
+    -> IO [(Pattern Variable, StepProof Object Variable)]
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig
@@ -515,10 +515,10 @@ runStep metadataTools configuration axioms =
 runSteps
     :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
     -> [RewriteRule Object Variable]
-    -> IO (Pattern Object Variable, StepProof Object Variable)
+    -> IO (Pattern Variable, StepProof Object Variable)
 runSteps metadataTools configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig

@@ -412,7 +412,7 @@ mainPatternParseAndVerify indexedModule patternFileName =
 mainParseSearchPattern
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
-    -> IO (Pattern Object Variable)
+    -> IO (Pattern Variable)
 mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of

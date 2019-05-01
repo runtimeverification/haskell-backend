@@ -403,7 +403,7 @@ unifiesWith
     :: HasCallStack
     => TermLike Variable
     -> TermLike Variable
-    -> Pattern Object Variable
+    -> Pattern Variable
     -> PropertyT SMT.SMT ()
 unifiesWith pat1 pat2 Conditional { term, predicate, substitution } = do
     Conditional { term = uTerm, predicate = uPred, substitution = uSubst } <-
@@ -579,7 +579,7 @@ asTermLike =
     . Foldable.toList
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
-asPattern :: Set.Builtin -> Pattern Object Variable
+asPattern :: Set.Builtin -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools Set.asPattern setSort
 

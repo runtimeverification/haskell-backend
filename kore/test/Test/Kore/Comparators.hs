@@ -121,7 +121,7 @@ instance
     , Eq variable
     , Show variable
     )
-    => SumEqualWithExplanation (Pattern Object domain variable child)
+    => SumEqualWithExplanation (Pattern domain variable child)
   where
     sumConstructorPair (AndPattern a1) (AndPattern a2) =
         SumConstructorSameWithArguments (EqWrap "AndPattern" a1 a2)
@@ -265,7 +265,7 @@ instance
     , Show variable
     , Show1 domain
     , Eq1 domain
-    ) => EqualWithExplanation (Pattern Object domain variable child)
+    ) => EqualWithExplanation (Pattern domain variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -281,7 +281,7 @@ instance
     , Eq annotation
     , Eq Object
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (Pattern Object domain variable) annotation))
+    , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
     ) =>
     EqualWithExplanation (PurePattern domain variable annotation)
   where
@@ -299,7 +299,7 @@ instance
     , Eq annotation
     , Eq Object
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (Pattern Object domain variable) annotation))
+    , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
     ) =>
     WrapperEqualWithExplanation (PurePattern domain variable annotation)
   where
@@ -1449,7 +1449,7 @@ instance
     , Show variable
     , EqualWithExplanation variable
     ) =>
-    EqualWithExplanation (RulePattern Object variable)
+    EqualWithExplanation (RulePattern variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -1459,7 +1459,7 @@ instance
     , Show variable
     , EqualWithExplanation variable
     ) =>
-    StructEqualWithExplanation (RulePattern Object variable)
+    StructEqualWithExplanation (RulePattern variable)
   where
     structConstructorName _ = "RulePattern"
     structFieldsWithNames

@@ -25,5 +25,5 @@ import           Kore.Syntax.Bottom
 simplify
     :: Ord variable
     => Bottom Sort child
-    -> (OrPattern Object variable, SimplificationProof Object)
+    -> (OrPattern variable, SimplificationProof Object)
 simplify Bottom {} = (OrPattern.bottom, SimplificationProof)

@@ -722,7 +722,7 @@ printRewriteRule rule = do
 unparseStrategy
     :: [String]
     -- ^ omit list
-    -> CommonStrategyPattern Object
+    -> CommonStrategyPattern
     -- ^ pattern
     -> String
 unparseStrategy omitList =

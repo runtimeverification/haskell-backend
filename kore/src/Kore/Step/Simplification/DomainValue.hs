@@ -37,8 +37,8 @@ simplify
        , SortedVariable variable
        )
     => SmtMetadataTools attrs
-    -> Domain.Builtin (OrPattern Object variable)
-    -> (OrPattern Object variable, SimplificationProof Object)
+    -> Domain.Builtin (OrPattern variable)
+    -> (OrPattern variable, SimplificationProof Object)
 simplify _ builtin =
     ( MultiOr.filterOr
         (do
@@ -54,7 +54,7 @@ simplifyBuiltin
        , Unparse variable
        , SortedVariable variable
        )
-    => Domain.Builtin (OrPattern Object variable)
+    => Domain.Builtin (OrPattern variable)
     -> MultiOr
         (Conditional Object variable (Domain.Builtin (TermLike variable)))
 simplifyBuiltin =

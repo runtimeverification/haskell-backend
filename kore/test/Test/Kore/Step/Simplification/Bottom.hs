@@ -7,7 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.MetaOrObject
 import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
@@ -37,8 +36,8 @@ test_bottomSimplification =
     ]
 
 evaluate
-    :: Bottom Sort (OrPattern Object Variable)
-    -> OrPattern Object Variable
+    :: Bottom Sort (OrPattern Variable)
+    -> OrPattern Variable
 evaluate bottom =
     case simplify bottom of
         (result, _proof) -> result

@@ -238,7 +238,7 @@ unificationResult
     :: UnificationResultTerm Object
     -> Substitution
     -> Syntax.Predicate Variable
-    -> Pattern Object Variable
+    -> Pattern Variable
 unificationResult (UnificationResultTerm term) sub predicate =
     Conditional
         { term

@@ -424,15 +424,15 @@ rewriteWithPredicate left right predicate =
 runSteps
     :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    ->  (  ExecutionGraph (CommonStrategyPattern Object)
+    ->  (  ExecutionGraph (CommonStrategyPattern)
         -> Maybe (ExecutionGraph b)
         )
     -> (ExecutionGraph b -> a)
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
     -> [Strategy
         (Prim
-            (Pattern Object Variable)
+            (Pattern Variable)
             (RewriteRule Object Variable)
         )
        ]
@@ -458,12 +458,12 @@ runOnePathSteps
     :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
     -> TermLike Variable
     -> [RewriteRule Object Variable]
     -> [RewriteRule Object Variable]
-    -> IO [CommonStrategyPattern Object]
+    -> IO [CommonStrategyPattern]
 runOnePathSteps
     metadataTools
     stepLimit

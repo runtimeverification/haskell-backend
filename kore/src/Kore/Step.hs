@@ -97,10 +97,10 @@ transitionRule
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> Prim (RewriteRule Object Variable)
-    -> (Pattern Object Variable, StepProof Object Variable)
+    -> (Pattern Variable, StepProof Object Variable)
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Object Variable) Simplifier
-        (Pattern Object Variable, StepProof Object Variable)
+        (Pattern Variable, StepProof Object Variable)
 transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify

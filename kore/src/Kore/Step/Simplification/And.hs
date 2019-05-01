@@ -95,9 +95,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> And Sort (OrPattern Object variable)
+    -> And Sort (OrPattern variable)
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -127,7 +127,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (And Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (And Sort) (Valid Object) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -147,10 +147,10 @@ simplifyEvaluated
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> OrPattern Object variable
-    -> OrPattern Object variable
+    -> OrPattern variable
+    -> OrPattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -198,9 +198,9 @@ makeEvaluate
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
-    -> Pattern Object variable
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Pattern variable
+    -> Pattern variable
+    -> BranchT Simplifier (Pattern variable)
 makeEvaluate
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
@@ -229,9 +229,9 @@ makeEvaluateNonBool
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
-    -> Pattern Object variable
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Pattern variable
+    -> Pattern variable
+    -> BranchT Simplifier (Pattern variable)
 makeEvaluateNonBool
     tools
     substitutionSimplifier
@@ -294,5 +294,5 @@ makeTermAnd
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable, SimplificationProof Object)
 makeTermAnd = AndTerms.termAnd

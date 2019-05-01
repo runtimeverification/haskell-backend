@@ -164,7 +164,7 @@ searchVar =
 --  \and{MySort{}}(
 --      V:MySort{},
 --      \top{MySort{}}())
-searchPattern :: Pattern Object Variable
+searchPattern :: Pattern Variable
 searchPattern = Conditional
     { term = searchVar
     , predicate = makeTruePredicate

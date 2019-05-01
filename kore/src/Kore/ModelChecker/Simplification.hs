@@ -42,7 +42,7 @@ checkImplicationIsTop
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object Variable
+    -> Pattern Variable
     -> TermLike Variable
     -> Simplifier Bool
 checkImplicationIsTop

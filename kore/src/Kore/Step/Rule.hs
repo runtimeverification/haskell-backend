@@ -68,7 +68,7 @@ newtype AxiomPatternError = AxiomPatternError ()
 {- | Normal rewriting and function axioms, claims and patterns.
 
  -}
-data RulePattern level variable = RulePattern
+data RulePattern variable = RulePattern
     { left  :: !(TermLike variable)
     , right :: !(TermLike variable)
     , requires :: !(Predicate variable)
@@ -76,11 +76,11 @@ data RulePattern level variable = RulePattern
     , attributes :: !Attribute.Axiom
     }
 
-deriving instance Eq variable => Eq (RulePattern level variable)
-deriving instance Ord variable => Ord (RulePattern level variable)
-deriving instance Show variable => Show (RulePattern level variable)
+deriving instance Eq variable => Eq (RulePattern variable)
+deriving instance Ord variable => Ord (RulePattern variable)
+deriving instance Show variable => Show (RulePattern variable)
 
-instance Unparse variable => Pretty (RulePattern level variable) where
+instance Unparse variable => Pretty (RulePattern variable) where
     pretty rulePattern'@(RulePattern _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
@@ -98,7 +98,7 @@ instance Unparse variable => Pretty (RulePattern level variable) where
 rulePattern
     :: TermLike variable
     -> TermLike variable
-    -> RulePattern Object variable
+    -> RulePattern variable
 rulePattern left right =
     RulePattern
         { left
@@ -111,7 +111,7 @@ rulePattern left right =
 {-  | Equality-based rule pattern.
 -}
 newtype EqualityRule level variable =
-    EqualityRule { getEqualityRule :: RulePattern level variable }
+    EqualityRule { getEqualityRule :: RulePattern variable }
 
 deriving instance Eq variable => Eq (EqualityRule level variable)
 deriving instance Ord variable => Ord (EqualityRule level variable)
@@ -120,7 +120,7 @@ deriving instance Show variable => Show (EqualityRule level variable)
 {-  | Rewrite-based rule pattern.
 -}
 newtype RewriteRule level variable =
-    RewriteRule { getRewriteRule :: RulePattern level variable }
+    RewriteRule { getRewriteRule :: RulePattern variable }
 
 deriving instance Eq variable => Eq (RewriteRule level variable)
 deriving instance Ord variable => Ord (RewriteRule level variable)
@@ -141,7 +141,7 @@ instance (Unparse variable, Ord variable) => Unparse (RewriteRule level variable
 {-  | Implication-based pattern.
 -}
 newtype ImplicationRule level variable =
-    ImplicationRule { getImplicationRule :: RulePattern level variable }
+    ImplicationRule { getImplicationRule :: RulePattern variable }
 
 deriving instance Eq variable => Eq (ImplicationRule level variable)
 deriving instance Ord variable => Ord (ImplicationRule level variable)
@@ -150,7 +150,7 @@ deriving instance Show variable => Show (ImplicationRule level variable)
 qualifiedAxiomOpToConstructor
     :: SymbolOrAlias
     -> Maybe
-        (RulePattern Object variable -> QualifiedAxiomPattern Object variable)
+        (RulePattern variable -> QualifiedAxiomPattern variable)
 qualifiedAxiomOpToConstructor patternHead = case headName of
     "weakExistsFinally" -> Just $ OnePathClaimPattern . OnePathRule
     "weakAlwaysFinally" -> Just $ AllPathClaimPattern . AllPathRule
@@ -161,7 +161,7 @@ qualifiedAxiomOpToConstructor patternHead = case headName of
 {-  | One-Path-Claim rule pattern.
 -}
 newtype OnePathRule level variable =
-    OnePathRule { getOnePathRule :: RulePattern level variable }
+    OnePathRule { getOnePathRule :: RulePattern variable }
 
 deriving instance Eq variable => Eq (OnePathRule level variable)
 deriving instance Ord variable => Ord (OnePathRule level variable)
@@ -170,7 +170,7 @@ deriving instance Show variable => Show (OnePathRule level variable)
 {-  | All-Path-Claim rule pattern.
 -}
 newtype AllPathRule level variable =
-    AllPathRule { getAllPathRule :: RulePattern level variable }
+    AllPathRule { getAllPathRule :: RulePattern variable }
 
 deriving instance Eq variable => Eq (AllPathRule level variable)
 deriving instance Ord variable => Ord (AllPathRule level variable)
@@ -179,22 +179,22 @@ deriving instance Show variable => Show (AllPathRule level variable)
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
-data QualifiedAxiomPattern level variable
-    = RewriteAxiomPattern (RewriteRule level variable)
-    | FunctionAxiomPattern (EqualityRule level variable)
-    | OnePathClaimPattern (OnePathRule level variable)
-    | AllPathClaimPattern (AllPathRule level variable)
-    | ImplicationAxiomPattern (ImplicationRule level variable)
+data QualifiedAxiomPattern variable
+    = RewriteAxiomPattern (RewriteRule Object variable)
+    | FunctionAxiomPattern (EqualityRule Object variable)
+    | OnePathClaimPattern (OnePathRule Object variable)
+    | AllPathClaimPattern (AllPathRule Object variable)
+    | ImplicationAxiomPattern (ImplicationRule Object variable)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
     -- not only to function-related ones.
 
-deriving instance Eq variable => Eq (QualifiedAxiomPattern level variable)
-deriving instance Ord variable => Ord (QualifiedAxiomPattern level variable)
-deriving instance Show variable => Show (QualifiedAxiomPattern level variable)
+deriving instance Eq variable => Eq (QualifiedAxiomPattern variable)
+deriving instance Ord variable => Ord (QualifiedAxiomPattern variable)
+deriving instance Show variable => Show (QualifiedAxiomPattern variable)
 
 {- | Does the axiom pattern represent a heating rule?
  -}
-isHeatingRule :: RulePattern Object variable -> Bool
+isHeatingRule :: RulePattern variable -> Bool
 isHeatingRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Heat -> True
@@ -202,7 +202,7 @@ isHeatingRule RulePattern { attributes } =
 
 {- | Does the axiom pattern represent a cooling rule?
  -}
-isCoolingRule :: RulePattern Object variable -> Bool
+isCoolingRule :: RulePattern variable -> Bool
 isCoolingRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Cool -> True
@@ -210,7 +210,7 @@ isCoolingRule RulePattern { attributes } =
 
 {- | Does the axiom pattern represent a normal rule?
  -}
-isNormalRule :: RulePattern Object variable -> Bool
+isNormalRule :: RulePattern variable -> Bool
 isNormalRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Normal -> True
@@ -301,7 +301,7 @@ extractImplicationClaimFrom sentence =
 -- | Attempts to extract a rule from the 'Verified.Sentence'.
 fromSentence
     :: Verified.Sentence
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
 fromSentence (SentenceAxiomSentence sentenceAxiom) =
     fromSentenceAxiom sentenceAxiom
 fromSentence _ =
@@ -310,7 +310,7 @@ fromSentence _ =
 -- | Attempts to extract a rule from the 'Verified.SentenceAxiom'.
 fromSentenceAxiom
     :: Verified.SentenceAxiom
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
 fromSentenceAxiom sentenceAxiom = do
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
@@ -325,7 +325,7 @@ not encode a normal rewrite or function axiom.
 patternToAxiomPattern
     :: Attribute.Axiom
     -> TermLike Variable
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Object Variable)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
 patternToAxiomPattern attributes pat =
     case pat of
         -- normal rewrite axioms
@@ -441,8 +441,8 @@ refreshRulePattern
         , SortedVariable variable
         )
     => Set variable  -- ^ Variables to avoid
-    -> RulePattern Object variable
-    -> (Map variable variable, RulePattern Object variable)
+    -> RulePattern variable
+    -> (Map variable variable, RulePattern variable)
 refreshRulePattern avoid rule1 =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
@@ -464,7 +464,7 @@ refreshRulePattern avoid rule1 =
  -}
 freeVariables
     :: Ord variable
-    => RulePattern Object variable
+    => RulePattern variable
     -> Set variable
 freeVariables RulePattern { left, right, requires } =
     Set.unions
@@ -478,8 +478,8 @@ freeVariables RulePattern { left, right, requires } =
 mapVariables
     :: Ord variable2
     => (variable1 -> variable2)
-    -> RulePattern Object variable1
-    -> RulePattern Object variable2
+    -> RulePattern variable1
+    -> RulePattern variable2
 mapVariables mapping rule1 =
     rule1
         { left = TermLike.mapVariables mapping left
@@ -502,8 +502,8 @@ substitute
         , SortedVariable variable
         )
     => Map variable (TermLike variable)
-    -> RulePattern Object variable
-    -> RulePattern Object variable
+    -> RulePattern variable
+    -> RulePattern variable
 substitute subst rulePattern' =
     rulePattern'
         { left = TermLike.substitute subst left

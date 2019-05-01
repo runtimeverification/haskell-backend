@@ -155,9 +155,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Equals Sort (OrPattern Object variable)
+    -> Equals Sort (OrPattern variable)
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -183,7 +183,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Equals Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Equals Sort) (Valid Object) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -203,10 +203,10 @@ simplifyEvaluated
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> OrPattern Object variable
-    -> OrPattern Object variable
+    -> OrPattern variable
+    -> OrPattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -273,10 +273,10 @@ makeEvaluateFunctionalOr
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object variable
-    -> [Pattern Object variable]
+    -> Pattern variable
+    -> [Pattern variable]
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeEvaluateFunctionalOr
     tools
     substitutionSimplifier
@@ -400,10 +400,10 @@ makeEvaluate
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object variable
-    -> Pattern Object variable
+    -> Pattern variable
+    -> Pattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeEvaluate
     _
     _
@@ -536,7 +536,7 @@ makeEvaluateTermsAssumesNoBottom
     -> TermLike variable
     -> TermLike variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeEvaluateTermsAssumesNoBottom
     tools
     substitutionSimplifier
@@ -586,7 +586,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeEvaluateTermsAssumesNoBottomMaybe
     tools
     substitutionSimplifier

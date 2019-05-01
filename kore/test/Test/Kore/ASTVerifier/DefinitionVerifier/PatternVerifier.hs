@@ -34,22 +34,22 @@ data PatternRestrict
     = NeedsInternalDefinitions
     | NeedsSortedParent
 
-data TestPattern level = TestPattern
+data TestPattern = TestPattern
     { testPatternPattern
-        :: !(Pattern level Domain.Builtin Variable (TermLike Variable))
+        :: !(Pattern Domain.Builtin Variable (TermLike Variable))
     , testPatternSort       :: !Sort
     , testPatternErrorStack :: !ErrorStack
     }
 
 newtype VariableOfDeclaredSort level = VariableOfDeclaredSort (Variable)
 
-testPatternErrorStackStrings :: TestPattern Object -> [String]
+testPatternErrorStackStrings :: TestPattern -> [String]
 testPatternErrorStackStrings
     TestPattern {testPatternErrorStack = ErrorStack strings}
   =
     strings
 
-testPatternUnifiedPattern :: TestPattern Object -> TermLike Variable
+testPatternUnifiedPattern :: TestPattern -> TermLike Variable
 testPatternUnifiedPattern
     TestPattern { testPatternPattern, testPatternSort }
   =
@@ -754,7 +754,7 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -798,7 +798,7 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Meta Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -839,7 +839,7 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -895,7 +895,7 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Meta Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -938,7 +938,7 @@ failureTestsForMetaPattern
             patternRestrict
 
 genericPatternInAllContexts
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -1004,7 +1004,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -1045,7 +1045,7 @@ objectPatternInAllContexts
             }
 
 patternsInAllContexts
-    :: [TestPattern Object]
+    :: [TestPattern]
     -> NamePrefix
     -> SortVariablesThatMustBeDeclared Object
     -> SortVariablesThatMustBeDeclared Object
@@ -1121,15 +1121,15 @@ patternsInAllContexts
                 }
 
 genericPatternInPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: Pattern Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> OperandSort Object
     -> Helpers.ResultSort Object
     -> VariableOfDeclaredSort Object
     -> SymbolOrAlias
     -> SymbolOrAlias
     -> PatternRestrict
-    -> [TestPattern Object]
+    -> [TestPattern]
 genericPatternInPatterns
     testedPattern
     anotherPattern
@@ -1192,17 +1192,17 @@ genericPatternInPatterns
             }
 
 objectPatternInPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: Pattern Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> OperandSort Object
-    -> [TestPattern Object]
+    -> [TestPattern]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> Sort
     -> Variable
-    -> [TestPattern Object]
+    -> [TestPattern]
 patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern
         { testPatternPattern = ExistsPattern Exists
@@ -1246,11 +1246,11 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     testedKorePattern = asPurePattern (valid :< testedPattern)
 
 patternInUnquantifiedGenericPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: Pattern Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> OperandSort Object
     -> Helpers.ResultSort Object
-    -> [TestPattern Object]
+    -> [TestPattern]
 patternInUnquantifiedGenericPatterns
     testedPattern
     anotherPattern
@@ -1411,10 +1411,10 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asPurePattern (valid :< testedPattern)
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: Pattern Domain.Builtin Variable (TermLike Variable)
+    -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> OperandSort Object
-    -> [TestPattern Object]
+    -> [TestPattern]
 patternInUnquantifiedObjectPatterns
     testedPattern
     anotherPattern
@@ -1469,7 +1469,7 @@ testsForUnifiedPatternInTopLevelContext
     -> SortVariablesThatMustBeDeclared Object
     -> [Verified.Sentence]
     -> PatternRestrict
-    -> [TestPattern Object -> TestData]
+    -> [TestPattern -> TestData]
 testsForUnifiedPatternInTopLevelContext
     namePrefix
     additionalSort
@@ -1487,7 +1487,7 @@ testsForUnifiedPatternInTopLevelGenericContext
     -> SortVariablesThatMustBeDeclared Object
     -> [Verified.Sentence]
     -> PatternRestrict
-    -> [TestPattern Object -> TestData]
+    -> [TestPattern -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext
     (NamePrefix _)
     (DeclaredSort _)

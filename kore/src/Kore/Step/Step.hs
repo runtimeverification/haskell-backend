@@ -128,34 +128,34 @@ solution and the renamed rule is wrapped with the combined condition.
 
  -}
 type UnifiedRule variable =
-    Conditional Object variable (RulePattern Object variable)
+    Conditional Object variable (RulePattern variable)
 
-withoutUnification :: UnifiedRule variable -> RulePattern Object variable
+withoutUnification :: UnifiedRule variable -> RulePattern variable
 withoutUnification = Conditional.term
 
 type Result variable =
     Step.Result
         (UnifiedRule (Target variable))
-        (Pattern Object variable)
+        (Pattern variable)
 
 type Results variable =
     Step.Results
         (UnifiedRule (Target variable))
-        (Pattern Object variable)
+        (Pattern variable)
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
 unwrapRule
     :: Ord variable
-    => RulePattern Object (Target variable) -> RulePattern Object variable
+    => RulePattern (Target variable) -> RulePattern variable
 unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
 unwrapConfiguration
     :: Ord variable
-    => Pattern Object (Target variable)
-    -> Pattern Object variable
+    => Pattern (Target variable)
+    -> Pattern variable
 unwrapConfiguration config@Conditional { substitution } =
     Pattern.mapVariables Target.unwrapVariable
         config { Pattern.substitution = substitution' }
@@ -191,9 +191,9 @@ unifyRule
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Initial configuration
-    -> RulePattern Object variable
+    -> RulePattern variable
     -- ^ Rule
     -> BranchT unifier (UnifiedRule variable)
 unifyRule
@@ -328,11 +328,11 @@ finalizeAppliedRule
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> RulePattern Object variable
+    -> RulePattern variable
     -- ^ Applied rule
     -> OrPredicate Object variable
     -- ^ Conditions of applied rule
-    -> BranchT unifier (OrPattern Object variable)
+    -> BranchT unifier (OrPattern variable)
 finalizeAppliedRule
     metadataTools
     predicateSimplifier
@@ -388,11 +388,11 @@ applyRemainder
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Initial configuration
     -> Syntax.Predicate variable
     -- ^ Remainder
-    -> BranchT unifier (Pattern Object variable)
+    -> BranchT unifier (Pattern variable)
 applyRemainder
     metadataTools
     predicateSimplifier
@@ -419,14 +419,14 @@ applyRemainder
 
 toAxiomVariables
     :: Ord variable
-    => RulePattern Object variable
-    -> RulePattern Object (Target variable)
+    => RulePattern variable
+    -> RulePattern (Target variable)
 toAxiomVariables = RulePattern.mapVariables Target.Target
 
 toConfigurationVariables
     :: Ord variable
-    => Pattern Object variable
-    -> Pattern Object (Target variable)
+    => Pattern variable
+    -> Pattern (Target variable)
 toConfigurationVariables = Pattern.mapVariables Target.NonTarget
 
 {- | Fully apply a single rule to the initial configuration.
@@ -453,9 +453,9 @@ applyRule
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Configuration being rewritten.
-    -> RulePattern Object variable
+    -> RulePattern variable
     -- ^ Rewriting axiom
     -> unifier [Result variable]
 applyRule
@@ -536,7 +536,7 @@ applyRewriteRule
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Configuration being rewritten.
     -> RewriteRule Object variable
     -- ^ Rewriting axiom
@@ -584,13 +584,13 @@ checkSubstitutionCoverage
         , unifier ~ unifierM (Target variable)
         )
     => SmtMetadataTools StepperAttributes
-    -> Pattern Object (Target variable)
+    -> Pattern (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
-    -> Pattern Object (Target variable)
+    -> Pattern (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier (Pattern Object variable)
+    -> BranchT unifier (Pattern variable)
 checkSubstitutionCoverage tools initial unified final
   | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
   | isSymbolic =
@@ -685,9 +685,9 @@ applyRulesInParallel
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> [RulePattern Object variable]
+    -> [RulePattern variable]
     -- ^ Rewrite rules
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesInParallel
@@ -752,7 +752,7 @@ applyRewriteRules
 
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRewriteRules
@@ -796,9 +796,9 @@ sequenceRules
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Configuration being rewritten
-    -> [RulePattern Object variable]
+    -> [RulePattern variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
 sequenceRules
@@ -814,11 +814,11 @@ sequenceRules
     -- The single remainder of the input configuration after rewriting to
     -- produce the disjunction of results.
     remainingAfter
-        :: Pattern Object variable
+        :: Pattern variable
         -- ^ initial configuration
         -> [Result variable]
         -- ^ results
-        -> unifier (MultiOr (Pattern Object variable))
+        -> unifier (MultiOr (Pattern variable))
     remainingAfter config results = do
         let remainder =
                 Remainder.remainder
@@ -836,7 +836,7 @@ sequenceRules
 
     sequenceRules1
         :: Results variable
-        -> RulePattern Object variable
+        -> RulePattern variable
         -> unifier(Results variable)
     sequenceRules1 results rule = do
         results' <- traverse (applyRule' rule) (Step.remainders results)
@@ -884,7 +884,7 @@ sequenceRewriteRules
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Configuration being rewritten
     -> [RewriteRule Object variable]
     -- ^ Rewrite rules

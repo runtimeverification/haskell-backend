@@ -114,9 +114,9 @@ type BuiltinAndAxiomSimplifierMap level =
 -}
 data AttemptedAxiomResults level variable =
     AttemptedAxiomResults
-        { results :: !(OrPattern level variable)
+        { results :: !(OrPattern variable)
         -- ^ The result of applying the axiom
-        , remainders :: !(OrPattern level variable)
+        , remainders :: !(OrPattern variable)
         -- ^ The part of the pattern that was not rewritten by the axiom.
         }
     deriving Generic

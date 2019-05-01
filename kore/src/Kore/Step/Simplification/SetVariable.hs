@@ -26,7 +26,7 @@ an or containing a term made of that variable.
 simplify
     :: (Ord variable, SortedVariable variable)
     => SetVariable variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    -> (OrPattern variable, SimplificationProof Object)
 simplify (SetVariable var) =
     ( OrPattern.fromPattern $ Pattern.fromTermLike $ mkSetVar var
     , SimplificationProof

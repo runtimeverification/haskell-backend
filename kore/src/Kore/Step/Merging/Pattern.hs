@@ -54,9 +54,9 @@ mergeWithPredicate
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate Object variable
     -- ^ Condition and substitution to add.
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable, SimplificationProof Object)
 mergeWithPredicate
     tools
     substitutionSimplifier
@@ -107,9 +107,9 @@ mergeWithEvaluatedCondition
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
+    -> Pattern variable
     -> Predicate Object variable
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable, SimplificationProof Object)
 mergeWithEvaluatedCondition
     tools
     substitutionSimplifier

@@ -60,7 +60,7 @@ import           Kore.Unparser
 type ParsedPattern = ParsedPurePattern
 
 asParsedPattern
-    :: (Pattern Object Domain.Builtin Variable) ParsedPattern
+    :: (Pattern Domain.Builtin Variable) ParsedPattern
     -> ParsedPattern
 asParsedPattern patternBase = asPurePattern (mempty :< patternBase)
 
@@ -347,7 +347,7 @@ Always starts with @{@.
 symbolOrAliasPatternRemainderParser
     :: Parser child
     -> Id  -- ^ The already parsed prefix.
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 symbolOrAliasPatternRemainderParser childParser identifier =
     ApplicationPattern
     <$> (   Application
@@ -421,7 +421,7 @@ BNF definitions:
 variableOrTermPatternParser
     :: Parser child
     -> Bool  -- ^ Whether it can be a Set Variable
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 variableOrTermPatternParser childParser isSetVar = do
     identifier <- idParser
     c <- ParserUtils.peekChar'
@@ -566,7 +566,7 @@ leveledMLConstructorParser
     :: Functor domain
     => Parser child
     -> (Parser child -> Parser (domain child))
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 leveledMLConstructorParser childParser domainValueParser = do
     void (Parser.char '\\')
     keywordBasedParsers
@@ -604,7 +604,7 @@ mlConstructorRemainderParser
     => Parser child
     -> (Parser child -> Parser (domain child))
     -> MLPatternType
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 mlConstructorRemainderParser childParser domainValueParser patternType =
     case patternType of
         AndPatternType -> AndPattern <$>
@@ -1011,7 +1011,7 @@ leveledPatternParser
     :: Functor domain
     => Parser child
     -> (Parser child -> Parser (domain child))
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 leveledPatternParser patternParser domainValueParser = do
     c <- ParserUtils.peekChar'
     case c of

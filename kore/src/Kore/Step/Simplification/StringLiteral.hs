@@ -26,7 +26,7 @@ an or containing a term made of that literal.
 simplify
     :: Ord variable
     => StringLiteral
-    -> (OrPattern Meta variable, SimplificationProof Meta)
+    -> (OrPattern variable, SimplificationProof Meta)
 simplify (StringLiteral str) =
     ( OrPattern.fromPattern $ Pattern.fromTermLike $ mkStringLiteral str
     , SimplificationProof

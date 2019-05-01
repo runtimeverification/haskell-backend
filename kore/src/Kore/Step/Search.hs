@@ -135,8 +135,8 @@ matchWith
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object variable
-    -> Pattern Object variable
+    -> Pattern variable
+    -> Pattern variable
     -> MaybeT Simplifier (OrPredicate Object variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-

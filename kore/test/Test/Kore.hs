@@ -346,7 +346,7 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Common.Pattern Object dom Variable child)
+    -> Gen (Common.Pattern dom Variable child)
 patternGen childGen patternSort =
     Gen.frequency
         [ (1, Common.AndPattern <$> andGen childGen patternSort)
@@ -736,10 +736,10 @@ sortActual name sorts =
         , sortActualSorts = sorts
         }
 
-expandedPatternGen :: Gen (Pattern Object Variable)
+expandedPatternGen :: Gen (Pattern Variable)
 expandedPatternGen =
     Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
-orPatternGen :: Gen (OrPattern Object Variable)
+orPatternGen :: Gen (OrPattern Variable)
 orPatternGen =
     OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) expandedPatternGen

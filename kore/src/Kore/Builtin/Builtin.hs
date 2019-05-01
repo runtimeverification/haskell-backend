@@ -619,7 +619,7 @@ parseString parser lit =
  -}
 appliedFunction
     :: (Monad m, Ord variable, level ~ Object)
-    => Pattern level variable
+    => Pattern variable
     -> m (AttemptedAxiom level variable)
 appliedFunction epat =
     return $ Applied AttemptedAxiomResults
@@ -646,7 +646,7 @@ unaryOperator
     -- ^ Parse operand
     ->  (   forall variable.
             Ord variable
-        => Sort -> b -> Pattern Object variable
+        => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -699,7 +699,7 @@ binaryOperator
         )
     -- ^ Extract domain value
     ->  (  forall variable . Ord variable
-        => Sort -> b -> Pattern Object variable
+        => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -752,7 +752,7 @@ ternaryOperator
         )
     -- ^ Extract domain value
     ->  (  forall variable. Ord variable
-        => Sort -> b -> Pattern Object variable
+        => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -957,7 +957,7 @@ unifyEqualsUnsolved
         , Show variable
         , Unparse variable
         , level ~ Object
-        , expanded ~ Pattern level variable
+        , expanded ~ Pattern variable
         , patt ~ TermLike variable
         , proof ~ SimplificationProof level
         )

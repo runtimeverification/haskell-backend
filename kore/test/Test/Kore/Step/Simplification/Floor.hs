@@ -81,7 +81,7 @@ test_floorSimplification =
                     [ Pattern.top ]
                 )
                 (makeEvaluate
-                    (Pattern.top :: Pattern Object Variable)
+                    (Pattern.top :: Pattern Variable)
                 )
             -- floor(bottom) = bottom
             assertEqualWithExplanation "floor(bottom)"
@@ -89,7 +89,7 @@ test_floorSimplification =
                     []
                 )
                 (makeEvaluate
-                    (Pattern.bottom :: Pattern Object Variable)
+                    (Pattern.bottom :: Pattern Variable)
                 )
         )
     , testCase "floor with predicates and substitutions"
@@ -157,8 +157,8 @@ test_floorSimplification =
 
 makeFloor
     :: Ord variable
-    => [Pattern Object variable]
-    -> Floor Sort (OrPattern Object variable)
+    => [Pattern variable]
+    -> Floor Sort (OrPattern variable)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
@@ -167,14 +167,14 @@ makeFloor patterns =
         }
 
 evaluate
-    :: Floor Sort (OrPattern Object Variable)
-    -> OrPattern Object Variable
+    :: Floor Sort (OrPattern Variable)
+    -> OrPattern Variable
 evaluate floor' =
     case simplify floor' of
         (result, _proof) -> result
 
 
-makeEvaluate :: Pattern Object Variable -> OrPattern Object Variable
+makeEvaluate :: Pattern Variable -> OrPattern Variable
 makeEvaluate child =
     case makeEvaluateFloor child of
         (result, _proof) -> result

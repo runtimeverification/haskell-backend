@@ -907,7 +907,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
         (MultiOr.make expectPure)
         actualPure
   where
-    termToPattern :: TermLike Variable -> Pattern Object Variable
+    termToPattern :: TermLike Variable -> Pattern Variable
     termToPattern (Bottom_ _) =
         Conditional.bottom
     termToPattern term =
@@ -916,7 +916,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-    predSubstToPattern :: Predicate Object Variable -> Pattern Object Variable
+    predSubstToPattern :: Predicate Object Variable -> Pattern Variable
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
       =
@@ -992,8 +992,8 @@ testSort2 =
 
 evaluateOr
     :: SmtMetadataTools StepperAttributes
-    -> Equals Sort (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+    -> Equals Sort (OrPattern Variable)
+    -> IO (OrPattern Variable)
 evaluateOr tools equals =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -1007,16 +1007,16 @@ evaluateOr tools equals =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluate = evaluateGeneric
 
 evaluateGeneric
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluateGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

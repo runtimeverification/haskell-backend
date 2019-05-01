@@ -71,10 +71,10 @@ check
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonModalPattern Object
+    ->  (  CommonModalPattern
         -> [Strategy
             (Prim
-                (CommonModalPattern Object)
+                (CommonModalPattern)
                 (RewriteRule Object Variable)
             )
            ]
@@ -103,10 +103,10 @@ check
 
 bmcStrategy
     :: [Axiom Object]
-    -> CommonModalPattern Object
+    -> CommonModalPattern
     -> [Strategy
         (Prim
-            (CommonModalPattern Object)
+            (CommonModalPattern)
             (RewriteRule Object Variable)
         )
        ]
@@ -126,10 +126,10 @@ checkClaim
     -> PredicateSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonModalPattern Object
+    ->  (  CommonModalPattern
         -> [Strategy
             (Prim
-                (CommonModalPattern Object)
+                (CommonModalPattern)
                 (RewriteRule Object Variable)
             )
            ]
@@ -164,7 +164,7 @@ checkClaim
         trace (show finalResult) (return finalResult)
   where
     transitionRule'
-        :: Prim (CommonModalPattern Object) (RewriteRule Object Variable)
+        :: Prim (CommonModalPattern) (RewriteRule Object Variable)
         -> (CommonProofState Object)
         -> ModelChecker.Transition (CommonProofState Object)
     transitionRule' =

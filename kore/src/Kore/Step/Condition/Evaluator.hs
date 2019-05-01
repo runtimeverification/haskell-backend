@@ -81,7 +81,7 @@ asPredicate
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
+    => Pattern variable
     -> (Predicate Object variable, SimplificationProof Object)
 asPredicate
     Conditional {term, predicate, substitution}

@@ -347,7 +347,7 @@ evaluateWithDefinitionAxioms
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
-        expanded :: Pattern Object variable
+        expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
     let unwrapEqualityRule =

@@ -79,9 +79,9 @@ simplify
     -> CofreeF
         (Application SymbolOrAlias)
         (Valid variable Object)
-        (OrPattern Object variable)
+        (OrPattern variable)
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -132,9 +132,9 @@ makeAndEvaluateApplications
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
     -> SymbolOrAlias
-    -> [Pattern Object variable]
+    -> [Pattern variable]
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeAndEvaluateApplications
     tools
     substitutionSimplifier
@@ -171,9 +171,9 @@ makeAndEvaluateSymbolApplications
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
     -> SymbolOrAlias
-    -> [Pattern Object variable]
+    -> [Pattern variable]
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeAndEvaluateSymbolApplications
     tools
     substitutionSimplifier
@@ -217,7 +217,7 @@ evaluateApplicationFunction
     -> ExpandedApplication Object variable
     -- ^ The pattern to be evaluated
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 evaluateApplicationFunction
     tools
     substitutionSimplifier
@@ -249,7 +249,7 @@ makeExpandedApplication
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
     -> SymbolOrAlias
-    -> [Pattern Object variable]
+    -> [Pattern variable]
     -> Simplifier
         (ExpandedApplication Object variable, SimplificationProof Object)
 makeExpandedApplication

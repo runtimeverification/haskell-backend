@@ -48,8 +48,8 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Or Sort (OrPattern Object variable)
-    ->  ( OrPattern Object variable
+    => Or Sort (OrPattern variable)
+    ->  ( OrPattern variable
         , SimplificationProof Object
         )
 \end{code}
@@ -76,9 +76,9 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => OrPattern Object variable
-    -> OrPattern Object variable
-    ->  ( OrPattern Object variable
+    => OrPattern variable
+    -> OrPattern variable
+    ->  ( OrPattern variable
         , SimplificationProof Object
         )
 \end{code}
@@ -87,7 +87,7 @@ simplifyEvaluated
 One way to preserve the required sort annotations is to make `simplifyEvaluated`
 take an argument of type
 ``` haskell
-CofreeF (Or Sort) (Valid Object) (OrPattern Object variable)
+CofreeF (Or Sort) (Valid Object) (OrPattern variable)
 ```
 instead of two `OrPattern` arguments. The type of `makeEvaluate` may
 be changed analogously. The `Valid` annotation will eventually cache
@@ -130,11 +130,11 @@ disjoinPredicates
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
+    => Pattern variable
     -- ^ Configuration
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Disjunction
-    -> Maybe (Pattern Object variable, SimplificationProof Object)
+    -> Maybe (Pattern variable, SimplificationProof Object)
 \end{code}
 
 When two configurations have the same substitution, it may be possible to
@@ -239,11 +239,11 @@ topAnnihilates
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
+    => Pattern variable
     -- ^ Configuration
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Disjunction
-    -> Maybe (Pattern Object variable, SimplificationProof Object)
+    -> Maybe (Pattern variable, SimplificationProof Object)
 \end{code}
 
 `⊤` is the annihilator of `∨`; when two configurations have the same

@@ -47,122 +47,122 @@ Section 9.1.4 (Patterns).
 -- NOTE: If you are adding a case to Pattern, you should add cases in:
 -- ASTUtils/SmartConstructors.hs
 -- as well as a ton of other places, probably.
-data Pattern level domain variable child where
+data Pattern domain variable child where
     AndPattern
-        :: !(And Sort child) -> Pattern level domain variable child
+        :: !(And Sort child) -> Pattern domain variable child
     ApplicationPattern
         :: !(Application SymbolOrAlias child)
-        -> Pattern level domain variable child
+        -> Pattern domain variable child
     BottomPattern
-        :: !(Bottom Sort child) -> Pattern level domain variable child
+        :: !(Bottom Sort child) -> Pattern domain variable child
     CeilPattern
-        :: !(Ceil Sort child) -> Pattern level domain variable child
+        :: !(Ceil Sort child) -> Pattern domain variable child
     DomainValuePattern
         :: !(domain child)
-        -> Pattern level domain variable child
+        -> Pattern domain variable child
     EqualsPattern
-        :: !(Equals Sort child) -> Pattern level domain variable child
+        :: !(Equals Sort child) -> Pattern domain variable child
     ExistsPattern
-        :: !(Exists Sort variable child) -> Pattern level domain variable child
+        :: !(Exists Sort variable child) -> Pattern domain variable child
     FloorPattern
-        :: !(Floor Sort child) -> Pattern level domain variable child
+        :: !(Floor Sort child) -> Pattern domain variable child
     ForallPattern
-        :: !(Forall Sort variable child) -> Pattern level domain variable child
+        :: !(Forall Sort variable child) -> Pattern domain variable child
     IffPattern
-        :: !(Iff Sort child) -> Pattern level domain variable child
+        :: !(Iff Sort child) -> Pattern domain variable child
     ImpliesPattern
-        :: !(Implies Sort child) -> Pattern level domain variable child
+        :: !(Implies Sort child) -> Pattern domain variable child
     InPattern
-        :: !(In Sort child) -> Pattern level domain variable child
+        :: !(In Sort child) -> Pattern domain variable child
     NextPattern
-        :: !(Next Sort child) -> Pattern level domain variable child
+        :: !(Next Sort child) -> Pattern domain variable child
     NotPattern
-        :: !(Not Sort child) -> Pattern level domain variable child
+        :: !(Not Sort child) -> Pattern domain variable child
     OrPattern
-        :: !(Or Sort child) -> Pattern level domain variable child
+        :: !(Or Sort child) -> Pattern domain variable child
     RewritesPattern
-        :: !(Rewrites Sort child) -> Pattern level domain variable child
+        :: !(Rewrites Sort child) -> Pattern domain variable child
     StringLiteralPattern
-        :: !StringLiteral -> Pattern level domain variable child
+        :: !StringLiteral -> Pattern domain variable child
     CharLiteralPattern
-        :: !CharLiteral -> Pattern level domain variable child
+        :: !CharLiteral -> Pattern domain variable child
     TopPattern
-        :: !(Top Sort child) -> Pattern level domain variable child
+        :: !(Top Sort child) -> Pattern domain variable child
     VariablePattern
-        :: !variable -> Pattern level domain variable child
+        :: !variable -> Pattern domain variable child
     InhabitantPattern
-        :: !Sort -> Pattern level domain variable child
+        :: !Sort -> Pattern domain variable child
     SetVariablePattern
-        :: !(SetVariable variable) -> Pattern level domain variable child
+        :: !(SetVariable variable) -> Pattern domain variable child
 
 $newDefinitionGroup
 {- dummy top-level splice to make ''Pattern available for lifting -}
 
 instance
     (Eq variable, Eq1 domain) =>
-    Eq1 (Pattern level domain variable)
+    Eq1 (Pattern domain variable)
   where
     liftEq = $(makeLiftEq ''Pattern)
 
 instance
     (Ord variable, Ord1 domain) =>
-    Ord1 (Pattern level domain variable)
+    Ord1 (Pattern domain variable)
   where
     liftCompare = $(makeLiftCompare ''Pattern)
 
 instance
     (Show variable, Show1 domain) =>
-    Show1 (Pattern level domain variable)
+    Show1 (Pattern domain variable)
   where
     liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
 
-deriving instance Generic (Pattern level domain variable child)
+deriving instance Generic (Pattern domain variable child)
 
 instance
     ( Hashable child
     , Hashable variable
     , Hashable (domain child)
     ) =>
-    Hashable (Pattern level domain variable child)
+    Hashable (Pattern domain variable child)
 
 instance
     ( NFData child
     , NFData variable
     , NFData (domain child)
     ) =>
-    NFData (Pattern level domain variable child)
+    NFData (Pattern domain variable child)
 
 instance
     (Eq child, Eq variable, Eq1 domain) =>
-    Eq (Pattern level domain variable child)
+    Eq (Pattern domain variable child)
   where
     (==) = eq1
 
 instance
     (Ord child, Ord variable, Ord1 domain) =>
-    Ord (Pattern level domain variable child)
+    Ord (Pattern domain variable child)
   where
     compare = compare1
 
 instance
     (Show child, Show variable, Show1 domain) =>
-    Show (Pattern level domain variable child)
+    Show (Pattern domain variable child)
   where
     showsPrec = showsPrec1
 
-deriving instance Functor domain => Functor (Pattern level domain variable)
+deriving instance Functor domain => Functor (Pattern domain variable)
 
-deriving instance Foldable domain => Foldable (Pattern level domain variable)
+deriving instance Foldable domain => Foldable (Pattern domain variable)
 
 deriving instance
-    Traversable domain => Traversable (Pattern level domain variable)
+    Traversable domain => Traversable (Pattern domain variable)
 
 instance
     ( Unparse child
     , Unparse (domain child)
     , Unparse variable
     ) =>
-    Unparse (Pattern level domain variable child)
+    Unparse (Pattern domain variable child)
   where
     unparse =
         \case
@@ -228,8 +228,8 @@ not injective!
 -}
 mapVariables
     :: (variable1 -> variable2)
-    -> Pattern level domain variable1 child
-    -> Pattern level domain variable2 child
+    -> Pattern domain variable1 child
+    -> Pattern domain variable2 child
 mapVariables mapping =
     runIdentity . traverseVariables (Identity . mapping)
 {-# INLINE mapVariables #-}
@@ -243,8 +243,8 @@ traversal is not injective!
 traverseVariables
     :: Applicative f
     => (variable1 -> f variable2)
-    -> Pattern level domain variable1 child
-    -> f (Pattern level domain variable2 child)
+    -> Pattern domain variable1 child
+    -> f (Pattern domain variable2 child)
 traverseVariables traversing =
     \case
         -- Non-trivial cases
@@ -281,8 +281,8 @@ traverseVariables traversing =
 -- | Use the provided mapping to replace all domain values in a 'Pattern' head.
 mapDomainValues
     :: (forall child'. domain1 child' -> domain2 child')
-    -> Pattern level domain1 variable child
-    -> Pattern level domain2 variable child
+    -> Pattern domain1 variable child
+    -> Pattern domain2 variable child
 mapDomainValues mapping =
     \case
         -- Non-trivial case
@@ -317,8 +317,8 @@ trivially because it must contain no domain values.
 
  -}
 castVoidDomainValues
-    :: Pattern level (Const Void) variable child
-    -> Pattern level domain       variable child
+    :: Pattern (Const Void) variable child
+    -> Pattern domain       variable child
 castVoidDomainValues = mapDomainValues (\case {})
 
 {-|Enumeration of patterns starting with @\@

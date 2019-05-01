@@ -336,7 +336,7 @@ test_functionRegistry =
   where
     makePattern
         :: TermLike Variable
-        -> Pattern Object Variable
+        -> Pattern Variable
     makePattern pat =
         Conditional
         { term = pat

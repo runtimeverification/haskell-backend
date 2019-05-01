@@ -174,7 +174,7 @@ testEvaluateBoolean a b =
       | otherwise = Pattern.bottom
     r = a == b
 
-termA :: Pattern Object Variable
+termA :: Pattern Variable
 termA =
     Conditional
         { term = Mock.a
@@ -182,14 +182,14 @@ termA =
         , substitution = mempty
         }
 
-termNotA :: Pattern Object Variable
+termNotA :: Pattern Variable
 termNotA = mkNot <$> termA
 
 makeIff
     :: (Ord variable)
-    => [Pattern Object variable]
-    -> [Pattern Object variable]
-    -> Iff Sort (OrPattern Object variable)
+    => [Pattern variable]
+    -> [Pattern variable]
+    -> Iff Sort (OrPattern variable)
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
@@ -198,8 +198,8 @@ makeIff first second =
         }
 
 simplify
-    :: Iff Sort (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+    :: Iff Sort (OrPattern Variable)
+    -> IO (OrPattern Variable)
 simplify iff0 =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -212,9 +212,9 @@ simplify iff0 =
         iff0
 
 makeEvaluate
-    :: Pattern Object Variable
-    -> Pattern Object Variable
-    -> OrPattern Object Variable
+    :: Pattern Variable
+    -> Pattern Variable
+    -> OrPattern Variable
 makeEvaluate = Iff.makeEvaluate
 
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol

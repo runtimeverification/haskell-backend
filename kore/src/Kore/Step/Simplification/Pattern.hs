@@ -50,9 +50,9 @@ simplify
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
+    -> Pattern variable
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -98,9 +98,9 @@ simplifyPredicate
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ The condition to be evaluated.
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable, SimplificationProof Object)
 simplifyPredicate
     tools
     substitutionSimplifier

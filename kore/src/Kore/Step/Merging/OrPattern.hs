@@ -58,10 +58,10 @@ mergeWithPredicate
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate Object variable
     -- ^ Predicate to add.
-    -> OrPattern Object variable
+    -> OrPattern variable
     -- ^ Pattern to which the condition should be added.
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 mergeWithPredicate
     tools
     substitutionSimplifier

@@ -87,9 +87,9 @@ simplify
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Ceil Sort (OrPattern Object variable)
+    -> Ceil Sort (OrPattern variable)
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -110,7 +110,7 @@ for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Ceil Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Ceil Object) (Valid Object) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -129,9 +129,9 @@ simplifyEvaluated
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> OrPattern Object variable
+    -> OrPattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 simplifyEvaluated
     tools substitutionSimplifier simplifier axiomIdToEvaluator child
   = do
@@ -163,9 +163,9 @@ makeEvaluate
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object variable
+    -> Pattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeEvaluate tools substitutionSimplifier simplifier axiomIdToEvaluator child
   | Pattern.isTop    child = return (OrPattern.top, SimplificationProof)
   | Pattern.isBottom child = return (OrPattern.bottom, SimplificationProof)
@@ -190,9 +190,9 @@ makeEvaluateNonBoolCeil
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object variable
+    -> Pattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeEvaluateNonBoolCeil
     tools
     substitutionSimplifier

@@ -402,16 +402,16 @@ mockMetadataTools =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluate tools patt =
     evaluateWithAxioms tools Map.empty patt
 
 evaluateWithAxioms
     :: SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluateWithAxioms tools axioms patt =
     (<$>) fst
         $ SMT.runSMT SMT.defaultConfig

@@ -346,18 +346,18 @@ asConcretePattern :: Integer -> TermLike Concrete
 asConcretePattern = Int.asConcretePattern intSort
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> Pattern Object Variable
+asPattern :: Integer -> Pattern Variable
 asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
-asPartialPattern :: Maybe Integer -> Pattern Object Variable
+asPartialPattern :: Maybe Integer -> Pattern Variable
 asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
     -> SymbolOrAlias
     -> [TermLike Variable]
-    -> Pattern Object Variable
+    -> Pattern Variable
     -> TestTree
 testInt name = testSymbolWithSolver evaluate name intSort
 

@@ -470,7 +470,7 @@ instance
     ( PrettyPrint child
     , PrettyPrint (domain child)
     , PrettyPrint variable
-    ) => PrettyPrint (Pattern level domain variable child)
+    ) => PrettyPrint (Pattern domain variable child)
   where
     prettyPrint flags (AndPattern p) =
         writeOneFieldStruct flags "AndPattern" p
@@ -545,7 +545,7 @@ instance
     , PrettyPrint child
     , PrettyPrint annotation
     , PrettyPrint (domain child)
-    , child ~ Cofree (Pattern Object domain variable) annotation
+    , child ~ Cofree (Pattern domain variable) annotation
     ) =>
     PrettyPrint (PurePattern domain variable annotation)
   where
@@ -761,6 +761,6 @@ instance PrettyPrint variable => PrettyPrint (Predicate variable) where
 instance PrettyPrint variable => PrettyPrint (Substitution variable) where
       prettyPrint flags = prettyPrint flags . Substitution.unwrap
 
-instance PrettyPrint variable => PrettyPrint (Step.Pattern level variable) where
+instance PrettyPrint variable => PrettyPrint (Step.Pattern variable) where
     prettyPrint flags (Conditional t p s) =
         writeThreeFieldStruct flags "Conditional" t p s

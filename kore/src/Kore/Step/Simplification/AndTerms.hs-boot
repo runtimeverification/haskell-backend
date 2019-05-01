@@ -35,7 +35,7 @@ termAnd
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable, SimplificationProof Object)
 
 termUnification
     :: forall variable unifier unifierM .
@@ -53,4 +53,4 @@ termUnification
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
-    -> unifier (Pattern Object variable, SimplificationProof Object)
+    -> unifier (Pattern variable, SimplificationProof Object)

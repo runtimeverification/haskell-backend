@@ -52,9 +52,9 @@ simplify
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Iff Sort (OrPattern Object variable)
+    -> Iff Sort (OrPattern variable)
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 simplify
     tools
     predicateSimplifier
@@ -84,7 +84,7 @@ See 'simplify' for detailed documentation.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Iff Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Iff Sort) (Valid Object) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -102,9 +102,9 @@ simplifyEvaluated
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> OrPattern Object variable
-    -> Simplifier (OrPattern Object variable)
+    -> OrPattern variable
+    -> OrPattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -149,9 +149,9 @@ makeEvaluate
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluate first second
   | Pattern.isTop first = OrPattern.fromPatterns [second]
   | Pattern.isBottom first = Not.makeEvaluate second
@@ -165,9 +165,9 @@ makeEvaluateNonBoolIff
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluateNonBoolIff
     patt1@Conditional
         { term = firstTerm

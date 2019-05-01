@@ -24,7 +24,7 @@ an or containing a term made of that literal.
 simplify
     :: (Ord variable, SortedVariable variable)
     => Sort
-    -> ( OrPattern Object variable
+    -> ( OrPattern variable
        , SimplificationProof Object
        )
 simplify s =

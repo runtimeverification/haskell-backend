@@ -104,7 +104,7 @@ simplifyAnds
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> NonEmpty (TermLike variable)
-    -> unifier (Pattern Object variable, UnificationProof Object variable)
+    -> unifier (Pattern variable, UnificationProof Object variable)
 simplifyAnds
     tools
     substitutionSimplifier
@@ -118,9 +118,9 @@ simplifyAnds
         else return ( result, EmptyUnificationProof )
   where
     simplifyAnds'
-        :: Pattern Object variable
+        :: Pattern variable
         -> TermLike variable
-        -> unifier (Pattern Object variable)
+        -> unifier (Pattern variable)
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
             Common.AndPattern And { andFirst = lhs, andSecond = rhs } ->

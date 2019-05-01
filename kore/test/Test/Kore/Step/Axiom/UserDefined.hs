@@ -221,7 +221,7 @@ test_userDefinedFunction =
 
 noSimplification
     ::  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
+            , ([Pattern Variable], SimplificationProof level)
             )
         ]
 noSimplification = []
@@ -229,11 +229,11 @@ noSimplification = []
 
 asSimplification
     ::  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
+            , ([Pattern Variable], SimplificationProof level)
             )
         ]
     ->  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
+            , ([Pattern Variable], SimplificationProof level)
             )
         ]
 asSimplification = id

@@ -290,7 +290,7 @@ newtype TermLikeSimplifier level =
         => PredicateSimplifier level
         -> TermLike variable
         -> Predicate level variable
-        -> BranchT Simplifier (Pattern level variable)
+        -> BranchT Simplifier (Pattern variable)
         )
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern.
@@ -310,7 +310,7 @@ simplifyTerm
     -> PredicateSimplifier Object
     -> TermLike variable
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplifyTerm
@@ -340,7 +340,7 @@ simplifyConditionalTerm
     -> PredicateSimplifier Object
     -> TermLike variable
     -> Predicate Object variable
-    -> BranchT Simplifier (Pattern Object variable)
+    -> BranchT Simplifier (Pattern variable)
 simplifyConditionalTerm (TermLikeSimplifier simplify) = simplify
 
 {- | Construct a 'TermLikeSimplifier' from a term simplifier.
@@ -360,7 +360,7 @@ termLikeSimplifier
         => PredicateSimplifier Object
         -> TermLike variable
         -> Simplifier
-            ( OrPattern Object variable
+            ( OrPattern variable
             , SimplificationProof Object
             )
         )
@@ -379,7 +379,7 @@ termLikeSimplifier simplifier =
         => PredicateSimplifier Object
         -> TermLike variable
         -> Predicate Object variable
-        -> BranchT Simplifier (Pattern Object variable)
+        -> BranchT Simplifier (Pattern variable)
     termLikeSimplifierWorker
         predicateSimplifier
         termLike

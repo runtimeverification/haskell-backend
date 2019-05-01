@@ -350,7 +350,7 @@ asPattern
         )
     => Sort
     -> Builtin variable
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
@@ -405,7 +405,7 @@ unifyEquals
         , SortedVariable variable
         , FreshVariable variable
         , p ~ TermLike variable
-        , expanded ~ Pattern Object variable
+        , expanded ~ Pattern variable
         , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM

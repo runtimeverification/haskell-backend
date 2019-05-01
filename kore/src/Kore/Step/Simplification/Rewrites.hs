@@ -33,8 +33,8 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Rewrites Sort (OrPattern Object variable)
-    ->  ( OrPattern Object variable
+    => Rewrites Sort (OrPattern variable)
+    ->  ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -50,7 +50,7 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedRewrites' take an argument of type
 
-> CofreeF (Or Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Or Sort) (Valid Object) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of
 'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
@@ -64,9 +64,9 @@ simplifyEvaluatedRewrites
         , Show variable
         , Unparse variable
         )
-    => OrPattern Object variable
-    -> OrPattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => OrPattern variable
+    -> OrPattern variable
+    -> (OrPattern variable, SimplificationProof Object)
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrPattern.toExpandedPattern first)
@@ -78,9 +78,9 @@ makeEvaluateRewrites
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => Pattern variable
+    -> Pattern variable
+    -> (OrPattern variable, SimplificationProof Object)
 makeEvaluateRewrites first second =
     ( OrPattern.fromPattern
         $ Pattern.fromTermLike

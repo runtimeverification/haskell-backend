@@ -326,11 +326,11 @@ asConcretePattern :: Text -> TermLike Concrete
 asConcretePattern = String.asConcretePattern stringSort
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
-asPattern :: Text -> Pattern Object Variable
+asPattern :: Text -> Pattern Variable
 asPattern = String.asPattern stringSort
 
 -- | Specialize 'String.asPartialPattern' to the builtin sort 'stringSort'.
-asPartialPattern :: Maybe Text -> Pattern Object Variable
+asPartialPattern :: Maybe Text -> Pattern Variable
 asPartialPattern = String.asPartialPattern stringSort
 
 testString
@@ -338,6 +338,6 @@ testString
     => String
     -> SymbolOrAlias
     -> [TermLike Variable]
-    -> Pattern Object Variable
+    -> Pattern Variable
     -> TestTree
 testString name = testSymbolWithSolver evaluate name stringSort

@@ -58,8 +58,8 @@ simplify
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Not Sort (OrPattern Object variable)
-    -> Simplifier (OrPattern Object variable)
+    -> Not Sort (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     predicateSimplifier
@@ -84,7 +84,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Not Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Not Sort) (Valid Object) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -102,8 +102,8 @@ simplifyEvaluated
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> Simplifier (OrPattern Object variable)
+    -> OrPattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -134,8 +134,8 @@ makeEvaluate
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> OrPattern variable
 makeEvaluate Conditional { term, predicate, substitution } =
     OrPattern.fromPatterns
         [ Conditional

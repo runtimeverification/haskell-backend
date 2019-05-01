@@ -76,7 +76,7 @@ evaluate predicate =
 
 noSimplification
     ::  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
+            , ([Pattern Variable], SimplificationProof level)
             )
         ]
 noSimplification = []

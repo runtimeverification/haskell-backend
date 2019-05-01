@@ -401,9 +401,9 @@ test_andSimplification =
         }
 
 makeAnd
-    :: [Pattern Object Variable]
-    -> [Pattern Object Variable]
-    -> And Sort (OrPattern Object Variable)
+    :: [Pattern Variable]
+    -> [Pattern Variable]
+    -> And Sort (OrPattern Variable)
 makeAnd first second =
     And
         { andSort = findSort (first ++ second)
@@ -411,13 +411,13 @@ makeAnd first second =
         , andSecond = OrPattern.fromPatterns second
         }
 
-findSort :: [Pattern Object Variable] -> Sort
+findSort :: [Pattern Variable] -> Sort
 findSort [] = testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
 evaluate
-    :: And Sort (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+    :: And Sort (OrPattern Variable)
+    -> IO (OrPattern Variable)
 evaluate patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig
@@ -430,9 +430,9 @@ evaluate patt =
         patt
 
 evaluatePatterns
-    :: Pattern Object Variable
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    :: Pattern Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluatePatterns first second =
     fmap OrPattern.fromPatterns
     $ SMT.runSMT SMT.defaultConfig

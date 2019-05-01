@@ -88,7 +88,7 @@ newtype PurePattern
     (annotation :: *)
   =
     PurePattern
-        { getPurePattern :: Cofree (Pattern Object domain variable) annotation }
+        { getPurePattern :: Cofree (Pattern domain variable) annotation }
     deriving (Foldable, Functor, Generic, Traversable)
 
 instance
@@ -121,7 +121,7 @@ deriving instance
     ( Show annotation
     , Show variable
     , Show1 domain
-    , child ~ Cofree (Pattern level domain variable) annotation
+    , child ~ Cofree (Pattern domain variable) annotation
     ) =>
     Show (PurePattern domain variable annotation)
 
@@ -161,7 +161,7 @@ instance
 
 
 type instance Base (PurePattern domain variable annotation) =
-    CofreeF (Pattern Object domain variable) annotation
+    CofreeF (Pattern domain variable) annotation
 
 -- This instance implements all class functions for the PurePattern newtype
 -- because the their implementations for the inner type may be specialized.
@@ -274,7 +274,7 @@ instance
 instance
     Functor domain =>
     ComonadCofree
-        (Pattern Object domain variable)
+        (Pattern domain variable)
         (PurePattern domain variable)
   where
     unwrap = \(PurePattern fixed) -> PurePattern <$> unwrap fixed
@@ -451,7 +451,7 @@ groundHead ctor location = SymbolOrAlias
 
 -- |Given a head and a list of children, produces an 'ApplicationPattern'
 --  applying the given head to the children
-apply :: SymbolOrAlias -> [child] -> Pattern level domain variable child
+apply :: SymbolOrAlias -> [child] -> Pattern domain variable child
 apply patternHead patterns = ApplicationPattern Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
@@ -460,5 +460,5 @@ apply patternHead patterns = ApplicationPattern Application
 -- |Applies the given head to the empty list of children to obtain a
 -- constant 'ApplicationPattern'
 constant
-    :: SymbolOrAlias -> Pattern level domain variable child
+    :: SymbolOrAlias -> Pattern domain variable child
 constant patternHead = apply patternHead []

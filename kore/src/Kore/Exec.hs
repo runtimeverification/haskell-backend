@@ -99,7 +99,7 @@ import           Kore.Syntax.Id
 import qualified Kore.Unification.Substitution as Substitution
 
 -- | Configuration used in symbolic execution.
-type Config = Pattern Object Variable
+type Config = Pattern Variable
 
 -- | Proof returned by symbolic execution.
 type Proof = StepProof Object Variable
@@ -181,7 +181,7 @@ search
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
@@ -470,8 +470,8 @@ narrowly-defined criteria.
  -}
 simplifyRulePattern
     :: SmtMetadataTools StepperAttributes
-    -> RulePattern Object Variable
-    -> Simplifier (RulePattern Object Variable)
+    -> RulePattern Variable
+    -> Simplifier (RulePattern Variable)
 simplifyRulePattern tools rulePattern = do
     let RulePattern { left } = rulePattern
     (simplifiedLeft, _proof) <- simplifyPattern tools left
@@ -508,7 +508,7 @@ simplifyPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> Simplifier
-        (OrPattern Object Variable, SimplificationProof Object)
+        (OrPattern Variable, SimplificationProof Object)
 simplifyPattern tools =
     Pattern.simplify
         tools

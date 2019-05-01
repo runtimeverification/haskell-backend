@@ -84,7 +84,7 @@ instance AstWithLocation Symbol where
 
 instance
     (Domain domain, AstWithLocation variable) =>
-    AstWithLocation (Pattern level domain variable child)
+    AstWithLocation (Pattern domain variable child)
   where
     locationFromAst =
         \case

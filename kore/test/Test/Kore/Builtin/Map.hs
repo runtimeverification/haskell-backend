@@ -493,7 +493,7 @@ asTermLike =
     . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map.Builtin Variable -> Pattern Object Variable
+asPattern :: Map.Builtin Variable -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools Map.asPattern mapSort
 

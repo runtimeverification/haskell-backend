@@ -113,8 +113,8 @@ decision is subject to change without notice.
 {- | Class type for claim-like rules
 -}
 type Claim claim =
-    ( Coercible (RulePattern Object Variable) claim
-    , Coercible claim (RulePattern Object Variable)
+    ( Coercible (RulePattern Variable) claim
+    , Coercible claim (RulePattern Variable)
     )
 
 -- | Is the 'Claim' trusted?
@@ -148,10 +148,10 @@ verify
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    ->  (  Pattern Object Variable
+    ->  (  Pattern Variable
         -> [Strategy
             (Prim
-                (Pattern Object Variable)
+                (Pattern Variable)
                 (RewriteRule Object Variable)
             )
            ]
@@ -162,7 +162,7 @@ verify
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT
-        (OrPattern Object Variable)
+        (OrPattern Variable)
         Simplifier
         ()
 verify
@@ -196,10 +196,10 @@ defaultStrategy
     => [claim]
     -- The claims that we want to prove
     -> [Axiom Object]
-    -> Pattern Object Variable
+    -> Pattern Variable
     -> [Strategy
         (Prim
-            (Pattern Object Variable)
+            (Pattern Variable)
             (RewriteRule Object Variable)
         )
        ]
@@ -229,17 +229,17 @@ verifyClaim
     -> PredicateSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    ->  (  Pattern Object Variable
+    ->  (  Pattern Variable
         -> [Strategy
             (Prim
-                (Pattern Object Variable)
+                (Pattern Variable)
                 (RewriteRule Object Variable)
             )
            ]
         )
     -> (RewriteRule Object Variable, Limit Natural)
     -> ExceptT
-        (OrPattern Object Variable)
+        (OrPattern Variable)
         Simplifier
         ()
 verifyClaim
@@ -261,7 +261,7 @@ verifyClaim
                     , substitution = mempty
                     }
                 )
-        startPattern :: CommonStrategyPattern Object
+        startPattern :: CommonStrategyPattern
         startPattern =
             StrategyPattern.RewritePattern
                 Conditional
@@ -274,10 +274,10 @@ verifyClaim
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
-        :: Prim (Pattern Object Variable) (RewriteRule Object Variable)
-        -> (CommonStrategyPattern Object, StepProof Object Variable)
+        :: Prim (Pattern Variable) (RewriteRule Object Variable)
+        -> (CommonStrategyPattern, StepProof Object Variable)
         -> TransitionT (RewriteRule Object Variable) Simplifier
-            (CommonStrategyPattern Object, StepProof Object Variable)
+            (CommonStrategyPattern, StepProof Object Variable)
     transitionRule' =
         OnePath.transitionRule
             metadataTools
@@ -310,13 +310,13 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Axiom Object]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph (CommonStrategyPattern Object) (RewriteRule Object Variable)
+    -> ExecutionGraph (CommonStrategyPattern) (RewriteRule Object Variable)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
     -> Simplifier
         (ExecutionGraph
-            (CommonStrategyPattern Object)
+            (CommonStrategyPattern)
             (RewriteRule Object Variable)
         )
 verifyClaimStep
@@ -336,10 +336,10 @@ verifyClaimStep
         node
   where
     transitionRule'
-        :: Prim (Pattern Object Variable) (RewriteRule Object Variable)
-        -> CommonStrategyPattern Object
+        :: Prim (Pattern Variable) (RewriteRule Object Variable)
+        -> CommonStrategyPattern
         -> TransitionT (RewriteRule Object Variable) Simplifier
-            (CommonStrategyPattern Object)
+            (CommonStrategyPattern)
     transitionRule' =
         stripProof
             $ OnePath.transitionRule
@@ -350,7 +350,7 @@ verifyClaimStep
 
     strategy'
         :: Strategy
-            (Prim (Pattern Object Variable) (RewriteRule Object Variable))
+            (Prim (Pattern Variable) (RewriteRule Object Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites
@@ -363,7 +363,7 @@ verifyClaimStep
     rewrites :: [RewriteRule Object Variable]
     rewrites = coerce <$> axioms
 
-    targetPattern :: Pattern Object Variable
+    targetPattern :: Pattern Variable
     targetPattern =
         Pattern.fromTermLike
             . right

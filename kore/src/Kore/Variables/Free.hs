@@ -95,7 +95,7 @@ synthetic
     ::  ( Foldable domain
         , Ord variable
         )
-    => CofreeF (Pattern level domain variable) a (Set.Set variable)
+    => CofreeF (Pattern domain variable) a (Set.Set variable)
     -> Set.Set variable
 synthetic (_ :< patternHead) =
     case patternHead of

@@ -43,8 +43,8 @@ simplify
         , Show variable
         , Ord variable
         )
-    => Floor Sort (OrPattern Object variable)
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => Floor Sort (OrPattern variable)
+    -> (OrPattern variable, SimplificationProof Object)
 simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
 
@@ -53,7 +53,7 @@ simplify Floor { floorChild = child } =
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Floor Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Floor Object) (Valid Object) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluateFloor'
 may be changed analogously. The 'Valid' annotation will eventually cache
@@ -67,8 +67,8 @@ simplifyEvaluatedFloor
         , Ord variable
         , Unparse variable
         )
-    => OrPattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => OrPattern variable
+    -> (OrPattern variable, SimplificationProof Object)
 simplifyEvaluatedFloor child =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
@@ -86,8 +86,8 @@ makeEvaluateFloor
         , Ord variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => Pattern variable
+    -> (OrPattern variable, SimplificationProof Object)
 makeEvaluateFloor child
   | Pattern.isTop child =
     (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
@@ -102,8 +102,8 @@ makeEvaluateNonBoolFloor
         , Ord variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => Pattern variable
+    -> (OrPattern variable, SimplificationProof Object)
 makeEvaluateNonBoolFloor
     patt@Conditional { term = Top_ _ }
   =

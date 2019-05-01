@@ -313,7 +313,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: Ord variable => Pattern Object variable
+    gOfAExpanded :: Ord variable => Pattern variable
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
@@ -331,7 +331,7 @@ test_applicationSimplification =
 
     noSimplification
         ::  [   ( TermLike Variable
-                , ([Pattern level Variable], SimplificationProof level)
+                , ([Pattern Variable], SimplificationProof level)
                 )
             ]
     noSimplification = []
@@ -345,11 +345,11 @@ makeApplication
     :: (Ord variable, Show variable, HasCallStack)
     => Sort
     -> SymbolOrAlias
-    -> [[Pattern Object variable]]
+    -> [[Pattern variable]]
     -> CofreeF
         (Application SymbolOrAlias)
         (Valid variable Object)
-        (OrPattern Object variable)
+        (OrPattern variable)
 makeApplication patternSort symbol patterns =
     (:<)
         valid
@@ -375,8 +375,8 @@ evaluate
     -> CofreeF
         (Application SymbolOrAlias)
         (Valid Variable Object)
-        (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+        (OrPattern Variable)
+    -> IO (OrPattern Variable)
 evaluate
     tools
     simplifier

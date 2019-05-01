@@ -222,11 +222,11 @@ shouldStore =
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
-        (CommonStrategyPattern Object)
+        (CommonStrategyPattern)
         (RewriteRule Object Variable)
 
 type InnerGraph =
-    Gr (CommonStrategyPattern Object) (Seq (RewriteRule Object Variable))
+    Gr (CommonStrategyPattern) (Seq (RewriteRule Object Variable))
 
 -- | State for the rep.
 data ReplState claim level = ReplState
@@ -321,7 +321,7 @@ emptyExecutionGraph =
   where
     extractConfig
         :: RewriteRule level Variable
-        -> CommonStrategyPattern level
+        -> CommonStrategyPattern
     extractConfig (RewriteRule RulePattern { left, requires }) =
         RewritePattern $ Conditional left requires mempty
 
@@ -404,7 +404,7 @@ getConfigAt
     :: level ~ Object
     => MonadState (ReplState claim level) m
     => Maybe Graph.Node
-    -> m (Maybe (Graph.Node, CommonStrategyPattern level))
+    -> m (Maybe (Graph.Node, CommonStrategyPattern))
 getConfigAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of

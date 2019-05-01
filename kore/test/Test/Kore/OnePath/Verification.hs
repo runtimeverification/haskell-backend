@@ -417,7 +417,7 @@ runVerification
     -> Limit Natural
     -> [OnePath.Axiom Object]
     -> [claim]
-    -> IO (Either (OrPattern Object Variable) ())
+    -> IO (Either (OrPattern Variable) ())
 runVerification
     metadataTools
     stepLimit

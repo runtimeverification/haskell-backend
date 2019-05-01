@@ -92,7 +92,7 @@ data SimplificationTarget = AndT | EqualsT | BothT
 type TermSimplifier level variable m =
     (  TermLike variable
     -> TermLike variable
-    -> m (Pattern level variable, SimplificationProof level)
+    -> m (Pattern variable, SimplificationProof level)
     )
 
 {- | Simplify an equality relation of two patterns.
@@ -155,7 +155,7 @@ termEqualsAnd
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> MaybeT Simplifier (Pattern variable, SimplificationProof Object)
 termEqualsAnd
     tools
     substitutionSimplifier
@@ -192,7 +192,7 @@ termEqualsAnd
         => unifier ~ unifierM variable
         => TermLike variable
         -> TermLike variable
-        -> unifier (Pattern Object variable, SimplificationProof Object)
+        -> unifier (Pattern variable, SimplificationProof Object)
     termEqualsAndWorker first second = Monad.Unify.liftSimplifier $ do
         eitherMaybeTermEqualsAndChild <- Monad.Unify.runUnifier $ runMaybeT $
             maybeTermEquals
@@ -243,7 +243,7 @@ maybeTermEquals
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (Pattern Object variable, SimplificationProof Object)
+    -> MaybeT unifier (Pattern variable, SimplificationProof Object)
 maybeTermEquals = maybeTransformTerm equalsFunctions
 
 {- | Unify two terms without discarding the terms.
@@ -276,19 +276,19 @@ termUnification
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
-    -> unifier (Pattern Object variable, SimplificationProof Object)
+    -> unifier (Pattern variable, SimplificationProof Object)
 termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
     termUnificationWorker
   where
     termUnificationWorker
         :: TermLike variable
         -> TermLike variable
-        -> unifier (Pattern Object variable, SimplificationProof Object)
+        -> unifier (Pattern variable, SimplificationProof Object)
     termUnificationWorker pat1 pat2 = do
         let
             maybeTermUnification
                 :: MaybeT unifier
-                    (Pattern Object variable, SimplificationProof Object)
+                    (Pattern variable, SimplificationProof Object)
             maybeTermUnification =
                 maybeTermAnd
                     tools
@@ -332,7 +332,7 @@ termAnd
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable, SimplificationProof Object)
 termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
     eitherResult <- Error.runExceptT $ Monad.Unify.getUnifier $
         termAndWorker p1 p2
@@ -347,7 +347,7 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
         :: TermLike variable
         -> TermLike variable
         -> Unifier variable
-            (Pattern Object variable, SimplificationProof Object)
+            (Pattern variable, SimplificationProof Object)
     termAndWorker first second = do
         let maybeTermAnd' =
                 maybeTermAnd
@@ -390,7 +390,7 @@ maybeTermAnd
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (Pattern Object variable, SimplificationProof Object)
+    -> MaybeT unifier (Pattern variable, SimplificationProof Object)
 maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
@@ -546,7 +546,7 @@ andEqualsFunctions =
             -> TermLike variable
             -> TermLike variable
             -> MaybeT unifier
-                (Pattern Object variable , SimplificationProof Object)
+                (Pattern variable , SimplificationProof Object)
             )
         -> TermTransformation Object variable unifier
     addT
@@ -613,7 +613,7 @@ type TermTransformation level variable unifier =
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Pattern level variable , SimplificationProof level)
+        (Pattern variable , SimplificationProof level)
 type TermTransformationOld level variable unifier =
        SmtMetadataTools StepperAttributes
     -> PredicateSimplifier level
@@ -624,7 +624,7 @@ type TermTransformationOld level variable unifier =
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Pattern level variable, SimplificationProof level)
+        (Pattern variable, SimplificationProof level)
 
 maybeTransformTerm
     ::  ( FreshVariable variable
@@ -646,7 +646,7 @@ maybeTransformTerm
     -- ^ Used to simplify subterm pairs.
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (Pattern Object variable, SimplificationProof Object)
+    -> MaybeT unifier (Pattern variable, SimplificationProof Object)
 maybeTransformTerm
     topTransformers
     mergeException
@@ -701,7 +701,7 @@ toExpanded
     ->  (  SmtMetadataTools StepperAttributes
         -> TermLike variable
         -> TermLike variable
-        -> Maybe (Pattern Object variable, SimplificationProof Object)
+        -> Maybe (Pattern variable, SimplificationProof Object)
         )
 toExpanded transformer tools first second =
     toExpanded0 <$> transformer tools first second
@@ -722,7 +722,7 @@ transformerLiftOld
     =>  (  SmtMetadataTools StepperAttributes
         -> TermLike variable
         -> TermLike variable
-        -> Maybe (Pattern Object variable, SimplificationProof Object)
+        -> Maybe (Pattern variable, SimplificationProof Object)
         )
     -> TermTransformationOld Object variable unifier
 transformerLiftOld
@@ -739,9 +739,9 @@ transformerLiftOld
 
 liftPattern
     :: Monad m
-    => Maybe (Pattern Object variable, SimplificationProof Object)
+    => Maybe (Pattern variable, SimplificationProof Object)
     -> MaybeT m
-        (Pattern Object variable, SimplificationProof Object)
+        (Pattern variable, SimplificationProof Object)
 liftPattern = MaybeT . return
 
 -- | Simplify the conjunction of terms where one is a predicate.
@@ -787,7 +787,7 @@ bottomTermEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Pattern Object variable, SimplificationProof Object)
+        (Pattern variable, SimplificationProof Object)
 bottomTermEquals
     tools
     substitutionSimplifier
@@ -851,7 +851,7 @@ termBottomEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Pattern Object variable, SimplificationProof Object)
+        (Pattern variable, SimplificationProof Object)
 termBottomEquals
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   =
@@ -882,7 +882,7 @@ variableFunctionAndEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Pattern Object variable, SimplificationProof Object)
+        (Pattern variable, SimplificationProof Object)
 variableFunctionAndEquals
     SimplificationType.And
     _tools
@@ -992,7 +992,7 @@ functionVariableAndEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Pattern Object variable, SimplificationProof Object)
+        (Pattern variable, SimplificationProof Object)
 functionVariableAndEquals
     simplificationType
     tools
@@ -1036,7 +1036,7 @@ equalInjectiveHeadsAndEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Pattern Object variable, SimplificationProof Object)
+        (Pattern variable, SimplificationProof Object)
 equalInjectiveHeadsAndEquals
     tools
     (PredicateMerger substitutionMerger)
@@ -1099,7 +1099,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (Pattern Object variable, SimplificationProof Object)
+        (Pattern variable, SimplificationProof Object)
 sortInjectionAndEqualsAssumesDifferentHeads
     tools
     termMerger
@@ -1480,7 +1480,7 @@ functionAnd
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> TermLike variable
-    -> Maybe (Pattern Object variable, SimplificationProof Object)
+    -> Maybe (Pattern variable, SimplificationProof Object)
 functionAnd
     tools
     first

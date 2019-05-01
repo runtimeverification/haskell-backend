@@ -87,7 +87,7 @@ substitutionSimplifier tools =
 testSymbolWithSolver
     ::  ( HasCallStack
         , p ~ TermLike Variable
-        , expanded ~ Pattern Object Variable
+        , expanded ~ Pattern Variable
         )
     => (p -> SMT expanded)
     -- ^ evaluator function for the builtin
@@ -200,7 +200,7 @@ stepSimplifier =
 evaluate
     :: MonadSMT m
     => TermLike Variable
-    -> m (Pattern Object Variable)
+    -> m (Pattern Variable)
 evaluate =
     (<$>) fst
     . liftSMT
@@ -213,26 +213,26 @@ evaluate =
 evaluateWith
     :: MVar Solver
     -> TermLike Variable
-    -> IO (Pattern Object Variable)
+    -> IO (Pattern Variable)
 evaluateWith solver patt =
     runReaderT (SMT.getSMT $ evaluate patt) solver
 
 runStep
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (Pattern Object Variable))
+            (MultiOr (Pattern Variable))
         )
 runStep configuration axiom = do
     result <- runStepResult configuration axiom
     return (Step.gatherResults <$> result)
 
 runStepResult
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
@@ -259,14 +259,14 @@ runSMT = SMT.runSMT SMT.defaultConfig
 
 runStepWith
     :: MVar Solver
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (Pattern Object Variable))
+            (MultiOr (Pattern Variable))
         )
 runStepWith solver configuration axiom = do
     result <- runStepResultWith solver configuration axiom
@@ -274,7 +274,7 @@ runStepWith solver configuration axiom = do
 
 runStepResultWith
     :: MVar Solver
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^ configuration
     -> RewriteRule Object Variable
     -- ^ axiom

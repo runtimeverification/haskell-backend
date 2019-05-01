@@ -39,8 +39,8 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Next Sort (OrPattern Object variable)
-    ->  ( OrPattern Object variable
+    => Next Sort (OrPattern variable)
+    ->  ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -54,8 +54,8 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => OrPattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => OrPattern variable
+    -> (OrPattern variable, SimplificationProof Object)
 simplifyEvaluated simplified =
     ( OrPattern.fromPatterns
         [ Conditional

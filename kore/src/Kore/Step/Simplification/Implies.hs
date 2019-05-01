@@ -57,9 +57,9 @@ simplify
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Implies Sort (OrPattern Object variable)
+    -> Implies Sort (OrPattern variable)
     -> Simplifier
-        (OrPattern Object variable , SimplificationProof Object)
+        (OrPattern variable , SimplificationProof Object)
 simplify
     tools
     predicateSimplifier
@@ -88,7 +88,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Implies Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Implies Sort) (Valid Object) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -105,10 +105,10 @@ simplifyEvaluated
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> OrPattern Object variable
+    -> OrPattern variable
+    -> OrPattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -152,9 +152,9 @@ simplifyEvaluateHalfImplies
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> Pattern Object variable
-    -> Simplifier (OrPattern Object variable)
+    -> OrPattern variable
+    -> Pattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
     tools
     predicateSimplifier
@@ -187,9 +187,9 @@ makeEvaluateImplies
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluateImplies
     first second
   | Pattern.isTop first =
@@ -209,9 +209,9 @@ makeEvaluateImpliesNonBool
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluateImpliesNonBool
     pattern1@Conditional
         { term = firstTerm

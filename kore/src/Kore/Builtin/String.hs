@@ -228,7 +228,7 @@ asPattern
     :: Ord variable
     => Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asTermLike resultSort
 
@@ -236,7 +236,7 @@ asPartialPattern
     :: Ord variable
     => Sort  -- ^ resulting sort
     -> Maybe Text  -- ^ builtin value to render
-    -> Pattern Object variable
+    -> Pattern variable
 asPartialPattern resultSort =
     maybe Pattern.bottom (asPattern resultSort)
 

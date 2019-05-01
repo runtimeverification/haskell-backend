@@ -81,14 +81,14 @@ test_forallSimplification =
                 Pattern.top
                 (makeEvaluate
                     Mock.x
-                    (Pattern.top :: Pattern Object Variable)
+                    (Pattern.top :: Pattern Variable)
                 )
             -- forall(bottom) = bottom
             assertEqualWithExplanation "forall(bottom)"
                 Pattern.bottom
                 (makeEvaluate
                     Mock.x
-                    (Pattern.bottom :: Pattern Object Variable)
+                    (Pattern.bottom :: Pattern Variable)
                 )
         )
     , testCase "forall applies substitution if possible"
@@ -235,8 +235,8 @@ test_forallSimplification =
 makeForall
     :: Ord variable
     => variable
-    -> [Pattern Object variable]
-    -> Forall Sort variable (OrPattern Object variable)
+    -> [Pattern variable]
+    -> Forall Sort variable (OrPattern variable)
 makeForall variable patterns =
     Forall
         { forallSort = testSort
@@ -248,14 +248,14 @@ testSort :: Sort
 testSort = Mock.testSort
 
 evaluate
-    :: Forall Sort Variable (OrPattern Object Variable)
-    -> OrPattern Object Variable
+    :: Forall Sort Variable (OrPattern Variable)
+    -> OrPattern Variable
 evaluate forall =
     fst $ Forall.simplify forall
 
 makeEvaluate
     :: Variable
-    -> Pattern Object Variable
-    -> Pattern Object Variable
+    -> Pattern Variable
+    -> Pattern Variable
 makeEvaluate variable child =
     fst $ Forall.makeEvaluate variable child

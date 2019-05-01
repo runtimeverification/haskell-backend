@@ -666,7 +666,7 @@ unifiedVariable :: VariableName -> Sort -> Variable
 unifiedVariable name sort =
     variable name sort
 
-variablePattern :: VariableName -> Sort -> Pattern level domain Variable p
+variablePattern :: VariableName -> Sort -> Pattern domain Variable p
 variablePattern name sort =
     VariablePattern (variable name sort)
 
@@ -680,7 +680,7 @@ unifiedVariablePattern name patternSort =
 simpleExistsPattern
     :: Variable
     -> Sort
-    -> Pattern level domain Variable (TermLike Variable)
+    -> Pattern domain Variable (TermLike Variable)
 simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
@@ -729,12 +729,12 @@ applicationObjectUnifiedPatternWithChildren
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
     asParsedPattern
         ( applicationPatternWithChildren name unifiedPatterns
-        :: Pattern Meta Domain.Builtin Variable ParsedPattern)
+        :: Pattern Domain.Builtin Variable ParsedPattern)
 
 applicationPatternWithChildren
     :: SymbolName
     -> [child]
-    -> Pattern level dom v child
+    -> Pattern dom v child
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
     ApplicationPattern Application
         { applicationSymbolOrAlias = SymbolOrAlias

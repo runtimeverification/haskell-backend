@@ -81,9 +81,9 @@ simplify
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Exists Sort variable (OrPattern Object variable)
+    -> Exists Sort variable (OrPattern variable)
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplify
@@ -106,7 +106,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Exists Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Exists Sort) (Valid Object) (OrPattern variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
@@ -128,9 +128,9 @@ simplifyEvaluated
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable
-    -> OrPattern Object variable
+    -> OrPattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -173,9 +173,9 @@ makeEvaluate
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable
-    -> Pattern Object variable
+    -> Pattern variable
     -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+        (OrPattern variable, SimplificationProof Object)
 makeEvaluate
     tools
     substitutionSimplifier
@@ -237,8 +237,8 @@ makeEvaluateBoundLeft
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
-    -> Pattern Object variable
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Pattern variable
+    -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundLeft
     tools
     substitutionSimplifier
@@ -287,8 +287,8 @@ makeEvaluateBoundRight
         )
     => variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
-    -> Pattern Object variable  -- ^ pattern to quantify
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Pattern variable  -- ^ pattern to quantify
+    -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundRight
     variable
     freeSubstitution
@@ -345,8 +345,8 @@ quantifyPattern
         , SortedVariable variable
         )
     => variable
-    -> Pattern Object variable
-    -> Pattern Object variable
+    -> Pattern variable
+    -> Pattern variable
 quantifyPattern variable Conditional { term, predicate, substitution }
   | quantifyTerm, quantifyPredicate =
       Conditional

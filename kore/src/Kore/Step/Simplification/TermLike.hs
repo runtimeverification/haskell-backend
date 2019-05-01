@@ -90,7 +90,7 @@ simplify
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier
-        ( Pattern Object variable
+        ( Pattern variable
         , SimplificationProof Object
         )
 simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
@@ -114,7 +114,7 @@ simplifyToOr
     -> PredicateSimplifier Object
     -> TermLike variable
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
@@ -142,7 +142,7 @@ simplifyInternal
     -- ^ Map from axiom IDs to axiom evaluators
     -> Recursive.Base (TermLike variable) (TermLike variable)
     -> Simplifier
-        ( OrPattern Object variable
+        ( OrPattern variable
         , SimplificationProof Object
         )
 simplifyInternal

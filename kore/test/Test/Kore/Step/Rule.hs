@@ -409,7 +409,7 @@ test_refreshRulePattern =
             "Expected no free variables in common with original RulePattern"
             (Set.null $ Set.intersection avoiding free')
 
-testRulePattern :: RulePattern Object Variable
+testRulePattern :: RulePattern Variable
 testRulePattern =
     RulePattern
         { left =

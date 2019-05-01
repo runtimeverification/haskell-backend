@@ -75,4 +75,4 @@ instance Domain External where
         getExternal DomainValue { domainValueSort, domainValueChild } =
             domainValueChild { domainValueSort } :: External child
 
-type CommonExternalPattern level = CommonPurePattern External
+type CommonExternalPattern = CommonPurePattern External
