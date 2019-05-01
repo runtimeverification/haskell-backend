@@ -485,14 +485,14 @@ appliedMockEvaluator result =
         }
 
 mockEvaluator
-    :: AttemptedAxiom Object variable
+    :: AttemptedAxiom variable
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+        (AttemptedAxiom variable, SimplificationProof Object)
 mockEvaluator evaluation _ _ _ _ _ =
     return (evaluation, SimplificationProof)
 

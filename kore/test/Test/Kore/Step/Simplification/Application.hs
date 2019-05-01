@@ -235,7 +235,7 @@ test_applicationSimplification =
                             , SortedVariable variable
                             , Unparse variable
                             )
-                        => AttemptedAxiom Object variable
+                        => AttemptedAxiom variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = OrPattern.fromPatterns
                             [ Conditional

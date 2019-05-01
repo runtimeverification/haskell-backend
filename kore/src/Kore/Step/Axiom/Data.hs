@@ -97,7 +97,7 @@ newtype BuiltinAndAxiomSimplifier =
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Simplifier
-            ( AttemptedAxiom Object variable
+            ( AttemptedAxiom variable
             , SimplificationProof Object
             )
         )
@@ -156,28 +156,27 @@ instance
 {-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
 a case for axioms that can't be applied.
 -}
-data AttemptedAxiom level variable
+data AttemptedAxiom variable
     = NotApplicable
-    | Applied !(AttemptedAxiomResults level variable)
+    | Applied !(AttemptedAxiomResults Object variable)
     deriving Generic
 
-deriving instance Eq variable => Eq (AttemptedAxiom level variable)
-deriving instance Show variable => Show (AttemptedAxiom level variable)
+deriving instance Eq variable => Eq (AttemptedAxiom variable)
+deriving instance Show variable => Show (AttemptedAxiom variable)
 
-instance (NFData variable)
-    => NFData (AttemptedAxiom level variable)
+instance (NFData variable) => NFData (AttemptedAxiom variable)
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
 -}
-type CommonAttemptedAxiom level = AttemptedAxiom level Variable
+type CommonAttemptedAxiom = AttemptedAxiom Variable
 
 {- | Does the 'AttemptedAxiom' have remainders?
 
 A 'NotApplicable' result is not considered to have remainders.
 
  -}
-hasRemainders :: AttemptedAxiom level variable -> Bool
+hasRemainders :: AttemptedAxiom variable -> Bool
 hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
 hasRemainders NotApplicable = False
 
@@ -185,8 +184,8 @@ hasRemainders NotApplicable = False
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiom Object variable, SimplificationProof Object)
-    ->           m (AttemptedAxiom Object variable, SimplificationProof Object)
+    => ExceptT e m (AttemptedAxiom variable, SimplificationProof Object)
+    ->           m (AttemptedAxiom variable, SimplificationProof Object)
 exceptNotApplicable =
     fmap (either (const notApplicable) id) . runExceptT
   where
@@ -194,14 +193,14 @@ exceptNotApplicable =
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator
-    :: Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
+    :: Simplifier (AttemptedAxiom variable, SimplificationProof Object)
 notApplicableAxiomEvaluator = pure (NotApplicable, SimplificationProof)
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
     :: Ord variable
     => TermLike variable
-    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable, SimplificationProof Object)
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
@@ -232,7 +231,7 @@ applicationAxiomSimplifier
             (Valid variable Object)
             (TermLike variable)
         -> Simplifier
-            ( AttemptedAxiom Object variable
+            ( AttemptedAxiom variable
             , SimplificationProof Object
             )
         )
@@ -255,7 +254,7 @@ applicationAxiomSimplifier applicationSimplifier =
             -> BuiltinAndAxiomSimplifierMap
             -> TermLike variable
             -> Simplifier
-                ( AttemptedAxiom Object variable
+                ( AttemptedAxiom variable
                 , SimplificationProof Object
                 )
         )

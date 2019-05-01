@@ -325,7 +325,7 @@ simpleEvaluator
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
     -> Simplifier
-        ( AttemptedAxiom Object variable
+        ( AttemptedAxiom variable
         , SimplificationProof Object
         )
 simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)

@@ -9,7 +9,6 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -556,7 +555,7 @@ evaluate
     :: SmtMetadataTools StepperAttributes
     -> BuiltinAndAxiomSimplifier
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom Object)
+    -> IO (CommonAttemptedAxiom)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

@@ -416,9 +416,9 @@ mergeWithConditionAndSubstitution
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> (AttemptedAxiom variable, SimplificationProof Object)
     -- ^ AttemptedAxiom to which the condition should be added.
-    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable, SimplificationProof Object)
 mergeWithConditionAndSubstitution
     _ _ _ _ _ (AttemptedAxiom.NotApplicable, _proof)
   =

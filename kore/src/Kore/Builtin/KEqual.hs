@@ -140,7 +140,7 @@ evalKEq
         (Valid variable Object)
         (TermLike variable)
     -> Simplifier
-        ( AttemptedAxiom Object variable
+        ( AttemptedAxiom variable
         , SimplificationProof Object
         )
 evalKEq true _ _ _ _ (valid :< app) =
@@ -193,7 +193,7 @@ evalKIte
         (Valid variable Object)
         (TermLike variable)
     -> Simplifier
-        ( AttemptedAxiom Object variable
+        ( AttemptedAxiom variable
         , SimplificationProof Object
         )
 evalKIte _ _ _ _ (_ :< app) =

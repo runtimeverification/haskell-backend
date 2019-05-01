@@ -253,7 +253,7 @@ evaluateWithAxiom
     -> EqualityRule Variable
     -> TermLikeSimplifier
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom Object)
+    -> IO (CommonAttemptedAxiom)
 evaluateWithAxiom
     metadataTools
     axiom
@@ -264,7 +264,7 @@ evaluateWithAxiom
     return (normalizeResult results)
   where
     normalizeResult
-        :: CommonAttemptedAxiom Object -> CommonAttemptedAxiom Object
+        :: CommonAttemptedAxiom -> CommonAttemptedAxiom
     normalizeResult =
         \case
             AttemptedAxiom.Applied AttemptedAxiomResults
@@ -281,7 +281,7 @@ evaluateWithAxiom
             , predicate = predicate
             , substitution = Substitution.modify sort substitution
             }
-    evaluated :: IO (CommonAttemptedAxiom Object)
+    evaluated :: IO (CommonAttemptedAxiom)
     evaluated =
         (<$>) fst
         $ SMT.runSMT SMT.defaultConfig

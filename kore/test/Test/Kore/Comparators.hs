@@ -1271,7 +1271,7 @@ instance
     , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
-    => SumEqualWithExplanation (AttemptedAxiom Object variable)
+    => SumEqualWithExplanation (AttemptedAxiom variable)
   where
     sumConstructorPair
         AttemptedAxiom.NotApplicable
@@ -1297,7 +1297,7 @@ instance
     , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
-    => EqualWithExplanation (AttemptedAxiom Object variable)
+    => EqualWithExplanation (AttemptedAxiom variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

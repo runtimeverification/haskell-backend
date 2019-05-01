@@ -620,7 +620,7 @@ parseString parser lit =
 appliedFunction
     :: (Monad m, Ord variable, level ~ Object)
     => Pattern variable
-    -> m (AttemptedAxiom level variable)
+    -> m (AttemptedAxiom variable)
 appliedFunction epat =
     return $ Applied AttemptedAxiomResults
         { results = OrPattern.fromPattern epat
@@ -670,7 +670,7 @@ unaryOperator
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom level variable)
+        -> Simplifier (AttemptedAxiom variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [Common.DomainValuePattern a] -> do
@@ -723,7 +723,7 @@ binaryOperator
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom level variable)
+        -> Simplifier (AttemptedAxiom variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [Common.DomainValuePattern a, Common.DomainValuePattern b] -> do
@@ -776,7 +776,7 @@ ternaryOperator
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom level variable)
+        -> Simplifier (AttemptedAxiom variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [Common.DomainValuePattern a, Common.DomainValuePattern b, Common.DomainValuePattern c] -> do
@@ -793,7 +793,7 @@ type FunctionImplementation
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+        -> Simplifier (AttemptedAxiom variable)
 
 functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
@@ -810,7 +810,7 @@ functionEvaluator impl =
             (Valid variable Object)
             (TermLike variable)
         -> Simplifier
-            ( AttemptedAxiom Object variable
+            ( AttemptedAxiom variable
             , SimplificationProof Object
             )
     evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) = do
@@ -944,8 +944,8 @@ expectNormalConcreteTerm tools purePattern =
  -}
 getAttemptedAxiom
     :: Monad m
-    => MaybeT m (AttemptedAxiom level variable)
-    -> m (AttemptedAxiom level variable)
+    => MaybeT m (AttemptedAxiom variable)
+    -> m (AttemptedAxiom variable)
 getAttemptedAxiom attempt =
     fromMaybe NotApplicable <$> runMaybeT attempt
 

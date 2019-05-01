@@ -72,7 +72,7 @@ equalityRuleEvaluator
     -> TermLike variable
     -- ^ The function on which to evaluate the current function.
     -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+        (AttemptedAxiom variable, SimplificationProof Object)
 equalityRuleEvaluator
     (EqualityRule rule)
     tools

@@ -208,7 +208,7 @@ returnSet
     => SmtMetadataTools attrs
     -> Sort
     -> Builtin
-    -> m (AttemptedAxiom Object variable)
+    -> m (AttemptedAxiom variable)
 returnSet tools resultSort set =
     Builtin.appliedFunction
     $ Pattern.fromTermLike

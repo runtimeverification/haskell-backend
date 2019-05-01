@@ -180,7 +180,7 @@ returnList
     => SmtMetadataTools StepperAttributes
     -> Sort
     -> Builtin variable
-    -> m (AttemptedAxiom Object variable)
+    -> m (AttemptedAxiom variable)
 returnList tools builtinListSort builtinListChild =
     Builtin.appliedFunction
     $ Reflection.give tools
@@ -205,7 +205,7 @@ evalGet =
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+        -> Simplifier (AttemptedAxiom variable)
     evalGet0 _ _ _ = \arguments ->
         Builtin.getAttemptedAxiom
         (do
@@ -253,7 +253,7 @@ evalConcat =
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+        -> Simplifier (AttemptedAxiom variable)
     evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do

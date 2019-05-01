@@ -119,7 +119,7 @@ totalDefinitionEvaluation rules =
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Simplifier
-            ( AttemptedAxiom Object variable
+            ( AttemptedAxiom variable
             , SimplificationProof Object
             )
     totalDefinitionEvaluationWorker
@@ -191,7 +191,7 @@ evaluateBuiltin
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable, SimplificationProof Object)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
     tools
@@ -246,7 +246,7 @@ applyFirstSimplifierThatWorks
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+        (AttemptedAxiom variable, SimplificationProof Object)
 applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
     return
         ( AttemptedAxiom.NotApplicable
@@ -334,7 +334,7 @@ evaluateWithDefinitionAxioms
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+        (AttemptedAxiom variable, SimplificationProof Object)
 evaluateWithDefinitionAxioms
     definitionRules
     tools

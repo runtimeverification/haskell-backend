@@ -621,14 +621,14 @@ mapVariables =
         fromVariable v { variableCounter = Just (Element 1) }
 
 mockEvaluator
-    :: AttemptedAxiom Object variable
+    :: AttemptedAxiom variable
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+        (AttemptedAxiom variable, SimplificationProof Object)
 mockEvaluator evaluation _ _ _ _ _ =
     return (evaluation, SimplificationProof)
 
