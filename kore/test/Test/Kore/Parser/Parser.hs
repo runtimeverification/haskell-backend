@@ -11,6 +11,7 @@ import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Parser.Parser
+import           Kore.Syntax.Sentence
 
 import Test.Kore hiding
        ( sortVariable, sortVariableSort )
@@ -1104,7 +1105,7 @@ sentenceClaimParserTests :: [TestTree]
 sentenceClaimParserTests =
     parseTree koreSentenceParser
         [ success "claim{sv1}\"a\"[\"b\"]"
-            (SentenceClaimSentence $
+            (SentenceClaimSentence . SentenceClaim $
                 (SentenceAxiom
                     { sentenceAxiomParameters = [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
@@ -1121,7 +1122,7 @@ sentenceClaimParserTests =
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "claim{}\"a\"[\"b\"]"
-            (SentenceClaimSentence $
+            (SentenceClaimSentence . SentenceClaim $
                 (SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
@@ -1136,7 +1137,7 @@ sentenceClaimParserTests =
                 :: ParsedSentenceAxiom)
             )
         , success "claim { sv1 , sv2 } \"a\" [ \"b\" ] "
-            (SentenceClaimSentence $
+            (SentenceClaimSentence . SentenceClaim $
                 (SentenceAxiom
                     { sentenceAxiomParameters =
                         [ SortVariable (testId "sv1")

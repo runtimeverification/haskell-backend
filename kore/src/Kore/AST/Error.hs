@@ -29,6 +29,7 @@ import Kore.AST.AstWithLocation
 import Kore.AST.Pure
 import Kore.AST.Sentence
 import Kore.Error
+import Kore.Syntax.Sentence
 
 {-|'koreFailWithLocations' produces an error result with a context containing
 the provided locations. -}
@@ -115,7 +116,7 @@ withSentenceAxiomContext _ = withContext "axiom declaration"
 {- | Identify and locate the given claim declaration in the error context.
  -}
 withSentenceClaimContext
-    :: SentenceAxiom sortParam patternType
+    :: SentenceClaim sortParam patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceClaimContext _ = withContext "claim declaration"

@@ -54,6 +54,7 @@ import           Kore.Parser.Lexeme
 import           Kore.Parser.ParserUtils
                  ( Parser )
 import qualified Kore.Parser.ParserUtils as ParserUtils
+import           Kore.Syntax.Sentence
 import           Kore.Unparser
                  ( unparseToString )
 
@@ -828,7 +829,7 @@ koreSentenceParser :: Parser ParsedSentence
 koreSentenceParser = keywordBasedParsers
     [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
     , ( "axiom", axiomSentenceRemainderParser SentenceAxiomSentence )
-    , ( "claim", axiomSentenceRemainderParser SentenceClaimSentence )
+    , ( "claim", claimSentenceRemainderParser SentenceClaimSentence )
     , ( "sort", sentenceSortRemainderParser )
     , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
     , ( "import", importSentenceRemainderParser )
@@ -932,6 +933,7 @@ importSentenceRemainderParser =
           <$> moduleNameParser
           <*> attributesParser
         )
+
 {-|'axiomSentenceRemainderParser' parses the part after the starting
 'axiom' keyword of an axiom-declaration and constructs it.
 
@@ -950,6 +952,24 @@ axiomSentenceRemainderParser
     -> Parser ParsedSentence
 axiomSentenceRemainderParser ctor =
   ctor
+  <$> ( SentenceAxiom
+        <$> inCurlyBracesListParser sortVariableParser
+        <*> korePatternParser
+        <*> attributesParser
+      )
+
+{-|'claimSentenceRemainderParser' parses the part after the starting
+'claim' keyword of an claim declaration and constructs it.
+
+Always starts with @{@.
+-}
+claimSentenceRemainderParser
+    ::  (  SentenceClaim SortVariable ParsedPattern
+        -> Sentence Meta SortVariable ParsedPattern
+        )
+    -> Parser ParsedSentence
+claimSentenceRemainderParser ctor =
+  ctor . SentenceClaim
   <$> ( SentenceAxiom
         <$> inCurlyBracesListParser sortVariableParser
         <*> korePatternParser

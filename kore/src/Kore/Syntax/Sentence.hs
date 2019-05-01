@@ -14,6 +14,8 @@ module Kore.Syntax.Sentence
     , SentenceSymbol (..)
     , SentenceImport (..)
     , SentenceSort (..)
+    , SentenceAxiom (..)
+    , SentenceClaim (..)
     ) where
 
 import           Control.DeepSeq
@@ -320,3 +322,95 @@ instance Unparse (SentenceSort patternType) where
               case n of
                   0 -> ""
                   m -> Pretty.fillSep["(\\inh Sorts)", printLbSortsRb (m - 1)]
+
+{- | 'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+
+ -}
+data SentenceAxiom (sortParam :: *) (patternType :: *) =
+    SentenceAxiom
+        { sentenceAxiomParameters :: ![sortParam]
+        , sentenceAxiomPattern    :: !patternType
+        , sentenceAxiomAttributes :: !Attributes
+        }
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+
+instance
+    (Hashable sortParam, Hashable patternType) =>
+    Hashable (SentenceAxiom sortParam patternType)
+
+instance
+    (NFData sortParam, NFData patternType) =>
+    NFData (SentenceAxiom sortParam patternType)
+
+instance
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (SentenceAxiom sortParam patternType)
+  where
+    unparse = unparseAxiom "axiom"
+    unparse2 = unparseAxiom2 "axiom"
+
+unparseAxiom
+    ::  ( Unparse patternType
+        , Unparse sortParam
+        )
+    => Pretty.Doc ann
+    -> SentenceAxiom sortParam patternType
+    -> Pretty.Doc ann
+unparseAxiom
+    label
+    SentenceAxiom
+        { sentenceAxiomParameters
+        , sentenceAxiomPattern
+        , sentenceAxiomAttributes
+        }
+  =
+    Pretty.fillSep
+        [ label
+        , parameters sentenceAxiomParameters
+        , unparse sentenceAxiomPattern
+        , unparse sentenceAxiomAttributes
+        ]
+
+unparseAxiom2
+    ::  ( Unparse patternType
+        , Unparse sortParam
+        )
+    => Pretty.Doc ann
+    -> SentenceAxiom sortParam patternType
+    -> Pretty.Doc ann
+unparseAxiom2
+    label
+    SentenceAxiom
+        { sentenceAxiomPattern
+        , sentenceAxiomAttributes
+        }
+  =
+    Pretty.fillSep
+        [ label
+        , unparse2 sentenceAxiomPattern
+        , unparse2 sentenceAxiomAttributes
+        ]
+
+{- | 'SentenceClaim' corresponds to the @claim-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+
+ -}
+newtype SentenceClaim (sortParam :: *) (patternType :: *) =
+    SentenceClaim { getSentenceClaim :: SentenceAxiom sortParam patternType }
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+
+instance
+    (Hashable sortParam, Hashable patternType) =>
+    Hashable (SentenceClaim sortParam patternType)
+
+instance
+    (NFData sortParam, NFData patternType) =>
+    NFData (SentenceClaim sortParam patternType)
+
+instance
+    (Unparse sortParam, Unparse patternType) =>
+    Unparse (SentenceClaim sortParam patternType)
+  where
+    unparse = unparseAxiom "claim" . getSentenceClaim
+    unparse2 = unparseAxiom2 "claim" . getSentenceClaim

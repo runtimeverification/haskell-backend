@@ -83,6 +83,7 @@ import qualified Kore.Attribute.Symbol.Symbol as Attribute
 import           Kore.Error
 import           Kore.Parser
                  ( ParsedPattern )
+import           Kore.Syntax.Sentence
 import qualified Kore.Verified as Verified
 
 type SortDescription level dom =
@@ -116,7 +117,7 @@ data IndexedModule param pat declAtts axiomAtts =
     , indexedModuleSortDescriptions
         :: !(Map.Map Id (Attribute.Sort, SentenceSort pat))
     , indexedModuleAxioms :: ![(axiomAtts, SentenceAxiom param pat)]
-    , indexedModuleClaims :: ![(axiomAtts, SentenceAxiom param pat)]
+    , indexedModuleClaims :: ![(axiomAtts, SentenceClaim param pat)]
     , indexedModuleAttributes :: !(declAtts, Attributes)
     , indexedModuleImports
         :: ![( declAtts
@@ -587,7 +588,7 @@ indexModuleSentence
             )
 
     indexSentenceClaim
-        _sentence@SentenceAxiom { sentenceAxiomAttributes }
+        _sentence@(SentenceClaim SentenceAxiom { sentenceAxiomAttributes })
       = do
         atts <- parseAttributes sentenceAxiomAttributes
         return

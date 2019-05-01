@@ -50,6 +50,7 @@ import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import qualified Kore.Syntax.Id as Kore
                  ( Id )
+import           Kore.Syntax.Sentence
 import qualified SMT.AST as AST
                  ( Constructor (Constructor), ConstructorArgument,
                  DataTypeDeclaration (DataTypeDeclaration) )
@@ -126,6 +127,12 @@ instance With (SentenceAxiom sort patt) Attribute where
 
 instance With (SentenceAxiom sort patt) [Attribute] where
     with = foldl' with
+
+instance With (SentenceClaim sort patt) Attribute where
+    with a b = SentenceClaim (with (getSentenceClaim a) b)
+
+instance With (SentenceClaim sort patt) [Attribute] where
+    with a b = SentenceClaim (with (getSentenceClaim a) b)
 
 instance With (SentenceImport patt) Attribute where
     s@SentenceImport {sentenceImportAttributes} `with` attribute =

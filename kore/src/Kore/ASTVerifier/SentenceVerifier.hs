@@ -32,6 +32,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import           Kore.Syntax.Sentence
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -148,9 +149,9 @@ verifySentence builtinVerifiers indexedModule attributesVerification sentence =
                         )
                 SentenceClaimSentence claimSentence ->
                     (<$>)
-                        SentenceClaimSentence
+                        (SentenceClaimSentence . SentenceClaim)
                         (verifyAxiomSentence
-                            claimSentence
+                            (getSentenceClaim claimSentence)
                             builtinVerifiers
                             indexedModule
                         )

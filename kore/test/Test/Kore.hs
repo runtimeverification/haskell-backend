@@ -61,6 +61,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax
+import           Kore.Syntax.Sentence
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -690,7 +691,8 @@ koreSentenceGen =
         , SentenceImportSentence
             <$> sentenceImportGen
         , SentenceAxiomSentence <$> sentenceAxiomGen korePatternUnifiedGen
-        , SentenceClaimSentence <$> sentenceAxiomGen korePatternUnifiedGen
+        , SentenceClaimSentence . SentenceClaim
+            <$> sentenceAxiomGen korePatternUnifiedGen
         , SentenceSortSentence <$> sentenceSortGen
         , (SentenceHookSentence . SentenceHookedSort) <$> sentenceSortGen
         , (SentenceHookSentence . SentenceHookedSymbol) <$> sentenceSymbolGen

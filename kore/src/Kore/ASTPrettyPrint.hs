@@ -38,6 +38,7 @@ import           Kore.Proof.Functional
 import           Kore.Step.Conditional
 import qualified Kore.Step.Pattern as Step
                  ( Pattern )
+import           Kore.Syntax.Sentence
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -610,6 +611,14 @@ instance
             , writeAttributesField
                 "sentenceAxiomAttributes" (sentenceImportAttributes sa)
             ]
+
+instance
+    ( PrettyPrint sortParam , PrettyPrint patternType ) =>
+    PrettyPrint (SentenceClaim sortParam patternType)
+  where
+    prettyPrint _ sentence@(SentenceClaim _) =
+        writeStructure "SentenceClaim"
+            [ writeFieldNewLine "getSentenceClaim" getSentenceClaim sentence ]
 
 instance
     ( PrettyPrint sortParam

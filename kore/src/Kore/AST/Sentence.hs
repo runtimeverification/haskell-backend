@@ -75,75 +75,6 @@ import           Kore.Syntax.Sentence
 import           Kore.Unparser
 
 
-{-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-data SentenceAxiom (sortParam :: *) (patternType :: *) =
-    SentenceAxiom
-        { sentenceAxiomParameters :: ![sortParam]
-        , sentenceAxiomPattern    :: !patternType
-        , sentenceAxiomAttributes :: !Attributes
-        }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
-
-instance
-    (Hashable sortParam, Hashable patternType) =>
-    Hashable (SentenceAxiom sortParam patternType)
-
-instance
-    (NFData sortParam, NFData patternType) =>
-    NFData (SentenceAxiom sortParam patternType)
-
-instance
-    (Unparse sortParam, Unparse patternType) =>
-    Unparse (SentenceAxiom sortParam patternType)
-  where
-    unparse = unparseAxiom "axiom"
-    unparse2 = unparseAxiom2 "axiom"
-
-
-unparseAxiom
-    ::  ( Unparse patternType
-        , Unparse sortParam
-        )
-    => Pretty.Doc ann
-    -> SentenceAxiom sortParam patternType
-    -> Pretty.Doc ann
-unparseAxiom
-    label
-    SentenceAxiom
-        { sentenceAxiomParameters
-        , sentenceAxiomPattern
-        , sentenceAxiomAttributes
-        }
-  =
-    Pretty.fillSep
-        [ label
-        , parameters sentenceAxiomParameters
-        , unparse sentenceAxiomPattern
-        , unparse sentenceAxiomAttributes
-        ]
-
-unparseAxiom2
-    ::  ( Unparse patternType
-        , Unparse sortParam
-        )
-    => Pretty.Doc ann
-    -> SentenceAxiom sortParam patternType
-    -> Pretty.Doc ann
-unparseAxiom2
-    label
-    SentenceAxiom
-        { sentenceAxiomPattern
-        , sentenceAxiomAttributes
-        }
-  =
-    Pretty.fillSep
-        [ label
-        , unparse2 sentenceAxiomPattern
-        , unparse2 sentenceAxiomAttributes
-        ]
-
 {-|@SentenceHook@ corresponds to @hook-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
@@ -195,7 +126,7 @@ data Sentence (level :: *) (sortParam :: *) (patternType :: *) where
         :: !(SentenceAxiom sortParam patternType)
         -> Sentence Meta sortParam patternType
     SentenceClaimSentence
-        :: !(SentenceAxiom sortParam patternType)
+        :: !(SentenceClaim sortParam patternType)
         -> Sentence Meta sortParam patternType
     SentenceSortSentence
         :: !(SentenceSort patternType)
@@ -245,8 +176,8 @@ instance
             SentenceAliasSentence s -> unparse s
             SentenceSymbolSentence s -> unparse s
             SentenceImportSentence s -> unparse s
-            SentenceAxiomSentence s -> unparseAxiom "axiom" s
-            SentenceClaimSentence s -> unparseAxiom "claim" s
+            SentenceAxiomSentence s -> unparse s
+            SentenceClaimSentence s -> unparse s
             SentenceSortSentence s -> unparse s
             SentenceHookSentence s -> unparse s
 
@@ -255,8 +186,8 @@ instance
             SentenceAliasSentence s -> unparse2 s
             SentenceSymbolSentence s -> unparse2 s
             SentenceImportSentence s -> unparse2 s
-            SentenceAxiomSentence s -> unparseAxiom2 "axiom" s
-            SentenceClaimSentence s -> unparseAxiom2 "claim" s
+            SentenceAxiomSentence s -> unparse2 s
+            SentenceClaimSentence s -> unparse2 s
             SentenceSortSentence s -> unparse2 s
             SentenceHookSentence s -> unparse2 s
 
@@ -281,7 +212,7 @@ sentenceAttributes =
             SentenceAxiom { sentenceAxiomAttributes } ->
                 sentenceAxiomAttributes
         SentenceClaimSentence
-            SentenceAxiom { sentenceAxiomAttributes } ->
+            (SentenceClaim (SentenceAxiom { sentenceAxiomAttributes })) ->
                 sentenceAxiomAttributes
         SentenceSortSentence
             SentenceSort { sentenceSortAttributes } ->

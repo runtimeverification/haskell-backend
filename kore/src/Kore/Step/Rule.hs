@@ -58,6 +58,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
+import           Kore.Syntax.Sentence
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
@@ -247,11 +248,11 @@ extractOnePathClaims idxMod =
     $ (indexedModuleClaims idxMod)
 
 extractOnePathClaimFrom
-    :: Verified.SentenceAxiom
+    :: Verified.SentenceClaim
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (OnePathRule Object Variable)
 extractOnePathClaimFrom sentence =
-    case fromSentenceAxiom sentence of
+    case fromSentenceAxiom (getSentenceClaim sentence) of
         Right (OnePathClaimPattern claim) -> Just claim
         _ -> Nothing
 
@@ -268,11 +269,11 @@ extractAllPathClaims idxMod =
     (indexedModuleClaims idxMod)
 
 extractAllPathClaimFrom
-    :: Verified.SentenceAxiom
+    :: Verified.SentenceClaim
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (AllPathRule Object Variable)
 extractAllPathClaimFrom sentence =
-    case fromSentenceAxiom sentence of
+    case fromSentenceAxiom (getSentenceClaim sentence) of
         Right (AllPathClaimPattern claim) -> Just claim
         _ -> Nothing
 
@@ -290,11 +291,11 @@ extractImplicationClaims idxMod =
     $ (indexedModuleClaims idxMod)
 
 extractImplicationClaimFrom
-    :: Verified.SentenceAxiom
+    :: Verified.SentenceClaim
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (ImplicationRule Object Variable)
 extractImplicationClaimFrom sentence =
-    case fromSentenceAxiom sentence of
+    case fromSentenceAxiom (getSentenceClaim sentence) of
         Right (ImplicationAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
 
