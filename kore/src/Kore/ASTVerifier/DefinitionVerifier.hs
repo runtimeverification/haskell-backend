@@ -267,8 +267,8 @@ extractSingleModuleNameFromDefinition definition =
 
 findModule
     :: ModuleName
-    -> Map.Map ModuleName (IndexedModule param pat declAtts axiomAtts)
-    -> Either (Error VerifyError) (IndexedModule param pat declAtts axiomAtts)
+    -> Map.Map ModuleName (IndexedModule pat declAtts axiomAtts)
+    -> Either (Error VerifyError) (IndexedModule pat declAtts axiomAtts)
 findModule name modules =
     case Map.lookup name modules of
         Just a -> return a

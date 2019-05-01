@@ -207,8 +207,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: IndexedModule sortParam patternType StepperAttributes Attribute.Axiom
-    -> IndexedModule sortParam patternType StepperAttributes Attribute.Axiom
+    :: IndexedModule patternType StepperAttributes Attribute.Axiom
+    -> IndexedModule patternType StepperAttributes Attribute.Axiom
 constructorFunctions ixm =
     ixm
         { indexedModuleSymbolSentences =

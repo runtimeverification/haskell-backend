@@ -52,15 +52,8 @@ related attributes).
 All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations
-    :: forall indexedModule param axiom
-    .   ( indexedModule ~
-            IndexedModule
-                param
-                Verified.Pattern
-                Attribute.Symbol
-                axiom
-        )
-    => indexedModule
+    :: forall axiom
+    .  IndexedModule Verified.Pattern Attribute.Symbol axiom
     -> AST.UnresolvedDeclarations
 buildRepresentations indexedModule =
     listToDeclarations builtinDeclarations
