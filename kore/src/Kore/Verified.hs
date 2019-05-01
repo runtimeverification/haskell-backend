@@ -18,25 +18,24 @@ import           Kore.Annotation.Valid
                  ( Valid )
 import           Kore.AST.Pure hiding
                  ( Pattern )
-import qualified Kore.AST.Sentence as AST
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Syntax.Sentence as Syntax
 
 type Pattern =
     PurePattern Object Domain.Builtin Variable (Valid (Variable) Object)
 
-type Sentence = AST.Sentence Pattern
+type Sentence = Syntax.Sentence Pattern
 
-type SentenceAlias = AST.SentenceAlias Pattern
+type SentenceAlias = Syntax.SentenceAlias Pattern
 
-type SentenceAxiom = AST.SentenceAxiom Pattern
+type SentenceAxiom = Syntax.SentenceAxiom Pattern
 
 type SentenceClaim = Syntax.SentenceClaim Pattern
 
-type SentenceHook = AST.SentenceHook Pattern
+type SentenceHook = Syntax.SentenceHook Pattern
 
-type SentenceImport = AST.SentenceImport Pattern
+type SentenceImport = Syntax.SentenceImport Pattern
 
-type SentenceSort = AST.SentenceSort Pattern
+type SentenceSort = Syntax.SentenceSort Pattern
 
-type SentenceSymbol = AST.SentenceSymbol Pattern
+type SentenceSymbol = Syntax.SentenceSymbol Pattern
