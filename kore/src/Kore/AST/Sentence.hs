@@ -40,7 +40,6 @@ module Kore.AST.Sentence
     , PureSentence
     , PureModule
     , PureDefinition
-    , castDefinitionDomainValues
     , ParsedSentenceAlias
     , ParsedSentenceSymbol
     , ParsedSentenceImport
@@ -53,53 +52,10 @@ module Kore.AST.Sentence
     , Attributes (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Functor.Const
-                 ( Const )
-import           Data.Hashable
-                 ( Hashable (..) )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Data.Void
-                 ( Void )
-import           GHC.Generics
-                 ( Generic )
-
 import           Kore.AST.Pure as Pure
 import           Kore.Attribute.Attributes
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Syntax.Module
-import           Kore.Syntax.Sentence
-import           Kore.Unparser
-
-{-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
-
-Because there are plans to extend this to a list of 'Module's, the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions) is splitted here into 'Definition' and 'Module'.
-
-'definitionAttributes' corresponds to the first non-terminal of @definition@,
-while the remaining three are grouped into 'definitionModules'.
--}
-data Definition (sentence :: *) =
-    Definition
-        { definitionAttributes :: !Attributes
-        , definitionModules    :: ![Module sentence]
-        }
-    deriving (Eq, Functor, Foldable, Generic, Show, Traversable)
-
-instance Hashable sentence => Hashable (Definition sentence)
-
-instance NFData sentence => NFData (Definition sentence)
-
-instance Unparse sentence => Unparse (Definition sentence) where
-    unparse Definition { definitionAttributes, definitionModules } =
-        Pretty.vsep
-            (unparse definitionAttributes : map unparse definitionModules)
-
-    unparse2 Definition { definitionAttributes, definitionModules } =
-        Pretty.vsep
-            (unparse2 definitionAttributes : map unparse2 definitionModules)
+import           Kore.Syntax.Definition
 
 class SentenceSymbolOrAlias (sentence :: * -> *) where
     getSentenceSymbolOrAliasConstructor
@@ -143,28 +99,6 @@ instance SentenceSymbolOrAlias SentenceSymbol where
 
 class AsSentence sentenceType s | s -> sentenceType where
     asSentence :: s -> sentenceType
-
--- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
-type PureSentenceAxiom level domain =
-    SentenceAxiom SortVariable (ParsedPurePattern level domain)
-
--- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
-type PureSentenceAlias domain = SentenceAlias (ParsedPurePattern Object domain)
-
--- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
-type PureSentenceSymbol domain =
-    SentenceSymbol (ParsedPurePattern Object domain)
-
--- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
-type PureSentenceImport level domain =
-    SentenceImport (ParsedPurePattern level domain)
-
--- | 'PureSentenceHook' is the pure (fixed-@level@) version of 'SentenceHook'.
-type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
-
--- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
-type PureSentence domain =
-    Sentence SortVariable (ParsedPurePattern Object domain)
 
 instance
     sortParam ~ SortVariable =>
@@ -232,12 +166,6 @@ instance
   where
     asSentence = SentenceHookSentence
 
--- |'PureModule' is the pure (fixed-@level@) version of 'Module'
-type PureModule level domain = Module (PureSentence domain)
-
--- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
-type PureDefinition level domain = Definition (PureSentence domain)
-
 type ParsedSentenceSort =
     SentenceSort (ParsedPurePattern Object Domain.Builtin)
 
@@ -266,9 +194,3 @@ type ParsedSentence =
 type ParsedModule = Module ParsedSentence
 
 type ParsedDefinition = Definition ParsedSentence
-
-castDefinitionDomainValues
-    :: Functor domain
-    => PureDefinition Object (Const Void)
-    -> PureDefinition Object domain
-castDefinitionDomainValues = (fmap . fmap) Pure.castVoidDomainValues

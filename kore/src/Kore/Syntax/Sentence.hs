@@ -18,6 +18,16 @@ module Kore.Syntax.Sentence
     , Sentence (..)
     , sentenceAttributes
     , eraseSentenceAnnotations
+    -- * Type synonyms
+    , PureSentenceSymbol
+    , PureSentenceAlias
+    , PureSentenceImport
+    , PureSentenceAxiom
+    , PureSentenceHook
+    , PureSentence
+    , PureModule
+    -- * Re-exports
+    , module Kore.Syntax.Module
     ) where
 
 import           Control.DeepSeq
@@ -33,12 +43,11 @@ import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Pure
-                 ( PurePattern )
+                 ( ParsedPurePattern, PurePattern )
 import           Kore.Attribute.Attributes
 import           Kore.Sort
 import           Kore.Syntax.Application
 import           Kore.Syntax.Module
-                 ( ModuleName (..) )
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 
@@ -556,3 +565,28 @@ eraseSentenceAnnotations
         sortParam
         (PurePattern Object domain variable (Annotation.Null Object))
 eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
+
+-- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
+type PureSentenceAxiom level domain =
+    SentenceAxiom SortVariable (ParsedPurePattern level domain)
+
+-- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
+type PureSentenceAlias domain = SentenceAlias (ParsedPurePattern Object domain)
+
+-- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
+type PureSentenceSymbol domain =
+    SentenceSymbol (ParsedPurePattern Object domain)
+
+-- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
+type PureSentenceImport level domain =
+    SentenceImport (ParsedPurePattern level domain)
+
+-- | 'PureSentenceHook' is the pure (fixed-@level@) version of 'SentenceHook'.
+type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
+
+-- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
+type PureSentence domain =
+    Sentence SortVariable (ParsedPurePattern Object domain)
+
+-- |'PureModule' is the pure (fixed-@level@) version of 'Module'
+type PureModule level domain = Module (PureSentence domain)
