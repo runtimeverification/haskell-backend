@@ -95,7 +95,7 @@ extractEqualityAxioms =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    :: SentenceAxiom SortVariable (TermLike Variable)
+    :: SentenceAxiom (TermLike Variable)
     -> Maybe (AxiomIdentifier Object, EqualityRule Object Variable)
 axiomToIdAxiomPatternPair axiom =
     case Rule.fromSentenceAxiom axiom of

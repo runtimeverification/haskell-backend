@@ -655,7 +655,7 @@ sentenceImportGen =
 
 sentenceAxiomGen
    :: Gen patternType
-   -> Gen (SentenceAxiom SortVariable patternType)
+   -> Gen (SentenceAxiom patternType)
 sentenceAxiomGen patGen = do
     sentenceAxiomParameters <- couple sortVariableGen
     Reader.local (addSortVariables sentenceAxiomParameters) $ do

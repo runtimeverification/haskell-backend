@@ -29,7 +29,7 @@ type Sentence = AST.Sentence Pattern
 
 type SentenceAlias = AST.SentenceAlias Pattern
 
-type SentenceAxiom = AST.SentenceAxiom SortVariable Pattern
+type SentenceAxiom = AST.SentenceAxiom Pattern
 
 type SentenceClaim = Syntax.SentenceClaim SortVariable Pattern
 

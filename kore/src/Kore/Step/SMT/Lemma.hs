@@ -61,10 +61,8 @@ declareSMTLemmas m = SMT.liftSMT $ do
     tools = given
 
     declareRule
-        :: forall sortParam . (Given (SmtMetadataTools StepperAttributes))
-        => ( Attribute.Axiom
-           , SentenceAxiom sortParam (TermLike Variable)
-           )
+        :: Given (SmtMetadataTools StepperAttributes)
+        => ( Attribute.Axiom , SentenceAxiom (TermLike Variable) )
         -> SMT (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)

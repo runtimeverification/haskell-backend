@@ -323,35 +323,26 @@ instance Unparse (SentenceSort patternType) where
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
  -}
-data SentenceAxiom (sortParam :: *) (patternType :: *) =
+data SentenceAxiom (patternType :: *) =
     SentenceAxiom
-        { sentenceAxiomParameters :: ![sortParam]
+        { sentenceAxiomParameters :: ![SortVariable]
         , sentenceAxiomPattern    :: !patternType
         , sentenceAxiomAttributes :: !Attributes
         }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
-instance
-    (Hashable sortParam, Hashable patternType) =>
-    Hashable (SentenceAxiom sortParam patternType)
+instance Hashable patternType => Hashable (SentenceAxiom patternType)
 
-instance
-    (NFData sortParam, NFData patternType) =>
-    NFData (SentenceAxiom sortParam patternType)
+instance NFData patternType => NFData (SentenceAxiom patternType)
 
-instance
-    (Unparse sortParam, Unparse patternType) =>
-    Unparse (SentenceAxiom sortParam patternType)
-  where
+instance Unparse patternType => Unparse (SentenceAxiom patternType) where
     unparse = unparseAxiom "axiom"
     unparse2 = unparseAxiom2 "axiom"
 
 unparseAxiom
-    ::  ( Unparse patternType
-        , Unparse sortParam
-        )
+    :: Unparse patternType
     => Pretty.Doc ann
-    -> SentenceAxiom sortParam patternType
+    -> SentenceAxiom patternType
     -> Pretty.Doc ann
 unparseAxiom
     label
@@ -369,11 +360,9 @@ unparseAxiom
         ]
 
 unparseAxiom2
-    ::  ( Unparse patternType
-        , Unparse sortParam
-        )
+    :: Unparse patternType
     => Pretty.Doc ann
-    -> SentenceAxiom sortParam patternType
+    -> SentenceAxiom patternType
     -> Pretty.Doc ann
 unparseAxiom2
     label
@@ -393,7 +382,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
  -}
 newtype SentenceClaim (sortParam :: *) (patternType :: *) =
-    SentenceClaim { getSentenceClaim :: SentenceAxiom sortParam patternType }
+    SentenceClaim { getSentenceClaim :: SentenceAxiom patternType }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 instance
@@ -452,7 +441,7 @@ data Sentence (patternType :: *) where
         :: !(SentenceImport patternType)
         -> Sentence patternType
     SentenceAxiomSentence
-        :: !(SentenceAxiom SortVariable patternType)
+        :: !(SentenceAxiom patternType)
         -> Sentence patternType
     SentenceClaimSentence
         :: !(SentenceClaim SortVariable patternType)
@@ -533,8 +522,8 @@ eraseSentenceAnnotations
 eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
-type PureSentenceAxiom level domain =
-    SentenceAxiom SortVariable (ParsedPurePattern level domain)
+type PureSentenceAxiom domain =
+    SentenceAxiom (ParsedPurePattern Object domain)
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
 type PureSentenceAlias domain = SentenceAlias (ParsedPurePattern Object domain)

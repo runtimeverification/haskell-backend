@@ -946,7 +946,7 @@ BNF example:
 Always starts with @{@.
 -}
 axiomSentenceRemainderParser
-    :: ( SentenceAxiom SortVariable ParsedPattern -> Sentence ParsedPattern )
+    :: ( SentenceAxiom ParsedPattern -> Sentence ParsedPattern )
     -> Parser ParsedSentence
 axiomSentenceRemainderParser ctor =
   ctor

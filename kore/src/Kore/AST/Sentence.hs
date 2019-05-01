@@ -132,7 +132,7 @@ instance
         (Sentence
             (PurePattern Object domain variable annotation)
         )
-        (SentenceAxiom SortVariable (PurePattern Object domain variable annotation))
+        (SentenceAxiom (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceAxiomSentence
 
@@ -168,9 +168,7 @@ type ParsedSentenceImport =
     SentenceImport (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedSentenceAxiom =
-    SentenceAxiom
-        SortVariable
-        (ParsedPurePattern Object Domain.Builtin)
+    SentenceAxiom (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedSentenceHook =
     SentenceHook (ParsedPurePattern Object Domain.Builtin)

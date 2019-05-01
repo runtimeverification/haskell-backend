@@ -118,14 +118,14 @@ instance With (SentenceAlias patt) Attribute where
 instance With (SentenceAlias patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceAxiom sort patt) Attribute where
+instance With (SentenceAxiom patt) Attribute where
     s@SentenceAxiom {sentenceAxiomAttributes} `with` attribute =
         s
             { SentenceAxiom.sentenceAxiomAttributes =
                 sentenceAxiomAttributes `with` attribute
             }
 
-instance With (SentenceAxiom sort patt) [Attribute] where
+instance With (SentenceAxiom patt) [Attribute] where
     with = foldl' with
 
 instance With (SentenceClaim sort patt) Attribute where

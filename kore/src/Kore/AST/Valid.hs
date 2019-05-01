@@ -1038,9 +1038,9 @@ mkAxiom
     ::  ( valid ~ Valid variable level
         , patternType ~ PurePattern level domain variable valid
         )
-    => [sortParam]
+    => [SortVariable]
     -> patternType
-    -> SentenceAxiom sortParam patternType
+    -> SentenceAxiom patternType
 mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
     SentenceAxiom
         { sentenceAxiomParameters
@@ -1058,7 +1058,7 @@ mkAxiom_
         , patternType ~ PurePattern level domain variable valid
         )
     => patternType
-    -> SentenceAxiom sortParam patternType
+    -> SentenceAxiom patternType
 mkAxiom_ = mkAxiom []
 
 {- | Construct a symbol declaration with the given parameters and sorts.

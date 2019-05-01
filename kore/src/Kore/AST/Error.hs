@@ -108,7 +108,7 @@ withSentenceAliasContext
 {- | Identify and locate the given axiom declaration in the error context.
  -}
 withSentenceAxiomContext
-    :: SentenceAxiom sortParam patternType
+    :: SentenceAxiom patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceAxiomContext _ = withContext "axiom declaration"

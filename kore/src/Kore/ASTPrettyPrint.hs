@@ -620,10 +620,7 @@ instance
         writeStructure "SentenceClaim"
             [ writeFieldNewLine "getSentenceClaim" getSentenceClaim sentence ]
 
-instance
-    ( PrettyPrint sortParam
-    , PrettyPrint patternType
-    ) => PrettyPrint (SentenceAxiom sortParam patternType)
+instance PrettyPrint patternType => PrettyPrint (SentenceAxiom patternType)
   where
     prettyPrint _ sa@(SentenceAxiom _ _ _) =
         writeStructure
