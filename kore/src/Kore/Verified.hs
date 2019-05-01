@@ -33,6 +33,6 @@ type SentenceHook = AST.SentenceHook Pattern
 
 type SentenceImport = AST.SentenceImport Pattern
 
-type SentenceSort = AST.SentenceSort Object Pattern
+type SentenceSort = AST.SentenceSort Pattern
 
 type SentenceSymbol = AST.SentenceSymbol Pattern

@@ -68,7 +68,7 @@ aliasSentencesMap = indexedModuleAliasSentences
 
 sortSentencesMap
     :: IndexedModule sortParam patternType declAtts axiomAtts
-    -> Map.Map Id (Attribute.Sort, SentenceSort Object patternType)
+    -> Map.Map Id (Attribute.Sort, SentenceSort patternType)
 sortSentencesMap = indexedModuleSortDescriptions
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
@@ -227,7 +227,7 @@ resolveSort
     :: MonadError (Error e) m
     => IndexedModule sortParam patternType declAtts axiomAtts
     -> Id
-    -> m (Attribute.Sort, SentenceSort Object patternType)
+    -> m (Attribute.Sort, SentenceSort patternType)
 resolveSort m sortId =
     case resolveThing sortSentencesMap m sortId of
         Nothing ->
@@ -299,7 +299,7 @@ findIndexedSort
     -- ^ indexed module
     -> Id
     -- ^ sort identifier
-    -> Either (Error e) (SentenceSort Object patternType)
+    -> Either (Error e) (SentenceSort patternType)
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)
 

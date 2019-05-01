@@ -243,7 +243,7 @@ sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
     (asSentence sentence)
   where
-    sentence :: SentenceSort Object (TermLike Variable)
+    sentence :: SentenceSort (TermLike Variable)
     sentence =
         SentenceSort
             { sentenceSortName = testId "AInt"
@@ -255,7 +255,7 @@ sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
     (asSentence sentence)
   where
-    sentence :: SentenceSort Object (TermLike Variable)
+    sentence :: SentenceSort (TermLike Variable)
     sentence =
         SentenceSort
             { sentenceSortName = testId "KItem"

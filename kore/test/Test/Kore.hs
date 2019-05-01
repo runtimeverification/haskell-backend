@@ -668,7 +668,7 @@ sentenceAxiomGen patGen = do
 
 sentenceSortGen
     :: forall patternType
-    .  Gen (SentenceSort Object patternType)
+    .  Gen (SentenceSort patternType)
 sentenceSortGen = do
     sentenceSortName <- idGen
     sentenceSortParameters <- couple sortVariableGen

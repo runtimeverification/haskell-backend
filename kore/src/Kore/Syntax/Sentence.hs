@@ -13,6 +13,7 @@ module Kore.Syntax.Sentence
     , SentenceAlias (..)
     , SentenceSymbol (..)
     , SentenceImport (..)
+    , SentenceSort (..)
     ) where
 
 import           Control.DeepSeq
@@ -268,3 +269,54 @@ instance Unparse (SentenceImport patternType) where
             [ "import", unparse2 sentenceImportModuleName
             , unparse2 sentenceImportAttributes
             ]
+
+{- | 'SentenceSort' corresponds to the @sort-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+
+ -}
+data SentenceSort (patternType :: *) =
+    SentenceSort
+        { sentenceSortName       :: !Id
+        , sentenceSortParameters :: ![SortVariable]
+        , sentenceSortAttributes :: !Attributes
+        }
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+
+instance Hashable (SentenceSort patternType)
+
+instance NFData (SentenceSort patternType)
+
+instance Unparse (SentenceSort patternType) where
+    unparse
+        SentenceSort
+            { sentenceSortName
+            , sentenceSortParameters
+            , sentenceSortAttributes
+            }
+      =
+        Pretty.fillSep
+            [ "sort"
+            , unparse sentenceSortName <> parameters sentenceSortParameters
+            , unparse sentenceSortAttributes
+            ]
+
+    unparse2
+        SentenceSort
+            { sentenceSortName
+            , sentenceSortParameters
+            }
+      = Pretty.vsep
+            [ Pretty.fillSep ["symbol", unparse2 sentenceSortName, "[sort]"]
+            , Pretty.fillSep ["axiom"
+                             , "\\subset"
+                             , Pretty.parens (Pretty.fillSep
+                                [ unparse2 sentenceSortName
+                                , printLbSortsRb (length sentenceSortParameters)
+                                ])
+                             , "Sorts"
+                             ]
+            ]
+      where printLbSortsRb n =
+              case n of
+                  0 -> ""
+                  m -> Pretty.fillSep["(\\inh Sorts)", printLbSortsRb (m - 1)]

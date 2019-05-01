@@ -123,7 +123,7 @@ withSentenceClaimContext _ = withContext "claim declaration"
 {- | Identify and locate the given sort declaration in the error context.
  -}
 withSentenceSortContext
-    :: SentenceSort level patternType
+    :: SentenceSort patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceSortContext

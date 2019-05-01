@@ -22,8 +22,6 @@ import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Sentence
 import qualified Kore.AST.Sentence as Definition
                  ( Definition (..) )
@@ -149,7 +147,7 @@ sortDeclaration name =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: SentenceSort Object ParsedPattern
+        :: SentenceSort ParsedPattern
         )
 
 symbolDeclaration :: Text -> Text -> [Text] -> ParsedSentence

@@ -147,14 +147,14 @@ instance With (SentenceSymbol patt) Attribute where
 instance With (SentenceSymbol patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceSort level patt) Attribute where
+instance With (SentenceSort patt) Attribute where
     s@SentenceSort {sentenceSortAttributes} `with` attribute =
         s
             { SentenceSort.sentenceSortAttributes =
                 sentenceSortAttributes `with` attribute
             }
 
-instance With (SentenceSort level patt) [Attribute] where
+instance With (SentenceSort patt) [Attribute] where
     with = foldl' with
 
 instance With Attributes Attribute where

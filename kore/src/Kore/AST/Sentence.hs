@@ -75,57 +75,6 @@ import           Kore.Syntax.Sentence
 import           Kore.Unparser
 
 
-{-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-data SentenceSort (level :: *) (patternType :: *) =
-    SentenceSort
-        { sentenceSortName       :: !Id
-        , sentenceSortParameters :: ![SortVariable]
-        , sentenceSortAttributes :: !Attributes
-        }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
-
-instance Hashable (SentenceSort level patternType)
-
-instance NFData (SentenceSort level patternType)
-
-instance Unparse (SentenceSort level patternType) where
-    unparse
-        SentenceSort
-            { sentenceSortName
-            , sentenceSortParameters
-            , sentenceSortAttributes
-            }
-      =
-        Pretty.fillSep
-            [ "sort"
-            , unparse sentenceSortName <> parameters sentenceSortParameters
-            , unparse sentenceSortAttributes
-            ]
-
-    unparse2
-        SentenceSort
-            { sentenceSortName
-            , sentenceSortParameters
-            }
-      = Pretty.vsep
-            [ Pretty.fillSep ["symbol", unparse2 sentenceSortName, "[sort]"]
-            , Pretty.fillSep ["axiom"
-                             , "\\subset"
-                             , Pretty.parens (Pretty.fillSep
-                                [ unparse2 sentenceSortName
-                                , printLbSortsRb (length sentenceSortParameters)
-                                ])
-                             , "Sorts"
-                             ]
-            ]
-      where printLbSortsRb n =
-              case n of
-                  0 -> ""
-                  m -> Pretty.fillSep["(\\inh Sorts)", printLbSortsRb (m - 1)]
-
-
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
@@ -202,7 +151,7 @@ represent hooked sorts and hooked symbols.
 -}
 data SentenceHook (patternType :: *) where
     SentenceHookedSort
-        :: !(SentenceSort Object patternType) -> SentenceHook patternType
+        :: !(SentenceSort patternType) -> SentenceHook patternType
     SentenceHookedSymbol
         :: !(SentenceSymbol patternType) -> SentenceHook patternType
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
@@ -249,7 +198,7 @@ data Sentence (level :: *) (sortParam :: *) (patternType :: *) where
         :: !(SentenceAxiom sortParam patternType)
         -> Sentence Meta sortParam patternType
     SentenceSortSentence
-        :: !(SentenceSort level patternType)
+        :: !(SentenceSort patternType)
         -> Sentence level sortParam patternType
     SentenceHookSentence
         :: !(SentenceHook patternType)
@@ -556,7 +505,7 @@ instance
             SortVariable
             (PurePattern Object domain variable annotation)
         )
-        (SentenceSort Object (PurePattern Object domain variable annotation))
+        (SentenceSort (PurePattern Object domain variable annotation))
   where
     asSentence = SentenceSortSentence
 
@@ -580,7 +529,7 @@ type PureModule level domain = Module (PureSentence level domain)
 type PureDefinition level domain = Definition (PureSentence level domain)
 
 type ParsedSentenceSort =
-    SentenceSort Object (ParsedPurePattern Object Domain.Builtin)
+    SentenceSort (ParsedPurePattern Object Domain.Builtin)
 
 type ParsedSentenceSymbol =
     SentenceSymbol (ParsedPurePattern Object Domain.Builtin)

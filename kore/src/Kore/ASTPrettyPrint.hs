@@ -629,7 +629,7 @@ instance
 
 instance
     PrettyPrint patternType
-    => PrettyPrint (SentenceSort level patternType)
+    => PrettyPrint (SentenceSort patternType)
   where
     prettyPrint _ sa@(SentenceSort _ _ _) =
         writeStructure

@@ -86,7 +86,7 @@ import           Kore.Parser
 import qualified Kore.Verified as Verified
 
 type SortDescription level dom =
-    SentenceSort level (PurePattern level dom Variable (Annotation.Null level))
+    SentenceSort (PurePattern level dom Variable (Annotation.Null level))
 
 data IndexModuleError
 
@@ -114,7 +114,7 @@ data IndexedModule param pat declAtts axiomAtts =
     , indexedModuleSymbolSentences
         :: !(Map.Map Id (declAtts, SentenceSymbol pat))
     , indexedModuleSortDescriptions
-        :: !(Map.Map Id (Attribute.Sort, SentenceSort Object pat))
+        :: !(Map.Map Id (Attribute.Sort, SentenceSort pat))
     , indexedModuleAxioms :: ![(axiomAtts, SentenceAxiom param pat)]
     , indexedModuleClaims :: ![(axiomAtts, SentenceAxiom param pat)]
     , indexedModuleAttributes :: !(declAtts, Attributes)
@@ -141,7 +141,7 @@ data IndexedModule param pat declAtts axiomAtts =
 recursiveIndexedModuleSortDescriptions
     :: forall param pat declAtts axiomAtts
     .  IndexedModule param pat declAtts axiomAtts
-    -> Map.Map Id (Attribute.Sort, SentenceSort Object pat)
+    -> Map.Map Id (Attribute.Sort, SentenceSort pat)
 recursiveIndexedModuleSortDescriptions =
     recursiveIndexedModuleStuff indexedModuleSortDescriptions
 
