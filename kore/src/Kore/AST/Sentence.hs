@@ -155,7 +155,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SentenceSymbol (level :: *) (patternType :: *) =
     SentenceSymbol
-        { sentenceSymbolSymbol     :: !(Symbol level)
+        { sentenceSymbolSymbol     :: !Symbol
         , sentenceSymbolSorts      :: ![Sort]
         , sentenceSymbolResultSort :: !Sort
         , sentenceSymbolAttributes :: !Attributes

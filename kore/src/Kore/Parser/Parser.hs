@@ -141,8 +141,8 @@ BNF definitions:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 symbolOrAliasDeclarationRawParser
-    :: (Id -> [SortVariable] -> m Object)  -- ^ Element constructor.
-    -> Parser (m Object)
+    :: (Id -> [SortVariable] -> result)  -- ^ Element constructor.
+    -> Parser result
 symbolOrAliasDeclarationRawParser constructor = do
     headConstructor <- idParser
     symbolOrAliasDeclarationRemainderRawParser (constructor headConstructor)
@@ -160,8 +160,8 @@ BNF fragments:
 Always starts with @{@.
 -}
 symbolOrAliasDeclarationRemainderRawParser
-    :: ([SortVariable] -> m Object)  -- ^ Element constructor.
-    -> Parser (m Object)
+    :: ([SortVariable] -> result)  -- ^ Element constructor.
+    -> Parser result
 symbolOrAliasDeclarationRemainderRawParser constructor =
     constructor <$> inCurlyBracesListParser sortVariableParser
 
@@ -184,7 +184,7 @@ aliasParser = symbolOrAliasDeclarationRawParser Alias
 {-|'symbolParser' is the same as 'aliasParser', but it interprets the head
 as a symbol one.
 -}
-symbolParser :: Parser (Symbol Object)
+symbolParser :: Parser Symbol
 symbolParser = symbolOrAliasDeclarationRawParser Symbol
 
 {-|'unaryOperatorRemainderParser' parses the part after an unary operator's

@@ -164,7 +164,7 @@ symbolDeclaration name sortName argumentSortNames =
         :: SentenceSymbol Object ParsedPattern
         )
 
-makeSymbol :: Text -> Symbol Object
+makeSymbol :: Text -> Symbol
 makeSymbol name =
     Symbol
         { symbolConstructor = testId name

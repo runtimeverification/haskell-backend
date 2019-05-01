@@ -139,8 +139,8 @@ charGen =
 
 symbolOrAliasDeclarationRawGen
     :: MonadGen m
-    => (Id -> [SortVariable] -> s Object)
-    -> m (s Object)
+    => (Id -> [SortVariable] -> result)
+    -> m result
 symbolOrAliasDeclarationRawGen constructor =
     constructor
         <$> Gen.small idGen
@@ -152,7 +152,7 @@ symbolOrAliasGen =
         <$> Gen.small idGen
         <*> couple (Gen.small sortGen)
 
-symbolGen :: MonadGen m => m (Symbol Object)
+symbolGen :: MonadGen m => m Symbol
 symbolGen = symbolOrAliasDeclarationRawGen Symbol
 
 aliasGen :: MonadGen m => m (Alias Object)

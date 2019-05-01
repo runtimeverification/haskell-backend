@@ -20,27 +20,24 @@ import GHC.Generics
 import Kore.AST.Pure as Pure
 import Kore.Unparser
 
-{-|'Symbol' corresponds to the
-@object-head-constructor{object-sort-variable-list}@ part of the
-@object-symbol-declaration@ and @meta-symbol-declaration@ syntactic categories
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+{- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
+@symbol-declaration@ syntactic category from the Semantics of K, Section 9.1.6
+(Declaration and Definitions).
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
+See also: 'SymbolOrAlias'.
 
-Note that this is very similar to 'SymbolOrAlias'.
--}
-data Symbol level = Symbol
+ -}
+data Symbol = Symbol
     { symbolConstructor :: !Id
     , symbolParams      :: ![SortVariable]
     }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (Symbol level)
+instance Hashable Symbol
 
-instance NFData (Symbol level)
+instance NFData Symbol
 
-instance Unparse (Symbol level) where
+instance Unparse Symbol where
     unparse Symbol { symbolConstructor, symbolParams } =
         unparse symbolConstructor
         <> parameters symbolParams
@@ -51,7 +48,7 @@ instance Unparse (Symbol level) where
 
 -- |Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
 -- corresponding to that argument.
-groundSymbol :: Id -> Symbol Object
+groundSymbol :: Id -> Symbol
 groundSymbol ctor = Symbol
     { symbolConstructor = ctor
     , symbolParams = []
