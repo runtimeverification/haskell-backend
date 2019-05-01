@@ -23,6 +23,7 @@ module Kore.Internal.Pattern
     -- * Re-exports
     , Conditional (..)
     , Conditional.withCondition
+    , Conditional.withoutTerm
     , Predicate
     ) where
 
