@@ -66,7 +66,6 @@ import           Data.Text
 import           GHC.Generics
                  ( Generic )
 
-import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Error
 import           Kore.AST.Pure
 import           Kore.Attribute.Hook
@@ -86,7 +85,7 @@ import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 type SortDescription level dom =
-    SentenceSort (PurePattern dom Variable (Annotation.Null level))
+    SentenceSort (PurePattern dom Variable Attribute.Null)
 
 data IndexModuleError
 

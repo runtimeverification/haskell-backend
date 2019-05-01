@@ -58,7 +58,6 @@ import           Data.Void
 import           GHC.Generics
                  ( Generic )
 
-import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
                  ( Valid (..) )
 import           Kore.AST.Common hiding
@@ -66,6 +65,7 @@ import           Kore.AST.Common hiding
                  traverseVariables )
 import qualified Kore.AST.Common as Head
 import           Kore.AST.MetaOrObject
+import qualified Kore.Attribute.Null as Attribute
 import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -308,12 +308,11 @@ asPurePattern = Recursive.embed
 eraseAnnotations
     :: Functor domain
     => PurePattern domain variable erased
-    -> PurePattern domain variable (Annotation.Null level)
-eraseAnnotations = (<$) Annotation.Null
+    -> PurePattern domain variable Attribute.Null
+eraseAnnotations = (<$) Attribute.Null
 
 -- | A pure pattern at level @level@ with variables in the common 'Variable'.
-type CommonPurePattern domain =
-    PurePattern domain Variable (Annotation.Null Object)
+type CommonPurePattern domain = PurePattern domain Variable Attribute.Null
 
 -- | A concrete pure pattern (containing no variables) at level @level@.
 type ConcretePurePattern domain = PurePattern domain Concrete (Valid Concrete)

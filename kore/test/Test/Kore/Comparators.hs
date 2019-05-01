@@ -23,11 +23,11 @@ import           Numeric.Natural
                  ( Natural )
 
 import qualified Kore.AllPath as AllPath
-import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Error
@@ -1385,7 +1385,7 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (Annotation.Null Object) where
+instance EqualWithExplanation Attribute.Null where
     compareWithExplanation _ _ = Nothing
     printWithExplanation = show
 

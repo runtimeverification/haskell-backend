@@ -27,9 +27,9 @@ import           Data.Void
 import           Numeric.Natural
 
 import           Data.Sup
-import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
@@ -318,8 +318,8 @@ instance PrettyPrint child => PrettyPrint (Ceil Sort child) where
 instance PrettyPrint a => PrettyPrint (Const a b) where
     prettyPrint flags (Const a) = writeOneFieldStruct flags "Const" a
 
-instance PrettyPrint (Annotation.Null level) where
-    prettyPrint _ Annotation.Null = "Null"
+instance PrettyPrint Attribute.Null where
+    prettyPrint _ Attribute.Null = "Null"
 
 instance PrettyPrint variable => PrettyPrint (Valid variable) where
     prettyPrint _ valid@(Valid _ _) =

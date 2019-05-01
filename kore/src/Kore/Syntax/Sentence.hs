@@ -50,13 +50,11 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import qualified Kore.Annotation.Null as Annotation
-                 ( Null (..) )
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Pure
                  ( PurePattern )
 import           Kore.Attribute.Attributes
+import qualified Kore.Attribute.Null as Attribute
+                 ( Null (..) )
 import           Kore.Sort
 import           Kore.Syntax.Application
 import           Kore.Syntax.Module
@@ -520,11 +518,9 @@ sentenceAttributes =
 -- | Erase the pattern annotations within a 'Sentence'.
 eraseSentenceAnnotations
     :: Functor domain
-    => Sentence
-        (PurePattern domain variable erased)
-    -> Sentence
-        (PurePattern domain variable (Annotation.Null Object))
-eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
+    => Sentence (PurePattern domain variable erased)
+    -> Sentence (PurePattern domain variable Attribute.Null)
+eraseSentenceAnnotations sentence = (<$) Attribute.Null <$> sentence
 
 class AsSentence sentenceType where
     asSentence :: sentenceType patternType -> Sentence patternType

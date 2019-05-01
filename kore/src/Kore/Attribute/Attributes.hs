@@ -19,15 +19,14 @@ import           Data.Hashable
                  ( Hashable )
 import qualified GHC.Generics as GHC
 
-import qualified Kore.Annotation.Null as Annotation
-                 ( Null )
 import           Kore.AST.Pure
+import qualified Kore.Attribute.Null as Attribute
+                 ( Null )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Unparser
 
--- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
-type ParsedPurePattern =
-    PurePattern Domain.Builtin Variable (Annotation.Null Object)
+-- | A pure pattern which has only been parsed.
+type ParsedPurePattern = PurePattern Domain.Builtin Variable Attribute.Null
 
 type AttributePattern = ParsedPurePattern
 

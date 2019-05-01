@@ -77,6 +77,8 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure hiding
                  ( getStringLiteral )
 import           Kore.Attribute.Attributes
+import qualified Kore.Attribute.Null as Attribute
+                 ( Null )
 import qualified Kore.Attribute.Smtlib.Smthook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
 import           Kore.Error
@@ -115,6 +117,9 @@ class Default attrs => ParseAttributes attrs where
 instance ParseAttributes Attributes where
     parseAttribute attr (Attributes attrs) =
         return (Attributes $ attr : attrs)
+
+instance ParseAttributes Attribute.Null where
+    parseAttribute _ _ = return mempty
 
 parseAttributesWith
     :: ParseAttributes attrs

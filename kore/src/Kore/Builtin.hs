@@ -38,11 +38,11 @@ import           Data.Semigroup
 import           Data.Text
                  ( Text )
 
-import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -220,7 +220,7 @@ WARNING: This is not implemented for internal domain values. Use
 asMetaPattern
     :: Functor domain
     => Domain.Builtin child
-    -> PurePattern domain Variable (Annotation.Null Meta)
+    -> PurePattern domain Variable Attribute.Null
 asMetaPattern =
     \case
         Domain.BuiltinExternal ext ->
