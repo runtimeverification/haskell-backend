@@ -37,7 +37,6 @@ import           System.IO
 import           Text.Megaparsec
                  ( parseMaybe )
 
-import           Kore.AST.MetaOrObject
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -96,14 +95,14 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     evalStateT (whileM repl0) state
 
   where
-    repl0 :: StateT (ReplState claim Object) Simplifier Bool
+    repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
         replInterpreter putStrLn command
 
-    state :: ReplState claim Object
+    state :: ReplState claim
     state =
         ReplState
             { axioms   = addIndexesToAxioms axioms'
@@ -211,7 +210,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => MonadState (ReplState claim Object) m => m String
+    prompt :: MonadIO m => MonadState (ReplState claim) m => m String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do

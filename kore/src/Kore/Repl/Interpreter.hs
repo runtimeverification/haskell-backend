@@ -101,7 +101,7 @@ import           Kore.Unparser
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
-type ReplM claim level a = RWST () String (ReplState claim level) Simplifier a
+type ReplM claim level a = RWST () String (ReplState claim) Simplifier a
 
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
@@ -109,7 +109,7 @@ replInterpreter
     .  Claim claim
     => (String -> IO ())
     -> ReplCommand
-    -> StateT (ReplState claim Object) Simplifier Bool
+    -> StateT (ReplState claim) Simplifier Bool
 replInterpreter printFn replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> True
@@ -146,7 +146,7 @@ replInterpreter printFn replCmd = do
     -- monadic result.
     evaluateCommand
         :: ReplM claim level Bool
-        -> StateT (ReplState claim level) Simplifier (String, Bool)
+        -> StateT (ReplState claim) Simplifier (String, Bool)
     evaluateCommand c = do
         st <- get
         (exit, st', w) <- Monad.Trans.lift $ runRWST c () st
@@ -162,7 +162,7 @@ help = putStrLn' helpText
 -- | Prints a claim using an index in the claims list.
 showClaim
     :: Claim claim
-    => MonadState (ReplState claim level) m
+    => MonadState (ReplState claim) m
     => MonadWriter String m
     => Int
     -- ^ index in the claims list
@@ -173,7 +173,7 @@ showClaim index = do
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
     => Int
     -- ^ index in the axioms list
@@ -184,9 +184,9 @@ showAxiom index = do
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
-    :: forall level claim m
+    :: forall claim m
     .  Claim claim
-    => MonadState (ReplState claim level) m
+    => MonadState (ReplState claim) m
     => MonadWriter String m
     => Int
     -- ^ index in the claims list
@@ -202,7 +202,7 @@ prove index = do
 
 showGraph
     :: MonadIO m
-    => MonadState (ReplState claim level) m
+    => MonadState (ReplState claim) m
     => m ()
 showGraph = do
     graph <- getInnerGraph
@@ -241,7 +241,7 @@ proveStepsF n = do
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
     => Int
     -- ^ node identifier
@@ -254,8 +254,7 @@ selectNode i = do
 
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig
-    :: level ~ Object
-    => Maybe Int
+    :: Maybe Int
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim level ()
 showConfig configNode = do
@@ -331,7 +330,7 @@ showLeafs = do
     showPair (ns, xs) = show ns <> ": " <> show xs
 
 showRule
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
     => Maybe Int
     -> m ()
@@ -386,8 +385,8 @@ showChildren maybeNode = do
 
 -- | Shows existing labels or go to an existing label.
 label
-    :: forall level m claim
-    .  MonadState (ReplState claim level) m
+    :: forall m claim
+    .  MonadState (ReplState claim) m
     => MonadWriter String m
     => Maybe String
     -- ^ 'Nothing' for show labels, @Just str@ for jumping to the string label.
@@ -415,7 +414,7 @@ label =
 
 -- | Adds label for selected node.
 labelAdd
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
     => String
     -- ^ label
@@ -437,7 +436,7 @@ labelAdd lbl maybeNode = do
 
 -- | Removes a label.
 labelDel
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
     => String
     -- ^ label
@@ -469,8 +468,8 @@ redirect cmd path = do
     redirectToFile = writeFile path
 
     runInterpreter
-        :: ReplState claim level
-        -> ReplM claim level (ReplState claim level)
+        :: ReplState claim
+        -> ReplM claim level (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter redirectToFile cmd)
 
 -- | Attempt to use a specific axiom or claim to progress the current proof.
@@ -555,8 +554,8 @@ tryAxiomClaim eac = do
 
 -- | Removes specified node and all its child nodes.
 clear
-    :: forall level m claim
-    .  MonadState (ReplState claim level) m
+    :: forall m claim
+    .  MonadState (ReplState claim) m
     => MonadWriter String m
     => Maybe Int
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
@@ -589,7 +588,7 @@ clear =
 
 -- | Save this sessions' commands to the specified file.
 saveSession
-    :: MonadState (ReplState level claim) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
     => MonadIO m
     => FilePath
@@ -633,8 +632,8 @@ pipe cmd file args = do
   where
     runInterpreter
         :: (String -> IO ())
-        -> ReplState claim level
-        -> ReplM claim level (ReplState claim level)
+        -> ReplState claim
+        -> ReplM claim level (ReplState claim)
     runInterpreter io = lift . execStateT (replInterpreter io cmd)
 
     createProcess' exec =
@@ -656,8 +655,8 @@ appendTo cmd file = do
     putStrLn' $ "Appended output to \"" <> file <> "\"."
   where
     runInterpreter
-        :: ReplState claim level
-        -> ReplM claim level (ReplState claim level)
+        :: ReplState claim
+        -> ReplM claim level (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter (appendFile file) cmd)
 
 
