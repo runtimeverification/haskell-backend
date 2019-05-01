@@ -107,7 +107,7 @@ matchAsUnification
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( OrPredicate Object variable
+        ( OrPredicate variable
         , UnificationProof Object variable
         )
 matchAsUnification
@@ -150,7 +150,7 @@ unificationWithAppMatchOnTop
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( OrPredicate Object variable
+        ( OrPredicate variable
         , UnificationProof Object variable
         )
 unificationWithAppMatchOnTop
@@ -232,7 +232,7 @@ match
     -> TermLike variable
     -- TODO: Use Result here.
     -> MaybeT unifier
-        (OrPredicate Object variable)
+        (OrPredicate variable)
 match
     tools
     substitutionSimplifier
@@ -278,7 +278,7 @@ matchEqualHeadPatterns
     -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (OrPredicate Object variable)
+    -> MaybeT unifier (OrPredicate variable)
 matchEqualHeadPatterns
     tools
     substitutionSimplifier
@@ -518,7 +518,7 @@ matchEqualHeadPatterns
             else nothing
     justTop
         :: MaybeT unifier
-            (OrPredicate Object variable)
+            (OrPredicate variable)
     justTop = just
         (MultiOr.make [Predicate.top])
 
@@ -540,7 +540,7 @@ matchJoin
     -> Map.Map variable variable
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier
-        (OrPredicate Object variable)
+        (OrPredicate variable)
 matchJoin
     tools
     substitutionSimplifier
@@ -561,12 +561,12 @@ matchJoin
             )
             patterns
     let
-        crossProduct :: MultiOr [Predicate Object variable]
+        crossProduct :: MultiOr [Predicate variable]
         crossProduct = MultiOr.fullCrossProduct matched
         merge
-            :: [Predicate Object variable]
+            :: [Predicate variable]
             -> unifier
-                (Predicate Object variable)
+                (Predicate variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
                 tools
@@ -595,7 +595,7 @@ unifyJoin
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
     -> unifier
-        ( OrPredicate Object variable
+        ( OrPredicate variable
         , UnificationProof Object variable
         )
 unifyJoin
@@ -612,14 +612,14 @@ unifyJoin
             )
             patterns
     let
-        matched :: [OrPredicate Object variable]
+        matched :: [OrPredicate variable]
         (matched, _proof) = unzip matchedWithProofs
-        crossProduct :: MultiOr [Predicate Object variable]
+        crossProduct :: MultiOr [Predicate variable]
         crossProduct = MultiOr.fullCrossProduct matched
         merge
-            :: [Predicate Object variable]
+            :: [Predicate variable]
             -> unifier
-                (Predicate Object variable)
+                (Predicate variable)
         merge items = do
             (result, _proof) <- mergePredicatesAndSubstitutionsExcept
                 tools
@@ -666,7 +666,7 @@ matchVariableFunction
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (OrPredicate Object variable)
+        (OrPredicate variable)
 matchVariableFunction
     tools
     substitutionSimplifier
@@ -710,8 +710,8 @@ checkVariableEscapeOr
         , Unparse variable
         )
     => [variable]
-    -> OrPredicate Object variable
-    -> OrPredicate Object variable
+    -> OrPredicate variable
+    -> OrPredicate variable
 checkVariableEscapeOr vars = fmap (checkVariableEscape vars)
 
 checkVariableEscape
@@ -722,8 +722,8 @@ checkVariableEscape
         , Unparse variable
         )
     => [variable]
-    -> Predicate Object variable
-    -> Predicate Object variable
+    -> Predicate variable
+    -> Predicate variable
 checkVariableEscape vars predSubst
   | any (`Set.member` freeVars) vars = error
         "quantified variables in substitution or predicate escaping context"

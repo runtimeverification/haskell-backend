@@ -56,7 +56,7 @@ mergeWithPredicate
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Predicate to add.
     -> OrPattern variable
     -- ^ Pattern to which the condition should be added.
@@ -97,7 +97,7 @@ mergeWithPredicateAssumesEvaluated
         , Unparse variable
         )
     => PredicateMerger Object variable m
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Predicate to add.
     -> MultiOr (Conditional variable term)
     -- ^ Pattern to which the condition should be added.

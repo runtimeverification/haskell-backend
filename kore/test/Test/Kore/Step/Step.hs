@@ -88,12 +88,12 @@ evalUnifier =
     . gather
 
 applyInitialConditions
-    :: Predicate Object Variable
-    -> Predicate Object Variable
+    :: Predicate Variable
+    -> Predicate Variable
     -> IO
         (Either
             (UnificationOrSubstitutionError Object Variable)
-            [OrPredicate Object Variable]
+            [OrPredicate Variable]
         )
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList

@@ -360,7 +360,7 @@ unificationProcedureSuccess
                 term2
         let
             normalize
-                :: Predicate Object Variable
+                :: Predicate Variable
                 ->  ( [ (Variable, TermLike Variable) ]
                     , Syntax.Predicate Variable
                     )

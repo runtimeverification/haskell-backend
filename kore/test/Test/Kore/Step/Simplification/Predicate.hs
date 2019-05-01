@@ -286,8 +286,8 @@ mockMetadataTools =
 
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap Object
-    -> Predicate Object Variable
-    -> IO (OrPredicate Object Variable)
+    -> Predicate Variable
+    -> IO (OrPredicate Variable)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig

@@ -41,6 +41,6 @@ mergePredicatesAndSubstitutionsExcept
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier
-        ( Predicate Object variable
+        ( Predicate variable
         , UnificationProof Object variable
         )

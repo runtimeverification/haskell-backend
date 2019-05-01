@@ -52,9 +52,9 @@ simplifyEvaluatedMultiPredicate
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> MultiAnd (OrPredicate Object variable)
+    -> MultiAnd (OrPredicate variable)
     -> Simplifier
-        (OrPredicate Object variable, SimplificationProof Object)
+        (OrPredicate variable, SimplificationProof Object)
 simplifyEvaluatedMultiPredicate
     tools
     substitutionSimplifier
@@ -63,7 +63,7 @@ simplifyEvaluatedMultiPredicate
     predicates
   = do
     let
-        crossProduct :: MultiOr [Predicate Object variable]
+        crossProduct :: MultiOr [Predicate variable]
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
@@ -74,8 +74,8 @@ simplifyEvaluatedMultiPredicate
         )
   where
     andPredicates
-        :: [Predicate Object variable]
-        -> Simplifier (Predicate Object variable)
+        :: [Predicate variable]
+        -> Simplifier (Predicate variable)
     andPredicates predicates0 = do
         (result, _proof) <- mergePredicatesAndSubstitutions
             tools

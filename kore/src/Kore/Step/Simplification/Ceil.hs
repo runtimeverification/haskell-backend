@@ -243,7 +243,7 @@ makeEvaluateTerm
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
-    -> Simplifier (OrPredicate Object variable, SimplificationProof Object)
+    -> Simplifier (OrPredicate variable, SimplificationProof Object)
 makeEvaluateTerm
     tools
     substitutionSimplifier
@@ -339,7 +339,7 @@ makeEvaluateBuiltin
     -- ^ Map from symbol IDs to defined functions
     -> Domain.Builtin (TermLike variable)
     -> Simplifier
-        (OrPredicate Object variable, SimplificationProof Object)
+        (OrPredicate variable, SimplificationProof Object)
 makeEvaluateBuiltin
     _tools
     _substitutionSimplifier
@@ -373,7 +373,7 @@ makeEvaluateBuiltin
         )
         values
     let
-        ceils :: [OrPredicate Object variable]
+        ceils :: [OrPredicate variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicate
         tools
@@ -398,7 +398,7 @@ makeEvaluateBuiltin
         )
         (Foldable.toList l)
     let
-        ceils :: [OrPredicate Object variable]
+        ceils :: [OrPredicate variable]
         (ceils, _proofs) = unzip children
     And.simplifyEvaluatedMultiPredicate
         tools
@@ -434,7 +434,7 @@ makeEvaluateBuiltin
 
 topPredicateWithProof
     :: Ord variable
-    => (OrPredicate Object variable, SimplificationProof Object)
+    => (OrPredicate variable, SimplificationProof Object)
 topPredicateWithProof =
     ( MultiOr.make [Predicate.top]
     , SimplificationProof

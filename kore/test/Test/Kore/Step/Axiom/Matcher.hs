@@ -886,21 +886,21 @@ matchDefinition
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Object Variable))
+    -> IO (Maybe (OrPredicate Variable))
 matchDefinition = match
 
 matchSimplification
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Object Variable))
+    -> IO (Maybe (OrPredicate Variable))
 matchSimplification = match
 
 unificationWithMatch
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Object Variable))
+    -> IO (Maybe (OrPredicate Variable))
 unificationWithMatch tools first second = do
     eitherResult <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
@@ -920,7 +920,7 @@ match
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Object Variable))
+    -> IO (Maybe (OrPredicate Variable))
 match tools first second =
     matchAsEither >>= return . \case
         Left _err -> Nothing
@@ -930,7 +930,7 @@ match tools first second =
         :: IO
             (Either
                 (UnificationOrSubstitutionError Object Variable)
-                ( OrPredicate Object Variable
+                ( OrPredicate Variable
                 , UnificationProof Object Variable
                 )
             )
@@ -942,7 +942,7 @@ match tools first second =
         :: ExceptT
             (UnificationOrSubstitutionError Object Variable)
             Simplifier
-            ( OrPredicate Object Variable
+            ( OrPredicate Variable
             , UnificationProof Object Variable
             )
     matchResult =

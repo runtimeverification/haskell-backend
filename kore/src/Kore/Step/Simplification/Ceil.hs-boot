@@ -37,4 +37,4 @@ makeEvaluateTerm
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
-    -> Simplifier (OrPredicate Object variable, SimplificationProof Object)
+    -> Simplifier (OrPredicate variable, SimplificationProof Object)

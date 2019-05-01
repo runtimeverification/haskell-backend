@@ -72,7 +72,7 @@ unificationProcedure
     -- ^left-hand-side of unification
     -> TermLike variable
     -> unifier
-        ( OrPredicate Object variable
+        ( OrPredicate variable
         , UnificationProof Object variable
         )
 unificationProcedure

@@ -121,7 +121,7 @@ termEquals
     -> TermLike variable
     -> MaybeT
         Simplifier
-        (OrPredicate Object variable, SimplificationProof Object)
+        (OrPredicate variable, SimplificationProof Object)
 termEquals
     tools
     substitutionSimplifier

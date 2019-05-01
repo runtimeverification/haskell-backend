@@ -77,7 +77,7 @@ evaluateApplication
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
         (Application SymbolOrAlias)
@@ -156,7 +156,7 @@ evaluatePattern
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
@@ -205,7 +205,7 @@ maybeEvaluatePattern
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
@@ -414,7 +414,7 @@ mergeWithConditionAndSubstitution
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Condition and substitution to add.
     -> (AttemptedAxiom Object variable, SimplificationProof Object)
     -- ^ AttemptedAxiom to which the condition should be added.

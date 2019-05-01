@@ -327,7 +327,7 @@ merge
     -> IO
         (Either
             ( UnificationOrSubstitutionError Object Variable )
-            ( Predicate Object Variable )
+            ( Predicate Variable )
         )
 merge s1 s2 =
     runSMT

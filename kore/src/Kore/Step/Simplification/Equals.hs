@@ -634,7 +634,7 @@ makeEvaluateTermsToPredicate
     -> TermLike variable
     -> TermLike variable
     -> Simplifier
-        (OrPredicate Object variable, SimplificationProof Object)
+        (OrPredicate variable, SimplificationProof Object)
 makeEvaluateTermsToPredicate
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second =

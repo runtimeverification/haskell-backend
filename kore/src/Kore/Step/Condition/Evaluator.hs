@@ -52,7 +52,7 @@ evaluate
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
     -> Simplifier
-        (Predicate Object variable, SimplificationProof Object)
+        (Predicate variable, SimplificationProof Object)
 evaluate
     substitutionSimplifier
     termSimplifier
@@ -82,7 +82,7 @@ asPredicate
         , Unparse variable
         )
     => Pattern variable
-    -> (Predicate Object variable, SimplificationProof Object)
+    -> (Predicate variable, SimplificationProof Object)
 asPredicate
     Conditional {term, predicate, substitution}
   =

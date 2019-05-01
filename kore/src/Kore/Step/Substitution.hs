@@ -64,7 +64,7 @@ newtype PredicateMerger level variable m =
     PredicateMerger
     (  [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> m (Predicate level variable)
+    -> m (Predicate variable)
     )
 
 -- | Normalize the substitution and predicate of 'expanded'.
@@ -127,8 +127,8 @@ normalizeExcept
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Predicate Object variable
-    -> BranchT unifier (Predicate Object variable)
+    -> Predicate variable
+    -> BranchT unifier (Predicate variable)
 normalizeExcept
     tools
     predicateSimplifier@(PredicateSimplifier simplifySubstitution)
@@ -201,7 +201,7 @@ mergePredicatesAndSubstitutions
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> Simplifier
-        ( Predicate Object variable
+        ( Predicate variable
         , UnificationProof Object variable
         )
 mergePredicatesAndSubstitutions
@@ -255,7 +255,7 @@ mergePredicatesAndSubstitutionsExcept
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier
-        ( Predicate Object variable
+        ( Predicate variable
         , UnificationProof Object variable
         )
 mergePredicatesAndSubstitutionsExcept
@@ -315,7 +315,7 @@ createPredicatesAndSubstitutionsMergerExcept
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> unifier (Predicate Object variable)
+        -> unifier (Predicate variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutionsExcept
             tools
@@ -350,7 +350,7 @@ createPredicatesAndSubstitutionsMerger
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> Simplifier (Predicate Object variable)
+        -> Simplifier (Predicate variable)
     worker predicates substitutions = do
         (merged, _proof) <- mergePredicatesAndSubstitutions
             tools
@@ -388,7 +388,7 @@ createLiftedPredicatesAndSubstitutionsMerger
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> unifier (Predicate Object variable)
+        -> unifier (Predicate variable)
     worker predicates substitutions = Monad.Unify.liftSimplifier $ do
         (merged, _proof) <- mergePredicatesAndSubstitutions
             tools
@@ -413,9 +413,9 @@ normalizeSubstitutionAfterMerge
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> Predicate Object variable
+    -> Predicate variable
     -> unifier
-          ( Predicate Object variable
+          ( Predicate variable
           , UnificationProof Object variable
           )
 normalizeSubstitutionAfterMerge

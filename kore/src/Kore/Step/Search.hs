@@ -137,7 +137,7 @@ matchWith
     -- ^ Map from symbol IDs to defined functions
     -> Pattern variable
     -> Pattern variable
-    -> MaybeT Simplifier (OrPredicate Object variable)
+    -> MaybeT Simplifier (OrPredicate variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     (unifier, _proof) <-
         hushT . Monad.Unify.getUnifier $
@@ -150,9 +150,9 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                 t2
     let
         mergeAndEvaluate
-            :: Predicate Object variable
+            :: Predicate variable
             -> Simplifier
-                ( Predicate Object variable
+                ( Predicate variable
                 , UnificationProof Object variable
                 )
         mergeAndEvaluate predSubst = do

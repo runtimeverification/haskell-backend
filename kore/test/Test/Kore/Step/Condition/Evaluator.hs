@@ -63,7 +63,7 @@ test_andNegation =
 
 evaluate
     :: Syntax.Predicate Variable
-    -> PropertyT SMT (Predicate Object Variable)
+    -> PropertyT SMT (Predicate Variable)
 evaluate predicate =
     (<$>) fst
     $ give testMetadataTools

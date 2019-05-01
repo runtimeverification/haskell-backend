@@ -60,7 +60,7 @@ program configuration for Kore execution.
  -}
 type Pattern variable = Conditional variable (TermLike variable)
 
-fromPredicate :: Predicate Object variable -> Pattern variable
+fromPredicate :: Predicate variable -> Pattern variable
 fromPredicate = (<$) mkTop_
 
 freeVariables

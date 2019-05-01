@@ -855,7 +855,7 @@ test_equalsSimplification_TermLike =
 assertTermEquals
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> Predicate Object Variable
+    -> Predicate Variable
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -864,7 +864,7 @@ assertTermEquals = assertTermEqualsGeneric
 assertTermEqualsGeneric
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> Predicate Object Variable
+    -> Predicate Variable
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -875,7 +875,7 @@ assertTermEqualsGeneric tools expectPure =
 assertTermEqualsMulti
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> [Predicate Object Variable]
+    -> [Predicate Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -884,7 +884,7 @@ assertTermEqualsMulti = assertTermEqualsMultiGeneric
 assertTermEqualsMultiGeneric
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> [Predicate Object Variable]
+    -> [Predicate Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -916,7 +916,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-    predSubstToPattern :: Predicate Object Variable -> Pattern Variable
+    predSubstToPattern :: Predicate Variable -> Pattern Variable
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
       =
@@ -1033,7 +1033,7 @@ evaluateTermsGeneric
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (OrPredicate Object Variable)
+    -> IO (OrPredicate Variable)
 evaluateTermsGeneric tools first second =
     (<$>) fst
     $ SMT.runSMT SMT.defaultConfig

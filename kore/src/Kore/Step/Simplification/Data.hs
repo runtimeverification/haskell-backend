@@ -289,7 +289,7 @@ newtype TermLikeSimplifier level =
             )
         => PredicateSimplifier level
         -> TermLike variable
-        -> Predicate level variable
+        -> Predicate variable
         -> BranchT Simplifier (Pattern variable)
         )
 
@@ -339,7 +339,7 @@ simplifyConditionalTerm
     => TermLikeSimplifier Object
     -> PredicateSimplifier Object
     -> TermLike variable
-    -> Predicate Object variable
+    -> Predicate variable
     -> BranchT Simplifier (Pattern variable)
 simplifyConditionalTerm (TermLikeSimplifier simplify) = simplify
 
@@ -378,7 +378,7 @@ termLikeSimplifier simplifier =
             )
         => PredicateSimplifier Object
         -> TermLike variable
-        -> Predicate Object variable
+        -> Predicate variable
         -> BranchT Simplifier (Pattern variable)
     termLikeSimplifierWorker
         predicateSimplifier
@@ -405,6 +405,6 @@ newtype PredicateSimplifier level =
                 , Unparse variable
                 , SortedVariable variable
                 )
-            => Predicate level variable
-            -> BranchT Simplifier (Predicate level variable)
+            => Predicate variable
+            -> BranchT Simplifier (Predicate variable)
         }

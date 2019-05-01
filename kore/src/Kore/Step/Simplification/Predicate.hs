@@ -72,8 +72,8 @@ simplify
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
     -> Int
-    -> Predicate Object variable
-    -> BranchT Simplifier (Predicate Object variable)
+    -> Predicate variable
+    -> BranchT Simplifier (Predicate variable)
 simplify
     tools
     simplifier
@@ -164,7 +164,7 @@ simplifyPartial
     => PredicateSimplifier Object
     -> TermLikeSimplifier Object
     -> Syntax.Predicate variable
-    -> BranchT Simplifier (Predicate Object variable)
+    -> BranchT Simplifier (Predicate variable)
 simplifyPartial
     substitutionSimplifier
     termSimplifier

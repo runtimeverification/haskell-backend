@@ -116,7 +116,7 @@ newtype UnificationProcedure level =
         -> TermLike variable
         -> TermLike variable
         -> unifier
-            ( OrPredicate level variable
+            ( OrPredicate variable
             , UnificationProof level variable
             )
         )
@@ -266,11 +266,11 @@ applyInitialConditions
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
 
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Initial conditions
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Unification conditions
-    -> BranchT unifier (OrPredicate Object variable)
+    -> BranchT unifier (OrPredicate variable)
 applyInitialConditions
     metadataTools
     predicateSimplifier
@@ -330,7 +330,7 @@ finalizeAppliedRule
 
     -> RulePattern variable
     -- ^ Applied rule
-    -> OrPredicate Object variable
+    -> OrPredicate variable
     -- ^ Conditions of applied rule
     -> BranchT unifier (OrPattern variable)
 finalizeAppliedRule

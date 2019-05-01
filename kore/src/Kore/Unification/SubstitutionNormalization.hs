@@ -68,7 +68,7 @@ normalizeSubstitution
     -> ExceptT
         (SubstitutionError Object variable)
         m
-        (Predicate Object variable)
+        (Predicate variable)
 normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
@@ -115,13 +115,13 @@ normalizeSubstitution tools substitution =
 
     normalizeSortedSubstitution'
         :: [variable]
-        -> m (Predicate Object variable)
+        -> m (Predicate variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
     maybeToBottom
         :: Maybe [variable]
-        -> m (Predicate Object variable)
+        -> m (Predicate variable)
     maybeToBottom = maybe
         (return Predicate.bottom)
         normalizeSortedSubstitution'
@@ -145,7 +145,7 @@ normalizeSortedSubstitution
     => [(variable, TermLike variable)]
     -> [(variable, TermLike variable)]
     -> [(variable, TermLike variable)]
-    -> m (Predicate Object variable)
+    -> m (Predicate variable)
 normalizeSortedSubstitution [] result _ =
     return Conditional
         { term = ()

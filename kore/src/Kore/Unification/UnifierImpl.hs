@@ -183,7 +183,7 @@ solveGroupedSubstitution
     -> variable
     -> NonEmpty (TermLike variable)
     -> unifier
-        ( Predicate Object variable
+        ( Predicate variable
         , UnificationProof Object variable
         )
 solveGroupedSubstitution
@@ -235,7 +235,7 @@ normalizeSubstitutionDuplication
     -> BuiltinAndAxiomSimplifierMap Object
     -> Substitution variable
     -> unifier
-        ( Predicate Object variable
+        ( Predicate variable
         , UnificationProof Object variable
         )
 normalizeSubstitutionDuplication
@@ -308,8 +308,8 @@ mergePredicateList
        , Unparse variable
        , SortedVariable variable
        )
-    => [(Predicate Object variable, UnificationProof Object variable)]
-    -> (Predicate Object variable, UnificationProof Object variable)
+    => [(Predicate variable, UnificationProof Object variable)]
+    -> (Predicate variable, UnificationProof Object variable)
 mergePredicateList [] =
     ( Predicate.top
     , EmptyUnificationProof
