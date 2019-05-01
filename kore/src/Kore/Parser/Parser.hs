@@ -177,7 +177,7 @@ BNF definitions:
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-aliasParser :: Parser (Alias Object)
+aliasParser :: Parser Alias
 aliasParser = symbolOrAliasDeclarationRawParser Alias
 
 

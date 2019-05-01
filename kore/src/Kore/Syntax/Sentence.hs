@@ -54,29 +54,25 @@ groundSymbol ctor = Symbol
     , symbolParams = []
     }
 
-{-|'Alias' corresponds to the
-@object-head-constructor{object-sort-variable-list}@ part of the
-@object-alias-declaration@ and @meta-alias-declaration@ syntactic categories
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+{- | 'Alias' corresponds to the @head-constructor{sort-variable-list}@ part of
+the @alias-declaration@ and @alias-declaration@ syntactic categories from the
+Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
+See also: 'SymbolOrAlias'.
 
-Note that this is very similar to 'SymbolOrAlias'.
--}
-data Alias level = Alias
+ -}
+data Alias = Alias
     { aliasConstructor :: !Id
     , aliasParams      :: ![SortVariable]
     }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (Alias level)
+instance Hashable Alias
 
-instance NFData (Alias level)
+instance NFData Alias
 
-instance Unparse (Alias level) where
+instance Unparse Alias where
     unparse Alias { aliasConstructor, aliasParams } =
-        unparse aliasConstructor
-        <> parameters aliasParams
+        unparse aliasConstructor <> parameters aliasParams
     unparse2 Alias { aliasConstructor } =
         unparse2 aliasConstructor

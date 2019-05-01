@@ -64,7 +64,7 @@ instance AstWithLocation Variable where
     updateAstLocation var loc =
         var {variableName = updateAstLocation (variableName var) loc}
 
-instance AstWithLocation (Alias level) where
+instance AstWithLocation Alias where
     locationFromAst = locationFromAst . aliasConstructor
     updateAstLocation al loc =
         al { aliasConstructor = updateAstLocation (aliasConstructor al) loc }

@@ -244,7 +244,7 @@ instance  PrettyPrint SymbolOrAlias where
             , writeListField "symbolOrAliasParams" symbolOrAliasParams s
             ]
 
-instance  PrettyPrint (Alias level) where
+instance  PrettyPrint Alias where
     prettyPrint _ s@(Alias _ _) =
         writeStructure "Alias"
             [ writeFieldOneLine "aliasConstructor" aliasConstructor s

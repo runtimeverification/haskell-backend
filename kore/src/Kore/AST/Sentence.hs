@@ -88,7 +88,7 @@ versions of symbol declarations. It should implement 'MetaOrObject level'.
 -}
 data SentenceAlias (level :: *) (patternType :: *) =
     SentenceAlias
-        { sentenceAliasAlias        :: !(Alias level)
+        { sentenceAliasAlias        :: !Alias
         , sentenceAliasSorts        :: ![Sort]
         , sentenceAliasResultSort   :: !Sort
         , sentenceAliasLeftPattern  :: !(Application SymbolOrAlias Variable)

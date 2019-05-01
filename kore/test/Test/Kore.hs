@@ -155,7 +155,7 @@ symbolOrAliasGen =
 symbolGen :: MonadGen m => m Symbol
 symbolGen = symbolOrAliasDeclarationRawGen Symbol
 
-aliasGen :: MonadGen m => m (Alias Object)
+aliasGen :: MonadGen m => m Alias
 aliasGen = symbolOrAliasDeclarationRawGen Alias
 
 sortVariableGen :: MonadGen m => m SortVariable

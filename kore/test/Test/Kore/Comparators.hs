@@ -1710,11 +1710,11 @@ instance
 
 -- For: Alias
 
-instance EqualWithExplanation (Alias Object) where
+instance EqualWithExplanation Alias where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation (Alias Object) where
+instance StructEqualWithExplanation Alias where
     structConstructorName _ = "Alias"
     structFieldsWithNames expect@(Alias _ _) actual@(Alias _ _) =
         map (\f -> f expect actual)
