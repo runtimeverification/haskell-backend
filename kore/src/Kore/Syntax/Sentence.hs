@@ -422,11 +422,9 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 See also: 'SentenceSort', 'SentenceSymbol'
 
  -}
-data SentenceHook (patternType :: *) where
-    SentenceHookedSort
-        :: !(SentenceSort patternType) -> SentenceHook patternType
-    SentenceHookedSymbol
-        :: !(SentenceSymbol patternType) -> SentenceHook patternType
+data SentenceHook (patternType :: *)
+    = SentenceHookedSort !(SentenceSort patternType)
+    | SentenceHookedSymbol !(SentenceSymbol patternType)
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 instance Hashable (SentenceHook patternType)
