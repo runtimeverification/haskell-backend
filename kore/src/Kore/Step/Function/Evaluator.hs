@@ -271,7 +271,7 @@ maybeEvaluatePattern
                                 , SimplificationProof
                                 )
   where
-    identifier :: Maybe (AxiomIdentifier Object)
+    identifier :: Maybe (AxiomIdentifier)
     identifier = AxiomIdentifier.extract patt
 
     maybeEvaluator :: Maybe (BuiltinAndAxiomSimplifier)

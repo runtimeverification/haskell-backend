@@ -1423,7 +1423,7 @@ instance EqualWithExplanation ConstructorLikeProof
     printWithExplanation = show
 
 
-instance SumEqualWithExplanation (AxiomIdentifier Object)
+instance SumEqualWithExplanation (AxiomIdentifier)
   where
     sumConstructorPair
         (AxiomIdentifier.Application p1) (AxiomIdentifier.Application p2)
@@ -1438,7 +1438,7 @@ instance SumEqualWithExplanation (AxiomIdentifier Object)
             (printWithExplanation p1)
             (printWithExplanation p2)
 
-instance EqualWithExplanation (AxiomIdentifier Object)
+instance EqualWithExplanation (AxiomIdentifier)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

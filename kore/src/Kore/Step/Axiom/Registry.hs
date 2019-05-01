@@ -55,7 +55,7 @@ import qualified Kore.Verified as Verified
  -}
 extractEqualityAxioms
     :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> Map (AxiomIdentifier Object) [EqualityRule Variable]
+    -> Map (AxiomIdentifier) [EqualityRule Variable]
 extractEqualityAxioms =
     \imod ->
         Foldable.foldl'
@@ -65,9 +65,9 @@ extractEqualityAxioms =
   where
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
-        :: Map (AxiomIdentifier Object) [EqualityRule Variable]
+        :: Map (AxiomIdentifier) [EqualityRule Variable]
         -> VerifiedModule StepperAttributes Attribute.Axiom
-        -> Map (AxiomIdentifier Object) [EqualityRule Variable]
+        -> Map (AxiomIdentifier) [EqualityRule Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
       where
@@ -77,9 +77,9 @@ extractEqualityAxioms =
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
     extractSentenceAxiom
-        :: Map (AxiomIdentifier Object) [EqualityRule Variable]
+        :: Map (AxiomIdentifier) [EqualityRule Variable]
         -> (attrs, Verified.SentenceAxiom)
-        -> Map (AxiomIdentifier Object) [EqualityRule Variable]
+        -> Map (AxiomIdentifier) [EqualityRule Variable]
     extractSentenceAxiom axioms (_, sentence) =
         let
             namedAxiom = axiomToIdAxiomPatternPair sentence
@@ -88,15 +88,15 @@ extractEqualityAxioms =
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
-        :: Map (AxiomIdentifier Object) [EqualityRule Variable]
-        -> (AxiomIdentifier Object, EqualityRule Variable)
-        -> Map (AxiomIdentifier Object) [EqualityRule Variable]
+        :: Map (AxiomIdentifier) [EqualityRule Variable]
+        -> (AxiomIdentifier, EqualityRule Variable)
+        -> Map (AxiomIdentifier) [EqualityRule Variable]
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
     :: SentenceAxiom (TermLike Variable)
-    -> Maybe (AxiomIdentifier Object, EqualityRule Variable)
+    -> Maybe (AxiomIdentifier, EqualityRule Variable)
 axiomToIdAxiomPatternPair axiom =
     case Rule.fromSentenceAxiom axiom of
         Left _ -> Nothing
@@ -113,14 +113,14 @@ axiomToIdAxiomPatternPair axiom =
 -- |Converts a registry of 'RulePattern's to one of
 -- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
-    :: Map.Map (AxiomIdentifier Object) [EqualityRule Variable]
-    -> Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier)
+    :: Map.Map (AxiomIdentifier) [EqualityRule Variable]
+    -> Map.Map (AxiomIdentifier) (BuiltinAndAxiomSimplifier)
 axiomPatternsToEvaluators =
     Map.fromAscList . mapMaybe equalitiesToEvaluators . Map.toAscList
   where
     equalitiesToEvaluators
-        :: (AxiomIdentifier Object, [EqualityRule Variable])
-        -> Maybe (AxiomIdentifier Object, BuiltinAndAxiomSimplifier)
+        :: (AxiomIdentifier, [EqualityRule Variable])
+        -> Maybe (AxiomIdentifier, BuiltinAndAxiomSimplifier)
     equalitiesToEvaluators
         (symbolId, filter (not . ignoreEqualityRule) -> equalities)
       =

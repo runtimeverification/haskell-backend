@@ -443,8 +443,8 @@ See also: 'simplifyRulePattern'
  -}
 simplifyFunctionAxioms
     :: SmtMetadataTools StepperAttributes
-    -> Map.Map (AxiomIdentifier Object) [Equality]
-    -> Simplifier (Map.Map (AxiomIdentifier Object) [Equality])
+    -> Map.Map (AxiomIdentifier) [Equality]
+    -> Simplifier (Map.Map (AxiomIdentifier) [Equality])
 simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
   where
     simplifyEqualityRule (EqualityRule rule) =

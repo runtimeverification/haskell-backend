@@ -106,7 +106,7 @@ newtype BuiltinAndAxiomSimplifier =
 their corresponding evaluators.
 -}
 type BuiltinAndAxiomSimplifierMap =
-    Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier)
+    Map.Map (AxiomIdentifier) (BuiltinAndAxiomSimplifier)
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}
