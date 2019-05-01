@@ -8,8 +8,6 @@ module Kore.Syntax.Sentence
     ( Symbol (..)
     , groundSymbol
     , Alias (..)
-    , ModuleName (..)
-    , getModuleNameForError
     , SentenceAlias (..)
     , SentenceSymbol (..)
     , SentenceImport (..)
@@ -26,11 +24,6 @@ import           Control.DeepSeq
                  ( NFData (..) )
 import           Data.Hashable
                  ( Hashable (..) )
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
@@ -44,6 +37,8 @@ import           Kore.AST.Pure
 import           Kore.Attribute.Attributes
 import           Kore.Sort
 import           Kore.Syntax.Application
+import           Kore.Syntax.Module
+                 ( ModuleName (..) )
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 
@@ -103,24 +98,6 @@ instance Unparse Alias where
         unparse aliasConstructor <> parameters aliasParams
     unparse2 Alias { aliasConstructor } =
         unparse2 aliasConstructor
-
-{- | 'ModuleName' corresponds to the @module-name@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-newtype ModuleName = ModuleName { getModuleName :: Text }
-    deriving (Eq, Generic, IsString, Ord, Show)
-
-instance Hashable ModuleName
-
-instance NFData ModuleName
-
-instance Unparse ModuleName where
-    unparse = Pretty.pretty . getModuleName
-    unparse2 = Pretty.pretty . getModuleName
-
-
-getModuleNameForError :: ModuleName -> String
-getModuleNameForError = Text.unpack . getModuleName
 
 {- | 'SentenceAlias' corresponds to the @alias-declaration@ and syntactic
 category from the Semantics of K, Section 9.1.6 (Declaration and Definitions).

@@ -59,8 +59,6 @@ import           Data.Functor.Const
                  ( Const )
 import           Data.Hashable
                  ( Hashable (..) )
-import           Data.Maybe
-                 ( catMaybes )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Void
                  ( Void )
@@ -70,57 +68,9 @@ import           GHC.Generics
 import           Kore.AST.Pure as Pure
 import           Kore.Attribute.Attributes
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax.Module
 import           Kore.Syntax.Sentence
 import           Kore.Unparser
-
-
-{-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
-'Attributes'.
-
-They correspond to the second, third and forth non-terminals of the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions).
--}
-data Module (sentence :: *) =
-    Module
-        { moduleName       :: !ModuleName
-        , moduleSentences  :: ![sentence]
-        , moduleAttributes :: !Attributes
-        }
-    deriving (Eq, Functor, Foldable, Generic, Show, Traversable)
-
-instance Hashable sentence => Hashable (Module sentence)
-
-instance NFData sentence => NFData (Module sentence)
-
-instance Unparse sentence => Unparse (Module sentence) where
-    unparse
-        Module { moduleName, moduleSentences, moduleAttributes }
-      =
-        (Pretty.vsep . catMaybes)
-            [ Just ("module" Pretty.<+> unparse moduleName)
-            , case moduleSentences of
-                [] -> Nothing
-                _ ->
-                    (Just . Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> moduleSentences)
-            , Just "endmodule"
-            , Just (unparse moduleAttributes)
-            ]
-
-    unparse2
-        Module { moduleName, moduleSentences, moduleAttributes }
-      =
-        (Pretty.vsep . catMaybes)
-            [ Just ("module" Pretty.<+> unparse2 moduleName)
-            , case moduleSentences of
-                [] -> Nothing
-                _ ->
-                    (Just . Pretty.indent 4 . Pretty.vsep)
-                        (unparse2 <$> moduleSentences)
-            , Just "endmodule"
-            , Just (unparse2 moduleAttributes)
-            ]
 
 {-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
